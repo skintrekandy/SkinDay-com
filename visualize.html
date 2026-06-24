@@ -25,7 +25,14 @@
     .nav-logo { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:400; color:var(--cream); letter-spacing:.04em; text-decoration:none; }
     .nav-logo span { color:var(--gold); }
     .nav-ctas { display:flex; align-items:center; gap:.6rem; }
-    .nav-link { background:transparent; border:1px solid rgba(201,169,110,.4); color:var(--dim); padding:.3rem .75rem; border-radius:4px; font-size:.78rem; text-decoration:none; }
+    .nav-link { background:transparent; border:1px solid rgba(201,169,110,.4); color:var(--dim); padding:.3rem .75rem; border-radius:4px; font-size:.78rem; text-decoration:none; cursor:pointer; }
+    .acct-wrap { position:relative; }
+    .acct-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:180px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 28px rgba(28,23,20,.14); padding:6px; z-index:60; display:none; }
+    .acct-menu.open { display:block; }
+    .acct-menu-email { display:block; padding:8px 12px 6px; font-size:.72rem; color:var(--muted); border-bottom:1px solid var(--border); margin-bottom:4px; word-break:break-all; }
+    .acct-menu button { display:block; width:100%; text-align:left; background:transparent; border:none; padding:9px 12px; font-family:'DM Sans',sans-serif; font-size:.82rem; color:var(--deep); cursor:pointer; border-radius:5px; }
+    .acct-menu button:hover { background:var(--cream); }
+    .acct-menu button.signout { color:var(--rose); }
     .nav-cta { background:var(--rose); color:#fff; padding:.3rem .75rem; border-radius:4px; font-size:.78rem; font-weight:500; text-decoration:none; white-space:nowrap; }
     .page { max-width:960px; margin:0 auto; padding:88px 20px 80px; }
     .hero { text-align:center; padding:44px 0 38px; border-bottom:1px solid var(--border); margin-bottom:38px; }
@@ -578,7 +585,15 @@
   <div class="nav-ctas">
     <button class="nav-credits" id="navCredits" type="button" title="Credit balance"></button>
     <button class="nav-library" id="navLibraryBtn" type="button" title="Case library">Library</button>
-    <button class="nav-link" id="navAccountBtn" type="button" style="display:none;">Account</button>
+    <span class="acct-wrap">
+      <button class="nav-link" id="navAccountBtn" type="button" style="display:none;" aria-haspopup="true" aria-expanded="false">Account</button>
+      <div class="acct-menu" id="acctMenu" role="menu">
+        <span class="acct-menu-email" id="acctMenuEmail"></span>
+        <button type="button" id="acctMenuBuy" role="menuitem">Add credits</button>
+        <button type="button" id="acctMenuInfo" role="menuitem">How credits work</button>
+        <button type="button" id="acctMenuSignOut" class="signout" role="menuitem">Sign out</button>
+      </div>
+    </span>
   </div>
 </nav>
 <div class="acct-bar" id="acctBar">
@@ -1550,9 +1565,30 @@ function closeBuyModal(){ document.getElementById('buyModal').classList.add('hid
 document.getElementById('buyBtn').addEventListener('click', openBuyModal);
 document.getElementById('navCredits').addEventListener('click', openBuyModal);
 const navAccountBtn = document.getElementById('navAccountBtn');
-if(navAccountBtn) navAccountBtn.addEventListener('click', () => {
-  window.location.href = '/account.html';
+const acctMenu = document.getElementById('acctMenu');
+function closeAcctMenu(){
+  if(acctMenu){ acctMenu.classList.remove('open'); }
+  if(navAccountBtn){ navAccountBtn.setAttribute('aria-expanded','false'); }
+}
+if(navAccountBtn) navAccountBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const emailEl = document.getElementById('acctMenuEmail');
+  if(emailEl){ emailEl.textContent = (sb && sb.__email) || ''; }
+  const open = acctMenu.classList.toggle('open');
+  navAccountBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
 });
+// Menu items reuse the existing, already-wired handlers
+const acctMenuBuy = document.getElementById('acctMenuBuy');
+if(acctMenuBuy) acctMenuBuy.addEventListener('click', () => { closeAcctMenu(); openBuyModal(); });
+const acctMenuInfo = document.getElementById('acctMenuInfo');
+if(acctMenuInfo) acctMenuInfo.addEventListener('click', () => { closeAcctMenu(); document.getElementById('creditsInfoBtn').click(); });
+const acctMenuSignOut = document.getElementById('acctMenuSignOut');
+if(acctMenuSignOut) acctMenuSignOut.addEventListener('click', () => { closeAcctMenu(); document.getElementById('signOutBtn').click(); });
+// Close on outside click or Escape
+document.addEventListener('click', (e) => {
+  if(acctMenu && acctMenu.classList.contains('open') && !e.target.closest('.acct-wrap')){ closeAcctMenu(); }
+});
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape'){ closeAcctMenu(); } });
 
 /* ─────── M12: Clinic case library ───────
    Library covers all treatment areas (sculptra, ha_chin, etc.) and three angles.
