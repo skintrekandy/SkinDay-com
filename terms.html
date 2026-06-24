@@ -4,120 +4,193 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Terms of Service — SkinDay</title>
-  <meta name="description" content="SkinDay terms of service. Rules and guidelines for using Studio and Visualize." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --cream: #FAF7F2; --deep: #1C1714;
-      --rose: #C8725A; --gold: #C9A96E;
-      --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
-    }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(28,23,20,0.96); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(201,169,110,0.25);
-      padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
-    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 600; color: var(--cream); text-decoration: none; letter-spacing: 0.01em; }
-    .nav-logo span { color: var(--gold); }
-    .nav-back { color: var(--dim); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
-    .nav-back:hover { color: var(--cream); }
-    .page-wrap { max-width: 720px; margin: 0 auto; padding: 72px 28px 96px; }
-    .page-eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
-    h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; color: var(--deep); margin-bottom: 0.5rem; line-height: 1.1; }
-    .last-updated { font-size: 0.8rem; color: var(--muted); margin-bottom: 3rem; }
-    h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; color: var(--deep); margin: 2.5rem 0 0.75rem; }
-    p { font-size: 0.94rem; line-height: 1.78; color: #3a3330; margin-bottom: 1rem; }
-    ul { padding-left: 1.4rem; margin-bottom: 1rem; }
-    ul li { font-size: 0.94rem; line-height: 1.78; color: #3a3330; margin-bottom: 0.3rem; }
-    a { color: var(--rose); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
-    footer { background: var(--deep); padding: 2rem 5%; text-align: center; }
-    .footer-note { font-size: 0.78rem; color: var(--muted); }
-    .footer-note a { color: var(--dim); }
+    :root { --cream:#FAF7F2;--deep:#1C1714;--rose:#C8725A;--gold:#C9A96E;
+    --deep2:#241E1A;
+    --rose-m:#D4896E;
+    --rose-bg:#F5E8E3;
+    --border:#EAE2D8;
+    --hero-border:rgba(201,169,110,.25);--muted:#8A7B72;--dim:#B5A89F;--border:#EAE2D8;--line-light:rgba(250,247,242,.16); }
+    body { font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--deep);-webkit-font-smoothing:antialiased; }
+    body.zh { font-family:'Noto Serif TC','DM Sans',sans-serif; }
+    body.zh p,body.zh li { letter-spacing:.02em;line-height:1.85; }
+    nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:#FAF7F2;text-decoration:none;letter-spacing:.01em;}
+    .nav-logo span{color:var(--gold);}
+    .nav-right{display:flex;align-items:center;gap:20px;}
+    .nav-back{color:var(--dim);text-decoration:none;font-size:.82rem;transition:color .2s;}
+    .nav-back:hover{color:#FAF7F2;}
+    .lang-toggle{display:flex;align-items:center;gap:0;border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;flex-shrink:0;}
+    .lang-btn{padding:6px 11px;cursor:pointer;background:none;border:none;color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s,color .2s;}
+    .lang-btn.active{background:rgba(250,247,242,.14);color:#FAF7F2;}
+    .lang-btn:hover:not(.active){color:var(--gold);}
+    .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
+    .page-wrap{max-width:720px;margin:0 auto;padding:72px 28px 96px;}
+    .page-eyebrow{font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
+    h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3rem);font-weight:400;color:var(--deep);margin-bottom:.5rem;line-height:1.1;}
+    .last-updated{font-size:.8rem;color:var(--muted);margin-bottom:3rem;}
+    h2{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--deep);margin:2.5rem 0 .75rem;}
+    p{font-size:.94rem;line-height:1.78;color:#3a3330;margin-bottom:1rem;}
+    ul{padding-left:1.4rem;margin-bottom:1rem;}
+    ul li{font-size:.94rem;line-height:1.78;color:#3a3330;margin-bottom:.3rem;}
+    a{color:var(--rose);text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0;}
+    footer{background:var(--deep);padding:2rem 5%;text-align:center;}
+    .footer-note{font-size:.78rem;color:var(--muted);}
+    .footer-note a{color:var(--dim);text-decoration:none;}
+    .footer-note a:hover{color:#FAF7F2;}
+    .lang-section{display:block;}
+    .lang-section.hidden{display:none;}
   </style>
 </head>
 <body>
 
 <nav>
-  <a href="/" class="nav-logo"><span>SkinDay</span></a>
-  <a href="/" class="nav-back">Back to SkinDay</a>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><span>SkinDay</span></a>
+    <div class="nav-right">
+      <a href="/" class="nav-back" id="navBack">Back to SkinDay</a>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <div class="lang-sep"></div>
+        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <div class="page-wrap">
-  <div class="page-eyebrow">Legal</div>
-  <h1>Terms of Service</h1>
-  <div class="last-updated">Last updated: June 2026</div>
+  <!-- ENGLISH -->
+  <div class="lang-section" id="sec-en">
+    <div class="page-eyebrow">Legal</div>
+    <h1>Terms of Service</h1>
+    <div class="last-updated">Last updated: June 2026</div>
+    <p>These Terms of Service govern your use of SkinDay, operated at skinday.com. By accessing or using SkinDay, you agree to these Terms.</p>
+    <hr />
+    <h2>1. About SkinDay</h2>
+    <p>SkinDay is a global clinic-growth platform for aesthetic clinics, providing two tools: SkinDay Studio (free browser-based before-and-after tool) and SkinDay Visualize (AI-powered consultation preview tool). SkinDay is not a medical provider, booking agent, or healthcare service.</p>
+    <h2>2. Who Can Use SkinDay</h2>
+    <p>SkinDay is intended for use by licensed aesthetic clinics and practitioners. By using Visualize, you represent that you are a qualified healthcare practitioner or are operating on behalf of a licensed clinic. SkinDay is not intended for patient self-use.</p>
+    <h2>3. SkinDay Studio</h2>
+    <p>Studio is free to use. Photos processed in Studio never leave your device. You are responsible for obtaining appropriate patient consent before capturing, using, or sharing any patient image.</p>
+    <h2>4. SkinDay Visualize</h2>
+    <p>Visualize requires a paid credit balance. By using Visualize, you agree that:</p>
+    <ul>
+      <li>Outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results.</li>
+      <li>You will not present simulations to patients as guarantees or promises of outcome.</li>
+      <li>You are responsible for obtaining appropriate patient consent before generating or sharing any simulation.</li>
+      <li>Photos submitted are transmitted to an AI provider for that single request only.</li>
+    </ul>
+    <h2>5. Credits and Payments</h2>
+    <p>Credits are purchased in advance via Stripe and are non-transferable between accounts. Credits do not expire. Payments are processed in CAD. For information on refunds, see our <a href="/refund">Refund Policy</a>.</p>
+    <h2>6. Accounts</h2>
+    <p>You are responsible for the security of your account credentials. You may request account deletion by contacting <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</p>
+    <h2>7. Prohibited Use</h2>
+    <ul>
+      <li>Using Visualize outputs as guarantees of treatment results in patient-facing materials</li>
+      <li>Using either tool for any unlawful purpose</li>
+      <li>Attempting to reverse-engineer, scrape, or copy the platform</li>
+      <li>Submitting images of individuals who have not provided appropriate consent</li>
+    </ul>
+    <h2>8. No Medical Advice</h2>
+    <p>Nothing on SkinDay constitutes medical advice. Visualize outputs are AI simulations, not clinical assessments. All treatment decisions remain the sole responsibility of the treating practitioner.</p>
+    <h2>9. Limitation of Liability</h2>
+    <p>SkinDay is provided "as is" without warranties of any kind. To the fullest extent permitted by applicable law, SkinDay shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform.</p>
+    <h2>10. Intellectual Property</h2>
+    <p>The SkinDay name, logo, design, and original content are the property of SkinDay and may not be used without written permission.</p>
+    <h2>11. Governing Law</h2>
+    <p>These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada.</p>
+    <h2>12. Changes</h2>
+    <p>We may update these Terms from time to time. Registered users will be notified of material changes by email.</p>
+    <h2>13. Contact</h2>
+    <p>Questions: <a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  </div>
 
-  <p>These Terms of Service govern your use of SkinDay, operated at skinday.com. By accessing or using SkinDay, you agree to these Terms. If you do not agree, please do not use the platform.</p>
-
-  <hr />
-
-  <h2>1. About SkinDay</h2>
-  <p>SkinDay is a global clinic-growth platform for aesthetic clinics, providing two tools: SkinDay Studio (free browser-based before-and-after tool) and SkinDay Visualize (AI-powered consultation preview tool). SkinDay is not a medical provider, booking agent, or healthcare service.</p>
-
-  <h2>2. Who Can Use SkinDay</h2>
-  <p>SkinDay is intended for use by licensed aesthetic clinics and practitioners. By using Visualize, you represent that you are a qualified healthcare practitioner or are operating on behalf of a licensed clinic. SkinDay is not intended for patient self-use.</p>
-
-  <h2>3. SkinDay Studio</h2>
-  <p>Studio is free to use. Photos processed in Studio never leave your device. You may use Studio output for clinical and marketing purposes. You are responsible for obtaining appropriate patient consent before capturing, using, or sharing any patient image.</p>
-
-  <h2>4. SkinDay Visualize</h2>
-  <p>Visualize requires a paid credit balance. Credits are purchased in advance and deducted per simulation. By using Visualize, you agree that:</p>
-  <ul>
-    <li>Outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results.</li>
-    <li>You will not present simulations to patients as guarantees or promises of outcome.</li>
-    <li>You are responsible for obtaining appropriate patient consent before generating or sharing any simulation.</li>
-    <li>Photos submitted are transmitted to an AI provider for that single request only.</li>
-  </ul>
-
-  <h2>5. Credits and Payments</h2>
-  <p>Credits are purchased in advance via Stripe and are non-transferable between accounts. Credits do not expire. Payments are processed in CAD. For information on refunds, see our <a href="/refund">Refund Policy</a>.</p>
-
-  <h2>6. Accounts</h2>
-  <p>You are responsible for maintaining the security of your account credentials and for all activity under your account. You may request account deletion by contacting <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</p>
-
-  <h2>7. Prohibited Use</h2>
-  <p>You agree not to:</p>
-  <ul>
-    <li>Use Visualize outputs as guarantees of treatment results in patient-facing materials</li>
-    <li>Use either tool for any unlawful purpose</li>
-    <li>Attempt to reverse-engineer, scrape, or copy the platform</li>
-    <li>Share account credentials with unauthorized users</li>
-    <li>Submit images of individuals who have not provided appropriate consent</li>
-  </ul>
-
-  <h2>8. No Medical Advice</h2>
-  <p>Nothing on SkinDay constitutes medical advice. Visualize outputs are AI simulations, not clinical assessments. All treatment decisions remain the sole responsibility of the treating practitioner.</p>
-
-  <h2>9. Limitation of Liability</h2>
-  <p>SkinDay is provided "as is" without warranties of any kind. To the fullest extent permitted by applicable law, SkinDay and its operators shall not be liable for any indirect, incidental, or consequential damages arising from your use of the platform or reliance on any simulation output.</p>
-
-  <h2>10. Intellectual Property</h2>
-  <p>The SkinDay name, logo, design, and original content are the property of SkinDay and may not be used without written permission.</p>
-
-  <h2>11. Governing Law</h2>
-  <p>These Terms are governed by the laws of the Province of Ontario and the federal laws of Canada applicable therein.</p>
-
-  <h2>12. Changes</h2>
-  <p>We may update these Terms from time to time. Continued use after changes constitutes acceptance. Registered users will be notified of material changes by email.</p>
-
-  <h2>13. Contact</h2>
-  <p>Questions about these Terms: <a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  <!-- TRADITIONAL CHINESE -->
+  <div class="lang-section hidden" id="sec-zh">
+    <div class="page-eyebrow">法律</div>
+    <h1>服務條款</h1>
+    <div class="last-updated">最後更新：2026 年 6 月</div>
+    <p>本服務條款規範您對 SkinDay（skinday.com）的使用。透過存取或使用 SkinDay，即表示您同意本條款。</p>
+    <hr />
+    <h2>1. 關於 SkinDay</h2>
+    <p>SkinDay 是面向醫美診所的全球診所成長平台，提供兩款工具：SkinDay Studio（免費的瀏覽器端前後對比工具）和 SkinDay Visualize（AI 驅動的諮詢預覽工具）。SkinDay 並非醫療提供者、預約代理或醫療保健服務。</p>
+    <h2>2. 使用資格</h2>
+    <p>SkinDay 適用於持牌醫美診所和醫療人員。使用 Visualize 即表示您聲明您是合格的醫療從業人員，或代表持牌診所進行操作。SkinDay 不適用於患者自行使用。</p>
+    <h2>3. SkinDay Studio</h2>
+    <p>Studio 免費使用。Studio 中處理的照片永不離開您的設備。在拍攝、使用或分享任何患者影像前取得適當的患者同意，是您的責任。</p>
+    <h2>4. SkinDay Visualize</h2>
+    <p>Visualize 需要預付點數餘額。使用 Visualize 即表示您同意：</p>
+    <ul>
+      <li>輸出內容為 AI 生成的視覺化效果，僅供諮詢參考，並非實際治療結果的預測。</li>
+      <li>您不會向患者呈現模擬效果作為治療結果的保證或承諾。</li>
+      <li>在生成或分享任何模擬效果前取得適當的患者同意，是您的責任。</li>
+      <li>提交的照片僅供單次請求傳送至 AI 提供商。</li>
+    </ul>
+    <h2>5. 點數與付款</h2>
+    <p>點數透過 Stripe 預先購買，不可在帳號之間轉移。點數永久有效。款項以加幣結算。有關退款的資訊，請參閱我們的<a href="/refund">退款政策</a>。</p>
+    <h2>6. 帳號</h2>
+    <p>您有責任維護帳號憑證的安全。您可以透過 <a href="mailto:hello@skinday.com">hello@skinday.com</a> 申請刪除帳號。</p>
+    <h2>7. 禁止行為</h2>
+    <ul>
+      <li>在面向患者的資料中，以 Visualize 輸出內容作為治療結果保證</li>
+      <li>將任一工具用於任何違法目的</li>
+      <li>嘗試對平台進行逆向工程、爬取或複製</li>
+      <li>提交未獲得適當同意的個人影像</li>
+    </ul>
+    <h2>8. 非醫療建議</h2>
+    <p>SkinDay 上的任何內容均不構成醫療建議。Visualize 輸出內容為 AI 模擬效果，而非臨床評估。所有治療決策均由主治醫療人員全權負責。</p>
+    <h2>9. 責任限制</h2>
+    <p>SkinDay 以「現狀」提供，不附任何形式的保證。在適用法律允許的最大範圍內，SkinDay 對因使用本平台而產生的任何間接、附帶或後果性損害不承擔責任。</p>
+    <h2>10. 智慧財產權</h2>
+    <p>SkinDay 名稱、標誌、設計及原創內容均屬 SkinDay 財產，未經書面許可不得使用。</p>
+    <h2>11. 適用法律</h2>
+    <p>本條款受安大略省法律及加拿大聯邦適用法律管轄。</p>
+    <h2>12. 條款變更</h2>
+    <p>我們可能不時更新本條款。重大變更將以電子郵件通知已註冊用戶。</p>
+    <h2>13. 聯絡方式</h2>
+    <p>如有疑問：<a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  </div>
 </div>
 
 <footer>
-  <div class="footer-note">&#169; 2026 SkinDay &nbsp;&middot;&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms">Terms of Service</a> &nbsp;&middot;&nbsp; <a href="/refund">Refund Policy</a></div>
+  <div class="footer-note">
+    &#169; 2026 SkinDay &nbsp;&middot;&nbsp;
+    <a href="/privacy" id="f-privacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="/terms" id="f-terms">Terms of Service</a> &nbsp;&middot;&nbsp;
+    <a href="/refund" id="f-refund">Refund Policy</a>
+  </div>
 </footer>
 
+<script>
+  var currentLang=sessionStorage.getItem('sd-lang')||'en';
+  function setLang(lang){currentLang=lang;sessionStorage.setItem('sd-lang',lang);applyLang();}
+  function applyLang(){
+    var isZh=currentLang==='zh';
+    document.body.classList.toggle('zh',isZh);
+    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
+    document.getElementById('sec-en').classList.toggle('hidden',isZh);
+    document.getElementById('sec-zh').classList.toggle('hidden',!isZh);
+    document.getElementById('navBack').textContent=isZh?'返回 SkinDay':'Back to SkinDay';
+    document.getElementById('f-privacy').textContent=isZh?'隱私政策':'Privacy Policy';
+    document.getElementById('f-terms').textContent=isZh?'服務條款':'Terms of Service';
+    document.getElementById('f-refund').textContent=isZh?'退款政策':'Refund Policy';
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
+    });
+    document.title=isZh?'服務條款 — SkinDay':'Terms of Service — SkinDay';
+  }
+  applyLang();
+</script>
 </body>
 </html>
