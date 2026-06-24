@@ -5,6 +5,21 @@
   functions = "netlify/functions"
   publish   = "."
 
+# ── STAGING / BRANCH DEPLOYS: BLOCK SEARCH INDEXING ──────────────
+# Applies ONLY to branch deploys (staging--skindayglobal.netlify.app
+# and any other non-production branch). Production (skinday.com) is
+# unaffected and stays fully indexable.
+# X-Robots-Tag is an HTTP header, so it covers every response (pages
+# and function output) without editing any HTML.
+[context.branch-deploy.headers]
+  [context.branch-deploy.headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
+# Deploy Previews (pull-request previews) should also stay hidden.
+[context.deploy-preview.headers]
+  [context.deploy-preview.headers.values]
+    X-Robots-Tag = "noindex, nofollow"
+
 # ── CLEAN URLS ───────────────────────────────────────────────────
 # Redirect every *.html request to its extensionless path so the
 # address bar never shows .html. Netlify still serves the underlying
