@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — SkinDay</title>
+  <meta name="description" content="SkinDay privacy policy. How we collect, use, and protect information across Studio and Visualize." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF7F2; --deep: #1C1714;
+      --rose: #C8725A; --gold: #C9A96E;
+      --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(28,23,20,0.96); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(201,169,110,0.25);
+      padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px;
+    }
+    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 600; color: var(--cream); text-decoration: none; letter-spacing: 0.01em; }
+    .nav-logo span { color: var(--gold); }
+    .nav-back { color: var(--dim); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+    .nav-back:hover { color: var(--cream); }
+    .page-wrap { max-width: 720px; margin: 0 auto; padding: 72px 28px 96px; }
+    .page-eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
+    h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; color: var(--deep); margin-bottom: 0.5rem; line-height: 1.1; }
+    .last-updated { font-size: 0.8rem; color: var(--muted); margin-bottom: 3rem; }
+    h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; color: var(--deep); margin: 2.5rem 0 0.75rem; }
+    p { font-size: 0.94rem; line-height: 1.78; color: #3a3330; margin-bottom: 1rem; }
+    ul { padding-left: 1.4rem; margin-bottom: 1rem; }
+    ul li { font-size: 0.94rem; line-height: 1.78; color: #3a3330; margin-bottom: 0.3rem; }
+    a { color: var(--rose); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
+    .posture-box { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 20px 24px; margin: 1.5rem 0; }
+    .posture-box p { margin: 0; font-size: 0.88rem; color: var(--muted); }
+    .posture-box strong { color: var(--deep); }
+    footer { background: var(--deep); padding: 2rem 5%; text-align: center; }
+    .footer-note { font-size: 0.78rem; color: var(--muted); }
+    .footer-note a { color: var(--dim); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo"><span>SkinDay</span></a>
+  <a href="/" class="nav-back">Back to SkinDay</a>
+</nav>
+
+<div class="page-wrap">
+  <div class="page-eyebrow">Legal</div>
+  <h1>Privacy Policy</h1>
+  <div class="last-updated">Last updated: June 2026</div>
+
+  <p>SkinDay operates skinday.com, a global clinic-growth platform for aesthetic clinics. This Privacy Policy explains how we collect, use, and protect information across our two products: SkinDay Studio and SkinDay Visualize. These two products have different data postures, and we are explicit about both.</p>
+
+  <hr />
+
+  <h2>1. SkinDay Studio — Data Posture</h2>
+  <div class="posture-box">
+    <p><strong>Photos never leave your device.</strong> Studio processes all images locally in your browser using client-side computation. No photo is uploaded to SkinDay's servers or any third party. SkinDay does not store, view, or have access to any image processed in Studio.</p>
+  </div>
+  <p>For Studio, the only information SkinDay may collect is anonymous usage data (page visits, feature interactions) to improve the product. No personal information or patient images are involved.</p>
+
+  <h2>2. SkinDay Visualize — Data Posture</h2>
+  <div class="posture-box">
+    <p><strong>Photos are sent to an AI provider for that single request only.</strong> To generate a consultation preview, the photo is transmitted to an AI provider (currently OpenAI). It is used for inference only — it is not stored by SkinDay, and it is not used to train or fine-tune any model.</p>
+  </div>
+  <p>For Visualize, we also collect:</p>
+  <ul>
+    <li><strong>Account information:</strong> name and email address when you create an account, or name and email received from Google if you sign in with Google.</li>
+    <li><strong>Credit and transaction records:</strong> purchase history and credit balance, processed via Stripe. SkinDay does not store full payment card details.</li>
+    <li><strong>Usage data:</strong> which treatment types and features are used, to improve the product. No patient-identifying information is stored alongside usage data.</li>
+  </ul>
+
+  <h2>3. Clinic Responsibility</h2>
+  <p>Obtaining appropriate patient consent before capturing, processing, or sharing any patient image is the clinic's responsibility. SkinDay is a tool for clinical use; the clinic remains the data controller for any patient information involved in a consultation.</p>
+
+  <h2>4. Data Sharing</h2>
+  <p>We do not sell personal information. We may share data in the following circumstances:</p>
+  <ul>
+    <li><strong>AI provider:</strong> Photos submitted through Visualize are transmitted to an AI provider (currently OpenAI) for inference. Their privacy policy governs that processing.</li>
+    <li><strong>Payment processor:</strong> Credit purchases are processed by Stripe. Their privacy policy governs payment data.</li>
+    <li><strong>Infrastructure providers:</strong> We use Supabase for authentication and database services, and Netlify for hosting. These providers process data on our behalf.</li>
+    <li><strong>Legal requirements:</strong> We may disclose information if required by law or to protect the rights and safety of users.</li>
+  </ul>
+
+  <h2>5. Cookies and Analytics</h2>
+  <p>SkinDay uses cookies and local browser storage to maintain sessions and remember preferences. We use anonymous analytics to understand how the platform is used. We do not use advertising cookies or third-party tracking pixels.</p>
+
+  <h2>6. Data Retention</h2>
+  <p>Account data is retained while your account is active. You may delete your account at any time by contacting <a href="mailto:hello@skinday.com">hello@skinday.com</a>, which will remove your personal information and credit history from our systems. Aggregate, anonymized analytics data may be retained indefinitely.</p>
+
+  <h2>7. Security</h2>
+  <p>We use encrypted connections (HTTPS), secure authentication, and row-level security policies on our database. No method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.</p>
+
+  <h2>8. International Use</h2>
+  <p>SkinDay is a global platform. If you are located outside Canada, your information may be processed in Canada or in the country where our infrastructure providers operate. By using SkinDay, you consent to this transfer.</p>
+
+  <h2>9. Children</h2>
+  <p>SkinDay is not directed at individuals under the age of 18 and is intended for use by licensed aesthetic clinics and practitioners. We do not knowingly collect information from minors.</p>
+
+  <h2>10. Changes to This Policy</h2>
+  <p>We may update this Privacy Policy from time to time. We will notify registered users of significant changes by email. Continued use of the platform after changes constitutes acceptance of the updated policy.</p>
+
+  <h2>11. Contact</h2>
+  <p>For questions about this Privacy Policy, contact us at <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</p>
+</div>
+
+<footer>
+  <div class="footer-note">&#169; 2026 SkinDay &nbsp;&middot;&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms">Terms of Service</a></div>
+</footer>
+
+</body>
+</html>
