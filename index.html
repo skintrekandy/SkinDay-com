@@ -178,7 +178,7 @@
   /* builder */
   .builder-sec{background:var(--deep);color:var(--cream);padding:104px 0;position:relative;overflow:hidden;}
   .builder-sec::before{content:"";position:absolute;left:-10%;bottom:-40%;width:50%;height:130%;background:radial-gradient(ellipse at center,rgba(200,114,90,.1),transparent 64%);pointer-events:none;}
-  .builder-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:70px;align-items:center;position:relative;z-index:2;}
+  .builder-grid{position:relative;z-index:2;max-width:700px;}
   .builder-grid .eyebrow{color:var(--gold);margin-bottom:22px;justify-content:flex-start;}
   .builder-grid h2{font-size:clamp(1.9rem,3.4vw,2.8rem);font-weight:500;line-height:1.12;margin-bottom:24px;}
   .builder-grid h2 em{font-style:italic;color:var(--gold);}
@@ -186,16 +186,7 @@
   .stats{display:flex;gap:44px;margin-top:32px;}
   .stat .n{font-family:'Cormorant Garamond',serif;font-size:2.7rem;font-weight:600;color:var(--gold);line-height:1;}
   .stat .l{font-size:.8rem;color:rgba(250,247,242,.56);margin-top:8px;letter-spacing:.02em;}
-  .quote-card{border:1px solid var(--line-light);border-radius:8px;padding:40px 36px;background:rgba(250,247,242,.03);position:relative;}
-  .quote-card::before{content:"\201C";position:absolute;top:-14px;left:32px;font-family:'Cormorant Garamond',serif;font-size:6rem;line-height:1;color:var(--gold);opacity:.22;pointer-events:none;}
-  .quote-card .q{font-family:'Cormorant Garamond',serif;font-size:1.65rem;line-height:1.34;font-style:italic;color:var(--cream);margin-bottom:26px;}
-  body.zh .quote-card .q{font-family:'Noto Serif TC',serif;font-size:1.4rem;line-height:1.6;font-style:normal;}
-  .quote-card .who{font-size:.86rem;color:rgba(250,247,242,.6);line-height:1.5;}
-  .quote-card .who b{color:rgba(250,247,242,.88);font-weight:500;display:block;margin-bottom:2px;}
-  .quote-card .clinics{margin-top:26px;padding-top:22px;border-top:1px solid var(--line-light);display:flex;flex-direction:column;gap:10px;}
-  .clinic-badge{display:flex;align-items:center;gap:10px;font-size:.82rem;color:rgba(250,247,242,.58);font-weight:300;}
-  .clinic-badge .cbdot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;}
-  @media(max-width:820px){.builder-grid{grid-template-columns:1fr;gap:44px;}.stats{gap:30px;}}
+  @media(max-width:820px){.stats{gap:30px;}}
 
   /* global note */
   .global-note{background:var(--warm);border-top:1px solid rgba(28,23,20,.08);border-bottom:1px solid rgba(28,23,20,.08);padding:72px 0;}
@@ -240,7 +231,7 @@
 
 <nav class="site-nav" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="/" class="brand"><span>SkinDay</span></a>
+    <a href="/" class="brand">Skin<span>Day</span></a>
     <div class="nav-right">
       <div class="nav-links">
         <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
@@ -374,18 +365,6 @@
           <div class="stat"><div class="n">Global</div><div class="l" data-en="Any clinic, anywhere" data-zh="全球任何診所">Any clinic, anywhere</div></div>
         </div>
       </div>
-      <div class="quote-card reveal">
-        <div class="q" data-en='Aesthetic medicine is a visual business. The consult is where trust is built or lost. We built tools for that moment."' data-zh="醫學美容是一門視覺化的事業。諮詢，是信任建立或失去的關鍵時刻。我們為這個時刻打造了工具。」">Aesthetic medicine is a visual business. The consult is where trust is built or lost. We built tools for that moment."</div>
-        <div class="who">
-          <b data-en="The SkinDay approach" data-zh="SkinDay 的理念">The SkinDay approach</b>
-          <span data-en="Clinically calibrated. Consultation-first." data-zh="臨床校準。諮詢優先。">Clinically calibrated. Consultation-first.</span>
-        </div>
-        <div class="clinics">
-          <div class="clinic-badge"><span class="cbdot"></span><span data-en="Simulations calibrated to real treatment behavior" data-zh="模擬效果依真實治療反應校準">Simulations calibrated to real treatment behavior</span></div>
-          <div class="clinic-badge"><span class="cbdot"></span><span data-en="Patient data stays private by design" data-zh="患者資料依設計受到保護">Patient data stays private by design</span></div>
-          <div class="clinic-badge"><span class="cbdot"></span><span data-en="Consultation-only framing, always" data-zh="始終維持僅供諮詢的框架">Consultation-only framing, always</span></div>
-        </div>
-      </div>
     </div>
   </div>
 </section>
@@ -425,7 +404,7 @@
   <div class="wrap">
     <div class="foot-top">
       <div>
-        <div class="foot-brand"><span>SkinDay</span></div>
+        <div class="foot-brand">Skin<span>Day</span></div>
         <div class="foot-tagline" data-en="Helping aesthetic clinics worldwide show results and grow." data-zh="協助全球醫美診所展示成果、持續成長。">Helping aesthetic clinics worldwide show results and grow.</div>
       </div>
       <div class="foot-cols">
