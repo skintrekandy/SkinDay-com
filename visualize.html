@@ -1010,7 +1010,7 @@
     <span class="launch-badge">Launch pricing for beta</span>
     <p id="buyIntro">Credits are used only when a new preview is generated. Slider adjustments, exports, and re-generates within the free window cost nothing, and a failed or blocked generation is refunded automatically.</p>
     <div id="packList"></div>
-    <p class="auth-hint" style="margin-top:12px;color:var(--muted);">Payments are processed by Stripe in CAD. Credits land on your account the moment payment completes.</p>
+    <p class="auth-hint" id="payCurrencyNote" style="margin-top:12px;color:var(--muted);">Payments are processed by Stripe in CAD. Credits land on your account the moment payment completes.</p>
     <div class="btn-row guide-close"><button class="btn btn-light" id="buyCloseBtn" type="button">Close</button></div>
   </div>
 </div>
@@ -1466,10 +1466,12 @@ function openBuyModal(){
   (SD_CFG.packs || []).forEach(pk => {
     const row = document.createElement('div'); row.className = 'pack-row';
     const left = document.createElement('div');
+    const cur = (SD_CFG.currency || 'cad').toLowerCase();
+    const sym = cur === 'usd' ? 'US$' : 'CA$';
     const reg = (pk.regularCad && pk.regularCad > pk.cad) ? pk.regularCad : null;
     const price = reg
-      ? '<strong>CA$' + (pk.cad/100).toFixed(2) + '</strong> <s>CA$' + (reg/100).toFixed(2) + '</s> <span>regular price after beta</span>'
-      : 'CA$' + (pk.cad/100).toFixed(2);
+      ? '<strong>' + sym + (pk.cad/100).toFixed(2) + '</strong> <s>' + sym + (reg/100).toFixed(2) + '</s> <span>regular price after beta</span>'
+      : sym + (pk.cad/100).toFixed(2);
     left.innerHTML = '<div class="pack-name">' + pk.label + ' · ' + pk.credits + ' credits</div>'
       + '<div class="pack-sub">' + price + '</div>';
     const btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.type = 'button';
@@ -1927,6 +1929,13 @@ window.addEventListener('message', (ev) => {
     SD_CFG = await (await fetch('/.netlify/functions/visualize-config')).json();
   } catch(e){ SD_CFG = { authDisabled:true }; }
   if(!SD_CFG || !SD_CFG.supabaseUrl || !SD_CFG.supabaseAnonKey) SD_CFG = { ...(SD_CFG||{}), authDisabled:true };
+  try {
+    const note = document.getElementById('payCurrencyNote');
+    if(note){
+      const curName = ((SD_CFG.currency || 'cad').toLowerCase() === 'usd') ? 'USD' : 'CAD';
+      note.textContent = 'Payments are processed by Stripe in ' + curName + '. Credits land on your account the moment payment completes.';
+    }
+  } catch(e){ /* non-fatal display tweak */ }
   fillCreditCopy();
 
   // Returning from Stripe?
