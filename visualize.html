@@ -1218,7 +1218,7 @@ const ANGLE_ORDER = ['frontal','r45','l45'];
 // soft, and small-face photos well enough that rejections only add friction. The
 // only advisory note still shown is MAX_FACE_FRAC (step back if face fills the
 // whole frame, because tight crops hurt oblique angle accuracy).
-const QC = { MAX_FACE_FRAC:0.75 };
+const QC = { MAX_FACE_FRAC:0.75, MIN_FACE_FRAC:0.07 };
 
 function makeSlot(){
   return { file:null, originalDataUrl:null, beforeDataUrl:null, blackBgCache:null,
@@ -2201,6 +2201,12 @@ async function toBlackBackground(dataUrl){
 function poseMatches(angleId, a){
   if(!a || !a.view){
     return { ok:false, msg:'No face detected. Use a clear, unobstructed photo of the face.' };
+  }
+  // Faces only: reject full-body or distant shots where a face is present but
+  // fills too little of the frame. Visualize simulates facial treatments only,
+  // so a body photo must never reach generation.
+  if(a.faceFrac != null && a.faceFrac < QC.MIN_FACE_FRAC){
+    return { ok:false, msg:'This looks like a full-body or distant photo. Visualize works on close-up photos of the face only. Retake with the face filling most of the frame.' };
   }
   if(a.view === 'out_of_range'){
     return { ok:false, msg:'Turned too far (about ' + Math.round(a.yawDeg) + '°). Aim for roughly a 45° turn.' };
