@@ -1,0 +1,60 @@
+# netlify.toml for skinday.com (SkinDay-com repo)
+# Place in the repo root.
+
+[build]
+  functions = "netlify/functions"
+  publish   = "."
+
+# ── CLEAN URLS ───────────────────────────────────────────────────
+# Redirect every *.html request to its extensionless path so the
+# address bar never shows .html. Netlify still serves the underlying
+# .html file at the clean path automatically (its built-in pretty-URL
+# behaviour), so /studio serves studio.html, /visualize serves
+# visualize.html, etc.
+#
+# 301 (permanent): the clean path is the canonical URL. Safe here
+# because the clean paths are already confirmed working.
+#
+# Note: the Stripe checkout function returns users to /visualize
+# (no .html), so the post-payment flow never triggers these redirects.
+[[redirects]]
+  from   = "/index.html"
+  to     = "/"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/studio.html"
+  to     = "/studio"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/visualize.html"
+  to     = "/visualize"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/contact.html"
+  to     = "/contact"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/privacy.html"
+  to     = "/privacy"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/terms.html"
+  to     = "/terms"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/refund.html"
+  to     = "/refund"
+  status = 301
+  force  = true
