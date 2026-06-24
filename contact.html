@@ -1,177 +1,372 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact — SkinDay</title>
-  <meta name="description" content="Get in touch with SkinDay. Clinic inquiries, partnerships, and support." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --cream:#FAF7F2;--warm:#F4EDE4;--deep:#1C1714;--rose:#C8725A;--gold:#C9A96E;
-    --deep2:#241E1A;
-    --rose-m:#D4896E;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact · SkinDay</title>
+<meta name="description" content="Get in touch with SkinDay. For clinics, partners, media, and Visualize billing questions.">
+<link rel="canonical" href="https://skinday.com/contact">
+<link rel="icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;
+    --rose:#C8725A;--gold:#C9A96E;
     --rose-bg:#F5E8E3;
     --border:#EAE2D8;
-    --hero-border:rgba(201,169,110,.25);--muted:#8A7B72;--dim:#B5A89F;--border:#EAE2D8;--line-light:rgba(250,247,242,.16); }
-    body { font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--deep);-webkit-font-smoothing:antialiased; }
-    body.zh { font-family:'Noto Serif TC','DM Sans',sans-serif; }
-    body.zh p,body.zh label { letter-spacing:.02em;line-height:1.8; }
-    .wrap { max-width:1180px;margin:0 auto;padding:0 28px; }
+    --muted:#8A7F76;
+    --dim:#B5A89F;
+    --line:rgba(28,23,20,.12);
+    --line-light:rgba(250,247,242,.16);
+    --green:#3D7A55;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100vh;}
+  .serif{font-family:'Cormorant Garamond',Georgia,serif;}
+  body.zh{font-family:'Noto Serif TC','DM Sans',system-ui,sans-serif;}
+  body.zh .serif{font-family:'Noto Serif TC',Georgia,serif;}
+  a{color:inherit;}
 
-    .lang-toggle{display:flex;align-items:center;gap:0;border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;flex-shrink:0;}
-    .lang-btn{padding:6px 11px;cursor:pointer;background:none;border:none;color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s,color .2s;letter-spacing:.03em;}
-    .lang-btn.active{background:rgba(250,247,242,.14);color:#FAF7F2;}
-    .lang-btn:hover:not(.active){color:var(--gold);}
-    .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
 
-    nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
-    .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
-    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:#FAF7F2;text-decoration:none;letter-spacing:.01em;}
-    .nav-logo span{color:var(--gold);}
-    .nav-right{display:flex;align-items:center;gap:20px;}
-    .nav-back{color:var(--dim);text-decoration:none;font-size:.82rem;transition:color .2s;}
-    .nav-back:hover{color:#FAF7F2;}
+  /* ── NAV ─────────────────────────────────────────── */
+  .site-nav{position:absolute;top:0;left:0;right:0;z-index:20;padding:30px 0;}
+  .nav-inner{max-width:1080px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:400;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
+  .brand span{color:var(--gold);}
+  .nav-right{display:flex;align-items:center;gap:30px;}
+  .nav-links{display:flex;gap:26px;}
+  .nav-links a{text-decoration:none;font-size:.82rem;letter-spacing:.04em;color:rgba(250,247,242,.65);transition:color .25s;}
+  .nav-links a:hover{color:var(--cream);}
+  .lang-toggle{display:flex;align-items:center;gap:8px;border:1px solid var(--line-light);border-radius:999px;padding:5px 12px;}
+  .lang-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.72rem;letter-spacing:.06em;color:rgba(250,247,242,.55);padding:0;transition:color .2s;}
+  .lang-btn.active{color:var(--cream);}
+  .lang-btn:hover:not(.active){color:var(--gold);}
+  .lang-sep{width:1px;height:11px;background:var(--line-light);}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--cream);}
+  .nav-mobile{display:none;}
 
-    .hero{background:var(--deep);color:#FAF7F2;padding:80px 0 72px;text-align:center;position:relative;overflow:hidden;}
-    .hero::before{content:"";position:absolute;top:-20%;right:-10%;width:50%;height:140%;background:radial-gradient(ellipse at center,rgba(201,169,110,.1),transparent 62%);pointer-events:none;}
-    .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;}
-    .hero .inner{position:relative;z-index:2;}
-    .eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:20px;}
-    body.zh .eyebrow{letter-spacing:.12em;}
-    .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,5vw,3.6rem);font-weight:400;line-height:1.08;margin-bottom:16px;}
-    .hero h1 em{font-style:italic;color:var(--gold);}
-    .hero p{font-size:.98rem;color:rgba(250,247,242,.68);font-weight:300;max-width:42ch;margin:0 auto;line-height:1.7;}
+  @media (max-width:760px){
+    .nav-links{display:none;}
+    .nav-right > .lang-toggle{display:none;}
+    .nav-toggle{display:block;}
+    .nav-mobile.open{display:flex;flex-direction:column;gap:20px;position:absolute;top:78px;left:0;right:0;background:var(--deep);border-bottom:1px solid var(--line-light);padding:28px 32px;z-index:30;}
+    .nav-mobile a{text-decoration:none;font-size:1rem;color:var(--cream);}
+    .nav-mobile .lang-toggle{width:fit-content;}
+  }
 
-    .form-wrap{max-width:600px;margin:0 auto;padding:72px 28px 96px;}
-    .field{display:flex;flex-direction:column;gap:7px;margin-bottom:18px;}
-    .field label{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
-    .field input,.field select,.field textarea{background:#fff;border:1px solid var(--border);color:var(--deep);padding:11px 14px;font-size:.9rem;font-family:'DM Sans',sans-serif;border-radius:4px;outline:none;width:100%;transition:border-color .2s;}
-    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
-    .field textarea{min-height:120px;resize:vertical;line-height:1.55;}
-    .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7B72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer;}
-    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-    @media(max-width:520px){.field-row{grid-template-columns:1fr;}}
-    .submit-btn{width:100%;padding:14px;background:var(--rose);color:#fff;border:none;border-radius:4px;font-size:.94rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;transition:background .2s,transform .2s;}
-    .submit-btn:hover{background:#b5634d;transform:translateY(-1px);}
-    .success-msg{display:none;text-align:center;padding:48px 0;}
-    .success-msg h2{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:400;margin-bottom:12px;}
-    .success-msg p{color:var(--muted);font-size:.94rem;font-weight:300;}
+  /* ── HERO ────────────────────────────────────────── */
+  .hero{background:var(--deep);padding:150px 0 96px;text-align:center;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;top:-120px;left:50%;transform:translateX(-50%);width:640px;height:640px;background:radial-gradient(circle,rgba(201,169,110,.10) 0%,transparent 70%);pointer-events:none;}
+  .hero-eyebrow{display:inline-block;font-size:.72rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2.4rem,5.4vw,3.7rem);font-weight:400;color:var(--cream);line-height:1.14;letter-spacing:-.01em;margin-bottom:18px;}
+  body.zh .hero h1{font-family:'Noto Serif TC',serif;font-weight:400;letter-spacing:.02em;}
+  .hero h1 em{font-style:italic;color:var(--gold);}
+  body.zh .hero h1 em{font-style:normal;}
+  .hero-sub{font-size:1rem;color:rgba(250,247,242,.55);max-width:500px;margin:0 auto;line-height:1.7;font-weight:300;}
 
-    footer{background:var(--deep);padding:2rem 5%;text-align:center;}
-    .footer-note{font-size:.78rem;color:var(--muted);}
-    .footer-note a{color:var(--dim);text-decoration:none;}
-    .footer-note a:hover{color:#FAF7F2;}
-  </style>
+  /* ── FORM ────────────────────────────────────────── */
+  .form-section{max-width:640px;margin:0 auto;padding:72px 24px 110px;}
+  .form-card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:48px;box-shadow:0 4px 40px rgba(28,23,20,.06);animation:fadeUp .5s ease both;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+
+  .field{margin-bottom:22px;}
+  .field label{display:block;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  .field input,.field select,.field textarea{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--deep);background:var(--cream);outline:none;transition:border-color .2s,box-shadow .2s;appearance:none;-webkit-appearance:none;}
+  body.zh .field input,body.zh .field select,body.zh .field textarea{font-family:'Noto Serif TC','DM Sans',sans-serif;}
+  .field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7F76' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px;cursor:pointer;}
+  .field textarea{resize:vertical;min-height:130px;line-height:1.6;}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,169,110,.12);}
+  .field input::placeholder,.field textarea::placeholder{color:var(--dim);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+  .submit-btn{width:100%;padding:15px;background:var(--rose);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;transition:background .2s,transform .1s;margin-top:8px;letter-spacing:.02em;}
+  body.zh .submit-btn{font-family:'Noto Serif TC','DM Sans',sans-serif;}
+  .submit-btn:hover{background:#b5614a;}
+  .submit-btn:active{transform:scale(.98);}
+  .submit-btn:disabled{background:var(--dim);cursor:not-allowed;transform:none;}
+
+  .form-foot{margin-top:22px;text-align:center;font-size:.82rem;color:var(--muted);line-height:1.6;}
+  .form-foot a{color:var(--rose);text-decoration:none;font-weight:500;}
+  .form-foot a:hover{text-decoration:underline;}
+
+  /* ── SUCCESS ─────────────────────────────────────── */
+  .success-state{display:none;text-align:center;padding:16px 0;animation:fadeUp .4s ease both;}
+  .success-icon{width:56px;height:56px;background:#edf7f1;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:24px;color:var(--green);}
+  .success-state h2{font-family:'Cormorant Garamond',serif;font-size:1.7rem;font-weight:500;color:var(--deep);margin-bottom:10px;}
+  body.zh .success-state h2{font-family:'Noto Serif TC',serif;}
+  .success-state p{font-size:.9rem;color:var(--muted);line-height:1.6;margin-bottom:28px;}
+  .success-back{display:inline-block;font-size:.85rem;font-weight:500;color:var(--rose);text-decoration:none;}
+  .success-back:hover{text-decoration:underline;}
+
+  /* ── ERROR ───────────────────────────────────────── */
+  .form-error{background:#fde8e6;border:1px solid #f5b8b3;border-radius:8px;padding:11px 14px;font-size:.85rem;color:#a85a52;margin-bottom:20px;display:none;}
+
+  /* ── FOOTER ──────────────────────────────────────── */
+  footer{background:var(--deep);color:rgba(250,247,242,.7);padding:64px 0 40px;}
+  .foot-top{display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap;margin-bottom:48px;}
+  .foot-brand{max-width:280px;}
+  .foot-brand .brand{color:var(--cream);}
+  .foot-brand .brand span{color:var(--gold);}
+  .foot-tagline{margin-top:14px;font-size:.85rem;color:rgba(250,247,242,.5);font-weight:300;line-height:1.7;}
+  .foot-cols{display:flex;gap:56px;flex-wrap:wrap;}
+  .foot-col h4{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(250,247,242,.4);margin-bottom:16px;font-weight:500;}
+  .foot-col a{display:block;text-decoration:none;font-size:.88rem;color:rgba(250,247,242,.7);margin-bottom:10px;transition:color .2s;}
+  .foot-col a:hover{color:var(--gold);}
+  .foot-legal{border-top:1px solid var(--line-light);padding-top:28px;font-size:.74rem;color:rgba(250,247,242,.4);font-weight:300;line-height:1.7;}
+  .foot-legal span{display:block;margin-bottom:10px;}
+  .foot-copy{margin-top:18px;font-size:.74rem;color:rgba(250,247,242,.35);}
+
+  @media (max-width:600px){
+    .hero{padding:128px 0 72px;}
+    .form-card{padding:32px 24px;}
+    .field-row{grid-template-columns:1fr;gap:0;}
+  }
+</style>
 </head>
 <body>
 
-<nav>
+<nav class="site-nav" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="/" class="nav-logo">Skin<span>Day</span></a>
+    <a href="/" class="brand">Skin<span>Day</span></a>
     <div class="nav-right">
-      <a href="/" class="nav-back" data-en="Back to SkinDay" data-zh="回到 SkinDay">Back to SkinDay</a>
+      <div class="nav-links">
+        <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+        <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+      </div>
       <div class="lang-toggle" role="group" aria-label="Language">
         <button class="lang-btn active" onclick="setLang('en')">EN</button>
         <div class="lang-sep"></div>
         <button class="lang-btn" onclick="setLang('zh')">繁中</button>
       </div>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="0" y1="2" x2="22" y2="2"/>
+          <line x1="0" y1="8" x2="22" y2="8"/>
+          <line x1="0" y1="14" x2="22" y2="14"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+    <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+    <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" onclick="setLang('zh')">繁中</button>
     </div>
   </div>
 </nav>
 
 <div class="hero">
-  <div class="inner wrap">
-    <div class="eyebrow" data-en="Get in touch" data-zh="聯絡我們">Get in touch</div>
-    <h1><span data-en="We'd love to " data-zh="歡迎">We'd love to </span><em data-en="hear from you." data-zh="聯繫我們。">hear from you.</em></h1>
-    <p data-en="Whether you're a clinic, a partner, or have a question about Visualize — reach out and we'll get back to you shortly." data-zh="無論您是診所、合作夥伴，或想了解 Visualize，都歡迎留下訊息，我們會盡快回覆。">Whether you're a clinic, a partner, or have a question about Visualize — reach out and we'll get back to you shortly.</p>
+  <div class="wrap">
+    <div class="hero-eyebrow" data-en="Get in touch" data-zh="聯絡我們">Get in touch</div>
+    <h1 data-en="We'd love to <em>hear from you</em>" data-zh="期待<em>與您聯繫</em>">We'd love to <em>hear from you</em></h1>
+    <p class="hero-sub" data-en="Whether you are a clinic, a partner, or have a question about Visualize, send us a note and we will get back to you." data-zh="無論您是診所、合作夥伴，或對 Visualize 有任何疑問，歡迎留言，我們會盡快回覆。">Whether you are a clinic, a partner, or have a question about Visualize, send us a note and we will get back to you.</p>
   </div>
 </div>
 
-<div class="form-wrap">
-  <form id="contactForm" name="contact" netlify netlify-honeypot="bot-field">
-    <input type="hidden" name="form-name" value="contact" />
-    <p style="display:none;"><label>Don't fill this out: <input name="bot-field" /></label></p>
-    <div class="field-row">
-      <div class="field">
-        <label data-en="Name" data-zh="姓名">Name</label>
-        <input type="text" name="name" required data-en-placeholder="Your name" data-zh-placeholder="您的姓名" placeholder="Your name" />
-      </div>
-      <div class="field">
-        <label data-en="Email" data-zh="電子郵件">Email</label>
-        <input type="email" name="email" required data-en-placeholder="you@yourclinic.com" data-zh-placeholder="您的電子郵件" placeholder="you@yourclinic.com" />
-      </div>
+<div class="form-section">
+  <div class="form-card">
+
+    <div class="form-error" id="form-error"></div>
+
+    <div id="form-body">
+      <!-- Netlify Forms: name attributes are required; honeypot guards spam -->
+      <form name="contact" method="POST" data-netlify="true" netlify-honeypot="bot-field" onsubmit="return submitForm(event)">
+        <input type="hidden" name="form-name" value="contact" />
+        <p style="display:none;"><label>Do not fill this out: <input name="bot-field" /></label></p>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="name" data-en="Name" data-zh="姓名">Name</label>
+            <input type="text" id="name" name="name" placeholder="Your name" autocomplete="name" data-en="Your name" data-zh="您的姓名" />
+          </div>
+          <div class="field">
+            <label for="email" data-en="Email" data-zh="電子郵件">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" data-en="you@example.com" data-zh="you@example.com" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="subject" data-en="Subject" data-zh="主旨">Subject</label>
+          <select id="subject" name="subject">
+            <option value="" disabled selected data-en="Select an inquiry type" data-zh="請選擇諮詢類型">Select an inquiry type</option>
+            <option value="Clinic support" data-en="Clinic support" data-zh="診所支援">Clinic support</option>
+            <option value="Partnership" data-en="Partnership" data-zh="合作洽詢">Partnership</option>
+            <option value="Visualize payment / refund" data-en="Visualize payment / refund" data-zh="Visualize 付款 / 退款">Visualize payment / refund</option>
+            <option value="Media inquiry" data-en="Media inquiry" data-zh="媒體採訪">Media inquiry</option>
+            <option value="General question" data-en="General question" data-zh="一般問題">General question</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="message" data-en="Message" data-zh="訊息內容">Message</label>
+          <textarea id="message" name="message" placeholder="Tell us what's on your mind…" data-en="Tell us what's on your mind…" data-zh="請告訴我們您的需求…"></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn" data-en="Send message →" data-zh="送出訊息 →">Send message →</button>
+      </form>
+
+      <p class="form-foot" data-en='Prefer email? Reach us at <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.' data-zh='想用電子郵件聯絡嗎？請寄至 <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>。'>Prefer email? Reach us at <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.</p>
     </div>
-    <div class="field">
-      <label data-en="Inquiry type" data-zh="詢問類型">Inquiry type</label>
-      <select name="subject" required id="subjectSelect">
-        <option value="" disabled selected data-en="Select an inquiry type" data-zh="請選擇詢問類型">Select an inquiry type</option>
-        <option value="clinic-support" data-en="Clinic support" data-zh="診所支援">Clinic support</option>
-        <option value="visualize-billing" data-en="Visualize billing" data-zh="Visualize 帳務問題">Visualize billing</option>
-        <option value="partnership" data-en="Partnership or pharma" data-zh="合作與品牌洽詢">Partnership or pharma</option>
-        <option value="media" data-en="Media inquiry" data-zh="媒體採訪">Media inquiry</option>
-        <option value="general" data-en="General question" data-zh="其他問題">General question</option>
-      </select>
+
+    <div class="success-state" id="success-state">
+      <div class="success-icon">✓</div>
+      <h2 data-en="Message sent" data-zh="訊息已送出">Message sent</h2>
+      <p data-en="Thanks for reaching out. We will reply to the email you provided." data-zh="感謝您的來信，我們會回覆至您提供的電子郵件。">Thanks for reaching out. We will reply to the email you provided.</p>
+      <a href="/" class="success-back" data-en="← Back to SkinDay" data-zh="← 返回 SkinDay">← Back to SkinDay</a>
     </div>
-    <div class="field">
-      <label data-en="Message" data-zh="訊息">Message</label>
-      <textarea name="message" required data-en-placeholder="Tell us what's on your mind..." data-zh-placeholder="請告訴我們您的問題或想法⋯⋯" placeholder="Tell us what's on your mind..."></textarea>
-    </div>
-    <button type="submit" class="submit-btn" data-en="Send message" data-zh="送出">Send message</button>
-  </form>
-  <div class="success-msg" id="successMsg">
-    <h2 data-en="Message sent." data-zh="訊息已送出。">Message sent.</h2>
-    <p data-en="We'll get back to you at the email you provided." data-zh="我們會盡快回覆您留下的電子郵件。">We'll get back to you at the email you provided.</p>
+
   </div>
 </div>
 
 <footer>
-  <div class="footer-note">
-    &#169; 2026 SkinDay &nbsp;&middot;&nbsp;
-    <a href="/privacy" data-en="Privacy Policy" data-zh="隱私政策">Privacy Policy</a> &nbsp;&middot;&nbsp;
-    <a href="/terms" data-en="Terms of Service" data-zh="服務條款">Terms of Service</a> &nbsp;&middot;&nbsp;
-    <a href="/refund" data-en="Refund Policy" data-zh="退款政策">Refund Policy</a>
+  <div class="wrap">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <a href="/" class="brand">Skin<span>Day</span></a>
+        <div class="foot-tagline" data-en="Clinical image tools for aesthetic clinics worldwide." data-zh="為全球醫美診所打造的臨床影像工具。">Clinical image tools for aesthetic clinics worldwide.</div>
+      </div>
+      <div class="foot-cols">
+        <div class="foot-col">
+          <h4 data-en="Tools" data-zh="工具">Tools</h4>
+          <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+          <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+        </div>
+        <div class="foot-col">
+          <h4 data-en="Company" data-zh="公司">Company</h4>
+          <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+        </div>
+        <div class="foot-col">
+          <h4 data-en="Legal" data-zh="法律">Legal</h4>
+          <a href="/privacy" data-en="Privacy" data-zh="隱私政策">Privacy</a>
+          <a href="/terms" data-en="Terms" data-zh="服務條款">Terms</a>
+          <a href="/refund" data-en="Refunds" data-zh="退款政策">Refunds</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-legal">
+      <span data-en="Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model." data-zh="Studio 在您的瀏覽器中本地處理照片，SkinDay 不會上傳、儲存或查看這些影像。Visualize 只會為了本次生成將照片傳送給 AI 服務供應商，不會用於模型訓練。">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model.</span>
+      <span data-en="Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice." data-zh="Visualize 輸出內容為 AI 生成的諮詢預覽，並非實際治療結果的預測。在使用或分享任何影像前取得顧客的適當同意，是診所的責任。SkinDay 並非醫療裝置，亦不提供醫療建議。">Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.</span>
+      <div class="foot-copy"><span>&#169; 2026 SkinDay. <span data-en="All rights reserved." data-zh="版權所有。">All rights reserved.</span></span></div>
+    </div>
   </div>
 </footer>
 
 <script>
-  var currentLang=sessionStorage.getItem('sd-lang')||'en';
-  function setLang(lang){currentLang=lang;sessionStorage.setItem('sd-lang',lang);applyLang();}
-  function applyLang(){
-    var isZh=currentLang==='zh';
-    document.body.classList.toggle('zh',isZh);
-    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
-    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
-      var val=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
-      el.innerHTML=val;
-    });
-    // placeholders
-    document.querySelectorAll('[data-en-placeholder]').forEach(function(el){
-      el.placeholder=isZh?el.getAttribute('data-zh-placeholder'):el.getAttribute('data-en-placeholder');
-    });
-    // select options
-    document.querySelectorAll('option[data-en]').forEach(function(el){
-      el.textContent=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
-    });
-    document.querySelectorAll('.lang-btn').forEach(function(btn){
-      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
-    });
-    document.title=isZh?'聯絡我們 — SkinDay':'Contact — SkinDay';
+  var currentLang = sessionStorage.getItem('sd-lang') || 'en';
+
+  function setLang(lang){
+    currentLang = lang;
+    sessionStorage.setItem('sd-lang', lang);
+    applyLang();
   }
+
+  function applyLang(){
+    var isZh = currentLang === 'zh';
+    document.body.classList.toggle('zh', isZh);
+    document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
+
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+      var val = isZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA'){
+        el.placeholder = val;
+      } else {
+        el.innerHTML = val;
+      }
+    });
+
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',
+        (btn.textContent.trim() === 'EN' && !isZh) ||
+        (btn.textContent.trim() === '繁中' && isZh)
+      );
+    });
+
+    document.title = isZh ? '聯絡我們 · SkinDay' : 'Contact · SkinDay';
+  }
+
   applyLang();
-  document.getElementById('contactForm').addEventListener('submit',function(e){
-    e.preventDefault();
-    var form=this;
-    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form)).toString()})
-    .then(function(){form.style.display='none';document.getElementById('successMsg').style.display='block';applyLang();})
-    .catch(function(){window.location.href='mailto:hello@skinday.com';});
+
+  function toggleNav(btn){
+    var m = document.getElementById('navMobile');
+    var open = m.classList.toggle('open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    btn.querySelector('svg').innerHTML = open
+      ? '<line x1="2" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="20" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+      : '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
+  }
+  document.getElementById('navMobile').querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      document.getElementById('navMobile').classList.remove('open');
+      var btn = document.querySelector('.nav-toggle');
+      if (btn){
+        btn.setAttribute('aria-expanded', 'false');
+        btn.querySelector('svg').innerHTML = '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
+      }
+    });
   });
+
+  function showError(msg){
+    var el = document.getElementById('form-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }
+
+  function submitForm(e){
+    e.preventDefault();
+    var isZh = currentLang === 'zh';
+    var name    = document.getElementById('name').value.trim();
+    var email   = document.getElementById('email').value.trim();
+    var subject = document.getElementById('subject').value;
+    var message = document.getElementById('message').value.trim();
+    var errEl   = document.getElementById('form-error');
+    var btn     = document.getElementById('submit-btn');
+
+    errEl.style.display = 'none';
+
+    if (!name)    return showError(isZh ? '請輸入您的姓名。' : 'Please enter your name.'), false;
+    if (!email || email.indexOf('@') === -1) return showError(isZh ? '請輸入有效的電子郵件地址。' : 'Please enter a valid email address.'), false;
+    if (!subject) return showError(isZh ? '請選擇諮詢類型。' : 'Please select an inquiry type.'), false;
+    if (!message) return showError(isZh ? '請輸入訊息內容。' : 'Please enter a message.'), false;
+
+    btn.disabled = true;
+    btn.textContent = isZh ? '傳送中…' : 'Sending…';
+
+    var form = e.target;
+    var data = new URLSearchParams(new FormData(form)).toString();
+
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: data
+    })
+    .then(function(res){
+      if (!res.ok) throw new Error('Server error');
+      document.getElementById('form-body').style.display = 'none';
+      document.getElementById('success-state').style.display = 'block';
+    })
+    .catch(function(){
+      btn.disabled = false;
+      btn.textContent = isZh ? '送出訊息 →' : 'Send message →';
+      showError(isZh
+        ? '發生錯誤，請再試一次，或直接寄信至 hello@skinday.ca。'
+        : 'Something went wrong. Please try again or email hello@skinday.ca directly.');
+    });
+
+    return false;
+  }
 </script>
+
 </body>
 </html>
