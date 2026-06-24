@@ -68,8 +68,8 @@ exports.handler = async (event) => {
 
   const params = new URLSearchParams();
   params.append('mode', 'payment');
-  params.append('success_url', base + '/visualize.html?purchase=success&session_id={CHECKOUT_SESSION_ID}');
-  params.append('cancel_url', base + '/visualize.html?purchase=cancelled');
+  params.append('success_url', base + '/visualize?purchase=success&session_id={CHECKOUT_SESSION_ID}');
+  params.append('cancel_url', base + '/visualize?purchase=cancelled');
   params.append('client_reference_id', user.id);
   params.append('metadata[user_id]', user.id);
   params.append('metadata[credits]', String(pack.credits));
