@@ -1276,7 +1276,7 @@ function creditCostFor(type){
   // M14.2: Optimistic/Both removed, so no doubling. Laser is 100/angle like filler.
   if(type === 'laser')   return c.laser   || 100;
   if(type === 'tox')     return c.tox     || 100;
-  if(type === 'biostim') return c.biostim || 100;
+  if(type === 'biostim') return c.biostim || 200;
   return c.filler || 100;
 }
 
@@ -4499,7 +4499,7 @@ document.getElementById('newBtn').addEventListener('click', () => {
 // 1 only if config has not loaded. Evaluated lazily (not a const) because SD_CFG
 // loads asynchronously after this script parses.
 function scenarioCreditCost(){
-  return (SD_CFG && SD_CFG.costs && SD_CFG.costs.scenario) || 1;
+  return (SD_CFG && SD_CFG.costs && SD_CFG.costs.scenario) || 100;
 }
 
 // Scenario state: per-angle, per-scenarioKey.
@@ -4765,7 +4765,9 @@ function renderScenarioResult(scenarioKey){
     bodyHtml = '<div class="scenario-status">Generating scenario... this may take 1-3 minutes. Keep this tab open.</div>';
   } else if(s.status === 'error'){
     // Fix 5: escape error string before inserting into HTML
-    bodyHtml = '<div class="scenario-error">Generation failed: ' + escapeHtml(s.error || 'Unknown error.') + '</div>';
+    // Reassure the user that a failed scenario is not charged: failed or blocked
+    // generations are refunded automatically server-side, so no credits are lost.
+    bodyHtml = '<div class="scenario-error">Generation failed: ' + escapeHtml(s.error || 'Unknown error.') + '<br><span style="color:var(--muted);">No credits were charged. Any credits reserved for this scenario have been refunded automatically. You can try again.</span></div>';
   } else if(s.status === 'done' && s.resultUrl){
     // Three-panel layout: original photo | Sculptra 6-month baseline | scenario result.
     // This lets the patient see the full journey: where they started, what Sculptra
