@@ -52,7 +52,8 @@ exports.handler = async () => {
           scenario: parseInt(process.env.VISUALIZE_COST_SCENARIO || '1', 10) || 1,
           enhanced: parseInt(process.env.VISUALIZE_COST_ENHANCED || '1', 10) || 1
         },
-        signupGrant: parseInt(process.env.VISUALIZE_SIGNUP_GRANT || '6', 10) || 0
+        signupGrant: parseInt(process.env.VISUALIZE_SIGNUP_GRANT || '6', 10) || 0,
+        currency: (process.env.VISUALIZE_CURRENCY || 'cad').toLowerCase()
       }
     : { authDisabled: true };
   return {
