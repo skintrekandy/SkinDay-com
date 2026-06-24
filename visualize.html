@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="robots" content="index, follow" />
-  <title>SkinDay Visualize · AI Treatment Preview for Clinics</title>
+  <title>SkinDay Visualize · AI Facial Treatment Preview for Clinics</title>
   <link rel="canonical" href="https://skinday.com/visualize" />
-  <meta name="description" content="Create AI-generated treatment previews for consultation purposes. Not a prediction of actual treatment results." />
+  <meta name="description" content="Create AI-generated facial treatment previews for consultation purposes. Not a prediction of actual treatment results." />
   <link rel="icon" href="/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -550,7 +550,6 @@
     <div class="lock-tabs" id="lockTabs" style="display:none;">
       <button type="button" data-mode="signin" class="active">Sign in</button>
       <button type="button" data-mode="signup">Create account</button>
-      <button type="button" data-mode="beta">Beta key</button>
     </div>
     <div class="lock-form auth-form" id="authForm" style="display:none;">
       <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
@@ -608,7 +607,7 @@
   <section class="hero">
     <div class="eyebrow">SkinDay Visualize</div>
     <h1>Make the <em>invisible</em> visible.</h1>
-    <p>Show patients where a treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
+    <p>Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
     <p class="hero-disclaimer">Consultation tool only. Not a prediction of actual results.</p>
   </section>
 
@@ -732,7 +731,7 @@
           <div class="area-chip" data-angle="l45"><span class="tick">✓</span>Left 45°</div>
         </div>
       </div>
-      <div class="photo-guide" id="photoGuide"><strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
+      <div class="photo-guide" id="photoGuide"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
       <button class="guide-link" id="guideBtn" type="button">📷 Photo guide &amp; quality checklist (important -- read before uploading)</button>
       <div class="slot-grid" id="uploadSlots"></div>
       <label class="bg-toggle"><input type="checkbox" id="blackBgChk" checked /><span>Replace background with black on the generated image.</span></label>
@@ -969,7 +968,7 @@
 
 <footer>
   <div class="brand">Skin<span>Day</span></div>
-  <div>Visualize AI Beta · Consultation previews only · AI-generated, not a prediction of results</div>
+  <div>SkinDay Visualize · Consultation previews only · AI-generated, not a prediction of results</div>
 </footer>
 <!-- ───────── HOW CREDITS WORK ───────── -->
 <div class="guide-modal hidden" id="creditsInfoModal">
@@ -1023,7 +1022,7 @@
 <div class="guide-modal hidden" id="buyModal">
   <div class="guide-card">
     <h2>Add credits</h2>
-    <span class="launch-badge">Launch pricing for beta</span>
+    <span class="launch-badge">Launch pricing</span>
     <p id="buyIntro">Credits are used only when a new preview is generated. Slider adjustments, exports, and re-generates within the free window cost nothing, and a failed or blocked generation is refunded automatically.</p>
     <div id="packList"></div>
     <p class="auth-hint" id="payCurrencyNote" style="margin-top:12px;color:var(--muted);">Payments are processed by Stripe in CAD. Credits land on your account the moment payment completes.</p>
@@ -1486,7 +1485,7 @@ function openBuyModal(){
     const sym = cur === 'usd' ? 'US$' : 'CA$';
     const reg = (pk.regularCad && pk.regularCad > pk.cad) ? pk.regularCad : null;
     const price = reg
-      ? '<strong>' + sym + (pk.cad/100).toFixed(2) + '</strong> <s>' + sym + (reg/100).toFixed(2) + '</s> <span>regular price after beta</span>'
+      ? '<strong>' + sym + (pk.cad/100).toFixed(2) + '</strong> <s>' + sym + (reg/100).toFixed(2) + '</s> <span>regular price</span>'
       : sym + (pk.cad/100).toFixed(2);
     left.innerHTML = '<div class="pack-name">' + pk.label + ' · ' + pk.credits + ' credits</div>'
       + '<div class="pack-sub">' + price + '</div>';
