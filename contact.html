@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact — SkinDay</title>
+  <meta name="description" content="Get in touch with SkinDay. Clinic inquiries, partnerships, and support." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF7F2; --warm: #F0EAE1; --deep: #1C1714;
+      --rose: #C8725A; --gold: #C9A96E;
+      --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(28,23,20,0.96); backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(201,169,110,0.25);
+      padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px;
+    }
+    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 600; color: var(--cream); text-decoration: none; letter-spacing: 0.01em; }
+    .nav-logo span { color: var(--gold); }
+    .nav-back { color: var(--dim); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+    .nav-back:hover { color: var(--cream); }
+
+    /* hero */
+    .hero {
+      background: var(--deep); color: var(--cream);
+      padding: 80px 0 72px; text-align: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ""; position: absolute; top: -20%; right: -10%; width: 50%; height: 140%;
+      background: radial-gradient(ellipse at center, rgba(201,169,110,.1), transparent 62%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .4;
+    }
+    .hero .inner { position: relative; z-index: 2; }
+    .eyebrow { font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 20px; }
+    .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 400; line-height: 1.08; margin-bottom: 16px; }
+    .hero h1 em { font-style: italic; color: var(--gold); }
+    .hero p { font-size: 0.98rem; color: rgba(250,247,242,.68); font-weight: 300; max-width: 42ch; margin: 0 auto; line-height: 1.7; }
+
+    /* form */
+    .form-wrap { max-width: 600px; margin: 0 auto; padding: 72px 28px 96px; }
+
+    .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
+    .field label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+    .field input, .field select, .field textarea {
+      background: #fff; border: 1px solid var(--border); color: var(--deep);
+      padding: 11px 14px; font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
+      border-radius: 4px; outline: none; width: 100%;
+      transition: border-color 0.2s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); }
+    .field textarea { min-height: 120px; resize: vertical; line-height: 1.55; }
+    .field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7B72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
+
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media(max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
+
+    .submit-btn {
+      width: 100%; padding: 14px; background: var(--rose); color: #fff;
+      border: none; border-radius: 4px; font-size: 0.94rem; font-weight: 500;
+      font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 8px;
+      transition: background 0.2s, transform 0.2s;
+    }
+    .submit-btn:hover { background: #b5634d; transform: translateY(-1px); }
+
+    .success-msg {
+      display: none; text-align: center; padding: 48px 0;
+    }
+    .success-msg h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; margin-bottom: 12px; }
+    .success-msg p { color: var(--muted); font-size: 0.94rem; font-weight: 300; }
+
+    footer { background: var(--deep); padding: 2rem 5%; text-align: center; }
+    .footer-note { font-size: 0.78rem; color: var(--muted); }
+    .footer-note a { color: var(--dim); text-decoration: none; }
+    .footer-note a:hover { color: var(--cream); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo"><span>SkinDay</span></a>
+  <a href="/" class="nav-back">Back to SkinDay</a>
+</nav>
+
+<div class="hero">
+  <div class="inner wrap">
+    <div class="eyebrow">Get in touch</div>
+    <h1>We'd love to <em>hear from you.</em></h1>
+    <p>Whether you're a clinic, a partner, or have a question about Visualize — reach out and we'll get back to you shortly.</p>
+  </div>
+</div>
+
+<div class="form-wrap">
+  <form id="contactForm" name="contact" netlify netlify-honeypot="bot-field">
+    <input type="hidden" name="form-name" value="contact" />
+    <p style="display:none;"><label>Don't fill this out: <input name="bot-field" /></label></p>
+
+    <div class="field-row">
+      <div class="field">
+        <label for="name">Name</label>
+        <input type="text" id="name" name="name" placeholder="Your name" required />
+      </div>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@yourclinic.com" required />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="subject">Inquiry type</label>
+      <select id="subject" name="subject" required>
+        <option value="" disabled selected>Select an inquiry type</option>
+        <option value="clinic-support">Clinic support</option>
+        <option value="visualize-billing">Visualize billing</option>
+        <option value="partnership">Partnership or pharma</option>
+        <option value="media">Media inquiry</option>
+        <option value="general">General question</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="message">Message</label>
+      <textarea id="message" name="message" placeholder="Tell us what's on your mind..." required></textarea>
+    </div>
+
+    <button type="submit" class="submit-btn">Send message</button>
+  </form>
+
+  <div class="success-msg" id="successMsg">
+    <h2>Message sent.</h2>
+    <p>We'll get back to you at the email you provided.</p>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-note">
+    &#169; 2026 SkinDay &nbsp;&middot;&nbsp;
+    <a href="/privacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="/terms">Terms of Service</a> &nbsp;&middot;&nbsp;
+    <a href="/refund">Refund Policy</a>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(new FormData(form)).toString()
+    }).then(function() {
+      form.style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+    }).catch(function() {
+      window.location.href = 'mailto:hello@skinday.com';
+    });
+  });
+</script>
+
+</body>
+</html>

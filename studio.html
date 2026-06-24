@@ -1,1215 +1,417 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>SkinDay Studio — AI-Assisted Before & After Photo Tool for Clinics</title>
-  <meta name="description" content="AI-assisted before & after photos for aesthetic clinics. Aligned, branded, ready in seconds. Photos are processed locally in your browser — SkinDay does not upload, store, or view patient images. Free for all clinics." />
-  <link rel="icon" href="/favicon.ico" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --cream: #FAF7F2; --warm: #F4EDE4; --deep: #1C1714; --deep2: #241E1A;
-      --rose: #C8725A; --rose-m: #D4896E; --gold: #C9A96E;
-      --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
-      --hero-border: rgba(201,169,110,0.25);
-    }
-    html { scroll-behavior: smooth; overflow-x: hidden; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
-    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(28,23,20,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--hero-border); padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px; }
-    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--cream); letter-spacing: 0.04em; text-decoration: none; }
-    .nav-logo span { color: var(--gold); }
-    .nav-ctas { display: flex; align-items: center; gap: 0.6rem; }
-    .nav-signin-btn { background: transparent; border: 1px solid rgba(201,169,110,0.4); color: var(--dim); padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; font-family: 'DM Sans', sans-serif; cursor: pointer; }
-    .nav-signin-btn:hover { border-color: var(--gold); color: var(--cream); }
-    .nav-cta { background: var(--rose); color: #fff !important; padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; font-weight: 500; text-decoration: none; transition: background 0.2s; display: inline-block; white-space: nowrap; }
-    .nav-cta:hover { background: var(--rose-m); }
-    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; z-index: 201; }
-    .hamburger span { display: block; width: 24px; height: 1.5px; background: var(--gold); transition: transform 0.35s ease, opacity 0.35s ease; transform-origin: center; }
-    .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-    .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-    .nav-overlay { position: fixed; inset: 0; z-index: 200; background: var(--deep); display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
-    .nav-overlay.open { opacity: 1; pointer-events: all; }
-    .nav-overlay-logo { position: absolute; top: 0; left: 0; right: 0; height: 60px; display: flex; align-items: center; padding: 0 5%; border-bottom: 1px solid rgba(201,169,110,0.15); font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; color: var(--cream); text-decoration: none; }
-    .nav-overlay-logo span { color: var(--gold); }
-    .nav-overlay-links { display: flex; flex-direction: column; align-items: center; width: 100%; }
-    .nav-overlay-links a { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem,8vw,3rem); font-weight: 300; color: var(--cream); text-decoration: none; padding: 0.6rem 0; width: 100%; text-align: center; border-bottom: 1px solid rgba(201,169,110,0.08); opacity: 0; transform: translateY(16px); transition: opacity 0.4s ease, transform 0.4s ease, color 0.2s; }
-    .nav-overlay.open .nav-overlay-links a { opacity: 1; transform: none; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(1) { transition-delay: 0.05s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(2) { transition-delay: 0.10s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(3) { transition-delay: 0.15s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(4) { transition-delay: 0.20s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(5) { transition-delay: 0.25s; }
-    .nav-overlay-links a:hover { color: var(--gold); }
-    .nav-overlay-links a.cta-link { color: var(--rose); }
-    .nav-overlay-bottom { position: absolute; bottom: 2rem; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-    @media (max-width: 640px) { .hamburger { display: flex; } .nav-signin-btn { display: none; } }
-    @media (max-width: 480px) { nav { padding: 0 4%; } .nav-cta { padding: 0.28rem 0.55rem; font-size: 0.72rem; } }
-    .page { max-width: 860px; margin: 0 auto; padding: 88px 20px 80px; }
-    .hero { text-align: center; padding: 44px 0 48px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
-    .eyebrow { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
-    .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem,5vw,3rem); font-weight: 300; line-height: 1.15; margin-bottom: 14px; }
-    .hero h1 em { font-style: italic; color: var(--rose); }
-    .hero p { font-size: 0.92rem; color: var(--muted); max-width: 420px; margin: 0 auto; line-height: 1.7; }
-    .step { margin-bottom: 36px; }
-    .step-num { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
-    .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .upload-zone { border: 1.5px dashed var(--border); border-radius: 8px; aspect-ratio: 3/4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; background: var(--warm); transition: border-color 0.2s; cursor: pointer; }
-    .upload-zone:hover { border-color: var(--gold); }
-    .upload-zone.filled { border-style: solid; border-color: var(--border); }
-    .upload-zone img.thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-    .upload-zone.filled input.main-input { display: none; }
-    .upload-plus { width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 18px; }
-    .upload-txt { font-size: 0.78rem; color: var(--muted); }
-    .zone-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 9px 12px; background: linear-gradient(transparent, rgba(28,23,20,0.72)); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,247,242,0.8); pointer-events: none; }
-    .change-btn { position: absolute; top: 8px; right: 8px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.7rem; font-family: 'DM Sans', sans-serif; padding: 3px 9px; border-radius: 3px; cursor: pointer; display: none; }
-    .upload-zone.filled .change-btn { display: block; }
-    .change-input { position: absolute; top: 8px; right: 8px; z-index: 4; opacity: 0; width: 60px; height: 24px; cursor: pointer; display: none; }
-    .upload-zone.filled .change-input { display: block; }
-    .status { display: flex; align-items: center; gap: 10px; padding: 11px 15px; background: #fff; border: 1px solid var(--border); border-radius: 6px; font-size: 0.83rem; color: var(--muted); margin-top: 14px; }
-    .privacy-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px; background: rgba(201,169,110,0.06); border: 1px solid rgba(201,169,110,0.18); border-radius: 6px; font-size: 0.78rem; color: var(--muted); line-height: 1.5; margin-top: 12px; }
-    .privacy-icon { flex-shrink: 0; font-size: 0.9rem; line-height: 1.5; opacity: 0.7; }
-    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background 0.3s; }
-    .dot.spin { background: var(--gold); animation: blink 1s infinite; }
-    .dot.ok { background: #3D7A55; }
-    .dot.warn { background: var(--gold); }
-    @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
-    .progress { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; margin-top: 8px; display: none; }
-    .progress.on { display: block; }
-    .progress-fill { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s; }
-    .crop-section { display: none; margin-top: 8px; }
-    .crop-section.visible { display: block; }
-    .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-    .preset-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
-    .preset-btn { border: 1.5px solid var(--border); border-radius: 8px; padding: 14px 8px 12px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-    .preset-btn:hover { border-color: var(--gold); background: var(--warm); }
-    .preset-btn.active { border-color: var(--rose); background: #fdf1ee; }
-    .preset-icon { font-size: 18px; line-height: 1; }
-    .preset-name { font-size: 0.78rem; font-weight: 500; color: var(--deep); }
-    .preset-desc { font-size: 0.67rem; color: var(--muted); line-height: 1.4; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SkinDay Studio — Branded before &amp; afters for aesthetic clinics</title>
+<meta name="description" content="Turn your best cases into aligned, branded before-and-afters in seconds. Photos never leave your browser. Free for every clinic.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+<link rel="shortcut icon" href="/favicon.ico">
+<style>
+  :root{
+    --deep:#1C1714;
+    --deep-soft:#2A231E;
+    --cream:#FAF7F2;
+    --warm:#F0EAE1;
+    --rose:#C8725A;
+    --gold:#C9A96E;
+    --muted:#8A7F76;
+    --line:rgba(28,23,20,.12);
+    --line-light:rgba(250,247,242,.16);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'DM Sans',system-ui,sans-serif;
+    background:var(--cream);
+    color:var(--deep);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .serif{font-family:'Cormorant Garamond',Georgia,serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
 
-    /* Zoom controls */
-    .zoom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
-    .zoom-box { display: flex; flex-direction: column; gap: 6px; }
-    .zoom-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between; }
-    .zoom-label span { color: var(--deep); font-weight: 400; }
-    input[type=range].zoom-slider { width: 100%; accent-color: var(--rose); cursor: pointer; }
+  /* nav */
+  .site-nav{
+    position:sticky;top:0;z-index:100;
+    background:rgba(28,23,20,.96);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line-light);
+  }
+  .nav-inner{
+    display:flex;align-items:center;justify-content:space-between;
+    max-width:1180px;margin:0 auto;padding:18px 28px;
+  }
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
+  .brand span{color:var(--gold);}
+  .nav-links{display:flex;align-items:center;gap:32px;}
+  .nav-links a{color:rgba(250,247,242,.78);text-decoration:none;font-size:.9rem;font-weight:400;transition:color .2s;}
+  .nav-links a:hover{color:var(--gold);}
+  .nav-links a.active{color:var(--cream);}
+  .nav-cta{
+    border:1px solid rgba(250,247,242,.36);border-radius:2px;
+    padding:8px 17px;color:var(--cream)!important;font-size:.84rem;font-weight:500;
+    transition:border-color .2s,background .2s,color .2s;
+  }
+  .nav-cta:hover{background:var(--gold);border-color:var(--gold);color:var(--deep)!important;}
+  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:rgba(250,247,242,.8);}
+  .nav-toggle svg{display:block;}
+  .nav-mobile{display:none;background:var(--deep);border-top:1px solid var(--line-light);padding:20px 28px 28px;}
+  .nav-mobile.open{display:block;}
+  .nav-mobile a{display:block;color:rgba(250,247,242,.78);text-decoration:none;font-size:1rem;padding:11px 0;border-bottom:1px solid var(--line-light);transition:color .2s;}
+  .nav-mobile a:last-child{border-bottom:none;margin-top:8px;color:var(--gold);font-weight:500;}
+  .nav-mobile a:hover{color:var(--cream);}
+  @media(max-width:760px){.nav-links{display:none;}.nav-toggle{display:block;}}
 
-    .preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
-    .preview-box { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--deep); position: relative; }
-    .preview-box canvas { display: block; width: 100%; }
-    .preview-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: linear-gradient(transparent,rgba(28,23,20,0.75)); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,247,242,0.8); pointer-events: none; }
-    .brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; margin-bottom: 24px; }
-    .field { display: flex; flex-direction: column; gap: 5px; }
-    .field label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
-    .field input, .field select { background: #fff; border: 1px solid var(--border); color: var(--deep); padding: 10px 12px; font-size: 0.88rem; font-family: 'DM Sans', sans-serif; border-radius: 6px; outline: none; transition: border-color 0.2s; }
-    .field input:focus, .field select:focus { border-color: var(--rose); }
-    .field input::placeholder { color: var(--dim); }
+  /* eyebrow */
+  .eyebrow{
+    font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--gold);font-weight:500;margin-bottom:28px;
+    display:inline-flex;align-items:center;gap:10px;
+  }
+  .eyebrow::before{content:"";display:block;width:22px;height:1px;background:var(--gold);opacity:.7;}
 
-    /* Watermark position picker */
-    .wm-pos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 6px; }
-    .wm-pos-btn { border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 4px; background: #fff; cursor: pointer; font-size: 0.72rem; color: var(--muted); text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    .wm-pos-btn:hover { border-color: var(--gold); }
-    .wm-pos-btn.active { border-color: var(--rose); background: #fdf1ee; color: var(--deep); }
-    .wm-pos-grid.disabled { opacity: 0.45; pointer-events: none; }
-    .wm-pos-hint { font-size: 0.72rem; color: var(--muted); margin-top: 8px; }
-    .wm-pos-icon { font-size: 14px; }
+  /* btn */
+  .btn{
+    display:inline-flex;align-items:center;gap:9px;text-decoration:none;
+    font-size:.93rem;font-weight:500;padding:14px 28px;border-radius:2px;
+    transition:transform .2s,background .2s,border-color .2s,color .2s;cursor:pointer;
+    letter-spacing:.01em;
+  }
+  .btn-primary{background:var(--rose);color:var(--cream);}
+  .btn-primary:hover{background:#b5634d;transform:translateY(-2px);}
+  .btn-ghost{border:1px solid var(--line);color:var(--deep);}
+  .btn-ghost:hover{border-color:var(--rose);color:var(--rose);}
+  .btn-ghost-light{border:1px solid var(--line-light);color:var(--cream);}
+  .btn-ghost-light:hover{border-color:var(--gold);color:var(--gold);}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
 
-    .gen-wrap { display: flex; justify-content: center; margin: 8px 0 28px; }
-    .btn-gen { background: var(--rose); color: #fff; border: none; padding: 14px 52px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; letter-spacing: 0.06em; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
-    .btn-gen:hover:not(:disabled) { background: var(--rose-m); }
-    .btn-gen:disabled { background: var(--dim); cursor: not-allowed; opacity: 0.6; }
-    .consent-row { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-bottom: 16px; }
-    .consent-label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
-    .consent-checkbox { flex-shrink: 0; margin-top: 2px; width: 16px; height: 16px; accent-color: var(--rose); cursor: pointer; }
-    .consent-label:hover { color: var(--deep); }
-    .output { display: none; }
-    .output.visible { display: block; }
-    .output-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--deep); }
-    #outputCanvas { display: block; width: 100%; }
-    .output-actions { display: flex; gap: 12px; margin-top: 16px; }
-    .btn-dl { background: var(--deep); color: var(--cream); border: none; padding: 12px 32px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-    .btn-dl:hover { background: var(--deep2); }
-    .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-    .btn-reset:hover { border-color: var(--muted); color: var(--deep); }
-    .btn-new-case { background: var(--rose); color: #fff; border: 1px solid var(--rose); padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
-    .btn-new-case:hover { background: var(--rose-m); border-color: var(--rose-m); }
-    footer { background: var(--deep); padding: 48px 5% 32px; border-top: 1px solid rgba(201,169,110,0.15); margin-top: 80px; }
-    .footer-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 2.5rem; max-width: 1280px; margin: 0 auto 3rem; }
-    .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--cream); margin-bottom: 0.6rem; }
-    .footer-brand span { color: var(--gold); }
-    .footer-tagline { font-size: 0.88rem; color: var(--muted); max-width: 220px; line-height: 1.6; }
-    .footer-links h4 { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 0.9rem; }
-    .footer-links ul { list-style: none; }
-    .footer-links li { margin-bottom: 0.6rem; }
-    .footer-links a { font-size: 0.88rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 1280px; margin: 0 auto; border-top: 1px solid rgba(181,168,159,0.1); padding-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; }
-    .footer-copy { font-size: 0.82rem; color: var(--muted); }
-    .footer-disclaimer { font-size: 0.78rem; color: var(--muted); opacity: 0.7; line-height: 1.5; }
-    @media (max-width: 580px) { .preset-grid { grid-template-columns: repeat(2,1fr); } .brand-grid { grid-template-columns: 1fr; } .wm-pos-grid { grid-template-columns: repeat(2,1fr); } }
-  </style>
-  <!-- Privacy-friendly analytics by Plausible -->
-  <script async src="https://plausible.io/js/pa-s9ic7e_4fbKlTLHHXTR_P.js"></script>
-  <script>
-    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-    plausible.init()
-  </script>
+  /* hero */
+  .hero{
+    position:relative;background:var(--deep);color:var(--cream);
+    padding:96px 0 108px;overflow:hidden;
+  }
+  .hero::before{
+    content:"";position:absolute;top:-20%;right:-8%;width:55%;height:130%;
+    background:radial-gradient(ellipse at center,rgba(200,114,90,.1),transparent 62%);
+    pointer-events:none;
+  }
+  .hero::after{
+    content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+    background:linear-gradient(90deg,transparent,var(--rose),transparent);opacity:.4;
+  }
+  .hero .wrap{position:relative;z-index:2;}
+  .hero h1{
+    font-size:clamp(2.6rem,5.8vw,4.7rem);font-weight:500;line-height:1.04;
+    letter-spacing:-.015em;margin-bottom:28px;max-width:18ch;
+  }
+  .hero h1 em{font-style:italic;color:var(--rose);}
+  .hero p.lead{
+    font-size:clamp(1rem,1.6vw,1.16rem);color:rgba(250,247,242,.74);
+    max-width:48ch;font-weight:300;margin-bottom:40px;line-height:1.7;
+  }
+  .privacy-note{
+    margin-top:28px;display:inline-flex;align-items:center;gap:10px;
+    font-size:.82rem;color:rgba(250,247,242,.5);font-weight:300;
+  }
+  .privacy-dot{width:4px;height:4px;border-radius:50%;background:var(--rose);flex-shrink:0;}
+
+  /* how it works */
+  .how{background:var(--cream);padding:100px 0;}
+  .how .section-head{max-width:42ch;margin-bottom:64px;}
+  .how .section-head h2{font-size:clamp(1.9rem,3.6vw,2.9rem);font-weight:500;line-height:1.1;letter-spacing:-.01em;margin-bottom:16px;}
+  .how .section-head p{color:var(--muted);font-size:1rem;font-weight:300;line-height:1.7;}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);}
+  .step{background:var(--cream);padding:40px 36px;}
+  .step-num{
+    font-family:'Cormorant Garamond',serif;font-size:2.4rem;font-weight:600;
+    color:var(--rose);line-height:1;margin-bottom:20px;opacity:.7;
+  }
+  .step h3{font-size:1.08rem;font-weight:500;margin-bottom:10px;letter-spacing:-.01em;}
+  .step p{font-size:.93rem;color:var(--muted);font-weight:300;line-height:1.65;}
+  @media(max-width:720px){.steps{grid-template-columns:1fr;}.step{padding:32px 0;background:transparent;border-bottom:1px solid var(--line);}.step:last-child{border-bottom:none;}}
+
+  /* privacy section */
+  .privacy{background:var(--deep);color:var(--cream);padding:88px 0;}
+  .privacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+  .privacy-grid h2{font-size:clamp(1.9rem,3.4vw,2.8rem);font-weight:500;line-height:1.1;margin-bottom:20px;}
+  .privacy-grid h2 em{font-style:italic;color:var(--rose);}
+  .privacy-grid .eyebrow{color:var(--rose);margin-bottom:20px;}
+  .privacy-grid p{color:rgba(250,247,242,.72);font-weight:300;font-size:1rem;line-height:1.72;margin-bottom:16px;}
+  .privacy-detail{
+    border:1px solid var(--line-light);border-radius:6px;padding:32px 30px;
+    background:rgba(250,247,242,.03);
+  }
+  .privacy-detail .pd-row{
+    display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line-light);
+    align-items:flex-start;
+  }
+  .privacy-detail .pd-row:last-child{border-bottom:none;padding-bottom:0;}
+  .privacy-detail .pd-row:first-child{padding-top:0;}
+  .pd-icon{
+    width:32px;height:32px;border-radius:4px;
+    background:rgba(200,114,90,.12);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+    font-size:.9rem;
+  }
+  .pd-text h4{font-size:.9rem;font-weight:500;color:var(--cream);margin-bottom:4px;}
+  .pd-text p{font-size:.84rem;color:rgba(250,247,242,.56);font-weight:300;line-height:1.55;margin:0;}
+  @media(max-width:820px){.privacy-grid{grid-template-columns:1fr;gap:44px;}}
+
+  /* crossover */
+  .crossover{background:var(--warm);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:80px 0;}
+  .crossover-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+  .crossover h2{font-size:clamp(1.7rem,3vw,2.5rem);font-weight:500;line-height:1.1;letter-spacing:-.01em;margin-bottom:16px;}
+  .crossover h2 em{font-style:italic;color:var(--gold);}
+  .crossover p{color:var(--muted);font-size:1rem;font-weight:300;line-height:1.7;margin-bottom:28px;}
+  .visualize-card{
+    background:#fff;border:1px solid var(--line);border-radius:6px;padding:36px 32px;
+    box-shadow:0 4px 24px -8px rgba(28,23,20,.08);
+  }
+  .visualize-card .vc-label{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:var(--gold);margin-bottom:16px;}
+  .visualize-card h3{font-family:'Cormorant Garamond',serif;font-size:1.8rem;font-weight:600;margin-bottom:8px;}
+  .visualize-card h3 span{color:var(--gold);}
+  .visualize-card p{font-size:.93rem;color:#4a423c;font-weight:300;line-height:1.65;margin-bottom:20px;}
+  .visualize-card .pill{font-size:.72rem;font-weight:600;letter-spacing:.03em;padding:4px 10px;border-radius:100px;background:rgba(201,169,110,.14);color:#9a7e3f;display:inline-block;margin-bottom:20px;}
+  .visualize-card a{
+    display:inline-flex;align-items:center;gap:7px;text-decoration:none;
+    font-size:.88rem;font-weight:600;color:var(--deep);border-bottom:1px solid var(--gold);
+    padding-bottom:2px;transition:gap .2s,color .2s;
+  }
+  .visualize-card a::after{content:" \2192";}
+  .visualize-card a:hover{gap:12px;color:var(--gold);}
+  @media(max-width:820px){.crossover-inner{grid-template-columns:1fr;gap:40px;}}
+
+  /* closing */
+  .closing{background:var(--cream);padding:110px 0;text-align:center;}
+  .closing h2{font-size:clamp(2.2rem,4.6vw,3.5rem);font-weight:500;line-height:1.06;max-width:20ch;margin:0 auto 20px;letter-spacing:-.01em;}
+  .closing h2 em{font-style:italic;color:var(--rose);}
+  .closing p{color:var(--muted);font-size:1rem;font-weight:300;margin-bottom:36px;max-width:40ch;margin-left:auto;margin-right:auto;}
+  .closing .sub-note{margin-top:16px;font-size:.82rem;color:var(--muted);font-weight:300;}
+
+  /* footer */
+  footer{background:var(--deep);color:rgba(250,247,242,.7);padding:64px 0 40px;}
+  .foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;padding-bottom:40px;border-bottom:1px solid var(--line-light);}
+  .foot-brand{font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:var(--cream);}
+  .foot-brand span{color:var(--gold);}
+  .foot-tagline{font-family:'DM Sans',sans-serif;font-size:.88rem;color:rgba(250,247,242,.52);margin-top:8px;font-weight:300;max-width:28ch;line-height:1.55;}
+  .foot-cols{display:flex;gap:64px;flex-wrap:wrap;}
+  .foot-col h4{font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:16px;font-weight:600;}
+  .foot-col a{display:block;color:rgba(250,247,242,.68);text-decoration:none;font-size:.9rem;margin-bottom:10px;font-weight:300;transition:color .2s;}
+  .foot-col a:hover{color:var(--cream);}
+  .foot-note{padding-top:28px;font-size:.79rem;color:rgba(250,247,242,.44);font-weight:300;line-height:1.72;max-width:82ch;}
+  .foot-note .posture{color:rgba(250,247,242,.6);}
+  .foot-bottom{margin-top:22px;font-size:.78rem;color:rgba(250,247,242,.36);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(16px);transition:opacity .65s ease,transform .65s ease;}
+  .reveal.in{opacity:1;transform:none;}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}.btn-primary:hover{transform:none;}}
+  a:focus-visible,.btn:focus-visible,.nav-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+</style>
 </head>
 <body>
 
-<nav>
-  <a href="/" class="nav-logo">Skin<span>Day</span></a>
-  <div class="nav-ctas">
-    <button class="nav-signin-btn">Client Sign In</button>
-    <a href="/editor.html" class="nav-cta">Clinic Portal</a>
+<nav class="site-nav" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="brand"><span>SkinDay</span></a>
+    <div class="nav-links">
+      <a href="/studio" class="active">Studio</a>
+      <a href="/visualize">Visualize</a>
+      <a href="/#built">About</a>
+      <a href="https://skinday.ca/studio" class="nav-cta" target="_blank" rel="noopener">Open Studio free</a>
+    </div>
+    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
+      <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+        <line x1="0" y1="2" x2="22" y2="2"/>
+        <line x1="0" y1="8" x2="22" y2="8"/>
+        <line x1="0" y1="14" x2="22" y2="14"/>
+      </svg>
+    </button>
   </div>
-  <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
+  <div class="nav-mobile" id="navMobile">
+    <a href="/studio">Studio</a>
+    <a href="/visualize">Visualize</a>
+    <a href="/#built">About</a>
+    <a href="https://skinday.ca/studio" target="_blank" rel="noopener">Open Studio free</a>
+  </div>
 </nav>
 
-<div class="nav-overlay" id="navOverlay">
-  <a href="/" class="nav-overlay-logo">Skin<span>Day</span></a>
-  <div class="nav-overlay-links">
-    <a href="/">Browse Clinics</a>
-    <a href="/about.html">About</a>
-    <a href="/studio.html" style="color:var(--gold);">Studio</a>
-    <a href="/account.html" class="cta-link">Client Sign In</a>
-    <a href="/editor.html" class="cta-link">Clinic Portal</a>
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow reveal">SkinDay Studio</div>
+    <h1 class="serif reveal">Your results,<br><em>beautifully presented.</em></h1>
+    <p class="lead reveal">Aligned, branded before-and-afters in seconds. Ready to share. Photos never leave your device.</p>
+    <div class="cta-row reveal">
+      <a href="https://skinday.ca/studio" class="btn btn-primary" target="_blank" rel="noopener">Open Studio free</a>
+      <a href="/visualize" class="btn btn-ghost-light">Explore Visualize</a>
+    </div>
+    <div class="privacy-note reveal">
+      <span class="privacy-dot"></span>
+      Photos are processed locally in your browser. Nothing is uploaded to any server.
+    </div>
   </div>
-  <div class="nav-overlay-bottom">skinday.ca</div>
-</div>
+</header>
 
-<div class="page">
-  <div class="hero">
-    <div class="eyebrow">SkinDay Studio</div>
-    <h1>AI-assisted before & after photos.<br><em>Aligned, branded, ready in seconds.</em></h1>
-    <p>Choose two photos, let Studio help align the crop, add your clinic branding, then download a polished image ready to post.</p>
-  </div>
-
-  <div class="step">
-    <div class="step-num">Step 1 — Choose your photos</div>
-    <div class="upload-row">
-      <div class="upload-zone" id="zone-before">
-        <div class="upload-plus">+</div>
-        <div class="upload-txt">Before photo</div>
-        <input type="file" accept="image/*" class="main-input" id="input-before"/>
-        <div class="zone-tag">Before</div>
-        <button class="change-btn">Change</button>
-        <input type="file" accept="image/*" class="change-input" id="change-before"/>
+<section class="how">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">How it works</div>
+      <h2 class="serif">Three steps. Seconds, not minutes.</h2>
+      <p>No account. No upload. No software to install. Open Studio in any browser and start immediately.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-num">01</div>
+        <h3>Upload your photos</h3>
+        <p>Drop your before and after images directly into Studio. They stay in your browser and go nowhere else.</p>
       </div>
-      <div class="upload-zone" id="zone-after">
-        <div class="upload-plus">+</div>
-        <div class="upload-txt">After photo</div>
-        <input type="file" accept="image/*" class="main-input" id="input-after"/>
-        <div class="zone-tag">After</div>
-        <button class="change-btn">Change</button>
-        <input type="file" accept="image/*" class="change-input" id="change-after"/>
+      <div class="step reveal">
+        <div class="step-num">02</div>
+        <h3>Align and brand</h3>
+        <p>Studio aligns your shots and applies your clinic branding automatically. Consistent framing, every time.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">03</div>
+        <h3>Download and share</h3>
+        <p>Export a clean, branded result ready for Instagram, your website, or your consult presentation.</p>
       </div>
     </div>
-    <div class="privacy-note">
-      <span class="privacy-icon" aria-hidden="true">🔒</span>
-      <span>Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images.</span>
-    </div>
-    <div class="status"><div class="dot" id="dot"></div><span id="statusText">Choose a before and after photo to begin</span></div>
-    <div class="progress" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
   </div>
+</section>
 
-  <div class="crop-section" id="cropSection">
-    <hr class="divider" style="margin-top:0">
-    <div class="step">
-      <div class="step-num">Step 2 — Choose crop area</div>
-      <div class="preset-grid">
-        <button class="preset-btn" data-preset="full" onclick="selPreset('full')">
-          <div class="preset-icon">🧍</div><div class="preset-name">Full Face</div><div class="preset-desc">Head to chin</div>
-        </button>
-        <button class="preset-btn active" data-preset="lower" onclick="selPreset('lower')">
-          <div class="preset-icon">💉</div><div class="preset-name">Lower Face</div><div class="preset-desc">Cheeks to jaw</div>
-        </button>
-        <button class="preset-btn" data-preset="upper" onclick="selPreset('upper')">
-          <div class="preset-icon">👁</div><div class="preset-name">Upper Face</div><div class="preset-desc">Forehead to brows</div>
-        </button>
-        <button class="preset-btn" data-preset="eyes" onclick="selPreset('eyes')">
-          <div class="preset-icon">✨</div><div class="preset-name">Eye Area</div><div class="preset-desc">Brows to nose</div>
-        </button>
+<section class="privacy">
+  <div class="wrap">
+    <div class="privacy-grid">
+      <div class="reveal">
+        <div class="eyebrow">Privacy by design</div>
+        <h2 class="serif">Patient photos stay <em>where they belong.</em></h2>
+        <p>Studio was built with one non-negotiable: patient images never leave the clinic's control. Everything runs locally in your browser. No server, no storage, no exceptions.</p>
+        <p>For clinics handling sensitive before-and-after photography, that boundary matters.</p>
       </div>
-
-      <!-- Zoom sliders -->
-      <div class="zoom-row">
-        <div class="zoom-box">
-          <div class="zoom-label">Before zoom <span id="zoomBVal">100%</span></div>
-          <input type="range" class="zoom-slider" id="zoomB" min="60" max="160" value="100" step="5" oninput="onZoom('before',this.value)"/>
+      <div class="privacy-detail reveal">
+        <div class="pd-row">
+          <div class="pd-icon">&#x1F512;</div>
+          <div class="pd-text">
+            <h4>No upload, ever</h4>
+            <p>Photos are processed entirely in your browser using local computation. They are never sent to SkinDay's servers or any third party.</p>
+          </div>
         </div>
-        <div class="zoom-box">
-          <div class="zoom-label">After zoom <span id="zoomAVal">100%</span></div>
-          <input type="range" class="zoom-slider" id="zoomA" min="60" max="160" value="100" step="5" oninput="onZoom('after',this.value)"/>
+        <div class="pd-row">
+          <div class="pd-icon">&#x1F5C4;</div>
+          <div class="pd-text">
+            <h4>No storage</h4>
+            <p>SkinDay does not store, cache, or retain any images. When you close the browser tab, everything is gone.</p>
+          </div>
         </div>
-      </div>
-
-      <div class="preview-row">
-        <div class="preview-box"><canvas id="cvBefore"></canvas><div class="preview-tag">Before</div></div>
-        <div class="preview-box"><canvas id="cvAfter"></canvas><div class="preview-tag">After</div></div>
-      </div>
-      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:-10px;margin-bottom:8px;">Drag each photo to reposition</div>
-    </div>
-
-    <hr class="divider">
-    <div class="step">
-      <div class="step-num">Step 3 — Add your branding (optional)</div>
-
-      <!-- Row 1: Clinic + Injector -->
-      <div class="brand-grid" style="margin-top:14px;">
-        <div class="field"><label>Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" maxlength="60"/></div>
-        <div class="field"><label>Injector name</label><input type="text" id="injectorName" placeholder="Injector name" maxlength="60"/></div>
-      </div>
-
-      <!-- Row 2: Treatment + Logo -->
-      <div class="brand-grid">
-        <div class="field">
-          <label>Treatment label</label>
-          <input type="text" id="treatmentLabel" placeholder="e.g. Sculptra · 3 sessions" maxlength="60"/>
-        </div>
-        <div class="field">
-          <label>Clinic logo <span style="font-weight:300;font-size:0.65rem;color:var(--dim);">PNG transparent bg best</span></label>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <label for="logoUpload" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;font-size:0.83rem;color:var(--muted);cursor:pointer;white-space:nowrap;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">Upload logo</label>
-            <input type="file" id="logoUpload" accept="image/*" style="display:none;"/>
-            <span id="logoFileName" style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">No logo</span>
-            <button id="logoClearBtn" onclick="clearLogo()" style="display:none;background:transparent;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;flex-shrink:0;">✕</button>
+        <div class="pd-row">
+          <div class="pd-icon">&#x2714;</div>
+          <div class="pd-text">
+            <h4>No account required</h4>
+            <p>Studio is free and open. You do not need to sign in or create an account to use it.</p>
           </div>
         </div>
       </div>
-
-      <!-- Row 3: Dates -->
-      <div class="brand-grid">
-        <div class="field">
-          <label>Before date</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <select id="beforeMonth"><option value="">Month</option><option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option><option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option><option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option><option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option></select>
-            <select id="beforeYear"><option value="">Year</option><option value="2020">2020</option><option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
-          </div>
-        </div>
-        <div class="field">
-          <label>After date</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <select id="afterMonth"><option value="">Month</option><option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option><option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option><option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option><option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option></select>
-            <select id="afterYear"><option value="">Year</option><option value="2020">2020</option><option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 4: Layout + Format -->
-      <div class="brand-grid">
-        <div class="field"><label>Layout</label><select id="layout"><option value="side">Side by side</option><option value="stack">Top & bottom</option></select></div>
-        <div class="field"><label>Export format</label><select id="exportFormat"><option value="square">Square 1:1 (Instagram post)</option><option value="portrait" selected>Portrait 4:5 (Instagram feed)</option><option value="story">Story 9:16 (Instagram story)</option><option value="free">Original — match crop</option></select></div>
-      </div>
-
-      <!-- Row 5: Exposure + Clarity -->
-      <div class="brand-grid">
-        <div class="field"><label>Normalize exposure</label><select id="norm"><option value="1">Yes — match brightness</option><option value="0">No — keep original</option></select></div>
-        <div class="field"><label>Image clarity</label><select id="enhance"><option value="0">None</option><option value="1" selected>Subtle — reduce noise & sharpen</option><option value="2">Strong — reduce noise & sharpen</option></select></div>
-      </div>
-
-      <!-- Row 6: Logo position (only shown when logo uploaded) -->
-      <div class="brand-grid" id="logoPosField" style="display:none;">
-        <div class="field">
-          <label>Logo position</label>
-          <select id="logoPos">
-            <option value="tr">Top right</option>
-            <option value="tl">Top left</option>
-            <option value="center">Middle</option>
-            <option value="br">Bottom right</option>
-            <option value="bl">Bottom left</option>
-          </select>
-        </div>
-        <div class="field"></div>
-      </div>
-
-      <!-- Watermark text position -->
-      <div class="field" style="margin-bottom:20px;">
-        <label>Watermark text position</label>
-        <div class="wm-pos-grid" id="wmPosGrid" style="margin-top:8px;">
-          <button class="wm-pos-btn" data-pos="tl" onclick="selWmPos('tl')"><span class="wm-pos-icon">↖</span>Top left</button>
-          <button class="wm-pos-btn" data-pos="tr" onclick="selWmPos('tr')"><span class="wm-pos-icon">↗</span>Top right</button>
-          <button class="wm-pos-btn active" data-pos="br" onclick="selWmPos('br')"><span class="wm-pos-icon">↘</span>Bottom right</button>
-          <button class="wm-pos-btn" data-pos="bl" onclick="selWmPos('bl')"><span class="wm-pos-icon">↙</span>Bottom left</button>
-          <button class="wm-pos-btn" data-pos="center" onclick="selWmPos('center')"><span class="wm-pos-icon">⊙</span>Centre</button>
-          <button class="wm-pos-btn" data-pos="tile" onclick="selWmPos('tile')"><span class="wm-pos-icon">⊞</span>Tiled</button>
-        </div>
-        <div class="wm-pos-hint" id="wmPosHint">Add a clinic or injector name above to enable the watermark.</div>
-      </div>
-
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <span id="saveMsg" style="font-size:0.75rem;color:#3D7A55;"></span>
-        <button onclick="saveSettings()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;border-radius:4px;cursor:pointer;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--deep)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Save settings</button>
-      </div>
-      <div class="consent-row">
-        <label class="consent-label">
-          <input type="checkbox" id="consentCheck" class="consent-checkbox"/>
-          <span>I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility.</span>
-        </label>
-      </div>
-      <div class="gen-wrap"><button class="btn-gen" id="genBtn" onclick="generate()" disabled>Generate image</button></div>
     </div>
   </div>
+</section>
 
-  <div class="output" id="outputSection">
-    <hr class="divider" style="margin-top:0">
-    <div class="step-num" style="margin-bottom:16px;">Your image</div>
-    <div class="output-wrap"><canvas id="outputCanvas"></canvas></div>
-    <div style="margin-bottom:12px;">
-      <div class="step-num" style="margin-bottom:10px;">Export format</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-        <button class="btn-dl" onclick="downloadFormat('original')" style="font-size:0.75rem;padding:10px 8px;">
-          Original<br><span style="font-size:0.65rem;opacity:0.6;font-weight:300;">As generated</span>
-        </button>
-        <button class="btn-dl" onclick="downloadFormat('square')" style="font-size:0.75rem;padding:10px 8px;">
-          Square 1:1<br><span style="font-size:0.65rem;opacity:0.6;font-weight:300;">Instagram post</span>
-        </button>
-        <button class="btn-dl" onclick="downloadFormat('story')" style="font-size:0.75rem;padding:10px 8px;">
-          Story 9:16<br><span style="font-size:0.65rem;opacity:0.6;font-weight:300;">Instagram story</span>
-        </button>
+<section class="crossover">
+  <div class="wrap">
+    <div class="crossover-inner">
+      <div class="reveal">
+        <h2 class="serif">Show what's possible <em>next.</em></h2>
+        <p>Studio shows what you've already achieved. When a patient asks what their own result could look like, that's where Visualize comes in.</p>
+        <a href="/visualize" class="btn btn-ghost">Explore Visualize</a>
+      </div>
+      <div class="visualize-card reveal">
+        <div class="vc-label">SkinDay Visualize</div>
+        <h3 class="serif">SkinDay <span>Visualize</span></h3>
+        <p>AI consultation previews for biostimulation and filler. Show a patient their own likely result during the consult.</p>
+        <div class="pill">Pay as you go</div><br>
+        <a href="/visualize">See how Visualize works</a>
       </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <button class="btn-new-case" onclick="newCase()">New case</button>
-      <button class="btn-reset" onclick="saveBrand()" style="border-color:var(--gold);color:var(--gold);">Save brand profile</button>
-      <span id="brandSaved" style="font-size:0.75rem;color:#3D7A55;display:none;">✓ Saved</span>
-    </div>
   </div>
-</div>
+</section>
+
+<section class="closing">
+  <div class="wrap">
+    <h2 class="serif reveal">Free, forever. <em>Open now.</em></h2>
+    <p class="reveal">No account, no subscription, no catch. Studio is free for every clinic.</p>
+    <a href="https://skinday.ca/studio" class="btn btn-primary reveal" target="_blank" rel="noopener">Open Studio free</a>
+    <div class="sub-note reveal">Photos never leave your device.</div>
+  </div>
+</section>
 
 <footer>
-  <div class="footer-top">
-    <div>
-      <div class="footer-brand">Skin<span>Day</span></div>
-      <div class="footer-tagline">Not the best clinic. Just the right one for you.</div>
+  <div class="wrap">
+    <div class="foot-top">
+      <div>
+        <div class="foot-brand"><span>SkinDay</span></div>
+        <div class="foot-tagline">Helping aesthetic clinics worldwide grow.</div>
+      </div>
+      <div class="foot-cols">
+        <div class="foot-col">
+          <h4>Tools</h4>
+          <a href="/studio">Studio (free)</a>
+          <a href="/visualize">Visualize</a>
+        </div>
+        <div class="foot-col">
+          <h4>Company</h4>
+          <a href="/#built">About</a>
+          <a href="mailto:hello@skinday.com">Contact</a>
+        </div>
+        <div class="foot-col">
+          <h4>Legal</h4>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+        </div>
+      </div>
     </div>
-    <div class="footer-links">
-      <h4>Discover</h4>
-      <ul>
-        <li><a href="/guide/botox-cost-toronto">Botox Guide Toronto</a></li>
-        <li><a href="/guide/botox-cost-vancouver">Botox Guide Vancouver</a></li>
-        <li><a href="/insights">SkinDay Insights</a></li>
-        <li><a href="/#directory">All Clinics</a></li>
-      </ul>
+    <div class="foot-note">
+      <span class="posture">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images.</span>
+      Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.
     </div>
-    <div class="footer-links">
-      <h4>Clinics</h4>
-      <ul>
-        <li><a href="/#claim">Claim Your Listing</a></li>
-        <li><a href="/studio.html" style="color:var(--gold);">Studio — Free Photo Tool</a></li>
-      </ul>
+    <div class="foot-bottom">
+      <span>&#169; 2026 SkinDay. All rights reserved.</span>
+      <span>skinday.com</span>
     </div>
-    <div class="footer-links">
-      <h4>Company</h4>
-      <ul>
-        <li><a href="/about.html">About SkinDay</a></li>
-        <li><a href="/contact.html">Contact</a></li>
-        <li><a href="/privacy.html">Privacy Policy</a></li>
-        <li><a href="/terms.html">Terms of Service</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <div class="footer-copy">© 2026 SkinDay. All rights reserved. · <a href="/privacy.html" style="color:var(--muted);text-decoration:none;">Privacy Policy</a> · <a href="/terms.html" style="color:var(--muted);text-decoration:none;">Terms</a></div>
-    <div class="footer-disclaimer">Prices shown are user-reported or clinic-verified. Always confirm directly with the clinic before booking.</div>
   </div>
 </footer>
 
 <script>
-const S = {
-  beforeImg:null, afterImg:null, fm:null,
-  preset:'lower', wmPos:'br',
-  bLm:null, aLm:null,
-  bZoom:1.0, aZoom:1.0,
-  bPan:{x:0,y:0}, aPan:{x:0,y:0}
-};
-const NOSE=1,CHIN=152,LEYE=33,REYE=263,BROWL=70,BROWR=300,JAWL=172,JAWR=397;
-
-document.getElementById('hamburger').addEventListener('click',function(){
-  this.classList.toggle('open');
-  document.getElementById('navOverlay').classList.toggle('open');
-});
-
-function setSt(msg,t='idle'){
-  document.getElementById('statusText').textContent=msg;
-  const d=document.getElementById('dot');
-  d.className='dot'+(t!=='idle'?' '+t:'');
-}
-function setProg(p){
-  const b=document.getElementById('progressBar'),f=document.getElementById('progressFill');
-  if(p>0&&p<100){b.classList.add('on');f.style.width=p+'%';}
-  else{b.classList.remove('on');f.style.width='0%';}
-}
-
-function loadFile(file,which){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    const img=new Image();
-    img.onload=()=>{
-      S[which+'Img']=img;
-      S[which==='before'?'bLm':'aLm']=null;
-      S[which==='before'?'bZoom':'aZoom']=1.0;
-      if(which==='before') S.bPan={x:0,y:0}; else S.aPan={x:0,y:0};
-      if(which==='before') document.getElementById('zoomB').value=100;
-      else document.getElementById('zoomA').value=100;
-      const zone=document.getElementById('zone-'+which);
-      zone.classList.add('filled');
-      let old=zone.querySelector('img.thumb'); if(old)old.remove();
-      const th=document.createElement('img'); th.className='thumb'; th.src=ev.target.result;
-      zone.insertBefore(th,zone.querySelector('.zone-tag'));
-      if(S.beforeImg&&S.afterImg) runDetect();
-      else setSt(which==='before'?'Before loaded — now choose the after photo.':'After loaded — now choose the before photo.','warn');
-    };
-    img.src=ev.target.result;
-  };
-  r.readAsDataURL(file);
-}
-['before','after'].forEach(w=>{
-  document.getElementById('input-'+w).addEventListener('change',e=>loadFile(e.target.files[0],w));
-  document.getElementById('change-'+w).addEventListener('change',e=>loadFile(e.target.files[0],w));
-});
-
-function initFM(){
-  return new Promise(res=>{
-    const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
-    fm.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
-    fm.initialize().then(()=>{S.fm=fm;res(fm);});
-  });
-}
-function detect(img){
-  return new Promise(async(res,rej)=>{
-    S.fm.onResults(r=>{
-      if(r.multiFaceLandmarks?.length>0)res(r.multiFaceLandmarks[0]);
-      else rej(new Error('no face'));
+  function toggleNav(btn){
+    var m=document.getElementById('navMobile');
+    var open=m.classList.toggle('open');
+    btn.setAttribute('aria-expanded',open?'true':'false');
+    btn.querySelector('svg').innerHTML=open
+      ?'<line x1="2" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="20" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+      :'<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
+  }
+  document.getElementById('navMobile').querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click',function(){
+      document.getElementById('navMobile').classList.remove('open');
+      var btn=document.querySelector('.nav-toggle');
+      if(btn){btn.setAttribute('aria-expanded','false');btn.querySelector('svg').innerHTML='<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';}
     });
-    const c=document.createElement('canvas');
-    c.width=img.naturalWidth; c.height=img.naturalHeight;
-    c.getContext('2d').drawImage(img,0,0);
-    await S.fm.send({image:c});
   });
-}
-
-async function runDetect(){
-  setSt('Analysing photos…','spin'); setProg(15);
-  if(!S.fm) await initFM();
-  let warns=[];
-  for(const w of['before','after']){
-    try{
-      setProg(w==='before'?35:65);
-      if(w==='before') S.bLm=await detect(S.beforeImg);
-      else S.aLm=await detect(S.afterImg);
-    }catch{warns.push(w);}
-  }
-  setProg(100);
-  document.getElementById('cropSection').classList.add('visible');
-  document.getElementById('cropSection').scrollIntoView({behavior:'smooth',block:'start'});
-  S.bPan={x:0,y:0}; S.aPan={x:0,y:0};
-  renderPreviews();
-  setupDrag('cvBefore','b');
-  setupDrag('cvAfter','a');
-  if(warns.length===0) setSt('Face detected — choose your crop area.','ok');
-  else if(warns.length===2) setSt('Profile or angled photos — centre crop applied.','warn');
-  else setSt(`Could not detect face in ${warns[0]} photo — centre crop applied.`,'warn');
-  setProg(0);
-}
-
-function selPreset(k){
-  S.preset=k;
-  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`[data-preset="${k}"]`).classList.add('active');
-  renderPreviews();
-}
-
-function selWmPos(pos){
-  // Watermark text is the clinic/injector name, so the position picker only
-  // applies when at least one name is present.
-  if(document.getElementById('wmPosGrid').classList.contains('disabled')) return;
-  S.wmPos=pos;
-  document.querySelectorAll('.wm-pos-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`[data-pos="${pos}"]`).classList.add('active');
-}
-
-// Enable the watermark position picker only when a clinic or injector name is set.
-function updateWmPosState(){
-  const hasName = !!(
-    (document.getElementById('clinicName').value || '').trim() ||
-    (document.getElementById('injectorName').value || '').trim()
-  );
-  const grid = document.getElementById('wmPosGrid');
-  const hint = document.getElementById('wmPosHint');
-  if(grid){
-    grid.classList.toggle('disabled', !hasName);
-    grid.querySelectorAll('.wm-pos-btn').forEach(b => { b.disabled = !hasName; });
-  }
-  if(hint) hint.style.display = hasName ? 'none' : 'block';
-}
-['clinicName','injectorName'].forEach(id => {
-  const el = document.getElementById(id);
-  if(el) el.addEventListener('input', updateWmPosState);
-});
-updateWmPosState();
-
-function onZoom(which,val){
-  const pct=parseInt(val);
-  if(which==='before'){
-    S.bZoom=pct/100;
-    document.getElementById('zoomBVal').textContent=pct+'%';
-  } else {
-    S.aZoom=pct/100;
-    document.getElementById('zoomAVal').textContent=pct+'%';
-  }
-  renderPreviews();
-}
-
-// Eye distance in pixels
-function eyeDistPx(lm,imgW){
-  return Math.abs(lm[REYE].x-lm[LEYE].x)*imgW;
-}
-
-// Base crop box from landmarks
-function lmToBaseBox(lm,iw,ih,preset){
-  const px=i=>({x:lm[i].x*iw,y:lm[i].y*ih});
-  const nose=px(NOSE),chin=px(CHIN),le=px(LEYE),re=px(REYE);
-  const browL=px(BROWL),browR=px(BROWR),jawL=px(JAWL),jawR=px(JAWR);
-  const browY=(browL.y+browR.y)/2;
-  const foreY=browY-(nose.y-browY)*0.85;
-  const faceH=chin.y-browY;
-  const eyeDist=Math.abs(re.x-le.x);
-  const eyeRatio=eyeDist/iw;
-  const isProfile=eyeRatio<0.07;
-  const isAngled=eyeRatio>=0.07&&eyeRatio<0.14;
-  const cx=(le.x+re.x)/2;
-  const jawW=jawR.x-jawL.x;
-  const facingLeft=nose.x<cx;
-  let halfW,cxAdjusted;
-  if(isProfile){
-    halfW=Math.max(eyeDist*4.2,iw*0.35);
-    cxAdjusted=cx+(facingLeft?halfW*0.18:-halfW*0.18);
-  } else if(isAngled){
-    halfW=Math.max(jawW*0.88,eyeDist*2.2);
-    const earShift=halfW*0.14;
-    cxAdjusted=cx+(facingLeft?earShift:-earShift);
-  } else {
-    halfW=jawW*0.65;
-    cxAdjusted=cx;
-  }
-  let top,bot;
-  // Full Face: generous crown/hairline headroom and a little neck room. The box
-  // is then normalized to a fixed 4:5 portrait panel below.
-  if(preset==='full') {top=foreY-faceH*.42;bot=chin.y+faceH*.28;}
-  if(preset==='lower'){top=nose.y-faceH*.10;bot=chin.y+faceH*.38;}
-  if(preset==='upper'){top=foreY-faceH*.15;bot=nose.y-faceH*.05;}
-  if(preset==='eyes') {top=browY-faceH*.20;bot=nose.y+faceH*.08;}
-  const box={x:cxAdjusted-halfW,y:top,w:halfW*2,h:bot-top,cx:cxAdjusted,cy:(top+bot)/2};
-  if(preset==='full'){
-    // Frame Full Face to a fixed 4:5 portrait. Expand the deficient dimension to
-    // reach the ratio so the face is never cropped just to fit it.
-    const targetAR=4/5;
-    const ar=box.w/box.h;
-    if(ar<targetAR) box.w=box.h*targetAR;        // too narrow -> widen
-    else if(ar>targetAR) box.h=box.w/targetAR;   // too wide -> add height
-    box.x=box.cx-box.w/2;
-    box.y=box.cy-box.h/2;
-  }
-  return box;
-}
-
-function fallbackBox(iw,ih,preset){
-  const p={full:[.03,.96,.08,.92],lower:[.40,.90,.08,.92],upper:[.03,.40,.08,.92],eyes:[.25,.56,.08,.92]};
-  const[t,b,l,r]=p[preset];
-  return{x:l*iw,y:t*ih,w:(r-l)*iw,h:(b-t)*ih,cx:(l+r)/2*iw,cy:(t+b)/2*ih};
-}
-
-// Scale-normalized box + zoom applied
-function getScaledBox(which,targetEyePx){
-  const img=which==='before'?S.beforeImg:S.afterImg;
-  const lm=which==='before'?S.bLm:S.aLm;
-  const zoom=which==='before'?S.bZoom:S.aZoom;
-  const iw=img.naturalWidth,ih=img.naturalHeight;
-  if(!lm) {
-    const fb=fallbackBox(iw,ih,S.preset);
-    // Apply zoom to fallback
-    const nw=fb.w/zoom, nh=fb.h/zoom;
-    return{x:Math.max(0,fb.cx-nw/2),y:Math.max(0,fb.cy-nh/2),w:Math.min(nw,iw),h:Math.min(nh,ih)};
-  }
-  const base=lmToBaseBox(lm,iw,ih,S.preset);
-  const thisEyePx=eyeDistPx(lm,iw);
-  if(!thisEyePx||thisEyePx<1) return fallbackBox(iw,ih,S.preset);
-  const scale=(targetEyePx/thisEyePx)/zoom;
-  const newW=base.w*scale, newH=base.h*scale;
-  const newX=base.cx-newW/2, newY=base.cy-newH/2;
-  return{
-    x:Math.max(0,Math.min(newX,iw-newW)),
-    y:Math.max(0,Math.min(newY,ih-newH)),
-    w:Math.min(newW,iw),
-    h:Math.min(newH,ih)
-  };
-}
-
-function getBothBoxes(){
-  const bHasLm=!!S.bLm, aHasLm=!!S.aLm;
-  let target;
-  if(bHasLm&&aHasLm){
-    const bEye=eyeDistPx(S.bLm,S.beforeImg.naturalWidth);
-    const aEye=eyeDistPx(S.aLm,S.afterImg.naturalWidth);
-    // Use MAX so both normalize to the larger face scale for consistent alignment
-    target=Math.max(bEye,aEye);
-  } else if(bHasLm){
-    target=eyeDistPx(S.bLm,S.beforeImg.naturalWidth);
-  } else if(aHasLm){
-    target=eyeDistPx(S.aLm,S.afterImg.naturalWidth);
-  }
-  // Always go through getScaledBox so zoom applies even for fallback (no landmarks)
-  // Use a dummy target of 100 when no landmarks at all
-  return{
-    bBox:getScaledBox('before', target||100),
-    aBox:getScaledBox('after',  target||100)
-  };
-}
-
-function clampBox(box, img){
-  return{
-    x:Math.max(0,Math.min(box.x,img.naturalWidth-box.w)),
-    y:Math.max(0,Math.min(box.y,img.naturalHeight-box.h)),
-    w:box.w, h:box.h
-  };
-}
-
-function renderPreviews(){
-  if(!S.beforeImg||!S.afterImg)return;
-  const{bBox,aBox}=getBothBoxes();
-  const pH=460;
-  const aspect=(bBox.w/bBox.h+aBox.w/aBox.h)/2;
-  const pW=Math.round(pH*aspect);
-  // Apply pan offsets with clamping
-  const bBoxP=clampBox({...bBox,x:bBox.x+S.bPan.x,y:bBox.y+S.bPan.y},S.beforeImg);
-  const aBoxP=clampBox({...aBox,x:aBox.x+S.aPan.x,y:aBox.y+S.aPan.y},S.afterImg);
-  drawToCanvas(document.getElementById('cvBefore'),S.beforeImg,bBoxP,pW,pH,1);
-  drawToCanvas(document.getElementById('cvAfter'), S.afterImg, aBoxP,pW,pH,1);
-}
-
-// Setup drag-to-pan on a preview canvas
-// Guards against attaching duplicate listeners if called multiple times
-// (runDetect() runs on every photo change — without this guard, listeners stack up)
-function setupDrag(canvasId, which){
-  const cv=document.getElementById(canvasId);
-  if(cv.dataset.dragInit==='1') return;
-  cv.dataset.dragInit='1';
-  let drag=null;
-  const start=e=>{
-    e.preventDefault();
-    const pt=e.touches?e.touches[0]:e;
-    drag={sx:pt.clientX,sy:pt.clientY,ox:S[which+'Pan'].x,oy:S[which+'Pan'].y};
-  };
-  const move=e=>{
-    if(!drag)return; e.preventDefault();
-    const pt=e.touches?e.touches[0]:e;
-    const{bBox,aBox}=getBothBoxes();
-    const box=which==='b'?bBox:aBox;
-    const scale=box.w/cv.offsetWidth;
-    const newPx=drag.ox-(pt.clientX-drag.sx)*scale;
-    const newPy=drag.oy-(pt.clientY-drag.sy)*scale;
-    S[which+'Pan'].x=Math.max(-box.w*.3,Math.min(newPx,box.w*.3));
-    S[which+'Pan'].y=Math.max(-box.h*.3,Math.min(newPy,box.h*.3));
-    renderPreviews();
-  };
-  const end=()=>{drag=null;};
-  cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); cv.addEventListener('mouseup',end); cv.addEventListener('mouseleave',end);
-  cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
-  cv.style.cursor='grab';
-}
-
-function drawToCanvas(cv,img,box,tw,th,bf){
-  cv.width=tw; cv.height=th;
-  const ctx=cv.getContext('2d');
-  ctx.drawImage(img,box.x,box.y,box.w,box.h,0,0,tw,th);
-  if(bf&&bf!==1){
-    const id=ctx.getImageData(0,0,tw,th);
-    for(let i=0;i<id.data.length;i+=4){id.data[i]=Math.min(255,id.data[i]*bf);id.data[i+1]=Math.min(255,id.data[i+1]*bf);id.data[i+2]=Math.min(255,id.data[i+2]*bf);}
-    ctx.putImageData(id,0,0);
-  }
-}
-
-function avgBright(ctx,w,h){
-  const d=ctx.getImageData(0,0,w,h).data; let s=0;
-  for(let i=0;i<d.length;i+=4)s+=.299*d[i]+.587*d[i+1]+.114*d[i+2];
-  return s/(d.length/4);
-}
-
-function drawWatermark(ctx,cW,cH,clinic,inj,pos){
-  const lines=[clinic,inj].filter(Boolean); if(!lines.length)return;
-
-  // Tiled mode — repeating diagonal watermark across full canvas
-  if(pos==='tile'){
-    const fs=Math.max(18,Math.round(cH*.018));
-    const text=lines.join('  ·  ');
-    ctx.save();
-    ctx.font=`400 ${fs}px 'DM Sans',sans-serif`;
-    const tw=ctx.measureText(text).width;
-    const spacing=tw+fs*3;
-    const rowH=fs*3.5;
-    ctx.globalAlpha=0.18;
-    ctx.fillStyle='#ffffff';
-    ctx.translate(cW/2,cH/2);
-    ctx.rotate(-Math.PI/6);
-    const cols=Math.ceil((cW+cH)/spacing)+2;
-    const rows=Math.ceil((cW+cH)/rowH)+2;
-    for(let row=-rows;row<=rows;row++){
-      for(let col=-cols;col<=cols;col++){
-        ctx.fillText(text, col*spacing, row*rowH);
-      }
-    }
-    ctx.restore();
-    return;
-  }
-
-  // Single block modes
-  const fs=Math.max(20,Math.round(cH*.022));
-  const lh=fs*1.5,px=18,py=14;
-  ctx.font=`500 ${fs}px 'DM Sans',sans-serif`;
-  const mw=lines.reduce((m,l)=>Math.max(m,ctx.measureText(l).width),0);
-  const bw=mw+px*2, bh=lines.length*lh+py*2;
-  const margin=20;
-  let bx,by;
-  if(pos==='tl')     {bx=margin;by=margin;}
-  else if(pos==='tr'){bx=cW-bw-margin;by=margin;}
-  else if(pos==='bl'){bx=margin;by=cH-bh-margin;}
-  else if(pos==='center'){bx=cW/2-bw/2;by=cH/2-bh/2;}
-  else               {bx=cW-bw-margin;by=cH-bh-margin;} // br
-  ctx.fillStyle='rgba(28,23,20,0.58)';
-  if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,5); else ctx.rect(bx,by,bw,bh);
-  ctx.fill();
-  ctx.textBaseline='top';
-  lines.forEach((line,i)=>{
-    ctx.font=i===0?`500 ${fs}px 'DM Sans',sans-serif`:`300 ${Math.round(fs*.85)}px 'DM Sans',sans-serif`;
-    ctx.fillStyle='rgba(250,247,242,0.92)';
-    ctx.fillText(line,bx+px,by+py+i*lh);
-  });
-}
-
-// ── Image enhancement ─────────────────────────────────────────
-function denoise(ctx, w, h) {
-  // Use canvas blur for natural noise reduction (better than channel scaling)
-  const tmp = document.createElement('canvas');
-  tmp.width=w; tmp.height=h;
-  const tctx=tmp.getContext('2d');
-  tctx.filter='blur(0.7px)';
-  tctx.drawImage(ctx.canvas,0,0);
-  tctx.filter='none';
-  ctx.clearRect(0,0,w,h);
-  ctx.drawImage(tmp,0,0);
-}
-
-function sharpen(ctx, w, h) {
-  const src = ctx.getImageData(0,0,w,h);
-  const dst = ctx.createImageData(w,h);
-  const sd = src.data, dd = dst.data;
-  // Copy source to destination first so edge pixels (which the convolution loop
-  // below skips) are preserved instead of being left transparent/black.
-  dd.set(sd);
-  for(let y=1;y<h-1;y++){
-    for(let x=1;x<w-1;x++){
-      for(let c=0;c<3;c++){
-        const val =
-          sd[((y-1)*w+x)*4+c] * -1 +
-          sd[(y*w+(x-1))*4+c] * -1 +
-          sd[(y*w+x)*4+c]     *  5 +
-          sd[(y*w+(x+1))*4+c] * -1 +
-          sd[((y+1)*w+x)*4+c] * -1;
-        dd[(y*w+x)*4+c] = Math.min(255,Math.max(0,val));
-      }
-      dd[(y*w+x)*4+3] = 255;
-    }
-  }
-  ctx.putImageData(dst,0,0);
-}
-
-function applyEnhancement(ctx, w, h, level) {
-  if(level === 0) return;
-  denoise(ctx, w, h);
-  sharpen(ctx, w, h);
-  if(level === 2) sharpen(ctx, w, h); // second pass for strong
-}
-
-function generate(){
-  const{bBox,aBox}=getBothBoxes();
-  // Apply pan offsets to final render
-  const bBoxF=clampBox({...bBox,x:bBox.x+S.bPan.x,y:bBox.y+S.bPan.y},S.beforeImg);
-  const aBoxF=clampBox({...aBox,x:aBox.x+S.aPan.x,y:aBox.y+S.aPan.y},S.afterImg);
-  const norm=document.getElementById('norm').value==='1';
-  const layout=document.getElementById('layout').value;
-  const clinic=document.getElementById('clinicName').value.trim();
-  const inj=document.getElementById('injectorName').value.trim();
-  const treatment=document.getElementById('treatmentLabel').value.trim();
-  const fmt=document.getElementById('exportFormat').value;
-
-  // Panel dimensions: always use natural crop aspect ratio — NO stretching
-  // Both panels use averaged aspect ratio so they match each other
-  const cropAspect=bBoxF.w/bBoxF.h; // use before as reference — more stable
-  const panelH=1080;
-  const panelW=Math.round(panelH*cropAspect);
-
-  // Canvas panels — draw at natural aspect, no distortion
-  const cB=document.createElement('canvas'); cB.width=panelW; cB.height=panelH;
-  const cA=document.createElement('canvas'); cA.width=panelW; cA.height=panelH;
-  cB.getContext('2d').drawImage(S.beforeImg,bBoxF.x,bBoxF.y,bBoxF.w,bBoxF.h,0,0,panelW,panelH);
-  cA.getContext('2d').drawImage(S.afterImg, aBoxF.x,aBoxF.y,aBoxF.w,aBoxF.h,0,0,panelW,panelH);
-  const enhance=parseInt(document.getElementById('enhance').value);
-  // Enhancement applied to after only — keeps before raw, halves compute time
-  applyEnhancement(cA.getContext('2d'),panelW,panelH,enhance);
-
-  if(norm){
-    const ab=avgBright(cB.getContext('2d'),panelW,panelH),aa=avgBright(cA.getContext('2d'),panelW,panelH);
-    const f=Math.max(.72,Math.min(1.38,ab/aa));
-    // Apply brightness directly — don't redraw from source (would wipe enhancement)
-    const ctxA=cA.getContext('2d');
-    const id=ctxA.getImageData(0,0,panelW,panelH);
-    for(let i=0;i<id.data.length;i+=4){
-      id.data[i]=Math.min(255,id.data[i]*f);
-      id.data[i+1]=Math.min(255,id.data[i+1]*f);
-      id.data[i+2]=Math.min(255,id.data[i+2]*f);
-    }
-    ctxA.putImageData(id,0,0);
-  }
-  const gap=4,oc=document.getElementById('outputCanvas');
-  // Composite dimensions
-  const compW=layout==='side'?panelW*2+gap:panelW;
-  const compH=layout==='side'?panelH:panelH*2+gap;
-
-  // Format letterboxing — fit composite into target format with black bars
-  let oW=compW, oH=compH, offX=0, offY=0;
-  if(fmt==='square')  { oW=1080; oH=1080; }
-  else if(fmt==='story'){ oW=1080; oH=1920; }
-  else if(fmt==='portrait'){ oW=1080; oH=1350; }
-  // else 'free' — use composite dimensions as-is
-
-  if(fmt!=='free'){
-    const scale=Math.min(oW/compW, oH/compH);
-    const sw=Math.round(compW*scale), sh=Math.round(compH*scale);
-    offX=Math.round((oW-sw)/2); offY=Math.round((oH-sh)/2);
-  }
-  oc.width=oW; oc.height=oH;
-  const ctx=oc.getContext('2d');
-  ctx.fillStyle='#1C1714'; ctx.fillRect(0,0,oW,oH);
-  const bM=document.getElementById('beforeMonth').value, bY=document.getElementById('beforeYear').value;
-  const aM=document.getElementById('afterMonth').value,  aY=document.getElementById('afterYear').value;
-  const beforeDate=[bM,bY].filter(Boolean).join(' ');
-  const afterDate=[aM,aY].filter(Boolean).join(' ');
-
-  // Draw composite onto output canvas (with letterbox offset if formatted)
-  const compCanvas=document.createElement('canvas');
-  compCanvas.width=compW; compCanvas.height=compH;
-  const cctx=compCanvas.getContext('2d');
-  cctx.fillStyle='#1C1714'; cctx.fillRect(0,0,compW,compH);
-
-  if(layout==='side'){
-    cctx.drawImage(cB,0,0,panelW,panelH);
-    cctx.drawImage(cA,panelW+gap,0,panelW,panelH);
-
-    // BEFORE/AFTER labels + dates
-    function drawCompLabel(ox,oy,pw,ph,label,date){
-      const gradH=date?100:70;
-      const g=cctx.createLinearGradient(ox,oy+ph-gradH,ox,oy+ph);
-      g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.85)');
-      cctx.fillStyle=g;cctx.fillRect(ox,oy+ph-gradH,pw,gradH);
-      cctx.fillStyle='rgba(250,247,242,.92)';
-      cctx.font='600 32px "DM Sans",sans-serif';
-      cctx.letterSpacing='2px';
-      cctx.fillText(label,ox+24,oy+ph-22);
-      cctx.letterSpacing='0px';
-      if(date){cctx.font='300 22px "DM Sans",sans-serif';cctx.fillStyle='rgba(250,247,242,.65)';cctx.fillText(date,ox+24,oy+ph-60);}
-    }
-    drawCompLabel(0,0,panelW,panelH,'BEFORE',beforeDate);
-    drawCompLabel(panelW+gap,0,panelW,panelH,'AFTER',afterDate);
-
-    // Treatment label — editorial text, no pill, restrained
-    if(treatment){
-      const tfs=Math.round(panelH*0.022);
-      cctx.save();
-      cctx.font=`300 ${tfs}px "DM Sans",sans-serif`;
-      cctx.letterSpacing='2px';
-      cctx.textAlign='center';
-      cctx.textBaseline='top';
-      // Subtle shadow so text reads on any background
-      cctx.shadowColor='rgba(0,0,0,0.55)';
-      cctx.shadowBlur=8;
-      cctx.fillStyle='rgba(250,247,242,0.82)';
-      cctx.fillText(treatment.toUpperCase(), compW/2, Math.round(panelH*0.028));
-      cctx.restore();
-    }
-
-    drawWatermark(cctx,compW,compH,clinic,inj,S.wmPos);
-    if(S.logoImg) drawLogo(cctx,compW,compH,S.logoImg,document.getElementById('logoPos').value);
-  }else{
-    cctx.drawImage(cB,0,0,panelW,panelH);
-    cctx.drawImage(cA,0,panelH+gap,panelW,panelH);
-
-    function drawCompLabel(ox,oy,pw,ph,label,date){
-      const gradH=date?100:70;
-      const g=cctx.createLinearGradient(ox,oy+ph-gradH,ox,oy+ph);
-      g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.85)');
-      cctx.fillStyle=g;cctx.fillRect(ox,oy+ph-gradH,pw,gradH);
-      cctx.fillStyle='rgba(250,247,242,.92)';
-      cctx.font='600 32px "DM Sans",sans-serif';
-      cctx.letterSpacing='2px';
-      cctx.fillText(label,ox+24,oy+ph-22);
-      cctx.letterSpacing='0px';
-      if(date){cctx.font='300 22px "DM Sans",sans-serif';cctx.fillStyle='rgba(250,247,242,.65)';cctx.fillText(date,ox+24,oy+ph-60);}
-    }
-    drawCompLabel(0,0,panelW,panelH,'BEFORE',beforeDate);
-    drawCompLabel(0,panelH+gap,panelW,panelH,'AFTER',afterDate);
-
-    // Treatment label — editorial text, no pill, restrained
-    if(treatment){
-      const tfs=Math.round(panelH*0.022);
-      cctx.save();
-      cctx.font=`300 ${tfs}px "DM Sans",sans-serif`;
-      cctx.letterSpacing='2px';
-      cctx.textAlign='center';
-      cctx.textBaseline='top';
-      // Subtle shadow so text reads on any background
-      cctx.shadowColor='rgba(0,0,0,0.55)';
-      cctx.shadowBlur=8;
-      cctx.fillStyle='rgba(250,247,242,0.82)';
-      cctx.fillText(treatment.toUpperCase(), compW/2, Math.round(panelH*0.028));
-      cctx.restore();
-    }
-
-    drawWatermark(cctx,compW,compH,clinic,inj,S.wmPos);
-    if(S.logoImg) drawLogo(cctx,compW,compH,S.logoImg,document.getElementById('logoPos').value);
-  }
-
-  // Stamp composite onto output canvas (letterboxed into chosen format)
-  if(fmt==='free'){
-    oc.width=compW; oc.height=compH;
-    ctx.fillStyle='#1C1714'; ctx.fillRect(0,0,compW,compH);
-    ctx.drawImage(compCanvas,0,0);
-  } else {
-    const scale=Math.min(oW/compW,oH/compH);
-    const sw=Math.round(compW*scale),sh=Math.round(compH*scale);
-    const ox2=Math.round((oW-sw)/2),oy2=Math.round((oH-sh)/2);
-    ctx.drawImage(compCanvas,ox2,oy2,sw,sh);
-  }
-
-  document.getElementById('outputSection').classList.add('visible');
-  document.getElementById('outputSection').scrollIntoView({behavior:'smooth'});
-  setSt('Done — your image is ready to download.','ok');
-}
-
-// ── Multi-format export ───────────────────────────────────────
-function downloadFormat(format) {
-  const src = document.getElementById('outputCanvas');
-  const sw = src.width, sh = src.height;
-  let tw, th;
-
-  if(format === 'square') {
-    const size = 1080;
-    tw = size; th = size;
-  } else if(format === 'story') {
-    tw = 1080; th = 1920;
-  } else {
-    // original — direct download
-    const a = document.createElement('a');
-    a.download = 'before-after.jpg';
-    a.href = src.toDataURL('image/jpeg', .95);
-    a.click();
-    return;
-  }
-
-  // Create export canvas with black background, image centered
-  const ec = document.createElement('canvas');
-  ec.width = tw; ec.height = th;
-  const ectx = ec.getContext('2d');
-  ectx.fillStyle = '#1C1714';
-  ectx.fillRect(0, 0, tw, th);
-
-  // Fit image within target, centered
-  const scale = Math.min(tw/sw, th/sh);
-  const dw = Math.round(sw*scale), dh = Math.round(sh*scale);
-  const dx = Math.round((tw-dw)/2), dy = Math.round((th-dh)/2);
-  ectx.drawImage(src, dx, dy, dw, dh);
-
-  const a = document.createElement('a');
-  a.download = `before-after-${format}.jpg`;
-  a.href = ec.toDataURL('image/jpeg', .95);
-  a.click();
-}
-
-// ── Brand profile (localStorage) ─────────────────────────────
-// ── Logo upload ───────────────────────────────────────────────
-S.logoImg = null;
-S.logoDataUrl = null;
-
-document.getElementById('logoUpload').addEventListener('change', function(e) {
-  const file = e.target.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
-      S.logoImg = img; S.logoDataUrl = ev.target.result;
-      document.getElementById('logoFileName').textContent = file.name;
-      document.getElementById('logoClearBtn').style.display = 'inline';
-      document.getElementById('logoPosField').style.display = 'block';
-      try { localStorage.setItem('skinday_logo', ev.target.result); } catch(e) {}
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-});
-
-function clearLogo() {
-  S.logoImg = null; S.logoDataUrl = null;
-  document.getElementById('logoFileName').textContent = 'No logo';
-  document.getElementById('logoClearBtn').style.display = 'none';
-  document.getElementById('logoPosField').style.display = 'none';
-  document.getElementById('logoUpload').value = '';
-  try { localStorage.removeItem('skinday_logo'); } catch(e) {}
-}
-
-function drawLogo(ctx, canvasW, canvasH, logo, pos) {
-  if(!logo) return;
-  const maxH = Math.round(canvasH * 0.08);
-  const scale = maxH / logo.naturalHeight;
-  const lw = Math.round(logo.naturalWidth * scale);
-  const lh = maxH;
-  const margin = 24;
-  let lx, ly;
-  if(pos==='tl')          { lx=margin;             ly=margin; }
-  else if(pos==='tr')     { lx=canvasW-lw-margin;  ly=margin; }
-  else if(pos==='bl')     { lx=margin;             ly=canvasH-lh-margin; }
-  else if(pos==='center') { lx=Math.round((canvasW-lw)/2); ly=Math.round((canvasH-lh)/2); }
-  else                    { lx=canvasW-lw-margin;  ly=canvasH-lh-margin; }
-  ctx.drawImage(logo, lx, ly, lw, lh);
-}
-
-function saveSettings(){
-  const s={
-    clinic:    document.getElementById('clinicName').value.trim(),
-    injector:  document.getElementById('injectorName').value.trim(),
-    treatment: document.getElementById('treatmentLabel').value.trim(),
-    wmPos:     S.wmPos,
-    layout:    document.getElementById('layout').value,
-    format:    document.getElementById('exportFormat').value,
-    norm:      document.getElementById('norm').value,
-    enhance:   document.getElementById('enhance').value,
-  };
-  localStorage.setItem('skinday_studio', JSON.stringify(s));
-  // Update both save buttons
-  const msg=document.getElementById('saveMsg');
-  if(msg){msg.textContent='Settings saved ✓';setTimeout(()=>{msg.textContent='';},2500);}
-  const bs=document.getElementById('brandSaved');
-  if(bs){bs.style.display='inline';setTimeout(()=>{bs.style.display='none';},2500);}
-}
-
-// Keep saveBrand as alias
-const saveBrand = saveSettings;
-
-// New case — clears photos, treatment label, and dates, but preserves brand profile
-// (clinic name, injector, logo, layout, format, watermark position, enhancement, etc.)
-function newCase(){
-  // Clear image state
-  S.beforeImg=null; S.afterImg=null;
-  S.bLm=null; S.aLm=null;
-  S.bZoom=1.0; S.aZoom=1.0;
-  S.bPan={x:0,y:0}; S.aPan={x:0,y:0};
-
-  // Reset upload zones
-  ['before','after'].forEach(w=>{
-    const zone=document.getElementById('zone-'+w);
-    zone.classList.remove('filled');
-    const thumb=zone.querySelector('img.thumb');
-    if(thumb) thumb.remove();
-    const input=document.getElementById('input-'+w);
-    if(input) input.value='';
-    const changeInput=document.getElementById('change-'+w);
-    if(changeInput) changeInput.value='';
-  });
-
-  // Clear treatment + dates (case-specific, shouldn't carry over)
-  const treatment=document.getElementById('treatmentLabel');
-  if(treatment) treatment.value='';
-  ['beforeMonth','beforeYear','afterMonth','afterYear'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.value='';
-  });
-
-  // Reset zoom sliders to 100%
-  const zB=document.getElementById('zoomB'); if(zB) zB.value=100;
-  const zA=document.getElementById('zoomA'); if(zA) zA.value=100;
-  const zBVal=document.getElementById('zoomBVal'); if(zBVal) zBVal.textContent='100%';
-  const zAVal=document.getElementById('zoomAVal'); if(zAVal) zAVal.textContent='100%';
-
-  // Hide crop and output sections
-  document.getElementById('cropSection').classList.remove('visible');
-  document.getElementById('outputSection').classList.remove('visible');
-
-  // Reset status and scroll to top of page
-  setSt('Choose a before and after photo to begin','idle');
-  setProg(0);
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-
-function loadSettings(){
-  try{
-    const raw=localStorage.getItem('skinday_studio'); if(!raw)return;
-    const s=JSON.parse(raw);
-    if(s.clinic)    document.getElementById('clinicName').value=s.clinic;
-    if(s.injector)  document.getElementById('injectorName').value=s.injector;
-    if(s.treatment) document.getElementById('treatmentLabel').value=s.treatment;
-    if(s.layout)    document.getElementById('layout').value=s.layout;
-    if(s.format)    document.getElementById('exportFormat').value=s.format;
-    if(s.norm)      document.getElementById('norm').value=s.norm;
-    if(s.enhance)   document.getElementById('enhance').value=s.enhance;
-    updateWmPosState(); // names may now be set, so enable the picker before restoring position
-    if(s.wmPos)     selWmPos(s.wmPos);
-  }catch(e){}
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  loadSettings();
-  // Restore logo from localStorage
-  try {
-    const savedLogo = localStorage.getItem('skinday_logo');
-    if(savedLogo) {
-      const img = new Image();
-      img.onload = () => {
-        S.logoImg = img; S.logoDataUrl = savedLogo;
-        document.getElementById('logoFileName').textContent = 'Logo loaded';
-        document.getElementById('logoClearBtn').style.display = 'inline';
-        document.getElementById('logoPosField').style.display = 'block';
-      };
-      img.src = savedLogo;
-    }
-  } catch(e) {}
-
-  // Wire up consent checkbox to enable/disable Generate button
-  const consent = document.getElementById('consentCheck');
-  const genBtn = document.getElementById('genBtn');
-  if(consent && genBtn) {
-    // Restore session consent so clinics aren't re-prompted every case
-    try {
-      if(sessionStorage.getItem('skinday_consent') === '1') {
-        consent.checked = true;
-        genBtn.disabled = false;
-      }
-    } catch(e) {}
-    consent.addEventListener('change', () => {
-      genBtn.disabled = !consent.checked;
-      try {
-        if(consent.checked) sessionStorage.setItem('skinday_consent','1');
-        else sessionStorage.removeItem('skinday_consent');
-      } catch(e) {}
-    });
-  }
-});
+  (function(){
+    var els=document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});
+    },{threshold:.12});
+    els.forEach(function(e){io.observe(e);});
+  })();
 </script>
 </body>
 </html>
