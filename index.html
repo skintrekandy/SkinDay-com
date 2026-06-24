@@ -3,151 +3,102 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>SkinDay -- Grow your aesthetic practice</title>
-<meta name="description" content="SkinDay helps aesthetic clinics worldwide grow. Studio for branded before-and-afters. Visualize for AI consultation previews that convert. Built for clinics, by clinicians.">
+<title>SkinDay — Grow your aesthetic practice</title>
+<meta name="description" content="SkinDay helps aesthetic clinics worldwide grow. Studio for branded before-and-afters. Visualize for AI consultation previews that convert.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="shortcut icon" href="/favicon.ico">
 <style>
   :root{
-    --deep:#1C1714;
-    --deep-soft:#2A231E;
-    --cream:#FAF7F2;
-    --warm:#F0EAE1;
-    --rose:#C8725A;
-    --gold:#C9A96E;
-    --muted:#8A7F76;
-    --line:rgba(28,23,20,.12);
-    --line-light:rgba(250,247,242,.16);
+    --deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;
+    --rose:#C8725A;--gold:#C9A96E;
+    --deep2:#241E1A;
+    --rose-m:#D4896E;
+    --rose-bg:#F5E8E3;
+    --border:#EAE2D8;
+    --hero-border:rgba(201,169,110,.25);--muted:#8A7F76;
+    --line:rgba(28,23,20,.12);--line-light:rgba(250,247,242,.16);
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
-  body{
-    font-family:'DM Sans',system-ui,sans-serif;
-    background:var(--cream);
-    color:var(--deep);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
-  }
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
   .serif{font-family:'Cormorant Garamond',Georgia,serif;}
   .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
 
+  /* language: chinese body font */
+  body.zh{font-family:'Noto Serif TC','DM Sans',system-ui,sans-serif;}
+  body.zh .serif{font-family:'Noto Serif TC',Georgia,serif;}
+  body.zh .hero h1{letter-spacing:0;font-size:clamp(2.4rem,5.4vw,4.3rem);}
+  body.zh .card p, body.zh .builder-grid p, body.zh .global-col p, body.zh .closing p{letter-spacing:.02em;line-height:1.8;}
+
+  /* lang toggle */
+  .lang-toggle{
+    display:flex;align-items:center;gap:0;
+    border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;
+    font-size:.78rem;font-weight:500;flex-shrink:0;
+  }
+  .lang-btn{
+    padding:6px 11px;cursor:pointer;background:none;border:none;
+    color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;
+    font-weight:500;transition:background .2s,color .2s;letter-spacing:.03em;
+  }
+  .lang-btn.active{background:rgba(250,247,242,.14);color:var(--cream);}
+  .lang-btn:hover:not(.active){color:var(--gold);}
+  .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
+
   /* nav */
-  .site-nav{
-    position:sticky;top:0;z-index:100;
-    background:rgba(28,23,20,.96);
-    backdrop-filter:blur(12px);
-    -webkit-backdrop-filter:blur(12px);
-    border-bottom:1px solid var(--line-light);
-  }
-  .nav-inner{
-    display:flex;align-items:center;justify-content:space-between;
-    max-width:1180px;margin:0 auto;padding:18px 28px;
-  }
-  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
+  .site-nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:400;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
   .brand span{color:var(--gold);}
+  .nav-right{display:flex;align-items:center;gap:24px;}
   .nav-links{display:flex;align-items:center;gap:32px;}
   .nav-links a{color:rgba(250,247,242,.78);text-decoration:none;font-size:.9rem;font-weight:400;transition:color .2s;}
   .nav-links a:hover{color:var(--gold);}
-  .nav-cta{
-    border:1px solid rgba(250,247,242,.36);border-radius:2px;
-    padding:8px 17px;color:var(--cream)!important;font-size:.84rem;font-weight:500;
-    transition:border-color .2s,background .2s,color .2s;
-  }
-  .nav-cta:hover{background:var(--gold);border-color:var(--gold);color:var(--deep)!important;}
-
+  .nav-cta{background:var(--rose);border:none;border-radius:4px;padding:8px 17px;color:#fff!important;font-size:.84rem;font-weight:500;transition:background .2s;}
+  .nav-cta:hover{background:var(--rose-m);}
   .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:rgba(250,247,242,.8);}
   .nav-toggle svg{display:block;}
-  .nav-mobile{
-    display:none;background:var(--deep);border-top:1px solid var(--line-light);
-    padding:20px 28px 28px;
-  }
+  .nav-mobile{display:none;background:var(--deep);border-top:1px solid var(--line-light);padding:20px 28px 28px;}
   .nav-mobile.open{display:block;}
-  .nav-mobile a{
-    display:block;color:rgba(250,247,242,.78);text-decoration:none;
-    font-size:1rem;padding:11px 0;border-bottom:1px solid var(--line-light);
-    transition:color .2s;
-  }
-  .nav-mobile a:last-child{border-bottom:none;margin-top:8px;color:var(--gold);font-weight:500;}
+  .nav-mobile a{display:block;color:rgba(250,247,242,.78);text-decoration:none;font-size:1rem;padding:11px 0;border-bottom:1px solid var(--hero-border);transition:color .2s;}
+  .nav-mobile a:last-of-type{border-bottom:none;margin-top:8px;color:var(--gold);font-weight:500;}
   .nav-mobile a:hover{color:var(--cream);}
+  .nav-mobile .lang-toggle{margin-top:18px;width:fit-content;}
+  @media(max-width:760px){.nav-links{display:none;}.nav-toggle{display:block;}}
 
-  @media(max-width:760px){
-    .nav-links{display:none;}
-    .nav-toggle{display:block;}
-  }
+  /* eyebrow */
+  .eyebrow{font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:28px;display:inline-flex;align-items:center;gap:10px;}
+  
+  body.zh .eyebrow{letter-spacing:.12em;}
 
-  /* hero */
-  .hero{
-    position:relative;background:var(--deep);color:var(--cream);
-    padding:96px 0 108px;overflow:hidden;
-  }
-  .hero::before{
-    content:"";position:absolute;top:-20%;right:-8%;width:55%;height:130%;
-    background:radial-gradient(ellipse at center,rgba(201,169,110,.11),transparent 60%);
-    pointer-events:none;
-  }
-  .hero-glow-rose{
-    position:absolute;bottom:-10%;left:-5%;width:38%;height:80%;
-    background:radial-gradient(ellipse at center,rgba(200,114,90,.08),transparent 65%);
-    pointer-events:none;
-  }
-  .hero::after{
-    content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
-    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.45;
-  }
-  .hero-inner{
-    position:relative;z-index:2;
-    display:grid;grid-template-columns:1.05fr 1fr;gap:60px;align-items:center;
-  }
-  .eyebrow{
-    font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;
-    color:var(--gold);font-weight:500;margin-bottom:28px;
-    display:inline-flex;align-items:center;gap:10px;
-  }
-  .eyebrow::before{content:"";display:block;width:22px;height:1px;background:var(--gold);opacity:.7;}
-  .hero h1{
-    font-size:clamp(2.6rem,5.8vw,4.7rem);font-weight:500;line-height:1.04;
-    letter-spacing:-.015em;margin-bottom:28px;
-  }
-  .hero h1 em{font-style:italic;color:var(--gold);}
-  .hero p.lead{
-    font-size:clamp(1rem,1.6vw,1.16rem);color:rgba(250,247,242,.74);
-    max-width:50ch;font-weight:300;margin-bottom:40px;line-height:1.7;
-  }
-  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
-  .btn{
-    display:inline-flex;align-items:center;gap:9px;text-decoration:none;
-    font-size:.93rem;font-weight:500;padding:14px 28px;border-radius:2px;
-    transition:transform .2s,background .2s,border-color .2s,color .2s;cursor:pointer;
-    letter-spacing:.01em;
-  }
+  /* btn */
+  .btn{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-size:.93rem;font-weight:500;padding:14px 28px;border-radius:4px;transition:transform .2s,background .2s,border-color .2s,color .2s;cursor:pointer;letter-spacing:.01em;}
   .btn-primary{background:var(--rose);color:var(--cream);}
-  .btn-primary:hover{background:#b5634d;transform:translateY(-2px);}
+  .btn-primary:hover{background:var(--rose-m);transform:translateY(-1px);}
   .btn-ghost{border:1px solid var(--line-light);color:var(--cream);}
   .btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+  .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
 
-  /* hero right visual */
-  .hero-visual{
-    position:relative;display:flex;flex-direction:column;gap:14px;
-  }
-  .vis-panel{
-    background:rgba(250,247,242,.05);border:1px solid var(--line-light);
-    border-radius:6px;padding:22px 24px;position:relative;overflow:hidden;
-  }
-  .vis-panel::before{
-    content:"";position:absolute;inset:0;
-    background:linear-gradient(135deg,rgba(250,247,242,.03),transparent);
-    pointer-events:none;
-  }
-  .vis-label{
-    font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
-    margin-bottom:14px;display:flex;align-items:center;gap:8px;
-  }
+  /* hero */
+  .hero{position:relative;background:var(--deep);color:var(--cream);padding:96px 0 108px;overflow:hidden;}
+  .hero::before{content:"";position:absolute;top:-20%;right:-8%;width:55%;height:130%;background:radial-gradient(ellipse at center,rgba(201,169,110,.11),transparent 60%);pointer-events:none;}
+  .hero-glow-rose{position:absolute;bottom:-10%;left:-5%;width:38%;height:80%;background:radial-gradient(ellipse at center,rgba(200,114,90,.08),transparent 65%);pointer-events:none;}
+  .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.45;}
+  .hero-inner{position:relative;z-index:2;display:grid;grid-template-columns:1.05fr 1fr;gap:60px;align-items:center;}
+  .hero h1{font-size:clamp(2.6rem,5.8vw,4.7rem);font-weight:300;line-height:1.04;letter-spacing:-.015em;margin-bottom:28px;}
+  .hero h1 em{font-style:italic;color:var(--gold);}
+  .hero p.lead{font-size:clamp(1rem,1.6vw,1.16rem);color:rgba(250,247,242,.74);max-width:50ch;font-weight:300;margin-bottom:40px;line-height:1.7;}
+
+  /* hero visual */
+  .hero-visual{position:relative;display:flex;flex-direction:column;gap:14px;}
+  .vis-panel{background:rgba(250,247,242,.05);border:1px solid var(--line-light);border-radius:6px;padding:22px 24px;position:relative;overflow:hidden;}
+  .vis-panel::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(250,247,242,.03),transparent);pointer-events:none;}
+  .vis-label{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
   .vis-label.past{color:var(--rose);}
   .vis-label.future{color:var(--gold);}
   .vis-label .dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
@@ -160,68 +111,36 @@
   .vis-bar.fill-g2{width:80%;background:linear-gradient(90deg,var(--gold),rgba(201,169,110,.4));}
   .vis-bar.fill-g3{width:50%;background:linear-gradient(90deg,var(--gold),rgba(201,169,110,.4));}
   .vis-caption{font-size:.78rem;color:rgba(250,247,242,.45);margin-top:10px;font-weight:300;}
-  .vis-connector{
-    display:flex;align-items:center;
-  }
+  .vis-connector{display:flex;align-items:center;}
   .vis-conn-line{flex:1;height:1px;background:linear-gradient(90deg,var(--rose),var(--gold));}
-  .vis-conn-node{
-    width:26px;height:26px;border-radius:50%;
-    border:1px solid rgba(250,247,242,.2);
-    background:rgba(250,247,242,.04);
-    display:flex;align-items:center;justify-content:center;
-    font-family:'Cormorant Garamond',serif;font-size:.95rem;color:rgba(250,247,242,.5);
-    flex-shrink:0;
-  }
+  .vis-conn-node{width:26px;height:26px;border-radius:50%;border:1px solid rgba(250,247,242,.2);background:rgba(250,247,242,.04);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:.95rem;color:rgba(250,247,242,.5);flex-shrink:0;}
+  @media(max-width:820px){.hero-inner{grid-template-columns:1fr;gap:48px;}.hero-visual{display:none;}}
 
-  @media(max-width:820px){
-    .hero-inner{grid-template-columns:1fr;gap:48px;}
-    .hero-visual{display:none;}
-  }
-
-  /* temporal spine */
+  /* spine */
   .spine{background:var(--cream);padding:108px 0 116px;}
   .section-head{text-align:center;max-width:44ch;margin:0 auto 80px;}
   .section-head .eyebrow{justify-content:center;color:var(--rose);margin-bottom:18px;}
   .section-head h2{font-size:clamp(2rem,4vw,3rem);font-weight:500;line-height:1.08;letter-spacing:-.01em;}
   .section-head p{color:var(--muted);font-size:1.02rem;margin-top:18px;font-weight:300;line-height:1.7;}
+  body.zh .section-head{max-width:32ch;}
 
-  .axis{
-    display:grid;grid-template-columns:1fr 110px 1fr;gap:0;align-items:start;
-    position:relative;
-  }
-  .axis-line{
-    position:absolute;top:60px;left:calc(50% - 230px);right:calc(50% - 230px);
-    height:1px;background:linear-gradient(90deg,var(--rose),var(--gold));opacity:.5;z-index:0;
-    pointer-events:none;
-  }
+  .axis{display:grid;grid-template-columns:1fr 110px 1fr;gap:0;align-items:start;position:relative;}
+  .axis-line{position:absolute;top:60px;left:calc(50% - 230px);right:calc(50% - 230px);height:1px;background:linear-gradient(90deg,var(--rose),var(--gold));opacity:.5;z-index:0;pointer-events:none;}
   .tool{position:relative;z-index:1;padding:0 24px;}
   .tool.past{padding-left:0;}
   .tool.future{padding-right:0;}
-  .tool .when{
-    font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;font-weight:600;
-    text-align:center;margin-bottom:24px;
-  }
+  .tool .when{font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;font-weight:600;text-align:center;margin-bottom:24px;}
+  body.zh .tool .when{letter-spacing:.1em;}
   .tool.past .when{color:var(--rose);}
   .tool.future .when{color:var(--gold);}
-  .timeline-dot{
-    width:11px;height:11px;border-radius:50%;margin:0 auto 38px;
-    position:relative;z-index:2;flex-shrink:0;
-  }
+  .timeline-dot{width:11px;height:11px;border-radius:50%;margin:0 auto 38px;position:relative;z-index:2;flex-shrink:0;}
   .tool.past .timeline-dot{background:var(--rose);}
   .tool.future .timeline-dot{background:var(--gold);}
-  .timeline-dot::after{
-    content:"";position:absolute;inset:-6px;border-radius:50%;
-    border:1px solid currentColor;opacity:.25;
-  }
+  .timeline-dot::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1px solid currentColor;opacity:.25;}
   .tool.past .timeline-dot::after{border-color:var(--rose);}
   .tool.future .timeline-dot::after{border-color:var(--gold);}
 
-  .card{
-    background:#fff;border:1px solid var(--line);border-radius:6px;
-    padding:36px 32px;
-    box-shadow:0 1px 0 rgba(28,23,20,.03),0 4px 20px -8px rgba(28,23,20,.06);
-    transition:transform .3s,box-shadow .3s;
-  }
+  .card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:36px 32px;box-shadow:0 1px 0 rgba(28,23,20,.03),0 4px 20px -8px rgba(28,23,20,.06);transition:transform .3s,box-shadow .3s;}
   .card:hover{transform:translateY(-4px);box-shadow:0 18px 44px -22px rgba(28,23,20,.26);}
   .card .pname{font-family:'Cormorant Garamond',serif;font-size:1.95rem;font-weight:600;margin-bottom:2px;line-height:1.1;}
   .card .pname .sub{color:var(--gold);}
@@ -232,29 +151,14 @@
   .pill.free{background:rgba(200,114,90,.1);color:var(--rose);}
   .pill.paid{background:rgba(201,169,110,.14);color:#9a7e3f;}
   .pill.privacy{background:rgba(28,23,20,.06);color:var(--muted);}
-  .card a.tool-link{
-    display:inline-flex;align-items:center;gap:7px;text-decoration:none;
-    font-size:.88rem;font-weight:600;color:var(--deep);border-bottom:1px solid var(--gold);
-    padding-bottom:2px;transition:gap .2s,color .2s;
-  }
+  .card a.tool-link{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-size:.88rem;font-weight:600;color:var(--deep);border-bottom:1px solid var(--gold);padding-bottom:2px;transition:gap .2s,color .2s;}
   .card a.tool-link::after{content:" \2192";}
   .card a.tool-link:hover{gap:12px;color:var(--rose);}
 
-  .pivot{
-    display:flex;flex-direction:column;align-items:center;padding-top:38px;
-    position:relative;z-index:1;
-  }
-  .pivot .ring{
-    width:58px;height:58px;border-radius:50%;border:1px solid var(--line);
-    display:flex;align-items:center;justify-content:center;background:var(--cream);
-    font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--muted);
-    margin-bottom:12px;letter-spacing:.08em;
-    box-shadow:0 0 0 6px var(--cream);
-  }
-  .pivot .label{
-    font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;
-    color:var(--muted);text-align:center;font-weight:600;line-height:1.5;
-  }
+  .pivot{display:flex;flex-direction:column;align-items:center;padding-top:38px;position:relative;z-index:1;}
+  .pivot .ring{width:58px;height:58px;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;background:var(--cream);font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--muted);margin-bottom:12px;letter-spacing:.08em;box-shadow:0 0 0 6px var(--cream);}
+  .pivot .label{font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:center;font-weight:600;line-height:1.5;}
+  body.zh .pivot .label{letter-spacing:.08em;font-size:.7rem;}
 
   @media(max-width:860px){
     .axis{grid-template-columns:1fr;gap:0;}
@@ -262,27 +166,19 @@
     .tool,.tool.past,.tool.future{padding:0;}
     .timeline-dot{display:none;}
     .tool .when{margin-bottom:14px;}
-    .pivot{
-      flex-direction:row;gap:0;padding:28px 0;justify-content:center;
-    }
+    .pivot{flex-direction:row;gap:0;padding:28px 0;justify-content:center;}
     .pivot .ring{margin-bottom:0;width:50px;height:50px;box-shadow:none;}
-    .pivot::before,.pivot::after{
-      content:"";flex:1;height:1px;opacity:.35;
-    }
+    .pivot::before,.pivot::after{content:"";flex:1;height:1px;opacity:.35;}
     .pivot::before{background:var(--rose);}
     .pivot::after{background:var(--gold);}
     .pivot .label{display:none;}
     .card{margin-bottom:0;}
   }
 
-  /* builder / trust */
+  /* builder */
   .builder-sec{background:var(--deep);color:var(--cream);padding:104px 0;position:relative;overflow:hidden;}
-  .builder-sec::before{
-    content:"";position:absolute;left:-10%;bottom:-40%;width:50%;height:130%;
-    background:radial-gradient(ellipse at center,rgba(200,114,90,.1),transparent 64%);
-    pointer-events:none;
-  }
-  .builder-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:70px;align-items:center;position:relative;z-index:2;}
+  .builder-sec::before{content:"";position:absolute;left:-10%;bottom:-40%;width:50%;height:130%;background:radial-gradient(ellipse at center,rgba(200,114,90,.1),transparent 64%);pointer-events:none;}
+  .builder-grid{position:relative;z-index:2;max-width:700px;}
   .builder-grid .eyebrow{color:var(--gold);margin-bottom:22px;justify-content:flex-start;}
   .builder-grid h2{font-size:clamp(1.9rem,3.4vw,2.8rem);font-weight:500;line-height:1.12;margin-bottom:24px;}
   .builder-grid h2 em{font-style:italic;color:var(--gold);}
@@ -290,63 +186,20 @@
   .stats{display:flex;gap:44px;margin-top:32px;}
   .stat .n{font-family:'Cormorant Garamond',serif;font-size:2.7rem;font-weight:600;color:var(--gold);line-height:1;}
   .stat .l{font-size:.8rem;color:rgba(250,247,242,.56);margin-top:8px;letter-spacing:.02em;}
-
-  .quote-card{
-    border:1px solid var(--line-light);border-radius:8px;padding:40px 36px;
-    background:rgba(250,247,242,.03);position:relative;
-  }
-  .quote-card::before{
-    content:"\201C";
-    position:absolute;top:-14px;left:32px;
-    font-family:'Cormorant Garamond',serif;font-size:6rem;
-    line-height:1;color:var(--gold);opacity:.22;
-    pointer-events:none;
-  }
-  .quote-card .q{
-    font-family:'Cormorant Garamond',serif;font-size:1.65rem;line-height:1.34;
-    font-style:italic;color:var(--cream);margin-bottom:26px;
-  }
-  .quote-card .who{font-size:.86rem;color:rgba(250,247,242,.6);line-height:1.5;}
-  .quote-card .who b{color:rgba(250,247,242,.88);font-weight:500;display:block;margin-bottom:2px;}
-  .quote-card .clinics{
-    margin-top:26px;padding-top:22px;border-top:1px solid var(--line-light);
-    display:flex;flex-direction:column;gap:10px;
-  }
-  .clinic-badge{
-    display:flex;align-items:center;gap:10px;
-    font-size:.82rem;color:rgba(250,247,242,.58);font-weight:300;
-  }
-  .clinic-badge .cbdot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;}
-
-  @media(max-width:820px){.builder-grid{grid-template-columns:1fr;gap:44px;}.stats{gap:30px;}}
+  @media(max-width:820px){.stats{gap:30px;}}
 
   /* global note */
-  .global-note{
-    background:var(--warm);border-top:1px solid rgba(28,23,20,.08);
-    border-bottom:1px solid rgba(28,23,20,.08);
-    padding:72px 0;
-  }
+  .global-note{background:var(--warm);border-top:1px solid rgba(28,23,20,.08);border-bottom:1px solid rgba(28,23,20,.08);padding:72px 0;}
   .global-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);}
   .global-col{background:var(--warm);padding:38px 40px;}
-  .global-col .gicon{
-    font-size:1.4rem;margin-bottom:16px;color:var(--gold);
-    font-family:'Cormorant Garamond',serif;font-style:italic;
-  }
+  .global-col .gicon{font-size:1.4rem;margin-bottom:16px;color:var(--gold);font-family:'Cormorant Garamond',serif;font-style:italic;}
   .global-col h4{font-size:1.05rem;font-weight:500;margin-bottom:10px;letter-spacing:-.01em;}
   .global-col p{font-size:.92rem;color:var(--muted);font-weight:300;line-height:1.65;}
-  @media(max-width:720px){
-    .global-grid{grid-template-columns:1fr;}
-    .global-col{padding:28px 0;background:transparent;border-bottom:1px solid var(--line);}
-    .global-col:last-child{border-bottom:none;}
-    .global-note{padding:52px 0;}
-  }
+  @media(max-width:720px){.global-grid{grid-template-columns:1fr;}.global-col{padding:28px 0;background:transparent;border-bottom:1px solid var(--line);}.global-col:last-child{border-bottom:none;}.global-note{padding:52px 0;}}
 
-  /* closing cta */
+  /* closing */
   .closing{background:var(--cream);padding:110px 0;text-align:center;}
-  .closing h2{
-    font-size:clamp(2.2rem,4.6vw,3.5rem);font-weight:500;line-height:1.06;
-    max-width:20ch;margin:0 auto 20px;letter-spacing:-.01em;
-  }
+  .closing h2{font-size:clamp(2.2rem,4.6vw,3.5rem);font-weight:500;line-height:1.06;max-width:20ch;margin:0 auto 20px;letter-spacing:-.01em;}
   .closing h2 em{font-style:italic;color:var(--rose);}
   .closing p{color:var(--muted);font-size:1.04rem;font-weight:300;margin-bottom:36px;max-width:44ch;margin-left:auto;margin-right:auto;}
   .closing .btn-primary{background:var(--deep);}
@@ -355,7 +208,7 @@
 
   /* footer */
   footer{background:var(--deep);color:rgba(250,247,242,.7);padding:64px 0 40px;}
-  .foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;padding-bottom:40px;border-bottom:1px solid var(--line-light);}
+  .foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;padding-bottom:40px;border-bottom:1px solid var(--hero-border);}
   .foot-brand{font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:var(--cream);}
   .foot-brand span{color:var(--gold);}
   .foot-tagline{font-family:'DM Sans',sans-serif;font-size:.88rem;color:rgba(250,247,242,.52);margin-top:8px;font-weight:300;max-width:28ch;line-height:1.55;}
@@ -370,39 +223,46 @@
   /* reveal */
   .reveal{opacity:0;transform:translateY(16px);transition:opacity .65s ease,transform .65s ease;}
   .reveal.in{opacity:1;transform:none;}
-
-  @media(prefers-reduced-motion:reduce){
-    .reveal{opacity:1;transform:none;transition:none;}
-    html{scroll-behavior:auto;}
-    .card:hover,.btn-primary:hover{transform:none;}
-  }
-  a:focus-visible,.btn:focus-visible,.nav-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+  @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}.card:hover,.btn-primary:hover{transform:none;}}
+  a:focus-visible,.btn:focus-visible,.nav-toggle:focus-visible,.lang-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 </style>
 </head>
 <body>
 
 <nav class="site-nav" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="/" class="brand"><span>SkinDay</span></a>
-    <div class="nav-links">
-      <a href="/studio">Studio</a>
-      <a href="/visualize">Visualize</a>
-      <a href="#built">About</a>
-      <a href="/studio" class="nav-cta">Try Studio free</a>
+    <a href="/" class="brand">Skin<span>Day</span></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+        <a href="#built" data-en="About" data-zh="關於我們">About</a>
+        <a href="/studio" class="nav-cta" data-en="Try Studio free" data-zh="免費使用 Studio">Try Studio free</a>
+      </div>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <div class="lang-sep"></div>
+        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+      </div>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="0" y1="2" x2="22" y2="2"/>
+          <line x1="0" y1="8" x2="22" y2="8"/>
+          <line x1="0" y1="14" x2="22" y2="14"/>
+        </svg>
+      </button>
     </div>
-    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
-      <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-        <line x1="0" y1="2" x2="22" y2="2"/>
-        <line x1="0" y1="8" x2="22" y2="8"/>
-        <line x1="0" y1="14" x2="22" y2="14"/>
-      </svg>
-    </button>
   </div>
   <div class="nav-mobile" id="navMobile">
     <a href="/studio">Studio</a>
     <a href="/visualize">Visualize</a>
-    <a href="#built">About</a>
-    <a href="/studio">Try Studio free</a>
+    <a href="#built" data-en="About" data-zh="關於我們">About</a>
+    <a href="/studio" data-en="Try Studio free" data-zh="免費使用 Studio">Try Studio free</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+    </div>
   </div>
 </nav>
 
@@ -411,23 +271,23 @@
   <div class="wrap">
     <div class="hero-inner">
       <div class="hero-left">
-        <div class="eyebrow reveal">For aesthetic clinics worldwide</div>
-        <h1 class="serif reveal">The results you've created. <em>And the ones you can.</em></h1>
-        <p class="lead reveal">Two tools to help your clinic grow. Show results that build trust. Run consultations that convert. Built for aesthetic clinics worldwide.</p>
+        <div class="eyebrow reveal" data-en="For aesthetic clinics worldwide" data-zh="面向全球醫美診所">For aesthetic clinics worldwide</div>
+        <h1 class="serif reveal">
+          <span data-en="The results you've created. " data-zh="您已創造的成果，">The results you've created. </span><em data-en="And the ones you can." data-zh="和下一步的可能。">And the ones you can.</em>
+        </h1>
+        <p class="lead reveal" data-en="Two tools to help your clinic grow. Show results that build trust. Run consultations that convert. Built for aesthetic clinics worldwide." data-zh="兩款工具，幫助醫美診所清楚呈現成果、提升諮詢轉換。用 Studio 整理真實案例；用 Visualize 在諮詢中展示合理的 AI 預覽。">Two tools to help your clinic grow. Show results that build trust. Run consultations that convert. Built for aesthetic clinics worldwide.</p>
         <div class="cta-row reveal">
-          <a href="/studio" class="btn btn-primary">Try Studio free</a>
-          <a href="/visualize" class="btn btn-ghost">Explore Visualize</a>
+          <a href="/studio" class="btn btn-primary" data-en="Try Studio free" data-zh="免費使用 Studio">Try Studio free</a>
+          <a href="/visualize" class="btn btn-ghost" data-en="Explore Visualize" data-zh="了解 Visualize">Explore Visualize</a>
         </div>
-
       </div>
-
       <div class="hero-visual reveal" aria-hidden="true">
         <div class="vis-panel">
-          <div class="vis-label past"><span class="dot"></span>Studio &mdash; what you've created</div>
+          <div class="vis-label past"><span class="dot"></span><span data-en="Studio &mdash; what you've created" data-zh="Studio &mdash; 整理您的真實成果">Studio — what you've created</span></div>
           <div class="vis-bar-row"><div class="vis-bar fill-1"></div></div>
           <div class="vis-bar-row"><div class="vis-bar fill-2"></div></div>
           <div class="vis-bar-row"><div class="vis-bar fill-3"></div></div>
-          <div class="vis-caption">Branded before &amp; after. Patient image stays in your browser.</div>
+          <div class="vis-caption" data-en="Branded before &amp; after. Patient image stays in your browser." data-zh="品牌化前後對比照。照片不會離開您的裝置。">Branded before &amp; after. Patient image stays in your browser.</div>
         </div>
         <div class="vis-connector" aria-hidden="true">
           <div class="vis-conn-line"></div>
@@ -435,11 +295,11 @@
           <div class="vis-conn-line"></div>
         </div>
         <div class="vis-panel">
-          <div class="vis-label future"><span class="dot"></span>Visualize &mdash; what you can create</div>
+          <div class="vis-label future"><span class="dot"></span><span data-en="Visualize &mdash; what you can create" data-zh="Visualize &mdash; 展示下一步的可能">Visualize — what you can create</span></div>
           <div class="vis-bar-row"><div class="vis-bar fill-g1"></div></div>
           <div class="vis-bar-row"><div class="vis-bar fill-g2"></div></div>
           <div class="vis-bar-row"><div class="vis-bar fill-g3"></div></div>
-          <div class="vis-caption">AI consult preview. Photo sent to AI for this request only.</div>
+          <div class="vis-caption" data-en="AI consult preview. Photo sent to AI for this request only." data-zh="AI 諮詢預覽。照片只會為了本次生成傳送給 AI 服務供應商。">AI consult preview. Photo sent to AI for this request only.</div>
         </div>
       </div>
     </div>
@@ -449,46 +309,42 @@
 <section class="spine" id="tools">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="eyebrow">Two tools, one job</div>
-      <h2 class="serif">Show the work. Win the consult.</h2>
-      <p>Aesthetic medicine is a visual business. SkinDay helps your clinic grow by showing results across time: what you have already achieved, and what a patient could achieve with you.</p>
+      <div class="eyebrow" data-en="Two tools, one job" data-zh="兩款工具，一件事">Two tools, one job</div>
+      <h2 class="serif" data-en="Show the work. Win the consult." data-zh="展示成果。贏得諮詢。">Show the work. Win the consult.</h2>
+      <p data-en="Aesthetic medicine is a visual business. SkinDay helps your clinic grow by showing results across time: what you have already achieved, and what a patient could achieve with you." data-zh="醫學美容是一門視覺的生意。SkinDay 幫助診所展示已完成的成果，以及顧客可能達到的效果。">Aesthetic medicine is a visual business. SkinDay helps your clinic grow by showing results across time: what you have already achieved, and what a patient could achieve with you.</p>
     </div>
-
     <div class="axis">
       <div class="axis-line" aria-hidden="true"></div>
-
       <div class="tool past reveal">
-        <div class="when">What you've created</div>
+        <div class="when" data-en="What you've created" data-zh="已完成的成果">What you've created</div>
         <div class="timeline-dot" aria-hidden="true"></div>
         <div class="card">
           <div class="pname serif">SkinDay Studio</div>
-          <div class="role">Before &amp; after, perfected</div>
-          <p>Turn your best cases into aligned, branded before-and-afters in seconds, ready to post. Photos are processed entirely in your browser, so patient images never leave your device.</p>
+          <div class="role" data-en="Before &amp; after, perfected" data-zh="術前術後，清晰呈現">Before &amp; after, perfected</div>
+          <p data-en="Turn your best cases into aligned, branded before-and-afters in seconds, ready to post. Photos are processed entirely in your browser, so patient images never leave your device." data-zh="幾秒內完成對齊與品牌化排版，整理成可分享的術前術後照。照片在瀏覽器中本地處理，不會離開您的裝置。">Turn your best cases into aligned, branded before-and-afters in seconds, ready to post. Photos are processed entirely in your browser, so patient images never leave your device.</p>
           <div class="meta">
-            <span class="pill free">Free for every clinic</span>
-            <span class="pill privacy">Nothing uploaded</span>
+            <span class="pill free" data-en="Free for every clinic" data-zh="全診所免費使用">Free for every clinic</span>
+            <span class="pill privacy" data-en="Nothing uploaded" data-zh="照片不上傳">Nothing uploaded</span>
           </div>
-          <a href="/studio" class="tool-link">Open Studio</a>
+          <a href="/studio" class="tool-link" data-en="Open Studio" data-zh="開啟 Studio">Open Studio</a>
         </div>
       </div>
-
       <div class="pivot reveal" aria-hidden="true">
         <div class="ring serif">&#x2219;</div>
-        <div class="label">The<br>consult</div>
+        <div class="label" data-en="The consult" data-zh="諮詢時刻">The<br>consult</div>
       </div>
-
       <div class="tool future reveal">
-        <div class="when">What you can create</div>
+        <div class="when" data-en="What you can create" data-zh="下一步的可能">What you can create</div>
         <div class="timeline-dot" aria-hidden="true"></div>
         <div class="card">
           <div class="pname serif">SkinDay <span class="sub">Visualize</span></div>
-          <div class="role">AI consultation preview</div>
-          <p>Show a patient their own likely result during the consult. Biostimulator and filler previews calibrated by clinical judgment, not generic filters. Visual clarity that moves consultations forward.</p>
+          <div class="role" data-en="AI consultation preview" data-zh="AI 諮詢視覺化預覽">AI consultation preview</div>
+          <p data-en="Show a patient their own likely result during the consult. Biostimulator and filler previews calibrated by clinical judgment, not generic filters. Visual clarity that moves consultations forward." data-zh="諮詢時讓顧客看到自己可能的改變。童顏針、玻尿酸填充等療程的 AI 預覽，依臨床邏輯校準，不是美顏濾鏡。">Show a patient their own likely result during the consult. Biostimulator and filler previews calibrated by clinical judgment, not generic filters. Visual clarity that moves consultations forward.</p>
           <div class="meta">
-            <span class="pill paid">Pay as you go</span>
-            <span class="pill privacy">Consultation use only</span>
+            <span class="pill paid" data-en="Pay as you go" data-zh="需要時再購買">Pay as you go</span>
+            <span class="pill privacy" data-en="Consultation use only" data-zh="限諮詢用途">Consultation use only</span>
           </div>
-          <a href="/visualize" class="tool-link">Explore Visualize</a>
+          <a href="/visualize" class="tool-link" data-en="Explore Visualize" data-zh="了解 Visualize">Explore Visualize</a>
         </div>
       </div>
     </div>
@@ -499,27 +355,14 @@
   <div class="wrap">
     <div class="builder-grid">
       <div class="reveal">
-        <div class="eyebrow">Built for clinics, by clinicians</div>
-        <h2 class="serif">Tools that understand the <em>clinical reality</em> of the work.</h2>
-        <p>SkinDay is not a generic photo app with a beauty filter. Every decision in the product reflects how aesthetic medicine actually works: the anatomy, the treatment behavior, the consult conversation, and the standards patients and practitioners both expect.</p>
-        <p>The simulations reflect how treatments behave on real faces. The consultation framing is built in from the start. Every tool carries a clear boundary between what AI can show and what only clinical judgment can decide.</p>
+        <div class="eyebrow" data-en="Built for clinics, by clinicians" data-zh="由臨床工作者為診所而建">Built for clinics, by clinicians</div>
+        <h2 class="serif"><span data-en="Tools that understand the " data-zh="真正理解">Tools that understand the </span><em data-en="clinical reality" data-zh="臨床實況">clinical reality</em><span data-en=" of the work." data-zh="的工具。"> of the work.</span></h2>
+        <p data-en="SkinDay is not a generic photo app with a beauty filter. Every decision in the product reflects how aesthetic medicine actually works: the anatomy, the treatment behavior, the consult conversation, and the standards patients and practitioners both expect." data-zh="SkinDay 不是美顏相機。每一個產品決策，都立基於醫學美容實際的臨床邏輯：解剖結構、治療反應、諮詢溝通，以及顧客與醫師共同的期待。">SkinDay is not a generic photo app with a beauty filter. Every decision in the product reflects how aesthetic medicine actually works: the anatomy, the treatment behavior, the consult conversation, and the standards patients and practitioners both expect.</p>
+        <p data-en="The simulations reflect how treatments behave on real faces. The consultation framing is built in from the start. Every tool carries a clear boundary between what AI can show and what only clinical judgment can decide." data-zh="AI 預覽反映治療在真實面部的實際表現。諮詢框架從一開始就內建其中。每款工具都清楚劃定了 AI 能展示的範疇，以及唯有臨床判斷才能決定的界限。">The simulations reflect how treatments behave on real faces. The consultation framing is built in from the start. Every tool carries a clear boundary between what AI can show and what only clinical judgment can decide.</p>
         <div class="stats">
-          <div class="stat"><div class="n">2</div><div class="l">Purpose-built tools</div></div>
-          <div class="stat"><div class="n">Free</div><div class="l">Studio, always</div></div>
-          <div class="stat"><div class="n">Global</div><div class="l">Any clinic, anywhere</div></div>
-        </div>
-      </div>
-
-      <div class="quote-card reveal">
-        <div class="q">Aesthetic medicine is a visual business. The consult is where trust is built or lost. We built tools for that moment."</div>
-        <div class="who">
-          <b>The SkinDay approach</b>
-          Clinically calibrated. Consultation-first.
-        </div>
-        <div class="clinics">
-          <div class="clinic-badge"><span class="cbdot"></span>Simulations calibrated to real treatment behavior</div>
-          <div class="clinic-badge"><span class="cbdot"></span>Patient data stays private by design</div>
-          <div class="clinic-badge"><span class="cbdot"></span>Consultation-only framing, always</div>
+          <div class="stat"><div class="n">2</div><div class="l" data-en="Purpose-built tools" data-zh="專為臨床設計的工具">Purpose-built tools</div></div>
+          <div class="stat"><div class="n">Free</div><div class="l" data-en="Studio, always" data-zh="Studio 永久免費使用">Studio, always</div></div>
+          <div class="stat"><div class="n">Global</div><div class="l" data-en="Any clinic, anywhere" data-zh="全球任何診所皆可使用">Any clinic, anywhere</div></div>
         </div>
       </div>
     </div>
@@ -531,18 +374,18 @@
     <div class="global-grid">
       <div class="global-col reveal">
         <div class="gicon">Free</div>
-        <h4>Studio: always free</h4>
-        <p>No account, no upload, no cost. Open Studio in your browser and start turning your cases into branded before-and-afters today.</p>
+        <h4 data-en="Studio: always free" data-zh="Studio：永久免費">Studio: always free</h4>
+        <p data-en="No account, no upload, no cost. Open Studio in your browser and start turning your cases into branded before-and-afters today." data-zh="不需帳號、不上傳、零費用。在瀏覽器中開啟 Studio，立刻整理品牌化的術前術後照。">No account, no upload, no cost. Open Studio in your browser and start turning your cases into branded before-and-afters today.</p>
       </div>
       <div class="global-col reveal">
         <div class="gicon">Pay-as-you-go</div>
-        <h4>Visualize: credits, no subscription</h4>
-        <p>Buy credits when you need them. No monthly commitment, no minimum volume. Designed for the rhythm of an independent clinic.</p>
+        <h4 data-en="Visualize: credits, no subscription" data-zh="Visualize：按需購買點數，無月費">Visualize: credits, no subscription</h4>
+        <p data-en="Buy credits when you need them. No monthly commitment, no minimum volume. Designed for the rhythm of an independent clinic." data-zh="用多少、買多少。沒有月費，沒有最低消費。適合各規模診所的使用節奏。">Buy credits when you need them. No monthly commitment, no minimum volume. Designed for the rhythm of an independent clinic.</p>
       </div>
       <div class="global-col reveal">
         <div class="gicon">Global</div>
-        <h4>Works for any clinic, anywhere</h4>
-        <p>SkinDay.com is built for aesthetic clinics worldwide. The tools run in your browser with no regional restrictions.</p>
+        <h4 data-en="Works for any clinic, anywhere" data-zh="全球任何診所均適用">Works for any clinic, anywhere</h4>
+        <p data-en="SkinDay.com is built for aesthetic clinics worldwide. The tools run in your browser with no regional restrictions." data-zh="SkinDay.com 面向全球醫美診所。工具在瀏覽器中運行，不受地區限制。">SkinDay.com is built for aesthetic clinics worldwide. The tools run in your browser with no regional restrictions.</p>
       </div>
     </div>
   </div>
@@ -550,10 +393,10 @@
 
 <section class="closing">
   <div class="wrap">
-    <h2 class="serif reveal">Start showing results <em>today.</em></h2>
-    <p class="reveal">Studio is free, runs entirely in your browser, and takes about thirty seconds to try. The simplest way to see what SkinDay can do for your practice.</p>
-    <a href="/studio" class="btn btn-primary reveal">Open Studio free</a>
-    <div class="sub-note reveal">No account required. Patient photos never leave your device.</div>
+    <h2 class="serif reveal"><span data-en="Start showing results " data-zh="立即試用">Start showing results </span><em data-en="today." data-zh="展示成果。">today.</em></h2>
+    <p class="reveal" data-en="Studio is free, runs entirely in your browser, and takes about thirty seconds to try. The simplest way to see what SkinDay can do for your practice." data-zh="Studio 完全免費，在瀏覽器中直接使用，三十秒就能體驗。是認識 SkinDay 最直接的方式。">Studio is free, runs entirely in your browser, and takes about thirty seconds to try. The simplest way to see what SkinDay can do for your practice.</p>
+    <a href="/studio" class="btn btn-primary reveal" data-en="Open Studio free" data-zh="免費開啟 Studio">Open Studio free</a>
+    <div class="sub-note reveal" data-en="No account required. Patient photos never leave your device." data-zh="不需帳號。照片不會離開您的裝置。">No account required. Patient photos never leave your device.</div>
   </div>
 </section>
 
@@ -561,41 +404,81 @@
   <div class="wrap">
     <div class="foot-top">
       <div>
-        <div class="foot-brand"><span>SkinDay</span></div>
-        <div class="foot-tagline">Helping aesthetic clinics worldwide show results and grow.</div>
+        <div class="foot-brand">Skin<span>Day</span></div>
+        <div class="foot-tagline" data-en="Helping aesthetic clinics worldwide show results and grow." data-zh="幫助全球醫美診所展示成果、持續成長。">Helping aesthetic clinics worldwide show results and grow.</div>
       </div>
       <div class="foot-cols">
         <div class="foot-col">
-          <h4>Tools</h4>
-          <a href="/studio">Studio (free)</a>
+          <h4 data-en="Tools" data-zh="工具">Tools</h4>
+          <a href="/studio" data-en="Studio (free)" data-zh="Studio（免費）">Studio (free)</a>
           <a href="/visualize">Visualize</a>
         </div>
         <div class="foot-col">
-          <h4>Company</h4>
-          <a href="/#built">About</a>
-          <a href="/contact">Contact</a>
+          <h4 data-en="Company" data-zh="公司">Company</h4>
+          <a href="/#built" data-en="About" data-zh="關於我們">About</a>
+          <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
         </div>
         <div class="foot-col">
-          <h4>Legal</h4>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
-          <a href="/refund">Refunds</a>
+          <h4 data-en="Legal" data-zh="法律">Legal</h4>
+          <a href="/privacy" data-en="Privacy" data-zh="隱私政策">Privacy</a>
+          <a href="/terms" data-en="Terms" data-zh="服務條款">Terms</a>
+          <a href="/refund" data-en="Refunds" data-zh="退款政策">Refunds</a>
         </div>
       </div>
     </div>
     <div class="foot-note">
-      <span class="posture">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model.</span>
-      Visualize outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.
+      <span class="posture" data-en="Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model." data-zh="Studio 在您的瀏覽器中本地處理照片，SkinDay 不會上傳、儲存或查看這些影像。Visualize 只會為了本次生成將照片傳送給 AI 服務供應商，不會用於模型訓練。">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model.</span>
+      <span data-en="Visualize outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice." data-zh="Visualize 輸出內容為 AI 生成的視覺化預覽，僅供諮詢參考，並非實際治療結果的預測。在使用或分享任何影像前取得顧客的適當同意，是診所的責任。SkinDay 並非醫療裝置，亦不提供醫療建議。">Visualize outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.</span>
     </div>
     <div class="foot-bottom">
-      <span>&#169; 2026 SkinDay. All rights reserved.</span>
+      <span>&#169; 2026 SkinDay. <span data-en="All rights reserved." data-zh="版權所有。">All rights reserved.</span></span>
       <span>skinday.com</span>
     </div>
   </div>
 </footer>
 
 <script>
-  function toggleNav(btn){
+  var currentLang = sessionStorage.getItem('sd-lang') || 'en';
+
+  function setLang(lang) {
+    currentLang = lang;
+    sessionStorage.setItem('sd-lang', lang);
+    applyLang();
+  }
+
+  function applyLang() {
+    var isZh = currentLang === 'zh';
+    document.body.classList.toggle('zh', isZh);
+    document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
+
+    // Update all data-en/data-zh elements
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el) {
+      var val = isZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        el.placeholder = val;
+      } else {
+        el.innerHTML = val;
+      }
+    });
+
+    // Update lang toggle buttons
+    document.querySelectorAll('.lang-btn').forEach(function(btn) {
+      btn.classList.toggle('active',
+        (btn.textContent.trim() === 'EN' && !isZh) ||
+        (btn.textContent.trim() === '繁中' && isZh)
+      );
+    });
+
+    // Update page title
+    document.title = isZh
+      ? 'SkinDay — 協助醫美診所成長'
+      : 'SkinDay — Grow your aesthetic practice';
+  }
+
+  // Apply on load
+  applyLang();
+
+  function toggleNav(btn) {
     var m = document.getElementById('navMobile');
     var open = m.classList.toggle('open');
     btn.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -603,24 +486,24 @@
       ? '<line x1="2" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="20" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
       : '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
   }
-  document.getElementById('navMobile').querySelectorAll('a').forEach(function(a){
-    a.addEventListener('click',function(){
+  document.getElementById('navMobile').querySelectorAll('a').forEach(function(a) {
+    a.addEventListener('click', function() {
       document.getElementById('navMobile').classList.remove('open');
       var btn = document.querySelector('.nav-toggle');
-      if(btn){
-        btn.setAttribute('aria-expanded','false');
+      if (btn) {
+        btn.setAttribute('aria-expanded', 'false');
         btn.querySelector('svg').innerHTML = '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
       }
     });
   });
 
-  (function(){
+  (function() {
     var els = document.querySelectorAll('.reveal');
-    if(!('IntersectionObserver' in window)){ els.forEach(function(e){ e.classList.add('in'); }); return; }
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
-    },{threshold:.12});
-    els.forEach(function(e){ io.observe(e); });
+    if (!('IntersectionObserver' in window)) { els.forEach(function(e) { e.classList.add('in'); }); return; }
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+    }, { threshold: .12 });
+    els.forEach(function(e) { io.observe(e); });
   })();
 </script>
 </body>

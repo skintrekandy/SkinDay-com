@@ -4,85 +4,62 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>SkinDay Visualize — AI consultation previews for aesthetic clinics</title>
-<meta name="description" content="Show patients their own likely result during the consult. AI-powered biostimulation and filler previews, calibrated by clinical judgment. Pay as you go.">
+<meta name="description" content="Show patients their own likely result during the consult. AI-powered previews for biostimulator, filler, neurotoxin, and energy-based treatments.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 <link rel="shortcut icon" href="/favicon.ico">
 <style>
-  :root{
-    --deep:#1C1714;
-    --deep-soft:#2A231E;
-    --cream:#FAF7F2;
-    --warm:#F0EAE1;
-    --rose:#C8725A;
-    --gold:#C9A96E;
-    --muted:#8A7F76;
-    --line:rgba(28,23,20,.12);
-    --line-light:rgba(250,247,242,.16);
-  }
+  :root{--deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;--rose:#C8725A;--gold:#C9A96E;
+    --deep2:#241E1A;
+    --rose-m:#D4896E;
+    --rose-bg:#F5E8E3;
+    --border:#EAE2D8;
+    --hero-border:rgba(201,169,110,.25);--muted:#8A7F76;--line:rgba(28,23,20,.12);--line-light:rgba(250,247,242,.16);}
   *{box-sizing:border-box;margin:0;padding:0;}
   html{scroll-behavior:smooth;}
-  body{
-    font-family:'DM Sans',system-ui,sans-serif;
-    background:var(--cream);
-    color:var(--deep);
-    line-height:1.6;
-    -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
-  }
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
   .serif{font-family:'Cormorant Garamond',Georgia,serif;}
   .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+  body.zh{font-family:'Noto Serif TC','DM Sans',system-ui,sans-serif;}
+  body.zh .serif{font-family:'Noto Serif TC',Georgia,serif;}
+  body.zh p,body.zh li{letter-spacing:.02em;line-height:1.8;}
+  body.zh .hero h1{letter-spacing:0;font-size:clamp(2.4rem,5.4vw,4.2rem);}
 
-  /* nav */
-  .site-nav{
-    position:sticky;top:0;z-index:100;
-    background:rgba(28,23,20,.96);
-    backdrop-filter:blur(12px);
-    -webkit-backdrop-filter:blur(12px);
-    border-bottom:1px solid var(--line-light);
-  }
-  .nav-inner{
-    display:flex;align-items:center;justify-content:space-between;
-    max-width:1180px;margin:0 auto;padding:18px 28px;
-  }
-  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
+  .lang-toggle{display:flex;align-items:center;gap:0;border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;font-size:.78rem;font-weight:500;flex-shrink:0;}
+  .lang-btn{padding:6px 11px;cursor:pointer;background:none;border:none;color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s,color .2s;letter-spacing:.03em;}
+  .lang-btn.active{background:rgba(250,247,242,.14);color:var(--cream);}
+  .lang-btn:hover:not(.active){color:var(--gold);}
+  .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
+
+  .site-nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:400;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
   .brand span{color:var(--gold);}
+  .nav-right{display:flex;align-items:center;gap:24px;}
   .nav-links{display:flex;align-items:center;gap:32px;}
   .nav-links a{color:rgba(250,247,242,.78);text-decoration:none;font-size:.9rem;font-weight:400;transition:color .2s;}
   .nav-links a:hover{color:var(--gold);}
   .nav-links a.active{color:var(--cream);}
-  .nav-cta{
-    border:1px solid rgba(250,247,242,.36);border-radius:2px;
-    padding:8px 17px;color:var(--cream)!important;font-size:.84rem;font-weight:500;
-    transition:border-color .2s,background .2s,color .2s;
-  }
-  .nav-cta:hover{background:var(--gold);border-color:var(--gold);color:var(--deep)!important;}
+  .nav-cta{background:var(--rose);border:none;border-radius:4px;padding:8px 17px;color:#fff!important;font-size:.84rem;font-weight:500;transition:background .2s;}
+  .nav-cta:hover{background:var(--rose-m);}
   .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:rgba(250,247,242,.8);}
   .nav-toggle svg{display:block;}
   .nav-mobile{display:none;background:var(--deep);border-top:1px solid var(--line-light);padding:20px 28px 28px;}
   .nav-mobile.open{display:block;}
-  .nav-mobile a{display:block;color:rgba(250,247,242,.78);text-decoration:none;font-size:1rem;padding:11px 0;border-bottom:1px solid var(--line-light);transition:color .2s;}
-  .nav-mobile a:last-child{border-bottom:none;margin-top:8px;color:var(--gold);font-weight:500;}
+  .nav-mobile a{display:block;color:rgba(250,247,242,.78);text-decoration:none;font-size:1rem;padding:11px 0;border-bottom:1px solid var(--hero-border);transition:color .2s;}
+  .nav-mobile a:last-of-type{border-bottom:none;margin-top:8px;color:var(--gold);font-weight:500;}
   .nav-mobile a:hover{color:var(--cream);}
+  .nav-mobile .lang-toggle{margin-top:18px;width:fit-content;}
   @media(max-width:760px){.nav-links{display:none;}.nav-toggle{display:block;}}
 
-  /* shared */
-  .eyebrow{
-    font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;
-    color:var(--gold);font-weight:500;margin-bottom:28px;
-    display:inline-flex;align-items:center;gap:10px;
-  }
-  .eyebrow::before{content:"";display:block;width:22px;height:1px;background:var(--gold);opacity:.7;}
-  .btn{
-    display:inline-flex;align-items:center;gap:9px;text-decoration:none;
-    font-size:.93rem;font-weight:500;padding:14px 28px;border-radius:2px;
-    transition:transform .2s,background .2s,border-color .2s,color .2s;cursor:pointer;
-    letter-spacing:.01em;
-  }
+  .eyebrow{font-size:.72rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:28px;display:inline-flex;align-items:center;gap:10px;}
+  
+  body.zh .eyebrow{letter-spacing:.12em;}
+  .btn{display:inline-flex;align-items:center;gap:9px;text-decoration:none;font-size:.93rem;font-weight:500;padding:14px 28px;border-radius:4px;transition:transform .2s,background .2s,border-color .2s,color .2s;cursor:pointer;letter-spacing:.01em;}
   .btn-primary{background:var(--gold);color:var(--deep);}
   .btn-primary:hover{background:#b8943e;transform:translateY(-2px);}
   .btn-ghost-light{border:1px solid var(--line-light);color:var(--cream);}
@@ -91,57 +68,26 @@
   .btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
   .cta-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center;}
 
-  /* hero */
-  .hero{
-    position:relative;background:var(--deep);color:var(--cream);
-    padding:96px 0 108px;overflow:hidden;
-  }
-  .hero::before{
-    content:"";position:absolute;top:-20%;right:-8%;width:55%;height:130%;
-    background:radial-gradient(ellipse at center,rgba(201,169,110,.12),transparent 62%);
-    pointer-events:none;
-  }
-  .hero::after{
-    content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
-    background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.45;
-  }
+  .hero{position:relative;background:var(--deep);color:var(--cream);padding:96px 0 108px;overflow:hidden;}
+  .hero::before{content:"";position:absolute;top:-20%;right:-8%;width:55%;height:130%;background:radial-gradient(ellipse at center,rgba(201,169,110,.12),transparent 62%);pointer-events:none;}
+  .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.45;}
   .hero .wrap{position:relative;z-index:2;}
-  .hero h1{
-    font-size:clamp(2.6rem,5.8vw,4.7rem);font-weight:500;line-height:1.04;
-    letter-spacing:-.015em;margin-bottom:28px;max-width:18ch;
-  }
+  .hero h1{font-size:clamp(2.6rem,5.8vw,4.7rem);font-weight:300;line-height:1.04;letter-spacing:-.015em;margin-bottom:28px;max-width:18ch;}
   .hero h1 em{font-style:italic;color:var(--gold);}
-  .hero p.lead{
-    font-size:clamp(1rem,1.6vw,1.16rem);color:rgba(250,247,242,.74);
-    max-width:48ch;font-weight:300;margin-bottom:40px;line-height:1.7;
-  }
+  .hero p.lead{font-size:clamp(1rem,1.6vw,1.16rem);color:rgba(250,247,242,.74);max-width:48ch;font-weight:300;margin-bottom:40px;line-height:1.7;}
   .hero-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:36px;}
-  .hero-pill{
-    font-size:.74rem;font-weight:500;letter-spacing:.03em;
-    padding:5px 12px;border-radius:100px;
-    border:1px solid var(--line-light);color:rgba(250,247,242,.65);
-  }
-  .privacy-note{
-    margin-top:28px;display:inline-flex;align-items:center;gap:10px;
-    font-size:.82rem;color:rgba(250,247,242,.5);font-weight:300;
-  }
+  .hero-pill{font-size:.74rem;font-weight:500;letter-spacing:.03em;padding:5px 12px;border-radius:100px;border:1px solid var(--line-light);color:rgba(250,247,242,.65);}
+  .privacy-note{margin-top:28px;display:inline-flex;align-items:center;gap:10px;font-size:.82rem;color:rgba(250,247,242,.5);font-weight:300;}
   .privacy-dot{width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;}
 
-  /* treatments */
   .treatments{background:var(--cream);padding:100px 0;}
   .treatments .section-head{max-width:42ch;margin-bottom:64px;}
   .treatments .section-head h2{font-size:clamp(1.9rem,3.6vw,2.9rem);font-weight:500;line-height:1.1;letter-spacing:-.01em;margin-bottom:16px;}
   .treatments .section-head p{color:var(--muted);font-size:1rem;font-weight:300;line-height:1.7;}
-
+  body.zh .treatments .section-head{max-width:28ch;}
   .treatment-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
-  .t-card{
-    background:#fff;border:1px solid var(--line);border-radius:6px;padding:36px 32px;
-    box-shadow:0 1px 0 rgba(28,23,20,.03);
-  }
-  .t-card .t-tag{
-    font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;
-    margin-bottom:16px;display:inline-flex;align-items:center;gap:8px;
-  }
+  .t-card{background:#fff;border:1px solid var(--line);border-radius:6px;padding:36px 32px;box-shadow:0 1px 0 rgba(28,23,20,.03);}
+  .t-card .t-tag{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;margin-bottom:16px;display:inline-flex;align-items:center;gap:8px;}
   .t-card.biostim .t-tag{color:var(--rose);}
   .t-card.filler .t-tag{color:var(--gold);}
   .t-card .t-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
@@ -152,11 +98,11 @@
   .t-feature::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;}
   @media(max-width:720px){.treatment-grid{grid-template-columns:1fr;}}
 
-  /* how it works */
   .how{background:var(--warm);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:100px 0;}
   .how .section-head{max-width:42ch;margin-bottom:64px;}
   .how .section-head h2{font-size:clamp(1.9rem,3.6vw,2.9rem);font-weight:500;line-height:1.1;letter-spacing:-.01em;margin-bottom:16px;}
   .how .section-head p{color:var(--muted);font-size:1rem;font-weight:300;line-height:1.7;}
+  body.zh .how .section-head{max-width:28ch;}
   .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(28,23,20,.1);}
   .step{background:var(--warm);padding:36px 30px;}
   .step-num{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:600;color:var(--gold);line-height:1;margin-bottom:18px;opacity:.8;}
@@ -165,45 +111,32 @@
   @media(max-width:860px){.steps{grid-template-columns:1fr 1fr;}}
   @media(max-width:520px){.steps{grid-template-columns:1fr;}.step{padding:28px 0;background:transparent;border-bottom:1px solid var(--line);}.step:last-child{border-bottom:none;}}
 
-  /* pricing */
   .pricing{background:var(--deep);color:var(--cream);padding:100px 0;}
   .pricing .section-head{text-align:center;max-width:38ch;margin:0 auto 64px;}
   .pricing .section-head .eyebrow{justify-content:center;}
   .pricing .section-head h2{font-size:clamp(1.9rem,3.6vw,2.9rem);font-weight:500;line-height:1.1;letter-spacing:-.01em;margin-bottom:16px;}
   .pricing .section-head p{color:rgba(250,247,242,.6);font-size:1rem;font-weight:300;line-height:1.7;}
-
   .pack-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line-light);margin-bottom:48px;}
   .pack{background:var(--deep-soft);padding:40px 34px;position:relative;}
   .pack.featured{background:#221c18;border-top:2px solid var(--gold);}
   .pack .pack-label{font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;color:var(--gold);margin-bottom:20px;}
   .pack .pack-price{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:600;color:var(--cream);line-height:1;margin-bottom:6px;}
   .pack .pack-price sup{font-size:1.4rem;vertical-align:super;}
-  .pack .pack-credits{font-size:.88rem;color:rgba(250,247,242,.55);margin-bottom:24px;font-weight:300;}
-  .pack .pack-per{font-size:.8rem;color:var(--gold);margin-bottom:28px;font-weight:400;}
+  .pack .pack-credits{font-size:.88rem;color:rgba(250,247,242,.55);margin-bottom:12px;font-weight:300;}
+  .pack .pack-per{font-size:.8rem;color:rgba(250,247,242,.5);margin-bottom:28px;font-weight:300;}
+  .pack .pack-per s{color:rgba(250,247,242,.35);font-weight:300;}
   .pack .pack-features{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
   .pack-feature{display:flex;align-items:center;gap:10px;font-size:.86rem;color:rgba(250,247,242,.65);font-weight:300;}
   .pack-feature::before{content:"";width:4px;height:4px;border-radius:50%;background:var(--gold);flex-shrink:0;opacity:.7;}
-  .pack .pack-cta{
-    display:inline-flex;align-items:center;gap:7px;text-decoration:none;
-    font-size:.86rem;font-weight:600;color:var(--cream);border-bottom:1px solid rgba(250,247,242,.3);
-    padding-bottom:2px;transition:border-color .2s,color .2s;
-  }
+  .pack .pack-cta{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-size:.86rem;font-weight:600;color:var(--cream);border-bottom:1px solid rgba(250,247,242,.3);padding-bottom:2px;transition:border-color .2s,color .2s;}
   .pack .pack-cta::after{content:" \2192";}
   .pack .pack-cta:hover{border-color:var(--gold);color:var(--gold);}
-  .pack.featured .pack-cta{
-    background:var(--gold);color:var(--deep);border:none;
-    padding:10px 20px;border-radius:2px;font-size:.88rem;
-  }
+  .pack.featured .pack-cta{background:var(--gold);color:var(--deep);border:none;padding:10px 20px;border-radius:2px;font-size:.88rem;}
   .pack.featured .pack-cta::after{content:none;}
   .pack.featured .pack-cta:hover{background:#b8943e;transform:translateY(-1px);}
-
-  .pricing-note{
-    text-align:center;font-size:.84rem;color:rgba(250,247,242,.44);
-    font-weight:300;line-height:1.7;max-width:56ch;margin:0 auto;
-  }
+  .pricing-note{text-align:center;font-size:.84rem;color:rgba(250,247,242,.44);font-weight:300;line-height:1.7;max-width:56ch;margin:0 auto;}
   @media(max-width:760px){.pack-grid{grid-template-columns:1fr;}.pack.featured{border-top:none;border-left:2px solid var(--gold);}}
 
-  /* data posture */
   .posture-sec{background:var(--cream);padding:88px 0;}
   .posture-grid{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
   .posture-grid h2{font-size:clamp(1.9rem,3.4vw,2.8rem);font-weight:500;line-height:1.1;margin-bottom:20px;letter-spacing:-.01em;}
@@ -218,23 +151,20 @@
   .pd-text p{font-size:.84rem;color:var(--muted);font-weight:300;line-height:1.55;margin:0;}
   @media(max-width:820px){.posture-grid{grid-template-columns:1fr;gap:44px;}}
 
-  /* crossover */
   .crossover{background:var(--deep);padding:80px 0;}
   .crossover-inner{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:40px;}
   .crossover h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.7rem,3vw,2.4rem);font-weight:500;line-height:1.1;color:var(--cream);max-width:28ch;}
   .crossover h2 em{font-style:italic;color:var(--rose);}
   .crossover p{color:rgba(250,247,242,.6);font-size:.95rem;font-weight:300;margin-top:12px;max-width:36ch;line-height:1.65;}
 
-  /* closing */
   .closing{background:var(--cream);padding:110px 0;text-align:center;}
   .closing h2{font-size:clamp(2.2rem,4.6vw,3.5rem);font-weight:500;line-height:1.06;max-width:20ch;margin:0 auto 20px;letter-spacing:-.01em;}
   .closing h2 em{font-style:italic;color:var(--gold);}
   .closing p{color:var(--muted);font-size:1rem;font-weight:300;margin-bottom:36px;max-width:40ch;margin-left:auto;margin-right:auto;}
   .closing .sub-note{margin-top:16px;font-size:.82rem;color:var(--muted);font-weight:300;}
 
-  /* footer */
   footer{background:var(--deep);color:rgba(250,247,242,.7);padding:64px 0 40px;}
-  .foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;padding-bottom:40px;border-bottom:1px solid var(--line-light);}
+  .foot-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:40px;padding-bottom:40px;border-bottom:1px solid var(--hero-border);}
   .foot-brand{font-family:'Cormorant Garamond',serif;font-size:1.45rem;color:var(--cream);}
   .foot-brand span{color:var(--gold);}
   .foot-tagline{font-family:'DM Sans',sans-serif;font-size:.88rem;color:rgba(250,247,242,.52);margin-top:8px;font-weight:300;max-width:28ch;line-height:1.55;}
@@ -246,58 +176,67 @@
   .foot-note .posture{color:rgba(250,247,242,.6);}
   .foot-bottom{margin-top:22px;font-size:.78rem;color:rgba(250,247,242,.36);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
 
-  /* reveal */
   .reveal{opacity:0;transform:translateY(16px);transition:opacity .65s ease,transform .65s ease;}
   .reveal.in{opacity:1;transform:none;}
   @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none;}html{scroll-behavior:auto;}.btn-primary:hover{transform:none;}}
-  a:focus-visible,.btn:focus-visible,.nav-toggle:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+  a:focus-visible,.btn:focus-visible,.nav-toggle:focus-visible,.lang-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
 </style>
 </head>
 <body>
 
 <nav class="site-nav" aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="/" class="brand"><span>SkinDay</span></a>
-    <div class="nav-links">
-      <a href="/studio">Studio</a>
-      <a href="/visualize" class="active">Visualize</a>
-      <a href="/#built">About</a>
-      <a href="https://skinday.ca/visualize" class="nav-cta" target="_blank" rel="noopener">Get started</a>
+    <a href="/" class="brand">Skin<span>Day</span></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/studio">Studio</a>
+        <a href="/visualize" class="active">Visualize</a>
+        <a href="/#built" data-en="About" data-zh="關於">About</a>
+        <a href="https://skinday.ca/visualize" class="nav-cta" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
+      </div>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <div class="lang-sep"></div>
+        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+      </div>
+      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>
+        </svg>
+      </button>
     </div>
-    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
-      <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-        <line x1="0" y1="2" x2="22" y2="2"/>
-        <line x1="0" y1="8" x2="22" y2="8"/>
-        <line x1="0" y1="14" x2="22" y2="14"/>
-      </svg>
-    </button>
   </div>
   <div class="nav-mobile" id="navMobile">
     <a href="/studio">Studio</a>
     <a href="/visualize">Visualize</a>
-    <a href="/#built">About</a>
-    <a href="https://skinday.ca/visualize" target="_blank" rel="noopener">Get started</a>
+    <a href="/#built" data-en="About" data-zh="關於">About</a>
+    <a href="https://skinday.ca/visualize" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+    </div>
   </div>
 </nav>
 
 <header class="hero">
   <div class="wrap">
-    <div class="eyebrow reveal">SkinDay Visualize</div>
-    <h1 class="serif reveal">The consult, made <em>visual.</em></h1>
-    <p class="lead reveal">Show a patient their own likely result before the treatment begins. AI-powered previews for biostimulator, filler, neurotoxin, and energy-based treatments.</p>
+    <div class="eyebrow reveal" data-en="SkinDay Visualize" data-zh="SkinDay Visualize">SkinDay Visualize</div>
+    <h1 class="serif reveal"><span data-en="The consult, made " data-zh="把諮詢">The consult, made </span><em data-en="visual." data-zh="變得看得見。">visual.</em></h1>
+    <p class="lead reveal" data-en="Show a patient their own likely result before the treatment begins. AI-powered previews for biostimulator, filler, neurotoxin, and energy-based treatments." data-zh="在療程開始前，讓顧客看到自己可能的治療方向。Visualize 提供童顏針、玻尿酸填充、咬肌放鬆與能量緊膚療程的 AI 諮詢預覽。">Show a patient their own likely result before the treatment begins. AI-powered previews for biostimulator, filler, neurotoxin, and energy-based treatments.</p>
     <div class="hero-pills reveal">
-      <span class="hero-pill">Biostimulator</span>
-      <span class="hero-pill">HA Filler</span>
-      <span class="hero-pill">Neurotoxin Jawline Contour</span>
-      <span class="hero-pill">RF / HIFU</span>
+      <span class="hero-pill" data-en="Biostimulator" data-zh="童顏針">Biostimulator</span>
+      <span class="hero-pill" data-en="HA Filler" data-zh="玻尿酸填充">HA Filler</span>
+      <span class="hero-pill" data-en="Neurotoxin Jawline Contour" data-zh="咬肌放鬆與下臉輪廓">Neurotoxin Jawline Contour</span>
+      <span class="hero-pill" data-en="RF / HIFU" data-zh="射頻 / 超音波緊膚">RF / HIFU</span>
     </div>
     <div class="cta-row reveal">
-      <a href="https://skinday.ca/visualize" class="btn btn-primary" target="_blank" rel="noopener">Get started</a>
-      <a href="#pricing" class="btn btn-ghost-light">See pricing</a>
+      <a href="https://skinday.ca/visualize" class="btn btn-primary" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
+      <a href="#pricing" class="btn btn-ghost-light" data-en="See pricing" data-zh="查看定價">See pricing</a>
     </div>
     <div class="privacy-note reveal">
       <span class="privacy-dot"></span>
-      Photo is sent to an AI provider for this request only. Not stored. Not used for training.
+      <span data-en="Photo is sent to an AI provider for this request only. Not stored. Not used for training." data-zh="照片只會為了本次生成傳送給 AI 服務供應商，不會儲存，不用於模型訓練。">Photo is sent to an AI provider for this request only. Not stored. Not used for training.</span>
     </div>
   </div>
 </header>
@@ -305,47 +244,47 @@
 <section class="treatments">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="eyebrow">What Visualize covers</div>
-      <h2 class="serif">Four treatment categories.</h2>
-      <p>Each simulation reflects how the treatment actually behaves, not a generic filter.</p>
+      <div class="eyebrow" data-en="What Visualize covers" data-zh="Visualize 涵蓋的療程">What Visualize covers</div>
+      <h2 class="serif" data-en="Four treatment categories." data-zh="四大療程類別。">Four treatment categories.</h2>
+      <p data-en="Each simulation reflects how the treatment actually behaves, not a generic filter." data-zh="每個AI 預覽均反映治療的實際表現，而非套用通用濾鏡。">Each simulation reflects how the treatment actually behaves, not a generic filter.</p>
     </div>
     <div class="treatment-grid">
       <div class="t-card biostim reveal">
-        <div class="t-tag"><span class="t-dot"></span>Biostimulator</div>
-        <h3 class="serif">Sculptra &amp; Biostimulators</h3>
-        <p>Simulate the volumetric restoration of biostimulator treatment. Calibrated to show a realistic expected response across the full face and midface.</p>
+        <div class="t-tag"><span class="t-dot"></span><span data-en="Biostimulator" data-zh="童顏針">Biostimulator</span></div>
+        <h3 class="serif" data-en="Sculptra &amp; Biostimulators" data-zh="Sculptra 童顏針">Sculptra &amp; Biostimulators</h3>
+        <p data-en="Simulate the volumetric restoration of biostimulator treatment. Calibrated to show a realistic expected response across the full face and midface." data-zh="模擬童顏針療程的臉部豐盈效果。依臨床邏輯校準，呈現全臉與中臉部位的合理預期反應。">Simulate the volumetric restoration of biostimulator treatment. Calibrated to show a realistic expected response across the full face and midface.</p>
         <div class="t-features">
-          <div class="t-feature">Full face and midface volume response</div>
-          <div class="t-feature">Expected and strong response scenarios</div>
-          <div class="t-feature">Parallel generation for side-by-side comparison</div>
+          <div class="t-feature" data-en="Full face and midface volume response" data-zh="全臉與中臉豐盈效果">Full face and midface volume response</div>
+          <div class="t-feature" data-en="Expected and strong response scenarios" data-zh="預期效果與較強效果情境">Expected and strong response scenarios</div>
+          <div class="t-feature" data-en="Parallel generation for side-by-side comparison" data-zh="同步生成，支援並排比對">Parallel generation for side-by-side comparison</div>
         </div>
       </div>
       <div class="t-card filler reveal">
-        <div class="t-tag"><span class="t-dot"></span>HA Filler</div>
-        <h3 class="serif">HA Filler Previews</h3>
-        <p>Area-specific filler simulations across six zones. Volume tiers reflect real syringe counts so the preview stays grounded in what you would actually inject.</p>
+        <div class="t-tag"><span class="t-dot"></span><span data-en="HA Filler" data-zh="玻尿酸填充">HA Filler</span></div>
+        <h3 class="serif" data-en="HA Filler Previews" data-zh="玻尿酸填充預覽">HA Filler Previews</h3>
+        <p data-en="Area-specific filler simulations across six zones. Volume tiers reflect real syringe counts so the preview stays grounded in what you would actually inject." data-zh="六個部位的玻尿酸填充 AI 預覽。劑量等級對應實際注射量，讓預覽效果貼近臨床實況。">Area-specific filler simulations across six zones. Volume tiers reflect real syringe counts so the preview stays grounded in what you would actually inject.</p>
         <div class="t-features">
-          <div class="t-feature">Cheeks, midface, chin, jawline, lips, nose</div>
-          <div class="t-feature">Conservative, moderate, and enhanced volume tiers</div>
-          <div class="t-feature">Single-area or combined treatments</div>
+          <div class="t-feature" data-en="Cheeks, midface, chin, jawline, lips, nose" data-zh="臉頰、中臉、下巴、下顎線、嘴唇、鼻子">Cheeks, midface, chin, jawline, lips, nose</div>
+          <div class="t-feature" data-en="Conservative, moderate, and enhanced volume tiers" data-zh="輕度、中度、明顯等劑量等級">Conservative, moderate, and enhanced volume tiers</div>
+          <div class="t-feature" data-en="Single-area or combined treatments" data-zh="單部位或多部位複合療程">Single-area or combined treatments</div>
         </div>
       </div>
       <div class="t-card reveal" style="border-top:2px solid var(--rose);">
-        <div class="t-tag" style="color:var(--rose);"><span class="t-dot"></span>Neurotoxin</div>
-        <h3 class="serif">Neurotoxin Jawline Contour</h3>
-        <p>Visualize masseter reduction and lower face slimming with neurotoxin. Shows the softening of lower face width and improvement in facial oval.</p>
+        <div class="t-tag" style="color:var(--rose);"><span class="t-dot" style="background:var(--rose);"></span><span data-en="Neurotoxin" data-zh="肉毒桿菌素">Neurotoxin</span></div>
+        <h3 class="serif" data-en="Neurotoxin Jawline Contour" data-zh="咬肌放鬆與下臉輪廓預覽">Neurotoxin Jawline Contour</h3>
+        <p data-en="Visualize masseter reduction and lower face slimming with neurotoxin. Shows the softening of lower face width and improvement in facial oval." data-zh="以 AI 預覽呈現肉毒桿菌素放鬆咬肌、收窄下臉的效果，展示臉型輪廓的可能改變。">Visualize masseter reduction and lower face slimming with neurotoxin. Shows the softening of lower face width and improvement in facial oval.</p>
         <div class="t-features">
-          <div class="t-feature">Masseter reduction and lower face slimming</div>
-          <div class="t-feature">Jawline contour improvement</div>
+          <div class="t-feature" data-en="Masseter reduction and lower face slimming" data-zh="咬肌放鬆、下臉收窄">Masseter reduction and lower face slimming</div>
+          <div class="t-feature" data-en="Jawline contour improvement" data-zh="下顎線條優化">Jawline contour improvement</div>
         </div>
       </div>
       <div class="t-card reveal" style="border-top:2px solid var(--gold);">
-        <div class="t-tag" style="color:var(--gold);"><span class="t-dot" style="background:var(--gold);"></span>RF / HIFU</div>
-        <h3 class="serif">RF &amp; HIFU Skin Tightening</h3>
-        <p>Preview the lifting and tightening effect of energy-based treatments. Supports skin laxity improvement, jowl reduction, and overall facial firmness.</p>
+        <div class="t-tag" style="color:var(--gold);"><span class="t-dot" style="background:var(--gold);"></span><span data-en="RF / HIFU" data-zh="射頻 / 超音波緊膚">RF / HIFU</span></div>
+        <h3 class="serif" data-en="RF &amp; HIFU Skin Tightening" data-zh="射頻與超音波緊膚提升">RF &amp; HIFU Skin Tightening</h3>
+        <p data-en="Preview the lifting and tightening effect of energy-based treatments. Supports skin laxity improvement, jowl reduction, and overall facial firmness." data-zh="預覽能量療程的提升與緊緻效果，涵蓋皮膚鬆弛改善、下垂肉收緊，以及整體緊緻感的 AI 預覽。">Preview the lifting and tightening effect of energy-based treatments. Supports skin laxity improvement, jowl reduction, and overall facial firmness.</p>
         <div class="t-features">
-          <div class="t-feature">Skin laxity and jowl improvement</div>
-          <div class="t-feature">Lifting and tightening effect</div>
+          <div class="t-feature" data-en="Skin laxity and jowl improvement" data-zh="皮膚鬆弛與下垂肉改善">Skin laxity and jowl improvement</div>
+          <div class="t-feature" data-en="Lifting and tightening effect" data-zh="提升與緊緻">Lifting and tightening effect</div>
         </div>
       </div>
     </div>
@@ -355,30 +294,30 @@
 <section class="how">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="eyebrow">How it works</div>
-      <h2 class="serif">In the room, during the consult.</h2>
-      <p>Visualize is designed for the consultation moment — fast enough to use in real time, accurate enough to be clinically credible.</p>
+      <div class="eyebrow" data-en="How it works" data-zh="使用方式">How it works</div>
+      <h2 class="serif" data-en="In the room, during the consult." data-zh="就在診間，諮詢當下。">In the room, during the consult.</h2>
+      <p data-en="Visualize is designed for the consultation moment — fast enough to use in real time, accurate enough to be clinically credible." data-zh="Visualize 專為諮詢現場設計，夠快可以即時使用，夠準確可以獲得臨床信任。">Visualize is designed for the consultation moment — fast enough to use in real time, accurate enough to be clinically credible.</p>
     </div>
     <div class="steps">
       <div class="step reveal">
         <div class="step-num">01</div>
-        <h3>Take a photo</h3>
-        <p>A clean frontal or three-quarter photo taken during the consult. Standard clinic lighting works fine.</p>
+        <h3 data-en="Take a photo" data-zh="拍一張照片">Take a photo</h3>
+        <p data-en="A clean frontal or three-quarter photo taken during the consult. Standard clinic lighting works fine." data-zh="諮詢時拍一張清晰的正面或四分之三側面照。診所一般燈光即可。">A clean frontal or three-quarter photo taken during the consult. Standard clinic lighting works fine.</p>
       </div>
       <div class="step reveal">
         <div class="step-num">02</div>
-        <h3>Select treatment</h3>
-        <p>Choose biostimulation or filler, then select the treatment area and volume. The simulation parameters are set by clinical logic, not sliders.</p>
+        <h3 data-en="Select treatment" data-zh="選擇療程">Select treatment</h3>
+        <p data-en="Choose the treatment type and area. The simulation parameters are set by clinical logic, not arbitrary sliders." data-zh="選擇療程類型與部位。預覽參數依臨床邏輯設定，不是任意調整的滑桿。">Choose the treatment type and area. The simulation parameters are set by clinical logic, not arbitrary sliders.</p>
       </div>
       <div class="step reveal">
         <div class="step-num">03</div>
-        <h3>Generate preview</h3>
-        <p>The AI generates a realistic simulation in seconds. The photo is sent to the AI provider for this request only and is not stored or retained.</p>
+        <h3 data-en="Generate preview" data-zh="生成 AI 預覽">Generate preview</h3>
+        <p data-en="The AI generates a realistic simulation in seconds. The photo is sent to the AI provider for this request only and is not stored or retained." data-zh="AI 在幾秒內生成逼真的AI 預覽。照片僅供本次請求傳送至 AI 服務供應商，不會被儲存或保留。">The AI generates a realistic simulation in seconds. The photo is sent to the AI provider for this request only and is not stored or retained.</p>
       </div>
       <div class="step reveal">
         <div class="step-num">04</div>
-        <h3>Review with patient</h3>
-        <p>Walk through the preview together. The simulation carries a clear consultation-only frame so expectations stay grounded.</p>
+        <h3 data-en="Review with patient" data-zh="與顧客一起確認">Review with patient</h3>
+        <p data-en="Walk through the preview together. The simulation carries a clear consultation-only frame so expectations stay grounded." data-zh="一起瀏覽預覽效果。AI 預覽帶有明確的諮詢用途框架，確保期望值維持在合理範圍內。">Walk through the preview together. The simulation carries a clear consultation-only frame so expectations stay grounded.</p>
       </div>
     </div>
   </div>
@@ -387,49 +326,49 @@
 <section class="pricing" id="pricing">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="eyebrow">Pricing</div>
-      <h2 class="serif">Pay as you go.</h2>
-      <p>No subscription, no monthly minimum. Buy credits when you need them.</p>
+      <div class="eyebrow" data-en="Pricing" data-zh="定價">Pricing</div>
+      <h2 class="serif" data-en="Pay as you go." data-zh="用多少，買多少。">Pay as you go.</h2>
+      <p data-en="No subscription, no monthly minimum. Buy credits when you need them." data-zh="不需訂閱，沒有月費。需要時再購買點數。">No subscription, no monthly minimum. Buy credits when you need them.</p>
     </div>
     <div class="pack-grid">
       <div class="pack reveal">
-        <div class="pack-label">Starter</div>
+        <div class="pack-label" data-en="Starter" data-zh="入門版">Starter</div>
         <div class="pack-price"><sup>$</sup>29</div>
-        <div class="pack-credits">2,000 credits</div>
-        <div class="pack-per">CA$29 &nbsp;<s style="color:rgba(250,247,242,.35);font-weight:300;">CA$59</s>&nbsp; regular price after beta</div>
+        <div class="pack-credits" data-en="2,000 credits" data-zh="2,000 點數">2,000 credits</div>
+        <div class="pack-per">CA$29 &nbsp;<s>CA$59</s>&nbsp; <span data-en="regular price after beta" data-zh="Beta 期結束後的正式定價">regular price after beta</span></div>
         <div class="pack-features">
-          <div class="pack-feature">2,000 consultation previews</div>
-          <div class="pack-feature">All treatment types</div>
-          <div class="pack-feature">Credits never expire</div>
+          <div class="pack-feature" data-en="2,000 consultation previews" data-zh="2,000 次 AI 諮詢預覽">2,000 consultation previews</div>
+          <div class="pack-feature" data-en="All treatment types" data-zh="所有療程類型">All treatment types</div>
+          <div class="pack-feature" data-en="Credits never expire" data-zh="點數不過期">Credits never expire</div>
         </div>
-        <a href="https://skinday.ca/visualize" class="pack-cta" target="_blank" rel="noopener">Get started</a>
+        <a href="https://skinday.ca/visualize" class="pack-cta" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
       </div>
       <div class="pack featured reveal">
-        <div class="pack-label">Clinic</div>
+        <div class="pack-label" data-en="Clinic" data-zh="診所版">Clinic</div>
         <div class="pack-price"><sup>$</sup>69</div>
-        <div class="pack-credits">6,000 credits</div>
-        <div class="pack-per">CA$69 &nbsp;<s style="color:rgba(250,247,242,.35);font-weight:300;">CA$149</s>&nbsp; regular price after beta</div>
+        <div class="pack-credits" data-en="6,000 credits" data-zh="6,000 點數">6,000 credits</div>
+        <div class="pack-per">CA$69 &nbsp;<s>CA$149</s>&nbsp; <span data-en="regular price after beta" data-zh="Beta 期結束後的正式定價">regular price after beta</span></div>
         <div class="pack-features">
-          <div class="pack-feature">6,000 consultation previews</div>
-          <div class="pack-feature">All treatment types</div>
-          <div class="pack-feature">Credits never expire</div>
+          <div class="pack-feature" data-en="6,000 consultation previews" data-zh="6,000 次 AI 諮詢預覽">6,000 consultation previews</div>
+          <div class="pack-feature" data-en="All treatment types" data-zh="所有療程類型">All treatment types</div>
+          <div class="pack-feature" data-en="Credits never expire" data-zh="點數不過期">Credits never expire</div>
         </div>
-        <a href="https://skinday.ca/visualize" class="pack-cta" target="_blank" rel="noopener">Get started</a>
+        <a href="https://skinday.ca/visualize" class="pack-cta" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
       </div>
       <div class="pack reveal">
-        <div class="pack-label">Studio</div>
+        <div class="pack-label" data-en="Studio" data-zh="工作室版">Studio</div>
         <div class="pack-price"><sup>$</sup>139</div>
-        <div class="pack-credits">15,000 credits</div>
-        <div class="pack-per">CA$139 &nbsp;<s style="color:rgba(250,247,242,.35);font-weight:300;">CA$329</s>&nbsp; regular price after beta</div>
+        <div class="pack-credits" data-en="15,000 credits" data-zh="15,000 點數">15,000 credits</div>
+        <div class="pack-per">CA$139 &nbsp;<s>CA$329</s>&nbsp; <span data-en="regular price after beta" data-zh="Beta 期結束後的正式定價">regular price after beta</span></div>
         <div class="pack-features">
-          <div class="pack-feature">15,000 consultation previews</div>
-          <div class="pack-feature">All treatment types</div>
-          <div class="pack-feature">Credits never expire</div>
+          <div class="pack-feature" data-en="15,000 consultation previews" data-zh="15,000 次 AI 諮詢預覽">15,000 consultation previews</div>
+          <div class="pack-feature" data-en="All treatment types" data-zh="所有療程類型">All treatment types</div>
+          <div class="pack-feature" data-en="Credits never expire" data-zh="點數不過期">Credits never expire</div>
         </div>
-        <a href="https://skinday.ca/visualize" class="pack-cta" target="_blank" rel="noopener">Get started</a>
+        <a href="https://skinday.ca/visualize" class="pack-cta" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
       </div>
     </div>
-    <div class="pricing-note reveal">All prices in CAD. Credits are shared across all treatment types and never expire. Additional packs can be purchased at any time.</div>
+    <div class="pricing-note reveal" data-en="All prices in CAD. Credits are shared across all treatment types and never expire. Additional packs can be purchased at any time." data-zh="所有價格以加幣（CAD）計算。點數適用所有療程類型，不會過期。隨時可追加購買。">All prices in CAD. Credits are shared across all treatment types and never expire. Additional packs can be purchased at any time.</div>
   </div>
 </section>
 
@@ -437,38 +376,38 @@
   <div class="wrap">
     <div class="posture-grid">
       <div class="reveal">
-        <div class="eyebrow">Data &amp; privacy</div>
-        <h2 class="serif">What happens to <em>the photo.</em></h2>
-        <p>Visualize requires sending a photo to an AI provider to generate the simulation. That is a different data posture than Studio, and we are explicit about it.</p>
-        <p>The photo is used for that single request. It is not stored by SkinDay, not retained by the AI provider for training, and not linked to any patient record.</p>
+        <div class="eyebrow" data-en="Data &amp; privacy" data-zh="資料與隱私保護">Data &amp; privacy</div>
+        <h2 class="serif"><span data-en="What happens to " data-zh="照片">What happens to </span><em data-en="the photo." data-zh="會如何處理。">the photo.</em></h2>
+        <p data-en="Visualize requires sending a photo to an AI provider to generate the simulation. That is a different data posture than Studio, and we are explicit about it." data-zh="Visualize 需要將照片傳送至 AI 服務供應商以生成AI 預覽。這與 Studio 的資料處理方式不同，我們對此保持透明。">Visualize requires sending a photo to an AI provider to generate the simulation. That is a different data posture than Studio, and we are explicit about it.</p>
+        <p data-en="The photo is used for that single request. It is not stored by SkinDay, not retained by the AI provider for training, and not linked to any patient record." data-zh="照片只供本次生成使用，SkinDay 不會儲存，AI 服務供應商不會用於模型訓練，也不會連結到任何顧客紀錄。">The photo is used for that single request. It is not stored by SkinDay, not retained by the AI provider for training, and not linked to any patient record.</p>
       </div>
       <div class="posture-detail reveal">
         <div class="pd-row">
           <div class="pd-icon">&#x2197;</div>
           <div class="pd-text">
-            <h4>Sent to AI for this request only</h4>
-            <p>The photo is transmitted to an AI provider to generate the simulation. This is the only purpose for which it is used.</p>
+            <h4 data-en="Sent to AI for this request only" data-zh="只為本次生成傳送給 AI 服務供應商">Sent to AI for this request only</h4>
+            <p data-en="The photo is transmitted to an AI provider to generate the simulation. This is the only purpose for which it is used." data-zh="照片傳送至 AI 服務供應商以生成AI 預覽。這是唯一的使用目的。">The photo is transmitted to an AI provider to generate the simulation. This is the only purpose for which it is used.</p>
           </div>
         </div>
         <div class="pd-row">
           <div class="pd-icon">&#x1F5D1;</div>
           <div class="pd-text">
-            <h4>Not stored by SkinDay</h4>
-            <p>SkinDay does not retain the photo after the simulation is generated. It is not saved to any SkinDay database.</p>
+            <h4 data-en="Not stored by SkinDay" data-zh="SkinDay 不儲存">Not stored by SkinDay</h4>
+            <p data-en="SkinDay does not retain the photo after the simulation is generated. It is not saved to any SkinDay database." data-zh="AI 預覽生成後，SkinDay 不會保留照片。不會儲存至任何 SkinDay 資料庫。">SkinDay does not retain the photo after the simulation is generated. It is not saved to any SkinDay database.</p>
           </div>
         </div>
         <div class="pd-row">
           <div class="pd-icon">&#x274C;</div>
           <div class="pd-text">
-            <h4>Not used to train any model</h4>
-            <p>The AI provider processes the image for inference only. It is not used to retrain or fine-tune any model.</p>
+            <h4 data-en="Not used to train any model" data-zh="不用於模型訓練">Not used to train any model</h4>
+            <p data-en="The AI provider processes the image for inference only. It is not used to retrain or fine-tune any model." data-zh="AI 服務供應商僅將照片用於推論，不會用於模型訓練或微調。">The AI provider processes the image for inference only. It is not used to retrain or fine-tune any model.</p>
           </div>
         </div>
         <div class="pd-row">
           <div class="pd-icon">&#x1F4CB;</div>
           <div class="pd-text">
-            <h4>Clinic's consent responsibility</h4>
-            <p>Obtaining appropriate patient consent before generating or sharing any simulation remains the clinic's responsibility.</p>
+            <h4 data-en="Clinic's consent responsibility" data-zh="顧客同意是診所的責任">Clinic's consent responsibility</h4>
+            <p data-en="Obtaining appropriate patient consent before generating or sharing any simulation remains the clinic's responsibility." data-zh="在生成或分享任何AI 預覽前取得顧客的適當同意，是診所的責任。">Obtaining appropriate patient consent before generating or sharing any simulation remains the clinic's responsibility.</p>
           </div>
         </div>
       </div>
@@ -480,9 +419,9 @@
   <div class="wrap">
     <div class="crossover-inner">
       <div class="reveal">
-        <h2 class="serif">Not ready for Visualize? <em>Start with Studio.</em></h2>
-        <p>Studio is free, runs entirely in your browser, and needs no account. The fastest way to see what SkinDay can do for your practice.</p>
-        <a href="/studio" class="btn btn-ghost-light" style="margin-top:24px;">Open Studio free</a>
+        <h2 class="serif"><span data-en="Not ready for Visualize? " data-zh="還沒準備好試 Visualize？">Not ready for Visualize? </span><em data-en="Start with Studio." data-zh="先從 Studio 開始。">Start with Studio.</em></h2>
+        <p data-en="Studio is free, runs entirely in your browser, and needs no account. The fastest way to see what SkinDay can do for your practice." data-zh="Studio 完全免費，在瀏覽器中直接使用，不需帳號。是認識 SkinDay 最快的方式。">Studio is free, runs entirely in your browser, and needs no account. The fastest way to see what SkinDay can do for your practice.</p>
+        <a href="/studio" class="btn btn-ghost-light" style="margin-top:24px;" data-en="Open Studio free" data-zh="免費開啟 Studio">Open Studio free</a>
       </div>
     </div>
   </div>
@@ -490,10 +429,10 @@
 
 <section class="closing">
   <div class="wrap">
-    <h2 class="serif reveal">Show the result. <em>Win the consult.</em></h2>
-    <p class="reveal">Credits never expire. Start with as many or as few as you need.</p>
-    <a href="https://skinday.ca/visualize" class="btn btn-primary reveal" target="_blank" rel="noopener">Get started</a>
-    <div class="sub-note reveal">Already have an account? <a href="https://skinday.ca/visualize" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;">Sign in</a></div>
+    <h2 class="serif reveal"><span data-en="Show the result. " data-zh="展示可能的效果，">Show the result. </span><em data-en="Win the consult." data-zh="讓諮詢更有說服力。">Win the consult.</em></h2>
+    <p class="reveal" data-en="Credits never expire. Start with as many or as few as you need." data-zh="點數不過期。從您需要的數量開始買，多少都可以。">Credits never expire. Start with as many or as few as you need.</p>
+    <a href="https://skinday.ca/visualize" class="btn btn-primary reveal" target="_blank" rel="noopener" data-en="Get started" data-zh="立即開始">Get started</a>
+    <div class="sub-note reveal"><span data-en="Already have an account? " data-zh="已有帳號？">Already have an account? </span><a href="https://skinday.ca/visualize" target="_blank" rel="noopener" style="color:var(--gold);text-decoration:none;" data-en="Sign in" data-zh="登入">Sign in</a></div>
   </div>
 </section>
 
@@ -501,46 +440,60 @@
   <div class="wrap">
     <div class="foot-top">
       <div>
-        <div class="foot-brand"><span>SkinDay</span></div>
-        <div class="foot-tagline">Helping aesthetic clinics worldwide grow.</div>
+        <div class="foot-brand">Skin<span>Day</span></div>
+        <div class="foot-tagline" data-en="Helping aesthetic clinics worldwide show results and grow." data-zh="協助全球醫美診所展示成果、持續成長。">Helping aesthetic clinics worldwide show results and grow.</div>
       </div>
       <div class="foot-cols">
         <div class="foot-col">
-          <h4>Tools</h4>
-          <a href="/studio">Studio (free)</a>
+          <h4 data-en="Tools" data-zh="工具">Tools</h4>
+          <a href="/studio" data-en="Studio (free)" data-zh="Studio（免費）">Studio (free)</a>
           <a href="/visualize">Visualize</a>
         </div>
         <div class="foot-col">
-          <h4>Company</h4>
-          <a href="/#built">About</a>
-          <a href="mailto:hello@skinday.com">Contact</a>
+          <h4 data-en="Company" data-zh="公司">Company</h4>
+          <a href="/#built" data-en="About" data-zh="關於">About</a>
+          <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
         </div>
         <div class="foot-col">
-          <h4>Legal</h4>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
+          <h4 data-en="Legal" data-zh="法律">Legal</h4>
+          <a href="/privacy" data-en="Privacy" data-zh="隱私政策">Privacy</a>
+          <a href="/terms" data-en="Terms" data-zh="服務條款">Terms</a>
+          <a href="/refund" data-en="Refunds" data-zh="退款政策">Refunds</a>
         </div>
       </div>
     </div>
     <div class="foot-note">
-      <span class="posture">Visualize sends a photo to an AI provider for that single request only. It is not stored by SkinDay and is not used to train any model.</span>
-      Visualize outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any simulation is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.
+      <span class="posture" data-en="Visualize sends a photo to an AI provider for that single request only. It is not stored by SkinDay and is not used to train any model." data-zh="Visualize 只會為了本次生成將照片傳送給 AI 服務供應商，SkinDay 不會儲存，也不用於模型訓練。">Visualize sends a photo to an AI provider for that single request only. It is not stored by SkinDay and is not used to train any model.</span>
+      <span data-en="Visualize outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any simulation is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice." data-zh="Visualize 輸出內容為 AI 生成的視覺化預覽，僅供諮詢參考，並非實際治療結果的預測。在使用或分享任何AI 預覽前取得顧客的適當同意，是診所的責任。SkinDay 並非醫療裝置，亦不提供醫療建議。">Visualize outputs are AI-generated visualizations for consultation purposes only and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any simulation is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.</span>
     </div>
     <div class="foot-bottom">
-      <span>&#169; 2026 SkinDay. All rights reserved.</span>
+      <span>&#169; 2026 SkinDay. <span data-en="All rights reserved." data-zh="版權所有。">All rights reserved.</span></span>
       <span>skinday.com</span>
     </div>
   </div>
 </footer>
 
 <script>
+  var currentLang=sessionStorage.getItem('sd-lang')||'en';
+  function setLang(lang){currentLang=lang;sessionStorage.setItem('sd-lang',lang);applyLang();}
+  function applyLang(){
+    var isZh=currentLang==='zh';
+    document.body.classList.toggle('zh',isZh);
+    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+      var val=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
+      if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.placeholder=val;}else{el.innerHTML=val;}
+    });
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
+    });
+    document.title=isZh?'SkinDay Visualize — AI 諮詢預覽':'SkinDay Visualize — AI consultation previews for aesthetic clinics';
+  }
+  applyLang();
   function toggleNav(btn){
-    var m=document.getElementById('navMobile');
-    var open=m.classList.toggle('open');
+    var m=document.getElementById('navMobile');var open=m.classList.toggle('open');
     btn.setAttribute('aria-expanded',open?'true':'false');
-    btn.querySelector('svg').innerHTML=open
-      ?'<line x1="2" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="20" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-      :'<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
+    btn.querySelector('svg').innerHTML=open?'<line x1="2" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="20" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>':'<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
   }
   document.getElementById('navMobile').querySelectorAll('a').forEach(function(a){
     a.addEventListener('click',function(){
@@ -552,9 +505,7 @@
   (function(){
     var els=document.querySelectorAll('.reveal');
     if(!('IntersectionObserver' in window)){els.forEach(function(e){e.classList.add('in');});return;}
-    var io=new IntersectionObserver(function(entries){
-      entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});
-    },{threshold:.12});
+    var io=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},{threshold:.12});
     els.forEach(function(e){io.observe(e);});
   })();
 </script>

@@ -4,97 +4,164 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Refund Policy — SkinDay</title>
-  <meta name="description" content="SkinDay refund policy for Visualize credits." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --cream: #FAF7F2; --deep: #1C1714;
-      --rose: #C8725A; --gold: #C9A96E;
-      --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
-    }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(28,23,20,0.96); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(201,169,110,0.25);
-      padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
-    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 600; color: var(--cream); text-decoration: none; letter-spacing: 0.01em; }
-    .nav-logo span { color: var(--gold); }
-    .nav-back { color: var(--dim); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
-    .nav-back:hover { color: var(--cream); }
-    .page-wrap { max-width: 720px; margin: 0 auto; padding: 72px 28px 96px; }
-    .page-eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; }
-    h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; color: var(--deep); margin-bottom: 0.5rem; line-height: 1.1; }
-    .last-updated { font-size: 0.8rem; color: var(--muted); margin-bottom: 3rem; }
-    h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; color: var(--deep); margin: 2.5rem 0 0.75rem; }
-    p { font-size: 0.94rem; line-height: 1.78; color: #3a3330; margin-bottom: 1rem; }
-    ul { padding-left: 1.4rem; margin-bottom: 1rem; }
-    ul li { font-size: 0.94rem; line-height: 1.78; color: #3a3330; margin-bottom: 0.3rem; }
-    a { color: var(--rose); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    hr { border: none; border-top: 1px solid var(--border); margin: 2.5rem 0; }
-    .policy-box { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 24px 28px; margin: 1.5rem 0; }
-    .policy-box p { margin: 0; font-size: 0.92rem; line-height: 1.72; color: #3a3330; }
-    .policy-box p + p { margin-top: 0.75rem; }
-    footer { background: var(--deep); padding: 2rem 5%; text-align: center; }
-    .footer-note { font-size: 0.78rem; color: var(--muted); }
-    .footer-note a { color: var(--dim); }
+    :root { --cream:#FAF7F2;--deep:#1C1714;--rose:#C8725A;--gold:#C9A96E;
+    --deep2:#241E1A;
+    --rose-m:#D4896E;
+    --rose-bg:#F5E8E3;
+    --border:#EAE2D8;
+    --hero-border:rgba(201,169,110,.25);--muted:#8A7B72;--dim:#B5A89F;--border:#EAE2D8;--line-light:rgba(250,247,242,.16); }
+    body { font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--deep);-webkit-font-smoothing:antialiased; }
+    body.zh { font-family:'Noto Serif TC','DM Sans',sans-serif; }
+    body.zh p,body.zh li { letter-spacing:.02em;line-height:1.85; }
+    nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:#FAF7F2;text-decoration:none;letter-spacing:.01em;}
+    .nav-logo span{color:var(--gold);}
+    .nav-right{display:flex;align-items:center;gap:20px;}
+    .nav-back{color:var(--dim);text-decoration:none;font-size:.82rem;transition:color .2s;}
+    .nav-back:hover{color:#FAF7F2;}
+    .lang-toggle{display:flex;align-items:center;gap:0;border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;flex-shrink:0;}
+    .lang-btn{padding:6px 11px;cursor:pointer;background:none;border:none;color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s,color .2s;}
+    .lang-btn.active{background:rgba(250,247,242,.14);color:#FAF7F2;}
+    .lang-btn:hover:not(.active){color:var(--gold);}
+    .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
+    .page-wrap{max-width:720px;margin:0 auto;padding:72px 28px 96px;}
+    .page-eyebrow{font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
+    h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3rem);font-weight:400;color:var(--deep);margin-bottom:.5rem;line-height:1.1;}
+    .last-updated{font-size:.8rem;color:var(--muted);margin-bottom:3rem;}
+    h2{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--deep);margin:2.5rem 0 .75rem;}
+    p{font-size:.94rem;line-height:1.78;color:#3a3330;margin-bottom:1rem;}
+    ul{padding-left:1.4rem;margin-bottom:1rem;}
+    ul li{font-size:.94rem;line-height:1.78;color:#3a3330;margin-bottom:.3rem;}
+    a{color:var(--rose);text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0;}
+    .policy-box{background:#fff;border:1px solid var(--border);border-radius:6px;padding:24px 28px;margin:1.5rem 0;}
+    .policy-box p{margin:0;font-size:.92rem;line-height:1.72;color:#3a3330;}
+    .policy-box p+p{margin-top:.75rem;}
+    footer{background:var(--deep);padding:2rem 5%;text-align:center;}
+    .footer-note{font-size:.78rem;color:var(--muted);}
+    .footer-note a{color:var(--dim);text-decoration:none;}
+    .footer-note a:hover{color:#FAF7F2;}
+    .lang-section{display:block;}
+    .lang-section.hidden{display:none;}
   </style>
 </head>
 <body>
 
 <nav>
-  <a href="/" class="nav-logo"><span>SkinDay</span></a>
-  <a href="/" class="nav-back">Back to SkinDay</a>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Skin<span>Day</span></a>
+    <div class="nav-right">
+      <a href="/" class="nav-back" id="navBack">Back to SkinDay</a>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <div class="lang-sep"></div>
+        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <div class="page-wrap">
-  <div class="page-eyebrow">Legal</div>
-  <h1>Refund Policy</h1>
-  <div class="last-updated">Last updated: June 2026</div>
-
-  <p>This policy applies to credit purchases made for SkinDay Visualize. SkinDay Studio is free and involves no purchases.</p>
-
-  <hr />
-
-  <h2>Automatic refunds</h2>
-  <div class="policy-box">
-    <p>Credits are automatically refunded if a simulation fails to generate, is blocked by a content moderation check, or returns an error. Refunds happen immediately and credits are returned to your balance. You do not need to contact us for these cases.</p>
+  <!-- ENGLISH -->
+  <div class="lang-section" id="sec-en">
+    <div class="page-eyebrow">Legal</div>
+    <h1>Refund Policy</h1>
+    <div class="last-updated">Last updated: June 2026</div>
+    <p>This policy applies to credit purchases made for SkinDay Visualize. SkinDay Studio is free and involves no purchases.</p>
+    <hr />
+    <h2>Automatic refunds</h2>
+    <div class="policy-box">
+      <p>Credits are automatically refunded if a simulation fails to generate, is blocked by a content moderation check, or returns an error. Refunds happen immediately and credits are returned to your balance. You do not need to contact us for these cases.</p>
+    </div>
+    <h2>Credits never expire</h2>
+    <p>Unused credits do not expire. There is no time pressure to use purchased credits, and no subscription to cancel.</p>
+    <h2>Requesting a refund</h2>
+    <p>If you believe you were charged in error, or if you experienced a technical issue that was not automatically resolved, contact us within 30 days of the purchase:</p>
+    <ul>
+      <li>Email: <a href="mailto:hello@skinday.com">hello@skinday.com</a></li>
+      <li>Include your account email and a brief description of the issue</li>
+    </ul>
+    <p>We review all requests and respond within 2 business days. Refunds are issued to the original payment method via Stripe.</p>
+    <h2>What is not refundable</h2>
+    <ul>
+      <li>Credits that have been successfully used to generate simulations</li>
+      <li>Purchases where simulations were generated and delivered as expected</li>
+      <li>Requests made more than 30 days after the original purchase date</li>
+    </ul>
+    <h2>Contact</h2>
+    <p>For any questions about billing or refunds: <a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
   </div>
 
-  <h2>Credits never expire</h2>
-  <p>Unused credits do not expire. There is no time pressure to use purchased credits, and no subscription to cancel.</p>
-
-  <h2>Requesting a refund</h2>
-  <p>If you believe you were charged in error, or if you experienced a technical issue that was not automatically resolved, contact us within 30 days of the purchase:</p>
-  <ul>
-    <li>Email: <a href="mailto:hello@skinday.com">hello@skinday.com</a></li>
-    <li>Include your account email and a brief description of the issue</li>
-  </ul>
-  <p>We review all requests and respond within 2 business days. Refunds are issued to the original payment method via Stripe.</p>
-
-  <h2>What is not refundable</h2>
-  <ul>
-    <li>Credits that have been successfully used to generate simulations</li>
-    <li>Purchases where simulations were generated and delivered as expected</li>
-    <li>Requests made more than 30 days after the original purchase date</li>
-  </ul>
-
-  <h2>Contact</h2>
-  <p>For any questions about billing or refunds: <a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  <!-- TRADITIONAL CHINESE -->
+  <div class="lang-section hidden" id="sec-zh">
+    <div class="page-eyebrow">法律</div>
+    <h1>退款政策</h1>
+    <div class="last-updated">最後更新：2026 年 6 月</div>
+    <p>本政策適用於 SkinDay Visualize 的點數購買。SkinDay Studio 免費使用，不涉及任何購買。</p>
+    <hr />
+    <h2>自動退款</h2>
+    <div class="policy-box">
+      <p>如果模擬生成失敗、被內容審核系統攔截，或返回錯誤，點數將自動退還。退款立即生效，點數返還至您的帳戶餘額。這些情況無需聯絡我們。</p>
+    </div>
+    <h2>點數永久有效</h2>
+    <p>未使用的點數不會過期。購買的點數無使用時限，也無需取消任何訂閱。</p>
+    <h2>申請退款</h2>
+    <p>如果您認為被錯誤收費，或遇到未自動解決的技術問題，請在購買後 30 天內聯絡我們：</p>
+    <ul>
+      <li>電子郵件：<a href="mailto:hello@skinday.com">hello@skinday.com</a></li>
+      <li>請提供您的帳號電子郵件及問題的簡短描述</li>
+    </ul>
+    <p>我們審核所有申請，並在 2 個工作天內回覆。退款透過 Stripe 退回至原始付款方式。</p>
+    <h2>不予退款的情況</h2>
+    <ul>
+      <li>已成功用於生成AI 預覽的點數</li>
+      <li>AI 預覽已按預期生成並交付的購買</li>
+      <li>原始購買日期 30 天後提出的申請</li>
+    </ul>
+    <h2>聯絡方式</h2>
+    <p>如對帳務或退款有任何疑問：<a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  </div>
 </div>
 
 <footer>
-  <div class="footer-note">&#169; 2026 SkinDay &nbsp;&middot;&nbsp; <a href="/privacy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms">Terms of Service</a> &nbsp;&middot;&nbsp; <a href="/refund">Refund Policy</a></div>
+  <div class="footer-note">
+    &#169; 2026 SkinDay &nbsp;&middot;&nbsp;
+    <a href="/privacy" id="f-privacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="/terms" id="f-terms">Terms of Service</a> &nbsp;&middot;&nbsp;
+    <a href="/refund" id="f-refund">Refund Policy</a>
+  </div>
 </footer>
 
+<script>
+  var currentLang=sessionStorage.getItem('sd-lang')||'en';
+  function setLang(lang){currentLang=lang;sessionStorage.setItem('sd-lang',lang);applyLang();}
+  function applyLang(){
+    var isZh=currentLang==='zh';
+    document.body.classList.toggle('zh',isZh);
+    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
+    document.getElementById('sec-en').classList.toggle('hidden',isZh);
+    document.getElementById('sec-zh').classList.toggle('hidden',!isZh);
+    document.getElementById('navBack').textContent=isZh?'返回 SkinDay':'Back to SkinDay';
+    document.getElementById('f-privacy').textContent=isZh?'隱私政策':'Privacy Policy';
+    document.getElementById('f-terms').textContent=isZh?'服務條款':'Terms of Service';
+    document.getElementById('f-refund').textContent=isZh?'退款政策':'Refund Policy';
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
+    });
+    document.title=isZh?'退款政策 — SkinDay':'Refund Policy — SkinDay';
+  }
+  applyLang();
+</script>
 </body>
 </html>

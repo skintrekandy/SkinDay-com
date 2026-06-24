@@ -7,101 +7,90 @@
   <meta name="description" content="Get in touch with SkinDay. Clinic inquiries, partnerships, and support." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
   <link rel="shortcut icon" href="/favicon.ico">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --cream: #FAF7F2; --warm: #F0EAE1; --deep: #1C1714;
-      --rose: #C8725A; --gold: #C9A96E;
-      --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
-    }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(28,23,20,0.96); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(201,169,110,0.25);
-      padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px;
-    }
-    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 600; color: var(--cream); text-decoration: none; letter-spacing: 0.01em; }
-    .nav-logo span { color: var(--gold); }
-    .nav-back { color: var(--dim); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
-    .nav-back:hover { color: var(--cream); }
+    :root { --cream:#FAF7F2;--warm:#F4EDE4;--deep:#1C1714;--rose:#C8725A;--gold:#C9A96E;
+    --deep2:#241E1A;
+    --rose-m:#D4896E;
+    --rose-bg:#F5E8E3;
+    --border:#EAE2D8;
+    --hero-border:rgba(201,169,110,.25);--muted:#8A7B72;--dim:#B5A89F;--border:#EAE2D8;--line-light:rgba(250,247,242,.16); }
+    body { font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--deep);-webkit-font-smoothing:antialiased; }
+    body.zh { font-family:'Noto Serif TC','DM Sans',sans-serif; }
+    body.zh p,body.zh label { letter-spacing:.02em;line-height:1.8; }
+    .wrap { max-width:1180px;margin:0 auto;padding:0 28px; }
 
-    /* hero */
-    .hero {
-      background: var(--deep); color: var(--cream);
-      padding: 80px 0 72px; text-align: center;
-      position: relative; overflow: hidden;
-    }
-    .hero::before {
-      content: ""; position: absolute; top: -20%; right: -10%; width: 50%; height: 140%;
-      background: radial-gradient(ellipse at center, rgba(201,169,110,.1), transparent 62%);
-      pointer-events: none;
-    }
-    .hero::after {
-      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: .4;
-    }
-    .hero .inner { position: relative; z-index: 2; }
-    .eyebrow { font-size: 0.72rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 20px; }
-    .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 400; line-height: 1.08; margin-bottom: 16px; }
-    .hero h1 em { font-style: italic; color: var(--gold); }
-    .hero p { font-size: 0.98rem; color: rgba(250,247,242,.68); font-weight: 300; max-width: 42ch; margin: 0 auto; line-height: 1.7; }
+    .lang-toggle{display:flex;align-items:center;gap:0;border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;flex-shrink:0;}
+    .lang-btn{padding:6px 11px;cursor:pointer;background:none;border:none;color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s,color .2s;letter-spacing:.03em;}
+    .lang-btn.active{background:rgba(250,247,242,.14);color:#FAF7F2;}
+    .lang-btn:hover:not(.active){color:var(--gold);}
+    .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
 
-    /* form */
-    .form-wrap { max-width: 600px; margin: 0 auto; padding: 72px 28px 96px; }
+    nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
+    .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:#FAF7F2;text-decoration:none;letter-spacing:.01em;}
+    .nav-logo span{color:var(--gold);}
+    .nav-right{display:flex;align-items:center;gap:20px;}
+    .nav-back{color:var(--dim);text-decoration:none;font-size:.82rem;transition:color .2s;}
+    .nav-back:hover{color:#FAF7F2;}
 
-    .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 18px; }
-    .field label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-    .field input, .field select, .field textarea {
-      background: #fff; border: 1px solid var(--border); color: var(--deep);
-      padding: 11px 14px; font-size: 0.9rem; font-family: 'DM Sans', sans-serif;
-      border-radius: 4px; outline: none; width: 100%;
-      transition: border-color 0.2s;
-    }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--gold); }
-    .field textarea { min-height: 120px; resize: vertical; line-height: 1.55; }
-    .field select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7B72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer; }
+    .hero{background:var(--deep);color:#FAF7F2;padding:80px 0 72px;text-align:center;position:relative;overflow:hidden;}
+    .hero::before{content:"";position:absolute;top:-20%;right:-10%;width:50%;height:140%;background:radial-gradient(ellipse at center,rgba(201,169,110,.1),transparent 62%);pointer-events:none;}
+    .hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4;}
+    .hero .inner{position:relative;z-index:2;}
+    .eyebrow{font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);font-weight:500;margin-bottom:20px;}
+    body.zh .eyebrow{letter-spacing:.12em;}
+    .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,5vw,3.6rem);font-weight:400;line-height:1.08;margin-bottom:16px;}
+    .hero h1 em{font-style:italic;color:var(--gold);}
+    .hero p{font-size:.98rem;color:rgba(250,247,242,.68);font-weight:300;max-width:42ch;margin:0 auto;line-height:1.7;}
 
-    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media(max-width: 520px) { .field-row { grid-template-columns: 1fr; } }
+    .form-wrap{max-width:600px;margin:0 auto;padding:72px 28px 96px;}
+    .field{display:flex;flex-direction:column;gap:7px;margin-bottom:18px;}
+    .field label{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+    .field input,.field select,.field textarea{background:#fff;border:1px solid var(--border);color:var(--deep);padding:11px 14px;font-size:.9rem;font-family:'DM Sans',sans-serif;border-radius:4px;outline:none;width:100%;transition:border-color .2s;}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold);}
+    .field textarea{min-height:120px;resize:vertical;line-height:1.55;}
+    .field select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238A7B72' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer;}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    @media(max-width:520px){.field-row{grid-template-columns:1fr;}}
+    .submit-btn{width:100%;padding:14px;background:var(--rose);color:#fff;border:none;border-radius:4px;font-size:.94rem;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;transition:background .2s,transform .2s;}
+    .submit-btn:hover{background:#b5634d;transform:translateY(-1px);}
+    .success-msg{display:none;text-align:center;padding:48px 0;}
+    .success-msg h2{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:400;margin-bottom:12px;}
+    .success-msg p{color:var(--muted);font-size:.94rem;font-weight:300;}
 
-    .submit-btn {
-      width: 100%; padding: 14px; background: var(--rose); color: #fff;
-      border: none; border-radius: 4px; font-size: 0.94rem; font-weight: 500;
-      font-family: 'DM Sans', sans-serif; cursor: pointer; margin-top: 8px;
-      transition: background 0.2s, transform 0.2s;
-    }
-    .submit-btn:hover { background: #b5634d; transform: translateY(-1px); }
-
-    .success-msg {
-      display: none; text-align: center; padding: 48px 0;
-    }
-    .success-msg h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; margin-bottom: 12px; }
-    .success-msg p { color: var(--muted); font-size: 0.94rem; font-weight: 300; }
-
-    footer { background: var(--deep); padding: 2rem 5%; text-align: center; }
-    .footer-note { font-size: 0.78rem; color: var(--muted); }
-    .footer-note a { color: var(--dim); text-decoration: none; }
-    .footer-note a:hover { color: var(--cream); }
+    footer{background:var(--deep);padding:2rem 5%;text-align:center;}
+    .footer-note{font-size:.78rem;color:var(--muted);}
+    .footer-note a{color:var(--dim);text-decoration:none;}
+    .footer-note a:hover{color:#FAF7F2;}
   </style>
 </head>
 <body>
 
 <nav>
-  <a href="/" class="nav-logo"><span>SkinDay</span></a>
-  <a href="/" class="nav-back">Back to SkinDay</a>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Skin<span>Day</span></a>
+    <div class="nav-right">
+      <a href="/" class="nav-back" data-en="Back to SkinDay" data-zh="回到 SkinDay">Back to SkinDay</a>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <div class="lang-sep"></div>
+        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+      </div>
+    </div>
+  </div>
 </nav>
 
 <div class="hero">
   <div class="inner wrap">
-    <div class="eyebrow">Get in touch</div>
-    <h1>We'd love to <em>hear from you.</em></h1>
-    <p>Whether you're a clinic, a partner, or have a question about Visualize — reach out and we'll get back to you shortly.</p>
+    <div class="eyebrow" data-en="Get in touch" data-zh="聯絡我們">Get in touch</div>
+    <h1><span data-en="We'd love to " data-zh="歡迎">We'd love to </span><em data-en="hear from you." data-zh="聯繫我們。">hear from you.</em></h1>
+    <p data-en="Whether you're a clinic, a partner, or have a question about Visualize — reach out and we'll get back to you shortly." data-zh="無論您是診所、合作夥伴，或想了解 Visualize，都歡迎留下訊息，我們會盡快回覆。">Whether you're a clinic, a partner, or have a question about Visualize — reach out and we'll get back to you shortly.</p>
   </div>
 </div>
 
@@ -109,69 +98,80 @@
   <form id="contactForm" name="contact" netlify netlify-honeypot="bot-field">
     <input type="hidden" name="form-name" value="contact" />
     <p style="display:none;"><label>Don't fill this out: <input name="bot-field" /></label></p>
-
     <div class="field-row">
       <div class="field">
-        <label for="name">Name</label>
-        <input type="text" id="name" name="name" placeholder="Your name" required />
+        <label data-en="Name" data-zh="姓名">Name</label>
+        <input type="text" name="name" required data-en-placeholder="Your name" data-zh-placeholder="您的姓名" placeholder="Your name" />
       </div>
       <div class="field">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" placeholder="you@yourclinic.com" required />
+        <label data-en="Email" data-zh="電子郵件">Email</label>
+        <input type="email" name="email" required data-en-placeholder="you@yourclinic.com" data-zh-placeholder="您的電子郵件" placeholder="you@yourclinic.com" />
       </div>
     </div>
-
     <div class="field">
-      <label for="subject">Inquiry type</label>
-      <select id="subject" name="subject" required>
-        <option value="" disabled selected>Select an inquiry type</option>
-        <option value="clinic-support">Clinic support</option>
-        <option value="visualize-billing">Visualize billing</option>
-        <option value="partnership">Partnership or pharma</option>
-        <option value="media">Media inquiry</option>
-        <option value="general">General question</option>
+      <label data-en="Inquiry type" data-zh="詢問類型">Inquiry type</label>
+      <select name="subject" required id="subjectSelect">
+        <option value="" disabled selected data-en="Select an inquiry type" data-zh="請選擇詢問類型">Select an inquiry type</option>
+        <option value="clinic-support" data-en="Clinic support" data-zh="診所支援">Clinic support</option>
+        <option value="visualize-billing" data-en="Visualize billing" data-zh="Visualize 帳務問題">Visualize billing</option>
+        <option value="partnership" data-en="Partnership or pharma" data-zh="合作與品牌洽詢">Partnership or pharma</option>
+        <option value="media" data-en="Media inquiry" data-zh="媒體採訪">Media inquiry</option>
+        <option value="general" data-en="General question" data-zh="其他問題">General question</option>
       </select>
     </div>
-
     <div class="field">
-      <label for="message">Message</label>
-      <textarea id="message" name="message" placeholder="Tell us what's on your mind..." required></textarea>
+      <label data-en="Message" data-zh="訊息">Message</label>
+      <textarea name="message" required data-en-placeholder="Tell us what's on your mind..." data-zh-placeholder="請告訴我們您的問題或想法⋯⋯" placeholder="Tell us what's on your mind..."></textarea>
     </div>
-
-    <button type="submit" class="submit-btn">Send message</button>
+    <button type="submit" class="submit-btn" data-en="Send message" data-zh="送出">Send message</button>
   </form>
-
   <div class="success-msg" id="successMsg">
-    <h2>Message sent.</h2>
-    <p>We'll get back to you at the email you provided.</p>
+    <h2 data-en="Message sent." data-zh="訊息已送出。">Message sent.</h2>
+    <p data-en="We'll get back to you at the email you provided." data-zh="我們會盡快回覆您留下的電子郵件。">We'll get back to you at the email you provided.</p>
   </div>
 </div>
 
 <footer>
   <div class="footer-note">
     &#169; 2026 SkinDay &nbsp;&middot;&nbsp;
-    <a href="/privacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
-    <a href="/terms">Terms of Service</a> &nbsp;&middot;&nbsp;
-    <a href="/refund">Refund Policy</a>
+    <a href="/privacy" data-en="Privacy Policy" data-zh="隱私政策">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="/terms" data-en="Terms of Service" data-zh="服務條款">Terms of Service</a> &nbsp;&middot;&nbsp;
+    <a href="/refund" data-en="Refund Policy" data-zh="退款政策">Refund Policy</a>
   </div>
 </footer>
 
 <script>
-  document.getElementById('contactForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    var form = this;
-    fetch('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(new FormData(form)).toString()
-    }).then(function() {
-      form.style.display = 'none';
-      document.getElementById('successMsg').style.display = 'block';
-    }).catch(function() {
-      window.location.href = 'mailto:hello@skinday.com';
+  var currentLang=sessionStorage.getItem('sd-lang')||'en';
+  function setLang(lang){currentLang=lang;sessionStorage.setItem('sd-lang',lang);applyLang();}
+  function applyLang(){
+    var isZh=currentLang==='zh';
+    document.body.classList.toggle('zh',isZh);
+    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+      var val=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
+      el.innerHTML=val;
     });
+    // placeholders
+    document.querySelectorAll('[data-en-placeholder]').forEach(function(el){
+      el.placeholder=isZh?el.getAttribute('data-zh-placeholder'):el.getAttribute('data-en-placeholder');
+    });
+    // select options
+    document.querySelectorAll('option[data-en]').forEach(function(el){
+      el.textContent=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
+    });
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
+    });
+    document.title=isZh?'聯絡我們 — SkinDay':'Contact — SkinDay';
+  }
+  applyLang();
+  document.getElementById('contactForm').addEventListener('submit',function(e){
+    e.preventDefault();
+    var form=this;
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams(new FormData(form)).toString()})
+    .then(function(){form.style.display='none';document.getElementById('successMsg').style.display='block';applyLang();})
+    .catch(function(){window.location.href='mailto:hello@skinday.com';});
   });
 </script>
-
 </body>
 </html>
