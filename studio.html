@@ -1399,10 +1399,26 @@ updateWmPosState();
 // ============================================================
 // DRAWING HELPERS
 // ============================================================
+// Average luminance of the non-background pixels. Near-black pixels (the
+// solid black backdrop, or naturally very dark areas) are skipped so exposure
+// matching compares subject-to-subject rather than frame-to-frame. Without
+// this, photos with black backgrounds normalize against their black area and
+// come out unevenly dark.
 function avgBright(ctx, w, h) {
-  const d = ctx.getImageData(0,0,w,h).data; let s = 0;
-  for (let i = 0; i < d.length; i+=4) s += .299*d[i] + .587*d[i+1] + .114*d[i+2];
-  return s / (d.length / 4);
+  const d = ctx.getImageData(0,0,w,h).data;
+  let s = 0, n = 0;
+  for (let i = 0; i < d.length; i+=4) {
+    const lum = .299*d[i] + .587*d[i+1] + .114*d[i+2];
+    if (lum < 18) continue; // skip background / near-black
+    s += lum; n++;
+  }
+  // Fall back to a full-frame average if almost everything was dark.
+  if (n < (d.length / 4) * 0.04) {
+    s = 0;
+    for (let i = 0; i < d.length; i+=4) s += .299*d[i] + .587*d[i+1] + .114*d[i+2];
+    return s / (d.length / 4);
+  }
+  return s / n;
 }
 
 function denoise(ctx, w, h) {
