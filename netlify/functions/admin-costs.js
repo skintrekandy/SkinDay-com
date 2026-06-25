@@ -31,16 +31,18 @@ const PACKS = loadPacks();
 // Per-action credit costs (mirror the live app's VISUALIZE_COST_* env). Used to
 // convert pack credits into generation counts and to value each generation.
 const FILLER_COST   = parseInt(process.env.VISUALIZE_COST_FILLER   || '100', 10) || 100;
-const BIOSTIM_COST  = parseInt(process.env.VISUALIZE_COST_BIOSTIM  || '200', 10) || 200;
+const BIOSTIM_COST  = parseInt(process.env.VISUALIZE_COST_BIOSTIM  || '100', 10) || 100;
 const SCENARIO_COST = parseInt(process.env.VISUALIZE_COST_SCENARIO || '100', 10) || 100;
 
 // Exchange rate for display (USD cost vs CAD revenue)
 const CAD_TO_USD = parseFloat(process.env.CAD_TO_USD || '0.73');
 
 exports.handler = async (event) => {
-  // Auth check
+  // Auth check. Uses VISUALIZE_ADMIN_SECRET, a credential separate from the
+  // Canada directory admin's ADMIN_SECRET, so the two admin systems are fully
+  // isolated: a leak or rotation of one never affects the other.
   const auth = (event.headers['authorization'] || '').replace('Bearer ', '').trim();
-  if(!process.env.ADMIN_SECRET || auth !== process.env.ADMIN_SECRET){
+  if(!process.env.VISUALIZE_ADMIN_SECRET || auth !== process.env.VISUALIZE_ADMIN_SECRET){
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
   }
 
@@ -100,7 +102,7 @@ exports.handler = async (event) => {
       const revenueUsd    = p.price_cad * CAD_TO_USD;
       // avgCostSuccess is cost per GENERATION. Convert pack credits into
       // generation counts using the per-action credit cost, so the math holds at
-      // any credit scale (old: filler=1/biostim=2; new: filler=100/biostim=200).
+      // any credit scale (old: filler=1/biostim=2; new: flat 100 per angle for all types).
       const fillerGens    = p.credits / FILLER_COST;
       const biostimGens   = p.credits / BIOSTIM_COST;
       const costIfAllFiller  = fillerGens  * avgCostSuccess;
