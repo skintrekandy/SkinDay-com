@@ -77,6 +77,11 @@
     .upload-grid.g-2h .upload-zone,
     .upload-grid.g-3h .upload-zone { aspect-ratio: 3/4; }
     .row-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); grid-column: 1 / -1; margin-bottom: -4px; padding-bottom: 2px; border-bottom: 1px solid var(--border); }
+    .row-label-wrap { grid-column: 1 / -1; display: flex; align-items: center; gap: 5px; margin-bottom: -4px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+    .row-label-input { background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); cursor: pointer; padding: 0; width: auto; min-width: 60px; }
+    .row-label-input:focus { cursor: text; color: var(--deep); text-transform: none; letter-spacing: 0.02em; }
+    .row-edit-btn { background: transparent; border: none; color: var(--dim); font-size: 0.66rem; cursor: pointer; padding: 0; line-height: 1; }
+    .row-edit-btn:hover { color: var(--gold); }
 
     .upload-zone { border: 1.5px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; background: var(--warm); transition: border-color 0.2s; cursor: pointer; }
     .upload-zone:hover { border-color: var(--gold); }
@@ -157,6 +162,11 @@
     .preview-box { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--deep); position: relative; }
     .preview-box canvas { display: block; width: 100%; }
     .preview-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; background: linear-gradient(transparent,rgba(28,23,20,0.75)); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.8); pointer-events: none; }
+    .preview-tag-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 4px; padding: 6px 8px 6px 10px; background: linear-gradient(transparent,rgba(28,23,20,0.78)); }
+    .preview-tag-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); cursor: pointer; }
+    .preview-tag-input:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.7); text-transform: none; letter-spacing: 0.02em; }
+    .preview-edit-btn { background: transparent; border: none; color: rgba(250,247,242,0.5); font-size: 0.66rem; cursor: pointer; padding: 0 2px; flex-shrink: 0; line-height: 1; }
+    .preview-edit-btn:hover { color: var(--gold); }
     .drag-hint { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: -6px; margin-bottom: 8px; }
 
     /* ── Branding ── */
@@ -346,17 +356,12 @@
           <div class="bg-swatch black"></div>
           Black background
         </button>
-        <button class="bg-btn" id="btnBgRemove" onclick="applyBgRemove()" disabled>
-          <div class="bg-swatch remove"></div>
-          Remove background
-        </button>
         <button class="bg-btn" id="btnBgReset" onclick="resetBg()" disabled style="color:var(--muted);">
           Reset original
         </button>
       </div>
       <div class="bg-slot-select" id="bgSlotSelect"></div>
       <div class="bg-hint" id="bgHint">Select a photo slot above, then apply a background.</div>
-      <div class="bg-progress" id="bgProgress">Removing background...</div>
     </div>
   </div>
 
@@ -517,6 +522,7 @@ const S = {
   logoImg: null,
   logoDataUrl: null,
   bgSelectedSlot: null,
+  rowLabelValues: null,
 };
 
 // Grid config: { count, rows, cols, defaultLabels, rowLabels }
@@ -618,13 +624,25 @@ function rebuildUploadGrid() {
     // 2x2: row 0 = cols 0-1, row 1 = cols 2-3
     // 2x3: row 0 = cols 0-2, row 1 = cols 3-5
     const cols = cfg.cols;
+    // Ensure rowLabelValues exist on state
+    if (!S.rowLabelValues || S.rowLabelValues.length !== cfg.rows) {
+      S.rowLabelValues = cfg.rowLabels.slice();
+    }
     for (let row = 0; row < cfg.rows; row++) {
-      html += `<div class="row-label">${cfg.rowLabels[row] || ''}</div>`;
+      html += `<div class="row-label-wrap">
+        <input class="row-label-input" id="row-label-${row}" value="${S.rowLabelValues[row] || ''}" readonly
+          onfocus="this.readOnly=false;this.select()"
+          onblur="this.readOnly=true;updateRowLabel(${row},this.value)"
+          onkeydown="if(event.key==='Enter'){this.blur()}"
+        />
+        <button class="row-edit-btn" onclick="document.getElementById('row-label-${row}').focus()" title="Edit label">✎</button>
+      </div>`;
       for (let c = 0; c < cols; c++) {
         html += makeSlotHTML(row * cols + c, true);
       }
     }
   } else {
+    S.rowLabelValues = null;
     for (let i = 0; i < cfg.count; i++) {
       html += makeSlotHTML(i, false);
     }
@@ -651,7 +669,7 @@ function rebuildUploadGrid() {
 function makeSlotHTML(i, hideLabel) {
   const sl = S.slots[i];
   const filled = sl.img ? ' filled' : '';
-  const bgCls = sl.bgMode === 'black' ? ' bg-black' : sl.bgMode === 'removed' ? ' bg-removed' : '';
+  const bgCls = sl.bgMode === 'black' ? ' bg-black' : '';
   const labelBar = hideLabel ? '' : `
       <div class="slot-label-wrap">
         <input class="slot-label" id="slot-label-${i}" value="${sl.label}" readonly
@@ -667,7 +685,7 @@ function makeSlotHTML(i, hideLabel) {
       <div class="upload-txt">${hideLabel ? 'Add photo' : sl.label}</div>
       <input type="file" accept="image/*" class="main-input" id="main-input-${i}"/>
       ${labelBar}
-      <div class="bg-badge" id="bg-badge-${i}">${sl.bgMode === 'black' ? 'Black bg' : 'Bg removed'}</div>
+      <div class="bg-badge" id="bg-badge-${i}">Black bg</div>
       <button class="change-btn">Change</button>
       <input type="file" accept="image/*" class="change-input" id="change-input-${i}"/>
     </div>
@@ -675,9 +693,43 @@ function makeSlotHTML(i, hideLabel) {
 }
 
 function updateSlotLabel(i, val) {
-  S.slots[i].label = val.trim() || GRID_CONFIG[S.grid].defaultLabels[i] || `Photo ${i+1}`;
-  const inp = document.getElementById(`slot-label-${i}`);
-  if (inp) inp.value = S.slots[i].label;
+  const label = val.trim() || GRID_CONFIG[S.grid].defaultLabels[i] || `Photo ${i+1}`;
+  S.slots[i].label = label;
+  // Sync upload-zone label input
+  const zoneInp = document.getElementById(`slot-label-${i}`);
+  if (zoneInp) zoneInp.value = label;
+  // Sync upload-zone placeholder text
+  const zone = document.getElementById(`zone-${i}`);
+  if (zone) {
+    const txt = zone.querySelector('.upload-txt');
+    if (txt && !zone.classList.contains('filled')) txt.textContent = label;
+  }
+  // Sync zoom slider label
+  const zoomBox = document.getElementById(`zoom-${i}`);
+  if (zoomBox) {
+    const lblEl = zoomBox.closest('.zoom-box')?.querySelector('.zoom-label');
+    if (lblEl) lblEl.innerHTML = `${label} zoom <span id="zVal-${i}">${Math.round(S.slots[i].zoom*100)}%</span>`;
+  }
+  // Sync preview tag input
+  const prevInp = document.getElementById(`preview-label-${i}`);
+  if (prevInp) prevInp.value = label;
+  // Sync background slot chip
+  const bgChip = document.getElementById(`bg-chip-${i}`);
+  if (bgChip) bgChip.textContent = label;
+  // Sync background hint if this slot is selected
+  if (S.bgSelectedSlot === i) {
+    const hint = document.getElementById('bgHint');
+    if (hint) hint.textContent = `"${label}" selected. Apply a background.`;
+  }
+}
+
+function updateRowLabel(row, val) {
+  const cfg = GRID_CONFIG[S.grid];
+  const label = val.trim() || cfg.rowLabels[row] || `Row ${row+1}`;
+  if (!S.rowLabelValues) S.rowLabelValues = cfg.rowLabels.slice();
+  S.rowLabelValues[row] = label;
+  const inp = document.getElementById(`row-label-${row}`);
+  if (inp) inp.value = label;
 }
 
 function restoreThumb(i) {
@@ -969,7 +1021,16 @@ function rebuildPreviewArea() {
   wrap.innerHTML = S.slots.map((sl, i) => `
     <div class="preview-box">
       <canvas id="cv-${i}"></canvas>
-      <div class="preview-tag">${sl.label}</div>
+      <div class="preview-tag-wrap">
+        <input class="preview-tag-input" id="preview-label-${i}" value="${sl.label}" readonly
+          onfocus="this.readOnly=false;this.select()"
+          onblur="this.readOnly=true;updateSlotLabel(${i},this.value)"
+          onkeydown="if(event.key==='Enter'){this.blur()}"
+          onmousedown="event.stopPropagation()"
+          ontouchstart="event.stopPropagation()"
+        />
+        <button class="preview-edit-btn" onclick="document.getElementById('preview-label-${i}').focus()" title="Edit label">✎</button>
+      </div>
     </div>
   `).join('');
   // Attach drag handlers
@@ -1092,7 +1153,6 @@ function selectBgSlot(i) {
 function updateBgButtons() {
   const hasSlot = S.bgSelectedSlot !== null && S.slots[S.bgSelectedSlot]?.img;
   document.getElementById('btnBgBlack').disabled = !hasSlot;
-  document.getElementById('btnBgRemove').disabled = !hasSlot;
   document.getElementById('btnBgReset').disabled = !hasSlot;
 }
 
@@ -1112,41 +1172,6 @@ function applyBgBlack() {
   sl.bgMode = 'black';
   updateZoneAfterBg(i);
   renderPreviews();
-}
-
-async function applyBgRemove() {
-  const i = S.bgSelectedSlot;
-  if (i === null || !S.slots[i].img) return;
-  const sl = S.slots[i];
-  const prog = document.getElementById('bgProgress');
-  prog.textContent = 'Removing background...';
-  prog.classList.add('on');
-  document.getElementById('btnBgRemove').disabled = true;
-  try {
-    const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser/index.js');
-    const blob = await fetch(sl.origDataUrl).then(r => r.blob());
-    const result = await removeBackground(blob);
-    const url = URL.createObjectURL(result);
-    const c = document.createElement('canvas');
-    const tmpImg = new Image();
-    await new Promise(res => { tmpImg.onload = res; tmpImg.src = url; });
-    c.width = tmpImg.naturalWidth; c.height = tmpImg.naturalHeight;
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(tmpImg, 0, 0);
-    sl.processedDataUrl = c.toDataURL('image/png');
-    sl._processedImg = null;
-    sl.bgMode = 'removed';
-    updateZoneAfterBg(i);
-    renderPreviews();
-    prog.textContent = 'Background removed.';
-    setTimeout(() => prog.classList.remove('on'), 2500);
-  } catch(e) {
-    prog.textContent = 'Background removal failed - try a different photo.';
-    setTimeout(() => prog.classList.remove('on'), 3000);
-  }
-  document.getElementById('btnBgRemove').disabled = false;
 }
 
 function resetBg() {
@@ -1349,6 +1374,10 @@ function drawPanelLabel(cctx, ox, oy, pw, ph, label, date) {
 function getImgForSlot(i) {
   const sl = S.slots[i];
   if (sl.processedDataUrl) {
+    // Prefer the already-decoded cached image
+    if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) {
+      return sl._processedImg;
+    }
     const img = new Image();
     img.src = sl.processedDataUrl;
     return img;
@@ -1356,7 +1385,23 @@ function getImgForSlot(i) {
   return sl.img;
 }
 
-function generate() {
+// Ensure every processed slot has a fully decoded image cached before generate
+function preloadProcessedImages() {
+  const jobs = S.slots.map(sl => {
+    if (!sl.processedDataUrl) return Promise.resolve();
+    if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) return Promise.resolve();
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => { sl._processedImg = img; res(); };
+      img.onerror = () => res();
+      img.src = sl.processedDataUrl;
+    });
+  });
+  return Promise.all(jobs);
+}
+
+async function generate() {
+  await preloadProcessedImages();
   const boxes = getPannedBoxes();
   const clinic = document.getElementById('clinicName').value.trim();
   const inj = document.getElementById('injectorName').value.trim();
@@ -1416,6 +1461,8 @@ function generate() {
   cctx.fillStyle = '#1C1714'; cctx.fillRect(0, 0, compW, compH);
 
   // Place panels
+  const usesRowLabels = cfg.rowLabels.length > 0;
+  const rowVals = S.rowLabelValues || cfg.rowLabels;
   panels.forEach((p, i) => {
     const col = i % cols;
     const row = Math.floor(i / cols);
@@ -1427,8 +1474,15 @@ function generate() {
     } else {
       cctx.drawImage(p.canvas, ox, oy);
     }
-    // Panel label
-    drawPanelLabel(cctx, ox, oy, avgW, panelH, S.slots[i].label.toUpperCase(), '');
+    // Caption: for multi-angle grids (2x2/2x3) label only the first panel of
+    // each row with the row label; otherwise label every panel with its slot label.
+    if (usesRowLabels) {
+      if (col === 0) {
+        drawPanelLabel(cctx, ox, oy, avgW, panelH, (rowVals[row] || '').toUpperCase(), '');
+      }
+    } else {
+      drawPanelLabel(cctx, ox, oy, avgW, panelH, S.slots[i].label.toUpperCase(), '');
+    }
   });
 
   // Treatment label at top center
