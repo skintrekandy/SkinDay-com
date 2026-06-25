@@ -120,22 +120,26 @@
     .progress-fill { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s; }
 
     /* ── Background controls ── */
-    .bg-controls { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
-    .bg-controls-title { font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--deep); margin-bottom: 12px; }
-    .bg-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .bg-btn { border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 14px; background: #fff; cursor: pointer; font-size: 0.79rem; font-family: 'DM Sans', sans-serif; color: var(--deep); transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
-    .bg-btn:hover { border-color: var(--gold); background: var(--warm); }
+    .bg-controls { margin-top: 0; }
+    .bg-intro { font-size: 0.84rem; color: var(--muted); line-height: 1.55; margin-bottom: 16px; max-width: 600px; }
+    .bg-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .bg-btn { border: 1.5px solid var(--border); border-radius: 6px; padding: 10px 16px; background: #fff; cursor: pointer; font-size: 0.83rem; font-family: 'DM Sans', sans-serif; color: var(--deep); transition: all 0.2s; display: flex; align-items: center; gap: 7px; }
+    .bg-btn:hover:not(:disabled) { border-color: var(--gold); background: var(--warm); }
     .bg-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .bg-btn.active { border-color: var(--rose); background: #fdf1ee; }
-    .bg-btn .bg-swatch { width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+    .bg-btn .bg-swatch { width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0; }
     .bg-btn .bg-swatch.black { background: #1C1714; border: 1px solid rgba(28,23,20,0.3); }
-    .bg-btn .bg-swatch.remove { background: linear-gradient(135deg, #ddd 25%, transparent 25%) -10px 0, linear-gradient(225deg, #ddd 25%, transparent 25%) -10px 0, linear-gradient(315deg, #ddd 25%, transparent 25%), linear-gradient(45deg, #ddd 25%, transparent 25%); background-size: 10px 10px; background-color: white; border: 1px solid var(--border); }
-    .bg-slot-select { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
-    .bg-slot-chip { border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 0.72rem; background: #fff; cursor: pointer; transition: all 0.2s; color: var(--muted); }
-    .bg-slot-chip.active { border-color: var(--rose); background: #fdf1ee; color: var(--deep); }
-    .bg-hint { font-size: 0.72rem; color: var(--muted); margin-top: 8px; line-height: 1.45; }
-    .bg-progress { font-size: 0.72rem; color: var(--gold); margin-top: 8px; display: none; }
+    .bg-slot-select { display: flex; gap: 7px; flex-wrap: wrap; }
+    .bg-slot-chip { border: 1.5px solid var(--border); border-radius: 20px; padding: 7px 16px; font-size: 0.8rem; background: #fff; cursor: pointer; transition: all 0.2s; color: var(--muted); font-family: 'DM Sans', sans-serif; }
+    .bg-slot-chip:hover { border-color: var(--gold); }
+    .bg-slot-chip.active { border-color: var(--rose); background: #fdf1ee; color: var(--deep); font-weight: 500; }
+    .bg-hint { font-size: 0.78rem; color: var(--muted); margin-top: 10px; line-height: 1.45; }
+    .bg-progress { font-size: 0.8rem; color: var(--gold); font-weight: 500; margin-top: 10px; display: none; }
     .bg-progress.on { display: block; }
+    .bg-continue-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+    .bg-continue-note { font-size: 0.82rem; color: var(--muted); }
+    .btn-continue { background: var(--deep); color: var(--cream); border: none; padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .btn-continue:hover { background: var(--deep2); }
 
     /* ── Crop section ── */
     .crop-section { display: none; margin-top: 8px; }
@@ -348,9 +352,12 @@
     <div class="status"><div class="dot" id="dot"></div><span id="statusText">Upload your photos to begin</span></div>
     <div class="progress" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
-    <!-- Background controls -->
+    <!-- STEP 3: Background (optional) -->
     <div class="bg-controls" id="bgControls" style="display:none;">
-      <div class="bg-controls-title">Background</div>
+      <hr class="divider" style="margin-top:24px;">
+      <div class="step-num">Step 3 - Background (optional)</div>
+      <p class="bg-intro">Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping.</p>
+      <div class="bg-slot-select" id="bgSlotSelect"></div>
       <div class="bg-actions">
         <button class="bg-btn" id="btnBgBlack" onclick="applyBgBlack()" disabled>
           <div class="bg-swatch black"></div>
@@ -360,17 +367,20 @@
           Reset original
         </button>
       </div>
-      <div class="bg-slot-select" id="bgSlotSelect"></div>
-      <div class="bg-hint" id="bgHint">Select a photo above, then apply a black background. The original backdrop is removed on-device, so the subject stays. Takes a few seconds.</div>
+      <div class="bg-hint" id="bgHint">Select a photo above, then apply a black background.</div>
       <div class="bg-progress" id="bgProgress"></div>
+      <div class="bg-continue-row" id="bgContinueRow" style="display:none;">
+        <span class="bg-continue-note">Backgrounds set? Move on to crop and branding.</span>
+        <button class="btn-continue" onclick="continueToCrop()">Continue to crop</button>
+      </div>
     </div>
   </div>
 
-  <!-- STEP 3: Crop & align -->
+  <!-- STEP 4: Crop & align -->
   <div class="crop-section" id="cropSection">
     <hr class="divider" style="margin-top:0">
     <div class="step">
-      <div class="step-num">Step 3 - Adjust crop</div>
+      <div class="step-num">Step 4 - Adjust crop</div>
       <div class="preset-grid face-presets" id="presetGrid">
         <button class="preset-btn" data-preset="full" onclick="selPreset('full')">
           <div class="preset-icon">🧍</div><div class="preset-name">Full Face</div><div class="preset-desc">Head to chin</div>
@@ -393,7 +403,7 @@
     <!-- STEP 4: Branding -->
     <hr class="divider">
     <div class="step">
-      <div class="step-num">Step 4 - Branding (optional)</div>
+      <div class="step-num">Step 5 - Branding (optional)</div>
 
       <div class="brand-grid" style="margin-top:14px;">
         <div class="field"><label>Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" maxlength="60"/></div>
@@ -827,9 +837,7 @@ async function runDetectAll() {
   if (S.subject === 'body') {
     // Body mode: skip detection, use fallback crop
     S.slots.forEach(sl => { sl.lm = null; });
-    showCropSection();
-    renderPreviews();
-    setSt('Body mode - choose your crop area.', 'ok');
+    showBackgroundStep('Body mode. Choose backgrounds below, or continue to crop.');
     return;
   }
   setSt('Analysing photos...', 'spin');
@@ -847,12 +855,33 @@ async function runDetectAll() {
     }
   }
   setProg(100);
+  let msg;
+  if (warns === 0) msg = 'Faces detected. Choose backgrounds below, or continue to crop.';
+  else if (warns === n) msg = 'No faces detected. Choose backgrounds below, or continue to crop.';
+  else msg = `${warns} photo(s) had no detectable face. Choose backgrounds below, or continue to crop.`;
+  showBackgroundStep(msg);
+  setProg(0);
+}
+
+// After upload + detection, surface the background decision before crop.
+// Black-background removal is a heavy step, so it belongs here (an explicit
+// choice) rather than stalling mid-crop.
+function showBackgroundStep(message) {
+  setSt(message, 'ok');
+  const bg = document.getElementById('bgControls');
+  if (bg) {
+    bg.style.display = 'block';
+    bg.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  // Reveal the "continue to crop" button
+  const cont = document.getElementById('bgContinueRow');
+  if (cont) cont.style.display = 'flex';
+}
+
+function continueToCrop() {
   showCropSection();
   renderPreviews();
-  if (warns === 0) setSt('Faces detected - choose your crop area.', 'ok');
-  else if (warns === n) setSt('No faces detected - centre crop applied.', 'warn');
-  else setSt(`${warns} photo(s) using centre crop - adjust zoom to fine-tune.`, 'warn');
-  setProg(0);
+  setSt('Adjust the crop for each photo.', 'ok');
 }
 
 function showCropSection() {
@@ -866,6 +895,10 @@ function showCropSection() {
 function hideCropSection() {
   document.getElementById('cropSection').classList.remove('visible');
   document.getElementById('outputSection').classList.remove('visible');
+  const bg = document.getElementById('bgControls');
+  if (bg) bg.style.display = 'none';
+  const cont = document.getElementById('bgContinueRow');
+  if (cont) cont.style.display = 'none';
 }
 
 // ============================================================
@@ -1121,8 +1154,16 @@ function drawToCanvas(cv, img, box, tw, th, bf) {
 // BACKGROUND CONTROLS
 // ============================================================
 function checkBgControlsVisibility() {
+  // The background step is revealed by showBackgroundStep() once all photos are
+  // uploaded and analysed. Here we only ensure it is hidden when there are no
+  // photos at all (e.g. after New case).
   const anyFilled = S.slots.some(sl => sl.img);
-  document.getElementById('bgControls').style.display = anyFilled ? 'block' : 'none';
+  if (!anyFilled) {
+    const bg = document.getElementById('bgControls');
+    if (bg) bg.style.display = 'none';
+    const cont = document.getElementById('bgContinueRow');
+    if (cont) cont.style.display = 'none';
+  }
 }
 
 function rebuildBgSlotSelect() {
