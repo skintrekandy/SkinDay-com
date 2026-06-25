@@ -80,8 +80,8 @@
     .row-label-wrap { grid-column: 1 / -1; display: flex; align-items: center; gap: 5px; margin-bottom: -4px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
     .row-label-input { background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); cursor: pointer; padding: 0; width: auto; min-width: 60px; }
     .row-label-input:focus { cursor: text; color: var(--deep); text-transform: none; letter-spacing: 0.02em; }
-    .row-edit-btn { background: transparent; border: none; color: var(--dim); font-size: 0.66rem; cursor: pointer; padding: 0; line-height: 1; }
-    .row-edit-btn:hover { color: var(--gold); }
+    .row-edit-btn { background: rgba(201,169,110,0.12); border: 1px solid rgba(201,169,110,0.4); border-radius: 4px; color: var(--gold); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
+    .row-edit-btn:hover { background: rgba(201,169,110,0.22); color: var(--deep); }
 
     .upload-zone { border: 1.5px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; background: var(--warm); transition: border-color 0.2s; cursor: pointer; }
     .upload-zone:hover { border-color: var(--gold); }
@@ -98,8 +98,8 @@
     .slot-label-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; background: linear-gradient(transparent, rgba(28,23,20,0.72)); padding: 8px 10px 7px; gap: 4px; }
     .slot-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; flex: 1; min-width: 0; cursor: default; }
     .slot-label:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.6); }
-    .slot-edit-btn { background: transparent; border: none; color: rgba(250,247,242,0.5); font-size: 0.65rem; cursor: pointer; padding: 0 2px; flex-shrink: 0; line-height: 1; }
-    .slot-edit-btn:hover { color: var(--gold); }
+    .slot-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
+    .slot-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
     .change-btn { position: absolute; top: 7px; right: 7px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.68rem; font-family: 'DM Sans', sans-serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; display: none; }
     .upload-zone.filled .change-btn { display: block; }
     .change-input { position: absolute; top: 7px; right: 7px; z-index: 4; opacity: 0; width: 56px; height: 22px; cursor: pointer; display: none; }
@@ -165,8 +165,8 @@
     .preview-tag-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 4px; padding: 6px 8px 6px 10px; background: linear-gradient(transparent,rgba(28,23,20,0.78)); }
     .preview-tag-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); cursor: pointer; }
     .preview-tag-input:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.7); text-transform: none; letter-spacing: 0.02em; }
-    .preview-edit-btn { background: transparent; border: none; color: rgba(250,247,242,0.5); font-size: 0.66rem; cursor: pointer; padding: 0 2px; flex-shrink: 0; line-height: 1; }
-    .preview-edit-btn:hover { color: var(--gold); }
+    .preview-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
+    .preview-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
     .drag-hint { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: -6px; margin-bottom: 8px; }
 
     /* ── Branding ── */
@@ -356,12 +356,17 @@
           <div class="bg-swatch black"></div>
           Black background
         </button>
+        <button class="bg-btn" id="btnBgBlackAll" onclick="applyBgBlackAll()" disabled>
+          <div class="bg-swatch black"></div>
+          Black bg, all photos
+        </button>
         <button class="bg-btn" id="btnBgReset" onclick="resetBg()" disabled style="color:var(--muted);">
           Reset original
         </button>
       </div>
       <div class="bg-slot-select" id="bgSlotSelect"></div>
-      <div class="bg-hint" id="bgHint">Select a photo slot above, then apply a background.</div>
+      <div class="bg-hint" id="bgHint">Replaces the photo background with solid black. Removes the original backdrop using on-device AI, so the subject stays. Takes a few seconds per photo.</div>
+      <div class="bg-progress" id="bgProgress"></div>
     </div>
   </div>
 
@@ -635,7 +640,7 @@ function rebuildUploadGrid() {
           onblur="this.readOnly=true;updateRowLabel(${row},this.value)"
           onkeydown="if(event.key==='Enter'){this.blur()}"
         />
-        <button class="row-edit-btn" onclick="document.getElementById('row-label-${row}').focus()" title="Edit label">✎</button>
+        <button class="row-edit-btn" onclick="document.getElementById('row-label-${row}').focus()" title="Edit label">Edit</button>
       </div>`;
       for (let c = 0; c < cols; c++) {
         html += makeSlotHTML(row * cols + c, true);
@@ -677,7 +682,7 @@ function makeSlotHTML(i, hideLabel) {
           onblur="this.readOnly=true;updateSlotLabel(${i},this.value)"
           onkeydown="if(event.key==='Enter'){this.blur()}"
         />
-        <button class="slot-edit-btn" onclick="document.getElementById('slot-label-${i}').focus()" title="Edit label">✎</button>
+        <button class="slot-edit-btn" onclick="document.getElementById('slot-label-${i}').focus()" title="Edit label">Edit</button>
       </div>`;
   return `
     <div class="upload-zone${filled}${bgCls}" id="zone-${i}">
@@ -1029,7 +1034,7 @@ function rebuildPreviewArea() {
           onmousedown="event.stopPropagation()"
           ontouchstart="event.stopPropagation()"
         />
-        <button class="preview-edit-btn" onclick="document.getElementById('preview-label-${i}').focus()" title="Edit label">✎</button>
+        <button class="preview-edit-btn" onclick="document.getElementById('preview-label-${i}').focus()" title="Edit label">Edit</button>
       </div>
     </div>
   `).join('');
@@ -1136,7 +1141,7 @@ function rebuildBgSlotSelect() {
   ` : '').join('');
   const hint = document.getElementById('bgHint');
   if (hint && S.bgSelectedSlot !== null) {
-    hint.textContent = `"${S.slots[S.bgSelectedSlot].label}" selected. Apply a background.`;
+    hint.textContent = `"${S.slots[S.bgSelectedSlot].label}" selected. "Black background" applies to it; "Black bg, all photos" does every photo. Takes a few seconds each.`;
   }
   updateBgButtons();
 }
@@ -1146,32 +1151,75 @@ function selectBgSlot(i) {
   document.querySelectorAll('.bg-slot-chip').forEach(c => c.classList.remove('active'));
   const chip = document.getElementById(`bg-chip-${i}`);
   if (chip) chip.classList.add('active');
-  document.getElementById('bgHint').textContent = `"${S.slots[i].label}" selected. Apply a background.`;
+  document.getElementById('bgHint').textContent = `"${S.slots[i].label}" selected. "Black background" applies to it; "Black bg, all photos" does every photo.`;
   updateBgButtons();
 }
 
 function updateBgButtons() {
   const hasSlot = S.bgSelectedSlot !== null && S.slots[S.bgSelectedSlot]?.img;
+  const anyFilled = S.slots.some(sl => sl.img);
   document.getElementById('btnBgBlack').disabled = !hasSlot;
+  const allBtn = document.getElementById('btnBgBlackAll');
+  if (allBtn) allBtn.disabled = !anyFilled;
   document.getElementById('btnBgReset').disabled = !hasSlot;
 }
 
-function applyBgBlack() {
+async function applyBgBlack() {
   const i = S.bgSelectedSlot;
   if (i === null || !S.slots[i].img) return;
+  await processBlackBg(i);
+}
+
+async function applyBgBlackAll() {
+  const indices = S.slots.map((sl, i) => sl.img ? i : -1).filter(i => i >= 0);
+  for (const i of indices) {
+    await processBlackBg(i, true);
+  }
+  setBgProgress('');
+}
+
+// Cut out the subject (imgly) and composite onto a solid black background.
+async function processBlackBg(i, quiet) {
   const sl = S.slots[i];
-  const img = sl.img;
-  const c = document.createElement('canvas');
-  c.width = img.naturalWidth; c.height = img.naturalHeight;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#1C1714';
-  ctx.fillRect(0, 0, c.width, c.height);
-  ctx.drawImage(img, 0, 0);
-  sl.processedDataUrl = c.toDataURL('image/jpeg', 0.95);
-  sl._processedImg = null;
-  sl.bgMode = 'black';
-  updateZoneAfterBg(i);
-  renderPreviews();
+  if (!sl.img || sl.bgMode === 'black') return;
+  setBgProgress(`Cutting out ${sl.label}...`);
+  document.getElementById('btnBgBlack').disabled = true;
+  const allBtn = document.getElementById('btnBgBlackAll');
+  if (allBtn) allBtn.disabled = true;
+  try {
+    const { removeBackground } = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser/index.js');
+    const blob = await fetch(sl.origDataUrl).then(r => r.blob());
+    const cutout = await removeBackground(blob);
+    const url = URL.createObjectURL(cutout);
+    const tmpImg = new Image();
+    await new Promise((res, rej) => { tmpImg.onload = res; tmpImg.onerror = rej; tmpImg.src = url; });
+    const c = document.createElement('canvas');
+    c.width = tmpImg.naturalWidth; c.height = tmpImg.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#1C1714';
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(tmpImg, 0, 0);
+    URL.revokeObjectURL(url);
+    sl.processedDataUrl = c.toDataURL('image/jpeg', 0.95);
+    sl._processedImg = null;
+    sl.bgMode = 'black';
+    updateZoneAfterBg(i);
+    renderPreviews();
+    if (!quiet) setBgProgress('Background applied.', 2200);
+  } catch(e) {
+    setBgProgress('Could not isolate the subject in this photo. Try a clearer, well-lit photo.', 3500);
+  }
+  document.getElementById('btnBgBlack').disabled = false;
+  if (allBtn) allBtn.disabled = false;
+}
+
+function setBgProgress(msg, autoclearMs) {
+  const prog = document.getElementById('bgProgress');
+  if (!prog) return;
+  if (!msg) { prog.classList.remove('on'); prog.textContent = ''; return; }
+  prog.textContent = msg;
+  prog.classList.add('on');
+  if (autoclearMs) setTimeout(() => { prog.classList.remove('on'); }, autoclearMs);
 }
 
 function resetBg() {

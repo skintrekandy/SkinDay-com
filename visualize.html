@@ -216,18 +216,21 @@
     footer .brand span { color:var(--gold); }
     /* Lock screen */
     .lock { position:fixed; inset:0; z-index:200; background:var(--deep); display:flex; align-items:center; justify-content:center; padding:24px; }
-    .lock-card { max-width:380px; width:100%; text-align:center; }
+    .lock-card { max-width:400px; width:100%; text-align:center; }
+    .lock-logo { font-family:'Cormorant Garamond',serif; font-size:1.7rem; font-weight:400; color:var(--cream); letter-spacing:.04em; text-decoration:none; display:inline-block; margin-bottom:34px; }
+    .lock-logo span { color:var(--gold); }
     .lock-eyebrow { font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:16px; }
-    .lock-card h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.4rem; color:var(--cream); line-height:1.1; margin-bottom:10px; }
-    .lock-card h1 span { color:var(--gold); }
-    .lock-soon { font-size:.95rem; color:var(--dim); margin-bottom:28px; }
+    .lock-card h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.6rem; color:var(--cream); line-height:1.12; margin-bottom:14px; }
+    .lock-card h1 em { font-style:italic; color:var(--rose); }
+    .lock-soon { font-size:.92rem; color:var(--dim); margin-bottom:30px; line-height:1.6; max-width:340px; margin-left:auto; margin-right:auto; }
     .lock-form { display:flex; flex-direction:column; gap:10px; }
     .lock-form input { background:rgba(250,247,242,.06); border:1px solid rgba(201,169,110,.3); color:var(--cream); padding:13px 14px; font-size:.9rem; font-family:'DM Sans',sans-serif; border-radius:6px; outline:none; text-align:center; }
     .lock-form input:focus { border-color:var(--gold); }
-    .lock-form button { background:var(--rose); color:#fff; border:none; padding:13px; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:500; border-radius:6px; cursor:pointer; }
+    .lock-form input::placeholder { color:rgba(250,247,242,.45); }
+    .lock-form button { background:var(--rose); color:#fff; border:none; padding:13px; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:500; border-radius:6px; cursor:pointer; transition:background .2s; }
     .lock-form button:hover { background:var(--rose-m); }
     .lock-err { font-size:.78rem; color:var(--rose-m); min-height:1.1em; }
-    .lock-foot { font-size:.74rem; color:var(--muted); margin-top:24px; line-height:1.6; }
+    .lock-foot { font-size:.74rem; color:var(--muted); margin-top:26px; line-height:1.6; }
     .lock-foot a { color:var(--gold); text-decoration:none; }
     /* M7: multi-angle slots, tabs, capture guide */
     .area-grid.three { grid-template-columns:repeat(3,1fr); }
@@ -544,9 +547,10 @@
 <!-- ───────── PASSWORD GATE ───────── -->
 <div class="lock" id="lockScreen">
   <div class="lock-card">
-    <div class="lock-eyebrow">SkinDay</div>
-    <h1>Visualize <span>·</span> AI&nbsp;Treatment&nbsp;Previews</h1>
-    <p class="lock-soon" id="lockTagline">AI-powered treatment previews. Sign in with your SkinDay account, or create one free.</p>
+    <a href="/" class="lock-logo">Skin<span>Day</span></a>
+    <div class="lock-eyebrow">SkinDay Visualize</div>
+    <h1>Make the <em>invisible</em> visible.</h1>
+    <p class="lock-soon" id="lockTagline">AI-powered treatment previews for consultations. Sign in with your SkinDay account, or create one free.</p>
     <div class="lock-tabs" id="lockTabs" style="display:none;">
       <button type="button" data-mode="signin" class="active">Sign in</button>
       <button type="button" data-mode="signup">Create account</button>
@@ -568,10 +572,8 @@
       <div class="lock-err" id="authErr"></div>
       <div class="auth-hint" id="authHint"></div>
     </div>
-    <div class="lock-form" id="betaForm">
-      <input type="password" id="betaKey" placeholder="Beta access password" autocomplete="off" />
-      <button id="unlockBtn" type="button">Enter beta</button>
-      <div class="lock-err" id="lockErr"></div>
+    <div class="lock-form" id="unavailForm" style="display:none;">
+      <div class="lock-err" id="lockErr" style="color:var(--dim);">Sign-in is temporarily unavailable. Please try again shortly.</div>
     </div>
     <div class="lock-foot">Same SkinDay account across all our tools. Questions? Email <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.</div>
   </div>
@@ -924,7 +926,7 @@
     <div class="scenario-fs-bar">
       <div>
         <div class="scenario-fs-title" id="scenarioFsTitle"></div>
-        <div class="scenario-fs-disclaimer">Scenario simulation — not a guaranteed outcome</div>
+        <div class="scenario-fs-disclaimer">Scenario simulation, not a guaranteed outcome</div>
       </div>
       <div class="scenario-fs-actions">
         <div class="fs-zoom">
@@ -1248,8 +1250,6 @@ function activeSlot(){ return state.slots[state.activeAngle]; }
 /* ───────── Lock screen ───────── */
 const lockScreen = document.getElementById('lockScreen');
 const app = document.getElementById('app');
-const betaKey = document.getElementById('betaKey');
-const unlockBtn = document.getElementById('unlockBtn');
 const lockErr = document.getElementById('lockErr');
 
 async function verifyKey(key){
@@ -1380,40 +1380,35 @@ async function refreshCredits(retries){
 }
 
 /* Beta path (unchanged mechanics) */
-async function attemptUnlock(){
-  const key = betaKey.value.trim();
-  if(!key){ lockErr.textContent = 'Enter the beta password.'; return; }
-  unlockBtn.disabled = true; lockErr.textContent = 'Checking…';
-  try {
-    if(await verifyKey(key)){
-      sessionStorage.setItem(KEY_STORE, key);
-      lockErr.textContent = '';
-      unlock('beta');
-    } else {
-      lockErr.textContent = 'That password is not recognised.';
-    }
-  } catch(e){
-    lockErr.textContent = 'Could not reach the server. Try again.';
-  } finally {
-    unlockBtn.disabled = false;
-  }
-}
-unlockBtn.addEventListener('click', attemptUnlock);
-betaKey.addEventListener('keydown', e => { if(e.key === 'Enter') attemptUnlock(); });
+// Beta password entry has been removed from the UI. The internal beta access
+// mode still exists for backward compatibility (saved keys), but there is no
+// longer any password form to fill in.
 
 /* Account path */
 let authMode = 'signin';
 function setLockMode(mode){
-  authMode = (mode === 'signup') ? 'signup' : (mode === 'beta' ? 'beta' : 'signin');
+  authMode = (mode === 'signup') ? 'signup' : 'signin';
   document.querySelectorAll('#lockTabs button').forEach(btn =>
     btn.classList.toggle('active', btn.dataset.mode === authMode));
-  document.getElementById('authForm').style.display = (authMode === 'beta') ? 'none' : 'flex';
-  document.getElementById('betaForm').style.display = (authMode === 'beta') ? '' : 'none';
+  const authForm = document.getElementById('authForm');
+  if(authForm) authForm.style.display = 'flex';
+  const unavail = document.getElementById('unavailForm');
+  if(unavail) unavail.style.display = 'none';
   document.getElementById('authBtn').textContent = (authMode === 'signup') ? 'Create account' : 'Sign in';
   document.getElementById('authHint').textContent = (authMode === 'signup' && SD_CFG.signupGrant > 0)
     ? ('New accounts start with ' + SD_CFG.signupGrant + ' free credits.')
     : '';
   document.getElementById('authErr').textContent = '';
+}
+
+// Show a graceful "temporarily unavailable" state when account auth can't load.
+function showAuthUnavailable(){
+  const tabs = document.getElementById('lockTabs');
+  if(tabs) tabs.style.display = 'none';
+  const authForm = document.getElementById('authForm');
+  if(authForm) authForm.style.display = 'none';
+  const unavail = document.getElementById('unavailForm');
+  if(unavail) unavail.style.display = '';
 }
 
 async function onSignedIn(session){
@@ -1496,8 +1491,8 @@ function openBuyModal(){
       // Open checkout in a small POPUP WINDOW (opened synchronously on the click
       // so popup blockers allow it). The popup runs Stripe, then on return closes
       // itself and notifies THIS page to refresh credits (see handlePurchasePopup
-      // + the 'message' listener). This keeps the current page — and every
-      // generated simulation — alive in memory, so buying credits never destroys
+      // + the 'message' listener). This keeps the current page, and every
+      // generated simulation, alive in memory, so buying credits never destroys
       // finished work. If the popup is blocked, fall back to a same-tab redirect.
       const checkoutWin = window.open('', 'sd_checkout', 'width=480,height=760,menubar=no,toolbar=no,location=no,status=no');
       if(checkoutWin){
@@ -1984,9 +1979,9 @@ window.addEventListener('message', (ev) => {
   if(saved && await verifyKey(saved).catch(() => false)){ unlock('beta'); return; }
 
   if(SD_CFG.authDisabled){
-    // Pre-M8 behavior: beta password only.
-    document.getElementById('lockTagline').textContent = 'Early access. Enter your beta password to try SkinDay Visualize.';
-    document.getElementById('betaForm').style.display = '';
+    // Account auth not configured (e.g. fresh staging deploy). Show a graceful
+    // unavailable state rather than a beta password prompt.
+    showAuthUnavailable();
     return;
   }
 
@@ -2065,8 +2060,8 @@ window.addEventListener('message', (ev) => {
       if(session && !accessMode) onSignedIn(session);
     });
   } catch(e){
-    console.error('[Visualize] account auth unavailable; beta key still works.', e);
-    setLockMode('beta');
+    console.error('[Visualize] account auth unavailable.', e);
+    showAuthUnavailable();
   }
 })();
 
@@ -4802,7 +4797,7 @@ function renderScenarioResult(scenarioKey){
   card.innerHTML =
     '<div class="scenario-result-header">' +
       '<span class="scenario-result-label">' + escapeHtml(label) + '</span>' +
-      '<span class="scenario-result-disclaimer">Scenario simulation — not a guaranteed outcome</span>' +
+      '<span class="scenario-result-disclaimer">Scenario simulation, not a guaranteed outcome</span>' +
       actionsHtml +
     '</div>' +
     bodyHtml;
