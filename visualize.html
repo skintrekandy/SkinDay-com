@@ -215,20 +215,38 @@
     footer .brand { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--cream); margin-bottom:.5rem; }
     footer .brand span { color:var(--gold); }
     /* Lock screen */
-    .lock { position:fixed; inset:0; z-index:200; background:var(--deep); display:flex; align-items:center; justify-content:center; padding:24px; }
-    .lock-card { max-width:380px; width:100%; text-align:center; }
-    .lock-eyebrow { font-size:.7rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:16px; }
-    .lock-card h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:2.4rem; color:var(--cream); line-height:1.1; margin-bottom:10px; }
-    .lock-card h1 span { color:var(--gold); }
-    .lock-soon { font-size:.95rem; color:var(--dim); margin-bottom:28px; }
-    .lock-form { display:flex; flex-direction:column; gap:10px; }
-    .lock-form input { background:rgba(250,247,242,.06); border:1px solid rgba(201,169,110,.3); color:var(--cream); padding:13px 14px; font-size:.9rem; font-family:'DM Sans',sans-serif; border-radius:6px; outline:none; text-align:center; }
-    .lock-form input:focus { border-color:var(--gold); }
-    .lock-form button { background:var(--rose); color:#fff; border:none; padding:13px; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:500; border-radius:6px; cursor:pointer; }
-    .lock-form button:hover { background:var(--rose-m); }
-    .lock-err { font-size:.78rem; color:var(--rose-m); min-height:1.1em; }
-    .lock-foot { font-size:.74rem; color:var(--muted); margin-top:24px; line-height:1.6; }
-    .lock-foot a { color:var(--gold); text-decoration:none; }
+    /* ── Sign-in: two-column private product entrance ── */
+    .lock { position:fixed; inset:0; z-index:200; background:var(--cream); overflow-y:auto; }
+    .lock-shell { min-height:100vh; display:grid; grid-template-columns:1fr 420px; align-items:center; gap:80px; max-width:1040px; margin:0 auto; padding:80px 32px; }
+    /* Left: product identity */
+    .lock-identity { max-width:440px; }
+    .lock-logo { font-family:'Cormorant Garamond',serif; font-size:1.55rem; font-weight:400; color:var(--deep); letter-spacing:.04em; text-decoration:none; display:inline-block; margin-bottom:30px; }
+    .lock-logo span { color:var(--gold); }
+    .lock-identity h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:3.4rem; color:var(--deep); line-height:1.05; margin-bottom:20px; letter-spacing:.01em; }
+    .lock-lede { font-size:1.02rem; color:var(--deep); line-height:1.55; margin-bottom:16px; }
+    .lock-sub { font-size:.9rem; color:var(--muted); line-height:1.7; margin-bottom:28px; max-width:380px; }
+    .lock-modalities { font-size:.78rem; letter-spacing:.04em; color:var(--gold); font-weight:500; padding-top:22px; border-top:1px solid var(--border); }
+    /* Right: auth */
+    .lock-card { width:100%; }
+    .lock-panel { background:#fff; border:1px solid rgba(28,23,20,.07); border-radius:8px; padding:32px 30px; box-shadow:none; text-align:left; }
+    .lock-title { font-size:1.32rem; font-family:'Cormorant Garamond',serif; font-weight:400; color:var(--deep); text-align:left; margin-bottom:5px; }
+    .lock-soon { font-size:.84rem; color:var(--muted); margin-bottom:24px; line-height:1.55; text-align:left; }
+    .lock-form { display:flex; flex-direction:column; gap:9px; }
+    .lock-form input { background:#fff; border:1px solid var(--border); color:var(--deep); padding:11px 13px; font-size:.88rem; font-family:'DM Sans',sans-serif; border-radius:6px; outline:none; text-align:left; transition:border-color .2s, box-shadow .2s; }
+    .lock-form input:focus { border-color:#3A312D; box-shadow:0 0 0 3px rgba(58,49,45,.07); }
+    .lock-form input::placeholder { color:var(--dim); }
+    .lock-form button { background:#3A312D; color:#FAF7F2; border:none; padding:12px; font-family:'DM Sans',sans-serif; font-size:.86rem; font-weight:500; letter-spacing:.02em; border-radius:6px; cursor:pointer; transition:background .2s; }
+    .lock-form button:hover { background:#2F2825; }
+    .lock-err { font-size:.78rem; color:var(--rose); min-height:1.1em; text-align:left; }
+    .lock-foot { font-size:.72rem; color:var(--muted); margin-top:22px; line-height:1.6; text-align:left; padding-top:18px; border-top:1px solid var(--border); }
+    .lock-foot a { color:var(--deep); text-decoration:underline; text-decoration-color:var(--dim); text-underline-offset:2px; }
+    .lock-foot a:hover { text-decoration-color:var(--deep); }
+    @media(max-width:860px){
+      .lock-shell { grid-template-columns:1fr; gap:36px; max-width:420px; padding:48px 24px; align-items:start; }
+      .lock-identity { max-width:none; }
+      .lock-identity h1 { font-size:2.6rem; }
+      .lock-modalities { padding-top:18px; }
+    }
     /* M7: multi-angle slots, tabs, capture guide */
     .area-grid.three { grid-template-columns:repeat(3,1fr); }
     .slot-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:12px; }
@@ -251,18 +269,20 @@
     .guide-svg { width:100%; max-width:400px; display:block; margin:12px auto 4px; }
     .guide-rule { font-size:.78rem; color:var(--muted); line-height:1.55; background:var(--warm); border-radius:6px; padding:9px 12px; }
     /* M8: accounts, credits, checkout */
-    .lock-tabs { display:flex; gap:6px; margin-bottom:14px; justify-content:center; }
-    .lock-tabs button { flex:0 1 auto; padding:7px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.25); background:transparent; color:rgba(250,247,242,.75); font-size:.78rem; cursor:pointer; font-family:'DM Sans',sans-serif; }
-    .lock-tabs button.active { background:var(--rose); border-color:var(--rose); color:#fff; }
+    .lock-tabs { display:flex; gap:4px; margin-bottom:18px; justify-content:flex-start; }
+    .lock-tabs button { flex:0 1 auto; padding:6px 4px; margin-right:14px; border-radius:0; border:none; border-bottom:1.5px solid transparent; background:transparent; color:var(--muted); font-size:.84rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:.2s; }
+    .lock-tabs button:hover { color:var(--deep); }
+    .lock-tabs button.active { background:transparent; color:var(--deep); border-bottom-color:#3A312D; font-weight:500; }
     .auth-form { display:flex; flex-direction:column; gap:10px; }
-    .auth-form input { padding:12px 14px; border-radius:8px; border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.06); color:#FAF7F2; font-size:.9rem; font-family:'DM Sans',sans-serif; }
-    .auth-form input::placeholder { color:rgba(250,247,242,.45); }
-    .auth-hint { font-size:.72rem; color:rgba(250,247,242,.55); line-height:1.5; }
-    .auth-google-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:12px 14px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.22); border-radius:8px; color:#FAF7F2; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:500; cursor:pointer; transition:.2s; }
-    .auth-google-btn:hover { background:rgba(255,255,255,.14); border-color:rgba(201,169,110,.5); }
+    .auth-form input { padding:11px 13px; border-radius:6px; border:1px solid var(--border); background:#fff; color:var(--deep); font-size:.88rem; font-family:'DM Sans',sans-serif; outline:none; transition:border-color .2s, box-shadow .2s; }
+    .auth-form input:focus { border-color:#3A312D; box-shadow:0 0 0 3px rgba(58,49,45,.07); }
+    .auth-form input::placeholder { color:var(--dim); }
+    .auth-hint { font-size:.74rem; color:var(--muted); line-height:1.5; text-align:left; }
+    .auth-google-btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:11px 14px; background:#fff; border:1px solid var(--border); border-radius:6px; color:var(--deep); font-family:'DM Sans',sans-serif; font-size:.86rem; font-weight:500; cursor:pointer; transition:.2s; }
+    .auth-google-btn:hover { background:var(--cream); border-color:var(--muted); }
     .auth-google-btn svg { width:18px; height:18px; flex-shrink:0; }
-    .auth-divider { display:flex; align-items:center; gap:10px; color:rgba(250,247,242,.3); font-size:.72rem; margin:2px 0; }
-    .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:rgba(255,255,255,.12); }
+    .auth-divider { display:flex; align-items:center; gap:10px; color:var(--dim); font-size:.72rem; margin:4px 0; }
+    .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
     .acct-bar { display:none; justify-content:flex-end; align-items:center; gap:14px; padding:8px 28px; background:rgba(28,23,20,.04); border-bottom:1px solid rgba(28,23,20,.07); font-size:.76rem; color:var(--muted); }
     .acct-bar .credits { color:var(--deep); font-weight:500; }
     .linklike { border:none; background:transparent; color:var(--rose); cursor:pointer; font-size:.76rem; text-decoration:underline; padding:0; font-family:'DM Sans',sans-serif; }
@@ -541,39 +561,52 @@
 </head>
 <body>
 
-<!-- ───────── PASSWORD GATE ───────── -->
+<!-- ───────── SIGN-IN GATE ───────── -->
 <div class="lock" id="lockScreen">
-  <div class="lock-card">
-    <div class="lock-eyebrow">SkinDay</div>
-    <h1>Visualize <span>·</span> AI&nbsp;Treatment&nbsp;Previews</h1>
-    <p class="lock-soon" id="lockTagline">AI-powered treatment previews. Sign in with your SkinDay account, or create one free.</p>
-    <div class="lock-tabs" id="lockTabs" style="display:none;">
-      <button type="button" data-mode="signin" class="active">Sign in</button>
-      <button type="button" data-mode="signup">Create account</button>
+  <div class="lock-shell">
+
+    <!-- Left: product identity -->
+    <div class="lock-identity">
+      <a href="/" class="lock-logo">Skin<span>Day</span></a>
+      <h1>Visualize</h1>
+      <p class="lock-lede">AI consultation previews for aesthetic clinics.</p>
+      <p class="lock-sub">Preview treatment possibilities during consultation.<br>Built for clinician-led aesthetic conversations.</p>
+      <div class="lock-modalities">Biostimulator &middot; HA filler &middot; Neurotoxin &middot; Energy-based treatments</div>
     </div>
-    <div class="lock-form auth-form" id="authForm" style="display:none;">
-      <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-        </svg>
-        Continue with Google
-      </button>
-      <div class="auth-divider">or</div>
-      <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
-      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
-      <button id="authBtn" type="button">Sign in</button>
-      <div class="lock-err" id="authErr"></div>
-      <div class="auth-hint" id="authHint"></div>
+
+    <!-- Right: sign-in -->
+    <div class="lock-card">
+      <div class="lock-panel">
+        <div class="lock-title">Continue to Visualize</div>
+        <p class="lock-soon" id="lockTagline">Use your SkinDay account to continue.</p>
+        <div class="lock-tabs" id="lockTabs" style="display:none;">
+          <button type="button" data-mode="signin" class="active">Sign in</button>
+          <button type="button" data-mode="signup">Create account</button>
+        </div>
+        <div class="lock-form auth-form" id="authForm" style="display:none;">
+          <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+            Continue with Google
+          </button>
+          <div class="auth-divider">or</div>
+          <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
+          <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
+          <button id="authBtn" type="button">Continue</button>
+          <div class="lock-err" id="authErr"></div>
+          <div class="auth-hint" id="authHint"></div>
+        </div>
+        <div class="lock-form" id="unavailForm" style="display:none;">
+          <div class="lock-err" id="lockErr" style="color:var(--muted);">Sign-in is temporarily unavailable. Please try again shortly.</div>
+        </div>
+        <div class="lock-foot">Photos are used only for the requested preview. Outputs are for consultation use and are not guaranteed treatment results. Questions? Email <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</div>
+      </div>
     </div>
-    <div class="lock-form" id="betaForm">
-      <input type="password" id="betaKey" placeholder="Beta access password" autocomplete="off" />
-      <button id="unlockBtn" type="button">Enter beta</button>
-      <div class="lock-err" id="lockErr"></div>
-    </div>
-    <div class="lock-foot">Same SkinDay account across all our tools. Questions? Email <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.</div>
+
   </div>
 </div>
 
@@ -924,7 +957,7 @@
     <div class="scenario-fs-bar">
       <div>
         <div class="scenario-fs-title" id="scenarioFsTitle"></div>
-        <div class="scenario-fs-disclaimer">Scenario simulation — not a guaranteed outcome</div>
+        <div class="scenario-fs-disclaimer">Scenario simulation, not a guaranteed outcome</div>
       </div>
       <div class="scenario-fs-actions">
         <div class="fs-zoom">
@@ -998,7 +1031,7 @@
       <div>
         <div style="font-size:.84rem;font-weight:600;color:var(--deep);margin-bottom:4px;">Case uploads coming soon</div>
         <div style="font-size:.8rem;color:var(--muted);line-height:1.55;">Clinic case uploads require compliant private storage and a patient consent workflow. We are building this now. In the meantime, contact us to have your cases added directly.</div>
-        <a href="mailto:hello@skinday.ca?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
+        <a href="mailto:hello@skinday.com?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
       </div>
     </div>
     <!-- Existing cases (shown below the upload form, filtered by current selection) -->
@@ -1248,8 +1281,6 @@ function activeSlot(){ return state.slots[state.activeAngle]; }
 /* ───────── Lock screen ───────── */
 const lockScreen = document.getElementById('lockScreen');
 const app = document.getElementById('app');
-const betaKey = document.getElementById('betaKey');
-const unlockBtn = document.getElementById('unlockBtn');
 const lockErr = document.getElementById('lockErr');
 
 async function verifyKey(key){
@@ -1380,40 +1411,35 @@ async function refreshCredits(retries){
 }
 
 /* Beta path (unchanged mechanics) */
-async function attemptUnlock(){
-  const key = betaKey.value.trim();
-  if(!key){ lockErr.textContent = 'Enter the beta password.'; return; }
-  unlockBtn.disabled = true; lockErr.textContent = 'Checking…';
-  try {
-    if(await verifyKey(key)){
-      sessionStorage.setItem(KEY_STORE, key);
-      lockErr.textContent = '';
-      unlock('beta');
-    } else {
-      lockErr.textContent = 'That password is not recognised.';
-    }
-  } catch(e){
-    lockErr.textContent = 'Could not reach the server. Try again.';
-  } finally {
-    unlockBtn.disabled = false;
-  }
-}
-unlockBtn.addEventListener('click', attemptUnlock);
-betaKey.addEventListener('keydown', e => { if(e.key === 'Enter') attemptUnlock(); });
+// Beta password entry has been removed from the UI. The internal beta access
+// mode still exists for backward compatibility (saved keys), but there is no
+// longer any password form to fill in.
 
 /* Account path */
 let authMode = 'signin';
 function setLockMode(mode){
-  authMode = (mode === 'signup') ? 'signup' : (mode === 'beta' ? 'beta' : 'signin');
+  authMode = (mode === 'signup') ? 'signup' : 'signin';
   document.querySelectorAll('#lockTabs button').forEach(btn =>
     btn.classList.toggle('active', btn.dataset.mode === authMode));
-  document.getElementById('authForm').style.display = (authMode === 'beta') ? 'none' : 'flex';
-  document.getElementById('betaForm').style.display = (authMode === 'beta') ? '' : 'none';
-  document.getElementById('authBtn').textContent = (authMode === 'signup') ? 'Create account' : 'Sign in';
+  const authForm = document.getElementById('authForm');
+  if(authForm) authForm.style.display = 'flex';
+  const unavail = document.getElementById('unavailForm');
+  if(unavail) unavail.style.display = 'none';
+  document.getElementById('authBtn').textContent = (authMode === 'signup') ? 'Create account' : 'Continue';
   document.getElementById('authHint').textContent = (authMode === 'signup' && SD_CFG.signupGrant > 0)
     ? ('New accounts start with ' + SD_CFG.signupGrant + ' free credits.')
     : '';
   document.getElementById('authErr').textContent = '';
+}
+
+// Show a graceful "temporarily unavailable" state when account auth can't load.
+function showAuthUnavailable(){
+  const tabs = document.getElementById('lockTabs');
+  if(tabs) tabs.style.display = 'none';
+  const authForm = document.getElementById('authForm');
+  if(authForm) authForm.style.display = 'none';
+  const unavail = document.getElementById('unavailForm');
+  if(unavail) unavail.style.display = '';
 }
 
 async function onSignedIn(session){
@@ -1496,8 +1522,8 @@ function openBuyModal(){
       // Open checkout in a small POPUP WINDOW (opened synchronously on the click
       // so popup blockers allow it). The popup runs Stripe, then on return closes
       // itself and notifies THIS page to refresh credits (see handlePurchasePopup
-      // + the 'message' listener). This keeps the current page — and every
-      // generated simulation — alive in memory, so buying credits never destroys
+      // + the 'message' listener). This keeps the current page, and every
+      // generated simulation, alive in memory, so buying credits never destroys
       // finished work. If the popup is blocked, fall back to a same-tab redirect.
       const checkoutWin = window.open('', 'sd_checkout', 'width=480,height=760,menubar=no,toolbar=no,location=no,status=no');
       if(checkoutWin){
@@ -1984,9 +2010,9 @@ window.addEventListener('message', (ev) => {
   if(saved && await verifyKey(saved).catch(() => false)){ unlock('beta'); return; }
 
   if(SD_CFG.authDisabled){
-    // Pre-M8 behavior: beta password only.
-    document.getElementById('lockTagline').textContent = 'Early access. Enter your beta password to try SkinDay Visualize.';
-    document.getElementById('betaForm').style.display = '';
+    // Account auth not configured (e.g. fresh staging deploy). Show a graceful
+    // unavailable state rather than a beta password prompt.
+    showAuthUnavailable();
     return;
   }
 
@@ -2065,8 +2091,8 @@ window.addEventListener('message', (ev) => {
       if(session && !accessMode) onSignedIn(session);
     });
   } catch(e){
-    console.error('[Visualize] account auth unavailable; beta key still works.', e);
-    setLockMode('beta');
+    console.error('[Visualize] account auth unavailable.', e);
+    showAuthUnavailable();
   }
 })();
 
@@ -4802,7 +4828,7 @@ function renderScenarioResult(scenarioKey){
   card.innerHTML =
     '<div class="scenario-result-header">' +
       '<span class="scenario-result-label">' + escapeHtml(label) + '</span>' +
-      '<span class="scenario-result-disclaimer">Scenario simulation — not a guaranteed outcome</span>' +
+      '<span class="scenario-result-disclaimer">Scenario simulation, not a guaranteed outcome</span>' +
       actionsHtml +
     '</div>' +
     bodyHtml;
