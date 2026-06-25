@@ -812,7 +812,7 @@ async function loadCosts(){
   document.getElementById('costs-error').style.display   = 'none';
   document.getElementById('costs-content').style.display = 'none';
   try {
-    const res = await fetch('/api/admin-costs', {
+    const res = await fetch('/.netlify/functions/admin-costs', {
       headers: { 'Authorization': 'Bearer ' + adminSecret }
     });
     if(res.status === 401){
