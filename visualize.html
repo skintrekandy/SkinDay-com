@@ -26,6 +26,11 @@
     .nav-logo span { color:var(--gold); }
     .nav-ctas { display:flex; align-items:center; gap:.6rem; }
     .nav-link { background:transparent; border:1px solid rgba(201,169,110,.4); color:var(--dim); padding:.3rem .75rem; border-radius:4px; font-size:.78rem; text-decoration:none; cursor:pointer; }
+    .lang-toggle { display:flex; align-items:center; gap:8px; border:1px solid rgba(201,169,110,.4); border-radius:999px; padding:5px 12px; }
+    .lang-btn { background:none; border:none; cursor:pointer; font-family:inherit; font-size:.72rem; letter-spacing:.06em; color:var(--dim); padding:0; transition:color .2s; }
+    .lang-btn.active { color:#FAF7F2; }
+    .lang-btn:hover:not(.active) { color:var(--gold); }
+    .lang-sep { width:1px; height:11px; background:rgba(201,169,110,.4); }
     .acct-wrap { position:relative; }
     .acct-menu { position:absolute; top:calc(100% + 8px); right:0; min-width:180px; background:#fff; border:1px solid var(--border); border-radius:8px; box-shadow:0 8px 28px rgba(28,23,20,.14); padding:6px; z-index:60; display:none; }
     .acct-menu.open { display:block; }
@@ -616,7 +621,7 @@
   <a href="/" class="nav-logo">Skin<span>Day</span></a>
   <div class="nav-ctas">
     <button class="nav-credits" id="navCredits" type="button" title="Credit balance"></button>
-    <button class="nav-library" id="navLibraryBtn" type="button" title="Case library">Library</button>
+    <button class="nav-library" id="navLibraryBtn" type="button" title="Case library" style="display:none;">Library</button>
     <span class="acct-wrap">
       <button class="nav-link" id="navAccountBtn" type="button" style="display:none;" aria-haspopup="true" aria-expanded="false">Account</button>
       <div class="acct-menu" id="acctMenu" role="menu">
@@ -626,6 +631,11 @@
         <button type="button" id="acctMenuSignOut" class="signout" role="menuitem">Sign out</button>
       </div>
     </span>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="lang-btn active" type="button" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" type="button" onclick="setLang('zh')">繁中</button>
+    </div>
   </div>
 </nav>
 <div class="acct-bar" id="acctBar">
@@ -639,9 +649,9 @@
 <div class="page">
   <section class="hero">
     <div class="eyebrow">SkinDay Visualize</div>
-    <h1>Make the <em>invisible</em> visible.</h1>
-    <p>Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
-    <p class="hero-disclaimer">Consultation tool only. Not a prediction of actual results.</p>
+    <h1 data-en="Make the <em>invisible</em> visible." data-zh="把看不見的變化，變得看得見。">Make the <em>invisible</em> visible.</h1>
+    <p data-en="Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand." data-zh="在療程開始前，向顧客呈現臉部治療可能帶來的變化。從玻尿酸填充到童顏針，讓諩詢更容易理解。">Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
+    <p class="hero-disclaimer" data-en="Consultation tool only. Not a prediction of actual results." data-zh="僅供諩詢使用。並非實際治療結果的預測。">Consultation tool only. Not a prediction of actual results.</p>
   </section>
 
   <!-- tab bar removed M11.1: single-tool page, no nav needed -->
@@ -649,34 +659,34 @@
   <section class="flow">
     <!-- Step 1: choose treatment type -->
     <div class="card">
-      <div class="step-num">Step 1 · What do you want to visualize?</div>
+      <div class="step-num" data-en="Step 1 · What do you want to visualize?" data-zh="步驟 1 · 想預覽哪一類療程？">Step 1 · What do you want to visualize?</div>
       <div class="type-toggle quad" id="typeToggle">
-        <button class="type-btn active" data-type="biostim" type="button"><strong>Biostimulation</strong></button>
-        <button class="type-btn" data-type="filler" type="button"><strong>HA Fillers</strong></button>
-        <button class="type-btn" data-type="tox" type="button"><strong>Neurotoxin</strong></button>
-        <button class="type-btn" data-type="laser" type="button"><strong>Energy-Based Devices</strong></button>
+        <button class="type-btn active" data-type="biostim" type="button"><strong data-en="Biostimulation" data-zh="膠原增生類">Biostimulation</strong></button>
+        <button class="type-btn" data-type="filler" type="button"><strong data-en="HA Fillers" data-zh="玻尿酸填充">HA Fillers</strong></button>
+        <button class="type-btn" data-type="tox" type="button"><strong data-en="Neurotoxin" data-zh="肉毒桿菌素">Neurotoxin</strong></button>
+        <button class="type-btn" data-type="laser" type="button"><strong data-en="Energy-Based Devices" data-zh="電波／音波療程">Energy-Based Devices</strong></button>
       </div>
     </div>
 
     <!-- Step 2: treatment details -->
     <div class="card">
-      <div class="step-num">Step 2 · Treatment details</div>
+      <div class="step-num" data-en="Step 2 · Treatment details" data-zh="步驟 2 · 療程細節">Step 2 · Treatment details</div>
 
       <!-- FILLER controls -->
       <div id="fillerControls" class="hidden">
         <div class="field">
-          <label>Treatment area</label>
+          <label data-en="Treatment area" data-zh="治療部位">Treatment area</label>
           <div class="area-grid" id="areaGrid">
-            <div class="area-chip active" data-area="chin_jawline"><span class="tick">✓</span>Chin + Jawline</div>
-            <div class="area-chip" data-area="cheeks"><span class="tick">✓</span>Cheeks</div>
-            <div class="area-chip" data-area="temple"><span class="tick">✓</span>Temple</div>
-            <div class="area-chip" data-area="nose"><span class="tick">✓</span>Nose</div>
-            <div class="area-chip" data-area="tear_trough"><span class="tick">✓</span>Tear trough</div>
-            <div class="area-chip" data-area="lips"><span class="tick">✓</span>Lips</div>
+            <div class="area-chip active" data-area="chin_jawline"><span class="tick">✓</span><span data-en="Chin + Jawline" data-zh="下巴＋下顒線">Chin + Jawline</span></div>
+            <div class="area-chip" data-area="cheeks"><span class="tick">✓</span><span data-en="Cheeks" data-zh="臉頰">Cheeks</span></div>
+            <div class="area-chip" data-area="temple"><span class="tick">✓</span><span data-en="Temple" data-zh="太陽穴">Temple</span></div>
+            <div class="area-chip" data-area="nose"><span class="tick">✓</span><span data-en="Nose" data-zh="鼻部">Nose</span></div>
+            <div class="area-chip" data-area="tear_trough"><span class="tick">✓</span><span data-en="Tear trough" data-zh="淚溝">Tear trough</span></div>
+            <div class="area-chip" data-area="lips"><span class="tick">✓</span><span data-en="Lips" data-zh="嘴唇">Lips</span></div>
           </div>
         </div>
         <div class="field">
-          <label>Patient (sets chin and jaw shape)</label>
+          <label data-en="Patient (sets chin and jaw shape)" data-zh="顧客性別（影響下巴與下顒線設定）">Patient (sets chin and jaw shape)</label>
           <div class="pill-grid" id="fillerSex">
             <button class="pill active" data-sex="female" type="button"><strong>Female</strong></button>
             <button class="pill" data-sex="male" type="button"><strong>Male</strong></button>
@@ -1223,6 +1233,51 @@
 </div><!-- /#app -->
 
 <script>
+// ============================================================
+// i18n - bilingual EN / 繁中 (shares sd-lang across the site)
+// Static markup uses data-en/data-zh; dynamic JS strings use t('key').
+// ============================================================
+var I18N = {
+  en: {
+    creditsEllipsis: 'Credits: …',
+    creditsLabel: 'Credits',
+    account: 'Account'
+  },
+  zh: {
+    creditsEllipsis: '\u9ede\u6578\uff1a\u2026',
+    creditsLabel: '\u9ede\u6578',
+    account: '\u5e33\u865f'
+  }
+};
+function detectLang(){
+  try { var saved = localStorage.getItem('sd-lang'); if (saved === 'zh' || saved === 'en') return saved; } catch(e){}
+  try { var nl = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase(); if (nl.indexOf('zh') === 0) return 'zh'; } catch(e){}
+  return 'en';
+}
+var currentLang = detectLang();
+function t(key){ var v = (I18N[currentLang] && I18N[currentLang][key]); if (v == null) v = I18N.en[key]; return v; }
+function setLang(lang){
+  currentLang = (lang === 'zh') ? 'zh' : 'en';
+  try { localStorage.setItem('sd-lang', currentLang); } catch(e){}
+  applyLang();
+}
+function applyLang(){
+  var isZh = currentLang === 'zh';
+  document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
+  document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+    var val = isZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = val;
+    else el.innerHTML = val;
+  });
+  document.querySelectorAll('.lang-btn').forEach(function(btn){
+    btn.classList.toggle('active', (btn.textContent.trim() === 'EN' && !isZh) || (btn.textContent.trim() === '\u7e41\u4e2d' && isZh));
+  });
+  document.title = isZh
+    ? 'SkinDay Visualize \u00b7 \u91ab\u7f8e\u8a3a\u6240 AI \u7642\u7a0b\u9810\u89bd\u5de5\u5177'
+    : 'SkinDay Visualize - AI Treatment Preview for Aesthetic Clinics';
+  if (typeof refreshDynamicLang === 'function') refreshDynamicLang();
+}
+
 const KEY_STORE = 'sd_visualize_key';
 const FREE_REGEN_MS = 60000;
 
@@ -1376,15 +1431,15 @@ function renderAcctBar(){
   } else if(accessMode === 'account'){
     bar.style.display = 'flex';
     ident.textContent = (sb && sb.__email) || '';
-    chip.textContent = creditBalance == null ? 'Credits: …' : ('Credits: ' + creditBalance);
+    chip.textContent = creditBalance == null ? t('creditsEllipsis') : (t('creditsLabel') + ': ' + creditBalance);
     buy.style.display = ''; out.style.display = ''; info.style.display = '';
     navPill.style.display = 'inline-flex';
-    navPill.innerHTML = 'Credits: <strong>' + (creditBalance == null ? '…' : creditBalance) + '</strong>';
+    navPill.innerHTML = t('creditsLabel') + ': <strong>' + (creditBalance == null ? '\u2026' : creditBalance) + '</strong>';
     if(navAcct){
       navAcct.style.display = '';
       // Show first name or email prefix to match main site nav style
       const email = (sb && sb.__email) || '';
-      const displayName = email ? email.split('@')[0] : 'Account';
+      const displayName = email ? email.split('@')[0] : t('account');
       navAcct.textContent = displayName.charAt(0).toUpperCase() + displayName.slice(1);
     }
     syncLibraryBtn();
@@ -1942,7 +1997,9 @@ async function deleteLibCase(id) {
 function syncLibraryBtn() {
   const btn = document.getElementById('navLibraryBtn');
   if (!btn) return;
-  btn.style.display = (accessMode === 'account') ? '' : 'none';
+  // Case library is not shipped yet (compliant storage + consent workflow still
+  // to be built). Keep the entry point hidden in all states until then.
+  btn.style.display = 'none';
 }
 
 /* ─────────────────────────────────────────────── */
@@ -1989,6 +2046,7 @@ window.addEventListener('message', (ev) => {
 });
 
 (async function initAccess(){
+  applyLang();
   try {
     SD_CFG = await (await fetch('/.netlify/functions/visualize-config')).json();
   } catch(e){ SD_CFG = { authDisabled:true }; }

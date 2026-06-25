@@ -216,7 +216,9 @@
     .export-formats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
     .btn-dl { background: var(--deep); color: var(--cream); border: none; padding: 10px 8px; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; text-align: center; }
     .btn-dl:hover { background: var(--deep2); }
-    .btn-dl span { display: block; font-size: 0.64rem; opacity: 0.6; font-weight: 300; margin-top: 2px; }
+    .btn-dl span { display: block; font-size: 0.64rem; opacity: 0.85; font-weight: 300; margin-top: 2px; }
+    .btn-dl-single { display: flex; align-items: center; justify-content: center; }
+    .btn-dl-single span { font-size: 0.75rem; opacity: 1; font-weight: 500; margin-top: 0; }
     .output-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .btn-new-case { background: var(--rose); color: #fff; border: 1px solid var(--rose); padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
     .btn-new-case:hover { background: var(--rose-m); border-color: var(--rose-m); }
@@ -522,7 +524,7 @@
     <div style="margin-top:16px;margin-bottom:12px;">
       <div class="step-num" style="margin-bottom:10px;" data-en="Export format" data-zh="匯出格式">Export format</div>
       <div class="export-formats">
-        <button class="btn-dl" onclick="downloadFormat('original')"><span data-en="Original" data-zh="原始版本">Original</span><span data-en="As generated" data-zh="生成版本">As generated</span></button>
+        <button class="btn-dl btn-dl-single" onclick="downloadFormat('original')"><span data-en="Original" data-zh="原始圖片">Original</span></button>
         <button class="btn-dl" onclick="downloadFormat('square')"><span data-en="Square 1:1" data-zh="正方形 1:1">Square 1:1</span><span data-en="Instagram post" data-zh="Instagram 貼文">Instagram post</span></button>
         <button class="btn-dl" onclick="downloadFormat('story')"><span data-en="Story 9:16" data-zh="限時動態 9:16">Story 9:16</span><span data-en="Instagram story" data-zh="Instagram 限時動態">Instagram story</span></button>
       </div>
@@ -592,11 +594,16 @@ var I18N = {
     settingsSaved: '\u8a2d\u5b9a\u5df2\u5132\u5b58'
   }
 };
-var currentLang = (function(){ try { return sessionStorage.getItem('sd-lang') === 'zh' ? 'zh' : 'en'; } catch(e){ return 'en'; } })();
+function detectLang(){
+  try { var saved = localStorage.getItem('sd-lang'); if (saved === 'zh' || saved === 'en') return saved; } catch(e){}
+  try { var nl = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase(); if (nl.indexOf('zh') === 0) return 'zh'; } catch(e){}
+  return 'en';
+}
+var currentLang = detectLang();
 function t(key){ var v = (I18N[currentLang] && I18N[currentLang][key]); if (v == null) v = I18N.en[key]; return v; }
 function setLang(lang){
   currentLang = (lang === 'zh') ? 'zh' : 'en';
-  try { sessionStorage.setItem('sd-lang', currentLang); } catch(e){}
+  try { localStorage.setItem('sd-lang', currentLang); } catch(e){}
   applyLang();
 }
 function applyLang(){
