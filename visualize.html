@@ -603,7 +603,7 @@
         <div class="lock-form" id="unavailForm" style="display:none;">
           <div class="lock-err" id="lockErr" style="color:var(--muted);">Sign-in is temporarily unavailable. Please try again shortly.</div>
         </div>
-        <div class="lock-foot">Photos are used only for the requested preview. Outputs are for consultation use and are not guaranteed treatment results. Questions? Email <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</div>
+        <div class="lock-foot">Photos are used only for the requested preview. Outputs are for consultation use and are not guaranteed treatment results. Questions? Email <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.</div>
       </div>
     </div>
 
@@ -1007,7 +1007,7 @@
 <div class="guide-modal hidden" id="creditsInfoModal">
   <div class="guide-card">
     <h2>How credits work</h2>
-    <p>Credits are spent only when a simulation is generated. Each angle of a case is one generation: <strong>HA filler costs <span id="ciFiller">1</span> credit(s) per angle</strong> and <strong>biostimulator costs <span id="ciBiostim">2</span> credit(s) per angle</strong>, so a full 3-angle HA case is <span id="ciCaseF">3</span> credits and a 3-angle biostimulator case is <span id="ciCaseB">6</span>.</p>
+    <p>Credits are spent only when a simulation is generated. Each angle of a case is one generation, and every treatment costs the same: <strong><span id="ciPerAngle">1</span> credit(s) per angle</strong>. So a full 3-angle case is <span id="ciCase3">3</span> credits, whether it is HA filler, biostimulator, neurotoxin, or an energy-based treatment.</p>
     <p>Everything after generation is free: adjusting the response slider, comparing angles, exporting and downloading, and re-generating within 60 seconds of a result. If a generation fails or is blocked by the AI provider's safety system, its credits are refunded to your balance automatically.</p>
     <p>Purchased credits do not expire. New accounts start with a small free balance so you can try the tool on a real consultation first.</p>
     <p><strong>Independence note:</strong> Visualize credits are a clinic tool purchase only. Buying credits never affects a clinic's ranking, search placement, reviews, or visibility anywhere on SkinDay.</p>
@@ -1031,7 +1031,7 @@
       <div>
         <div style="font-size:.84rem;font-weight:600;color:var(--deep);margin-bottom:4px;">Case uploads coming soon</div>
         <div style="font-size:.8rem;color:var(--muted);line-height:1.55;">Clinic case uploads require compliant private storage and a patient consent workflow. We are building this now. In the meantime, contact us to have your cases added directly.</div>
-        <a href="mailto:hello@skinday.com?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
+        <a href="mailto:hello@skinday.ca?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
       </div>
     </div>
     <!-- Existing cases (shown below the upload form, filtered by current selection) -->
@@ -1303,17 +1303,19 @@ let SD_CFG = { authDisabled:true };
 function creditCostFor(type){
   const c = (SD_CFG && SD_CFG.costs) || {};
   // Costs here are in credit units (100 = one angle), matching SD_CFG.costs.
-  // M14.2: Optimistic/Both removed, so no doubling. Laser is 100/angle like filler.
+  // M14.3: flat 100 credits per angle for every treatment. Biostim was 200 back
+  // when it ran two passes (Expected + Strong); it now runs a single Expected
+  // gpt-image-2 pass, so it costs the same as filler and is priced the same.
   if(type === 'laser')   return c.laser   || 100;
   if(type === 'tox')     return c.tox     || 100;
-  if(type === 'biostim') return c.biostim || 200;
+  if(type === 'biostim') return c.biostim || 100;
   return c.filler || 100;
 }
 
 function fillCreditCopy(){
-  const f = creditCostFor('filler'), b = creditCostFor('biostim');
+  const per = creditCostFor('filler'); // flat: all treatments cost the same per angle
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
-  set('ciFiller', f); set('ciBiostim', b); set('ciCaseF', 3 * f); set('ciCaseB', 3 * b);
+  set('ciPerAngle', per); set('ciCase3', 3 * per);
   // Scenario cost labels: keep the buttons and subtitle in sync with the server
   // price so nothing reads "1 credit" while the server charges the scaled amount.
   const sc = scenarioCreditCost();
