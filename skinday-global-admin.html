@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SkinDay Global Admin · Visualize</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream:   #FAF7F2;
+    --warm:    #F4EDE4;
+    --deep:    #1C1714;
+    --deep2:   #241E1A;
+    --rose:    #C8725A;
+    --rose-m:  #D4896E;
+    --rose-bg: #F5E8E3;
+    --gold:    #C9A96E;
+    --muted:   #8A7B72;
+    --dim:     #B5A89F;
+    --border:  #EAE2D8;
+    --green:   #3D7A55;
+    --green-bg:#E8F4ED;
+    --red:     #B94040;
+    --red-bg:  #F9EDED;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--deep);
+    color: var(--cream);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN SCREEN ─────────────────────────────────────────── */
+  #login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+  }
+
+  .login-card {
+    background: var(--deep2);
+    border: 1px solid rgba(201,169,110,0.2);
+    border-radius: 12px;
+    padding: 3rem 2.5rem;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+  }
+
+  .login-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .login-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 2.5rem;
+  }
+
+  .login-card input {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    background: var(--deep);
+    border: 1px solid rgba(234,226,216,0.15);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.1em;
+    outline: none;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .login-card input:focus {
+    border-color: rgba(201,169,110,0.4);
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+  }
+
+  .btn-primary:hover { background: var(--rose-m); }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+
+  .login-error {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: var(--red);
+    display: none;
+  }
+
+  /* ── MAIN APP ─────────────────────────────────────────────── */
+  #app { display: none; }
+
+  /* Header */
+  .admin-header {
+    background: var(--deep2);
+    border-bottom: 1px solid rgba(234,226,216,0.1);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
+
+  .header-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gold);
+  }
+
+  .header-badge {
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid rgba(234,226,216,0.15);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .btn-ghost {
+    background: none;
+    border: 1px solid rgba(234,226,216,0.15);
+    color: var(--dim);
+    padding: 0.4rem 0.9rem;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-ghost:hover { border-color: rgba(234,226,216,0.3); color: var(--cream); }
+
+  /* Tab nav */
+  .admin-nav {
+    background: var(--deep2);
+    border-bottom: 1px solid rgba(234,226,216,0.08);
+    padding: 0 2rem;
+    display: flex;
+    gap: 0;
+  }
+
+  .nav-tab {
+    padding: 0.875rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .nav-tab:hover { color: var(--cream); }
+  .nav-tab.active { color: var(--cream); border-bottom-color: var(--rose); }
+
+  .tab-count {
+    background: var(--rose);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.1rem 0.45rem;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .tab-count.zero { background: rgba(234,226,216,0.15); color: var(--muted); }
+
+  /* Main content */
+  .admin-main {
+    padding: 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Loading */
+  .loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid rgba(234,226,216,0.1);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--muted);
+  }
+
+  .empty-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.4; }
+  .empty-title { font-size: 1rem; color: var(--dim); margin-bottom: 0.4rem; }
+  .empty-desc { font-size: 0.85rem; }
+
+  /* Claims list */
+  .claims-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .claim-card {
+    background: var(--deep2);
+    border: 1px solid rgba(234,226,216,0.08);
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: border-color 0.2s;
+  }
+
+  .claim-card:hover { border-color: rgba(234,226,216,0.15); }
+
+  .claim-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .claim-clinic-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--cream);
+    line-height: 1.2;
+  }
+
+  .claim-neighbourhood {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+  }
+
+  .claim-id {
+    font-size: 0.7rem;
+    color: var(--dim);
+    font-family: monospace;
+    background: rgba(255,255,255,0.04);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .claim-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(234,226,216,0.06);
+  }
+
+  .meta-item { }
+
+  .meta-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.2rem;
+  }
+
+  .meta-value {
+    font-size: 0.9rem;
+    color: var(--cream);
+  }
+
+  .meta-value a {
+    color: var(--rose-m);
+    text-decoration: none;
+  }
+
+  .meta-value a:hover { text-decoration: underline; }
+
+  .claim-submitted {
+    font-size: 0.8rem;
+    color: var(--dim);
+    margin-bottom: 1.25rem;
+  }
+
+  .claim-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .btn-approve {
+    padding: 0.6rem 1.25rem;
+    background: var(--green);
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-approve:hover { opacity: 0.85; }
+  .btn-approve:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-reject {
+    padding: 0.6rem 1.25rem;
+    background: none;
+    color: var(--red);
+    border: 1px solid rgba(185,64,64,0.3);
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-reject:hover { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+  .btn-reject:disabled { opacity: 0.4; cursor: default; }
+
+  .btn-revoke {
+    padding: 0.6rem 1.25rem;
+    background: none;
+    color: var(--gold);
+    border: 1px solid rgba(201,169,110,0.3);
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-revoke:hover { background: rgba(201,169,110,0.1); border-color: var(--gold); }
+  .btn-revoke:disabled { opacity: 0.4; cursor: default; }
+
+  .status-pill.revoked { background: rgba(201,169,110,0.1); color: var(--gold); }
+  .chain-tag {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    font-size: 0.7rem; color: var(--dim);
+    background: rgba(234,226,216,0.06);
+    border: 1px solid rgba(234,226,216,0.1);
+    border-radius: 4px; padding: 0.15rem 0.5rem;
+    margin-left: 0.5rem; vertical-align: middle;
+  }
+
+  .admin-note-input {
+    flex: 1;
+    min-width: 180px;
+    padding: 0.55rem 0.875rem;
+    background: var(--deep);
+    border: 1px solid rgba(234,226,216,0.12);
+    border-radius: 7px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .admin-note-input:focus { border-color: rgba(201,169,110,0.3); }
+  .admin-note-input::placeholder { color: var(--dim); }
+
+  /* Status badge on reviewed cards */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.7rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .status-pill.approved { background: var(--green-bg); color: var(--green); }
+  .status-pill.rejected { background: var(--red-bg); color: var(--red); }
+  .status-pill.pending  { background: rgba(201,169,110,0.12); color: var(--gold); }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--deep2);
+    border: 1px solid rgba(234,226,216,0.15);
+    border-radius: 8px;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+    color: var(--cream);
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: rgba(61,122,85,0.4); color: var(--green); }
+  #toast.error   { border-color: rgba(185,64,64,0.4); color: var(--red); }
+
+  /* Reviewed tab card overrides */
+  .claim-card.reviewed { opacity: 0.75; }
+  .claim-card.reviewed:hover { opacity: 1; }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--deep2);
+    border: 1px solid rgba(234,226,216,0.08);
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .stat-value {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.25rem;
+    font-weight: 500;
+    color: var(--cream);
+    line-height: 1;
+    margin-bottom: 0.3rem;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* ── ADD CLINIC FORM ──────────────────────────────────────── */
+  .add-clinic-form {
+    background: var(--deep2);
+    border: 1px solid rgba(234,226,216,0.08);
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 640px;
+  }
+
+  .form-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: var(--cream);
+    margin-bottom: 0.35rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.82rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+    line-height: 1.5;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .form-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .form-label span {
+    color: var(--rose);
+    margin-left: 2px;
+  }
+
+  .form-input {
+    padding: 0.75rem 0.875rem;
+    background: var(--deep);
+    border: 1px solid rgba(234,226,216,0.12);
+    border-radius: 7px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .form-input:focus { border-color: rgba(201,169,110,0.35); }
+  .form-input::placeholder { color: var(--dim); }
+
+  .form-select {
+    padding: 0.75rem 0.875rem;
+    background: var(--deep);
+    border: 1px solid rgba(234,226,216,0.12);
+    border-radius: 7px;
+    color: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .form-divider {
+    border: none;
+    border-top: 1px solid rgba(234,226,216,0.06);
+    margin: 1.5rem 0;
+  }
+
+  .form-section-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 1rem;
+  }
+
+  .btn-submit-clinic {
+    padding: 0.875rem 2rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    margin-top: 1rem;
+  }
+
+  .btn-submit-clinic:hover { background: var(--rose-m); }
+  .btn-submit-clinic:disabled { opacity: 0.5; cursor: default; }
+
+  .add-success {
+    display: none;
+    background: var(--green-bg);
+    border: 1px solid rgba(61,122,85,0.3);
+    border-radius: 8px;
+    padding: 1.25rem 1.5rem;
+    margin-top: 1.5rem;
+    color: var(--green);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  .add-success.show { display: block; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 600px) {
+    .admin-header { padding: 1rem; }
+    .admin-main { padding: 1rem; }
+    .admin-nav { padding: 0 1rem; overflow-x: auto; }
+    .stats-bar { grid-template-columns: 1fr; }
+    .claim-meta { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">SkinDay</div>
+    <div class="login-sub">Global Admin · Visualize</div>
+    <input type="password" id="secret-input" placeholder="Visualize admin secret" autocomplete="current-password">
+    <button class="btn-primary" onclick="login()">Sign in</button>
+    <div class="login-error" id="login-error">Incorrect secret.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="admin-header">
+    <div class="header-brand">
+      <span class="header-logo">SkinDay</span>
+      <span class="header-badge">Global · Visualize</span>
+    </div>
+    <div class="header-actions">
+      <button class="btn-ghost" onclick="refresh()">↻ Refresh</button>
+      <button class="btn-ghost" onclick="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav">
+    <button class="nav-tab active" data-tab="costs" onclick="switchTab('costs')">
+      $ Costs
+    </button>
+  </nav>
+
+  <main class="admin-main">
+<div id="costs-panel" style="display:block">
+      <div class="add-clinic-form" style="max-width:1000px;">
+        <div class="form-title">Visualize Cost Dashboard</div>
+        <div class="form-subtitle">OpenAI spend vs credit revenue, last 30 days. Data populates once generation logging is active.</div>
+        <div id="costs-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">Loading...</div>
+        <div id="costs-error" style="display:none;color:var(--rose);padding:20px 0;font-size:.85rem;"></div>
+        <div id="costs-content" style="display:none;">
+
+          <!-- Overview cards -->
+          <div style="font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:1.5rem 0 .75rem;">30-day overview</div>
+          <div id="costs-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-bottom:1.5rem;"></div>
+
+          <!-- Pack margins -->
+          <div style="font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:1.5rem 0 .75rem;">Credit pack margins</div>
+          <div id="costs-packs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:1.5rem;"></div>
+
+          <!-- By type + angle -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:1.5rem;">
+            <div>
+              <div style="font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem;">By treatment type</div>
+              <div style="overflow-x:auto;"><table id="costs-type-table" style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                <thead><tr>
+                  <th style="text-align:left;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Type</th>
+                  <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Gens</th>
+                  <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Cost (USD)</th>
+                  <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Avg/gen</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table></div>
+            </div>
+            <div>
+              <div style="font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:.75rem;">By angle</div>
+              <div style="overflow-x:auto;"><table id="costs-angle-table" style="width:100%;border-collapse:collapse;font-size:.82rem;">
+                <thead><tr>
+                  <th style="text-align:left;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Angle</th>
+                  <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Gens</th>
+                  <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Cost (USD)</th>
+                  <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);">Avg/gen</th>
+                </tr></thead>
+                <tbody></tbody>
+              </table></div>
+            </div>
+          </div>
+
+          <!-- Daily table -->
+          <div style="font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:1.5rem 0 .75rem;">Daily breakdown</div>
+          <div style="overflow-x:auto;"><table id="costs-daily-table" style="width:100%;border-collapse:collapse;font-size:.82rem;">
+            <thead><tr>
+              <th style="text-align:left;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Date</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Total</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">OK</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Failed</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Cost USD</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Wasted</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Avg/gen</th>
+              <th style="text-align:right;padding:6px 10px;font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);border-bottom:1px solid rgba(201,169,110,.18);white-space:nowrap;">Credits</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table></div>
+
+          <div style="text-align:right;margin-top:1rem;">
+            <button onclick="loadCosts()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// SkinDay Global Admin (Visualize). Separate from the Canada
+// directory admin: its own page, its own secret (VISUALIZE_ADMIN_SECRET,
+// checked server-side by admin-costs.js), and a function that only ever
+// reads Visualize cost/generation data. No directory operations here.
+// ============================================================
+let adminSecret = '';
+let currentTab = 'costs';
+
+// ── AUTH ───────────────────────────────
+function login() {
+  const val = document.getElementById('secret-input').value.trim();
+  if (!val) return;
+  adminSecret = val;
+  localStorage.setItem('skinday_visualize_admin_secret', val);
+  document.getElementById('login-error').style.display = 'none';
+  enterApp();
+}
+
+document.getElementById('secret-input').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') login();
+});
+
+function logout() {
+  adminSecret = '';
+  localStorage.removeItem('skinday_visualize_admin_secret');
+  costsLoaded = false;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('secret-input').value = '';
+}
+
+// Auto-login if a secret is saved
+(function autoLogin(){
+  const saved = localStorage.getItem('skinday_visualize_admin_secret');
+  if (saved) { adminSecret = saved; enterApp(); }
+})();
+
+// Verify the secret by attempting to load costs. A 401 sends the user back
+// to the login screen; any other result reveals the app.
+async function enterApp(){
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  await loadCosts();
+}
+
+function refresh(){ costsLoaded = false; loadCosts(); }
+
+// Single-tab for now; structured so more tabs slot in later.
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.nav-tab').forEach(function(b){
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  if (tab === 'costs' && !costsLoaded) loadCosts();
+}
+
+// ── COSTS (ported from the Canada admin Costs tab) ──────────
+let costsLoaded = false;
+
+async function loadCosts(){
+  document.getElementById('costs-loading').style.display = 'block';
+  document.getElementById('costs-error').style.display   = 'none';
+  document.getElementById('costs-content').style.display = 'none';
+  try {
+    const res = await fetch('/api/admin-costs', {
+      headers: { 'Authorization': 'Bearer ' + adminSecret }
+    });
+    if(res.status === 401){
+      // Wrong or missing secret: clear it and return to the login screen.
+      adminSecret = '';
+      localStorage.removeItem('skinday_visualize_admin_secret');
+      costsLoaded = false;
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
+    if(!res.ok) throw new Error('Server returned ' + res.status);
+    const data = await res.json();
+    renderCosts(data);
+    costsLoaded = true;
+    document.getElementById('costs-loading').style.display = 'none';
+    document.getElementById('costs-content').style.display = 'block';
+  } catch(err){
+    document.getElementById('costs-loading').style.display = 'none';
+    document.getElementById('costs-error').style.display   = 'block';
+    document.getElementById('costs-error').textContent     = 'Failed to load cost data: ' + err.message;
+  }
+}
+
+function fmtUSD(n, d){ return n == null ? '--' : '$' + Number(n).toFixed(d == null ? 4 : d); }
+function fmtPct(a, b){ return b ? (a/b*100).toFixed(1) + '%' : '--'; }
+
+function renderCosts(data){
+  const t = data.totals;
+
+  // Overview cards
+  const cardDefs = [
+    { label:'Total generations',    val: t.total_generations,                                 sub: '30 days' },
+    { label:'Successful',           val: t.successful,           color:'var(--green)',         sub: fmtPct(t.successful, t.total_generations) + ' success rate' },
+    { label:'Failed / refunded',    val: t.failed,               color: t.failed>10 ? 'var(--rose)' : '', sub:'' },
+    { label:'Avg cost / gen',       val: fmtUSD(t.avg_cost_per_gen),                          sub: 'successful only' },
+    { label:'Total OpenAI cost',    val: fmtUSD(t.total_cost_usd, 2),                         sub: 'USD' },
+    { label:'Wasted cost',          val: fmtUSD(t.wasted_cost_usd, 2), color: (t.wasted_cost_usd||0)>5 ? 'var(--rose)' : '', sub: fmtPct(t.wasted_cost_usd, t.total_cost_usd) + ' of total' },
+    { label:'Est. revenue',         val: 'CA$' + Number(t.revenue_est_cad||0).toFixed(2),    color:'var(--green)', sub: 'from credits used' },
+    { label:'Est. margin',          val: fmtUSD(t.margin_est_usd, 2), color: (t.margin_est_usd||0) < 0 ? 'var(--rose)' : 'var(--green)', sub: 'USD after OpenAI' },
+  ];
+  document.getElementById('costs-cards').innerHTML = cardDefs.map(c => `
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.15);border-radius:8px;padding:14px 16px;">
+      <div style="font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:.35rem;">${c.label}</div>
+      <div style="font-size:1.35rem;font-weight:500;color:${c.color||'var(--cream)'};">${c.val}</div>
+      ${c.sub ? `<div style="font-size:.72rem;color:var(--muted);margin-top:.3rem;">${c.sub}</div>` : ''}
+    </div>`).join('');
+
+  // Pack margins
+  document.getElementById('costs-packs').innerHTML = (data.pack_margins||[]).map(p => {
+    const barPct = Math.max(0, Math.min(100, (p.margin_if_all_filler / p.revenue_usd) * 100));
+    const mColor = p.margin_if_all_filler >= 0 ? 'var(--green)' : 'var(--rose)';
+    return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(201,169,110,.15);border-radius:8px;padding:14px 16px;">
+      <div style="font-weight:600;color:var(--cream);margin-bottom:.75rem;">${p.pack.charAt(0).toUpperCase()+p.pack.slice(1)} - CA$${p.price_cad} / ${p.credits} cr</div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.8rem;"><span style="color:var(--muted);">Revenue (USD)</span><span style="color:var(--cream);">${fmtUSD(p.revenue_usd,2)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.8rem;"><span style="color:var(--muted);">Cost if all filler</span><span>${fmtUSD(p.cost_if_all_filler,2)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.3rem;font-size:.8rem;"><span style="color:var(--muted);">Cost if all Sculptra</span><span>${fmtUSD(p.cost_if_all_biostim,2)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:.5rem;font-size:.8rem;"><span style="color:var(--muted);">Margin (filler mix)</span><span style="color:${mColor};font-weight:600;">${fmtUSD(p.margin_if_all_filler,2)}</span></div>
+      <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;"><div style="height:5px;border-radius:3px;background:var(--green);width:${barPct}%;"></div></div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:.35rem;">${barPct.toFixed(0)}% margin on filler mix</div>
+    </div>`;
+  }).join('');
+
+  // Type table
+  const typeTbody = document.querySelector('#costs-type-table tbody');
+  typeTbody.innerHTML = Object.entries(data.by_type||{}).map(([type, v]) => `
+    <tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--cream);">${type}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${v.count}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${fmtUSD(v.cost)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${fmtUSD(v.count ? v.cost/v.count : null)}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted);">No data yet</td></tr>';
+
+  // Angle table
+  const angleTbody = document.querySelector('#costs-angle-table tbody');
+  angleTbody.innerHTML = Object.entries(data.by_angle||{}).map(([angle, v]) => `
+    <tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--cream);">${angle}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${v.count}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${fmtUSD(v.cost)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${fmtUSD(v.count ? v.cost/v.count : null)}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--muted);">No data yet</td></tr>';
+
+  // Daily table
+  const dailyTbody = document.querySelector('#costs-daily-table tbody');
+  dailyTbody.innerHTML = (data.daily||[]).map(row => {
+    const day = new Date(row.day).toLocaleDateString('en-CA', { month:'short', day:'numeric' });
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--cream);white-space:nowrap;">${day}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${row.total_generations||0}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--green);text-align:right;">${row.successful||0}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:${(row.failed_or_refunded||0)>3?'var(--rose)':'var(--dim)'};text-align:right;">${row.failed_or_refunded||0}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${fmtUSD(row.total_cost_usd)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:${(row.wasted_cost_usd||0)>1?'var(--rose)':'var(--dim)'};text-align:right;">${fmtUSD(row.wasted_cost_usd)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${fmtUSD(row.avg_cost_per_success)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid rgba(234,226,216,.06);color:var(--dim);text-align:right;">${row.credits_charged||0}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--muted);">No data yet</td></tr>';
+}
+
+// renderCosts is provided by the ported cost block above.
+
+</script>
+</body>
+</html>
