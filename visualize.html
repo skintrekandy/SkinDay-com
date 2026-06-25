@@ -649,8 +649,8 @@
 <div class="page">
   <section class="hero">
     <div class="eyebrow">SkinDay Visualize</div>
-    <h1 data-en="Make the <em>invisible</em> visible." data-zh="把看不見的變化，變得看得見。">Make the <em>invisible</em> visible.</h1>
-    <p data-en="Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand." data-zh="在療程開始前，向顧客呈現臉部治療可能帶來的變化。從玻尿酸填充到童顏針，讓諩詢更容易理解。">Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
+    <h1 data-en="Make the <em>invisible</em> visible." data-zh="讓療程可能性，在諮詢中被看見。">Make the <em>invisible</em> visible.</h1>
+    <p data-en="Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand." data-zh="在治療開始前，向顧客呈現可能的變化方向。專為醫療人員主導的醫美諮詢而設計。">Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
     <p class="hero-disclaimer" data-en="Consultation tool only. Not a prediction of actual results." data-zh="僅供諩詢使用。並非實際治療結果的預測。">Consultation tool only. Not a prediction of actual results.</p>
   </section>
 
@@ -693,11 +693,11 @@
           </div>
         </div>
         <div class="field">
-          <label>Volume</label>
+          <label data-en="Volume" data-zh="填充量">Volume</label>
           <div class="pill-grid" id="fillerVolumeToggle">
-            <button class="pill active" data-volume="conservative" type="button"><strong>Conservative</strong></button>
-            <button class="pill" data-volume="moderate" type="button"><strong>Moderate</strong></button>
-            <button class="pill" data-volume="enhanced" type="button"><strong>Enhanced</strong></button>
+            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Conservative" data-zh="自然">Conservative</strong></button>
+            <button class="pill" data-volume="moderate" type="button"><strong data-en="Moderate" data-zh="中等">Moderate</strong></button>
+            <button class="pill" data-volume="enhanced" type="button"><strong data-en="Enhanced" data-zh="加強">Enhanced</strong></button>
           </div>
           <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Conservative: 1 syringe.</div>
         </div>
@@ -706,34 +706,34 @@
       <!-- BIOSTIM controls -->
       <div id="biostimControls">
         <div class="field">
-          <label>Product</label>
+          <label data-en="Product" data-zh="產品類型">Product</label>
           <div class="pill-grid" id="biostimProduct">
-            <button class="pill active" data-product="sculptra" type="button"><strong>PLLA (Sculptra)</strong></button>
-            <button class="pill" data-product="hdr" type="button"><strong>CaHA (Hyperdilute Radiesse)</strong></button>
+            <button class="pill active" data-product="sculptra" type="button"><strong data-en="PLLA (Sculptra)" data-zh="PLLA（童顏針；如 Sculptra）">PLLA (Sculptra)</strong></button>
+            <button class="pill" data-product="hdr" type="button"><strong data-en="CaHA (Hyperdilute Radiesse)" data-zh="CaHA（稀釋晶亮瓷；如 Radiesse）">CaHA (Hyperdilute Radiesse)</strong></button>
           </div>
-          <div class="small" style="margin-top:6px;color:var(--muted);font-style:italic;">PLLA (e.g. Sculptra, Lanluma) restores soft-tissue support. Hyperdilute CaHA (Radiesse) firms and tightens skin with minimal volume.</div>
+          <div class="small" style="margin-top:6px;color:var(--muted);font-style:italic;" data-en="PLLA (e.g. Sculptra, Lanluma) restores soft-tissue support. Hyperdilute CaHA (Radiesse) firms and tightens skin with minimal volume." data-zh="PLLA（如 Sculptra、Lanluma）主要用於恢復軟組織支撐。高倍稀釋 CaHA（如 Radiesse／晶亮瓷）則偏向改善膚質緊實與支撐感，增加的體積較少。">PLLA (e.g. Sculptra, Lanluma) restores soft-tissue support. Hyperdilute CaHA (Radiesse) firms and tightens skin with minimal volume.</div>
         </div>
 
         <!-- Patient intake: age, sex, primary concern (all optional) -->
         <div class="intake-age-sex">
           <div class="field">
-            <label>Patient age <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
-            <input id="patientAge" type="number" min="18" max="99" placeholder="e.g. 45" style="width:100%;" />
+            <label><span data-en="Patient age" data-zh="顧客年齡">Patient age</span> <span style="font-weight:400;color:var(--muted);" data-en="(optional)" data-zh="（選填）">(optional)</span></label>
+            <input id="patientAge" type="number" min="18" max="99" placeholder="e.g. 45" data-en="e.g. 45" data-zh="例如 45" style="width:100%;" />
           </div>
           <div class="field">
-            <label>Sex <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+            <label><span data-en="Sex" data-zh="性別">Sex</span> <span style="font-weight:400;color:var(--muted);" data-en="(optional)" data-zh="（選填）">(optional)</span></label>
             <div class="pill-grid" id="patientSexToggle">
-              <button class="pill" data-sex="female" type="button">Female</button>
-              <button class="pill" data-sex="male" type="button">Male</button>
+              <button class="pill" data-sex="female" type="button" data-en="Female" data-zh="女性">Female</button>
+              <button class="pill" data-sex="male" type="button" data-en="Male" data-zh="男性">Male</button>
             </div>
           </div>
         </div>
         <div class="field" style="margin-top:4px;">
-          <label>Primary concern <span style="font-weight:400;color:var(--muted);">(optional)</span></label>
+          <label><span data-en="Primary concern" data-zh="主要關注">Primary concern</span> <span style="font-weight:400;color:var(--muted);" data-en="(optional)" data-zh="（選填）">(optional)</span></label>
           <div class="pill-grid" id="primaryConcernToggle" style="margin-top:6px;">
-            <button class="pill" data-concern="hollow_deflated" type="button">Volume loss</button>
-            <button class="pill" data-concern="full_descended" type="button">Sagging</button>
-            <button class="pill" data-concern="mixed" type="button">Mixed</button>
+            <button class="pill" data-concern="hollow_deflated" type="button" data-en="Volume loss" data-zh="容量流失">Volume loss</button>
+            <button class="pill" data-concern="full_descended" type="button" data-en="Sagging" data-zh="鬆弛下垂">Sagging</button>
+            <button class="pill" data-concern="mixed" type="button" data-en="Mixed" data-zh="混合型">Mixed</button>
           </div>
         </div>
       </div>
@@ -741,10 +741,10 @@
       <!-- ENERGY-BASED DEVICES controls (RF / HIFU) -->
       <div id="laserControls" class="hidden">
         <div class="field">
-          <label>Energy type</label>
+          <label data-en="Energy type" data-zh="能量類型">Energy type</label>
           <div class="pill-grid" id="laserTypeToggle">
-            <button class="pill active" data-laser-type="rf" type="button"><strong>RF</strong></button>
-            <button class="pill" data-laser-type="hifu" type="button"><strong>HIFU</strong></button>
+            <button class="pill active" data-laser-type="rf" type="button"><strong data-en="RF" data-zh="電波／射頻">RF</strong></button>
+            <button class="pill" data-laser-type="hifu" type="button"><strong data-en="HIFU" data-zh="音波／HIFU">HIFU</strong></button>
           </div>
           <div class="small" id="laserTypeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">RF: radiofrequency skin tightening (e.g. Thermage, XERF). Results develop gradually over about 3 to 6 months.</div>
         </div>
@@ -752,11 +752,11 @@
 
       <div id="toxControls" class="hidden">
         <div class="field">
-          <label>Indication</label>
+          <label data-en="Indication" data-zh="適應項目">Indication</label>
           <div class="pill-grid" id="toxModeToggle">
-            <button class="pill" data-tox-mode="masseter" type="button"><strong>Masseter Slimming</strong></button>
-            <button class="pill" data-tox-mode="nefertiti" type="button"><strong>Nefertiti Lift</strong></button>
-            <button class="pill active" data-tox-mode="combined" type="button"><strong>Combined</strong></button>
+            <button class="pill" data-tox-mode="masseter" type="button"><strong data-en="Masseter Slimming" data-zh="瘦咬肌">Masseter Slimming</strong></button>
+            <button class="pill" data-tox-mode="nefertiti" type="button"><strong data-en="Nefertiti Lift" data-zh="Nefertiti 下臉線條拉提">Nefertiti Lift</strong></button>
+            <button class="pill active" data-tox-mode="combined" type="button"><strong data-en="Combined" data-zh="綜合">Combined</strong></button>
           </div>
           <div class="small" id="toxModeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Masseter slimming + Nefertiti lift. Conservative lower-face contour only. Results ~4-6 wk.</div>
         </div>
@@ -765,34 +765,34 @@
 
     <!-- Step 3: upload & generate -->
     <div class="card">
-      <div class="step-num">Step 3 · Photos &amp; generate</div>
+      <div class="step-num" data-en="Step 3 · Photos &amp; generate" data-zh="步驟 3 · 上傳照片並生成">Step 3 · Photos &amp; generate</div>
       <div class="field">
-        <label>Angles to simulate (select one or more)</label>
+        <label data-en="Angles to simulate (select one or more)" data-zh="選擇要模擬的角度（可選一個或多個）">Angles to simulate (select one or more)</label>
         <div class="area-grid three" id="angleGrid">
-          <div class="area-chip active" data-angle="frontal"><span class="tick">✓</span>Frontal</div>
-          <div class="area-chip" data-angle="r45"><span class="tick">✓</span>Right 45°</div>
-          <div class="area-chip" data-angle="l45"><span class="tick">✓</span>Left 45°</div>
+          <div class="area-chip active" data-angle="frontal"><span class="tick">✓</span><span data-en="Frontal" data-zh="正面">Frontal</span></div>
+          <div class="area-chip" data-angle="r45"><span class="tick">✓</span><span data-en="Right 45°" data-zh="右側 45°">Right 45°</span></div>
+          <div class="area-chip" data-angle="l45"><span class="tick">✓</span><span data-en="Left 45°" data-zh="左側 45°">Left 45°</span></div>
         </div>
       </div>
-      <div class="photo-guide" id="photoGuide"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
-      <button class="guide-link" id="guideBtn" type="button">📷 Photo guide &amp; quality checklist (important -- read before uploading)</button>
+      <div class="photo-guide" id="photoGuide" data-en="<strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong>" data-zh="<strong>僅限臉部照片。</strong>Visualize 用於臉部療程預覽，請上傳清楚的臉部近照，不要使用全身照或距離太遠的照片。<strong>照片品質是影響生成效果最重要的因素。</strong>光線不足、背景雜亂或裁切太緊，都容易造成瑙疵或效果不明顯，即使 AI 再進步也一樣。<strong>上傳前請先閱讀拍攝指南。</strong>"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
+      <button class="guide-link" id="guideBtn" type="button" data-en="📷 Photo guide &amp; quality checklist (important - read before uploading)" data-zh="📷 拍攝指南與照片品質檢查表（重要，請先閱讀）">📷 Photo guide &amp; quality checklist (important - read before uploading)</button>
       <div class="slot-grid" id="uploadSlots"></div>
-      <label class="bg-toggle"><input type="checkbox" id="blackBgChk" checked /><span>Replace background with black on the generated image.</span></label>
-      <div class="privacy-note"><span>🔒</span><span>The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading.</span></div>
+      <label class="bg-toggle"><input type="checkbox" id="blackBgChk" checked /><span data-en="Replace background with black on the generated image." data-zh="在生成圖片中替換為黑色背景。">Replace background with black on the generated image.</span></label>
+      <div class="privacy-note"><span>🔒</span><span data-en="The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading." data-zh="在您按下「生成」前，照片會保留在此瀏覽器中。按下生成後，照片只會為了本次請求傳送給 AI 影像服務供應商（OpenAI），不會用於模型訓練。上傳前，您必須已取得顧客同意。">The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading.</span></div>
 
       <div class="field" style="margin-top:14px;">
-        <label>Your name or clinic (optional, appears on export)</label>
+        <label data-en="Your name or clinic (optional, appears on export)" data-zh="您的姓名或診所名稱（選填，會顯示於匯出圖片）">Your name or clinic (optional, appears on export)</label>
         <input id="clinicName" placeholder="e.g. Dr. Smith · ABC Cosmetic Clinic" maxlength="60" />
       </div>
       <div class="field" style="margin-top:10px;">
-        <label>Clinic logo (optional, appears on export)</label>
+        <label data-en="Clinic logo (optional, appears on export)" data-zh="診所 Logo（選填，會顯示於匯出圖片）">Clinic logo (optional, appears on export)</label>
         <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
-          <button type="button" id="logoUploadBtn" class="btn btn-light" style="font-size:.78rem;padding:.35rem .8rem;">Upload logo</button>
+          <button type="button" id="logoUploadBtn" class="btn btn-light" style="font-size:.78rem;padding:.35rem .8rem;" data-en="Upload logo" data-zh="上傳 Logo">Upload logo</button>
           <span id="logoUploadName" style="font-size:.76rem;color:var(--muted);"></span>
-          <button type="button" id="logoRemoveBtn" style="display:none;background:none;border:none;cursor:pointer;font-size:.76rem;color:var(--rose);padding:0;">Remove</button>
+          <button type="button" id="logoRemoveBtn" style="display:none;background:none;border:none;cursor:pointer;font-size:.76rem;color:var(--rose);padding:0;" data-en="Remove" data-zh="移除">Remove</button>
         </div>
         <input type="file" id="logoFileInput" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;" />
-        <div class="field-hint" style="margin-top:4px;">PNG or JPG with transparent or dark background works best.</div>
+        <div class="field-hint" style="margin-top:4px;" data-en="PNG or JPG with transparent or dark background works best." data-zh="建議使用透明背景或深色背景的 PNG／JPG。">PNG or JPG with transparent or dark background works best.</div>
       </div>
 
       <!-- M12: library indicator (shown for account users who have uploaded cases) -->
@@ -803,43 +803,43 @@
 
       <label class="consent" id="consentBox">
         <input type="checkbox" id="consentChk" />
-        <span>I have this patient's consent to upload their photo to an AI image provider for consultation visualization purposes.</span>
+        <span data-en="I have this patient's consent to upload their photo to an AI image provider for consultation visualization purposes." data-zh="我已取得此顧客同意，可將其照片上傳至 AI 影像服務供應商，用於諩詢預覽目的。">I have this patient's consent to upload their photo to an AI image provider for consultation visualization purposes.</span>
       </label>
       <div class="consent-tools">
-        <span>Need a consent form? Download a template:</span>
+        <span data-en="Need a consent form? Download a template:" data-zh="需要同意書？下載範本：">Need a consent form? Download a template:</span>
         <a href="/SkinDay-Patient-Consent-Template.pdf" download>PDF</a>
         <span class="sep">·</span>
         <a href="/SkinDay-Patient-Consent-Template.docx" download>Word</a>
       </div>
 
-      <div class="disclaimer"><span>⚠️</span><span>Every export is labelled and carries a permanent consultation-only disclaimer. Outputs are simulations for communication, never a guaranteed result or medical prediction.</span></div>
-      <p style="font-size:.72rem;color:var(--muted);margin:8px 0 0;line-height:1.5;">Early access · We're continuously improving results. Quality varies by photo  -  see the photo guide for best outcomes.</p>
+      <div class="disclaimer"><span>⚠️</span><span data-en="Every export is labelled and carries a permanent consultation-only disclaimer. Outputs are simulations for communication, never a guaranteed result or medical prediction." data-zh="每張匯出圖片都會標示為諩詢用途，並附上永久聲明。輸出內容僅為溝通用模擬預覽，絕不是保證結果或醫療預測。">Every export is labelled and carries a permanent consultation-only disclaimer. Outputs are simulations for communication, never a guaranteed result or medical prediction.</span></div>
+      <p style="font-size:.72rem;color:var(--muted);margin:8px 0 0;line-height:1.5;" data-en="Early access · We're continuously improving results. Quality varies by photo - see the photo guide for best outcomes." data-zh="早期試用 · 我們會持續改善生成效果。結果會受照片品質影響，建議依照拍攝指南取得最佳效果。">Early access · We're continuously improving results. Quality varies by photo - see the photo guide for best outcomes.</p>
 
-      <div class="status"><div class="dot" id="dot"></div><span id="statusText">Choose a treatment, then add the patient photos</span></div>
+      <div class="status"><div class="dot" id="dot"></div><span id="statusText" data-en="Choose a treatment, then add the patient photos" data-zh="請先選擇療程，再加入顧客照片">Choose a treatment, then add the patient photos</span></div>
       <div id="genCard" class="gen-card" style="display:none;"></div>
 
-      <div class="btn-row" style="text-align:center;margin-top:18px;"><button class="btn btn-primary" id="generateBtn" disabled>Generate simulated preview</button></div>
+      <div class="btn-row" style="text-align:center;margin-top:18px;"><button class="btn btn-primary" id="generateBtn" disabled data-en="Generate simulated preview" data-zh="生成模擬預覽">Generate simulated preview</button></div>
       <div class="cost-note" id="costNote"></div>
     </div>
   </section>
 
   <!-- Output -->
   <section class="output" id="outputSection">
-    <div class="step-num">Your consultation preview</div>
+    <div class="step-num" data-en="Your consultation preview" data-zh="您的諩詢預覽">Your consultation preview</div>
     <div class="angle-tabs" id="angleTabs" style="display:none;"></div>
     <div class="zoom-bar">
       <button class="zoom-btn" id="zoomOut" type="button" aria-label="Zoom out">−</button>
       <span id="zoomLabel">100%</span>
       <button class="zoom-btn" id="zoomIn" type="button" aria-label="Zoom in">+</button>
-      <button class="zoom-reset" id="zoomReset" type="button">Reset</button>
+      <button class="zoom-reset" id="zoomReset" type="button" data-en="Reset" data-zh="重設">Reset</button>
       <button class="zoom-reset" id="previewFsBtn" type="button" style="display:inline-flex;align-items:center;gap:5px;text-decoration:none;border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--deep);">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-        Fullscreen
+        <span data-en="Fullscreen" data-zh="全螢幕">Fullscreen</span>
       </button>
     </div>
     <div class="result-grid" id="resultGrid">
-      <div class="result-card"><img id="originalResult" alt="Original photo" /><div class="result-tag">Original</div></div>
-      <div class="result-card"><img id="aiResult" alt="AI simulated treatment preview" /><svg class="anno-svg" id="annoSvg" viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg><div class="result-tag sim" id="simTag">Simulated · AI Visualization</div></div>
+      <div class="result-card"><img id="originalResult" alt="Original photo" /><div class="result-tag" data-en="Original" data-zh="原始照片">Original</div></div>
+      <div class="result-card"><img id="aiResult" alt="AI simulated treatment preview" /><svg class="anno-svg" id="annoSvg" viewBox="0 0 100 125" preserveAspectRatio="xMidYMid slice" aria-hidden="true"></svg><div class="result-tag sim" id="simTag" data-en="Simulated · AI Visualization" data-zh="模擬預覽 · AI 影像">Simulated · AI Visualization</div></div>
       <div class="result-card" id="optimisticCard" style="display:none;"><img id="optimisticResult" alt="AI optimistic simulated treatment preview" /><div class="result-tag sim" id="optimisticTag">Simulated · Optimistic</div></div>
     </div>
     <div id="intensityWrap" style="display:none;margin-top:14px;">
@@ -878,84 +878,84 @@
         <img id="cmpAfter" class="cmp-img" alt="Simulated treatment preview" />
         <img id="cmpBefore" class="cmp-img" alt="Original photo" />
         <div class="cmp-handle" id="cmpHandle"><div class="cmp-grip">⇄</div></div>
-        <div class="cmp-tag cmp-tag-l">Original</div>
-        <div class="cmp-tag cmp-tag-r">Simulated</div>
+        <div class="cmp-tag cmp-tag-l" data-en="Original" data-zh="原始照片">Original</div>
+        <div class="cmp-tag cmp-tag-r" data-en="Simulated" data-zh="模擬預覽">Simulated</div>
       </div>
     </div>
-    <div class="small" style="margin-top:10px;">AI-generated visualization for consultation purposes only. Not a prediction of actual treatment results. Results vary by anatomy, product, technique, healing, and clinical judgment.</div>
+    <div class="small" style="margin-top:10px;" data-en="AI-generated visualization for consultation purposes only. Not a prediction of actual treatment results. Results vary by anatomy, product, technique, healing, and clinical judgment." data-zh="AI 生成影像僅供諩詢說明使用，並非實際治療結果的預測。結果會因解剖條件、產品、技術、恢復過程與臨床判斷而有所不同。">AI-generated visualization for consultation purposes only. Not a prediction of actual treatment results. Results vary by anatomy, product, technique, healing, and clinical judgment.</div>
     <canvas id="exportCanvas"></canvas>
     <div class="regen-note" id="regenNote"></div>
     <div class="action-bar">
       <!-- Primary: always visible -->
       <div class="action-bar-primary">
-        <button class="btn btn-primary" id="regenBtn">Re-generate</button>
+        <button class="btn btn-primary" id="regenBtn" data-en="Re-generate" data-zh="重新生成">Re-generate</button>
         <button class="btn btn-gold" id="strongBtn" style="display:none;" aria-hidden="true"></button>
       </div>
       <!-- Downloads: the main clinic deliverable -->
       <div class="action-bar-downloads">
-        <button class="btn btn-dark" id="downloadBtn">Download</button>
-        <button class="btn btn-dark" id="sheetBtn" style="display:none;">Download all angles</button>
+        <button class="btn btn-dark" id="downloadBtn" data-en="Download" data-zh="下載">Download</button>
+        <button class="btn btn-dark" id="sheetBtn" style="display:none;" data-en="Download all angles" data-zh="下載所有角度">Download all angles</button>
       </div>
       <!-- Overflow: contextual / secondary actions -->
       <div class="overflow-wrap">
-        <button class="btn btn-light" id="moreBtn" style="display:none;">⋯ More</button>
+        <button class="btn btn-light" id="moreBtn" style="display:none;" data-en="⋯ More" data-zh="⋯ 更多">⋯ More</button>
         <div class="overflow-menu" id="overflowMenu">
-          <button id="insightsBtn">Compare</button>
-          <button id="plainBtn">Download simulated only</button>
-          <button id="discardAngleBtn" style="display:none;">Discard this angle</button>
-          <button id="newBtn">New case</button>
+          <button id="insightsBtn" data-en="Compare" data-zh="比較">Compare</button>
+          <button id="plainBtn" data-en="Download simulated only" data-zh="僅下載模擬圖">Download simulated only</button>
+          <button id="discardAngleBtn" style="display:none;" data-en="Discard this angle" data-zh="刪除此角度">Discard this angle</button>
+          <button id="newBtn" data-en="New case" data-zh="建立新案例">New case</button>
         </div>
       </div>
     </div>
   </section>
   <!-- ── M12.2: Explore Scenarios panel (appears after baseline is generated) ── -->
   <section class="scenarios-panel hidden" id="scenariosPanel">
-    <div class="scenarios-title">Explore scenarios</div>
+    <div class="scenarios-title" data-en="Explore scenarios" data-zh="探索加選情境">Explore scenarios</div>
     <div class="scenarios-subtitle">Build on the baseline simulation to explore what is possible. Each scenario consumes 1 credit and generates in the background.</div>
     <div class="scenarios-grid">
       <button class="scenario-btn" type="button" data-scenario="stronger_sculptra" id="scenBtn_stronger_sculptra">
-        <strong>Stronger biostimulation response</strong>
-        <span>A fuller response after 6-8+ vials/syringes, with more lateral lift</span>
+        <strong data-en="Stronger biostimulation response" data-zh="更明顯的童顏針／膠原增生反應">Stronger biostimulation response</strong>
+        <span data-en="A fuller response after 6-8+ vials/syringes, with more lateral lift" data-zh="6–8 瓶／支以上可能帶來更飽滿的反應，並呈現更明顯的外側支撐">A fuller response after 6-8+ vials/syringes, with more lateral lift</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_chin_jaw_filler" id="scenBtn_add_chin_jaw_filler">
-        <strong>Add chin + jawline filler</strong>
-        <span>Hyaluronic acid filler added to the chin and jawline</span>
+        <strong data-en="Add chin + jawline filler" data-zh="加入下巴＋下顒線玻尿酸">Add chin + jawline filler</strong>
+        <span data-en="Hyaluronic acid filler added to the chin and jawline" data-zh="在下巴與下顒線加入玻尿酸填充">Hyaluronic acid filler added to the chin and jawline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_cheek_filler" id="scenBtn_add_cheek_filler">
-        <strong>Add cheek filler</strong>
-        <span>Hyaluronic acid midface volume on the baseline</span>
+        <strong data-en="Add cheek filler" data-zh="加入臉頰玻尿酸">Add cheek filler</strong>
+        <span data-en="Hyaluronic acid midface volume on the baseline" data-zh="在基準結果上加入中臉玻尿酸容量支撐">Hyaluronic acid midface volume on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_temple_support" id="scenBtn_add_temple_support">
-        <strong>Add temple support</strong>
-        <span>Focused upper lateral face volume on the baseline</span>
+        <strong data-en="Add temple support" data-zh="加入太陽穴支撐">Add temple support</strong>
+        <span data-en="Focused upper lateral face volume on the baseline" data-zh="在基準結果上加入上外側臉部容量支撐">Focused upper lateral face volume on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_tear_trough" id="scenBtn_add_tear_trough">
-        <strong>Add under-eye (tear trough) support</strong>
-        <span>Softens the under-eye hollow on the baseline</span>
+        <strong data-en="Add under-eye (tear trough) support" data-zh="加入淚溝支撐">Add under-eye (tear trough) support</strong>
+        <span data-en="Softens the under-eye hollow on the baseline" data-zh="在基準結果上柔化眼下凹陷">Softens the under-eye hollow on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_nose_filler" id="scenBtn_add_nose_filler">
-        <strong>Add nose filler</strong>
-        <span>Liquid rhinoplasty on the baseline</span>
+        <strong data-en="Add nose filler" data-zh="加入鼻部玻尿酸">Add nose filler</strong>
+        <span data-en="Liquid rhinoplasty on the baseline" data-zh="在基準結果上加入非手術鼻部調整">Liquid rhinoplasty on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_lips_filler" id="scenBtn_add_lips_filler">
-        <strong>Add lip filler</strong>
-        <span>Natural lip volume enhancement on the baseline</span>
+        <strong data-en="Add lip filler" data-zh="加入唇部玻尿酸">Add lip filler</strong>
+        <span data-en="Natural lip volume enhancement on the baseline" data-zh="在基準結果上加入自然唇部容量">Natural lip volume enhancement on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_biostim_lift" id="scenBtn_add_biostim_lift">
-        <strong>Add biostimulation lift</strong>
-        <span>Collagen-based lateral lift on the baseline</span>
+        <strong data-en="Add biostimulation lift" data-zh="加入膠原增生拉提">Add biostimulation lift</strong>
+        <span data-en="Collagen-based lateral lift on the baseline" data-zh="在基準結果上加入膠原增生帶來的外側支撐">Collagen-based lateral lift on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="stronger_laser" id="scenBtn_stronger_laser">
-        <strong>Stronger response</strong>
-        <span>Upper-range tightening for a strong responder</span>
+        <strong data-en="Stronger response" data-zh="更明顯反應">Stronger response</strong>
+        <span data-en="Upper-range tightening for a strong responder" data-zh="對反應較佳個案呈現較高範圍的緊實變化">Upper-range tightening for a strong responder</span>
         <em class="credit-tag">1 credit</em>
       </button>
     </div>
@@ -967,7 +967,7 @@
     <div class="scenario-fs-bar">
       <div>
         <div class="scenario-fs-title" id="scenarioFsTitle"></div>
-        <div class="scenario-fs-disclaimer">Scenario simulation, not a guaranteed outcome</div>
+        <div class="scenario-fs-disclaimer" data-en="Scenario simulation, not a guaranteed outcome" data-zh="情境模擬，並非保證結果">Scenario simulation, not a guaranteed outcome</div>
       </div>
       <div class="scenario-fs-actions">
         <div class="fs-zoom">
@@ -977,9 +977,9 @@
         </div>
         <button class="scenario-fs-btn" type="button" id="scenarioFsDownload">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download
+          <span data-en="Download" data-zh="下載">Download</span>
         </button>
-        <button class="scenario-fs-btn" type="button" id="scenarioFsClose">Close</button>
+        <button class="scenario-fs-btn" type="button" id="scenarioFsClose" data-en="Close" data-zh="關閉">Close</button>
       </div>
     </div>
     <div class="scenario-fs-grid" id="scenarioFsGrid"></div>
@@ -1002,7 +1002,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download
         </button>
-        <button class="scenario-fs-btn" type="button" id="previewFsClose">Close</button>
+        <button class="scenario-fs-btn" type="button" id="previewFsClose" data-en="Close" data-zh="關閉">Close</button>
       </div>
     </div>
     <div class="scenario-fs-grid two" id="previewFsGrid"></div>
@@ -1011,17 +1011,17 @@
 
 <footer>
   <div class="brand">Skin<span>Day</span></div>
-  <div>SkinDay Visualize · Consultation previews only · AI-generated, not a prediction of results</div>
+  <div data-en="SkinDay Visualize · Consultation previews only · AI-generated, not a prediction of results" data-zh="SkinDay Visualize · 僅供諩詢預覽 · AI 生成，並非結果預測">SkinDay Visualize · Consultation previews only · AI-generated, not a prediction of results</div>
 </footer>
 <!-- ───────── HOW CREDITS WORK ───────── -->
 <div class="guide-modal hidden" id="creditsInfoModal">
   <div class="guide-card">
-    <h2>How credits work</h2>
-    <p>Credits are spent only when a simulation is generated. Each angle of a case is one generation, and every treatment costs the same: <strong><span id="ciPerAngle">1</span> credit(s) per angle</strong>. So a full 3-angle case is <span id="ciCase3">3</span> credits, whether it is HA filler, biostimulator, neurotoxin, or an energy-based treatment.</p>
-    <p>Everything after generation is free: adjusting the response slider, comparing angles, exporting and downloading, and re-generating within 60 seconds of a result. If a generation fails or is blocked by the AI provider's safety system, its credits are refunded to your balance automatically.</p>
-    <p>Purchased credits do not expire. New accounts start with a small free balance so you can try the tool on a real consultation first.</p>
-    <p><strong>Independence note:</strong> Visualize credits are a clinic tool purchase only. Buying credits never affects a clinic's ranking, search placement, reviews, or visibility anywhere on SkinDay.</p>
-    <div class="btn-row guide-close"><button class="btn btn-light" id="creditsInfoCloseBtn" type="button">Close</button></div>
+    <h2 data-en="How credits work" data-zh="點數說明">How credits work</h2>
+    <p data-en="Credits are spent only when a simulation is generated. Each angle of a case is one generation, and every treatment costs the same: <strong><span id=&quot;ciPerAngle&quot;>1</span> credit(s) per angle</strong>. So a full 3-angle case is <span id=&quot;ciCase3&quot;>3</span> credits, whether it is HA filler, biostimulator, neurotoxin, or an energy-based treatment." data-zh="只有在生成模擬預覽時才會扣點。每個角度算一次生成，所有療程費用相同：<strong>每個角度 <span id=&quot;ciPerAngle&quot;>1</span> 點</strong>。因此，完整三角度案例為 <span id=&quot;ciCase3&quot;>3</span> 點，不論是玻尿酸、童顏針／膠原增生、肉毒桿菌素或電波／音波療程。">Credits are spent only when a simulation is generated. Each angle of a case is one generation, and every treatment costs the same: <strong><span id="ciPerAngle">1</span> credit(s) per angle</strong>. So a full 3-angle case is <span id="ciCase3">3</span> credits, whether it is HA filler, biostimulator, neurotoxin, or an energy-based treatment.</p>
+    <p data-en="Everything after generation is free: adjusting the response slider, comparing angles, exporting and downloading, and re-generating within 60 seconds of a result. If a generation fails or is blocked by the AI provider's safety system, its credits are refunded to your balance automatically." data-zh="生成後的操作皆不另扣點：調整反應滑桿、比較角度、匯出與下載，以及在結果產生後 60 秒內重新生成。若生成失敗或被 AI 服務供應商的安全系統攜截，點數會自動退回帳戶餘額。">Everything after generation is free: adjusting the response slider, comparing angles, exporting and downloading, and re-generating within 60 seconds of a result. If a generation fails or is blocked by the AI provider's safety system, its credits are refunded to your balance automatically.</p>
+    <p data-en="Purchased credits do not expire. New accounts start with a small free balance so you can try the tool on a real consultation first." data-zh="購買的點數不會過期。新帳號會附少量免費點數，讓您可以先在真實諩詢中試用。">Purchased credits do not expire. New accounts start with a small free balance so you can try the tool on a real consultation first.</p>
+    <p data-en="<strong>Independence note:</strong> Visualize credits are a clinic tool purchase only. Buying credits never affects a clinic's ranking, search placement, reviews, or visibility anywhere on SkinDay." data-zh="<strong>獨立性聲明：</strong>Visualize 點數僅為診所工具購買項目。購買點數不會影響診所在 SkinDay 任何地方的排名、搜尋位置、評價或曝光度。"><strong>Independence note:</strong> Visualize credits are a clinic tool purchase only. Buying credits never affects a clinic's ranking, search placement, reviews, or visibility anywhere on SkinDay.</p>
+    <div class="btn-row guide-close"><button class="btn btn-light" id="creditsInfoCloseBtn" type="button" data-en="Close" data-zh="關閉">Close</button></div>
   </div>
 </div>
 
@@ -1064,24 +1064,24 @@
 </div>
 <div class="guide-modal hidden" id="buyModal">
   <div class="guide-card">
-    <h2>Add credits</h2>
-    <span class="launch-badge">Launch pricing</span>
-    <p id="buyIntro">Credits are used only when a new preview is generated. Slider adjustments, exports, and re-generates within the free window cost nothing, and a failed or blocked generation is refunded automatically.</p>
+    <h2 data-en="Add credits" data-zh="購買點數">Add credits</h2>
+    <span class="launch-badge" data-en="Launch pricing" data-zh="早期定價">Launch pricing</span>
+    <p id="buyIntro" data-en="Credits are used only when a new preview is generated. Slider adjustments, exports, and re-generates within the free window cost nothing, and a failed or blocked generation is refunded automatically." data-zh="只有生成新的預覽時才會使用點數。滑桿調整、匯出，以及免費時間內的重新生成皆不扣點；失敗或被攜截的生成會自動退點。">Credits are used only when a new preview is generated. Slider adjustments, exports, and re-generates within the free window cost nothing, and a failed or blocked generation is refunded automatically.</p>
     <div id="packList"></div>
     <p class="auth-hint" id="payCurrencyNote" style="margin-top:12px;color:var(--muted);">Payments are processed by Stripe in CAD. Credits land on your account the moment payment completes.</p>
-    <div class="btn-row guide-close"><button class="btn btn-light" id="buyCloseBtn" type="button">Close</button></div>
+    <div class="btn-row guide-close"><button class="btn btn-light" id="buyCloseBtn" type="button" data-en="Close" data-zh="關閉">Close</button></div>
   </div>
 </div>
 
 <!-- ───────── CAPTURE GUIDE ───────── -->
 <div class="guide-modal hidden" id="guideModal">
   <div class="guide-card">
-    <h2>Photo quality is everything</h2>
-    <p style="font-size:1rem;font-weight:600;color:var(--rose);margin-bottom:4px;">The simulation is only as good as the photo. A poor photo will produce a poor result, regardless of how advanced the AI is.</p>
-    <p>Follow these guidelines and the system will consistently produce consultation-ready simulations. Skip them and artifacts, inconsistencies, or flat results are likely.</p>
+    <h2 data-en="Photo quality is everything" data-zh="照片品質決定一切">Photo quality is everything</h2>
+    <p style="font-size:1rem;font-weight:600;color:var(--rose);margin-bottom:4px;" data-en="The simulation is only as good as the photo. A poor photo will produce a poor result, regardless of how advanced the AI is." data-zh="模擬結果的品質取決於照片本身。照片品質不好，即使 AI 再先進，也很難產生好的結果。">The simulation is only as good as the photo. A poor photo will produce a poor result, regardless of how advanced the AI is.</p>
+    <p data-en="Follow these guidelines and the system will consistently produce consultation-ready simulations. Skip them and artifacts, inconsistencies, or flat results are likely." data-zh="請依照以下拍攝建議，系統會更穩定產生可用於諩詢的預覽。若忽略這些條件，較容易出現瑙疵、不一致或效果偏弱的結果。">Follow these guidelines and the system will consistently produce consultation-ready simulations. Skip them and artifacts, inconsistencies, or flat results are likely.</p>
 
     <!-- LIGHTING -->
-    <h3>1 · Lighting</h3>
+    <h3 data-en="1 · Lighting" data-zh="1 · 光線">1 · Lighting</h3>
     <div class="guide-row">
       <div class="guide-col">
         <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" class="guide-icon-svg">
@@ -1095,7 +1095,7 @@
           <line x1="96" y1="38" x2="82" y2="46" stroke="#C9A96E" stroke-width="2" stroke-dasharray="3 2"/>
           <text x="60" y="92" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#5A4A42">✓ Even, diffuse, front-lit</text>
         </svg>
-        <p class="guide-caption"><strong>Good:</strong> Soft, even light from the front or both sides. Ring light, window light facing the patient, or a bright overcast day.</p>
+        <p class="guide-caption" data-en="<strong>Good:</strong> Soft, even light from the front or both sides. Ring light, window light facing the patient, or a bright overcast day." data-zh="<strong>建議：</strong>正面或雙側柔和均勻光線。可使用環形燈、面向顧客的窗光，或明亮陰天的自然光。"><strong>Good:</strong> Soft, even light from the front or both sides. Ring light, window light facing the patient, or a bright overcast day.</p>
       </div>
       <div class="guide-col">
         <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" class="guide-icon-svg">
@@ -1108,12 +1108,12 @@
           <path d="M60,24 Q82,28 82,52 Q82,76 60,80 Q60,52 60,24Z" fill="#7A5A40" opacity="0.35"/>
           <text x="60" y="92" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#A33524">✗ Harsh side light / shadows</text>
         </svg>
-        <p class="guide-caption"><strong>Avoid:</strong> Single side light, overhead-only ceiling light, flash, backlit windows, or deep shadows on any part of the face.</p>
+        <p class="guide-caption" data-en="<strong>Avoid:</strong> Single side light, overhead-only ceiling light, flash, backlit windows, or deep shadows on any part of the face." data-zh="<strong>避免：</strong>單側光、只有天花板頂光、閃光燈、背光窗戶，或臉上任何明顯深陰影。"><strong>Avoid:</strong> Single side light, overhead-only ceiling light, flash, backlit windows, or deep shadows on any part of the face.</p>
       </div>
     </div>
 
     <!-- BACKGROUND -->
-    <h3>2 · Background</h3>
+    <h3 data-en="2 · Background" data-zh="2 · 背景">2 · Background</h3>
     <div class="guide-row">
       <div class="guide-col">
         <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" class="guide-icon-svg">
@@ -1121,7 +1121,7 @@
           <ellipse cx="60" cy="52" rx="22" ry="28" fill="#E8C9A0" stroke="#C8725A" stroke-width="1.5"/>
           <text x="60" y="92" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#C9A96E">✓ Plain dark background</text>
         </svg>
-        <p class="guide-caption"><strong>Good:</strong> Plain black, white, or neutral grey wall. The system replaces the background automatically but a clean background improves edge detection.</p>
+        <p class="guide-caption" data-en="<strong>Good:</strong> Plain black, white, or neutral grey wall. The system replaces the background automatically but a clean background improves edge detection." data-zh="<strong>建議：</strong>使用純黑、白色或中性灰牆面。系統會自動替換背景，但乾淨背景有助於邊緣判讀。"><strong>Good:</strong> Plain black, white, or neutral grey wall. The system replaces the background automatically but a clean background improves edge detection.</p>
       </div>
       <div class="guide-col">
         <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" class="guide-icon-svg">
@@ -1133,12 +1133,12 @@
           <ellipse cx="60" cy="52" rx="22" ry="28" fill="#E8C9A0" stroke="#A33524" stroke-width="1.5"/>
           <text x="60" y="92" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#A33524">✗ Busy / cluttered background</text>
         </svg>
-        <p class="guide-caption"><strong>Avoid:</strong> Clinic equipment, posters, other people, patterned walls, or anything distracting behind the patient.</p>
+        <p class="guide-caption" data-en="<strong>Avoid:</strong> Clinic equipment, posters, other people, patterned walls, or anything distracting behind the patient." data-zh="<strong>避免：</strong>診所儀器、海報、其他人、花紋牆面，或任何會分散注意力的背景。"><strong>Avoid:</strong> Clinic equipment, posters, other people, patterned walls, or anything distracting behind the patient.</p>
       </div>
     </div>
 
     <!-- FRAMING -->
-    <h3>3 · Framing and distance</h3>
+    <h3 data-en="3 · Framing and distance" data-zh="3 · 構圖與距離">3 · Framing and distance</h3>
     <div class="guide-row">
       <div class="guide-col">
         <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" class="guide-icon-svg">
@@ -1150,7 +1150,7 @@
           <path d="M48,74 Q50,86 52,88 M72,74 Q70,86 68,88" stroke="#E8C9A0" stroke-width="6" fill="none"/>
           <text x="60" y="97" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#5A4A42">✓ Head + neck, 2/3 of frame</text>
         </svg>
-        <p class="guide-caption"><strong>Good:</strong> Face fills about two-thirds of the frame. Full head visible, top of neck showing. Camera at eye level. Step back from the patient -- do not crop the top of the head or the chin.</p>
+        <p class="guide-caption" data-en="<strong>Good:</strong> Face fills about two-thirds of the frame. Full head visible, top of neck showing. Camera at eye level. Step back from the patient - do not crop the top of the head or the chin." data-zh="<strong>建議：</strong>臉部約佔畫面三分之二。完整頭部需入鏡，並露出上頸部。相機與眼睛同高。請稍微退遠拍攝，不要切到頭頂或下巴。"><strong>Good:</strong> Face fills about two-thirds of the frame. Full head visible, top of neck showing. Camera at eye level. Step back from the patient - do not crop the top of the head or the chin.</p>
       </div>
       <div class="guide-col">
         <svg viewBox="0 0 120 100" xmlns="http://www.w3.org/2000/svg" class="guide-icon-svg">
@@ -1161,22 +1161,22 @@
           <rect x="0" y="0" width="120" height="100" fill="none" stroke="#A33524" stroke-width="3"/>
           <text x="60" y="97" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#A33524">✗ Too close / tight crop</text>
         </svg>
-        <p class="guide-caption"><strong>Avoid:</strong> Selfie distance, tight crops that cut the chin or forehead, or photos taken from above or below eye level.</p>
+        <p class="guide-caption" data-en="<strong>Avoid:</strong> Selfie distance, tight crops that cut the chin or forehead, or photos taken from above or below eye level." data-zh="<strong>避免：</strong>自拍距離、裁切太緊導致下巴或額頭被切掉，或從高於／低於眼睛的位置拍攝。"><strong>Avoid:</strong> Selfie distance, tight crops that cut the chin or forehead, or photos taken from above or below eye level.</p>
       </div>
     </div>
 
     <!-- PATIENT PREP -->
-    <h3>4 · Patient preparation</h3>
+    <h3 data-en="4 · Patient preparation" data-zh="4 · 顧客準備">4 · Patient preparation</h3>
     <ul class="guide-checklist">
-      <li><span class="check">✓</span> Hair fully off the face -- headband, clip, or tied back. The temples and hairline must be visible.</li>
-      <li><span class="check">✓</span> Glasses off.</li>
-      <li><span class="check">✓</span> Neutral expression, mouth closed, relaxed jaw.</li>
-      <li><span class="check">✓</span> No heavy make-up that changes the face shape (foundation is fine).</li>
-      <li><span class="check">✓</span> Same angles, distance, and lighting at every visit for before/after comparisons.</li>
+      <li><span class="check">✓</span> <span data-en="Hair fully off the face - headband, clip, or tied back. The temples and hairline must be visible." data-zh="頭髮請完整離開臉部，可使用髮帶、髮夾或綡起來。太陽穴與髮際線需要清楚可見。">Hair fully off the face - headband, clip, or tied back. The temples and hairline must be visible.</span></li>
+      <li><span class="check">✓</span> <span data-en="Glasses off." data-zh="請取下眼鎏。">Glasses off.</span></li>
+      <li><span class="check">✓</span> <span data-en="Neutral expression, mouth closed, relaxed jaw." data-zh="表情自然中立，嘴巴閉合，下顒放鬆。">Neutral expression, mouth closed, relaxed jaw.</span></li>
+      <li><span class="check">✓</span> <span data-en="No heavy make-up that changes the face shape (foundation is fine)." data-zh="避免會改變臉型判讀的濃妝；一般底妝可以。">No heavy make-up that changes the face shape (foundation is fine).</span></li>
+      <li><span class="check">✓</span> <span data-en="Same angles, distance, and lighting at every visit for before/after comparisons." data-zh="每次回診拍攝前後對比時，請盡量維持相同角度、距離與光線。">Same angles, distance, and lighting at every visit for before/after comparisons.</span></li>
     </ul>
 
     <!-- THREE ANGLES -->
-    <h3>5 · The three angles</h3>
+    <h3 data-en="5 · The three angles" data-zh="5 · 三個角度">5 · The three angles</h3>
     <svg class="guide-svg" viewBox="0 0 330 130" xmlns="http://www.w3.org/2000/svg" aria-label="The three photo angles">
       <g fill="none" stroke="#1C1714" stroke-width="1.6" stroke-linecap="round">
         <g transform="translate(10,6)">
@@ -1204,31 +1204,31 @@
         </g>
       </g>
       <g font-family="DM Sans, sans-serif" font-size="9.5" fill="#8A7B72" text-anchor="middle">
-        <text x="62" y="116">Left 45°</text>
-        <text x="165" y="116">Frontal</text>
-        <text x="268" y="116">Right 45°</text>
+        <text x="62" y="116" data-en="Left 45°" data-zh="左側 45°">Left 45°</text>
+        <text x="165" y="116" data-en="Frontal" data-zh="正面">Frontal</text>
+        <text x="268" y="116" data-en="Right 45°" data-zh="右側 45°">Right 45°</text>
       </g>
     </svg>
-    <p class="guide-rule">The 45° check: the dotted line through the nose tip should just touch the far cheek. Nose well inside the cheek line = turn too shallow. Nose past it = too far toward profile.</p>
-    <p class="guide-rule" style="color:var(--rose);font-weight:600;">The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only -- one great photo beats three mediocre ones.</p>
+    <p class="guide-rule" data-en="The 45° check: the dotted line through the nose tip should just touch the far cheek. Nose well inside the cheek line = turn too shallow. Nose past it = too far toward profile." data-zh="45° 檢查方式：通過鼻尖的參考線應剛好接近遠側臉頰。若鼻尖仍明顯在臉頰線內，代表轉得不夠；若鼻尖超過太多，則太接近側臉。">The 45° check: the dotted line through the nose tip should just touch the far cheek. Nose well inside the cheek line = turn too shallow. Nose past it = too far toward profile.</p>
+    <p class="guide-rule" style="color:var(--rose);font-weight:600;" data-en="The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only - one great photo beats three mediocre ones." data-zh="正面照通常能得到最清楚的結果。斜側角度可補充下臉部資訊。若不確定，請只使用正面照；一張好照片勝過三張普通照片。">The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only - one great photo beats three mediocre ones.</p>
 
-    <div class="btn-row guide-close"><button class="btn btn-primary" id="guideCloseBtn" type="button">Got it</button></div>
+    <div class="btn-row guide-close"><button class="btn btn-primary" id="guideCloseBtn" type="button" data-en="Got it" data-zh="我知道了">Got it</button></div>
   </div>
 </div>
 <!-- ───────── Mobile sticky slider bar ───────── -->
 <div id="mobileSliderBar" class="bar-hidden" aria-hidden="true">
   <div class="msb-row">
-    <span class="msb-label" id="msbLabel">Response timeline</span>
+    <span class="msb-label" id="msbLabel" data-en="Response timeline" data-zh="反應時間">Response timeline</span>
     <span id="msbValue">Expected</span>
   </div>
   <input type="range" id="mobileSlider" min="0" max="100" step="1" value="70" aria-hidden="true" tabindex="-1" />
   <div class="msb-ends">
-    <span id="msbMin">Early</span><span id="msbMax">6 months</span>
+    <span id="msbMin" data-en="Early" data-zh="早期">Early</span><span id="msbMax" data-en="6 months" data-zh="6 個月">6 months</span>
   </div>
   <div id="msbCostNote" style="display:none;font-size:.75rem;text-align:center;color:rgba(250,247,242,.6);margin-bottom:2px;"></div>
-  <button id="msbActionBtn" type="button" class="bar-hidden" disabled>Generate simulated preview</button>
-  <button id="msbDownloadBtn" type="button">Download</button>
-  <button id="msbRegenLink" type="button">Re-generate</button>
+  <button id="msbActionBtn" type="button" class="bar-hidden" disabled data-en="Generate simulated preview" data-zh="生成模擬預覽">Generate simulated preview</button>
+  <button id="msbDownloadBtn" type="button" data-en="Download" data-zh="下載">Download</button>
+  <button id="msbRegenLink" type="button" data-en="Re-generate" data-zh="重新生成">Re-generate</button>
 </div>
 </div><!-- /#app -->
 
@@ -1241,12 +1241,89 @@ var I18N = {
   en: {
     creditsEllipsis: 'Credits: …',
     creditsLabel: 'Credits',
-    account: 'Account'
+    account: 'Account',
+    // Filler volume tier names
+    tierConservative: 'Conservative', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
+    // Laser help
+    laserHelpRf: 'RF: radiofrequency skin tightening (e.g. Thermage, XERF). Results develop gradually over about 3 to 6 months.',
+    laserHelpHifu: 'HIFU: focused-ultrasound lifting (e.g. Ultherapy, Sofwave). Results develop gradually over about 3 to 6 months.',
+    // Tox help
+    toxHelpMasseter: 'Jaw-angle slimming only. No neck, submental, or chin change. Results ~4-6 wk.',
+    toxHelpNefertiti: 'Subtle mandibular border cleanup. Submental largely unchanged. Results ~4-6 wk.',
+    toxHelpCombined: 'Masseter slimming + Nefertiti lift. Conservative lower-face contour only. Results ~4-6 wk.',
+    // Scenarios subtitle (sc = credits per scenario)
+    scenariosSubtitle: function(sc){ return 'Build on the baseline simulation to explore what is possible. Each scenario consumes ' + sc + (sc === 1 ? ' credit' : ' credits') + ' and generates in the background.'; },
+    creditTag: function(n){ return n + (n === 1 ? ' credit' : ' credits'); },
+    // Buy/pack
+    buy: 'Buy', opening: 'Opening…', credits: 'credits',
+    payNote: function(cur){ return 'Payments are processed by Stripe in ' + cur + '. Credits land on your account the moment payment completes.'; },
+    // Status messages
+    stChooseTreatment: 'Choose a treatment, then add the patient photos',
+    stCheckoutPopup: 'Complete your purchase in the popup window. Your simulations stay right here.',
+    stCheckoutFail: 'Could not start the checkout. Please try again.',
+    stPaymentReceived: 'Payment received. Updating your credit balance…',
+    stPaymentBalance: function(bal){ return bal != null ? ('Payment received. Credit balance: ' + bal + '.') : 'Payment received. Your balance will update shortly.'; },
+    stCheckoutCancelled: 'Checkout cancelled. No charge was made.',
+    stPhotosRestored: 'Photos restored. Ready to generate.',
+    stNotEnoughCredits: 'Not enough credits to generate this correction level. Top up to continue.',
+    stCorrectionGenerated: function(name){ return name + ' correction generated.'; },
+    stGenerationFailed: function(err){ return 'Generation failed: ' + err; },
+    // Auth
+    authEnterBoth: 'Enter your email and password.',
+    authOneMoment: 'One moment…',
+    authConfirmEmail: 'Check your email to confirm the account, then sign in here.',
+    authNoReach: 'Could not reach the sign-in service. Try again.',
+    authNotAvailable: 'Auth not available.',
+    authRedirecting: 'Redirecting…',
+    betaAccess: 'Beta access', unmetered: 'Unmetered',
+    genOne: 'Generate simulated preview',
+    genMany: function(n){ return 'Generate ' + n + ' simulated previews'; },
+    generating: 'Generating...',
+    genTitle: function(isRegen){ return (isRegen ? 'Re-generating' : 'Generating') + ' your preview'; },
+    compare: 'Compare', sideBySide: 'Side by side',
+    changeLogo: 'Change logo', uploadLogo: 'Upload logo',
+    scenariosFirst: 'Generate the baseline first before exploring scenarios.',
+    simulatedPrefix: 'Simulated'
   },
   zh: {
     creditsEllipsis: '\u9ede\u6578\uff1a\u2026',
     creditsLabel: '\u9ede\u6578',
-    account: '\u5e33\u865f'
+    account: '\u5e33\u865f',
+    tierConservative: '\u81ea\u7136', tierModerate: '\u4e2d\u7b49', tierEnhanced: '\u52a0\u5f37',
+    laserHelpRf: '\u96fb\u6ce2\uff0f\u5c04\u983b\uff1a\u5982 Thermage\u3001XERF\u3002\u7dca\u819a\u6548\u679c\u901a\u5e38\u6703\u5728\u7d04 3 \u81f3 6 \u500b\u6708\u9010\u6f38\u5448\u73fe\u3002',
+    laserHelpHifu: '\u97f3\u6ce2\uff0fHIFU\uff1a\u805a\u7126\u8d85\u97f3\u6ce2\u62c9\u63d0\uff08\u5982 Ultherapy\u3001Sofwave\uff09\u3002\u6548\u679c\u901a\u5e38\u6703\u5728\u7d04 3 \u81f3 6 \u500b\u6708\u9010\u6f38\u5448\u73fe\u3002',
+    toxHelpMasseter: '\u50c5\u7626\u4e0b\u9852\u89d2\u3002\u4e0d\u5f71\u97ff\u9838\u90e8\u3001\u4e0b\u9852\u4e0b\u65b9\u6216\u4e0b\u5df4\u3002\u6548\u679c\u7d04 4 \u81f3 6 \u9031\u9010\u6f38\u51fa\u73fe\u3002',
+    toxHelpNefertiti: '\u8f15\u5fae\u4fee\u98fe\u4e0b\u9852\u908a\u7dda\u3002\u4e0b\u9852\u4e0b\u65b9\u5927\u81f4\u4e0d\u8b8a\u3002\u6548\u679c\u7d04 4 \u81f3 6 \u9031\u9010\u6f38\u51fa\u73fe\u3002',
+    toxHelpCombined: '\u7626\u54ac\u808c\uff0bNefertiti \u4e0b\u81c9\u7dda\u689d\u62c9\u63d0\u3002\u50c5\u5448\u73fe\u4fdd\u5b88\u7684\u4e0b\u81c9\u8f2a\u5ed3\u8b8a\u5316\u3002\u6548\u679c\u7d04 4 \u81f3 6 \u9031\u9010\u6f38\u51fa\u73fe\u3002',
+    scenariosSubtitle: function(sc){ return '\u5728\u57fa\u6e96\u6a21\u64ec\u4e0a\u52a0\u5165\u5176\u4ed6\u7642\u7a0b\u60c5\u5883\uff0c\u63a2\u7d22\u66f4\u591a\u53ef\u80fd\u6027\u3002\u6bcf\u500b\u60c5\u5883\u6703\u6d88\u8017 ' + sc + ' \u9ede\uff0c\u4e26\u5728\u80cc\u666f\u4e2d\u751f\u6210\u3002'; },
+    creditTag: function(n){ return n + ' \u9ede'; },
+    buy: '\u8cfc\u8cb7', opening: '\u958b\u555f\u4e2d\u2026', credits: '\u9ede',
+    payNote: function(cur){ return '\u4ed8\u6b3e\u7531 Stripe \u4ee5 ' + cur + ' \u8655\u7406\u3002\u4ed8\u6b3e\u5b8c\u6210\u5f8c\uff0c\u9ede\u6578\u6703\u7acb\u5373\u52a0\u5165\u60a8\u7684\u5e33\u6236\u3002'; },
+    stChooseTreatment: '\u8acb\u5148\u9078\u64c7\u7642\u7a0b\uff0c\u518d\u52a0\u5165\u9867\u5ba2\u7167\u7247',
+    stCheckoutPopup: '\u8acb\u5728\u5f48\u51fa\u8996\u7a97\u4e2d\u5b8c\u6210\u8cfc\u8cb7\u3002\u60a8\u7684\u6a21\u64ec\u9810\u89bd\u6703\u4fdd\u7559\u5728\u6b64\u3002',
+    stCheckoutFail: '\u7121\u6cd5\u958b\u59cb\u7d50\u5e33\uff0c\u8acb\u518d\u8a66\u4e00\u6b21\u3002',
+    stPaymentReceived: '\u5df2\u6536\u5230\u4ed8\u6b3e\u3002\u6b63\u5728\u66f4\u65b0\u60a8\u7684\u9ede\u6578\u9918\u984d\u2026',
+    stPaymentBalance: function(bal){ return bal != null ? ('\u5df2\u6536\u5230\u4ed8\u6b3e\u3002\u9ede\u6578\u9918\u984d\uff1a' + bal + '\u3002') : '\u5df2\u6536\u5230\u4ed8\u6b3e\u3002\u9918\u984d\u5c07\u65bc\u7a0d\u5f8c\u66f4\u65b0\u3002'; },
+    stCheckoutCancelled: '\u5df2\u53d6\u6d88\u7d50\u5e33\uff0c\u672a\u9032\u884c\u4efb\u4f55\u6263\u6b3e\u3002',
+    stPhotosRestored: '\u7167\u7247\u5df2\u6062\u5fa9\u3002\u53ef\u4ee5\u958b\u59cb\u751f\u6210\u3002',
+    stNotEnoughCredits: '\u9ede\u6578\u4e0d\u8db3\uff0c\u7121\u6cd5\u751f\u6210\u6b64\u4fee\u6b63\u7a0b\u5ea6\u3002\u8acb\u5145\u503c\u4ee5\u7e7c\u7e8c\u3002',
+    stCorrectionGenerated: function(name){ return name + ' \u4fee\u6b63\u5df2\u751f\u6210\u3002'; },
+    stGenerationFailed: function(err){ return '\u751f\u6210\u5931\u6557\uff1a' + err; },
+    authEnterBoth: '\u8acb\u8f38\u5165\u60a8\u7684\u96fb\u5b50\u90f5\u4ef6\u8207\u5bc6\u78bc\u3002',
+    authOneMoment: '\u8acb\u7a0d\u5019\u2026',
+    authConfirmEmail: '\u8acb\u6aa2\u67e5\u96fb\u5b50\u90f5\u4ef6\u4ee5\u78ba\u8a8d\u5e33\u865f\uff0c\u7136\u5f8c\u5728\u6b64\u767b\u5165\u3002',
+    authNoReach: '\u7121\u6cd5\u9023\u7dda\u81f3\u767b\u5165\u670d\u52d9\uff0c\u8acb\u518d\u8a66\u4e00\u6b21\u3002',
+    authNotAvailable: '\u76ee\u524d\u7121\u6cd5\u767b\u5165\u3002',
+    authRedirecting: '\u8f49\u5411\u4e2d\u2026',
+    betaAccess: '\u6e2c\u8a66\u7248\u5b58\u53d6', unmetered: '\u4e0d\u8a08\u91cf',
+    genOne: '\u751f\u6210\u6a21\u64ec\u9810\u89bd',
+    genMany: function(n){ return '\u751f\u6210 ' + n + ' \u5f35\u6a21\u64ec\u9810\u89bd'; },
+    generating: '\u751f\u6210\u4e2d\u2026',
+    genTitle: function(isRegen){ return isRegen ? '\u6b63\u5728\u91cd\u65b0\u751f\u6210\u9810\u89bd' : '\u6b63\u5728\u751f\u6210\u9810\u89bd'; },
+    compare: '\u6bd4\u8f03', sideBySide: '\u4e26\u6392\u6bd4\u8f03',
+    changeLogo: '\u66f4\u63db Logo', uploadLogo: '\u4e0a\u50b3 Logo',
+    scenariosFirst: '\u8acb\u5148\u751f\u6210\u57fa\u6e96\u7d50\u679c\uff0c\u518d\u63a2\u7d22\u52a0\u9078\u60c5\u5883\u3002',
+    simulatedPrefix: '\u6a21\u64ec\u9810\u89bd'
   }
 };
 function detectLang(){
@@ -1375,10 +1452,27 @@ function fillCreditCopy(){
   // price so nothing reads "1 credit" while the server charges the scaled amount.
   const sc = scenarioCreditCost();
   document.querySelectorAll('.scenario-btn .credit-tag').forEach(el => {
-    el.textContent = sc + (sc === 1 ? ' credit' : ' credits');
+    el.textContent = t('creditTag')(sc);
   });
   const sub = document.querySelector('.scenarios-subtitle');
-  if(sub) sub.textContent = 'Build on the baseline simulation to explore what is possible. Each scenario consumes ' + sc + (sc === 1 ? ' credit' : ' credits') + ' and generates in the background.';
+  if(sub) sub.textContent = t('scenariosSubtitle')(sc);
+}
+
+// Re-localize content that JS renders (not covered by data-en/data-zh) when the
+// user switches language at runtime. Called from applyLang().
+function refreshDynamicLang(){
+  try { if (typeof fillCreditCopy === 'function') fillCreditCopy(); } catch(e){}
+  try { if (typeof updateFillerVolumeHelp === 'function') updateFillerVolumeHelp(); } catch(e){}
+  try {
+    var lh = document.getElementById('laserTypeHelp');
+    if (lh && typeof laserTypeHelpText === 'function' && typeof state !== 'undefined') lh.textContent = laserTypeHelpText(state.laserType);
+  } catch(e){}
+  try {
+    var th = document.getElementById('toxModeHelp');
+    if (th && typeof toxModeHelpText === 'function' && typeof state !== 'undefined') th.textContent = toxModeHelpText(state.toxMode);
+  } catch(e){}
+  try { if (typeof refreshAccountUI === 'function') refreshAccountUI(); } catch(e){}
+  try { if (typeof renderAcctBar === 'function') renderAcctBar(); } catch(e){}
 }
 let sb = null;                  // supabase client (account mode)
 let accessMode = null;          // 'beta' | 'account'
@@ -1423,8 +1517,8 @@ function renderAcctBar(){
   const info = document.getElementById('creditsInfoBtn');
   if(accessMode === 'beta'){
     bar.style.display = 'flex';
-    ident.textContent = 'Beta access';
-    chip.textContent = 'Unmetered';
+    ident.textContent = t('betaAccess');
+    chip.textContent = t('unmetered');
     buy.style.display = 'none'; out.style.display = 'none'; info.style.display = 'none';
     navPill.style.display = 'none';
     if(navAcct) navAcct.style.display = 'none';
@@ -1512,14 +1606,14 @@ async function submitAuth(){
   const password = document.getElementById('authPassword').value;
   const err = document.getElementById('authErr');
   const btn = document.getElementById('authBtn');
-  if(!email || !password){ err.textContent = 'Enter your email and password.'; return; }
-  btn.disabled = true; err.textContent = 'One moment…';
+  if(!email || !password){ err.textContent = t('authEnterBoth'); return; }
+  btn.disabled = true; err.textContent = t('authOneMoment');
   try {
     if(authMode === 'signup'){
       const { data, error } = await sb.auth.signUp({ email, password });
       if(error){ err.textContent = error.message; return; }
       if(data && data.session){ err.textContent = ''; onSignedIn(data.session); }
-      else { err.textContent = 'Check your email to confirm the account, then sign in here.'; }
+      else { err.textContent = t('authConfirmEmail'); }
     } else {
       const { data, error } = await sb.auth.signInWithPassword({ email, password });
       if(error){ err.textContent = error.message; return; }
@@ -1527,15 +1621,15 @@ async function submitAuth(){
       onSignedIn(data.session);
     }
   } catch(e){
-    err.textContent = 'Could not reach the sign-in service. Try again.';
+    err.textContent = t('authNoReach');
   } finally {
     btn.disabled = false;
   }
 }
 async function handleGoogleAuthVisualize(){
-  if(!sb){ document.getElementById('authErr').textContent = 'Auth not available.'; return; }
+  if(!sb){ document.getElementById('authErr').textContent = t('authNotAvailable'); return; }
   const btn = document.getElementById('googleAuthBtn');
-  if(btn){ btn.disabled = true; btn.textContent = 'Redirecting…'; }
+  if(btn){ btn.disabled = true; btn.textContent = t('authRedirecting'); }
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
@@ -1570,12 +1664,12 @@ function openBuyModal(){
     const price = reg
       ? '<strong>' + sym + (pk.cad/100).toFixed(2) + '</strong> <s>' + sym + (reg/100).toFixed(2) + '</s> <span>regular price</span>'
       : sym + (pk.cad/100).toFixed(2);
-    left.innerHTML = '<div class="pack-name">' + pk.label + ' · ' + pk.credits + ' credits</div>'
+    left.innerHTML = '<div class="pack-name">' + pk.label + ' · ' + pk.credits + ' ' + t('credits') + '</div>'
       + '<div class="pack-sub">' + price + '</div>';
     const btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.type = 'button';
-    btn.textContent = 'Buy';
+    btn.textContent = t('buy');
     btn.addEventListener('click', async () => {
-      btn.disabled = true; btn.textContent = 'Opening…';
+      btn.disabled = true; btn.textContent = t('opening');
       // Open checkout in a small POPUP WINDOW (opened synchronously on the click
       // so popup blockers allow it). The popup runs Stripe, then on return closes
       // itself and notifies THIS page to refresh credits (see handlePurchasePopup
@@ -1598,9 +1692,9 @@ function openBuyModal(){
             // Popup path: this page stays intact with all results; the popup
             // notifies us to refresh the balance when payment completes.
             checkoutWin.location.href = d.url;
-            btn.textContent = 'Buy'; btn.disabled = false;
+            btn.textContent = t('buy'); btn.disabled = false;
             closeBuyModal();
-            setStatus('Complete your purchase in the popup window. Your simulations stay right here.', 'idle');
+            setStatus(t('stCheckoutPopup'), 'idle');
           } else {
             // Popup blocked: same-tab fallback. Save photos + selections so the
             // inputs at least restore after the round-trip.
@@ -1627,14 +1721,14 @@ function openBuyModal(){
           return;
         }
         if(checkoutWin && !checkoutWin.closed) checkoutWin.close();
-        btn.textContent = 'Buy';
+        btn.textContent = t('buy');
         btn.disabled = false;
-        setStatus(d.error || 'Could not start the checkout. Please try again.', 'warn');
+        setStatus(d.error || t('stCheckoutFail'), 'warn');
         closeBuyModal();
       } catch(e){
         if(checkoutWin && !checkoutWin.closed) checkoutWin.close();
-        btn.textContent = 'Buy'; btn.disabled = false;
-        setStatus('Could not start the checkout. Please try again.', 'warn');
+        btn.textContent = t('buy'); btn.disabled = false;
+        setStatus(t('stCheckoutFail'), 'warn');
         closeBuyModal();
       }
     });
@@ -1797,7 +1891,7 @@ async function runFillerLevelGeneration(fillerIntensity){
     const per = creditCostFor(state.type);
     const total = per * angles.length;
     if(creditBalance != null && creditBalance < total){
-      setStatus('Not enough credits to generate this correction level. Top up to continue.', 'warn');
+      setStatus(t('stNotEnoughCredits'), 'warn');
       openBuyModal();
       return;
     }
@@ -1853,10 +1947,10 @@ async function runFillerLevelGeneration(fillerIntensity){
     });
     renderTabs();
     renderActiveSlot();
-    setStatus(levelName + ' correction generated.', 'ok');
+    setStatus(t('stCorrectionGenerated')(levelName), 'ok');
   } else {
     const failIds = angles.filter(id => state.slots[id].status === 'error');
-    if(failIds.length) setStatus('Generation failed: ' + state.slots[failIds[0]].error, 'warn');
+    if(failIds.length) setStatus(t('stGenerationFailed')(state.slots[failIds[0]].error), 'warn');
   }
 
   syncGenerateBtn(); regenBtn.disabled = false;
@@ -2035,12 +2129,12 @@ window.addEventListener('message', (ev) => {
   const d = ev.data;
   if(d && d.sdPurchase && accessMode === 'account'){
     if(d.sdPurchase === 'success'){
-      setStatus('Payment received. Updating your credit balance…', 'spin');
+      setStatus(t('stPaymentReceived'), 'spin');
       refreshCredits(4).then(bal => {
-        setStatus(bal != null ? ('Payment received. Credit balance: ' + bal + '.') : 'Payment received. Your balance will update shortly.', 'ok');
+        setStatus(t('stPaymentBalance')(bal), 'ok');
       });
     } else if(d.sdPurchase === 'cancelled'){
-      setStatus('Checkout cancelled. No charge was made.', 'idle');
+      setStatus(t('stCheckoutCancelled'), 'idle');
     }
   }
 });
@@ -2055,7 +2149,7 @@ window.addEventListener('message', (ev) => {
     const note = document.getElementById('payCurrencyNote');
     if(note){
       const curName = ((SD_CFG.currency || 'cad').toLowerCase() === 'usd') ? 'USD' : 'CAD';
-      note.textContent = 'Payments are processed by Stripe in ' + curName + '. Credits land on your account the moment payment completes.';
+      note.textContent = t('payNote')(curName);
     }
   } catch(e){ /* non-fatal display tweak */ }
   fillCreditCopy();
@@ -2085,9 +2179,9 @@ window.addEventListener('message', (ev) => {
     if(data && data.session){
       await onSignedIn(data.session);
       if(purchase === 'success'){
-        setStatus('Payment received. Updating your credit balance…', 'spin');
+        setStatus(t('stPaymentReceived'), 'spin');
         const bal = await refreshCredits(4);
-        setStatus(bal != null ? ('Payment received. Credit balance: ' + bal + '.') : 'Payment received. Your balance will update shortly.', 'ok');
+        setStatus(t('stPaymentBalance')(bal), 'ok');
         // Restore pending generation state if the user was mid-flow when credits ran out.
         try {
           const raw = sessionStorage.getItem('sd_pending_gen');
@@ -2137,14 +2231,14 @@ window.addEventListener('message', (ev) => {
             const blackBgChk = document.getElementById('blackBgChk');
             if(blackBgChk) blackBgChk.checked = !!state.blackBg;
             renderSlots(); syncGenerateBtn();
-            setStatus('Photos restored. Ready to generate.', 'ok');
+            setStatus(t('stPhotosRestored'), 'ok');
             // Auto-fire generation now that credits are topped up
             await new Promise(r => setTimeout(r, 800)); // brief pause so user sees the status
             runGeneration(false);
           }
         } catch(restoreErr){ console.warn('[Visualize] Could not restore pending state:', restoreErr); }
       } else if(purchase === 'cancelled'){
-        setStatus('Checkout cancelled. No charge was made.', 'idle');
+        setStatus(t('stCheckoutCancelled'), 'idle');
       }
     }
     sb.auth.onAuthStateChange((_evt, session) => {
@@ -2190,8 +2284,8 @@ function syncGenerateBtn(){
   });
   generateBtn.disabled = !(ready && consentChk.checked);
   generateBtn.textContent = ids.length > 1
-    ? ('Generate ' + ids.length + ' simulated previews')
-    : 'Generate simulated preview';
+    ? t('genMany')(ids.length)
+    : t('genOne');
 
   // M8: cost preview for metered accounts. Costs come from server config
   // (env-tunable); the fallback matches the server's defaults.
@@ -2516,8 +2610,8 @@ function fillerVolumeLabel(area, tier){
 function updateFillerVolumeHelp(){
   const help = document.getElementById('fillerVolumeHelp');
   const area = (state.areas && state.areas[0]) || 'chin_jawline';
-  const tierName = state.fillerVolume === 'conservative' ? 'Conservative'
-                 : state.fillerVolume === 'moderate' ? 'Moderate' : 'Enhanced';
+  const tierName = state.fillerVolume === 'conservative' ? t('tierConservative')
+                 : state.fillerVolume === 'moderate' ? t('tierModerate') : t('tierEnhanced');
   if(help) help.textContent = tierName + ': ' + fillerVolumeLabel(area, state.fillerVolume) + '.';
 }
 document.querySelectorAll('#areaGrid .area-chip').forEach(chip => {
@@ -2541,10 +2635,7 @@ document.getElementById('fillerVolumeToggle').addEventListener('click', e => {
   updateFillerVolumeHelp();
 });
 // M14: RF / HIFU energy-type selector
-const LASER_TYPE_HELP = {
-  rf:   'RF: radiofrequency skin tightening (e.g. Thermage, XERF). Results develop gradually over about 3 to 6 months.',
-  hifu: 'HIFU: focused-ultrasound lifting (e.g. Ultherapy, Sofwave). Results develop gradually over about 3 to 6 months.'
-};
+function laserTypeHelpText(typ){ return typ === 'hifu' ? t('laserHelpHifu') : t('laserHelpRf'); }
 document.getElementById('laserTypeToggle').addEventListener('click', e => {
   const btn = e.target.closest('[data-laser-type]');
   if(!btn) return;
@@ -2552,14 +2643,10 @@ document.getElementById('laserTypeToggle').addEventListener('click', e => {
   btn.classList.add('active');
   state.laserType = btn.dataset.laserType;
   const help = document.getElementById('laserTypeHelp');
-  if(help) help.textContent = LASER_TYPE_HELP[state.laserType] || LASER_TYPE_HELP.rf;
+  if(help) help.textContent = laserTypeHelpText(state.laserType);
 });
 
-const TOX_MODE_HELP = {
-  masseter:  'Jaw-angle slimming only. No neck, submental, or chin change. Results ~4-6 wk.',
-  nefertiti: 'Subtle mandibular border cleanup. Submental largely unchanged. Results ~4-6 wk.',
-  combined:  'Masseter slimming + Nefertiti lift. Conservative lower-face contour only. Results ~4-6 wk.'
-};
+function toxModeHelpText(m){ return m === 'masseter' ? t('toxHelpMasseter') : m === 'nefertiti' ? t('toxHelpNefertiti') : t('toxHelpCombined'); }
 document.getElementById('toxModeToggle').addEventListener('click', e => {
   const btn = e.target.closest('[data-tox-mode]');
   if(!btn) return;
@@ -2567,7 +2654,7 @@ document.getElementById('toxModeToggle').addEventListener('click', e => {
   btn.classList.add('active');
   state.toxMode = btn.dataset.toxMode;
   const help = document.getElementById('toxModeHelp');
-  if(help) help.textContent = TOX_MODE_HELP[state.toxMode] || TOX_MODE_HELP.combined;
+  if(help) help.textContent = toxModeHelpText(state.toxMode);
 });
 
 /* ───────── Pill selectors ───────── */
@@ -2853,7 +2940,7 @@ function updateIntensityUI(){
       msbBtn.classList.remove('bar-hidden');
       msbBtn.style.display = 'block';
       msbBtn.disabled = genBtnEl ? genBtnEl.disabled : true;
-      msbBtn.textContent = genBtnEl ? genBtnEl.textContent : 'Generate simulated preview';
+      msbBtn.textContent = genBtnEl ? genBtnEl.textContent : t('genOne');
       msbBtn.className = '';
       msbBtn.style.background = msbBtn.disabled ? '' : 'var(--rose)';
       msbBtn.onclick = () => { if(genBtnEl && !genBtnEl.disabled) genBtnEl.click(); };
@@ -3064,13 +3151,13 @@ function showCompare(){
   setComparePos(50);
   resultGrid.style.display = 'none';
   compareWrap.style.display = 'block';
-  insightsBtn.textContent = 'Side by side';
+  insightsBtn.textContent = t('sideBySide');
 }
 // name kept so the existing generate/reset paths can return the view to default
 function hideAnnotations(){
   compareWrap.style.display = 'none';
   resultGrid.style.display = '';
-  insightsBtn.textContent = 'Compare';
+  insightsBtn.textContent = t('compare');
 }
 insightsBtn.addEventListener('click', () => {
   if(compareWrap.style.display === 'block'){ hideAnnotations(); }
@@ -3292,7 +3379,7 @@ function _renderGenCard(angles, isRegen){
   else if(secs < 120) sub = 'Still working -- detailed previews can take a little longer.';
   else                sub = 'Taking longer than usual. You can keep waiting or regenerate.';
 
-  const title = (isRegen ? 'Re-generating' : 'Generating') + ' your preview';
+  const title = t('genTitle')(isRegen);
 
   // Per-angle status rows.
   let rows = '';
@@ -3307,7 +3394,7 @@ function _renderGenCard(angles, isRegen){
     } else if(phase === 'preparing'){
       stCls = 'active'; stText = 'Preparing photo...';
     } else if(phase === 'generating' || slSt === 'generating'){
-      stCls = 'active'; stText = 'Generating...';
+      stCls = 'active'; stText = t('generating');
     } else {
       stCls = ''; stText = 'Waiting...';
     }
@@ -3554,7 +3641,7 @@ function renderActiveSlot(){
   document.getElementById('originalResult').src = sl.cropBeforeCache || sl.beforeDataUrl || sl.originalDataUrl || '';
   // Route through applyActiveView so enhanced mode shows sl.strongDataUrl correctly.
   // Do not set aiResult.src directly here; applyActiveView() at line 2285 handles it.
-  let tag = 'Simulated · ' + treatmentName();
+  let tag = t('simulatedPrefix') + ' · ' + treatmentName();
   if(multi) tag += ' · ' + ANGLE_DEF[state.activeAngle].short;
   if(usesResponseModes()){
     // M13: label reflects what was generated
@@ -3592,10 +3679,10 @@ function renderActiveSlot(){
     if(optImg) optImg.src = sl.cropStrongCache || sl.strongDataUrl;
     // middle card is always the Expected result in Both mode
     state.courseMode = 'standard';
-    let mid = 'Simulated · ' + treatmentName();
+    let mid = t('simulatedPrefix') + ' · ' + treatmentName();
     if(multi) mid += ' · ' + ANGLE_DEF[state.activeAngle].short;
     document.getElementById('simTag').textContent = mid + ' · Expected';
-    let optTag = 'Simulated · ' + treatmentName();
+    let optTag = t('simulatedPrefix') + ' · ' + treatmentName();
     if(multi) optTag += ' · ' + ANGLE_DEF[state.activeAngle].short;
     const optTagEl = document.getElementById('optimisticTag');
     if(optTagEl) optTagEl.textContent = optTag + ' · Optimistic';
@@ -3921,7 +4008,7 @@ function applyActiveView(){
     if(optBtn) optBtn.classList.remove('active');
     if(helpEl) helpEl.textContent = 'Expected: realistic outcome after 3-4 vials for most patients.';
     applyActiveView();
-    document.getElementById('simTag').textContent = 'Simulated · ' + treatmentName() +
+    document.getElementById('simTag').textContent = t('simulatedPrefix') + ' · ' + treatmentName() +
       (state.selectedAngles.length > 1 ? ' · ' + ANGLE_DEF[state.activeAngle].short : '') + ' · Expected';
   });
   if(optBtn) optBtn.addEventListener('click', () => {
@@ -3932,7 +4019,7 @@ function applyActiveView(){
     if(optBtn) optBtn.classList.add('active');
     if(helpEl) helpEl.textContent = 'Optimistic: upper-range result after 3-4 vials for strong responders.';
     applyActiveView();
-    document.getElementById('simTag').textContent = 'Simulated · ' + treatmentName() +
+    document.getElementById('simTag').textContent = t('simulatedPrefix') + ' · ' + treatmentName() +
       (state.selectedAngles.length > 1 ? ' · ' + ANGLE_DEF[state.activeAngle].short : '') + ' · Optimistic';
   });
 })();
@@ -4488,7 +4575,7 @@ document.getElementById('logoFileInput').addEventListener('change', e => {
     clinicLogoDataUrl = ev.target.result;
     document.getElementById('logoUploadName').textContent = file.name;
     document.getElementById('logoRemoveBtn').style.display = '';
-    document.getElementById('logoUploadBtn').textContent = 'Change logo';
+    document.getElementById('logoUploadBtn').textContent = t('changeLogo');
   };
   reader.readAsDataURL(file);
 });
@@ -4497,7 +4584,7 @@ document.getElementById('logoRemoveBtn').addEventListener('click', () => {
   document.getElementById('logoFileInput').value = '';
   document.getElementById('logoUploadName').textContent = '';
   document.getElementById('logoRemoveBtn').style.display = 'none';
-  document.getElementById('logoUploadBtn').textContent = 'Upload logo';
+  document.getElementById('logoUploadBtn').textContent = t('uploadLogo');
 });
 
 // Patient sex toggle (biostim) -- tap active to deselect
@@ -4715,7 +4802,7 @@ function syncScenarioBtns(){
 async function runScenario(scenarioKey){
   const sl = activeSlot();
   if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
-    setStatus('Generate the baseline first before exploring scenarios.', 'warn');
+    setStatus(t('scenariosFirst'), 'warn');
     return;
   }
 
