@@ -28,6 +28,11 @@
     .nav-logo span { color: var(--gold); }
     .nav-ctas { display: flex; align-items: center; gap: 0.6rem; }
     .nav-link { background: transparent; border: 1px solid rgba(201,169,110,0.4); color: var(--dim); padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; text-decoration: none; transition: all 0.2s; }
+    .lang-toggle { display: flex; align-items: center; gap: 8px; border: 1px solid rgba(201,169,110,0.4); border-radius: 999px; padding: 5px 12px; }
+    .lang-btn { background: none; border: none; cursor: pointer; font-family: inherit; font-size: 0.72rem; letter-spacing: 0.06em; color: var(--dim); padding: 0; transition: color 0.2s; }
+    .lang-btn.active { color: var(--cream); }
+    .lang-btn:hover:not(.active) { color: var(--gold); }
+    .lang-sep { width: 1px; height: 11px; background: rgba(201,169,110,0.4); }
     .nav-link:hover { border-color: var(--gold); color: var(--cream); }
     .nav-cta { background: var(--rose); color: #fff; padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background 0.2s; }
     .nav-cta:hover { background: var(--rose-m); }
@@ -255,20 +260,25 @@
 <nav>
   <a href="/" class="nav-logo">Skin<span>Day</span></a>
   <div class="nav-ctas">
-    <a href="/visualize" class="nav-link">Visualize</a>
+    <a href="/visualize" class="nav-link" data-en="Visualize" data-zh="Visualize">Visualize</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="lang-btn active" type="button" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" type="button" onclick="setLang('zh')">繁中</button>
+    </div>
   </div>
 </nav>
 
 <div class="page">
   <div class="hero">
     <div class="eyebrow">SkinDay Studio</div>
-    <h1>Before & after photos,<br><em>ready in seconds.</em></h1>
-    <p>Multi-angle grids, background removal, clinic branding. Everything processed locally in your browser.</p>
+    <h1 data-en="Before &amp; after photos,<br><em>ready in seconds.</em>" data-zh="製作前後對比圖，<br><em>數秒完成。</em>">Before &amp; after photos,<br><em>ready in seconds.</em></h1>
+    <p data-en="Multi-angle grids, background removal, clinic branding. Everything processed locally in your browser." data-zh="多角度版面、背景處理、診所品牌標示。所有照片都在您的瀏覽器中本地處理。">Multi-angle grids, background removal, clinic branding. Everything processed locally in your browser.</p>
   </div>
 
   <!-- STEP 1: Grid + Subject -->
   <div class="step">
-    <div class="step-num">Step 1 - Choose your layout</div>
+    <div class="step-num" data-en="Step 1 - Choose your layout" data-zh="步驟 1：選擇版面">Step 1 - Choose your layout</div>
 
     <div class="grid-picker" id="gridPicker">
       <!-- 2-up horizontal -->
@@ -277,8 +287,8 @@
           <div class="gi-cell" style="width:22px;height:30px;"></div>
           <div class="gi-cell" style="width:22px;height:30px;"></div>
         </div>
-        <div class="grid-name">2 Side</div>
-        <div class="grid-desc">Before / After</div>
+        <div class="grid-name" data-en="2 Side" data-zh="左右對比">2 Side</div>
+        <div class="grid-desc" data-en="Before / After" data-zh="治療前／治療後">Before / After</div>
       </button>
       <!-- 2-up vertical -->
       <button class="grid-btn" data-grid="2v" onclick="selGrid('2v')">
@@ -286,8 +296,8 @@
           <div class="gi-cell" style="width:38px;height:14px;"></div>
           <div class="gi-cell" style="width:38px;height:14px;"></div>
         </div>
-        <div class="grid-name">2 Stack</div>
-        <div class="grid-desc">Top / Bottom</div>
+        <div class="grid-name" data-en="2 Stack" data-zh="上下對比">2 Stack</div>
+        <div class="grid-desc" data-en="Top / Bottom" data-zh="上／下排列">Top / Bottom</div>
       </button>
       <!-- 3-up horizontal -->
       <button class="grid-btn" data-grid="3h" onclick="selGrid('3h')">
@@ -296,8 +306,8 @@
           <div class="gi-cell" style="width:14px;height:30px;"></div>
           <div class="gi-cell" style="width:14px;height:30px;"></div>
         </div>
-        <div class="grid-name">3 Side</div>
-        <div class="grid-desc">3 timepoints</div>
+        <div class="grid-name" data-en="3 Side" data-zh="三圖並排">3 Side</div>
+        <div class="grid-desc" data-en="3 timepoints" data-zh="三個時間點">3 timepoints</div>
       </button>
       <!-- 2x2 -->
       <button class="grid-btn" data-grid="2x2" onclick="selGrid('2x2')">
@@ -311,8 +321,8 @@
             <div class="gi-cell" style="width:21px;height:14px;"></div>
           </div>
         </div>
-        <div class="grid-name">2 x 2</div>
-        <div class="grid-desc">2 angles</div>
+        <div class="grid-name" data-en="2 x 2" data-zh="2 x 2">2 x 2</div>
+        <div class="grid-desc" data-en="2 angles" data-zh="兩個角度">2 angles</div>
       </button>
       <!-- 2x3 -->
       <button class="grid-btn" data-grid="2x3" onclick="selGrid('2x3')">
@@ -328,62 +338,62 @@
             <div class="gi-cell" style="width:13px;height:14px;"></div>
           </div>
         </div>
-        <div class="grid-name">2 x 3</div>
-        <div class="grid-desc">3 angles</div>
+        <div class="grid-name" data-en="2 x 3" data-zh="2 x 3">2 x 3</div>
+        <div class="grid-desc" data-en="3 angles" data-zh="三個角度">3 angles</div>
       </button>
     </div>
 
     <div class="subject-toggle">
       <button class="subj-btn active" id="subjFace" onclick="selSubject('face')">
-        <strong>Face</strong>
-        <span>Facial alignment + crop presets</span>
+        <strong data-en="Face" data-zh="臉部">Face</strong>
+        <span data-en="Facial alignment + crop presets" data-zh="臉部對齊與裁切預設">Facial alignment + crop presets</span>
       </button>
       <button class="subj-btn" id="subjBody" onclick="selSubject('body')">
-        <strong>Body</strong>
-        <span>Full photos, no cropping</span>
+        <strong data-en="Body" data-zh="身體">Body</strong>
+        <span data-en="Full photos, no cropping" data-zh="完整照片，不裁切">Full photos, no cropping</span>
       </button>
     </div>
   </div>
 
   <!-- STEP 2: Upload photos -->
   <div class="step" id="uploadStep">
-    <div class="step-num">Step 2 - Upload photos</div>
+    <div class="step-num" data-en="Step 2 - Upload photos" data-zh="步驟 2：上傳照片">Step 2 - Upload photos</div>
     <div class="upload-grid g-2h" id="uploadGrid">
       <!-- Slots injected by JS -->
     </div>
     <div class="privacy-note">
       <span style="flex-shrink:0;font-size:0.9rem;line-height:1.5;opacity:0.7;">🔒</span>
-      <span>Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images.</span>
+      <span data-en="Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images." data-zh="照片會在您的瀏覽器中本地處理。SkinDay 不會上傳、儲存或查看顧客影像。">Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images.</span>
     </div>
-    <div class="status"><div class="dot" id="dot"></div><span id="statusText">Upload your photos to begin</span></div>
+    <div class="status"><div class="dot" id="dot"></div><span id="statusText" data-en="Upload your photos to begin" data-zh="上傳照片開始製作">Upload your photos to begin</span></div>
     <div class="progress" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
     <!-- STEP 3: Background (optional) -->
     <div class="bg-controls" id="bgControls" style="display:none;">
       <hr class="divider" style="margin-top:24px;">
-      <div class="step-num">Step 3 - Background (optional)</div>
-      <p class="bg-intro">Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping.</p>
+      <div class="step-num" data-en="Step 3 - Background (optional)" data-zh="步驟 3：背景處理（可選）">Step 3 - Background (optional)</div>
+      <p class="bg-intro" data-en="Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping." data-zh="想要更乾淨的攝影棚風格？您可以將任何照片的背景替換為純黑背景。原始背景會在您的裝置上移除，主體會保留下來。每張照片約需數秒，因此會在裁切前先完成。">Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping.</p>
       <div class="bg-selectall-row">
         <label class="bg-check-item bg-selectall">
           <input type="checkbox" id="bgSelectAll" onchange="toggleSelectAllBg(this.checked)"/>
-          <span>Select all photos</span>
+          <span data-en="Select all photos" data-zh="選取全部照片">Select all photos</span>
         </label>
       </div>
       <div class="bg-slot-select" id="bgSlotSelect"></div>
       <div class="bg-actions">
         <button class="bg-btn" id="btnBgBlack" onclick="applyBgBlack()" disabled>
           <div class="bg-swatch black"></div>
-          Apply black background
+          <span data-en="Apply black background" data-zh="套用黑色背景">Apply black background</span>
         </button>
         <button class="bg-btn" id="btnBgReset" onclick="resetBg()" disabled style="color:var(--muted);">
-          Reset selected
+          <span data-en="Reset selected" data-zh="重設已選照片">Reset selected</span>
         </button>
       </div>
-      <div class="bg-hint" id="bgHint">Tick the photos you want, then apply a black background.</div>
+      <div class="bg-hint" id="bgHint" data-en="Tick the photos you want, then apply a black background." data-zh="勾選要處理的照片，再套用黑色背景。">Tick the photos you want, then apply a black background.</div>
       <div class="bg-progress" id="bgProgress"></div>
       <div class="bg-continue-row" id="bgContinueRow" style="display:none;">
-        <span class="bg-continue-note" id="bgContinueNote">Backgrounds set? Move on to crop and branding.</span>
-        <button class="btn-continue" id="bgContinueBtn" onclick="continueToCrop()">Continue to crop</button>
+        <span class="bg-continue-note" id="bgContinueNote" data-en="Backgrounds set? Move on to crop and branding." data-zh="背景設定完成後，可繼續裁切與品牌設定。">Backgrounds set? Move on to crop and branding.</span>
+        <button class="btn-continue" id="bgContinueBtn" onclick="continueToCrop()" data-en="Continue to crop" data-zh="繼續裁切">Continue to crop</button>
       </div>
     </div>
   </div>
@@ -392,46 +402,46 @@
   <div class="crop-section" id="cropSection">
     <hr class="divider" id="cropDivider" style="margin-top:0">
     <div class="step" id="cropStep">
-      <div class="step-num">Step 4 - Adjust crop</div>
+      <div class="step-num" data-en="Step 4 - Adjust crop" data-zh="步驟 4：調整裁切">Step 4 - Adjust crop</div>
       <div class="preset-grid face-presets" id="presetGrid">
         <button class="preset-btn" data-preset="full" onclick="selPreset('full')">
-          <div class="preset-icon">🧍</div><div class="preset-name">Full Face</div><div class="preset-desc">Head to chin</div>
+          <div class="preset-icon">🧍</div><div class="preset-name" data-en="Full Face" data-zh="全臉">Full Face</div><div class="preset-desc" data-en="Head to chin" data-zh="頭頂至下巴">Head to chin</div>
         </button>
         <button class="preset-btn active" data-preset="lower" onclick="selPreset('lower')">
-          <div class="preset-icon">💉</div><div class="preset-name">Lower Face</div><div class="preset-desc">Cheeks to jaw</div>
+          <div class="preset-icon">💉</div><div class="preset-name" data-en="Lower Face" data-zh="下臉部">Lower Face</div><div class="preset-desc" data-en="Cheeks to jaw" data-zh="臉頰至下顒">Cheeks to jaw</div>
         </button>
         <button class="preset-btn" data-preset="upper" onclick="selPreset('upper')">
-          <div class="preset-icon">👁</div><div class="preset-name">Upper Face</div><div class="preset-desc">Forehead to brows</div>
+          <div class="preset-icon">👁</div><div class="preset-name" data-en="Upper Face" data-zh="上臉部">Upper Face</div><div class="preset-desc" data-en="Forehead to brows" data-zh="額頭至眉毛">Forehead to brows</div>
         </button>
         <button class="preset-btn" data-preset="eyes" onclick="selPreset('eyes')">
-          <div class="preset-icon">✨</div><div class="preset-name">Eye Area</div><div class="preset-desc">Brows to nose</div>
+          <div class="preset-icon">✨</div><div class="preset-name" data-en="Eye Area" data-zh="眼周">Eye Area</div><div class="preset-desc" data-en="Brows to nose" data-zh="眉毛至鼻部">Brows to nose</div>
         </button>
       </div>
       <div class="zoom-controls" id="zoomControls"></div>
       <div class="preview-area p-2" id="previewArea"></div>
-      <div class="drag-hint">Drag each photo to reposition</div>
+      <div class="drag-hint" data-en="Drag each photo to reposition" data-zh="拖曳每張照片以調整位置">Drag each photo to reposition</div>
     </div>
 
     <!-- Branding -->
     <hr class="divider" id="brandDivider">
     <div class="step">
-      <div class="step-num" id="brandStepNum">Step 5 - Branding (optional)</div>
+      <div class="step-num" id="brandStepNum" data-en="Step 5 - Branding (optional)" data-zh="步驟 5：品牌設定（可選）">Step 5 - Branding (optional)</div>
 
       <div class="brand-grid" style="margin-top:14px;">
-        <div class="field"><label>Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" maxlength="60"/></div>
-        <div class="field"><label>Injector name</label><input type="text" id="injectorName" placeholder="Injector name" maxlength="60"/></div>
+        <div class="field"><label data-en="Clinic name" data-zh="診所名稱">Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" data-en="Your clinic name" data-zh="您的診所名稱" maxlength="60"/></div>
+        <div class="field"><label data-en="Injector name" data-zh="施作人員">Injector name</label><input type="text" id="injectorName" placeholder="Injector name" data-en="Injector name" data-zh="施作人員" maxlength="60"/></div>
       </div>
       <div class="brand-grid">
         <div class="field">
-          <label>Treatment label</label>
-          <input type="text" id="treatmentLabel" placeholder="e.g. Sculptra · 3 sessions" maxlength="60"/>
+          <label data-en="Treatment label" data-zh="療程標籤">Treatment label</label>
+          <input type="text" id="treatmentLabel" placeholder="e.g. Sculptra · 3 sessions" data-en="e.g. Sculptra · 3 sessions" data-zh="例如 Sculptra · 3 次療程" maxlength="60"/>
         </div>
         <div class="field">
-          <label>Clinic logo <span style="font-weight:300;font-size:0.65rem;color:var(--dim);">PNG transparent bg best</span></label>
+          <label><span data-en="Clinic logo" data-zh="診所 Logo">Clinic logo</span> <span style="font-weight:300;font-size:0.65rem;color:var(--dim);" data-en="PNG transparent bg best" data-zh="建議使用透明背景 PNG">PNG transparent bg best</span></label>
           <div style="display:flex;align-items:center;gap:8px;">
-            <label for="logoUpload" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;font-size:0.83rem;color:var(--muted);cursor:pointer;white-space:nowrap;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">Upload logo</label>
+            <label for="logoUpload" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;font-size:0.83rem;color:var(--muted);cursor:pointer;white-space:nowrap;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'" data-en="Upload logo" data-zh="上傳 Logo">Upload logo</label>
             <input type="file" id="logoUpload" accept="image/*" style="display:none;"/>
-            <span id="logoFileName" style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">No logo</span>
+            <span id="logoFileName" style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;" data-en="No logo" data-zh="不使用 Logo">No logo</span>
             <button id="logoClearBtn" onclick="clearLogo()" style="display:none;background:transparent;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;flex-shrink:0;">x</button>
           </div>
         </div>
@@ -439,98 +449,172 @@
 
       <div class="brand-grid">
         <div class="field">
-          <label>Export format</label>
+          <label data-en="Export format" data-zh="匯出格式">Export format</label>
           <select id="exportFormat">
-            <option value="square">Square 1:1 (Instagram post)</option>
-            <option value="portrait" selected>Portrait 4:5 (Instagram feed)</option>
-            <option value="story">Story 9:16 (Instagram story)</option>
-            <option value="free">Original - match crop</option>
+            <option value="square" data-en="Square 1:1 (Instagram post)" data-zh="正方形 1:1（Instagram 貼文）">Square 1:1 (Instagram post)</option>
+            <option value="portrait" selected data-en="Portrait 4:5 (Instagram feed)" data-zh="直式 4:5（Instagram 動態牆）">Portrait 4:5 (Instagram feed)</option>
+            <option value="story" data-en="Story 9:16 (Instagram story)" data-zh="限時動態 9:16（Instagram Story）">Story 9:16 (Instagram story)</option>
+            <option value="free" data-en="Original - match crop" data-zh="原始比例（依裁切範圍）">Original - match crop</option>
           </select>
         </div>
         <div class="field">
-          <label>Image clarity</label>
+          <label data-en="Image clarity" data-zh="影像清晰度">Image clarity</label>
           <select id="enhance">
-            <option value="0">None</option>
-            <option value="1" selected>Subtle - reduce noise & sharpen</option>
-            <option value="2">Strong - reduce noise & sharpen</option>
+            <option value="0" data-en="None" data-zh="不處理">None</option>
+            <option value="1" selected data-en="Subtle - reduce noise &amp; sharpen" data-zh="輕微：降噪並銳化">Subtle - reduce noise &amp; sharpen</option>
+            <option value="2" data-en="Strong - reduce noise &amp; sharpen" data-zh="加強：降噪並銳化">Strong - reduce noise &amp; sharpen</option>
           </select>
         </div>
       </div>
 
       <div class="brand-grid">
         <div class="field">
-          <label>Normalize exposure</label>
+          <label data-en="Normalize exposure" data-zh="亮度校正">Normalize exposure</label>
           <select id="norm">
-            <option value="1">Yes - match brightness</option>
-            <option value="0">No - keep original</option>
+            <option value="1" data-en="Yes - match brightness" data-zh="是：統一亮度">Yes - match brightness</option>
+            <option value="0" data-en="No - keep original" data-zh="否：保留原始亮度">No - keep original</option>
           </select>
         </div>
         <div class="field" id="logoPosField" style="display:none;">
-          <label>Logo position</label>
+          <label data-en="Logo position" data-zh="Logo 位置">Logo position</label>
           <select id="logoPos">
-            <option value="tr">Top right</option>
-            <option value="tl">Top left</option>
-            <option value="br">Bottom right</option>
-            <option value="bl">Bottom left</option>
+            <option value="tr" data-en="Top right" data-zh="右上">Top right</option>
+            <option value="tl" data-en="Top left" data-zh="左上">Top left</option>
+            <option value="br" data-en="Bottom right" data-zh="右下">Bottom right</option>
+            <option value="bl" data-en="Bottom left" data-zh="左下">Bottom left</option>
           </select>
         </div>
       </div>
 
       <div class="field" style="margin-bottom:20px;">
-        <label>Watermark text position</label>
+        <label data-en="Watermark text position" data-zh="浮水印文字位置">Watermark text position</label>
         <div class="wm-pos-grid disabled" id="wmPosGrid" style="margin-top:8px;">
-          <button class="wm-pos-btn" data-pos="tl" onclick="selWmPos('tl')"><span class="wm-pos-icon">↖</span>Top left</button>
-          <button class="wm-pos-btn" data-pos="tr" onclick="selWmPos('tr')"><span class="wm-pos-icon">↗</span>Top right</button>
-          <button class="wm-pos-btn active" data-pos="br" onclick="selWmPos('br')"><span class="wm-pos-icon">↘</span>Bottom right</button>
-          <button class="wm-pos-btn" data-pos="bl" onclick="selWmPos('bl')"><span class="wm-pos-icon">↙</span>Bottom left</button>
-          <button class="wm-pos-btn" data-pos="center" onclick="selWmPos('center')"><span class="wm-pos-icon">⊙</span>Centre</button>
-          <button class="wm-pos-btn" data-pos="tile" onclick="selWmPos('tile')"><span class="wm-pos-icon">⊞</span>Tiled</button>
+          <button class="wm-pos-btn" data-pos="tl" onclick="selWmPos('tl')"><span class="wm-pos-icon">↖</span><span data-en="Top left" data-zh="左上">Top left</span></button>
+          <button class="wm-pos-btn" data-pos="tr" onclick="selWmPos('tr')"><span class="wm-pos-icon">↗</span><span data-en="Top right" data-zh="右上">Top right</span></button>
+          <button class="wm-pos-btn active" data-pos="br" onclick="selWmPos('br')"><span class="wm-pos-icon">↘</span><span data-en="Bottom right" data-zh="右下">Bottom right</span></button>
+          <button class="wm-pos-btn" data-pos="bl" onclick="selWmPos('bl')"><span class="wm-pos-icon">↙</span><span data-en="Bottom left" data-zh="左下">Bottom left</span></button>
+          <button class="wm-pos-btn" data-pos="center" onclick="selWmPos('center')"><span class="wm-pos-icon">⊙</span><span data-en="Centre" data-zh="置中">Centre</span></button>
+          <button class="wm-pos-btn" data-pos="tile" onclick="selWmPos('tile')"><span class="wm-pos-icon">⊞</span><span data-en="Tiled" data-zh="平鋪">Tiled</span></button>
         </div>
-        <div class="wm-pos-hint" id="wmPosHint">Add a clinic or injector name above to enable the watermark.</div>
+        <div class="wm-pos-hint" id="wmPosHint" data-en="Add a clinic or injector name above to enable the watermark." data-zh="請先輸入診所名稱或施作人員名稱，即可啟用浮水印。">Add a clinic or injector name above to enable the watermark.</div>
       </div>
 
       <div class="save-row">
         <span class="save-msg" id="saveMsg"></span>
-        <button class="btn-save" onclick="saveSettings()">Save settings</button>
+        <button class="btn-save" onclick="saveSettings()" data-en="Save settings" data-zh="儲存設定">Save settings</button>
       </div>
 
       <div class="consent-row">
         <label class="consent-label">
           <input type="checkbox" id="consentCheck" class="consent-checkbox"/>
-          <span>I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility.</span>
+          <span data-en="I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility." data-zh="我已取得顧客同意，可將這些影像用於行銷或社群發布。SkinDay Studio 只協助排版與格式化；在分享前取得適當同意，仍是診所的責任。">I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility.</span>
         </label>
       </div>
-      <div class="gen-wrap"><button class="btn-gen" id="genBtn" onclick="generate()" disabled>Generate image</button></div>
+      <div class="gen-wrap"><button class="btn-gen" id="genBtn" onclick="generate()" disabled data-en="Generate image" data-zh="生成圖片">Generate image</button></div>
     </div>
   </div>
 
   <!-- OUTPUT -->
   <div class="output" id="outputSection">
     <hr class="divider" style="margin-top:0">
-    <div class="step-num" style="margin-bottom:16px;">Your image</div>
+    <div class="step-num" style="margin-bottom:16px;" data-en="Your image" data-zh="您的圖片">Your image</div>
     <div class="output-wrap"><canvas id="outputCanvas"></canvas></div>
     <div style="margin-top:16px;margin-bottom:12px;">
-      <div class="step-num" style="margin-bottom:10px;">Export format</div>
+      <div class="step-num" style="margin-bottom:10px;" data-en="Export format" data-zh="匯出格式">Export format</div>
       <div class="export-formats">
-        <button class="btn-dl" onclick="downloadFormat('original')">Original<span>As generated</span></button>
-        <button class="btn-dl" onclick="downloadFormat('square')">Square 1:1<span>Instagram post</span></button>
-        <button class="btn-dl" onclick="downloadFormat('story')">Story 9:16<span>Instagram story</span></button>
+        <button class="btn-dl" onclick="downloadFormat('original')"><span data-en="Original" data-zh="原始版本">Original</span><span data-en="As generated" data-zh="生成版本">As generated</span></button>
+        <button class="btn-dl" onclick="downloadFormat('square')"><span data-en="Square 1:1" data-zh="正方形 1:1">Square 1:1</span><span data-en="Instagram post" data-zh="Instagram 貼文">Instagram post</span></button>
+        <button class="btn-dl" onclick="downloadFormat('story')"><span data-en="Story 9:16" data-zh="限時動態 9:16">Story 9:16</span><span data-en="Instagram story" data-zh="Instagram 限時動態">Instagram story</span></button>
       </div>
     </div>
     <div class="output-row">
-      <button class="btn-new-case" onclick="newCase()">New case</button>
-      <button class="btn-reset" onclick="saveSettings()" style="border-color:var(--gold);color:var(--gold);">Save brand profile</button>
-      <span id="brandSaved" style="font-size:0.75rem;color:#3D7A55;display:none;">Saved</span>
+      <button class="btn-new-case" onclick="newCase()" data-en="New case" data-zh="建立新案例">New case</button>
+      <button class="btn-reset" onclick="saveSettings()" style="border-color:var(--gold);color:var(--gold);" data-en="Save brand profile" data-zh="儲存品牌設定">Save brand profile</button>
+      <span id="brandSaved" style="font-size:0.75rem;color:#3D7A55;display:none;" data-en="Saved" data-zh="已儲存">Saved</span>
     </div>
   </div>
 </div>
 
 <footer>
   <div class="brand">Skin<span>Day</span></div>
-  <div>SkinDay Studio · Free before & after tool for clinics · All processing is local, no images are uploaded</div>
+  <div data-en="SkinDay Studio · Free before &amp; after tool for clinics · All processing is local, no images are uploaded" data-zh="SkinDay Studio · 免費的醫美前後對比圖工具 · 所有處理皆在本地完成，影像不會上傳">SkinDay Studio · Free before &amp; after tool for clinics · All processing is local, no images are uploaded</div>
 </footer>
 
 <script>
+// ============================================================
+// i18n - bilingual EN / 繁中 (shares sd-lang with the rest of the site)
+// ============================================================
+var I18N = {
+  en: {
+    photo: 'Photo', before: 'BEFORE', after: 'AFTER',
+    uploadBegin: 'Upload your photos to begin',
+    loadedSome: function(n,tot,more){ return n+' of '+tot+' photos loaded - add '+more+' more.'; },
+    analysing: 'Analysing photos...',
+    facesDetected: 'Faces detected. Choose backgrounds below, or continue to crop.',
+    noFaces: 'No faces detected. Choose backgrounds below, or continue to crop.',
+    someFaces: function(w){ return w+' photo(s) had no detectable face. Choose backgrounds below, or continue to crop.'; },
+    bodyMode: 'Body mode. Choose backgrounds below, or continue to crop.',
+    continueBranding: 'Continue to branding',
+    continueCrop: 'Continue to crop',
+    noteBranding: 'Backgrounds set? Add branding and generate.',
+    noteCrop: 'Backgrounds set? Move on to crop and branding.',
+    addBranding: 'Add branding, then generate.',
+    adjustCrop: 'Adjust the crop for each photo.',
+    removingBg: function(i,tot,label){ return 'Removing background ('+i+' of '+tot+'): "'+label+'"...'; },
+    bgDone: function(n){ return 'Black background applied to '+n+' photo'+(n===1?'':'s')+'.'; },
+    bgPartial: function(done,failed){ return 'Applied to '+done+', but '+failed+' could not be isolated. Try clearer, well-lit photos.'; },
+    bgReset: function(n){ return 'Reset '+n+' photo'+(n===1?'':'s')+' to original.'; },
+    doneDownload: 'Done - your image is ready to download.',
+    noLogo: 'No logo', logoLoaded: 'Logo loaded',
+    settingsSaved: 'Settings saved'
+  },
+  zh: {
+    photo: '\u7167\u7247', before: '\u6cbb\u7642\u524d', after: '\u6cbb\u7642\u5f8c',
+    uploadBegin: '\u4e0a\u50b3\u7167\u7247\u958b\u59cb\u88fd\u4f5c',
+    loadedSome: function(n,tot,more){ return '\u5df2\u8f09\u5165 '+n+' / '+tot+' \u5f35\u7167\u7247\uff0c\u9084\u9700 '+more+' \u5f35\u3002'; },
+    analysing: '\u6b63\u5728\u5206\u6790\u7167\u7247\u2026',
+    facesDetected: '\u5df2\u5075\u6e2c\u5230\u81c9\u90e8\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002',
+    noFaces: '\u672a\u5075\u6e2c\u5230\u81c9\u90e8\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002',
+    someFaces: function(w){ return '\u6709 '+w+' \u5f35\u7167\u7247\u672a\u5075\u6e2c\u5230\u81c9\u90e8\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002'; },
+    bodyMode: '\u8eab\u9ad4\u6a21\u5f0f\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002',
+    continueBranding: '\u7e7c\u7e8c\u54c1\u724c\u8a2d\u5b9a',
+    continueCrop: '\u7e7c\u7e8c\u88c1\u5207',
+    noteBranding: '\u80cc\u666f\u8a2d\u5b9a\u5b8c\u6210\u5f8c\uff0c\u53ef\u52a0\u5165\u54c1\u724c\u4e26\u751f\u6210\u3002',
+    noteCrop: '\u80cc\u666f\u8a2d\u5b9a\u5b8c\u6210\u5f8c\uff0c\u53ef\u7e7c\u7e8c\u88c1\u5207\u8207\u54c1\u724c\u8a2d\u5b9a\u3002',
+    addBranding: '\u52a0\u5165\u54c1\u724c\u8a2d\u5b9a\uff0c\u518d\u751f\u6210\u3002',
+    adjustCrop: '\u8abf\u6574\u6bcf\u5f35\u7167\u7247\u7684\u88c1\u5207\u7bc4\u570d\u3002',
+    removingBg: function(i,tot,label){ return '\u6b63\u5728\u79fb\u9664\u80cc\u666f\uff08'+i+' / '+tot+'\uff09\uff1a\u300c'+label+'\u300d\u2026'; },
+    bgDone: function(n){ return '\u5df2\u70ba '+n+' \u5f35\u7167\u7247\u5957\u7528\u9ed1\u8272\u80cc\u666f\u3002'; },
+    bgPartial: function(done,failed){ return '\u5df2\u8655\u7406 '+done+' \u5f35\uff0c\u4f46\u6709 '+failed+' \u5f35\u7121\u6cd5\u5206\u96e2\u4e3b\u9ad4\u3002\u8acb\u4f7f\u7528\u66f4\u6e05\u6670\u3001\u5149\u7dda\u5145\u8db3\u7684\u7167\u7247\u3002'; },
+    bgReset: function(n){ return '\u5df2\u5c07 '+n+' \u5f35\u7167\u7247\u91cd\u8a2d\u70ba\u539f\u59cb\u72c0\u614b\u3002'; },
+    doneDownload: '\u5b8c\u6210\uff1a\u60a8\u7684\u5716\u7247\u5df2\u53ef\u4e0b\u8f09\u3002',
+    noLogo: '\u4e0d\u4f7f\u7528 Logo', logoLoaded: '\u5df2\u8f09\u5165 Logo',
+    settingsSaved: '\u8a2d\u5b9a\u5df2\u5132\u5b58'
+  }
+};
+var currentLang = (function(){ try { return sessionStorage.getItem('sd-lang') === 'zh' ? 'zh' : 'en'; } catch(e){ return 'en'; } })();
+function t(key){ var v = (I18N[currentLang] && I18N[currentLang][key]); if (v == null) v = I18N.en[key]; return v; }
+function setLang(lang){
+  currentLang = (lang === 'zh') ? 'zh' : 'en';
+  try { sessionStorage.setItem('sd-lang', currentLang); } catch(e){}
+  applyLang();
+}
+function applyLang(){
+  var isZh = currentLang === 'zh';
+  document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
+  document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+    var val = isZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = val;
+    else el.innerHTML = val;
+  });
+  document.querySelectorAll('.lang-btn').forEach(function(btn){
+    btn.classList.toggle('active', (btn.textContent.trim() === 'EN' && !isZh) || (btn.textContent.trim() === '\u7e41\u4e2d' && isZh));
+  });
+  document.title = isZh ? 'SkinDay Studio \u00b7 \u91ab\u7f8e\u8a3a\u6240\u524d\u5f8c\u5c0d\u6bd4\u5716\u5de5\u5177' : 'SkinDay Studio - Before & After Photo Tool for Clinics';
+  // Refresh any dynamically built UI that holds translatable text
+  if (typeof refreshDynamicLang === 'function') refreshDynamicLang();
+}
+
 // ============================================================
 // STATE
 // ============================================================
@@ -556,6 +640,40 @@ const GRID_CONFIG = {
   '2x2': { count:4, rows:2, cols:2, defaultLabels:['Before','Before','After','After'], rowLabels:['Before','After'] },
   '2x3': { count:6, rows:2, cols:3, defaultLabels:['Before','Before','Before','After','After','After'], rowLabels:['Before','After'] },
 };
+
+// Localized default slot labels (Before/After/Photo N). Used only for the
+// auto-generated defaults; once a user edits a label it is preserved as typed.
+function defaultLabelFor(grid, i){
+  var cfg = GRID_CONFIG[grid];
+  var raw = (cfg && cfg.defaultLabels[i]) || ('Photo ' + (i+1));
+  if (currentLang !== 'zh') return raw;
+  if (raw === 'Before') return t('before');
+  if (raw === 'After') return t('after');
+  var m = raw.match(/^Photo (\d+)$/);
+  if (m) return t('photo') + ' ' + m[1];
+  return raw;
+}
+
+// Called by applyLang() when the user switches language at runtime. Re-localizes
+// any slot still showing a default label (Before/After/Photo N) without touching
+// labels the user has customized.
+function refreshDynamicLang(){
+  var DEFAULTS_EN = ['Before','After','Photo 1','Photo 2','Photo 3','Photo 4','Photo 5','Photo 6'];
+  var DEFAULTS_ZH = [t('before'),t('after')].concat([1,2,3,4,5,6].map(function(n){return I18N.zh.photo+' '+n;}));
+  if (!S.slots || !S.slots.length) return;
+  S.slots.forEach(function(sl, i){
+    var isDefault = DEFAULTS_EN.indexOf(sl.label) >= 0 || DEFAULTS_ZH.indexOf(sl.label) >= 0;
+    if (isDefault) {
+      sl.label = defaultLabelFor(S.grid, i);
+      var z = document.getElementById('label-' + i);
+      if (z) z.value = sl.label;
+      var pv = document.getElementById('preview-label-' + i);
+      if (pv) pv.value = sl.label;
+      var bgl = document.getElementById('bg-check-label-' + i);
+      if (bgl) bgl.textContent = sl.label;
+    }
+  });
+}
 
 // Body crop presets (no landmarks needed)
 const FACE_PRESETS = [
@@ -627,7 +745,7 @@ function rebuildUploadGrid() {
     const old = S.slots[i];
     newSlots.push(old && old.img ? old : {
       img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
-      label: cfg.defaultLabels[i] || `Photo ${i+1}`,
+      label: defaultLabelFor(S.grid, i),
       origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
     });
   }
@@ -709,7 +827,7 @@ function makeSlotHTML(i, hideLabel) {
 }
 
 function updateSlotLabel(i, val) {
-  const label = val.trim() || GRID_CONFIG[S.grid].defaultLabels[i] || `Photo ${i+1}`;
+  const label = val.trim() || defaultLabelFor(S.grid, i);
   S.slots[i].label = label;
   // Sync upload-zone label input
   const zoneInp = document.getElementById(`slot-label-${i}`);
@@ -801,7 +919,7 @@ function loadFile(file, idx) {
         runDetectAll();
       } else {
         const missing = S.slots.filter(sl => !sl.img).length;
-        setSt(`${S.slots.filter(sl => sl.img).length} of ${S.slots.length} photos loaded - add ${missing} more.`, 'warn');
+        setSt(t('loadedSome')(S.slots.filter(sl => sl.img).length, S.slots.length, missing), 'warn');
       }
     };
     img.src = ev.target.result;
@@ -837,10 +955,10 @@ async function runDetectAll() {
   if (S.subject === 'body') {
     // Body mode: skip detection, use fallback crop
     S.slots.forEach(sl => { sl.lm = null; });
-    showBackgroundStep('Body mode. Choose backgrounds below, or continue to crop.');
+    showBackgroundStep(t('bodyMode'));
     return;
   }
-  setSt('Analysing photos...', 'spin');
+  setSt(t('analysing'), 'spin');
   setProg(10);
   if (!S.fm) await initFM();
   let warns = 0;
@@ -856,9 +974,9 @@ async function runDetectAll() {
   }
   setProg(100);
   let msg;
-  if (warns === 0) msg = 'Faces detected. Choose backgrounds below, or continue to crop.';
-  else if (warns === n) msg = 'No faces detected. Choose backgrounds below, or continue to crop.';
-  else msg = `${warns} photo(s) had no detectable face. Choose backgrounds below, or continue to crop.`;
+  if (warns === 0) msg = t('facesDetected');
+  else if (warns === n) msg = t('noFaces');
+  else msg = t('someFaces')(warns);
   showBackgroundStep(msg);
   setProg(0);
 }
@@ -879,11 +997,11 @@ function showBackgroundStep(message) {
   const contBtn = document.getElementById('bgContinueBtn');
   const contNote = document.getElementById('bgContinueNote');
   if (S.subject === 'body') {
-    if (contBtn) contBtn.textContent = 'Continue to branding';
-    if (contNote) contNote.textContent = 'Backgrounds set? Add branding and generate.';
+    if (contBtn) contBtn.textContent = t('continueBranding');
+    if (contNote) contNote.textContent = t('noteBranding');
   } else {
-    if (contBtn) contBtn.textContent = 'Continue to crop';
-    if (contNote) contNote.textContent = 'Backgrounds set? Move on to crop and branding.';
+    if (contBtn) contBtn.textContent = t('continueCrop');
+    if (contNote) contNote.textContent = t('noteCrop');
   }
 }
 
@@ -893,13 +1011,13 @@ function continueToCrop() {
   if (S.subject === 'body') {
     // Body mode: no cropping. Use photos as uploaded, go straight to branding.
     setCropStepVisible(false);
-    setSt('Add branding, then generate.', 'ok');
+    setSt(t('addBranding'), 'ok');
   } else {
     setCropStepVisible(true);
     rebuildZoomControls();
     rebuildPreviewArea();
     renderPreviews();
-    setSt('Adjust the crop for each photo.', 'ok');
+    setSt(t('adjustCrop'), 'ok');
   }
   cs.scrollIntoView({behavior:'smooth', block:'start'});
 }
@@ -1292,7 +1410,7 @@ async function applyBgBlack() {
   for (let n = 0; n < targets.length; n++) {
     const i = targets[n];
     const sl = S.slots[i];
-    setBgProgress(`Removing background (${n+1} of ${targets.length}): "${sl.label}"...`);
+    setBgProgress(t('removingBg')(n+1, targets.length, sl.label));
     try {
       sl.processedDataUrl = await toBlackBackground(sl.origDataUrl);
       sl._processedImg = null;
@@ -1306,8 +1424,8 @@ async function applyBgBlack() {
     }
   }
   rebuildBgSlotSelect();
-  if (failed === 0) setBgProgress(`Black background applied to ${done} photo${done === 1 ? '' : 's'}.`, 2600);
-  else setBgProgress(`Applied to ${done}, but ${failed} could not be isolated. Try clearer, well-lit photos.`, 4000);
+  if (failed === 0) setBgProgress(t('bgDone')(done), 2600);
+  else setBgProgress(t('bgPartial')(done, failed), 4000);
 }
 
 function setBgProgress(msg, autoclearMs) {
@@ -1336,7 +1454,7 @@ function resetBg() {
   });
   renderPreviews();
   rebuildBgSlotSelect();
-  setBgProgress(`Reset ${targets.length} photo${targets.length === 1 ? '' : 's'} to original.`, 2200);
+  setBgProgress(t('bgReset')(targets.length), 2200);
 }
 
 function updateZoneAfterBg(i) {
@@ -1691,7 +1809,7 @@ async function generate() {
 
   document.getElementById('outputSection').classList.add('visible');
   document.getElementById('outputSection').scrollIntoView({behavior:'smooth'});
-  setSt('Done - your image is ready to download.', 'ok');
+  setSt(t('doneDownload'), 'ok');
 }
 
 // ============================================================
@@ -1743,7 +1861,7 @@ document.getElementById('logoUpload').addEventListener('change', function(e) {
 
 function clearLogo() {
   S.logoImg = null; S.logoDataUrl = null;
-  document.getElementById('logoFileName').textContent = 'No logo';
+  document.getElementById('logoFileName').textContent = t('noLogo');
   document.getElementById('logoClearBtn').style.display = 'none';
   document.getElementById('logoPosField').style.display = 'none';
   document.getElementById('logoUpload').value = '';
@@ -1767,7 +1885,7 @@ function saveSettings() {
   };
   try { localStorage.setItem('skinday_studio', JSON.stringify(s)); } catch(e) {}
   const msg = document.getElementById('saveMsg');
-  if (msg) { msg.textContent = 'Settings saved'; setTimeout(() => { msg.textContent = ''; }, 2500); }
+  if (msg) { msg.textContent = t('settingsSaved'); setTimeout(() => { msg.textContent = ''; }, 2500); }
   const bs = document.getElementById('brandSaved');
   if (bs) { bs.style.display = 'inline'; setTimeout(() => { bs.style.display = 'none'; }, 2500); }
 }
@@ -1804,7 +1922,7 @@ function newCase() {
   rebuildUploadGrid();
   hideCropSection();
   document.getElementById('treatmentLabel').value = '';
-  setSt('Upload your photos to begin', 'idle');
+  setSt(t('uploadBegin'), 'idle');
   setProg(0);
   checkBgControlsVisibility();
   window.scrollTo({top: 0, behavior: 'smooth'});
@@ -1814,6 +1932,7 @@ function newCase() {
 // INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
   rebuildUploadGrid();
   loadSettings();
   // Restore logo
@@ -1823,7 +1942,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const img = new Image();
       img.onload = () => {
         S.logoImg = img; S.logoDataUrl = savedLogo;
-        document.getElementById('logoFileName').textContent = 'Logo loaded';
+        document.getElementById('logoFileName').textContent = t('logoLoaded');
         document.getElementById('logoClearBtn').style.display = 'inline';
         document.getElementById('logoPosField').style.display = 'block';
       };
