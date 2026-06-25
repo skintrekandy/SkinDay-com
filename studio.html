@@ -129,10 +129,17 @@
     .bg-btn.active { border-color: var(--rose); background: #fdf1ee; }
     .bg-btn .bg-swatch { width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0; }
     .bg-btn .bg-swatch.black { background: #1C1714; border: 1px solid rgba(28,23,20,0.3); }
-    .bg-slot-select { display: flex; gap: 7px; flex-wrap: wrap; }
-    .bg-slot-chip { border: 1.5px solid var(--border); border-radius: 20px; padding: 7px 16px; font-size: 0.8rem; background: #fff; cursor: pointer; transition: all 0.2s; color: var(--muted); font-family: 'DM Sans', sans-serif; }
-    .bg-slot-chip:hover { border-color: var(--gold); }
-    .bg-slot-chip.active { border-color: var(--rose); background: #fdf1ee; color: var(--deep); font-weight: 500; }
+    .bg-selectall-row { margin-bottom: 8px; }
+    .bg-slot-select { display: flex; gap: 8px; flex-wrap: wrap; }
+    .bg-check-item { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 0.82rem; background: #fff; cursor: pointer; transition: all 0.2s; color: var(--deep); font-family: 'DM Sans', sans-serif; user-select: none; }
+    .bg-check-item:hover { border-color: var(--gold); }
+    .bg-check-item.checked { border-color: var(--rose); background: #fdf1ee; }
+    .bg-check-item.done { border-color: rgba(28,23,20,0.35); background: var(--deep); color: var(--cream); }
+    .bg-check-item input { width: 15px; height: 15px; accent-color: var(--rose); cursor: pointer; flex-shrink: 0; margin: 0; }
+    .bg-check-item.done input { accent-color: var(--gold); }
+    .bg-check-item .done-tag { font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+    .bg-selectall { border-style: dashed; background: var(--warm); }
+    .bg-selectall.checked { border-style: solid; }
     .bg-hint { font-size: 0.78rem; color: var(--muted); margin-top: 10px; line-height: 1.45; }
     .bg-progress { font-size: 0.8rem; color: var(--gold); font-weight: 500; margin-top: 10px; display: none; }
     .bg-progress.on { display: block; }
@@ -146,7 +153,6 @@
     .crop-section.visible { display: block; }
     .preset-grid { display: grid; gap: 10px; margin-bottom: 20px; }
     .preset-grid.face-presets { grid-template-columns: repeat(4,1fr); }
-    .preset-grid.body-presets { grid-template-columns: repeat(3,1fr); }
     .preset-btn { border: 1.5px solid var(--border); border-radius: 8px; padding: 14px 8px 12px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .preset-btn:hover { border-color: var(--gold); background: var(--warm); }
     .preset-btn.active { border-color: var(--rose); background: #fdf1ee; }
@@ -334,7 +340,7 @@
       </button>
       <button class="subj-btn" id="subjBody" onclick="selSubject('body')">
         <strong>Body</strong>
-        <span>Body-oriented presets, no face detection</span>
+        <span>Full photos, no cropping</span>
       </button>
     </div>
   </div>
@@ -357,29 +363,35 @@
       <hr class="divider" style="margin-top:24px;">
       <div class="step-num">Step 3 - Background (optional)</div>
       <p class="bg-intro">Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping.</p>
+      <div class="bg-selectall-row">
+        <label class="bg-check-item bg-selectall">
+          <input type="checkbox" id="bgSelectAll" onchange="toggleSelectAllBg(this.checked)"/>
+          <span>Select all photos</span>
+        </label>
+      </div>
       <div class="bg-slot-select" id="bgSlotSelect"></div>
       <div class="bg-actions">
         <button class="bg-btn" id="btnBgBlack" onclick="applyBgBlack()" disabled>
           <div class="bg-swatch black"></div>
-          Black background
+          Apply black background
         </button>
         <button class="bg-btn" id="btnBgReset" onclick="resetBg()" disabled style="color:var(--muted);">
-          Reset original
+          Reset selected
         </button>
       </div>
-      <div class="bg-hint" id="bgHint">Select a photo above, then apply a black background.</div>
+      <div class="bg-hint" id="bgHint">Tick the photos you want, then apply a black background.</div>
       <div class="bg-progress" id="bgProgress"></div>
       <div class="bg-continue-row" id="bgContinueRow" style="display:none;">
-        <span class="bg-continue-note">Backgrounds set? Move on to crop and branding.</span>
-        <button class="btn-continue" onclick="continueToCrop()">Continue to crop</button>
+        <span class="bg-continue-note" id="bgContinueNote">Backgrounds set? Move on to crop and branding.</span>
+        <button class="btn-continue" id="bgContinueBtn" onclick="continueToCrop()">Continue to crop</button>
       </div>
     </div>
   </div>
 
   <!-- STEP 4: Crop & align -->
   <div class="crop-section" id="cropSection">
-    <hr class="divider" style="margin-top:0">
-    <div class="step">
+    <hr class="divider" id="cropDivider" style="margin-top:0">
+    <div class="step" id="cropStep">
       <div class="step-num">Step 4 - Adjust crop</div>
       <div class="preset-grid face-presets" id="presetGrid">
         <button class="preset-btn" data-preset="full" onclick="selPreset('full')">
@@ -400,10 +412,10 @@
       <div class="drag-hint">Drag each photo to reposition</div>
     </div>
 
-    <!-- STEP 4: Branding -->
-    <hr class="divider">
+    <!-- Branding -->
+    <hr class="divider" id="brandDivider">
     <div class="step">
-      <div class="step-num">Step 5 - Branding (optional)</div>
+      <div class="step-num" id="brandStepNum">Step 5 - Branding (optional)</div>
 
       <div class="brand-grid" style="margin-top:14px;">
         <div class="field"><label>Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" maxlength="60"/></div>
@@ -532,7 +544,7 @@ const S = {
   slots: [],
   logoImg: null,
   logoDataUrl: null,
-  bgSelectedSlot: null,
+  bgChecked: {},
   rowLabelValues: null,
 };
 
@@ -546,12 +558,6 @@ const GRID_CONFIG = {
 };
 
 // Body crop presets (no landmarks needed)
-const BODY_PRESETS = [
-  { key:'body-full',  icon:'🧍', name:'Full Body',  desc:'Head to feet' },
-  { key:'body-torso', icon:'👕', name:'Torso',       desc:'Neck to hips' },
-  { key:'body-lower', icon:'🦵', name:'Lower Body',  desc:'Waist to knees' },
-  { key:'body-arm',   icon:'💪', name:'Arm / Hand',  desc:'Close crop' },
-];
 const FACE_PRESETS = [
   { key:'full',   icon:'🧍', name:'Full Face',  desc:'Head to chin' },
   { key:'lower',  icon:'💉', name:'Lower Face', desc:'Cheeks to jaw' },
@@ -576,8 +582,12 @@ function selSubject(s) {
   S.subject = s;
   document.getElementById('subjFace').classList.toggle('active', s === 'face');
   document.getElementById('subjBody').classList.toggle('active', s === 'body');
-  rebuildPresetGrid();
-  // Re-run detection or clear landmarks based on mode
+  if (s === 'face') {
+    // Reset to a sensible face preset if coming from body
+    if (!FACE_PRESETS.find(p => p.key === S.preset)) S.preset = 'lower';
+    rebuildPresetGrid();
+  }
+  // Re-run detection (face) or skip to background step (body)
   const allFilled = S.slots.every(sl => sl.img);
   if (allFilled) runDetectAll();
 }
@@ -590,22 +600,17 @@ function selPreset(k) {
   renderPreviews();
 }
 
+// Face crop presets only. Body mode does not crop, so it has no preset grid.
 function rebuildPresetGrid() {
   const grid = document.getElementById('presetGrid');
-  const presets = S.subject === 'face' ? FACE_PRESETS : BODY_PRESETS;
-  grid.className = 'preset-grid ' + (S.subject === 'face' ? 'face-presets' : 'body-presets');
-  grid.innerHTML = presets.map(p => `
+  grid.className = 'preset-grid face-presets';
+  grid.innerHTML = FACE_PRESETS.map(p => `
     <button class="preset-btn${S.preset === p.key ? ' active' : ''}" data-preset="${p.key}" onclick="selPreset('${p.key}')">
       <div class="preset-icon">${p.icon}</div>
       <div class="preset-name">${p.name}</div>
       <div class="preset-desc">${p.desc}</div>
     </button>
   `).join('');
-  // Default preset for body
-  if (S.subject === 'body' && !BODY_PRESETS.find(p => p.key === S.preset)) {
-    S.preset = 'body-torso';
-    document.querySelector('[data-preset="body-torso"]')?.classList.add('active');
-  }
 }
 
 // ============================================================
@@ -724,14 +729,9 @@ function updateSlotLabel(i, val) {
   // Sync preview tag input
   const prevInp = document.getElementById(`preview-label-${i}`);
   if (prevInp) prevInp.value = label;
-  // Sync background slot chip
-  const bgChip = document.getElementById(`bg-chip-${i}`);
-  if (bgChip) bgChip.textContent = label;
-  // Sync background hint if this slot is selected
-  if (S.bgSelectedSlot === i) {
-    const hint = document.getElementById('bgHint');
-    if (hint) hint.textContent = `"${label}" selected. Apply a background.`;
-  }
+  // Sync background checkbox item label
+  const bgItemLabel = document.getElementById(`bg-check-label-${i}`);
+  if (bgItemLabel) bgItemLabel.textContent = label;
 }
 
 function updateRowLabel(row, val) {
@@ -873,23 +873,61 @@ function showBackgroundStep(message) {
     bg.style.display = 'block';
     bg.scrollIntoView({behavior:'smooth', block:'center'});
   }
-  // Reveal the "continue to crop" button
+  // The continue button advances to crop (Face) or straight to branding (Body).
   const cont = document.getElementById('bgContinueRow');
   if (cont) cont.style.display = 'flex';
+  const contBtn = document.getElementById('bgContinueBtn');
+  const contNote = document.getElementById('bgContinueNote');
+  if (S.subject === 'body') {
+    if (contBtn) contBtn.textContent = 'Continue to branding';
+    if (contNote) contNote.textContent = 'Backgrounds set? Add branding and generate.';
+  } else {
+    if (contBtn) contBtn.textContent = 'Continue to crop';
+    if (contNote) contNote.textContent = 'Backgrounds set? Move on to crop and branding.';
+  }
 }
 
 function continueToCrop() {
-  showCropSection();
-  renderPreviews();
-  setSt('Adjust the crop for each photo.', 'ok');
+  const cs = document.getElementById('cropSection');
+  cs.classList.add('visible');
+  if (S.subject === 'body') {
+    // Body mode: no cropping. Use photos as uploaded, go straight to branding.
+    setCropStepVisible(false);
+    setSt('Add branding, then generate.', 'ok');
+  } else {
+    setCropStepVisible(true);
+    rebuildZoomControls();
+    rebuildPreviewArea();
+    renderPreviews();
+    setSt('Adjust the crop for each photo.', 'ok');
+  }
+  cs.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Show or hide the crop sub-step (Body mode hides it; branding stays visible).
+function setCropStepVisible(visible) {
+  const step = document.getElementById('cropStep');
+  const div = document.getElementById('cropDivider');
+  if (step) step.style.display = visible ? '' : 'none';
+  if (div) div.style.display = visible ? '' : 'none';
+  // Branding becomes Step 4 when crop is skipped, Step 5 when crop is shown.
+  const brandNum = document.getElementById('brandStepNum');
+  if (brandNum) brandNum.textContent = visible ? 'Step 5 - Branding (optional)' : 'Step 4 - Branding (optional)';
+  // When crop is hidden, the branding divider is the first thing in the section,
+  // so suppress its top margin to avoid a double rule under the background step.
+  const brandDiv = document.getElementById('brandDivider');
+  if (brandDiv) brandDiv.style.marginTop = visible ? '' : '0';
 }
 
 function showCropSection() {
   const cs = document.getElementById('cropSection');
   cs.classList.add('visible');
   cs.scrollIntoView({behavior:'smooth', block:'start'});
-  rebuildZoomControls();
-  rebuildPreviewArea();
+  setCropStepVisible(S.subject !== 'body');
+  if (S.subject !== 'body') {
+    rebuildZoomControls();
+    rebuildPreviewArea();
+  }
 }
 
 function hideCropSection() {
@@ -951,17 +989,6 @@ function lmToBaseBox(lm, iw, ih, preset) {
   return box;
 }
 
-function bodyFallbackBox(iw, ih, preset) {
-  const p = {
-    'body-full':  [0.02, 0.98, 0.05, 0.95],
-    'body-torso': [0.05, 0.65, 0.10, 0.90],
-    'body-lower': [0.45, 0.95, 0.05, 0.95],
-    'body-arm':   [0.20, 0.80, 0.15, 0.85],
-  };
-  const [t, b, l, r] = p[preset] || [0.03, 0.97, 0.05, 0.95];
-  return {x: l*iw, y: t*ih, w: (r-l)*iw, h: (b-t)*ih, cx: (l+r)/2*iw, cy: (t+b)/2*ih};
-}
-
 function faceFallbackBox(iw, ih, preset) {
   const p = {full:[.03,.96,.08,.92], lower:[.40,.90,.08,.92], upper:[.03,.40,.08,.92], eyes:[.25,.56,.08,.92]};
   const [t, b, l, r] = p[preset] || [.03,.96,.08,.92];
@@ -975,8 +1002,13 @@ function getBoxForSlot(idx, targetEyePx) {
   const zoom = sl.zoom;
   const preset = S.preset;
 
-  if (S.subject === 'body' || !sl.lm) {
-    const fb = S.subject === 'body' ? bodyFallbackBox(iw, ih, preset) : faceFallbackBox(iw, ih, preset);
+  // Body mode: no cropping. Use the whole photo as uploaded.
+  if (S.subject === 'body') {
+    return {x: 0, y: 0, w: iw, h: ih};
+  }
+
+  if (!sl.lm) {
+    const fb = faceFallbackBox(iw, ih, preset);
     const nw = fb.w / zoom, nh = fb.h / zoom;
     return {x: Math.max(0, fb.cx - nw/2), y: Math.max(0, fb.cy - nh/2), w: Math.min(nw, iw), h: Math.min(nh, ih)};
   }
@@ -1168,34 +1200,59 @@ function checkBgControlsVisibility() {
 
 function rebuildBgSlotSelect() {
   const wrap = document.getElementById('bgSlotSelect');
-  // Auto-select first filled slot if nothing is selected yet
-  if (S.bgSelectedSlot === null || !S.slots[S.bgSelectedSlot]?.img) {
-    const firstFilled = S.slots.findIndex(sl => sl.img);
-    S.bgSelectedSlot = firstFilled >= 0 ? firstFilled : null;
-  }
+  // Drop checks for slots that no longer have a photo
+  Object.keys(S.bgChecked).forEach(k => { if (!S.slots[k] || !S.slots[k].img) delete S.bgChecked[k]; });
   wrap.innerHTML = S.slots.map((sl, i) => sl.img ? `
-    <button class="bg-slot-chip${S.bgSelectedSlot === i ? ' active' : ''}" id="bg-chip-${i}" onclick="selectBgSlot(${i})">${sl.label}</button>
+    <label class="bg-check-item${S.bgChecked[i] ? ' checked' : ''}${sl.bgMode === 'black' ? ' done' : ''}" id="bg-check-item-${i}">
+      <input type="checkbox" ${S.bgChecked[i] ? 'checked' : ''} onchange="toggleBgCheck(${i}, this.checked)"/>
+      <span id="bg-check-label-${i}">${sl.label}</span>
+      ${sl.bgMode === 'black' ? '<span class="done-tag">Black</span>' : ''}
+    </label>
   ` : '').join('');
-  const hint = document.getElementById('bgHint');
-  if (hint && S.bgSelectedSlot !== null) {
-    hint.textContent = `"${S.slots[S.bgSelectedSlot].label}" selected. Click "Black background" to remove its backdrop. Takes a few seconds.`;
-  }
+  syncSelectAllState();
   updateBgButtons();
 }
 
-function selectBgSlot(i) {
-  S.bgSelectedSlot = i;
-  document.querySelectorAll('.bg-slot-chip').forEach(c => c.classList.remove('active'));
-  const chip = document.getElementById(`bg-chip-${i}`);
-  if (chip) chip.classList.add('active');
-  document.getElementById('bgHint').textContent = `"${S.slots[i].label}" selected. Click "Black background" to remove its backdrop.`;
+function toggleBgCheck(i, checked) {
+  if (checked) S.bgChecked[i] = true; else delete S.bgChecked[i];
+  const item = document.getElementById(`bg-check-item-${i}`);
+  if (item) item.classList.toggle('checked', !!checked);
+  syncSelectAllState();
   updateBgButtons();
+}
+
+function toggleSelectAllBg(checked) {
+  S.slots.forEach((sl, i) => {
+    if (!sl.img) return;
+    if (checked) S.bgChecked[i] = true; else delete S.bgChecked[i];
+    const cb = document.querySelector(`#bg-check-item-${i} input`);
+    if (cb) cb.checked = checked;
+    const item = document.getElementById(`bg-check-item-${i}`);
+    if (item) item.classList.toggle('checked', checked);
+  });
+  updateBgButtons();
+}
+
+// Keep the "Select all" checkbox in sync (checked only when every photo is ticked).
+function syncSelectAllState() {
+  const filledIdxs = S.slots.map((sl, i) => sl.img ? i : -1).filter(i => i >= 0);
+  const all = filledIdxs.length > 0 && filledIdxs.every(i => S.bgChecked[i]);
+  const sa = document.getElementById('bgSelectAll');
+  if (sa) sa.checked = all;
+  const saItem = sa ? sa.closest('.bg-check-item') : null;
+  if (saItem) saItem.classList.toggle('checked', all);
+}
+
+function selectedBgIndices() {
+  return S.slots.map((sl, i) => (sl.img && S.bgChecked[i]) ? i : -1).filter(i => i >= 0);
 }
 
 function updateBgButtons() {
-  const hasSlot = S.bgSelectedSlot !== null && S.slots[S.bgSelectedSlot]?.img;
-  document.getElementById('btnBgBlack').disabled = !hasSlot;
-  document.getElementById('btnBgReset').disabled = !hasSlot;
+  const sel = selectedBgIndices();
+  const anyToApply = sel.some(i => S.slots[i].bgMode !== 'black');
+  const anyToReset = sel.some(i => S.slots[i].bgMode === 'black');
+  document.getElementById('btnBgBlack').disabled = !anyToApply;
+  document.getElementById('btnBgReset').disabled = !anyToReset;
 }
 
 // Background removal loader, mirroring the working SkinDay Visualize pattern.
@@ -1227,24 +1284,30 @@ async function toBlackBackground(dataUrl) {
 }
 
 async function applyBgBlack() {
-  const i = S.bgSelectedSlot;
-  if (i === null || !S.slots[i].img) return;
-  const sl = S.slots[i];
-  if (sl.bgMode === 'black') { setBgProgress('Already on black. Reset first to redo.', 2200); return; }
-  setBgProgress(`Removing background from "${sl.label}"...`);
+  const targets = selectedBgIndices().filter(i => S.slots[i].bgMode !== 'black');
+  if (!targets.length) return;
   document.getElementById('btnBgBlack').disabled = true;
-  try {
-    sl.processedDataUrl = await toBlackBackground(sl.origDataUrl);
-    sl._processedImg = null;
-    sl.bgMode = 'black';
-    updateZoneAfterBg(i);
-    renderPreviews();
-    setBgProgress('Black background applied.', 2200);
-  } catch(e) {
-    console.error('[Studio] background removal failed:', e);
-    setBgProgress('Could not isolate the subject in this photo. Try a clearer, well-lit photo.', 3500);
+  document.getElementById('btnBgReset').disabled = true;
+  let done = 0, failed = 0;
+  for (let n = 0; n < targets.length; n++) {
+    const i = targets[n];
+    const sl = S.slots[i];
+    setBgProgress(`Removing background (${n+1} of ${targets.length}): "${sl.label}"...`);
+    try {
+      sl.processedDataUrl = await toBlackBackground(sl.origDataUrl);
+      sl._processedImg = null;
+      sl.bgMode = 'black';
+      updateZoneAfterBg(i);
+      renderPreviews();
+      done++;
+    } catch(e) {
+      console.error('[Studio] background removal failed for slot', i, e);
+      failed++;
+    }
   }
-  document.getElementById('btnBgBlack').disabled = false;
+  rebuildBgSlotSelect();
+  if (failed === 0) setBgProgress(`Black background applied to ${done} photo${done === 1 ? '' : 's'}.`, 2600);
+  else setBgProgress(`Applied to ${done}, but ${failed} could not be isolated. Try clearer, well-lit photos.`, 4000);
 }
 
 function setBgProgress(msg, autoclearMs) {
@@ -1257,20 +1320,23 @@ function setBgProgress(msg, autoclearMs) {
 }
 
 function resetBg() {
-  const i = S.bgSelectedSlot;
-  if (i === null) return;
-  const sl = S.slots[i];
-  sl.processedDataUrl = null;
-  sl._processedImg = null;
-  sl.bgMode = 'orig';
-  const zone = document.getElementById(`zone-${i}`);
-  zone.classList.remove('bg-black', 'bg-removed');
-  const badge = document.getElementById(`bg-badge-${i}`);
-  if (badge) badge.style.display = 'none';
-  const th = zone.querySelector('img.thumb');
-  if (th) th.src = sl.origDataUrl;
+  const targets = selectedBgIndices().filter(i => S.slots[i].bgMode === 'black');
+  if (!targets.length) return;
+  targets.forEach(i => {
+    const sl = S.slots[i];
+    sl.processedDataUrl = null;
+    sl._processedImg = null;
+    sl.bgMode = 'orig';
+    const zone = document.getElementById(`zone-${i}`);
+    if (zone) zone.classList.remove('bg-black', 'bg-removed');
+    const badge = document.getElementById(`bg-badge-${i}`);
+    if (badge) badge.style.display = 'none';
+    const th = zone ? zone.querySelector('img.thumb') : null;
+    if (th) th.src = sl.origDataUrl;
+  });
   renderPreviews();
-  document.getElementById('bgHint').textContent = 'Background reset to original.';
+  rebuildBgSlotSelect();
+  setBgProgress(`Reset ${targets.length} photo${targets.length === 1 ? '' : 's'} to original.`, 2200);
 }
 
 function updateZoneAfterBg(i) {
@@ -1716,7 +1782,9 @@ function newCase() {
     label: sl.label,
     origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
   }));
-  S.bgSelectedSlot = null;
+  S.bgChecked = {};
+  const sa = document.getElementById('bgSelectAll');
+  if (sa) sa.checked = false;
   rebuildUploadGrid();
   hideCropSection();
   document.getElementById('treatmentLabel').value = '';

@@ -215,23 +215,38 @@
     footer .brand { font-family:'Cormorant Garamond',serif; font-size:1.5rem; color:var(--cream); margin-bottom:.5rem; }
     footer .brand span { color:var(--gold); }
     /* Lock screen */
-    .lock { position:fixed; inset:0; z-index:200; background:var(--cream); display:flex; align-items:center; justify-content:center; padding:24px; }
-    .lock-card { max-width:380px; width:100%; text-align:center; }
-    .lock-logo { font-family:'Cormorant Garamond',serif; font-size:1.7rem; font-weight:400; color:var(--deep); letter-spacing:.04em; text-decoration:none; display:inline-block; margin-bottom:18px; }
+    /* ── Sign-in: two-column private product entrance ── */
+    .lock { position:fixed; inset:0; z-index:200; background:var(--cream); overflow-y:auto; }
+    .lock-shell { min-height:100vh; display:grid; grid-template-columns:1fr 420px; align-items:center; gap:80px; max-width:1040px; margin:0 auto; padding:80px 32px; }
+    /* Left: product identity */
+    .lock-identity { max-width:440px; }
+    .lock-logo { font-family:'Cormorant Garamond',serif; font-size:1.55rem; font-weight:400; color:var(--deep); letter-spacing:.04em; text-decoration:none; display:inline-block; margin-bottom:30px; }
     .lock-logo span { color:var(--gold); }
-    .lock-panel { background:#fff; border:1px solid var(--border); border-radius:14px; padding:30px 28px 26px; box-shadow:0 14px 40px rgba(28,23,20,.07); text-align:left; }
-    .lock-title { font-size:1.02rem; font-weight:600; color:var(--deep); text-align:center; margin-bottom:4px; }
-    .lock-soon { font-size:.84rem; color:var(--muted); margin-bottom:22px; line-height:1.55; text-align:center; }
-    .lock-form { display:flex; flex-direction:column; gap:10px; }
-    .lock-form input { background:#fff; border:1px solid var(--border); color:var(--deep); padding:13px 14px; font-size:.9rem; font-family:'DM Sans',sans-serif; border-radius:8px; outline:none; text-align:left; transition:border-color .2s; }
-    .lock-form input:focus { border-color:var(--rose); }
+    .lock-identity h1 { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:3.4rem; color:var(--deep); line-height:1.05; margin-bottom:20px; letter-spacing:.01em; }
+    .lock-lede { font-size:1.02rem; color:var(--deep); line-height:1.55; margin-bottom:14px; }
+    .lock-sub { font-size:.9rem; color:var(--muted); line-height:1.6; margin-bottom:28px; max-width:380px; }
+    .lock-modalities { font-size:.78rem; letter-spacing:.04em; color:var(--gold); font-weight:500; padding-top:22px; border-top:1px solid var(--border); }
+    /* Right: auth */
+    .lock-card { width:100%; }
+    .lock-panel { background:#fff; border:1px solid rgba(28,23,20,.10); border-radius:10px; padding:32px 30px; box-shadow:none; text-align:left; }
+    .lock-title { font-size:1.32rem; font-family:'Cormorant Garamond',serif; font-weight:400; color:var(--deep); text-align:left; margin-bottom:5px; }
+    .lock-soon { font-size:.84rem; color:var(--muted); margin-bottom:24px; line-height:1.55; text-align:left; }
+    .lock-form { display:flex; flex-direction:column; gap:9px; }
+    .lock-form input { background:#fff; border:1px solid var(--border); color:var(--deep); padding:11px 13px; font-size:.88rem; font-family:'DM Sans',sans-serif; border-radius:6px; outline:none; text-align:left; transition:border-color .2s, box-shadow .2s; }
+    .lock-form input:focus { border-color:var(--rose); box-shadow:0 0 0 3px rgba(196,114,90,.08); }
     .lock-form input::placeholder { color:var(--dim); }
-    .lock-form button { background:var(--rose); color:#fff; border:none; padding:13px; font-family:'DM Sans',sans-serif; font-size:.88rem; font-weight:500; border-radius:8px; cursor:pointer; transition:background .2s; }
-    .lock-form button:hover { background:var(--rose-m); }
-    .lock-err { font-size:.78rem; color:var(--rose); min-height:1.1em; text-align:center; }
-    .lock-foot { font-size:.74rem; color:var(--muted); margin-top:20px; line-height:1.6; text-align:center; }
+    .lock-form button { background:#B96F5C; color:#fff; border:none; padding:12px; font-family:'DM Sans',sans-serif; font-size:.86rem; font-weight:500; letter-spacing:.01em; border-radius:6px; cursor:pointer; transition:background .2s; }
+    .lock-form button:hover { background:#a9624f; }
+    .lock-err { font-size:.78rem; color:var(--rose); min-height:1.1em; text-align:left; }
+    .lock-foot { font-size:.72rem; color:var(--muted); margin-top:22px; line-height:1.6; text-align:left; padding-top:18px; border-top:1px solid var(--border); }
     .lock-foot a { color:var(--rose); text-decoration:none; }
     .lock-foot a:hover { text-decoration:underline; }
+    @media(max-width:860px){
+      .lock-shell { grid-template-columns:1fr; gap:36px; max-width:420px; padding:48px 24px; align-items:start; }
+      .lock-identity { max-width:none; }
+      .lock-identity h1 { font-size:2.6rem; }
+      .lock-modalities { padding-top:18px; }
+    }
     /* M7: multi-angle slots, tabs, capture guide */
     .area-grid.three { grid-template-columns:repeat(3,1fr); }
     .slot-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-top:12px; }
@@ -548,37 +563,50 @@
 
 <!-- ───────── SIGN-IN GATE ───────── -->
 <div class="lock" id="lockScreen">
-  <div class="lock-card">
-    <a href="/" class="lock-logo">Skin<span>Day</span></a>
-    <div class="lock-panel">
-      <div class="lock-title">Sign in to Visualize</div>
-      <p class="lock-soon" id="lockTagline">AI treatment previews for consultations. Use your SkinDay account, or create one free.</p>
-      <div class="lock-tabs" id="lockTabs" style="display:none;">
-        <button type="button" data-mode="signin" class="active">Sign in</button>
-        <button type="button" data-mode="signup">Create account</button>
-      </div>
-      <div class="lock-form auth-form" id="authForm" style="display:none;">
-        <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
-          </svg>
-          Continue with Google
-        </button>
-        <div class="auth-divider">or</div>
-        <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
-        <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
-        <button id="authBtn" type="button">Sign in</button>
-        <div class="lock-err" id="authErr"></div>
-        <div class="auth-hint" id="authHint"></div>
-      </div>
-      <div class="lock-form" id="unavailForm" style="display:none;">
-        <div class="lock-err" id="lockErr" style="color:var(--muted);">Sign-in is temporarily unavailable. Please try again shortly.</div>
+  <div class="lock-shell">
+
+    <!-- Left: product identity -->
+    <div class="lock-identity">
+      <a href="/" class="lock-logo">Skin<span>Day</span></a>
+      <h1>Visualize</h1>
+      <p class="lock-lede">AI consultation previews for aesthetic clinics.</p>
+      <p class="lock-sub">Preview treatment possibilities during consultation, with outputs designed for clinician-led aesthetic conversations.</p>
+      <div class="lock-modalities">Biostimulator &middot; HA filler &middot; Neurotoxin &middot; Energy-based treatments</div>
+    </div>
+
+    <!-- Right: sign-in -->
+    <div class="lock-card">
+      <div class="lock-panel">
+        <div class="lock-title">Enter Visualize</div>
+        <p class="lock-soon" id="lockTagline">Use your SkinDay account to continue.</p>
+        <div class="lock-tabs" id="lockTabs" style="display:none;">
+          <button type="button" data-mode="signin" class="active">Sign in</button>
+          <button type="button" data-mode="signup">Create account</button>
+        </div>
+        <div class="lock-form auth-form" id="authForm" style="display:none;">
+          <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+              <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.83z" fill="#FBBC05"/>
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.83c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+            </svg>
+            Continue with Google
+          </button>
+          <div class="auth-divider">or</div>
+          <input type="email" id="authEmail" placeholder="Email" autocomplete="email" />
+          <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
+          <button id="authBtn" type="button">Continue</button>
+          <div class="lock-err" id="authErr"></div>
+          <div class="auth-hint" id="authHint"></div>
+        </div>
+        <div class="lock-form" id="unavailForm" style="display:none;">
+          <div class="lock-err" id="lockErr" style="color:var(--muted);">Sign-in is temporarily unavailable. Please try again shortly.</div>
+        </div>
+        <div class="lock-foot">Photos are used only for the requested preview. Outputs are for consultation use and are not guaranteed treatment results. Questions? Email <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</div>
       </div>
     </div>
-    <div class="lock-foot">Same SkinDay account across all our tools. Questions? Email <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.</div>
+
   </div>
 </div>
 
@@ -1003,7 +1031,7 @@
       <div>
         <div style="font-size:.84rem;font-weight:600;color:var(--deep);margin-bottom:4px;">Case uploads coming soon</div>
         <div style="font-size:.8rem;color:var(--muted);line-height:1.55;">Clinic case uploads require compliant private storage and a patient consent workflow. We are building this now. In the meantime, contact us to have your cases added directly.</div>
-        <a href="mailto:hello@skinday.ca?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
+        <a href="mailto:hello@skinday.com?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
       </div>
     </div>
     <!-- Existing cases (shown below the upload form, filtered by current selection) -->
@@ -1397,7 +1425,7 @@ function setLockMode(mode){
   if(authForm) authForm.style.display = 'flex';
   const unavail = document.getElementById('unavailForm');
   if(unavail) unavail.style.display = 'none';
-  document.getElementById('authBtn').textContent = (authMode === 'signup') ? 'Create account' : 'Sign in';
+  document.getElementById('authBtn').textContent = (authMode === 'signup') ? 'Create account' : 'Continue';
   document.getElementById('authHint').textContent = (authMode === 'signup' && SD_CFG.signupGrant > 0)
     ? ('New accounts start with ' + SD_CFG.signupGrant + ' free credits.')
     : '';
