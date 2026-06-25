@@ -524,8 +524,8 @@ const GRID_CONFIG = {
   '2h':  { count:2, rows:1, cols:2, defaultLabels:['Before','After'], rowLabels:[] },
   '2v':  { count:2, rows:2, cols:1, defaultLabels:['Before','After'], rowLabels:[] },
   '3h':  { count:3, rows:1, cols:3, defaultLabels:['Original','3 months','6 months'], rowLabels:[] },
-  '2x2': { count:4, rows:2, cols:2, defaultLabels:['Before R45','Before Frontal','After R45','After Frontal'], rowLabels:['Before','After'] },
-  '2x3': { count:6, rows:2, cols:3, defaultLabels:['Before R45','Before Frontal','Before L45','After R45','After Frontal','After L45'], rowLabels:['Before','After'] },
+  '2x2': { count:4, rows:2, cols:2, defaultLabels:['Before','Before','After','After'], rowLabels:['Before','After'] },
+  '2x3': { count:6, rows:2, cols:3, defaultLabels:['Before','Before','Before','After','After','After'], rowLabels:['Before','After'] },
 };
 
 // Body crop presets (no landmarks needed)
@@ -621,12 +621,12 @@ function rebuildUploadGrid() {
     for (let row = 0; row < cfg.rows; row++) {
       html += `<div class="row-label">${cfg.rowLabels[row] || ''}</div>`;
       for (let c = 0; c < cols; c++) {
-        html += makeSlotHTML(row * cols + c);
+        html += makeSlotHTML(row * cols + c, true);
       }
     }
   } else {
     for (let i = 0; i < cfg.count; i++) {
-      html += makeSlotHTML(i);
+      html += makeSlotHTML(i, false);
     }
   }
   grid.innerHTML = html;
@@ -648,15 +648,11 @@ function rebuildUploadGrid() {
   checkBgControlsVisibility();
 }
 
-function makeSlotHTML(i) {
+function makeSlotHTML(i, hideLabel) {
   const sl = S.slots[i];
   const filled = sl.img ? ' filled' : '';
   const bgCls = sl.bgMode === 'black' ? ' bg-black' : sl.bgMode === 'removed' ? ' bg-removed' : '';
-  return `
-    <div class="upload-zone${filled}${bgCls}" id="zone-${i}">
-      <div class="upload-plus">+</div>
-      <div class="upload-txt">${sl.label}</div>
-      <input type="file" accept="image/*" class="main-input" id="main-input-${i}"/>
+  const labelBar = hideLabel ? '' : `
       <div class="slot-label-wrap">
         <input class="slot-label" id="slot-label-${i}" value="${sl.label}" readonly
           onfocus="this.readOnly=false"
@@ -664,7 +660,13 @@ function makeSlotHTML(i) {
           onkeydown="if(event.key==='Enter'){this.blur()}"
         />
         <button class="slot-edit-btn" onclick="document.getElementById('slot-label-${i}').focus()" title="Edit label">✎</button>
-      </div>
+      </div>`;
+  return `
+    <div class="upload-zone${filled}${bgCls}" id="zone-${i}">
+      <div class="upload-plus">+</div>
+      <div class="upload-txt">${hideLabel ? 'Add photo' : sl.label}</div>
+      <input type="file" accept="image/*" class="main-input" id="main-input-${i}"/>
+      ${labelBar}
       <div class="bg-badge" id="bg-badge-${i}">${sl.bgMode === 'black' ? 'Black bg' : 'Bg removed'}</div>
       <button class="change-btn">Change</button>
       <input type="file" accept="image/*" class="change-input" id="change-input-${i}"/>
@@ -688,7 +690,7 @@ function restoreThumb(i) {
   const th = document.createElement('img');
   th.className = 'thumb';
   th.src = sl.processedDataUrl || sl.origDataUrl;
-  zone.insertBefore(th, zone.querySelector('.slot-label-wrap'));
+  zone.insertBefore(th, zone.querySelector('.bg-badge') || zone.querySelector('.change-btn'));
   if (sl.bgMode !== 'orig') {
     zone.classList.toggle('bg-black', sl.bgMode === 'black');
     zone.classList.toggle('bg-removed', sl.bgMode === 'removed');
@@ -712,6 +714,7 @@ function loadFile(file, idx) {
       S.slots[idx].pan = {x:0,y:0};
       S.slots[idx].origDataUrl = ev.target.result;
       S.slots[idx].processedDataUrl = null;
+      S.slots[idx]._processedImg = null;
       S.slots[idx].bgMode = 'orig';
 
       const zone = document.getElementById(`zone-${idx}`);
@@ -724,7 +727,7 @@ function loadFile(file, idx) {
       const th = document.createElement('img');
       th.className = 'thumb';
       th.src = ev.target.result;
-      zone.insertBefore(th, zone.querySelector('.slot-label-wrap'));
+      zone.insertBefore(th, zone.querySelector('.bg-badge') || zone.querySelector('.change-btn'));
 
       rebuildBgSlotSelect();
       checkBgControlsVisibility();
@@ -935,17 +938,17 @@ function getPannedBoxes() {
 // ============================================================
 function rebuildZoomControls() {
   const wrap = document.getElementById('zoomControls');
-  if (!S.slots.some(sl => sl.img)) { wrap.innerHTML = ''; return; }
-  // Use a 2-col grid for small counts, 3-col for 3+
-  const cols = S.slots.length >= 3 ? 3 : 2;
+  const filled = S.slots.filter(sl => sl.img);
+  if (!filled.length) { wrap.innerHTML = ''; return; }
+  const cols = filled.length >= 3 ? 3 : filled.length === 1 ? 1 : 2;
   wrap.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  wrap.innerHTML = S.slots.map((sl, i) => `
+  wrap.innerHTML = S.slots.map((sl, i) => sl.img ? `
     <div class="zoom-box">
       <div class="zoom-label">${sl.label} zoom <span id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
       <input type="range" class="zoom-slider" id="zoom-${i}" min="60" max="160" value="${Math.round(sl.zoom*100)}" step="5"
         oninput="onZoom(${i},this.value)"/>
     </div>
-  `).join('');
+  ` : '').join('');
 }
 
 function onZoom(idx, val) {
@@ -974,16 +977,36 @@ function rebuildPreviewArea() {
 }
 
 function renderPreviews() {
-  if (!S.slots.every(sl => sl.img)) return;
-  const boxes = getPannedBoxes();
+  const filledSlots = S.slots.filter(sl => sl.img);
+  if (!filledSlots.length) return;
+  // Only compute boxes for filled slots to avoid crashing on empty ones
+  const allFilled = S.slots.every(sl => sl.img);
+  const boxes = allFilled ? getPannedBoxes() : null;
   const pH = 300;
-  const aspect = boxes.reduce((sum, b) => sum + b.w / b.h, 0) / boxes.length;
-  const pW = Math.round(pH * aspect);
+  let pW = pH; // fallback aspect
+  if (boxes) {
+    const aspect = boxes.reduce((sum, b) => sum + b.w / b.h, 0) / boxes.length;
+    pW = Math.round(pH * aspect);
+  }
   S.slots.forEach((sl, i) => {
     const cv = document.getElementById(`cv-${i}`);
-    if (!cv) return;
-    const src = sl.processedDataUrl ? (() => { const img = new Image(); img.src = sl.processedDataUrl; return img; })() : sl.img;
-    drawToCanvas(cv, src, boxes[i], pW, pH, 1);
+    if (!cv || !sl.img) return;
+    const box = boxes ? boxes[i] : (() => {
+      const target = eyeDistPx(sl.lm, sl.img.naturalWidth) || 100;
+      return clampBox({...getBoxForSlot(i, target), x: getBoxForSlot(i, target).x + sl.pan.x, y: getBoxForSlot(i, target).y + sl.pan.y}, sl.img);
+    })();
+    if (sl.processedDataUrl) {
+      if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) {
+        drawToCanvas(cv, sl._processedImg, box, pW, pH, 1);
+      } else {
+        const img = new Image();
+        img.onload = () => { sl._processedImg = img; drawToCanvas(cv, img, box, pW, pH, 1); };
+        img.src = sl.processedDataUrl;
+      }
+    } else {
+      sl._processedImg = null;
+      drawToCanvas(cv, sl.img, box, pW, pH, 1);
+    }
   });
 }
 
@@ -1042,9 +1065,18 @@ function checkBgControlsVisibility() {
 
 function rebuildBgSlotSelect() {
   const wrap = document.getElementById('bgSlotSelect');
+  // Auto-select first filled slot if nothing is selected yet
+  if (S.bgSelectedSlot === null || !S.slots[S.bgSelectedSlot]?.img) {
+    const firstFilled = S.slots.findIndex(sl => sl.img);
+    S.bgSelectedSlot = firstFilled >= 0 ? firstFilled : null;
+  }
   wrap.innerHTML = S.slots.map((sl, i) => sl.img ? `
     <button class="bg-slot-chip${S.bgSelectedSlot === i ? ' active' : ''}" id="bg-chip-${i}" onclick="selectBgSlot(${i})">${sl.label}</button>
   ` : '').join('');
+  const hint = document.getElementById('bgHint');
+  if (hint && S.bgSelectedSlot !== null) {
+    hint.textContent = `"${S.slots[S.bgSelectedSlot].label}" selected. Apply a background.`;
+  }
   updateBgButtons();
 }
 
@@ -1076,6 +1108,7 @@ function applyBgBlack() {
   ctx.fillRect(0, 0, c.width, c.height);
   ctx.drawImage(img, 0, 0);
   sl.processedDataUrl = c.toDataURL('image/jpeg', 0.95);
+  sl._processedImg = null;
   sl.bgMode = 'black';
   updateZoneAfterBg(i);
   renderPreviews();
@@ -1103,6 +1136,7 @@ async function applyBgRemove() {
     ctx.fillRect(0, 0, c.width, c.height);
     ctx.drawImage(tmpImg, 0, 0);
     sl.processedDataUrl = c.toDataURL('image/png');
+    sl._processedImg = null;
     sl.bgMode = 'removed';
     updateZoneAfterBg(i);
     renderPreviews();
@@ -1120,6 +1154,7 @@ function resetBg() {
   if (i === null) return;
   const sl = S.slots[i];
   sl.processedDataUrl = null;
+  sl._processedImg = null;
   sl.bgMode = 'orig';
   const zone = document.getElementById(`zone-${i}`);
   zone.classList.remove('bg-black', 'bg-removed');
