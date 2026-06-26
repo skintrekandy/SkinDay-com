@@ -188,6 +188,7 @@
     .result-tag { position:absolute; bottom:0; left:0; right:0; padding:9px 12px; background:linear-gradient(transparent,rgba(28,23,20,.75)); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:rgba(250,247,242,.9); }
     .result-tag.sim { background:linear-gradient(transparent,rgba(28,23,20,.78)); font-weight:500; color:rgba(201,169,110,.95); }
     .regen-note { font-size:.72rem; color:var(--muted); text-align:center; margin-top:12px; }
+    .save-now-note { font-size:.74rem; line-height:1.5; color:var(--deep); background:var(--warm); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin:12px 0 4px; text-align:center; }
     .insights { margin-top:18px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:16px 18px; }
     .insights-title { font-size:.68rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:12px; }
     .insights ul { list-style:none; display:flex; flex-direction:column; gap:9px; }
@@ -885,6 +886,7 @@
     <div class="small" style="margin-top:10px;" data-en="AI-generated visualization for consultation purposes only. Not a prediction of actual treatment results. Results vary by anatomy, product, technique, healing, and clinical judgment." data-zh="AI 生成影像僅供諮詢說明使用，並非實際治療結果的預測。結果會因解剖條件、產品、技術、恢復過程與臨床判斷而有所不同。">AI-generated visualization for consultation purposes only. Not a prediction of actual treatment results. Results vary by anatomy, product, technique, healing, and clinical judgment.</div>
     <canvas id="exportCanvas"></canvas>
     <div class="regen-note" id="regenNote"></div>
+    <div class="save-now-note" id="saveNowNote" style="display:none;" data-en="Generated images are not stored in SkinDay. Download them for free to keep them." data-zh="生成的圖片不會儲存於 SkinDay。請免費下載以保存。">Generated images are not stored in SkinDay. Download them for free to keep them.</div>
     <div class="action-bar">
       <!-- Primary: always visible -->
       <div class="action-bar-primary">
@@ -3743,6 +3745,7 @@ function renderActiveSlot(){
 
   const doneCount = state.selectedAngles.filter(id => state.slots[id].status === 'done').length;
   document.getElementById('sheetBtn').style.display = doneCount > 1 ? '' : 'none';
+  document.getElementById('saveNowNote').style.display = doneCount >= 1 ? '' : 'none';
   // M11.1: show Discard button when this angle is done and there are multiple angles
   const sl2 = activeSlot();
   document.getElementById('discardAngleBtn').style.display =
@@ -4683,6 +4686,7 @@ document.getElementById('discardAngleBtn').addEventListener('click', () => {
   }
   const doneCount = state.selectedAngles.filter(a => state.slots[a].status === 'done').length;
   document.getElementById('sheetBtn').style.display = doneCount > 1 ? '' : 'none';
+  document.getElementById('saveNowNote').style.display = doneCount >= 1 ? '' : 'none';
 });
 
 /* ───────── New case (proper reset, no reload) ───────── */
@@ -4694,6 +4698,7 @@ document.getElementById('newBtn').addEventListener('click', () => {
   hideAnnotations();
   resetZoom();
   document.getElementById('outputSection').classList.remove('visible');
+  document.getElementById('saveNowNote').style.display = 'none';
   document.getElementById('angleTabs').style.display = 'none';
   hideScenariosPanel(); // M12.2: clear scenarios on new case
   Object.keys(scenarioState).forEach(k => { delete scenarioState[k]; });
