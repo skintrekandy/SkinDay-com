@@ -1503,15 +1503,9 @@ function fillCreditCopy(){
   set('ciPerAngle', per); set('ciCase3', 3 * per);
   // Scenario cost labels: keep the buttons and subtitle in sync with the server
   // price so nothing reads "1 credit" while the server charges the scaled amount.
-  // M15: add-ons now apply to every angle that has a generated baseline, so the
-  // displayed cost reflects the whole batch (per-angle cost x done angles).
   const sc = scenarioCreditCost();
-  const doneCount = (state.slots ? Object.keys(state.slots).filter(
-    id => state.slots[id] && state.slots[id].status === 'done' && state.slots[id].resultDataUrl
-  ).length : 0) || 1;
-  const batchCost = sc * doneCount;
   document.querySelectorAll('.scenario-btn .credit-tag').forEach(el => {
-    el.textContent = t('creditTag')(batchCost);
+    el.textContent = t('creditTag')(sc);
   });
   const sub = document.querySelector('.scenarios-subtitle');
   if(sub) sub.textContent = t('scenariosSubtitle')(sc);
@@ -4759,8 +4753,6 @@ function scenarioCreditCost(){
 // Using per-angle buckets means switching angle tabs never shows a stale
 // scenario result from a different angle.
 const scenarioState = {};
-// M15: true while a multi-angle add-on batch is running, to block parallel batches.
-let scenarioBatchInFlight = false;
 
 function scenarioBucket() {
   const angle = state.activeAngle;
@@ -4851,9 +4843,6 @@ function showScenariosPanel(){
     if(bucket[key] && allowed.includes(key)) renderScenarioResult(key);
   });
   syncScenarioBtns();
-  // M15: refresh credit tags so they reflect the real batch cost (per-angle x the
-  // number of generated baselines), since add-ons now apply to every done angle.
-  if(typeof fillCreditCopy === 'function') fillCreditCopy();
 }
 
 function hideScenariosPanel(){
@@ -4889,68 +4878,22 @@ function syncScenarioBtns(){
 }
 
 async function runScenario(scenarioKey){
-  // M15: add-ons apply to ALL angles that have a generated baseline, not just the
-  // active angle. This removes the confusing per-angle behavior (where users had
-  // to switch angle tabs and re-click the add-on for each one). The proven
-  // single-angle generation path is reused unchanged, once per angle.
-
-  // Guard: do not start a second batch for this scenario while one is in flight.
-  if(scenarioBatchInFlight){ return; }
-
-  const doneAngles = Object.keys(state.slots).filter(
-    id => state.slots[id] && state.slots[id].status === 'done' && state.slots[id].resultDataUrl
-  );
-
-  if(!doneAngles.length){
+  const sl = activeSlot();
+  if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
     setStatus(t('scenariosFirst'), 'warn');
     return;
   }
 
-  // Credit pre-flight for the WHOLE batch: only start if there are enough credits
-  // for every angle. Prevents starting a multi-angle add-on that fails part-way
-  // and leaves the user charged for a partial result.
-  if(accessMode === 'account' && creditBalance != null){
-    const needed = scenarioCreditCost() * doneAngles.length;
-    if(creditBalance < needed){
-      const n = doneAngles.length;
-      setStatus('Not enough credits: this add-on covers ' + n + ' angle' + (n > 1 ? 's' : '') +
-                ' and needs ' + needed + ' credits. Top up to continue.', 'warn');
+  // Credit pre-flight
+  if(accessMode === 'account'){
+    if(creditBalance != null && creditBalance < scenarioCreditCost()){
+      setStatus('Not enough credits for this scenario. Top up to continue.', 'warn');
       openBuyModal();
       return;
     }
   }
 
-  // Remember which angle the user is actually viewing, so we can restore it after
-  // running the add-on across the other angles.
-  const viewingAngle = state.activeAngle;
-
-  scenarioBatchInFlight = true;
-  try {
-    // Run sequentially, one angle at a time, reusing the proven per-angle worker.
-    for(const angleId of doneAngles){
-      await runScenarioForAngle(scenarioKey, angleId);
-    }
-  } finally {
-    scenarioBatchInFlight = false;
-    // Restore the user's view and re-render for the angle they're looking at.
-    state.activeAngle = viewingAngle;
-    syncScenarioBtns();
-    renderScenarioResult(scenarioKey);
-  }
-}
-
-// Per-angle add-on worker. Generates one add-on for one specific angle, building
-// on that angle's baseline. Temporarily points state.activeAngle at the target
-// angle so the existing bucket/render helpers (scenarioBucket, activeSlot,
-// renderScenarioResult) operate on the right angle; the caller restores the view.
-async function runScenarioForAngle(scenarioKey, angleId){
-  state.activeAngle = angleId;
-
-  const sl = activeSlot();
-  if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
-    return;
-  }
-
+  const angleId = state.activeAngle;
   const bucket  = scenarioBucket();
 
   bucket[scenarioKey] = { status: 'generating', jobId: null, resultUrl: null, rawResultUrl: null, error: null };
