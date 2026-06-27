@@ -683,6 +683,8 @@
           <label data-en="Treatment area" data-zh="治療部位">Treatment area</label>
           <div class="area-grid" id="areaGrid">
             <div class="area-chip active" data-area="chin_jawline"><span class="tick">✓</span><span data-en="Chin + Jawline" data-zh="下巴＋下顎線">Chin + Jawline</span></div>
+            <div class="area-chip" data-area="chin"><span class="tick">✓</span><span data-en="Chin only" data-zh="僅下巴">Chin only</span></div>
+            <div class="area-chip" data-area="jawline"><span class="tick">✓</span><span data-en="Jawline only" data-zh="僅下顎線">Jawline only</span></div>
             <div class="area-chip" data-area="cheeks"><span class="tick">✓</span><span data-en="Cheeks" data-zh="臉頰">Cheeks</span></div>
             <div class="area-chip" data-area="temple"><span class="tick">✓</span><span data-en="Temple" data-zh="太陽穴">Temple</span></div>
             <div class="area-chip" data-area="nose"><span class="tick">✓</span><span data-en="Nose" data-zh="鼻部">Nose</span></div>
@@ -2645,6 +2647,8 @@ function updatePhotoGuide(){
 // delicate areas (nose, tear trough, lips) top out around 1-2 syringes.
 const FILLER_VOLUME_LABELS = {
   chin_jawline: { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
+  chin:         { conservative: '1 syringe', moderate: '1-2 syringes', enhanced: '2-3 syringes' },
+  jawline:      { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '3-4 syringes' },
   cheeks:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
   temple:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
   nose:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
@@ -4208,6 +4212,8 @@ function usesResponseModes(){ return state.type === 'biostim' || state.type === 
 // Clinic-facing area labels for filler, used in result tags and exports.
 const FILLER_AREA_LABELS = {
   chin_jawline: 'Chin + Jawline',
+  chin:         'Chin',
+  jawline:      'Jawline',
   cheeks:       'Cheeks',
   temple:       'Temple',
   nose:         'Nose',
