@@ -957,6 +957,32 @@ const SCENARIO_PROMPTS = {
       SCENARIO_SAFETY
   },
 
+  add_chin_filler: {
+    label: 'Add chin filler',
+    description: 'Sculptra baseline + HA chin filler (chin only)',
+    prompt: SCENARIO_PROMPT_BASE +
+      'Treatment to simulate: Sculptra biostimulator (baseline level) PLUS HA filler to the chin ONLY. ' +
+      'Show: the expected Sculptra lateral scaffold support AND a chin-only change: ' +
+      'gently bring the chin point forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced, keeping the chin width natural. ' +
+      'For a female patient: the chin elongates forward and the lower third reads more balanced. ' +
+      'For a male patient: the chin is wider and squared at the mentum, never tapered or pointed. ' +
+      'This is chin filler only: do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width. ' +
+      'Do not change the midface, cheekbones, upper face, eyes, or brows.' +
+      SCENARIO_SAFETY
+  },
+
+  add_jawline_filler: {
+    label: 'Add jawline filler',
+    description: 'Sculptra baseline + HA jawline filler (jawline only)',
+    prompt: SCENARIO_PROMPT_BASE +
+      'Treatment to simulate: Sculptra biostimulator (baseline level) PLUS HA filler to the jawline ONLY. ' +
+      'Show: the expected Sculptra lateral scaffold support AND a jawline-only change: ' +
+      'a smoother, more continuous mandibular border from the chin body back toward the gonial angle, with the prejowl hollow softened where present, so the jaw line reads more defined. ' +
+      'This is jawline filler only: do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance. ' +
+      'Do not change the midface, cheekbones, upper face, eyes, or brows.' +
+      SCENARIO_SAFETY
+  },
+
   add_temple_support: {
     label: 'Add temple support',
     description: 'Sculptra baseline + focused temple volume',
@@ -1064,6 +1090,12 @@ const CROSS_ADDON_PROMPTS = {
   add_chin_jaw_filler: CROSS_ADDON_BASE +
     'Add hyaluronic acid filler to the chin and jawline: more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support, so the lower third reads more defined and refined. Keep it conservative and natural.' +
     addonSafety('hyaluronic acid filler to the chin and jawline'),
+  add_chin_filler: CROSS_ADDON_BASE +
+    'Add hyaluronic acid filler to the chin ONLY: gently bring the chin point forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced, keeping the chin width natural. This is chin filler only -- do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width.' +
+    addonSafety('hyaluronic acid filler to the chin only'),
+  add_jawline_filler: CROSS_ADDON_BASE +
+    'Add hyaluronic acid filler to the jawline ONLY: a smoother, more continuous mandibular border from the chin body back toward the gonial angle, with the prejowl hollow softened where present, so the jaw line reads more defined. This is jawline filler only -- do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance.' +
+    addonSafety('hyaluronic acid filler to the jawline only'),
   add_cheek_filler: CROSS_ADDON_BASE +
     'Add hyaluronic acid filler to the cheeks (midface): restore soft midface and lateral cheek volume so the cheek reads fuller and better supported, with a smooth continuous transition from the cheekbone into the midface. Subtle and natural, never overfilled, shelf-like, or pillowed.' +
     addonSafety('hyaluronic acid filler to the cheeks and midface'),
