@@ -80,12 +80,12 @@ function fillerAreaExpected(a, intensity){
 
 const FILLER_AREAS = {
   chin: {
-    expected: 'slightly more chin projection and a better-balanced lower-face profile',
-    avoid: 'do not lengthen the chin, do not make it pointed or jutting, do not alter the lips or mouth'
+    expected: 'more chin projection and a better-balanced lower-face profile, treating the chin alone: bring the chin point gently forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced with the upper face, keeping the chin width natural. The change comes only from added chin volume and structural support at the chin itself',
+    avoid: 'do not over-lengthen into a long, narrow, pointed, jutting, or witch-like chin, and keep the chin width natural; this is chin filler only, so do not add lateral jawline definition, do not sharpen, square, or carve the mandibular border, and do not change the gonial angle or jaw width; do not slim or carve the cheeks; do not add a double chin and do not alter the neck below the new chin point; do not alter the lips or mouth'
   },
   jawline: {
-    expected: 'subtle definition along the lower mandibular border with slight prejowl support',
-    avoid: 'do not create a sharp, angular, or "superhero" jawline, do not slim the cheeks, do not change the neck'
+    expected: 'cleaner definition along the lower mandibular border with slight prejowl support, treating the jawline alone: a smoother, more continuous border from the chin body back toward the gonial angle, with the prejowl hollow softened where present so the jaw line reads more defined. The change comes only from added structural support along the mandibular border',
+    avoid: 'do not create a sharp, angular, or "superhero" jawline, do not slim the cheeks, do not change the neck; this is jawline filler only, so do not add chin projection, do not lengthen, lower, or strengthen the chin point, and do not change the pogonion position or the chin-to-lip distance; do not widen or square the chin'
   },
   nose: {
     expected: 'smooth one small dorsal bump on the nasal bridge and slightly straighten the side profile (liquid rhinoplasty)',
@@ -93,7 +93,7 @@ const FILLER_AREAS = {
   },
   lips: {
     expected: 'a natural-looking increase in lip body and a slightly more defined vermilion border, with at most a small, even amount of projection, keeping the existing lip shape, the natural upper-to-lower balance, and the position of the lip border and cupid\'s bow',
-    avoid: 'do not add gloss, shine, a wet look, or any lip product; do not change the lip color, redness, or pigment, and do not add lipstick; do not over-fill, evert, shelf, or roll the lips out, and do not create a "duck" or sausage shape; do not move or reshape the vermilion border or cupid\'s bow; do not invert the natural upper-to-lower proportion; do not whiten the teeth'
+    avoid: 'do not add gloss, shine, a wet look, or any lip product; do not change the lip color, redness, or pigment, and do not add lipstick; do not over-fill, evert, shelf, or roll the lips out, and do not create a "duck" or sausage shape; do not move or reshape the vermilion border or cupid\'s bow; do not invert the natural upper-to-lower proportion; do not whiten the teeth; the lip change must stay strictly within the lip body and must not add chin projection, lengthen or strengthen the chin, change the chin point or pogonion, alter the mentolabial fold, or change the lower-lip-to-chin distance; the chin and lower face stay pixel-close to the original except where chin or jawline filler is separately and explicitly selected'
   },
   cheeks: {
     expected: 'restore a little midface and cheekbone volume so the cheek apex and the curve from the lower lid down to the cheek (the ogee curve) look gently fuller and better supported, with a natural, restorative apex rather than an exaggerated or sculpted cheekbone',
@@ -712,6 +712,16 @@ const HA_FILLER_AREA_ALLOWLISTS = {
     'TEAR TROUGH FILLER ONLY. Allowed zones: under-eye hollow and immediately adjacent upper medial cheek. ' +
     'Allowed effects: softer under-eye hollow, smoother lid-cheek junction, reduced shadow from depression being filled. ' +
     'HARD LOCK -- must not change: eye shape, eyelid, iris, midface volume, lips, nose, chin.',
+  chin:
+    'CHIN FILLER ONLY. Allowed zones: chin (mentum), chin point and pogonion, lower-third projection and length. ' +
+    'Allowed effects: forward chin projection, modest vertical lengthening, better-balanced lower-face profile, natural chin width. ' +
+    'HARD LOCK -- must not change: jawline (mandibular border, gonial angle, jaw width), cheeks, lips and mouth, nose, eyes, neck, and skin texture. ' +
+    'This is chin filler only -- not jawline contouring, not a combined lower-face reshape.',
+  jawline:
+    'JAWLINE FILLER ONLY. Allowed zones: lower mandibular border from the chin body back toward the gonial angle, prejowl hollow. ' +
+    'Allowed effects: cleaner, more continuous mandibular border definition, prejowl support, softened jowl shadow. ' +
+    'HARD LOCK -- must not change: chin (projection, length, shape, pogonion position, width), cheeks, lips and mouth, nose, neck, and skin texture. ' +
+    'This is jawline filler only -- not chin filler, not a combined lower-face reshape.',
 };
 
 // Assemble the CORE prompt from selections. The safety base is appended elsewhere.
