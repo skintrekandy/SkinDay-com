@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="color-scheme" content="light only">
   <meta name="robots" content="index, follow" />
   <title>SkinDay Visualize · AI Facial Treatment Preview for Clinics</title>
   <link rel="canonical" href="https://skinday.com/visualize" />
@@ -13,7 +14,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
+    :root {color-scheme:light;
       --cream:#FAF7F2; --warm:#F4EDE4; --deep:#1C1714; --deep2:#241E1A;
       --rose:#C8725A; --rose-m:#D4896E; --gold:#C9A96E;
       --muted:#8A7B72; --dim:#B5A89F; --border:#EAE2D8;
@@ -46,6 +47,8 @@
     .hero h1 em { font-style:italic; color:var(--rose); }
     .hero p { font-size:.92rem; color:var(--muted); max-width:560px; margin:0 auto; line-height:1.7; }
     .hero-disclaimer { font-size:.74rem; color:var(--dim); margin-top:16px; letter-spacing:.02em; }
+    .hero-guide-link { display:inline-block; margin-top:18px; font-size:.8rem; letter-spacing:.02em; color:var(--gold); text-decoration:none; border-bottom:1px solid rgba(201,169,110,.4); padding-bottom:2px; transition:color .2s,border-color .2s; }
+    .hero-guide-link:hover { color:var(--rose); border-bottom-color:var(--rose); }
     .tabs { display:flex; gap:8px; justify-content:center; margin:0 0 28px; flex-wrap:wrap; }
     .tab { border:1px solid var(--border); background:#fff; color:var(--muted); border-radius:999px; padding:9px 16px; font-size:.8rem; cursor:pointer; }
     .tab.active { border-color:var(--rose); color:var(--deep); background:#fdf1ee; }
@@ -653,6 +656,7 @@
     <h1 data-en="Make the <em>invisible</em> visible." data-zh="讓療程可能性，在諮詢中被看見。">Make the <em>invisible</em> visible.</h1>
     <p data-en="Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand." data-zh="在治療開始前，向顧客呈現可能的變化方向。專為醫療人員主導的醫美諮詢而設計。">Show patients where a facial treatment may lead, from fillers to biostimulators, before it begins. Built to make a consultation easier to understand.</p>
     <p class="hero-disclaimer" data-en="Consultation tool only. Not a prediction of actual results." data-zh="僅供諮詢使用。並非實際治療結果的預測。">Consultation tool only. Not a prediction of actual results.</p>
+    <a href="/guide" class="hero-guide-link" data-en="How to use this in a consultation →" data-zh="諮詢中如何使用 →">How to use this in a consultation →</a>
   </section>
 
   <!-- tab bar removed M11.1: single-tool page, no nav needed -->
@@ -917,7 +921,7 @@
     <div class="scenarios-grid">
       <button class="scenario-btn" type="button" data-scenario="stronger_sculptra" id="scenBtn_stronger_sculptra">
         <strong data-en="Stronger biostimulation response" data-zh="更明顯的童顏針／膠原增生反應">Stronger biostimulation response</strong>
-        <span data-en="A fuller response after 6-8+ vials/syringes, with more lateral lift" data-zh="6–8 瓶／支以上可能帶來更飽滿的反應，並呈現更明顯的外側支撐">A fuller response after 6-8+ vials/syringes, with more lateral lift</span>
+        <span data-en="A fuller response after 6-8+ vials/syringes, with more lateral support" data-zh="6–8 瓶／支以上可能帶來更飽滿的反應，並呈現更明顯的外側支撐">A fuller response after 6-8+ vials/syringes, with more lateral support</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_chin_jaw_filler" id="scenBtn_add_chin_jaw_filler">
@@ -951,8 +955,8 @@
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_biostim_lift" id="scenBtn_add_biostim_lift">
-        <strong data-en="Add biostimulation lift" data-zh="加入膠原增生拉提">Add biostimulation lift</strong>
-        <span data-en="Collagen-based lateral lift on the baseline" data-zh="在基準結果上加入膠原增生帶來的外側支撐">Collagen-based lateral lift on the baseline</span>
+        <strong data-en="Add biostimulation" data-zh="加入膠原增生">Add biostimulation</strong>
+        <span data-en="Collagen-based volume restoration on the baseline" data-zh="在基準結果上加入膠原增生帶來的容量支撐">Collagen-based volume restoration on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="stronger_laser" id="scenBtn_stronger_laser">
@@ -4748,15 +4752,15 @@ const SCENARIO_LABELS = {
   add_tear_trough:    'Add under-eye (tear trough) support',
   add_nose_filler:    'Add nose filler',
   add_lips_filler:    'Add lip filler',
-  add_biostim_lift:   'Add biostimulation lift',
+  add_biostim_lift:   'Add biostimulation',
   stronger_laser:     'Stronger response',
   combination_plan:   'Full combination plan'
 };
 
 // M14: which scenarios are offered per baseline treatment type.
 // Sculptra biostim: full set. HA filler: add other filler areas. RF/HIFU: all
-// filler areas plus a biostimulation lateral-lift add-on.
-// HDR and tox: filler volume add-ons + biostim lift (common combination plans).
+// filler areas plus a biostimulation add-on (volume restoration).
+// HDR and tox: filler volume add-ons + biostimulation (common combination plans).
 const SCENARIOS_BY_TYPE = {
   biostim: ['stronger_sculptra','add_chin_jaw_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
   hdr:     ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],

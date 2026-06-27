@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
 <title>SkinDay · Clinical image tools for aesthetic clinics</title>
 <meta name="description" content="Clinical image tools for aesthetic clinics. Studio creates branded before-and-after images. Visualize previews treatment possibilities for consultation.">
 <link rel="canonical" href="https://skinday.com/">
@@ -13,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root{
+  :root{color-scheme:light;
     --deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;
     --rose:#C8725A;--gold:#C9A96E;
     --rose-bg:#F5E8E3;
@@ -85,6 +86,10 @@
   .card-note{font-size:.74rem;letter-spacing:.04em;line-height:1.5;color:var(--rose);font-weight:400;margin-top:-20px;margin-bottom:34px;max-width:34ch;}
   .card-cta{margin-top:auto;align-self:flex-start;text-decoration:none;font-size:.82rem;letter-spacing:.05em;color:var(--deep);border-bottom:1px solid var(--gold);padding-bottom:3px;transition:color .25s,border-color .25s;}
   .card-cta:hover{color:var(--gold);}
+  .card-cta-row{margin-top:auto;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:baseline;}
+  .card-cta-row .card-cta{margin-top:0;}
+  .card-cta-soft{border-bottom-color:var(--border);color:#6B5F55;}
+  .card-cta-soft:hover{color:var(--rose);border-bottom-color:var(--rose);}
   .card.is-visualize .card-cta{border-color:var(--rose);}
   .card.is-visualize .card-cta:hover{color:var(--rose);}
 
@@ -124,6 +129,7 @@
       <div class="nav-links">
         <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
         <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+        <a href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
         <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
       </div>
       <div class="lang-toggle" role="group" aria-label="Language">
@@ -183,7 +189,10 @@
         <h2 class="card-name serif" data-en="Preview treatment possibilities during consultation." data-zh="在諮詢中呈現療程可能帶來的變化。">Preview treatment possibilities during consultation.</h2>
         <p class="card-desc" data-en="AI-generated previews built for clinician-led aesthetic conversations." data-zh="專為醫師主導的醫美諮詢而設計。">AI-generated previews designed for clinician-led aesthetic conversations.</p>
         <p class="card-note" data-en="Built on clinical aesthetic expertise, not a generic AI filter." data-zh="建立於臨床美學專業，而非一般的 AI 濾鏡。">Built on clinical aesthetic expertise, not a generic AI filter.</p>
-        <a href="/visualize" class="card-cta" data-en="Explore Visualize" data-zh="了解 Visualize">Explore Visualize</a>
+        <div class="card-cta-row">
+          <a href="/visualize" class="card-cta" data-en="Explore Visualize" data-zh="了解 Visualize">Explore Visualize</a>
+          <a href="/guide" class="card-cta card-cta-soft" data-en="How to use it in a consult" data-zh="諮詢中如何使用">How to use it in a consult</a>
+        </div>
       </article>
     </div>
   </div>
