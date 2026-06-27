@@ -931,6 +931,16 @@
         <span data-en="Hyaluronic acid filler added to the chin and jawline" data-zh="在下巴與下顎線加入玻尿酸填充">Hyaluronic acid filler added to the chin and jawline</span>
         <em class="credit-tag">1 credit</em>
       </button>
+      <button class="scenario-btn" type="button" data-scenario="add_chin_filler" id="scenBtn_add_chin_filler">
+        <strong data-en="Add chin filler" data-zh="加入下巴玻尿酸">Add chin filler</strong>
+        <span data-en="Hyaluronic acid added to the chin only" data-zh="僅在下巴加入玻尿酸填充">Hyaluronic acid added to the chin only</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_jawline_filler" id="scenBtn_add_jawline_filler">
+        <strong data-en="Add jawline filler" data-zh="加入下顎線玻尿酸">Add jawline filler</strong>
+        <span data-en="Hyaluronic acid added to the jawline only" data-zh="僅在下顎線加入玻尿酸填充">Hyaluronic acid added to the jawline only</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
       <button class="scenario-btn" type="button" data-scenario="add_cheek_filler" id="scenBtn_add_cheek_filler">
         <strong data-en="Add cheek filler" data-zh="加入臉頰玻尿酸">Add cheek filler</strong>
         <span data-en="Hyaluronic acid midface volume on the baseline" data-zh="在基準結果上加入中臉玻尿酸容量支撐">Hyaluronic acid midface volume on the baseline</span>
@@ -1493,9 +1503,15 @@ function fillCreditCopy(){
   set('ciPerAngle', per); set('ciCase3', 3 * per);
   // Scenario cost labels: keep the buttons and subtitle in sync with the server
   // price so nothing reads "1 credit" while the server charges the scaled amount.
+  // M15: add-ons now apply to every angle that has a generated baseline, so the
+  // displayed cost reflects the whole batch (per-angle cost x done angles).
   const sc = scenarioCreditCost();
+  const doneCount = (state.slots ? Object.keys(state.slots).filter(
+    id => state.slots[id] && state.slots[id].status === 'done' && state.slots[id].resultDataUrl
+  ).length : 0) || 1;
+  const batchCost = sc * doneCount;
   document.querySelectorAll('.scenario-btn .credit-tag').forEach(el => {
-    el.textContent = t('creditTag')(sc);
+    el.textContent = t('creditTag')(batchCost);
   });
   const sub = document.querySelector('.scenarios-subtitle');
   if(sub) sub.textContent = t('scenariosSubtitle')(sc);
@@ -4743,6 +4759,8 @@ function scenarioCreditCost(){
 // Using per-angle buckets means switching angle tabs never shows a stale
 // scenario result from a different angle.
 const scenarioState = {};
+// M15: true while a multi-angle add-on batch is running, to block parallel batches.
+let scenarioBatchInFlight = false;
 
 function scenarioBucket() {
   const angle = state.activeAngle;
@@ -4753,6 +4771,8 @@ function scenarioBucket() {
 const SCENARIO_LABELS = {
   stronger_sculptra:  'Stronger biostimulation response',
   add_chin_jaw_filler: 'Add chin + jawline filler',
+  add_chin_filler:    'Add chin filler',
+  add_jawline_filler: 'Add jawline filler',
   add_cheek_filler:   'Add cheek filler',
   add_temple_support: 'Add temple support',
   add_tear_trough:    'Add under-eye (tear trough) support',
@@ -4768,11 +4788,11 @@ const SCENARIO_LABELS = {
 // filler areas plus a biostimulation add-on (volume restoration).
 // HDR and tox: filler volume add-ons + biostimulation (common combination plans).
 const SCENARIOS_BY_TYPE = {
-  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
-  hdr:     ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],
-  filler:  ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
-  laser:   ['stronger_laser','add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
-  tox:     ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
+  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
+  hdr:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],
+  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
+  laser:   ['stronger_laser','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
+  tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
 };
 function scenariosForBaseline(){
   // HDR uses its own scenario set (different from Sculptra biostim).
@@ -4797,6 +4817,8 @@ function scenarioExportLabel(scenarioKey, baseLabel){
 const SCENARIO_DESCRIPTIONS = {
   stronger_sculptra:   'Higher-dose scenario (6-8+ vials/syringes). Upper-range result, not guaranteed.',
   add_chin_jaw_filler: 'Combination-treatment scenario. Not a guaranteed outcome.',
+  add_chin_filler:     'Add-on scenario. Not a guaranteed outcome.',
+  add_jawline_filler:  'Add-on scenario. Not a guaranteed outcome.',
   add_cheek_filler:    'Add-on scenario. Not a guaranteed outcome.',
   add_temple_support:  'Add-on scenario. Upper-range outcome, not guaranteed.',
   add_tear_trough:     'Add-on scenario. Not a guaranteed outcome.',
@@ -4829,6 +4851,9 @@ function showScenariosPanel(){
     if(bucket[key] && allowed.includes(key)) renderScenarioResult(key);
   });
   syncScenarioBtns();
+  // M15: refresh credit tags so they reflect the real batch cost (per-angle x the
+  // number of generated baselines), since add-ons now apply to every done angle.
+  if(typeof fillCreditCopy === 'function') fillCreditCopy();
 }
 
 function hideScenariosPanel(){
@@ -4864,22 +4889,68 @@ function syncScenarioBtns(){
 }
 
 async function runScenario(scenarioKey){
-  const sl = activeSlot();
-  if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
+  // M15: add-ons apply to ALL angles that have a generated baseline, not just the
+  // active angle. This removes the confusing per-angle behavior (where users had
+  // to switch angle tabs and re-click the add-on for each one). The proven
+  // single-angle generation path is reused unchanged, once per angle.
+
+  // Guard: do not start a second batch for this scenario while one is in flight.
+  if(scenarioBatchInFlight){ return; }
+
+  const doneAngles = Object.keys(state.slots).filter(
+    id => state.slots[id] && state.slots[id].status === 'done' && state.slots[id].resultDataUrl
+  );
+
+  if(!doneAngles.length){
     setStatus(t('scenariosFirst'), 'warn');
     return;
   }
 
-  // Credit pre-flight
-  if(accessMode === 'account'){
-    if(creditBalance != null && creditBalance < scenarioCreditCost()){
-      setStatus('Not enough credits for this scenario. Top up to continue.', 'warn');
+  // Credit pre-flight for the WHOLE batch: only start if there are enough credits
+  // for every angle. Prevents starting a multi-angle add-on that fails part-way
+  // and leaves the user charged for a partial result.
+  if(accessMode === 'account' && creditBalance != null){
+    const needed = scenarioCreditCost() * doneAngles.length;
+    if(creditBalance < needed){
+      const n = doneAngles.length;
+      setStatus('Not enough credits: this add-on covers ' + n + ' angle' + (n > 1 ? 's' : '') +
+                ' and needs ' + needed + ' credits. Top up to continue.', 'warn');
       openBuyModal();
       return;
     }
   }
 
-  const angleId = state.activeAngle;
+  // Remember which angle the user is actually viewing, so we can restore it after
+  // running the add-on across the other angles.
+  const viewingAngle = state.activeAngle;
+
+  scenarioBatchInFlight = true;
+  try {
+    // Run sequentially, one angle at a time, reusing the proven per-angle worker.
+    for(const angleId of doneAngles){
+      await runScenarioForAngle(scenarioKey, angleId);
+    }
+  } finally {
+    scenarioBatchInFlight = false;
+    // Restore the user's view and re-render for the angle they're looking at.
+    state.activeAngle = viewingAngle;
+    syncScenarioBtns();
+    renderScenarioResult(scenarioKey);
+  }
+}
+
+// Per-angle add-on worker. Generates one add-on for one specific angle, building
+// on that angle's baseline. Temporarily points state.activeAngle at the target
+// angle so the existing bucket/render helpers (scenarioBucket, activeSlot,
+// renderScenarioResult) operate on the right angle; the caller restores the view.
+async function runScenarioForAngle(scenarioKey, angleId){
+  state.activeAngle = angleId;
+
+  const sl = activeSlot();
+  if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
+    return;
+  }
+
   const bucket  = scenarioBucket();
 
   bucket[scenarioKey] = { status: 'generating', jobId: null, resultUrl: null, rawResultUrl: null, error: null };
