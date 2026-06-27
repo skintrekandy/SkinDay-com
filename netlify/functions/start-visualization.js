@@ -183,6 +183,8 @@ exports.handler = async (event) => {
         stronger_sculptra:   ['biostim'],
         combination_plan:    ['biostim'],
         add_chin_jaw_filler: ['biostim', 'filler', 'laser', 'tox'],
+        add_chin_filler:     ['biostim', 'filler', 'laser', 'tox'],
+        add_jawline_filler:  ['biostim', 'filler', 'laser', 'tox'],
         add_cheek_filler:    ['filler', 'laser', 'tox'],
         add_temple_support:  ['biostim', 'filler', 'laser', 'tox'],
         add_tear_trough:     ['biostim', 'filler', 'laser', 'tox'],
