@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>SkinDay Taiwan — 醫美診所目錄 · 2,000+ 家診所</title>
+  <meta name="description" content="比較台灣各地醫美診所。2,000+ 家診所，涵蓋台北、台中、高雄、台南等主要城市，包含評分、診所資訊與治療項目。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://skinday.com/taiwan" />
+  <meta property="og:title" content="SkinDay Taiwan — 醫美診所目錄 · 2,000+ 家診所" />
+  <meta property="og:description" content="比較台灣各地醫美診所評分與治療項目。" />
+  <meta property="og:site_name" content="SkinDay" />
+  <link rel="canonical" href="https://skinday.com/taiwan" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:   #FAF7F2;
+      --warm:    #F4EDE4;
+      --deep:    #1C1714;
+      --deep2:   #241E1A;
+      --rose:    #B06070;
+      --rose-m:  #C07585;
+      --rose-bg: #F0E0E5;
+      --gold:    #C9A96E;
+      --muted:   #8A7B72;
+      --dim:     #B5A89F;
+      --border:  #EAE2D8;
+      --green:   #3D7A55;
+      --hero-border: rgba(201,169,110,0.25);
+    }
+
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'DM Sans', 'Noto Serif TC', sans-serif;
+      background: var(--cream);
+      color: var(--deep);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(28,23,20,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--hero-border);
+      padding: 0 5%;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem; font-weight: 400;
+      color: var(--cream); letter-spacing: 0.04em;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-ctas { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .nav-cta {
+      background: var(--rose); color: #fff !important;
+      padding: 0.3rem 0.75rem; border-radius: 4px;
+      font-size: 0.78rem; font-weight: 500 !important;
+      text-decoration: none !important;
+      transition: background 0.2s !important;
+      display: inline-block; white-space: nowrap;
+    }
+    .nav-cta:hover { background: var(--rose-m) !important; }
+
+    .nav-signin-btn {
+      background: transparent; border: 1px solid rgba(201,169,110,0.35);
+      color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .nav-signin-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .nav-user-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: transparent; border: 1px solid rgba(201,169,110,0.35);
+      border-radius: 4px; padding: 0.28rem 0.6rem;
+      cursor: pointer; color: var(--dim);
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+      transition: all 0.2s; position: relative; white-space: nowrap;
+    }
+    .nav-user-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .nav-user-initial { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: var(--deep); display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
+    .nav-user-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid var(--gold); }
+    .nav-user-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0; background: var(--deep2);
+      border: 1px solid rgba(201,169,110,0.2); border-radius: 8px; min-width: 160px;
+      box-shadow: 0 8px 32px rgba(28,23,20,0.3); display: none; flex-direction: column; overflow: hidden; z-index: 500;
+    }
+    .nav-user-dropdown.open { display: flex; }
+    .nav-user-dropdown a, .nav-user-dropdown button {
+      padding: 0.65rem 1rem; font-family: "DM Sans", sans-serif; font-size: 0.82rem; color: var(--dim);
+      text-decoration: none; background: none; border: none; text-align: left; cursor: pointer;
+      transition: background 0.15s, color 0.15s; width: 100%;
+    }
+    .nav-user-dropdown a:hover, .nav-user-dropdown button:hover { background: rgba(255,255,255,0.06); color: var(--cream); }
+    .nav-user-dropdown .signout { color: #e07070; }
+    @media (max-width: 480px) {
+      .nav-country-pill { display: none; }
+      nav { padding: 0 4%; }
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: var(--deep);
+      padding: 130px 5% 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 60% 40%, rgba(176,96,112,0.1) 0%, transparent 70%),
+                  radial-gradient(ellipse 40% 50% at 20% 80%, rgba(201,169,110,0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-inner { max-width: 820px; position: relative; z-index: 1; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 1.4rem;
+    }
+    .hero-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--gold); }
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.6rem, 5.5vw, 4.4rem);
+      font-weight: 300; line-height: 1.1;
+      color: var(--cream); margin-bottom: 1.4rem; letter-spacing: -0.01em;
+    }
+    h1 em { font-style: italic; color: var(--gold); }
+    .hero-sub {
+      font-size: 1rem; color: var(--dim); line-height: 1.7;
+      max-width: 560px; margin-bottom: 2.4rem; font-weight: 300;
+    }
+    .hero-sub-zh {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 0.9rem; color: var(--muted); line-height: 1.8;
+      max-width: 480px; margin-top: -1.6rem; margin-bottom: 2rem;
+    }
+    .hero-stats {
+      display: flex; gap: 3rem; margin-top: 3rem;
+      padding-top: 2rem; border-top: 1px solid rgba(181,168,159,0.15);
+    }
+    .stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem; font-weight: 400; color: var(--cream); line-height: 1;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 0.3rem; }
+    .btn-primary {
+      background: var(--rose); color: #fff; border: none;
+      padding: 0.85rem 2rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 500; letter-spacing: 0.02em;
+      border-radius: 4px; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover { background: var(--rose-m); transform: translateY(-1px); }
+
+    /* ─── SEARCH ─── */
+    .search-wrap { background: var(--deep); padding: 0 5% 0; position: relative; z-index: 2; }
+    .search-bar {
+      max-width: 920px; margin: 0 auto;
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 16px; padding: 8px;
+      display: flex; gap: 0; align-items: stretch;
+      box-shadow: 0 12px 48px rgba(28,23,20,0.3);
+    }
+    .search-field {
+      flex: 1; display: flex; flex-direction: column;
+      padding: 1rem 1.4rem; border-right: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s; border-radius: 10px 0 0 10px;
+    }
+    .search-field:last-of-type { border-right: none; border-radius: 0; }
+    .search-field:hover { background: var(--warm); }
+    .search-field-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem;
+    }
+    .search-field select, .search-field input {
+      border: none; background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 500; color: var(--deep);
+      outline: none; cursor: pointer; width: 100%; padding: 0;
+      appearance: none; -webkit-appearance: none;
+    }
+    .search-field select option { color: var(--deep); background: var(--cream); }
+    .neighbourhood-wrap { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+    .region-badge {
+      display: none; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; background: var(--gold); color: var(--deep);
+      padding: 0.15rem 0.4rem; border-radius: 4px; white-space: nowrap;
+      pointer-events: none; opacity: 0; transition: opacity 0.2s;
+    }
+    .region-badge.visible { display: inline-block; opacity: 1; }
+    .search-actions {
+      display: flex; gap: 0.5rem; align-items: center; padding: 0 0.6rem 0 0.9rem;
+    }
+    .btn-nearby {
+      background: transparent; border: 1.5px solid var(--gold); color: var(--deep);
+      padding: 0.7rem 1rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; white-space: nowrap; transition: all 0.2s;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .btn-nearby:hover { background: var(--gold); color: var(--deep); }
+    .btn-search {
+      background: var(--rose); color: #fff; border: none;
+      padding: 0.85rem 1.8rem; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: background 0.2s;
+    }
+    .btn-search:hover { background: var(--rose-m); }
+    @media (max-width: 640px) {
+      .search-bar { flex-wrap: wrap; border-radius: 12px; }
+      .search-field { flex: 0 0 100%; border-right: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 0.75rem 1.2rem; }
+      .search-actions { padding: 0.7rem 0.6rem; width: 100%; justify-content: flex-end; }
+      .search-wrap { padding-bottom: 1.5rem; }
+    }
+
+    /* ─── SECTION ─── */
+    .section-header { text-align: center; padding: 72px 5% 40px; }
+    .section-eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rose); margin-bottom: 0.9rem; }
+    .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; line-height: 1.2; color: var(--deep); margin-bottom: 0.8rem; }
+    .section-title em { font-style: italic; color: var(--rose); }
+    .section-desc { font-size: 0.95rem; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.65; font-weight: 300; }
+
+    /* ─── FILTER BAR ─── */
+    .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; }
+    .filter-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; margin-right: 0.25rem; }
+    .sort-select {
+      background: transparent; border: 1px solid var(--border); color: var(--deep);
+      padding: 0.4rem 1.2rem 0.4rem 0.9rem; border-radius: 20px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; outline: none; appearance: auto;
+    }
+
+    /* ─── CARDS GRID ─── */
+    .comparison-section {
+      background: var(--warm); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); padding-bottom: 72px; padding-top: 52px;
+    }
+    .cards-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem; padding: 0 5%; max-width: 1280px; margin: 0 auto;
+    }
+
+    /* ─── CLINIC CARD (Taiwan — with photo) ─── */
+    .clinic-card {
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s; position: relative;
+    }
+    .clinic-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(28,23,20,0.1); }
+
+    /* Photo banner */
+    .card-photo-banner {
+      position: relative; height: 140px; overflow: hidden;
+      background: var(--warm);
+    }
+    .card-photo-banner img.card-cover {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .clinic-card:hover .card-cover { transform: scale(1.04); }
+    .card-photo-banner.no-photo {
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--warm) 0%, #EDE0D8 100%);
+    }
+    .card-photo-banner.no-photo::after {
+      content: '診所';
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem; font-weight: 300; color: var(--border); letter-spacing: 0.1em;
+    }
+    /* Logo badge */
+    .card-logo-badge {
+      position: absolute; bottom: -16px; left: 14px;
+      width: 36px; height: 36px; border-radius: 8px;
+      border: 2px solid var(--cream); background: #fff;
+      overflow: hidden; box-shadow: 0 2px 8px rgba(28,23,20,0.15);
+      flex-shrink: 0;
+    }
+    .card-logo-badge img { width: 100%; height: 100%; object-fit: contain; }
+    /* Save button on photo */
+    .card-corner-actions {
+      position: absolute; top: 0.7rem; right: 0.7rem;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .btn-save-card {
+      background: rgba(28,23,20,0.45); backdrop-filter: blur(4px);
+      border: none; border-radius: 50%; width: 30px; height: 30px;
+      cursor: pointer; color: #fff; font-size: 1rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .btn-save-card:hover { background: rgba(28,23,20,0.7); }
+    .btn-save-card.saved { background: rgba(176,96,112,0.8); }
+    .heart-icon { display: inline-block; width: 1em; height: 1em; position: relative; }
+    .heart-icon::before { content: '♥'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0; transition: opacity 0.2s; }
+    .heart-icon::after  { content: '♡'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 1; transition: opacity 0.2s; }
+    .btn-save-card.saved .heart-icon::before { opacity: 1; }
+    .btn-save-card.saved .heart-icon::after  { opacity: 0; }
+
+    /* Card body */
+    .card-header {
+      padding: 1.4rem 1.4rem 1rem;
+      padding-top: 1.6rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-header.has-logo { padding-top: 1.8rem; }
+    .clinic-name {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1rem; font-weight: 500; color: var(--deep);
+      line-height: 1.3; margin-bottom: 0.3rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .clinic-name-verified { display: flex; align-items: center; gap: 5px; }
+    .clinic-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.4rem; }
+    .rating-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.15rem; }
+    .stars { color: var(--gold); font-size: 0.8rem; letter-spacing: 0.05em; }
+    .rating-num { font-size: 0.85rem; font-weight: 600; color: var(--deep); }
+    .review-count { font-size: 0.72rem; color: var(--dim); }
+
+    /* Price block */
+    .card-price { padding: 0.9rem 1.4rem; border-bottom: 1px solid var(--border); }
+    .price-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+    .price-main { display: flex; align-items: baseline; gap: 0.3rem; }
+    .price-from { font-size: 0.7rem; color: var(--muted); font-style: italic; }
+    .price-amount { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 400; color: var(--deep); line-height: 1; }
+    .price-unit { font-size: 0.7rem; color: var(--muted); }
+    .trust-badge { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.03em; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 3px; margin-top: 4px; }
+    .trust-badge-clinic { background: rgba(61,122,85,0.1); color: var(--green); border: 1px solid rgba(61,122,85,0.2); }
+    .trust-badge-inquiry { background: rgba(201,169,110,0.1); color: #8A6830; border: 1px solid rgba(201,169,110,0.25); }
+
+    /* Visit row */
+    .card-visit-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.65rem 1.4rem; border-bottom: 1px solid var(--border);
+      gap: 0.75rem;
+    }
+    .card-visit-prompt { display: flex; flex-direction: column; }
+    .card-visit-line1 { font-size: 0.72rem; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
+    .card-visit-line2 { font-size: 0.68rem; color: var(--dim); }
+    .card-vote-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.1rem 0.25rem; border-radius: 4px; transition: background 0.15s; line-height: 1; }
+    .card-vote-btn:hover { background: rgba(0,0,0,0.06); }
+    .card-vote-btn.voted { opacity: 0.6; cursor: default; pointer-events: none; }
+    .card-vote-btn.voted-on { background: rgba(0,0,0,0.06); transform: scale(1.18); }
+    .card-vote-count { font-size: 0.72rem; color: var(--muted); font-weight: 500; min-width: 0.8rem; display: inline-block; }
+
+    /* Card footer */
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.4rem;
+    }
+    .view-link {
+      font-size: 0.8rem; font-weight: 500; color: var(--rose);
+      text-decoration: none; letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 0.3rem; transition: gap 0.2s;
+    }
+    .view-link:hover { gap: 0.5rem; }
+    .btn-compare-card {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 0.35rem 0.85rem; border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-compare-card:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-compare-card.selected { background: var(--gold); border-color: var(--gold); color: var(--deep); font-weight: 600; }
+    .clinic-card.comparing { outline: 2px solid var(--gold); outline-offset: -2px; }
+    .clinic-card.no-price { opacity: 1; }
+
+    /* ─── LOAD MORE ─── */
+    .load-more-wrap { text-align: center; padding: 2.5rem 5% 0; }
+    .btn-outline {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 0.8rem 2.2rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 400; border-radius: 4px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--deep); color: var(--deep); }
+
+    /* ─── COMPARE BAR ─── */
+    .compare-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: var(--deep); border-top: 1px solid rgba(201,169,110,0.3);
+      padding: 0.9rem 5%; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.35);
+    }
+    .compare-bar.visible { transform: translateY(0); }
+    .compare-bar-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-right: 0.25rem; white-space: nowrap; }
+    .compare-slots { display: flex; gap: 0.6rem; flex: 1; min-width: 0; }
+    .compare-slot { background: rgba(255,255,255,0.06); border: 1px dashed rgba(181,168,159,0.25); border-radius: 6px; padding: 0.45rem 0.9rem; font-size: 0.8rem; color: var(--dim); display: flex; align-items: center; gap: 0.5rem; min-width: 130px; max-width: 200px; white-space: nowrap; overflow: hidden; transition: all 0.2s; }
+    .compare-slot.filled { background: rgba(201,169,110,0.1); border-color: rgba(201,169,110,0.35); color: var(--cream); }
+    .compare-slot-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.85rem; line-height: 1; padding: 0; margin-left: auto; flex-shrink: 0; transition: color 0.2s; }
+    .compare-slot-remove:hover { color: var(--rose); }
+    .compare-slot-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+    .compare-bar-actions { display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0; }
+    .btn-compare-now { background: var(--gold); color: var(--deep); border: none; padding: 0.6rem 1.4rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+    .btn-compare-now:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-compare-now:not(:disabled):hover { opacity: 0.88; }
+    .btn-compare-clear { background: transparent; border: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; padding: 0.4rem 0.6rem; transition: color 0.2s; white-space: nowrap; }
+    .btn-compare-clear:hover { color: var(--rose); }
+
+    /* ─── SHORTLIST ─── */
+    .nav-shortlist-btn { background: transparent; border: 1px solid rgba(201,169,110,0.35); color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: all 0.2s; white-space: nowrap; }
+    .nav-shortlist-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .nav-shortlist-badge { background: var(--rose); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 10px; padding: 0.1rem 0.4rem; min-width: 18px; text-align: center; display: none; }
+    .nav-shortlist-badge.visible { display: inline-block; }
+    .shortlist-drawer-overlay { display: none; position: fixed; inset: 0; z-index: 350; background: rgba(28,23,20,0.6); backdrop-filter: blur(4px); }
+    .shortlist-drawer-overlay.open { display: block; }
+    .shortlist-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 95vw; background: var(--cream); z-index: 351; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow: -8px 0 40px rgba(28,23,20,0.18); }
+    .shortlist-drawer-overlay.open .shortlist-drawer { transform: translateX(0); }
+    .shortlist-drawer-header { padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .shortlist-drawer-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; color: var(--deep); }
+    .shortlist-drawer-title span { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted); margin-left: 0.5rem; }
+    .shortlist-drawer-close { background: none; border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; padding: 0.2rem 0.4rem; transition: color 0.2s; }
+    .shortlist-drawer-close:hover { color: var(--deep); }
+    .shortlist-drawer-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
+    .shortlist-empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .shortlist-empty-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .shortlist-empty p { font-size: 0.88rem; line-height: 1.6; }
+    .shortlist-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
+    .shortlist-item:last-child { border-bottom: none; }
+    .shortlist-item-logo { width: 38px; height: 38px; border-radius: 6px; background: var(--warm); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); overflow: hidden; }
+    .shortlist-item-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .shortlist-item-info { flex: 1; min-width: 0; }
+    .shortlist-item-name { font-size: 0.9rem; font-weight: 500; color: var(--deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.15rem; }
+    .shortlist-item-meta { font-size: 0.75rem; color: var(--muted); }
+    .shortlist-item-remove { background: none; border: none; color: var(--dim); font-size: 1rem; cursor: pointer; padding: 0.2rem; transition: color 0.2s; flex-shrink: 0; }
+    .shortlist-item-remove:hover { color: var(--rose); }
+    .shortlist-drawer-footer { padding: 1rem 1.2rem; border-top: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+    .shortlist-compare-btn { width: 100%; background: var(--deep); color: var(--cream); border: none; border-radius: 6px; padding: 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .shortlist-compare-btn:hover { opacity: 0.85; }
+    .shortlist-clear-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; text-align: center; padding: 0.3rem; transition: color 0.2s; }
+    .shortlist-clear-btn:hover { color: var(--rose); }
+
+    /* ─── COMPARE MODAL ─── */
+    .compare-modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(28,23,20,0.7); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 2vh 3%; }
+    .compare-modal-overlay.open { display: flex; }
+    .compare-modal { background: var(--cream); border-radius: 16px; width: 100%; max-width: 860px; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; }
+    .compare-modal-header { padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .compare-modal-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--deep); }
+    .compare-modal-close { background: none; border: none; font-size: 1.3rem; color: var(--muted); cursor: pointer; padding: 0.25rem 0.5rem; transition: color 0.2s; }
+    .compare-modal-close:hover { color: var(--deep); }
+    .compare-modal-body { flex: 1; overflow-y: auto; overflow-x: auto; }
+    .compare-table { width: 100%; border-collapse: collapse; }
+    .compare-table th, .compare-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; word-wrap: break-word; }
+    .compare-table th { width: 140px; min-width: 120px; background: var(--warm); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--border); white-space: nowrap; }
+    .compare-table td { font-size: 0.88rem; color: var(--deep); line-height: 1.5; }
+    .compare-table.cols-2 td { width: calc((100% - 140px) / 2); }
+    .compare-table.cols-3 td { width: calc((100% - 140px) / 3); }
+    .compare-col-header { background: var(--deep) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; border-bottom: 1px solid rgba(201,169,110,0.15) !important; }
+    .compare-col-header .col-name { font-family: 'Noto Serif TC', serif; font-size: 1.05rem; font-weight: 500; color: var(--cream); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.2rem; line-height: 1.3; min-height: 2.6em; }
+    .compare-col-header .col-meta { font-size: 0.75rem; color: var(--muted); }
+    .compare-price-big { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 400; color: var(--deep); line-height: 1; }
+    .compare-price-unit { font-size: 0.78rem; color: var(--muted); margin-left: 0.2rem; }
+    .compare-no-price { font-size: 0.85rem; color: var(--dim); font-style: italic; }
+    .compare-stars { color: var(--gold); font-size: 1rem; letter-spacing: 0.04em; }
+    .compare-rating-num { font-weight: 600; font-size: 0.95rem; }
+    .compare-reviews { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+    .compare-winner { background: rgba(201,169,110,0.07); }
+    .compare-winner-tag { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(201,169,110,0.2); color: #9A7840; border: 1px solid rgba(201,169,110,0.35); padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+    .compare-modal-footer { padding: 1.2rem 2rem; background: var(--warm); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
+    @media (max-width: 640px) { .compare-modal-overlay { padding: 2vh 3% 2vh; align-items: flex-start; } .compare-modal { border-radius: 12px; } .compare-table th { width: 90px; min-width: 90px; font-size: 0.6rem; } .compare-price-big { font-size: 1.4rem; } }
+
+    /* ─── AUTH MODAL ─── */
+    .auth-modal-overlay { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(28,23,20,0.7); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem; }
+    .auth-modal-overlay.open { display: flex; }
+    .auth-modal { background: var(--cream); border-radius: 16px; width: 100%; max-width: 420px; padding: 2.2rem 2rem 2rem; position: relative; }
+    .auth-modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; }
+    .auth-modal-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--deep); text-align: center; margin-bottom: 0.3rem; }
+    .auth-modal-logo span { color: var(--gold); }
+    .auth-modal-tagline { font-size: 0.82rem; color: var(--muted); text-align: center; margin-bottom: 1.6rem; }
+    .auth-google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0.75rem; border: 1.5px solid var(--border); border-radius: 8px; background: #fff; color: var(--deep); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: border-color 0.2s; }
+    .auth-google-btn:hover { border-color: var(--muted); }
+    .auth-google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .auth-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.2rem 0; color: var(--dim); font-size: 0.78rem; }
+    .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .auth-input { width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--deep); background: #fff; outline: none; transition: border-color 0.2s; margin-bottom: 0.75rem; box-sizing: border-box; }
+    .auth-input:focus { border-color: var(--gold); }
+    .auth-submit-btn { width: 100%; padding: 0.75rem; background: var(--deep); color: var(--cream); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; margin-top: 0.25rem; }
+    .auth-submit-btn:hover { opacity: 0.85; }
+    .auth-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .auth-toggle { text-align: center; margin-top: 1.1rem; font-size: 0.82rem; color: var(--muted); }
+    .auth-toggle button { background: none; border: none; color: var(--rose); font-size: 0.82rem; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; }
+    .auth-error { font-size: 0.8rem; color: var(--rose); text-align: center; margin-top: 0.5rem; min-height: 1.2rem; }
+
+    /* ─── MISSING CLINIC MODAL ─── */
+    .missing-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(28,23,20,0.55); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
+    .missing-modal-overlay.open { display: flex; }
+    .missing-modal { background: var(--warm); border-radius: 16px; padding: 36px; max-width: 480px; width: 100%; position: relative; box-shadow: 0 20px 60px rgba(28,23,20,0.2); }
+    .missing-modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+    .missing-modal h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; color: var(--deep); margin-bottom: 6px; }
+    .missing-modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .cm-form-input { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--deep); background: #fff; outline: none; margin-bottom: 12px; }
+    .missing-modal-success { display: none; text-align: center; padding: 20px 0; }
+    .missing-modal-success .success-icon { font-size: 2rem; margin-bottom: 10px; }
+
+    /* ─── TRUST STRIP ─── */
+    .trust-strip { background: var(--deep); padding: 40px 5%; display: flex; align-items: center; justify-content: center; gap: 4rem; flex-wrap: wrap; border-top: 1px solid rgba(201,169,110,0.15); }
+    .trust-item { display: flex; align-items: center; gap: 0.75rem; }
+    .trust-icon { width: 36px; height: 36px; background: rgba(201,169,110,0.1); border: 1px solid rgba(201,169,110,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .trust-text strong { display: block; font-size: 0.85rem; font-weight: 500; color: var(--cream); }
+    .trust-text span { font-size: 0.82rem; color: var(--muted); }
+
+    /* ─── FOOTER ─── */
+    footer { background: var(--deep2); padding: 40px 5%; border-top: 1px solid rgba(201,169,110,0.1); }
+    .footer-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
+    .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--dim); text-decoration: none; }
+    .footer-logo span { color: var(--gold); }
+    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-links a { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--cream); }
+    .footer-copy { font-size: 0.75rem; color: var(--muted); }
+
+    /* ─── LIGHTBOX ─── */
+    .sd-lightbox { display: none; position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; }
+    .sd-lightbox.open { display: flex; }
+    .sd-lightbox-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; }
+    .sd-lightbox-img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 4px; }
+    .sd-lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 2rem; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .sd-lightbox-nav.prev { left: 1rem; }
+    .sd-lightbox-nav.next { right: 1rem; }
+    .sd-lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+    .sd-lightbox-nav:disabled { opacity: 0.2; cursor: default; }
+    .sd-lightbox-counter { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 20px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Skin<span>Day</span></a>
+  <div class="nav-ctas">
+    <button class="nav-shortlist-btn" id="navShortlistBtn" onclick="openShortlistDrawer()">
+      ♡ <span id="navShortlistBadge" class="nav-shortlist-badge">0</span>
+    </button>
+    <button class="nav-signin-btn" id="navSignInBtn" onclick="openAuthModal()">登入</button>
+    <div style="position:relative;display:none;" id="navUserMenu">
+      <button class="nav-user-btn" id="navUserBtn" onclick="toggleUserDropdown()">
+        <span id="navUserInitial" class="nav-user-initial">?</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+      </button>
+      <div class="nav-user-dropdown" id="navUserDropdown">
+        <a href="/account">我的帳戶</a>
+        <button class="signout" onclick="handleSignOut()">登出</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">SkinDay Taiwan · 台灣醫美目錄</div>
+    <h1>Find your clinic.<br><em>In Taiwan.</em></h1>
+    <p class="hero-sub">Ratings, photos, and verified profiles across Taiwan's aesthetic medicine clinics — from Taipei to Kaohsiung.</p>
+    <p class="hero-sub-zh">比較全台醫美診所的評分、照片與完整資料，涵蓋台北、台中、高雄、台南各地。</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num" id="heroClinicCount">2,172+</div>
+        <div class="stat-label">診所</div>
+      </div>
+      <div>
+        <div class="stat-num">18</div>
+        <div class="stat-label">縣市地區</div>
+      </div>
+      <div>
+        <div class="stat-num">4.5★</div>
+        <div class="stat-label">平均評分</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-bar">
+    <div class="search-field">
+      <div class="search-field-label">地區 · Location</div>
+      <div class="neighbourhood-wrap">
+        <select id="searchNeighbourhood" onchange="applySearch()">
+          <option value="all">全台灣 · All Taiwan</option>
+          <optgroup label="── 台北市 Taipei City ──────────">
+            <option value="taipei-daan">大安區 Da'an</option>
+            <option value="taipei-zhongshan">中山區 Zhongshan</option>
+            <option value="taipei-songshan">松山區 Songshan</option>
+            <option value="taipei-xinyi">信義區 Xinyi</option>
+            <option value="taipei-zhongzheng">中正區 Zhongzheng</option>
+            <option value="taipei-shilin">士林區 Shilin</option>
+            <option value="taipei-neihu">內湖區 Neihu</option>
+            <option value="taipei-datong">大同區 Datong</option>
+            <option value="taipei-wanhua">萬華區 Wanhua</option>
+            <option value="taipei-nangang">南港區 Nangang</option>
+            <option value="taipei-wenshan">文山區 Wenshan</option>
+            <option value="taipei-beitou">北投區 Beitou</option>
+          </optgroup>
+          <optgroup label="── 新北市 New Taipei City ────────">
+            <option value="new-taipei-banqiao">板橋區 Banqiao</option>
+            <option value="new-taipei-xinzhuang">新莊區 Xinzhuang</option>
+            <option value="new-taipei-sanchong">三重區 Sanchong</option>
+            <option value="new-taipei-zhonghe">中和區 Zhonghe</option>
+            <option value="new-taipei-yonghe">永和區 Yonghe</option>
+            <option value="new-taipei-xindian">新店區 Xindian</option>
+            <option value="new-taipei-luzhou">蘆洲區 Luzhou</option>
+            <option value="new-taipei-tucheng">土城區 Tucheng</option>
+            <option value="new-taipei-taishan">泰山區 Taishan</option>
+            <option value="new-taipei-xizhi">汐止區 Xizhi</option>
+          </optgroup>
+          <optgroup label="── 桃園市 Taoyuan City ──────────">
+            <option value="taoyuan-taoyuan">桃園區 Taoyuan</option>
+            <option value="taoyuan-zhongli">中壢區 Zhongli</option>
+            <option value="taoyuan-pingzhen">平鎮區 Pingzhen</option>
+          </optgroup>
+          <optgroup label="── 新竹 Hsinchu ──────────────">
+            <option value="hsinchu-east">東區 East District</option>
+            <option value="hsinchu-north">北區 North District</option>
+            <option value="hsinchu-county-zhubei">竹北市 Zhubei</option>
+          </optgroup>
+          <optgroup label="── 台中市 Taichung City ──────────">
+            <option value="taichung-west">西區 West District</option>
+            <option value="taichung-xitun">西屯區 Xitun</option>
+            <option value="taichung-north">北區 North District</option>
+            <option value="taichung-nantun">南屯區 Nantun</option>
+            <option value="taichung-beitun">北屯區 Beitun</option>
+            <option value="taichung-south">南區 South District</option>
+          </optgroup>
+          <optgroup label="── 台南市 Tainan City ──────────">
+            <option value="tainan-east">東區 East District</option>
+            <option value="tainan-west-central">中西區 West Central</option>
+            <option value="tainan-north">北區 North District</option>
+            <option value="tainan-south">南區 South District</option>
+          </optgroup>
+          <optgroup label="── 高雄市 Kaohsiung City ─────────">
+            <option value="kaohsiung-lingya">苓雅區 Lingya</option>
+            <option value="kaohsiung-sanmin">三民區 Sanmin</option>
+            <option value="kaohsiung-zuoying">左營區 Zuoying</option>
+            <option value="kaohsiung-gushan">鼓山區 Gushan</option>
+            <option value="kaohsiung-sinsing">新興區 Sinsing</option>
+          </optgroup>
+          <optgroup label="── 其他縣市 Other Cities ─────────">
+            <option value="keelung-renai">基隆市 Keelung</option>
+            <option value="miaoli-miaoli">苗栗縣 Miaoli</option>
+            <option value="changhua-changhua">彰化縣 Changhua</option>
+            <option value="nantou-nantou">南投縣 Nantou</option>
+            <option value="yunlin-huwei">雲林縣 Yunlin</option>
+            <option value="chiayi-west">嘉義市 Chiayi</option>
+            <option value="pingtung-pingtung">屏東縣 Pingtung</option>
+            <option value="taitung-taitung">台東縣 Taitung</option>
+            <option value="hualien-hualien">花蓮縣 Hualien</option>
+            <option value="yilan-yilan">宜蘭縣 Yilan</option>
+          </optgroup>
+        </select>
+        <span class="region-badge" id="regionBadge"></span>
+      </div>
+    </div>
+    <div class="search-field">
+      <div class="search-field-label">診所名稱 · Clinic Name</div>
+      <input type="text" id="searchClinicName" placeholder="Search..." onkeydown="if(event.key==='Enter')applySearch()" />
+    </div>
+    <div class="search-actions">
+      <button class="btn-nearby" onclick="useNearMe()">📍 附近</button>
+      <button class="btn-search" onclick="applySearch()">搜尋</button>
+    </div>
+  </div>
+</div>
+
+<!-- DIRECTORY SECTION -->
+<section class="comparison-section" id="prices">
+  <div class="section-header">
+    <div class="section-eyebrow">全台醫美診所資料庫</div>
+    <h2 class="section-title">真實評價。<br><em>更好的選擇。</em></h2>
+    <p class="section-desc">評分、照片、完整診所資料 — 為您呈現評論看不到的一面。未提供價格的診所同樣列入，讓您掌握完整市場全貌。</p>
+  </div>
+
+  <div class="filter-wrap">
+    <span class="filter-label">排序</span>
+    <select class="sort-select" onchange="sortCards(this.value)" id="mainSortSelect">
+      <option value="rating">評分最高</option>
+      <option value="reviews" selected>評論最多</option>
+      <option value="price-high">價格：高 → 低</option>
+      <option value="price-low">價格：低 → 高</option>
+      <option value="nearest">最近距離</option>
+    </select>
+  </div>
+
+  <div class="cards-grid" id="cardsGrid">
+  </div>
+
+  <div class="load-more-wrap">
+    <button class="btn-outline" id="loadMoreBtn" onclick="loadMore()" style="display:none">載入更多診所</button>
+    <p style="margin-top:1.5rem;font-size:0.85rem;color:var(--muted);text-align:center;">
+      找不到您的診所？
+      <a href="#" onclick="event.preventDefault();openMissingClinicModal()" style="color:var(--rose);text-decoration:none;border-bottom:1px solid var(--rose-bg);">告訴我們 →</a>
+    </p>
+  </div>
+</section>
+
+<!-- TRUST STRIP -->
+<div class="trust-strip">
+  <div class="trust-item">
+    <div class="trust-icon">📸</div>
+    <div class="trust-text">
+      <strong>真實診所照片</strong>
+      <span>Google Maps 公開資料</span>
+    </div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">⭐</div>
+    <div class="trust-text">
+      <strong>Google 評分</strong>
+      <span>每家診所均附評論數</span>
+    </div>
+  </div>
+  <div class="trust-item">
+    <div class="trust-icon">🔍</div>
+    <div class="trust-text">
+      <strong>2,172+ 家診所</strong>
+      <span>涵蓋全台 18 縣市</span>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <a href="/" class="footer-logo">Skin<span>Day</span></a>
+    <div class="footer-links">
+      <a href="/">Global</a>
+      <a href="/canada">Canada</a>
+      <a href="/taiwan">Taiwan</a>
+      <a href="/visualize">Visualize</a>
+      <a href="/guide">Guide</a>
+    </div>
+    <div class="footer-copy">© 2026 SkinDay</div>
+  </div>
+</footer>
+
+<!-- COMPARE BAR -->
+<div class="compare-bar" id="compareBar">
+  <span class="compare-bar-label">比較</span>
+  <div class="compare-slots" id="compareSlots">
+    <div class="compare-slot" id="compareSlot0"><span class="compare-slot-name">選擇診所</span></div>
+    <div class="compare-slot" id="compareSlot1"><span class="compare-slot-name">選擇診所</span></div>
+    <div class="compare-slot" id="compareSlot2"><span class="compare-slot-name">選擇診所</span></div>
+  </div>
+  <div class="compare-bar-actions">
+    <button class="btn-compare-now" id="btnCompareNow" onclick="openCompareModal()" disabled>開始比較</button>
+    <button class="btn-compare-clear" onclick="clearCompare()">清除</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-overlay" id="compareModalOverlay">
+  <div class="compare-modal">
+    <div class="compare-modal-header">
+      <h3>診所比較</h3>
+      <button class="compare-modal-close" onclick="closeCompareModal()">✕</button>
+    </div>
+    <div class="compare-modal-body">
+      <table class="compare-table" id="compareTable"></table>
+    </div>
+    <div class="compare-modal-footer">
+      <button class="btn-outline" onclick="closeCompareModal()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHORTLIST DRAWER -->
+<div class="shortlist-drawer-overlay" id="shortlistDrawerOverlay" onclick="closeShortlistDrawer(event)">
+  <div class="shortlist-drawer" id="shortlistDrawer">
+    <div class="shortlist-drawer-header">
+      <div class="shortlist-drawer-title">我的收藏 <span id="shortlistCount">0 家診所</span></div>
+      <button class="shortlist-drawer-close" onclick="closeShortlistDrawer()">✕</button>
+    </div>
+    <div class="shortlist-drawer-body" id="shortlistDrawerBody">
+      <div class="shortlist-empty">
+        <div class="shortlist-empty-icon">♡</div>
+        <p>尚未收藏任何診所。<br>點擊診所卡片上的愛心即可收藏。</p>
+      </div>
+    </div>
+    <div class="shortlist-drawer-footer" id="shortlistDrawerFooter" style="display:none;">
+      <button class="shortlist-compare-btn" id="shortlistCompareBtn" onclick="compareFromShortlist()">比較收藏的診所</button>
+      <button class="shortlist-clear-btn" onclick="clearShortlist()">清除收藏</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="auth-modal-overlay" id="authModalOverlay">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-modal-logo">Skin<span>Day</span></div>
+    <div class="auth-modal-tagline">收藏診所，建立您的比較清單。</div>
+    <button class="auth-google-btn" onclick="handleGoogleSignIn()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      使用 Google 繼續
+    </button>
+    <div class="auth-divider">或</div>
+    <div id="authEmailForm">
+      <input class="auth-input" type="email" id="authEmail" placeholder="電子郵件" autocomplete="email" />
+      <input class="auth-input" type="password" id="authPassword" placeholder="密碼" autocomplete="current-password" />
+      <button class="auth-submit-btn" id="authSubmitBtn" onclick="handleEmailAuth()">登入</button>
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-toggle">
+        <span id="authToggleText">還沒有帳戶？</span>
+        <button onclick="toggleAuthMode()">註冊</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MISSING CLINIC MODAL -->
+<div class="missing-modal-overlay" id="missingClinicModal">
+  <div class="missing-modal">
+    <button class="missing-modal-close" onclick="closeMissingClinicModal()">✕</button>
+    <div id="missing-modal-form">
+      <h3>新增診所</h3>
+      <p>找不到您的診所？填寫資料，我們將在 2 個工作天內完成新增。</p>
+      <input class="cm-form-input" type="text" id="missing-clinic-name" placeholder="診所名稱" required />
+      <input class="cm-form-input" type="email" id="missing-clinic-email" placeholder="電子郵件" required />
+      <input class="cm-form-input" type="text" id="missing-clinic-hood" placeholder="地區（例：大安區、信義區）" />
+      <button class="btn-primary" onclick="submitMissingClinic()" id="missing-submit-btn" style="width:100%;margin-top:4px;">送出 →</button>
+    </div>
+    <div class="missing-modal-success" id="missing-modal-success">
+      <div class="success-icon">✓</div>
+      <p>感謝您的提交。<br>我們將在幾天內與您聯繫。</p>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="sd-lightbox" id="sdLightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button class="sd-lightbox-close" id="sdLightboxClose">✕</button>
+  <button class="sd-lightbox-nav prev" id="sdLightboxPrev">‹</button>
+  <img class="sd-lightbox-img" id="sdLightboxImg" src="" alt="" draggable="false" />
+  <button class="sd-lightbox-nav next" id="sdLightboxNext">›</button>
+  <div class="sd-lightbox-counter" id="sdLightboxCounter"></div>
+</div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────
+const SB_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+const COUNTRY = 'taiwan';
+const PAGE_SIZE = 24;
+
+let currentFilter = 'all';
+let currentNameQuery = '';
+let currentSort = 'reviews';
+let currentPage = 0;
+let currentTotal = 0;
+let currentPageClinics = [];
+let clinicsIndex = [];
+let compareList = [];
+let isLoading = false;
+let userLocation = null;
+
+// Region badge map
+const NEIGHBOURHOOD_REGION = {
+  'taipei-daan':'台北', 'taipei-zhongshan':'台北', 'taipei-songshan':'台北',
+  'taipei-xinyi':'台北', 'taipei-zhongzheng':'台北', 'taipei-shilin':'台北',
+  'taipei-neihu':'台北', 'taipei-datong':'台北', 'taipei-wanhua':'台北',
+  'taipei-nangang':'台北', 'taipei-wenshan':'台北', 'taipei-beitou':'台北',
+  'new-taipei-banqiao':'新北', 'new-taipei-xinzhuang':'新北', 'new-taipei-sanchong':'新北',
+  'new-taipei-zhonghe':'新北', 'new-taipei-yonghe':'新北', 'new-taipei-xindian':'新北',
+  'new-taipei-luzhou':'新北', 'new-taipei-tucheng':'新北', 'new-taipei-taishan':'新北', 'new-taipei-xizhi':'新北',
+  'taoyuan-taoyuan':'桃園', 'taoyuan-zhongli':'桃園', 'taoyuan-pingzhen':'桃園',
+  'hsinchu-east':'新竹', 'hsinchu-north':'新竹', 'hsinchu-county-zhubei':'新竹縣',
+  'taichung-west':'台中', 'taichung-xitun':'台中', 'taichung-north':'台中',
+  'taichung-nantun':'台中', 'taichung-beitun':'台中', 'taichung-south':'台中',
+  'tainan-east':'台南', 'tainan-west-central':'台南', 'tainan-north':'台南', 'tainan-south':'台南',
+  'kaohsiung-lingya':'高雄', 'kaohsiung-sanmin':'高雄', 'kaohsiung-zuoying':'高雄',
+  'kaohsiung-gushan':'高雄', 'kaohsiung-sinsing':'高雄',
+  'keelung-renai':'基隆', 'miaoli-miaoli':'苗栗', 'changhua-changhua':'彰化',
+  'nantou-nantou':'南投', 'yunlin-huwei':'雲林', 'chiayi-west':'嘉義',
+  'pingtung-pingtung':'屏東', 'taitung-taitung':'台東', 'hualien-hualien':'花蓮', 'yilan-yilan':'宜蘭',
+};
+
+// Neighbourhood coords for Near Me
+const HOOD_COORDS = {
+  'taipei-daan':[25.0269,121.5434], 'taipei-zhongshan':[25.0637,121.5293],
+  'taipei-songshan':[25.0499,121.5774], 'taipei-xinyi':[25.0286,121.5654],
+  'taipei-zhongzheng':[25.0289,121.5068], 'taipei-shilin':[25.0877,121.5232],
+  'taipei-neihu':[25.0807,121.5963], 'taipei-datong':[25.0635,121.5127],
+  'new-taipei-banqiao':[25.0143,121.4677], 'new-taipei-xinzhuang':[25.0353,121.4487],
+  'new-taipei-sanchong':[25.0613,121.4878], 'new-taipei-zhonghe':[24.9976,121.4937],
+  'taoyuan-taoyuan':[24.9937,121.3009], 'taoyuan-zhongli':[24.9543,121.2244],
+  'taichung-west':[24.1466,120.6789], 'taichung-xitun':[24.1598,120.6413],
+  'tainan-east':[22.9916,120.2266], 'tainan-west-central':[22.9972,120.1931],
+  'kaohsiung-lingya':[22.6198,120.3136], 'kaohsiung-sanmin':[22.6538,120.3093],
+  'kaohsiung-zuoying':[22.6893,120.2981],
+  'hsinchu-east':[24.8015,120.9717], 'hsinchu-county-zhubei':[24.8374,121.0046],
+};
+
+// ─── NORMALISE ────────────────────────────────────────────────
+function normaliseClinic(o) {
+  o.id = String(o.id);
+  if (typeof o.injector_credentials === 'string') { try { o.injector_credentials = JSON.parse(o.injector_credentials); } catch(e) { o.injector_credentials = []; } }
+  if (!Array.isArray(o.injector_credentials)) o.injector_credentials = [];
+  if (!Array.isArray(o.categories)) o.categories = [];
+  return o;
+}
+
+// ─── BUILD API URL ─────────────────────────────────────────────
+function buildApiUrl(page) {
+  const params = new URLSearchParams();
+  params.set('page', page);
+  params.set('sort', currentSort);
+  params.set('country', COUNTRY);
+  if (currentNameQuery) params.set('search', currentNameQuery);
+  if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
+  return '/api/get-clinics?' + params.toString();
+}
+
+// ─── RENDER STARS ─────────────────────────────────────────────
+function renderStars(rating) {
+  if (!rating) return '☆☆☆☆☆';
+  const r = parseFloat(rating);
+  const full = Math.floor(r);
+  const half = r - full >= 0.5;
+  return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(Math.max(0, 5 - full - (half ? 1 : 0)));
+}
+
+function formatPriceDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short' });
+}
+
+// ─── RENDER CARDS ─────────────────────────────────────────────
+function renderPageCards(clinicsData, append) {
+  const grid = document.getElementById('cardsGrid');
+
+  // Sort
+  if (currentSort === 'price-low') {
+    clinicsData.sort((a,b) => (a.price!=null?parseFloat(a.price):99999) - (b.price!=null?parseFloat(b.price):99999));
+  } else if (currentSort === 'price-high') {
+    clinicsData.sort((a,b) => (b.price!=null?parseFloat(b.price):-1) - (a.price!=null?parseFloat(a.price):-1));
+  } else if (currentSort === 'rating') {
+    clinicsData.sort((a,b) => (b.rating||0) - (a.rating||0));
+  } else if (currentSort === 'reviews') {
+    clinicsData.sort((a,b) => (b.reviews||0) - (a.reviews||0));
+  } else if (currentSort === 'nearest' && userLocation) {
+    clinicsData.sort((a,b) => {
+      const coords = cl => (cl.lat && cl.lng) ? [parseFloat(cl.lat), parseFloat(cl.lng)] : null;
+      const ca = coords(a), cb = coords(b);
+      const da = ca ? haversineKm(userLocation.lat, userLocation.lon, ca[0], ca[1]) : 99999;
+      const db = cb ? haversineKm(userLocation.lat, userLocation.lon, cb[0], cb[1]) : 99999;
+      return da - db;
+    });
+  }
+
+  const html = clinicsData.map(c => {
+    const hasPrice = c.price !== null && c.price !== undefined;
+    const hasPhoto = c.photo && c.photo !== '';
+    const hasLogo = c.logo && c.logo !== '';
+
+    const photoBanner = hasPhoto
+      ? `<div class="card-photo-banner">
+          <img class="card-cover" src="${c.photo}" alt="${c.name}" loading="lazy" onerror="this.parentElement.classList.add('no-photo');this.remove()">
+          ${hasLogo ? `<div class="card-logo-badge"><img src="${c.logo}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+          <div class="card-corner-actions">
+            <button class="btn-save-card" id="save-${c.id}" onclick="toggleSave('${c.id}', event)" title="收藏"><span class="heart-icon"></span></button>
+          </div>
+        </div>`
+      : `<div class="card-photo-banner no-photo">
+          <div class="card-corner-actions">
+            <button class="btn-save-card" id="save-${c.id}" onclick="toggleSave('${c.id}', event)" title="收藏"><span class="heart-icon"></span></button>
+          </div>
+        </div>`;
+
+    const priceSourceLabel = c.price_source === 'clinic'
+      ? `<span class="trust-badge trust-badge-clinic"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>診所確認 · ${formatPriceDate(c.price_date)}</span>`
+      : c.price_source === 'inquiry'
+      ? `<span class="trust-badge trust-badge-inquiry">詢問確認 · ${formatPriceDate(c.price_date)}</span>`
+      : '';
+
+    const priceBlockHTML = hasPrice
+      ? `<div class="card-price">
+          <div class="price-label">肉毒桿菌 — 每單位</div>
+          <div class="price-main">
+            <span class="price-from">from</span>
+            <span class="price-amount">NT$${c.price}</span>
+            <span class="price-unit">/ 單位</span>
+          </div>
+          ${priceSourceLabel}
+        </div>`
+      : '';
+
+    const distEl = (() => {
+      if (!userLocation || (!c.lat && !c.lng)) return '';
+      const d = haversineKm(userLocation.lat, userLocation.lon, parseFloat(c.lat), parseFloat(c.lng));
+      return ` · ${d < 1 ? (d*1000).toFixed(0)+'m' : d.toFixed(1)+'km'}`;
+    })();
+
+    return `
+      <div class="clinic-card${hasPrice ? '' : ' no-price'}" data-id="${c.id}">
+        ${photoBanner}
+        <div class="card-header${hasLogo && hasPhoto ? ' has-logo' : ''}">
+          <div class="clinic-name">
+            ${c.claimed ? `<span class="clinic-name-verified">${c.name}</span>` : c.name}
+          </div>
+          <div class="clinic-meta">📍 ${c.neighbourhood || c.region || ''}${distEl}</div>
+          <div class="rating-row">
+            <span class="stars">${renderStars(c.rating)}</span>
+            <span class="rating-num">${c.rating != null ? c.rating : '—'}</span>
+          </div>
+          <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')} 則 Google 評論</div>
+        </div>
+        ${priceBlockHTML}
+        <div class="card-visit-row">
+          <span class="card-visit-prompt">
+            <span class="card-visit-line1">曾經去過？</span>
+            <span class="card-visit-line2">您會再去嗎？</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:0.35rem;">
+            <button class="card-vote-btn" id="vote-yes-${c.id}" onclick="event.stopPropagation();window.cardVote('${c.id}','yes',this)">👍</button><span class="card-vote-count" id="vote-yes-count-${c.id}">0</span>
+            <button class="card-vote-btn" id="vote-no-${c.id}" onclick="event.stopPropagation();window.cardVote('${c.id}','no',this)">👎</button><span class="card-vote-count" id="vote-no-count-${c.id}">0</span>
+          </span>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">查看資料 →</a>
+          <button class="btn-compare-card" id="cmp-${c.id}" onclick="toggleCompare('${c.id}')">+ 比較</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (append) {
+    const sentinel = grid.querySelector('.load-more-sentinel');
+    if (sentinel) sentinel.remove();
+    grid.insertAdjacentHTML('beforeend', html);
+  } else {
+    grid.innerHTML = html;
+  }
+
+  syncCompareButtons();
+  syncSaveButtons().catch(() => {});
+  fetchVisitSignals(clinicsData.map(c => String(c.id))).catch(() => {});
+  fetchMyVotes(clinicsData.map(c => String(c.id))).catch(() => {});
+}
+
+// ─── FETCH PAGE ────────────────────────────────────────────────
+async function fetchPage(page, append) {
+  if (isLoading) return;
+  isLoading = true;
+  const grid = document.getElementById('cardsGrid');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if (!append) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入中…</div>';
+  } else {
+    grid.insertAdjacentHTML('beforeend', '<div class="load-more-sentinel" style="grid-column:1/-1;text-align:center;padding:24px 0;color:var(--muted);font-size:0.85rem;">載入更多中…</div>');
+  }
+  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  try {
+    const res = await fetch(buildApiUrl(page));
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const raw = (data.clinics || []).map(normaliseClinic);
+    if (append) { currentPageClinics = currentPageClinics.concat(raw); }
+    else { currentPageClinics = raw; }
+    currentPage = data.page ?? page;
+    currentTotal = data.total ?? 0;
+    if (raw.length === 0 && !append) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">找不到符合條件的診所。</div>';
+    } else {
+      renderPageCards(raw, append);
+    }
+    if (loadMoreBtn) loadMoreBtn.style.display = data.hasMore ? 'inline-block' : 'none';
+  } catch(err) {
+    console.error(err);
+    if (!append) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理頁面。</div>';
+  } finally {
+    isLoading = false;
+    const sentinel = document.querySelector('.load-more-sentinel');
+    if (sentinel) sentinel.remove();
+  }
+}
+
+function loadMore() { fetchPage(currentPage + 1, true); }
+
+// ─── FILTER / SORT ────────────────────────────────────────────
+function applySearch() {
+  const neighbourhood = document.getElementById('searchNeighbourhood').value;
+  const nameQuery = (document.getElementById('searchClinicName').value || '').trim().toLowerCase();
+  currentFilter = neighbourhood;
+  currentNameQuery = nameQuery;
+  const badge = document.getElementById('regionBadge');
+  const region = NEIGHBOURHOOD_REGION[neighbourhood];
+  if (region && neighbourhood !== 'all') { badge.textContent = region; badge.classList.add('visible'); }
+  else { badge.classList.remove('visible'); }
+  fetchPage(0, false);
+  if (!nameQuery) document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function sortCards(val) {
+  if (val === 'nearest') {
+    if (!userLocation) {
+      if (!navigator.geolocation) { showToast('您的瀏覽器不支援定位功能。'); document.getElementById('mainSortSelect').value = currentSort; return; }
+      showToast('正在取得您的位置…');
+      navigator.geolocation.getCurrentPosition(
+        pos => { userLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude }; currentSort = 'nearest'; fetchPage(0, false); },
+        () => { showToast('無法取得位置，請確認已開啟定位權限。'); document.getElementById('mainSortSelect').value = currentSort; },
+        { timeout: 8000 }
+      );
+      return;
+    }
+  }
+  currentSort = val;
+  fetchPage(0, false);
+}
+
+function useNearMe() {
+  const btn = document.querySelector('.btn-nearby');
+  btn.textContent = '📍 定位中…'; btn.disabled = true;
+  if (!navigator.geolocation) { btn.textContent = '📍 附近'; btn.disabled = false; showToast('您的瀏覽器不支援定位功能。'); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      let nearest = null, nearestDist = Infinity;
+      for (const [hood, [lat, lon]] of Object.entries(HOOD_COORDS)) {
+        const d = haversineKm(userLocation.lat, userLocation.lon, lat, lon);
+        if (d < nearestDist) { nearestDist = d; nearest = hood; }
+      }
+      btn.textContent = '📍 附近'; btn.disabled = false;
+      currentSort = 'nearest';
+      if (nearest && nearestDist < 100) { currentFilter = nearest; }
+      fetchPage(0, false);
+      document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+    () => { btn.textContent = '📍 附近'; btn.disabled = false; showToast('無法取得位置，請確認已開啟定位權限。'); },
+    { timeout: 8000 }
+  );
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--deep);color:var(--cream);padding:0.75rem 1.5rem;border-radius:6px;font-size:0.82rem;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.25);transition:opacity 0.3s;'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+// ─── COMPARE ─────────────────────────────────────────────────
+function toggleCompare(id) {
+  const idx = compareList.indexOf(id);
+  if (idx > -1) { compareList.splice(idx, 1); }
+  else if (compareList.length < 3) { compareList.push(id); }
+  else { showToast('最多可比較 3 家診所。'); return; }
+  updateCompareBar(); syncCompareButtons();
+}
+function updateCompareBar() {
+  const bar = document.getElementById('compareBar');
+  const btn = document.getElementById('btnCompareNow');
+  if (compareList.length === 0) { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  btn.disabled = compareList.length < 2;
+  for (let i = 0; i < 3; i++) {
+    const slot = document.getElementById('compareSlot'+i);
+    if (compareList[i]) {
+      const c = findClinic(compareList[i]);
+      slot.classList.add('filled');
+      slot.innerHTML = `<span class="compare-slot-name">${c ? c.name : compareList[i]}</span><button class="compare-slot-remove" onclick="toggleCompare('${compareList[i]}')">✕</button>`;
+    } else {
+      slot.classList.remove('filled');
+      slot.innerHTML = '<span class="compare-slot-name">選擇診所</span>';
+    }
+  }
+}
+function clearCompare() { compareList = []; updateCompareBar(); syncCompareButtons(); }
+function syncCompareButtons() {
+  document.querySelectorAll('.btn-compare-card').forEach(b => {
+    const id = b.id.replace('cmp-','');
+    if (compareList.includes(id)) { b.classList.add('selected'); b.textContent = '✓ 已加入'; b.disabled = false; b.style.opacity = ''; }
+    else { b.classList.remove('selected'); b.textContent = '+ 比較'; b.disabled = compareList.length >= 3; b.style.opacity = compareList.length >= 3 ? '0.35' : ''; }
+  });
+  document.querySelectorAll('.clinic-card').forEach(card => {
+    card.classList.toggle('comparing', compareList.includes(card.dataset.id));
+  });
+}
+function openCompareModal() {
+  const clinics = compareList.map(id => findClinic(id)).filter(Boolean);
+  if (clinics.length < 2) return;
+  const colClass = 'cols-' + clinics.length;
+  const minPrice = clinics.filter(c => c.price).reduce((m, c) => Math.min(m, parseFloat(c.price)), Infinity);
+  const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
+  const maxReviews = Math.max(...clinics.map(c => parseInt(c.reviews)||0));
+  let html = `<table class="compare-table ${colClass}"><thead><tr><th></th>`;
+  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${c.neighbourhood||''}</div></td>`; });
+  html += '</tr></thead><tbody>';
+  html += '<tr><th>評分</th>';
+  clinics.forEach(c => {
+    const isTop = (parseFloat(c.rating)||0) === maxRating;
+    html += `<td${isTop?' class="compare-winner"':''}><span class="compare-stars">★</span> <span class="compare-rating-num">${c.rating||'—'}</span>${isTop?'<span class="compare-winner-tag">最高</span>':''}<div class="compare-reviews">${(c.reviews||0).toLocaleString('zh-TW')} 則評論</div></td>`;
+  });
+  html += '</tr><tr><th>NTD 價格</th>';
+  clinics.forEach(c => {
+    const isLowest = c.price && parseFloat(c.price) === minPrice;
+    html += c.price
+      ? `<td${isLowest?' class="compare-winner"':''}><span class="compare-price-big">NT$${c.price}</span><span class="compare-price-unit">/單位</span>${isLowest?'<span class="compare-winner-tag">最優惠</span>':''}</td>`
+      : '<td><span class="compare-no-price">未提供</span></td>';
+  });
+  html += '</tr><tr><th>地區</th>';
+  clinics.forEach(c => { html += `<td>${c.neighbourhood||c.region||'—'}</td>`; });
+  html += '</tr><tr><th>電話</th>';
+  clinics.forEach(c => { html += `<td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--rose)">${c.phone}</a>` : '—'}</td>`; });
+  html += '</tr><tr><th>網站</th>';
+  clinics.forEach(c => { html += `<td>${c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="color:var(--rose);font-size:0.82rem;">前往網站 →</a>` : '—'}</td>`; });
+  html += '</tr></tbody></table>';
+  document.getElementById('compareTable').outerHTML = html.replace('<table', '<table id="compareTable"');
+  document.getElementById('compareTable').outerHTML = html;
+  document.getElementById('compareModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCompareModal() { document.getElementById('compareModalOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+function compareFromShortlist() {
+  const list = getShortlist().slice(0, 3);
+  compareList = list; updateCompareBar(); syncCompareButtons();
+  closeShortlistDrawer(); openCompareModal();
+}
+document.getElementById('compareModalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('compareModalOverlay')) closeCompareModal(); });
+
+// ─── CLINIC LOOKUP ────────────────────────────────────────────
+function findClinic(id) {
+  const sid = String(id);
+  return currentPageClinics.find(c => String(c.id) === sid) || clinicsIndex.find(c => String(c.id) === sid) || null;
+}
+
+// ─── OPEN CLINIC MODAL (reuse Canada's /api/get-clinics single fetch) ─────
+window.openClinicModal = async function(id) {
+  const c = findClinic(String(id));
+  if (!c) return;
+  const content = [
+    c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:8px 8px 0 0;" loading="lazy">` : '',
+    `<div style="padding:1.5rem;">`,
+    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.5rem;font-weight:500;margin-bottom:0.5rem;">${c.name}</h2>`,
+    `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">📍 ${c.neighbourhood||c.region||''}</p>`,
+    `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">`,
+    `<span style="color:var(--gold);">★</span><strong>${c.rating||'—'}</strong>`,
+    `<span style="color:var(--muted);font-size:0.82rem;">(${(c.reviews||0).toLocaleString('zh-TW')} 則評論)</span>`,
+    `</div>`,
+    c.price ? `<p style="margin-bottom:1rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/單位</span></p>` : '',
+    c.phone ? `<p style="margin-bottom:0.5rem;font-size:0.9rem;">📞 <a href="tel:${c.phone}" style="color:var(--rose);">${c.phone}</a></p>` : '',
+    c.website ? `<p style="margin-bottom:1rem;font-size:0.9rem;"><a href="${c.website}" target="_blank" rel="noopener" style="color:var(--rose);">前往官網 →</a></p>` : '',
+    `</div>`
+  ].join('');
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(28,23,20,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--cream);border-radius:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;position:relative;animation:fadeUp 0.25s ease;';
+  modal.innerHTML = `<button onclick="this.closest('[data-overlay]').remove();document.body.style.overflow='';" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.3);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;">✕</button>${content}`;
+  overlay.dataset.overlay = '1';
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+};
+
+// ─── VISIT SIGNALS ────────────────────────────────────────────
+async function fetchVisitSignals(ids) {
+  if (!ids.length) return;
+  try {
+    const res = await fetch('/api/get-visit-signals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinic_ids: ids })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    (data.signals || []).forEach(s => {
+      const yesEl = document.getElementById('vote-yes-count-' + s.clinic_id);
+      const noEl = document.getElementById('vote-no-count-' + s.clinic_id);
+      if (yesEl) yesEl.textContent = s.yes_count || 0;
+      if (noEl) noEl.textContent = s.no_count || 0;
+    });
+  } catch(e) {}
+}
+
+async function fetchMyVotes(ids) {
+  if (!_currentUser || !ids.length) return;
+  try {
+    const res = await fetch('/api/get-my-votes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinic_ids: ids, access_token: (await _sb.auth.getSession()).data.session?.access_token })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    (data.votes || []).forEach(v => {
+      const yBtn = document.getElementById('vote-yes-' + v.clinic_id);
+      const nBtn = document.getElementById('vote-no-' + v.clinic_id);
+      if (yBtn) yBtn.classList.add('voted', v.would_return ? 'voted-on' : '');
+      if (nBtn) nBtn.classList.add('voted', !v.would_return ? 'voted-on' : '');
+    });
+  } catch(e) {}
+}
+
+window.cardVote = async function(clinicId, vote, btn) {
+  if (!_currentUser) {
+    try { localStorage.setItem('sd_pending_vote', JSON.stringify({ clinic_id: clinicId, vote })); } catch {}
+    sessionStorage.setItem('sd_oauth_return', '1');
+    openAuthModal();
+    return;
+  }
+  const session = (await _sb.auth.getSession()).data.session;
+  if (!session) return;
+  const yBtn = document.getElementById('vote-yes-' + clinicId);
+  const nBtn = document.getElementById('vote-no-' + clinicId);
+  [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.add('voted'));
+  btn.classList.add('voted-on');
+  try {
+    const res = await fetch('/api/submit-visit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote === 'yes', access_token: session.access_token })
+    });
+    if (res.status === 409) { showToast('您已為此診所投票。'); return; }
+    if (res.ok) {
+      const countEl = document.getElementById('vote-' + vote + '-count-' + clinicId);
+      if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+    }
+  } catch(e) {}
+};
+
+// ─── MISSING CLINIC ───────────────────────────────────────────
+function openMissingClinicModal() { document.getElementById('missingClinicModal').classList.add('open'); document.getElementById('missing-modal-form').style.display = ''; document.getElementById('missing-modal-success').style.display = 'none'; }
+function closeMissingClinicModal() { document.getElementById('missingClinicModal').classList.remove('open'); }
+document.addEventListener('DOMContentLoaded', () => { document.getElementById('missingClinicModal')?.addEventListener('click', e => { if (e.target === document.getElementById('missingClinicModal')) closeMissingClinicModal(); }); });
+async function submitMissingClinic() {
+  const name = document.getElementById('missing-clinic-name').value.trim();
+  const email = document.getElementById('missing-clinic-email').value.trim();
+  const hood = document.getElementById('missing-clinic-hood').value.trim();
+  const btn = document.getElementById('missing-submit-btn');
+  if (!name || !email) { showToast('請填寫診所名稱與電子郵件。'); return; }
+  btn.disabled = true; btn.textContent = '送出中…';
+  try { await fetch('/api/submit-claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'missing', clinic_name: name, owner_email: email, clinic_neighbourhood: hood, owner_name: '', owner_role: 'Owner' }) }); } catch(e) {}
+  document.getElementById('missing-modal-form').style.display = 'none';
+  document.getElementById('missing-modal-success').style.display = 'block';
+}
+
+// ─── SUPABASE AUTH ────────────────────────────────────────────
+const _SB_URL = SB_URL, _SB_KEY = SB_KEY;
+const _sb = supabase.createClient(_SB_URL, _SB_KEY);
+let _currentUser = null, _authMode = 'signin';
+
+async function initAuth() {
+  let session = (await _sb.auth.getSession()).data.session;
+  if (!session) { await new Promise(r => setTimeout(r, 800)); session = (await _sb.auth.getSession()).data.session; }
+  if (session?.user) setUser(session.user); else setLoggedOut();
+  _sb.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+      if (window.location.hash.includes('access_token') || window.location.hash === '#') window.history.replaceState({}, document.title, window.location.pathname);
+      setUser(session.user); closeAuthModal(); mergeLocalShortlistToSupabase();
+      let pending = null; try { pending = JSON.parse(localStorage.getItem('sd_pending_vote')); } catch {}
+      if (pending?.clinic_id && pending?.vote) {
+        localStorage.removeItem('sd_pending_vote');
+        fetch('/api/submit-visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinic_id: String(pending.clinic_id), would_return: pending.vote === 'yes', access_token: session.access_token }) }).catch(() => {});
+      }
+    } else if (event === 'SIGNED_OUT') { setLoggedOut(); }
+  });
+}
+
+function setUser(user) {
+  _currentUser = user;
+  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || '用戶';
+  const firstName = name.split(' ')[0];
+  const initial = firstName.charAt(0).toUpperCase();
+  const signInBtn = document.getElementById('navSignInBtn');
+  const userMenu = document.getElementById('navUserMenu');
+  if (signInBtn) signInBtn.style.display = 'none';
+  if (userMenu) userMenu.style.display = 'block';
+  const nameEl = document.getElementById('navUserName');
+  const initialEl = document.getElementById('navUserInitial');
+  if (nameEl) nameEl.textContent = firstName;
+  if (initialEl) initialEl.textContent = initial;
+  if (user.user_metadata?.avatar_url && initialEl) initialEl.outerHTML = `<img class="nav-user-avatar" id="navUserInitial" src="${user.user_metadata.avatar_url}" alt="">`;
+  closeAuthModal(); syncSaveButtons();
+}
+function setLoggedOut() { _currentUser = null; document.getElementById('navSignInBtn').style.display = 'inline-block'; document.getElementById('navUserMenu').style.display = 'none'; syncSaveButtons(); }
+function toggleUserDropdown() { document.getElementById('navUserDropdown').classList.toggle('open'); }
+document.addEventListener('click', e => { const menu = document.getElementById('navUserMenu'); if (menu && !menu.contains(e.target)) document.getElementById('navUserDropdown').classList.remove('open'); });
+function openAuthModal() { document.getElementById('authModalOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeAuthModal() { document.getElementById('authModalOverlay').classList.remove('open'); document.body.style.overflow = ''; document.getElementById('authError').textContent = ''; }
+document.getElementById('authModalOverlay')?.addEventListener('click', e => { if (e.target === document.getElementById('authModalOverlay')) closeAuthModal(); });
+function toggleAuthMode() { _authMode = _authMode === 'signin' ? 'signup' : 'signin'; document.getElementById('authSubmitBtn').textContent = _authMode === 'signin' ? '登入' : '建立帳戶'; document.getElementById('authToggleText').textContent = _authMode === 'signin' ? '還沒有帳戶？' : '已有帳戶？'; document.querySelector('.auth-toggle button').textContent = _authMode === 'signin' ? '註冊' : '登入'; document.getElementById('authError').textContent = ''; }
+
+function isInAppBrowser() {
+  const ua = (navigator.userAgent || '').toLowerCase();
+  return ['micromessenger','wechat','instagram','fban','fbav','line/','twitter','tiktok','kakaotalk'].some(s => ua.includes(s)) ||
+    (/iphone|ipod|ipad/.test(ua) && !/safari/.test(ua));
+}
+function showBrowserPrompt() {
+  if (document.getElementById('sdBrowserPrompt')) return true;
+  const url = window.location.href;
+  const ov = document.createElement('div');
+  ov.id = 'sdBrowserPrompt';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(28,23,20,0.78);display:flex;align-items:center;justify-content:center;padding:24px;';
+  ov.innerHTML = '<div style="background:var(--cream);color:var(--deep);max-width:340px;width:100%;border-radius:14px;padding:24px;font-family:inherit;"><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.5rem;margin-bottom:10px;">請在瀏覽器中開啟</div><div style="font-size:0.9rem;line-height:1.5;color:var(--muted);margin-bottom:16px;">Google 登入需在真實瀏覽器中進行。請點選右上角選單，選擇「在瀏覽器中開啟」。</div><button id="sdBrowserPromptClose" style="width:100%;background:none;border:1px solid rgba(0,0,0,0.15);border-radius:8px;padding:10px;font-size:0.85rem;cursor:pointer;">關閉</button></div>';
+  document.body.appendChild(ov);
+  document.getElementById('sdBrowserPromptClose')?.addEventListener('click', () => ov.remove());
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  return true;
+}
+function oauthBlockedByWebview() { if (isInAppBrowser()) { showBrowserPrompt(); return true; } return false; }
+
+async function handleGoogleSignIn() {
+  if (oauthBlockedByWebview()) return;
+  const { error } = await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/account', queryParams: { prompt: 'select_account' } } });
+  if (error) document.getElementById('authError').textContent = error.message;
+}
+async function handleEmailAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authSubmitBtn');
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = '請輸入電子郵件與密碼。'; return; }
+  btn.disabled = true; btn.textContent = _authMode === 'signin' ? '登入中…' : '建立帳戶中…';
+  const result = _authMode === 'signin' ? await _sb.auth.signInWithPassword({ email, password }) : await _sb.auth.signUp({ email, password });
+  btn.disabled = false; btn.textContent = _authMode === 'signin' ? '登入' : '建立帳戶';
+  if (result.error) { errEl.textContent = result.error.message; }
+  else if (_authMode === 'signup' && !result.data.session) { errEl.style.color = 'var(--green)'; errEl.textContent = '帳戶已建立！請確認您的電子郵件。'; }
+}
+async function handleSignOut() { await _sb.auth.signOut(); window.location.reload(); }
+
+// ─── SHORTLIST ────────────────────────────────────────────────
+const SHORTLIST_KEY = 'skinday_tw_shortlist';
+function getShortlist() { try { return JSON.parse(localStorage.getItem(SHORTLIST_KEY) || '[]'); } catch(e) { return []; } }
+function saveShortlist(list) { try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(list)); } catch(e) {} }
+async function getShortlistIds() {
+  if (_currentUser) { const { data } = await _sb.from('saved_clinics').select('clinic_id').eq('user_id', _currentUser.id); return (data||[]).map(r => r.clinic_id); }
+  return getShortlist();
+}
+window.toggleSave = async function(id, e) {
+  e?.stopPropagation();
+  const btn = document.getElementById('save-'+id);
+  if (_currentUser) {
+    const existing = await _sb.from('saved_clinics').select('id').eq('user_id', _currentUser.id).eq('clinic_id', String(id)).maybeSingle();
+    if (existing.data) { await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id).eq('clinic_id', String(id)); if (btn) btn.classList.remove('saved'); }
+    else { await _sb.from('saved_clinics').insert({ user_id: _currentUser.id, clinic_id: String(id) }); if (btn) btn.classList.add('saved'); }
+  } else {
+    const list = getShortlist();
+    const idx = list.indexOf(String(id));
+    if (idx > -1) { list.splice(idx, 1); if (btn) btn.classList.remove('saved'); }
+    else { list.push(String(id)); if (btn) btn.classList.add('saved'); }
+    saveShortlist(list);
+  }
+  await updateShortlistUI();
+};
+async function syncSaveButtons() { const ids = await getShortlistIds(); document.querySelectorAll('.btn-save-card').forEach(b => { const id = b.id.replace('save-',''); b.classList.toggle('saved', ids.includes(String(id))); }); }
+async function mergeLocalShortlistToSupabase() {
+  const local = getShortlist();
+  if (!local.length || !_currentUser) return;
+  await Promise.all(local.map(id => _sb.from('saved_clinics').upsert({ user_id: _currentUser.id, clinic_id: String(id) }, { onConflict: 'user_id,clinic_id' })));
+  saveShortlist([]);
+}
+async function updateShortlistUI() {
+  const ids = await getShortlistIds();
+  const badge = document.getElementById('navShortlistBadge');
+  if (badge) { badge.textContent = ids.length; badge.classList.toggle('visible', ids.length > 0); }
+  const count = document.getElementById('shortlistCount');
+  if (count) count.textContent = ids.length + ' 家診所';
+  // Render drawer
+  const body = document.getElementById('shortlistDrawerBody');
+  const footer = document.getElementById('shortlistDrawerFooter');
+  if (!body) return;
+  if (ids.length === 0) {
+    body.innerHTML = '<div class="shortlist-empty"><div class="shortlist-empty-icon">♡</div><p>尚未收藏任何診所。<br>點擊診所卡片上的愛心即可收藏。</p></div>';
+    if (footer) footer.style.display = 'none';
+    return;
+  }
+  if (footer) footer.style.display = '';
+  const clinics = ids.map(id => findClinic(String(id))).filter(Boolean);
+  body.innerHTML = clinics.map(c => `
+    <div class="shortlist-item">
+      <div class="shortlist-item-logo">${c.logo ? `<img src="${c.logo}" alt="">` : c.name.charAt(0)}</div>
+      <div class="shortlist-item-info">
+        <div class="shortlist-item-name">${c.name}</div>
+        <div class="shortlist-item-meta">📍 ${c.neighbourhood||c.region||''} · ★${c.rating||'—'}</div>
+        ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">NT$${c.price}/單位</div>` : ''}
+      </div>
+      <button class="shortlist-item-remove" onclick="toggleSave('${c.id}', event)">✕</button>
+    </div>`).join('') + (ids.length - clinics.length > 0 ? `<p style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">${ids.length - clinics.length} 家診所資料尚未載入。</p>` : '');
+}
+function openShortlistDrawer() { document.getElementById('shortlistDrawerOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; updateShortlistUI(); }
+function closeShortlistDrawer(e) { if (e && e.target !== document.getElementById('shortlistDrawerOverlay')) return; document.getElementById('shortlistDrawerOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+async function clearShortlist() {
+  if (_currentUser) await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id);
+  saveShortlist([]);
+  document.querySelectorAll('.btn-save-card.saved').forEach(b => b.classList.remove('saved'));
+  await updateShortlistUI();
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────
+(function() {
+  let _lbUrls = [], _lbIdx = 0, _lbTouch = null;
+  function openLightbox(urls, idx) { _lbUrls = urls; _lbIdx = idx||0; renderLightbox(); document.getElementById('sdLightbox').classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeLightbox() { document.getElementById('sdLightbox').classList.remove('open'); document.body.style.overflow = ''; }
+  function renderLightbox() { document.getElementById('sdLightboxImg').src = _lbUrls[_lbIdx]; document.getElementById('sdLightboxCounter').textContent = (_lbIdx+1)+' / '+_lbUrls.length; document.getElementById('sdLightboxPrev').disabled = _lbIdx===0; document.getElementById('sdLightboxNext').disabled = _lbIdx===_lbUrls.length-1; }
+  window.openLightbox = openLightbox;
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('sdLightboxClose').addEventListener('click', closeLightbox);
+    document.getElementById('sdLightboxPrev').addEventListener('click', () => { if (_lbIdx>0){_lbIdx--;renderLightbox();} });
+    document.getElementById('sdLightboxNext').addEventListener('click', () => { if (_lbIdx<_lbUrls.length-1){_lbIdx++;renderLightbox();} });
+    document.getElementById('sdLightbox').addEventListener('click', e => { if (e.target===document.getElementById('sdLightbox')) closeLightbox(); });
+    document.addEventListener('keydown', e => { const lb=document.getElementById('sdLightbox'); if (!lb.classList.contains('open')) return; if (e.key==='Escape') closeLightbox(); if (e.key==='ArrowLeft'&&_lbIdx>0){_lbIdx--;renderLightbox();} if (e.key==='ArrowRight'&&_lbIdx<_lbUrls.length-1){_lbIdx++;renderLightbox();} });
+    document.getElementById('sdLightbox').addEventListener('touchstart', e => { _lbTouch=e.touches[0].clientX; },{passive:true});
+    document.getElementById('sdLightbox').addEventListener('touchend', e => { if(_lbTouch===null)return;const dx=e.changedTouches[0].clientX-_lbTouch;_lbTouch=null;if(Math.abs(dx)<40)return;if(dx<0&&_lbIdx<_lbUrls.length-1){_lbIdx++;renderLightbox();}else if(dx>0&&_lbIdx>0){_lbIdx--;renderLightbox();} },{passive:true});
+  });
+})();
+
+// ─── INIT ─────────────────────────────────────────────────────
+(async function init() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;letter-spacing:0.03em;">載入中…</div>';
+
+  const [indexRes, pageRes] = await Promise.allSettled([
+    fetch('/api/get-clinics?mode=index&country=taiwan').then(r => r.ok ? r.json() : []),
+    fetch(buildApiUrl(0)).then(r => r.ok ? r.json() : { clinics: [], total: 0, hasMore: false }),
+  ]);
+
+  if (indexRes.status === 'fulfilled' && Array.isArray(indexRes.value)) {
+    clinicsIndex = indexRes.value.map(normaliseClinic);
+  }
+
+  if (pageRes.status === 'fulfilled') {
+    const data = pageRes.value;
+    const raw = (data.clinics || []).map(normaliseClinic);
+    currentPageClinics = raw; currentPage = 0; currentTotal = data.total || 0;
+    if (raw.length === 0) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">找不到診所。</div>'; }
+    else { renderPageCards(raw, false); }
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) loadMoreBtn.style.display = data.hasMore ? 'inline-block' : 'none';
+  } else {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理頁面。</div>';
+  }
+
+  await initAuth();
+  await updateShortlistUI();
+
+  // Live clinic count
+  try {
+    const res = await fetch(SB_URL + '/rest/v1/clinics?select=id&approved=eq.true&country=eq.taiwan', { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Prefer': 'count=exact', 'Range': '0-0' } });
+    const count = parseInt((res.headers.get('content-range')||'').split('/')[1]||'0', 10);
+    if (count) { const el = document.getElementById('heroClinicCount'); if (el) el.textContent = count.toLocaleString('zh-TW') + '+'; }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>

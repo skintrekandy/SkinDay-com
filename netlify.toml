@@ -73,3 +73,15 @@
   to     = "/refund"
   status = 301
   force  = true
+
+[[redirects]]
+  from   = "/taiwan.html"
+  to     = "/taiwan"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/guide.html"
+  to     = "/guide"
+  status = 301
+  force  = true
