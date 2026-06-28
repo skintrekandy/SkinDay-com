@@ -547,9 +547,13 @@ const LASER_TX = {
 function buildLaserPrompt(sel) {
   const view = normalizeView(sel);
   const tx = LASER_TX[sel.laserType] || LASER_TX.rf;
-  const isStrong = sel.isStrongPass === 'true' || sel.isStrongPass === true;
-  const projection = (sel.projection === 'optimistic' || isStrong) ? 'optimistic' : 'expected';
-  const magnitude = tx[projection] || tx.expected;
+  // Energy devices (RF, HIFU) do NOT offer a stronger-response pass. A single
+  // energy course has a low, fixed visual ceiling, so a forced "stronger" pass
+  // has no honest larger target and the image model fills the gap by destroying
+  // skin texture (mottled, waxy, blotchy). The strong/optimistic toggle is
+  // therefore intentionally ignored here: laser always renders the expected
+  // result. Do not reintroduce an optimistic projection for laser.
+  const magnitude = tx.expected;
   const isOblique = view !== 'frontal';
   const framing = isOblique
     ? 'Produce a clinically realistic photograph of the same person after an energy-based skin-tightening treatment, keeping the same oblique pose, identity, apparent age, skin character, lighting, and camera setup.'
