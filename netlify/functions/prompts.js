@@ -1141,68 +1141,16 @@ const CROSS_ADDON_PROMPTS = {
     'Preserve identity, apparent age, skin tone, ethnicity and all ethnic features, facial asymmetry, eyes, brows, lips, nose, ears, hair, headband, neck, clothing, background, lighting, and camera angle exactly. The result must be understated, natural, and unmistakably the same person. Do not add text, labels, watermarks, or annotations.'
 };
 
-// M16: Build a short description of the baseline filler that is already present,
-// from the areas + intensity the patient's baseline used. Used to reconstruct the
-// already-treated face in a single pass from the original photo (instead of
-// editing the degraded baseline render). Intensity words map to lay magnitude.
-function describeBaselineFiller(baselineAreas, baselineIntensity) {
-  const areaNames = {
-    chin_jawline: 'the chin and jawline',
-    chin: 'the chin',
-    jawline: 'the jawline',
-    cheeks: 'the cheeks (midface)',
-    temple: 'the temples',
-    tear_trough: 'the under-eye tear troughs',
-    nose: 'the nose bridge',
-    lips: 'the lips'
-  };
-  const list = String(baselineAreas || '')
-    .split(',')
-    .map(a => a.trim())
-    .filter(Boolean)
-    .map(a => areaNames[a] || null)
-    .filter(Boolean);
-  if (!list.length) return '';
-  const mag = baselineIntensity === 'enhanced' ? 'a clearly visible amount of'
-            : baselineIntensity === 'moderate' ? 'a moderate, natural amount of'
-            : 'a small, natural amount of';
-  let areasText;
-  if (list.length === 1) areasText = list[0];
-  else if (list.length === 2) areasText = list[0] + ' and ' + list[1];
-  else areasText = list.slice(0, -1).join(', ') + ', and ' + list[list.length - 1];
-  return 'This patient has ALREADY received ' + mag + ' hyaluronic acid filler in ' +
-    areasText + ', and that result is already present and must be faithfully reproduced. ';
-}
-
-function buildScenarioPrompt(scenarioKey, view, baselineType, opts) {
-  opts = opts || {};
-  const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
-                     view === 'l45' || view === 'r45');
-
-  // M16: FILLER baselines build the add-on in ONE clean pass from the ORIGINAL
-  // photo. The prompt reconstructs the already-present baseline filler (from its
-  // areas + intensity) AND describes the new add-on, so a single generation shows
-  // the full stacked result without the texture loss of editing a prior render.
-  if (baselineType === 'filler') {
-    const cp = CROSS_ADDON_PROMPTS[scenarioKey];
-    if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
-    const viewLead = isOblique
-      ? 'IMPORTANT: this is a three-quarter (oblique) photograph. Preserve the exact head angle, crop, perspective, and facial orientation. Do not rotate the face toward frontal. '
-      : '';
-    const onePassLead =
-      'This is an original medical consultation photograph and is the direct edit target. ' +
-      'Produce the full combined result in a SINGLE generation from this original photo. ' +
-      'Preserve the natural skin texture, pores, fine lines, and tonal variation of the original exactly; do not smooth, retouch, wax, or beautify the skin. ';
-    const baselineClause = describeBaselineFiller(opts.baselineAreas, opts.baselineIntensity);
-    return NO_TEXT_RULE + ' ' + viewLead + onePassLead + baselineClause + cp;
-  }
-
-  // M14: other cross-type baselines (laser / tox) keep editing the already-treated
-  // baseline image directly via the generic add-on prompts.
-  const isCrossType = baselineType === 'laser' || baselineType === 'tox';
+function buildScenarioPrompt(scenarioKey, view, baselineType) {
+  // M14: cross-type baselines (filler / laser) use the generic add-on prompts,
+  // which edit the already-treated baseline image directly. Sculptra baselines
+  // (biostim, or unspecified for backward compatibility) use the original set.
+  const isCrossType = baselineType === 'filler' || baselineType === 'laser' || baselineType === 'tox';
   if (isCrossType) {
     const cp = CROSS_ADDON_PROMPTS[scenarioKey];
     if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
+    const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
+                       view === 'l45' || view === 'r45');
     const viewLead = isOblique
       ? 'IMPORTANT: this is a three-quarter (oblique) photograph. Preserve the exact head angle, crop, perspective, and facial orientation. Do not rotate the face toward frontal. '
       : '';
@@ -1211,6 +1159,9 @@ function buildScenarioPrompt(scenarioKey, view, baselineType, opts) {
 
   const s = SCENARIO_PROMPTS[scenarioKey];
   if (!s) throw new Error('Unknown scenario key: ' + scenarioKey);
+
+  const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
+                     view === 'l45' || view === 'r45');
 
   // stronger_sculptra needs an oblique lead that preserves pose WITHOUT saying
   // "minimum change" -- that phrasing suppresses the Sculptra magnitude we want.

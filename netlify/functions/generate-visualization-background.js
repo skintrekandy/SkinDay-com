@@ -577,13 +577,7 @@ exports.handler = async (event) => {
 
       let staticPrompt;
       try {
-        // M16: pass the baseline filler description (areas + intensity) so the
-        // cumulative prompt can reproduce the already-present filler before adding
-        // the new layer, in one clean pass from the original photo.
-        staticPrompt = buildScenarioPrompt(scenarioKey, f.view || 'frontal', f.baselineType, {
-          baselineAreas: f.baselineAreas || '',
-          baselineIntensity: f.baselineIntensity || ''
-        });
+        staticPrompt = buildScenarioPrompt(scenarioKey, f.view || 'frontal', f.baselineType);
       } catch (e) {
         await fail('Invalid scenario key: ' + scenarioKey, 'bad_request');
         await refundIfBilled(store, jobId, 'invalid scenarioKey');

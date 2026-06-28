@@ -133,8 +133,7 @@ const FIELD_KEYS = [
   'timeline', 'note', 'prompt', 'isStrongPass',
   'angle', 'sex', 'view', 'phenotype', 'sculptraPhenotype', 'patientAge', 'laserType',
   'sourceJobId',
-  'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType',  // M12.2 scenario; M14 baselineType
-  'baselineAreas', 'baselineIntensity'  // M16: baseline filler description for one-pass cumulative add-on prompt
+  'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType'  // M12.2 scenario; M14 baselineType
 ];
 
 exports.handler = async (event) => {
