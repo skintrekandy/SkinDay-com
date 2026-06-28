@@ -4,12 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <meta name="color-scheme" content="light" />
-  <title>SkinDay Taiwan — 醫美診所目錄 · 2,000+ 家診所</title>
-  <meta name="description" content="比較台灣各地醫美診所。2,000+ 家診所，涵蓋台北、台中、高雄、台南等主要城市，包含評分、診所資訊與治療項目。" />
+  <title>SkinDay Taiwan — 醫美診所搜尋 · 2,000+ 家診所</title>
+  <meta name="description" content="探索並比較全台醫美診所。收錄 2,000+ 家診所，涵蓋台北、台中、高雄、台南等主要城市，提供評分、照片、診所資訊與治療項目。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://skinday.com/taiwan" />
   <meta property="og:title" content="SkinDay Taiwan — 醫美診所目錄 · 2,000+ 家診所" />
-  <meta property="og:description" content="比較台灣各地醫美診所評分與治療項目。" />
+  <meta property="og:description" content="比較全台醫美診所的評分、照片與治療項目。" />
   <meta property="og:site_name" content="SkinDay" />
   <link rel="canonical" href="https://skinday.com/taiwan" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -561,10 +561,10 @@
 <!-- HERO -->
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-eyebrow">SkinDay Taiwan · 台灣醫美目錄</div>
-    <h1>Find your clinic.<br><em>In Taiwan.</em></h1>
-    <p class="hero-sub">Ratings, photos, and verified profiles across Taiwan's aesthetic medicine clinics — from Taipei to Kaohsiung.</p>
-    <p class="hero-sub-zh">比較全台醫美診所的評分、照片與完整資料，涵蓋台北、台中、高雄、台南各地。</p>
+    <div class="hero-eyebrow">SkinDay Taiwan · 台灣醫美診所搜尋</div>
+    <h1>比較醫美診所，<br><em>做更安心的選擇。</em></h1>
+    <p class="hero-sub">評分、照片、診所資料與治療項目，協助你快速掌握全台醫美診所。</p>
+    <p class="hero-sub-zh">從台北、台中到高雄、台南，整理公開資訊與診所資料，讓比較更清楚。</p>
     <div class="hero-stats">
       <div>
         <div class="stat-num" id="heroClinicCount">2,172+</div>
@@ -572,7 +572,7 @@
       </div>
       <div>
         <div class="stat-num">18</div>
-        <div class="stat-label">縣市地區</div>
+        <div class="stat-label">縣市</div>
       </div>
       <div>
         <div class="stat-num">4.5★</div>
@@ -677,9 +677,9 @@
 <!-- DIRECTORY SECTION -->
 <section class="comparison-section" id="prices">
   <div class="section-header">
-    <div class="section-eyebrow">全台醫美診所資料庫</div>
-    <h2 class="section-title">真實評價。<br><em>更好的選擇。</em></h2>
-    <p class="section-desc">評分、照片、完整診所資料 — 為您呈現評論看不到的一面。未提供價格的診所同樣列入，讓您掌握完整市場全貌。</p>
+    <div class="section-eyebrow">全台醫美診所搜尋</div>
+    <h2 class="section-title">真實評價。<br><em>更清楚的選擇。</em></h2>
+    <p class="section-desc">整理評分、照片與診所資料，讓您看見評論之外的細節。即使尚未提供價格的診所，也一併保留，協助您掌握更完整的市場全貌。</p>
   </div>
 
   <div class="filter-wrap">
@@ -697,9 +697,9 @@
   </div>
 
   <div class="load-more-wrap">
-    <button class="btn-outline" id="loadMoreBtn" onclick="loadMore()" style="display:none">載入更多診所</button>
+    <button class="btn-outline" id="loadMoreBtn" onclick="loadMore()" style="display:none">查看更多診所</button>
     <p style="margin-top:1.5rem;font-size:0.85rem;color:var(--muted);text-align:center;">
-      找不到您的診所？
+      找不到想看的診所？
       <a href="#" onclick="event.preventDefault();openMissingClinicModal()" style="color:var(--rose);text-decoration:none;border-bottom:1px solid var(--rose-bg);">告訴我們 →</a>
     </p>
   </div>
@@ -710,22 +710,22 @@
   <div class="trust-item">
     <div class="trust-icon">📸</div>
     <div class="trust-text">
-      <strong>真實診所照片</strong>
-      <span>Google Maps 公開資料</span>
+      <strong>診所實景照片</strong>
+      <span>取自 Google Maps 公開資料</span>
     </div>
   </div>
   <div class="trust-item">
     <div class="trust-icon">⭐</div>
     <div class="trust-text">
-      <strong>Google 評分</strong>
-      <span>每家診所均附評論數</span>
+      <strong>Google 評分與評論</strong>
+      <span>附評論數供您參考</span>
     </div>
   </div>
   <div class="trust-item">
     <div class="trust-icon">🔍</div>
     <div class="trust-text">
       <strong>2,172+ 家診所</strong>
-      <span>涵蓋全台 18 縣市</span>
+      <span>涵蓋全台 18 個縣市</span>
     </div>
   </div>
 </div>
@@ -749,9 +749,9 @@
 <div class="compare-bar" id="compareBar">
   <span class="compare-bar-label">比較</span>
   <div class="compare-slots" id="compareSlots">
-    <div class="compare-slot" id="compareSlot0"><span class="compare-slot-name">選擇診所</span></div>
-    <div class="compare-slot" id="compareSlot1"><span class="compare-slot-name">選擇診所</span></div>
-    <div class="compare-slot" id="compareSlot2"><span class="compare-slot-name">選擇診所</span></div>
+    <div class="compare-slot" id="compareSlot0"><span class="compare-slot-name">選取診所</span></div>
+    <div class="compare-slot" id="compareSlot1"><span class="compare-slot-name">選取診所</span></div>
+    <div class="compare-slot" id="compareSlot2"><span class="compare-slot-name">選取診所</span></div>
   </div>
   <div class="compare-bar-actions">
     <button class="btn-compare-now" id="btnCompareNow" onclick="openCompareModal()" disabled>開始比較</button>
@@ -763,7 +763,7 @@
 <div class="compare-modal-overlay" id="compareModalOverlay">
   <div class="compare-modal">
     <div class="compare-modal-header">
-      <h3>診所比較</h3>
+      <h3>比較診所</h3>
       <button class="compare-modal-close" onclick="closeCompareModal()">✕</button>
     </div>
     <div class="compare-modal-body">
@@ -785,7 +785,7 @@
     <div class="shortlist-drawer-body" id="shortlistDrawerBody">
       <div class="shortlist-empty">
         <div class="shortlist-empty-icon">♡</div>
-        <p>尚未收藏任何診所。<br>點擊診所卡片上的愛心即可收藏。</p>
+        <p>尚未收藏診所。<br>點擊診所卡片上的愛心，即可加入收藏。</p>
       </div>
     </div>
     <div class="shortlist-drawer-footer" id="shortlistDrawerFooter" style="display:none;">
@@ -800,7 +800,7 @@
   <div class="auth-modal">
     <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
     <div class="auth-modal-logo">Skin<span>Day</span></div>
-    <div class="auth-modal-tagline">收藏診所，建立您的比較清單。</div>
+    <div class="auth-modal-tagline">收藏診所，建立您的比較名單。</div>
     <button class="auth-google-btn" onclick="handleGoogleSignIn()">
       <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
       使用 Google 繼續
@@ -824,7 +824,7 @@
   <div class="missing-modal">
     <button class="missing-modal-close" onclick="closeMissingClinicModal()">✕</button>
     <div id="missing-modal-form">
-      <h3>新增診所</h3>
+      <h3>新增缺少的診所</h3>
       <p>找不到您的診所？填寫資料，我們將在 2 個工作天內完成新增。</p>
       <input class="cm-form-input" type="text" id="missing-clinic-name" placeholder="診所名稱" required />
       <input class="cm-form-input" type="email" id="missing-clinic-email" placeholder="電子郵件" required />
@@ -833,7 +833,7 @@
     </div>
     <div class="missing-modal-success" id="missing-modal-success">
       <div class="success-icon">✓</div>
-      <p>感謝您的提交。<br>我們將在幾天內與您聯繫。</p>
+      <p>感謝您的回報。<br>我們將在幾天內與您確認。</p>
     </div>
   </div>
 </div>
@@ -1171,7 +1171,7 @@ async function fetchPage(page, append) {
     if (loadMoreBtn) loadMoreBtn.style.display = data.hasMore ? 'inline-block' : 'none';
   } catch(err) {
     console.error(err);
-    if (!append) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理頁面。</div>';
+    if (!append) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理後再試。</div>';
   } finally {
     isLoading = false;
     const sentinel = document.querySelector('.load-more-sentinel');
@@ -1522,7 +1522,7 @@ async function handleEmailAuth() {
   const result = _authMode === 'signin' ? await _sb.auth.signInWithPassword({ email, password }) : await _sb.auth.signUp({ email, password });
   btn.disabled = false; btn.textContent = _authMode === 'signin' ? '登入' : '建立帳戶';
   if (result.error) { errEl.textContent = result.error.message; }
-  else if (_authMode === 'signup' && !result.data.session) { errEl.style.color = 'var(--green)'; errEl.textContent = '帳戶已建立！請確認您的電子郵件。'; }
+  else if (_authMode === 'signup' && !result.data.session) { errEl.style.color = 'var(--green)'; errEl.textContent = '帳戶已建立。請確認您的電子郵件。'; }
 }
 async function handleSignOut() { await _sb.auth.signOut(); window.location.reload(); }
 
@@ -1568,7 +1568,7 @@ async function updateShortlistUI() {
   const footer = document.getElementById('shortlistDrawerFooter');
   if (!body) return;
   if (ids.length === 0) {
-    body.innerHTML = '<div class="shortlist-empty"><div class="shortlist-empty-icon">♡</div><p>尚未收藏任何診所。<br>點擊診所卡片上的愛心即可收藏。</p></div>';
+    body.innerHTML = '<div class="shortlist-empty"><div class="shortlist-empty-icon">♡</div><p>尚未收藏診所。<br>點擊診所卡片上的愛心，即可加入收藏。</p></div>';
     if (footer) footer.style.display = 'none';
     return;
   }
@@ -1635,7 +1635,7 @@ async function clearShortlist() {
     const loadMoreBtn = document.getElementById('loadMoreBtn');
     if (loadMoreBtn) loadMoreBtn.style.display = data.hasMore ? 'inline-block' : 'none';
   } else {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理頁面。</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理後再試。</div>';
   }
 
   await initAuth();
