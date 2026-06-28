@@ -85,6 +85,15 @@
   .pill.is-visualize:hover{border-color:var(--rose);background:rgba(200,114,90,.05);}
   .pill.is-directory:hover{border-color:var(--gold);background:rgba(201,169,110,.05);}
 
+  /* ── DIRECTORY PILL PICKER ───────────────────────── */
+  .pill-dir-wrap{position:relative;display:flex;}
+  .pill-dir-wrap .pill{cursor:pointer;font-family:inherit;width:100%;}
+  .pill-dir-menu{display:none;position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:240px;box-shadow:0 12px 40px rgba(28,23,20,.16);z-index:60;}
+  .pill-dir-wrap.open .pill-dir-menu{display:block;}
+  .pill-dir-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:7px;text-decoration:none;font-size:.95rem;color:var(--deep);transition:background .15s;}
+  .pill-dir-item:hover{background:var(--warm);}
+  .pill-dir-item.soon{color:#aaa;cursor:default;pointer-events:none;}
+
   @keyframes rise{to{opacity:1;transform:translateY(0);}}
 
   /* ── PRODUCT CARDS ───────────────────────────────── */
@@ -209,10 +218,18 @@
       <span class="pill-name serif">Visualize</span>
       <span class="pill-sub" data-en="AI consultation previews" data-zh="AI 諮詢預覽">AI consultation previews</span>
     </a>
-    <a href="/taiwan" class="pill is-directory">
-      <span class="pill-name serif">Directory</span>
-      <span class="pill-sub" data-en="Clinic finder · Canada &amp; Taiwan" data-zh="診所搜尋 · 加拿大 &amp; 台灣">Clinic finder · Canada &amp; Taiwan</span>
-    </a>
+    <div class="pill-dir-wrap" id="pillDir">
+      <button type="button" class="pill is-directory" onclick="togglePillDir()" aria-expanded="false" aria-haspopup="true">
+        <span class="pill-name serif">Directory</span>
+        <span class="pill-sub" data-en="Clinic finder · choose a country" data-zh="診所搜尋 · 選擇國家">Clinic finder · choose a country</span>
+      </button>
+      <div class="pill-dir-menu" role="menu">
+        <a href="/canada" class="pill-dir-item" role="menuitem"><span>🍁 Canada</span><span class="nav-dir-badge live">Live</span></a>
+        <a href="/taiwan" class="pill-dir-item" role="menuitem"><span>🇹🇼 Taiwan</span><span class="nav-dir-badge live">Live</span></a>
+        <div class="pill-dir-item soon"><span>🇭🇰 Hong Kong</span><span class="nav-dir-badge">Soon</span></div>
+        <div class="pill-dir-item soon"><span>🇺🇸 United States</span><span class="nav-dir-badge">Soon</span></div>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -377,6 +394,12 @@
     viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   }
 
+  function togglePillDir() {
+    var p = document.getElementById('pillDir');
+    var isOpen = p.classList.toggle('open');
+    p.querySelector('.pill').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
   document.addEventListener('click', function(e) {
     ['navDir', 'navViz'].forEach(function(id) {
       var el = document.getElementById(id);
@@ -385,6 +408,11 @@
         el.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false');
       }
     });
+    var pill = document.getElementById('pillDir');
+    if (pill && !pill.contains(e.target)) {
+      pill.classList.remove('open');
+      pill.querySelector('.pill').setAttribute('aria-expanded', 'false');
+    }
   });
 </script>
 </body>
