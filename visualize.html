@@ -4975,31 +4975,12 @@ async function runScenario(scenarioKey){
 
     const form = new FormData();
     // M14: Sculptra baselines edit the ORIGINAL photo (planner re-describes the
-    // plan). Cross-type baselines (laser / tox / HDR) edit the BASELINE image
-    // itself, so the add-on stacks on top of the already-treated face.
-    //
-    // M16: FILLER baselines now also edit the ORIGINAL photo in ONE clean pass,
-    // not the baseline render. Editing the already-generated baseline ran
-    // gpt-image-2 on its own prior output, which degraded skin texture (the
-    // "photocopy of a photocopy" effect). Instead we send the original photo as
-    // the edit target and pass the baseline's areas + intensity so the prompt can
-    // reconstruct the already-present filler AND add the new layer in a single
-    // generation from the pristine original. Laser/tox/HDR keep the prior
-    // behavior (their baselines are not cleanly describable from areas).
+    // plan). Cross-type baselines (filler / laser / tox / HDR) edit the BASELINE
+    // image itself, so the add-on stacks on top of the already-treated face.
     const isCrossType = state.type === 'filler' || state.type === 'laser' ||
                         state.type === 'tox' ||
                         (state.type === 'biostim' && state.product === 'hdr');
-    const isFillerOnePass = (state.type === 'filler');
-    if(isFillerOnePass){
-      // One clean pass from the original; baseline reconstructed via prompt.
-      form.append('image',         originalBlob, 'original-' + angleId + '.jpg'); // edit target = original
-      form.append('originalImage', originalBlob, 'original-' + angleId + '.jpg');
-      // Tell the backend what the baseline filler was, so the cumulative prompt
-      // can reproduce it before adding the new layer.
-      const volMap = { conservative: 'natural', moderate: 'moderate', enhanced: 'enhanced' };
-      form.append('baselineAreas',     (Array.isArray(state.areas) ? state.areas.join(',') : ''));
-      form.append('baselineIntensity', (volMap[state.fillerVolume] || 'natural'));
-    } else if(isCrossType){
+    if(isCrossType){
       form.append('image',         baselineBlob, 'baseline-' + angleId + '.jpg'); // edit target = baseline
       form.append('originalImage', baselineBlob, 'baseline-' + angleId + '.jpg'); // planner unused for cross-type
     } else {
