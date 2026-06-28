@@ -450,12 +450,12 @@
     .compare-modal-close { background: none; border: none; font-size: 1.3rem; color: var(--muted); cursor: pointer; padding: 0.25rem 0.5rem; transition: color 0.2s; }
     .compare-modal-close:hover { color: var(--deep); }
     .compare-modal-body { flex: 1; overflow-y: auto; overflow-x: auto; }
-    .compare-table { width: 100%; border-collapse: collapse; }
-    .compare-table th, .compare-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; word-wrap: break-word; }
-    .compare-table th { width: 140px; min-width: 120px; background: var(--warm); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--border); white-space: nowrap; }
+    .compare-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .compare-table th, .compare-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
+    .compare-table th { width: 100px; background: var(--warm); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--border); white-space: nowrap; }
     .compare-table td { font-size: 0.88rem; color: var(--deep); line-height: 1.5; }
-    .compare-table.cols-2 td { width: calc((100% - 140px) / 2); }
-    .compare-table.cols-3 td { width: calc((100% - 140px) / 3); }
+    .compare-table.cols-2 td { width: calc((100% - 100px) / 2); }
+    .compare-table.cols-3 td { width: calc((100% - 100px) / 3); }
     .compare-col-header { background: var(--deep) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; border-bottom: 1px solid rgba(201,169,110,0.15) !important; }
     .compare-col-header .col-name { font-family: 'Noto Serif TC', serif; font-size: 1.05rem; font-weight: 500; color: var(--cream); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.2rem; line-height: 1.3; min-height: 2.6em; }
     .compare-col-header .col-meta { font-size: 0.75rem; color: var(--muted); }
@@ -468,7 +468,7 @@
     .compare-winner { background: rgba(201,169,110,0.07); }
     .compare-winner-tag { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(201,169,110,0.2); color: #9A7840; border: 1px solid rgba(201,169,110,0.35); padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
     .compare-modal-footer { padding: 1.2rem 2rem; background: var(--warm); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
-    @media (max-width: 640px) { .compare-modal-overlay { padding: 2vh 3% 2vh; align-items: flex-start; } .compare-modal { border-radius: 12px; } .compare-table th { width: 90px; min-width: 90px; font-size: 0.6rem; } .compare-price-big { font-size: 1.4rem; } }
+    @media (max-width: 640px) { .compare-modal-overlay { padding: 2vh 3% 2vh; align-items: flex-start; } .compare-modal { border-radius: 12px; } .compare-table th { width: 80px; font-size: 0.6rem; } .compare-price-big { font-size: 1.4rem; } }
 
     /* ─── AUTH MODAL ─── */
     .auth-modal-overlay { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(28,23,20,0.7); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem; }
@@ -937,6 +937,31 @@ const NEIGHBOURHOOD_LABEL = {
   'keelung-nuannuan':'暖暖區',
 };
 
+const SLUG_TO_CITY_ZH = {
+  'taipei':'台北市','new-taipei':'新北市','taoyuan':'桃園市',
+  'taichung':'台中市','tainan':'台南市','kaohsiung':'高雄市',
+  'hsinchu':'新竹市','hsinchu-county':'新竹縣','keelung':'基隆市',
+  'chiayi':'嘉義市','chiayi-county':'嘉義縣','yunlin':'雲林縣',
+  'changhua':'彰化縣','miaoli':'苗栗縣','nantou':'南投縣',
+  'pingtung':'屏東縣','hualien':'花蓮縣','taitung':'台東縣','yilan':'宜蘭縣',
+};
+
+function getCityFromSlug(slug) {
+  if (!slug) return '';
+  for (const [prefix, city] of Object.entries(SLUG_TO_CITY_ZH)) {
+    if (slug === prefix || slug.startsWith(prefix + '-')) return city;
+  }
+  return '';
+}
+
+function getNeighbourhoodFull(slug) {
+  const district = getNeighbourhoodLabel(slug);
+  const city = getCityFromSlug(slug);
+  if (!district) return city || slug || '';
+  if (!city) return district;
+  return district + ' · ' + city;
+}
+
 const CITY_PREFIXES = ['taipei','new-taipei','taoyuan','taichung','tainan','kaohsiung',
   'hsinchu','hsinchu-county','keelung','chiayi','chiayi-county','yunlin','changhua',
   'miaoli','nantou','pingtung','hualien','taitung','yilan'];
@@ -1079,7 +1104,7 @@ function renderPageCards(clinicsData, append) {
           <div class="clinic-name">
             ${c.claimed ? `<span class="clinic-name-verified">${c.name}</span>` : c.name}
           </div>
-          <div class="clinic-meta">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''}${distEl}</div>
+          <div class="clinic-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}${distEl}</div>
           <div class="rating-row">
             <span class="stars">${renderStars(c.rating)}</span>
             <span class="rating-num">${c.rating != null ? c.rating : '—'}</span>
@@ -1269,7 +1294,7 @@ function openCompareModal() {
   const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
   const maxReviews = Math.max(...clinics.map(c => parseInt(c.reviews)||0));
   let html = `<table class="compare-table ${colClass}"><thead><tr><th></th>`;
-  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''}</div></td>`; });
+  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}</div></td>`; });
   html += '</tr></thead><tbody>';
   html += '<tr><th>評分</th>';
   clinics.forEach(c => {
@@ -1284,7 +1309,7 @@ function openCompareModal() {
       : '<td><span class="compare-no-price">未提供</span></td>';
   });
   html += '</tr><tr><th>地區</th>';
-  clinics.forEach(c => { html += `<td>${getNeighbourhoodLabel(c.neighbourhood) || c.region || '—'}</td>`; });
+  clinics.forEach(c => { html += `<td>${getNeighbourhoodFull(c.neighbourhood) || c.region || '—'}</td>`; });
   html += '</tr><tr><th>電話</th>';
   clinics.forEach(c => { html += `<td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--rose)">${c.phone}</a>` : '—'}</td>`; });
   html += '</tr><tr><th>網站</th>';
@@ -1316,7 +1341,7 @@ window.openClinicModal = async function(id) {
     c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:8px 8px 0 0;" loading="lazy">` : '',
     `<div style="padding:1.5rem;">`,
     `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.5rem;font-weight:500;margin-bottom:0.5rem;">${c.name}</h2>`,
-    `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''}</p>`,
+    `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}</p>`,
     `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">`,
     `<span style="color:var(--gold);">★</span><strong>${c.rating||'—'}</strong>`,
     `<span style="color:var(--muted);font-size:0.82rem;">(${(c.reviews||0).toLocaleString('zh-TW')} 則評論)</span>`,
@@ -1555,7 +1580,7 @@ async function updateShortlistUI() {
       <div class="shortlist-item-logo">${c.logo ? `<img src="${c.logo}" alt="">` : c.name.charAt(0)}</div>
       <div class="shortlist-item-info">
         <div class="shortlist-item-name">${c.name}</div>
-        <div class="shortlist-item-meta">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''} · ★${c.rating||'—'}</div>
+        <div class="shortlist-item-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''} · ★${c.rating||'—'}</div>
         ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">NT$${c.price}/單位</div>` : ''}
       </div>
       <button class="shortlist-item-remove" onclick="toggleSave('${c.id}', event)">✕</button>
