@@ -532,7 +532,97 @@
     .sd-lightbox-counter { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 20px; }
 
     @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── VIEW TOGGLE ─── */
+    #viewToggleStrip { display: flex; }
+    .view-toggle { display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; overflow: hidden; flex-shrink: 0; }
+    .view-toggle-btn { background: transparent; border: none; color: rgba(255,255,255,0.5); padding: 0.42rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: background 0.18s, color 0.18s; white-space: nowrap; }
+    .view-toggle-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .view-toggle-btn.active { background: var(--cream); color: var(--deep); }
+    .view-toggle-btn:not(.active):hover { background: rgba(255,255,255,0.1); color: var(--cream); }
+
+    /* ─── MAP SECTION ─── */
+    .map-section { display: none; }
+    .map-section.active { display: flex; flex-direction: column; }
+    html.map-view-active .search-wrap { display: none; }
+    html.map-view-active #viewToggleStrip { display: none; }
+
+    /* ─── COMPACT SEARCH ─── */
+    .map-compact-search { background: var(--deep); padding: 10px 5%; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; }
+    .map-compact-search select { flex: 1; max-width: 420px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; padding: 0.52rem 2rem 0.52rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; color: var(--cream); outline: none; cursor: pointer; appearance: none; }
+    .map-back-btn { display: none; background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; padding: 0.3rem; flex-shrink: 0; align-items: center; justify-content: center; transition: color 0.15s; }
+    .map-back-btn:hover { color: var(--cream); }
+    .map-compact-spacer { flex: 1; }
+    .map-compact-toggle { display: flex; gap: 0; }
+    .map-compact-toggle button { background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.55); padding: 0.42rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.18s; }
+    .map-compact-toggle button:first-child { border-radius: 6px 0 0 6px; }
+    .map-compact-toggle button:last-child { border-radius: 0 6px 6px 0; }
+    .map-compact-toggle button.active { background: var(--cream); color: var(--deep); }
+
+    /* ─── SPLIT ─── */
+    .map-split { display: flex; width: 100%; flex: 1; min-height: 0; }
+    .map-card-list { width: 25%; flex-shrink: 0; overflow-y: scroll; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .map-card-list::-webkit-scrollbar { width: 5px; }
+    .map-card-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .map-list-header { position: sticky; top: 0; z-index: 2; background: #fff; padding: 0.7rem 0.85rem 0.55rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .map-list-header-count { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .map-list-header-sort { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 0.22rem 0.6rem; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: var(--muted); cursor: pointer; outline: none; }
+    .map-list-cards { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.65rem 0.75rem 0.75rem; flex: 1; }
+    .map-panel { flex: 1; position: relative; min-height: 0; }
+    #google-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    /* ─── MAP CLINIC CARD ─── */
+    .map-clinic-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 0.8rem 0.9rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; flex-shrink: 0; }
+    .map-clinic-card:hover { border-color: var(--rose-m); box-shadow: 0 2px 10px rgba(28,23,20,0.08); }
+    .map-clinic-card.highlighted { border-color: var(--rose) !important; box-shadow: 0 0 0 2px rgba(176,96,112,0.18), 0 3px 14px rgba(28,23,20,0.1); background: rgba(176,96,112,0.04); position: relative; }
+    .map-clinic-card.highlighted::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 999px; background: var(--rose); }
+    .map-card-top { display: flex; align-items: flex-start; gap: 0.55rem; margin-bottom: 0.45rem; }
+    .map-card-logo { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--cream); flex-shrink: 0; }
+    .map-card-logo-placeholder { width: 34px; height: 34px; border-radius: 6px; background: var(--warm); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); }
+    .map-card-name-block { flex: 1; min-width: 0; }
+    .map-card-name { font-family: 'Noto Serif TC', serif; font-size: 0.95rem; font-weight: 500; color: var(--deep); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .map-card-meta { font-size: 0.68rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .map-card-rating-badge { flex-shrink: 0; text-align: center; padding-left: 0.4rem; }
+    .map-card-rating-score { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; line-height: 1; color: var(--deep); }
+    .map-card-rating-star { color: var(--gold); font-size: 0.62rem; line-height: 1; margin-top: 1px; }
+    .map-card-rating-reviews { font-size: 0.58rem; color: var(--muted); margin-top: 1px; white-space: nowrap; }
+    .map-card-price { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 400; color: var(--deep); }
+    .map-card-price-unit { font-size: 0.65rem; color: var(--muted); }
+    .map-card-footer { display: flex; justify-content: flex-end; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid var(--border); }
+    .map-card-view { font-size: 0.72rem; font-weight: 500; color: var(--rose); text-decoration: none; }
+    .map-list-status { text-align: center; padding: 2rem 1rem; font-size: 0.82rem; color: var(--muted); }
+
+    /* ─── MAP OVERLAY ─── */
+    .map-loading { position: absolute; inset: 0; background: rgba(250,247,242,0.9); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--muted); z-index: 5; transition: opacity 0.4s; }
+    .map-loading.hidden { opacity: 0; pointer-events: none; }
+    .map-result-count { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(28,23,20,0.82); backdrop-filter: blur(6px); color: #FAF7F2; border-radius: 20px; padding: 0.3rem 0.9rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; z-index: 5; pointer-events: none; white-space: nowrap; }
+
+    /* ─── MOBILE MAP ─── */
+    @media (max-width: 768px) {
+      .map-compact-toggle { display: none; }
+      .map-compact-spacer { display: none; }
+      body.map-open .search-wrap { display: none; }
+      body.map-open #viewToggleStrip { display: none; }
+      body.map-open #mapSection { position: fixed; inset: 0; z-index: 100; height: 100svh !important; overflow: hidden; }
+      body.map-open { overflow: hidden; }
+      .map-section.active { height: 100%; }
+      .map-split { flex-direction: column; }
+      .map-card-list { display: none; }
+      .map-panel { flex: 1; min-height: 0; position: relative; }
+      .map-back-btn { display: flex; }
+      .map-carousel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; padding-bottom: env(safe-area-inset-bottom, 8px); }
+      .map-carousel-count { text-align: center; font-size: 0.7rem; color: #fff; background: rgba(28,23,20,0.6); backdrop-filter: blur(4px); display: inline-block; padding: 0.2rem 0.75rem; border-radius: 20px; margin: 0 auto 6px; position: relative; left: 50%; transform: translateX(-50%); }
+      .map-carousel-track { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 16px 16px; }
+      .map-carousel-track::-webkit-scrollbar { display: none; }
+      .map-carousel-card { flex: 0 0 80vw; max-width: 320px; scroll-snap-align: start; background: #fff; border-radius: 12px; padding: 0.9rem 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.2); cursor: pointer; border: 1.5px solid transparent; transition: border-color 0.15s; flex-shrink: 0; scroll-snap-stop: always; }
+      .map-carousel-card.highlighted { border-color: var(--rose); border-width: 2px; }
+    }
+    @media (min-width: 769px) {
+      .map-carousel { display: none !important; }
+      .map-section.active { height: calc(100vh - 130px); max-height: 860px; min-height: 520px; }
+    }
   </style>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -674,6 +764,20 @@
   </div>
 </div>
 
+<!-- VIEW TOGGLE STRIP -->
+<div id="viewToggleStrip" style="background:var(--deep);padding:12px 5%;justify-content:center;align-items:center;">
+  <div class="view-toggle" id="viewToggle">
+    <button class="view-toggle-btn active" id="gridToggleBtn" onclick="switchView('grid')" title="Grid view">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      格狀
+    </button>
+    <button class="view-toggle-btn" id="mapToggleBtn" onclick="switchView('map')" title="Map view">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      地圖
+    </button>
+  </div>
+</div>
+
 <!-- DIRECTORY SECTION -->
 <section class="comparison-section" id="prices">
   <div class="section-header">
@@ -705,6 +809,89 @@
   </div>
 </section>
 
+<!-- MAP VIEW SECTION -->
+<section class="map-section" id="mapSection" style="padding:0;">
+  <div class="map-compact-search" id="mapCompactSearch">
+    <button class="map-back-btn" id="mapBackBtn" onclick="switchView('grid')" title="Back to grid">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <select id="mapCompactSel" onchange="onCompactSearch()">
+      <option value="all">全台灣 · All Taiwan</option>
+      <optgroup label="── 台北市 ──">
+        <option value="taipei-daan">大安區</option>
+        <option value="taipei-zhongshan">中山區</option>
+        <option value="taipei-songshan">松山區</option>
+        <option value="taipei-xinyi">信義區</option>
+        <option value="taipei-zhongzheng">中正區</option>
+        <option value="taipei-shilin">士林區</option>
+        <option value="taipei-neihu">內湖區</option>
+        <option value="taipei-datong">大同區</option>
+      </optgroup>
+      <optgroup label="── 新北市 ──">
+        <option value="new-taipei-banqiao">板橋區</option>
+        <option value="new-taipei-xinzhuang">新莊區</option>
+        <option value="new-taipei-sanchong">三重區</option>
+        <option value="new-taipei-zhonghe">中和區</option>
+        <option value="new-taipei-yonghe">永和區</option>
+      </optgroup>
+      <optgroup label="── 桃園市 ──">
+        <option value="taoyuan-taoyuan">桃園區</option>
+        <option value="taoyuan-zhongli">中壢區</option>
+      </optgroup>
+      <optgroup label="── 台中市 ──">
+        <option value="taichung-west">西區</option>
+        <option value="taichung-xitun">西屯區</option>
+        <option value="taichung-north">北區</option>
+        <option value="taichung-nantun">南屯區</option>
+      </optgroup>
+      <optgroup label="── 台南市 ──">
+        <option value="tainan-east">東區</option>
+        <option value="tainan-west-central">中西區</option>
+      </optgroup>
+      <optgroup label="── 高雄市 ──">
+        <option value="kaohsiung-lingya">苓雅區</option>
+        <option value="kaohsiung-sanmin">三民區</option>
+        <option value="kaohsiung-zuoying">左營區</option>
+      </optgroup>
+    </select>
+    <button class="btn-nearby" onclick="useNearMe()">📍 附近</button>
+    <div class="map-compact-spacer"></div>
+    <div class="map-compact-toggle" id="mapCompactToggle">
+      <button id="mapCompactGridBtn" onclick="switchView('grid')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        格狀
+      </button>
+      <button id="mapCompactMapBtn" class="active" onclick="switchView('map')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        地圖
+      </button>
+    </div>
+  </div>
+  <div class="map-split" id="mapSplit">
+    <div class="map-card-list" id="mapCardList">
+      <div class="map-list-header" id="mapListHeader">
+        <span class="map-list-header-count" id="mapListCount"></span>
+        <select class="map-list-header-sort" onchange="onMapSort(this.value)">
+          <option value="rating">評分最高</option>
+          <option value="reviews">評論最多</option>
+          <option value="price-low">價格：低到高</option>
+          <option value="price-high">價格：高到低</option>
+        </select>
+      </div>
+      <div class="map-list-cards" id="mapListCards"></div>
+    </div>
+    <div class="map-panel" id="mapPanel">
+      <div id="google-map"></div>
+      <div class="map-loading" id="mapLoading">載入地圖中…</div>
+      <div class="map-result-count" id="mapResultCount" style="display:none;"></div>
+    </div>
+    <div class="map-carousel" id="mapCarousel">
+      <div class="map-carousel-count" id="mapCarouselCount"></div>
+      <div class="map-carousel-track" id="mapCarouselTrack"></div>
+    </div>
+  </div>
+</section>
+
 <!-- TRUST STRIP -->
 <div class="trust-strip">
   <div class="trust-item">
@@ -732,16 +919,42 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-inner">
-    <a href="/" class="footer-logo">Skin<span>Day</span></a>
-    <div class="footer-links">
-      <a href="/">Global</a>
-      <a href="/canada">Canada</a>
-      <a href="/taiwan">Taiwan</a>
-      <a href="/visualize">Visualize</a>
-      <a href="/guide">Guide</a>
+  <div class="footer-top">
+    <div>
+      <a href="https://skinday.com" class="footer-brand">Skin<span>Day</span></a>
+      <div class="footer-tagline">找到適合你的診所，而不只是最有名的那間。</div>
     </div>
-    <div class="footer-copy">© 2026 SkinDay</div>
+    <div class="footer-links">
+      <h4>探索</h4>
+      <ul>
+        <li><a href="/taiwan">台灣醫美診所</a></li>
+        <li><a href="/canada">加拿大診所</a></li>
+        <li><a href="https://skinday.com">SkinDay 全球</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>診所工具</h4>
+      <ul>
+        <li><a href="https://skinday.com/visualize" style="color:var(--gold);">Visualize — AI 諮詢預覽</a></li>
+        <li><a href="https://skinday.com/studio" style="color:var(--gold);">Studio — 免費照片工具</a></li>
+        <li><a href="https://skinday.com/guide">使用指南</a></li>
+      </ul>
+    </div>
+    <div class="footer-links">
+      <h4>公司</h4>
+      <ul>
+        <li><a href="https://skinday.com/contact">聯絡我們</a></li>
+        <li><a href="https://skinday.com/privacy">隱私政策</a></li>
+        <li><a href="https://skinday.com/terms">服務條款</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 SkinDay. 版權所有。· <a href="https://skinday.com/privacy" style="color:var(--muted);text-decoration:none;">隱私政策</a> · <a href="https://skinday.com/terms" style="color:var(--muted);text-decoration:none;">服務條款</a></div>
+    <div class="footer-disclaimers">
+      <div class="footer-disclaimer"><span class="disc-num">1.</span>診所評分與資料來自 Google Maps 公開資訊，僅供參考。預約前請直接向診所確認。</div>
+      <div class="footer-disclaimer"><span class="disc-num">2.</span>本平台顯示之診所資訊不構成醫療建議。治療前請諮詢合格醫師。</div>
+    </div>
   </div>
 </footer>
 
@@ -994,6 +1207,25 @@ const HOOD_COORDS = {
   'kaohsiung-zuoying':[22.6893,120.2981],
   'hsinchu-east':[24.8015,120.9717], 'hsinchu-county-zhubei':[24.8374,121.0046],
 };
+
+// ─── NEIGHBOURHOOD COUNTS ────────────────────────────────────
+function updateNeighbourhoodCounts() {
+  const counts = {};
+  clinicsIndex.forEach(c => {
+    if (!c.neighbourhood) return;
+    counts[c.neighbourhood] = (counts[c.neighbourhood] || 0) + 1;
+  });
+  const select = document.getElementById('searchNeighbourhood');
+  if (!select) return;
+  Array.from(select.options).forEach(opt => {
+    if (opt.value === 'all' || opt.value === '') return;
+    const count = counts[opt.value];
+    if (count) {
+      const baseName = opt.text.replace(/\s*\(\d+\)$/, '');
+      opt.text = baseName + ' (' + count + ')';
+    }
+  });
+}
 
 // ─── NORMALISE ────────────────────────────────────────────────
 function normaliseClinic(o) {
@@ -1436,7 +1668,7 @@ async function submitMissingClinic() {
   const btn = document.getElementById('missing-submit-btn');
   if (!name || !email) { showToast('請填寫診所名稱與電子郵件。'); return; }
   btn.disabled = true; btn.textContent = '送出中…';
-  try { await fetch('/api/submit-claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'missing', clinic_name: name, owner_email: email, clinic_neighbourhood: hood, owner_name: '', owner_role: 'Owner' }) }); } catch(e) {}
+  try { await fetch('https://skinday.ca/api/submit-claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'missing', clinic_name: name, owner_email: email, clinic_neighbourhood: hood + ' (Taiwan)', owner_name: '', owner_role: 'Owner' }) }); } catch(e) {}
   document.getElementById('missing-modal-form').style.display = 'none';
   document.getElementById('missing-modal-success').style.display = 'block';
 }
@@ -1612,6 +1844,321 @@ async function clearShortlist() {
   });
 })();
 
+// ─── MAP ─────────────────────────────────────────────────────
+const GMAPS_KEY = 'AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc';
+let _map = null, _markers = [], _userMarker = null, _allClinics = [], _activeCid = null;
+let _mapSort = 'rating', _lastZoom = null, _idleTimer = null, _hoverTimer = null;
+let currentView = 'grid';
+
+const PIN_PATH = 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z';
+const PIN_IDLE   = { path: PIN_PATH, fillColor: '#1C1714', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1,   labelOrigin: new google.maps.Point(0, -30) };
+const PIN_HOVER  = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1.35, labelOrigin: new google.maps.Point(0, -30) };
+const PIN_ACTIVE = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,   scale: 1.5,  labelOrigin: new google.maps.Point(0, -30) };
+const LABEL_STYLE = { color: '#fff', fontSize: '10px', fontWeight: '700', fontFamily: 'DM Sans, sans-serif' };
+
+function isMobileMapUI() { return window.matchMedia('(hover: none)').matches; }
+function _normCid(cid) { return String(cid); }
+function _getClinic(cid) { return _allClinics.find(c => String(c.id) === _normCid(cid)) || null; }
+function _getMarker(cid) { return _markers.find(m => m._cid === _normCid(cid) && !m._count) || null; }
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('gridToggleBtn').classList.toggle('active', view === 'grid');
+  document.getElementById('mapToggleBtn').classList.toggle('active', view === 'map');
+  const gridSec = document.getElementById('prices');
+  const mapSec  = document.getElementById('mapSection');
+  const moreSec = document.querySelector('.load-more-wrap');
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  if (view === 'map') {
+    gridSec.style.display = 'none';
+    if (moreSec) moreSec.style.display = 'none';
+    mapSec.classList.add('active');
+    document.documentElement.classList.add('map-view-active');
+    if (isMobile) { document.body.dataset.scrollY = window.scrollY; document.body.classList.add('map-open'); }
+    const sel = document.getElementById('mapCompactSel');
+    if (sel) sel.value = currentFilter || 'all';
+    document.getElementById('mapCompactGridBtn')?.classList.remove('active');
+    document.getElementById('mapCompactMapBtn')?.classList.add('active');
+    initMap();
+  } else {
+    mapSec.classList.remove('active');
+    document.documentElement.classList.remove('map-view-active');
+    gridSec.style.display = '';
+    if (moreSec) moreSec.style.display = '';
+    if (isMobile) { document.body.classList.remove('map-open'); window.scrollTo(0, parseInt(document.body.dataset.scrollY || '0')); }
+    document.getElementById('mapCompactGridBtn')?.classList.add('active');
+    document.getElementById('mapCompactMapBtn')?.classList.remove('active');
+    fetchPage(0, false);
+  }
+}
+
+function onCompactSearch() {
+  const val = document.getElementById('mapCompactSel').value;
+  currentFilter = val;
+  currentNameQuery = '';
+  const mainSel = document.getElementById('searchNeighbourhood');
+  if (mainSel) mainSel.value = val;
+  reloadMap();
+}
+
+async function fetchMapClinics() {
+  let url = SB_URL + '/rest/v1/clinics?select=id,name,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&approved=eq.true&country=eq.taiwan&lat=not.is.null&order=rating.desc.nullslast&limit=5000';
+  if (currentFilter && currentFilter !== 'all') {
+    url += '&neighbourhood=eq.' + encodeURIComponent(currentFilter);
+  }
+  const r = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+  if (!r.ok) throw new Error('fetch failed');
+  return (await r.json()).map(normaliseClinic);
+}
+
+async function initMap() {
+  const loadingEl = document.getElementById('mapLoading');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  try { _allClinics = await fetchMapClinics(); } catch(e) { if (loadingEl) loadingEl.textContent = '載入失敗'; return; }
+  if (!_map) {
+    _map = new google.maps.Map(document.getElementById('google-map'), {
+      zoom: 8, center: { lat: 23.5, lng: 121.0 },
+      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+      zoomControl: true, zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+      gestureHandling: 'greedy',
+      styles: [
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'off' }] }
+      ]
+    });
+    _map.addListener('idle', onMapIdle);
+  }
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (userLocation) placeUserPin(userLocation.lat, userLocation.lon);
+  if (_allClinics.length > 0) {
+    const bounds = new google.maps.LatLngBounds();
+    _allClinics.forEach(c => { if (c.lat && c.lng) bounds.extend({ lat: +c.lat, lng: +c.lng }); });
+    _map.fitBounds(bounds, { top: 50, right: 20, bottom: 80, left: 20 });
+    if (!isMobileMapUI()) renderDesktopList();
+  } else {
+    placeMarkers();
+    if (!isMobileMapUI()) renderDesktopList();
+  }
+}
+
+async function reloadMap() {
+  const loadingEl = document.getElementById('mapLoading');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  try { _allClinics = await fetchMapClinics(); } catch(e) { return; }
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (_allClinics.length > 0) {
+    const bounds = new google.maps.LatLngBounds();
+    _allClinics.forEach(c => { if (c.lat && c.lng) bounds.extend({ lat: +c.lat, lng: +c.lng }); });
+    _map.fitBounds(bounds, { top: 50, right: 20, bottom: 80, left: 20 });
+    if (!isMobileMapUI()) renderDesktopList();
+  } else { clearMarkers(); if (!isMobileMapUI()) renderDesktopList(); }
+}
+
+function onMapIdle() {
+  const z = _map.getZoom();
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(() => {
+    placeMarkers();
+    if (isMobileMapUI()) { renderCarousel(); } else { updateViewportCount(); }
+    if (_activeCid) renderSelection();
+    _lastZoom = z;
+  }, 350);
+}
+
+function clearMarkers() { _markers.forEach(m => m.setMap(null)); _markers = []; }
+
+function placeMarkers() {
+  clearMarkers();
+  if (!_map || !_allClinics.length) return;
+  const zoom = _map.getZoom();
+  const bounds = _map.getBounds();
+  if (!bounds) return;
+  const inView = _allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat: +c.lat, lng: +c.lng }));
+  if (zoom >= 12) {
+    inView.slice(0, 300).forEach(c => {
+      const m = new google.maps.Marker({ position: { lat: +c.lat, lng: +c.lng }, map: _map, optimized: false, icon: PIN_IDLE, label: { ...LABEL_STYLE, text: ' ' } });
+      m._cid = String(c.id);
+      wireMarkerEvents(m, c, false);
+      _markers.push(m);
+    });
+  } else {
+    const cellDeg = zoom >= 9 ? 0.1 : zoom >= 7 ? 0.4 : zoom >= 5 ? 1.2 : 3;
+    const cells = {};
+    inView.forEach(c => {
+      const key = Math.floor(+c.lat / cellDeg) + ',' + Math.floor(+c.lng / cellDeg);
+      if (!cells[key]) cells[key] = [];
+      cells[key].push(c);
+    });
+    Object.values(cells).forEach(group => {
+      const rep = group[0];
+      const count = group.length;
+      const label = count > 1 ? { ...LABEL_STYLE, text: count > 999 ? Math.round(count/1000)+'k' : String(count) } : { ...LABEL_STYLE, text: ' ' };
+      const scale = count > 500 ? 1.5 : count > 50 ? 1.25 : count > 1 ? 1.1 : 1;
+      const m = new google.maps.Marker({ position: { lat: +rep.lat, lng: +rep.lng }, map: _map, optimized: false, icon: { ...PIN_IDLE, scale }, label, zIndex: count });
+      m._cid = String(rep.id); m._count = count; m._group = group;
+      wireMarkerEvents(m, rep, count > 1);
+      _markers.push(m);
+    });
+  }
+}
+
+function wireMarkerEvents(m, c, isCluster) {
+  const cid = String(c.id);
+  const canHover = window.matchMedia('(hover: hover)').matches;
+  if (canHover) {
+    m.addListener('mouseover', () => { if (_activeCid !== cid) { m.setIcon({ ...PIN_HOVER, scale: (m.icon?.scale||1)*1.2 }); if (!isCluster) highlightCard(cid); } });
+    m.addListener('mouseout',  () => { if (_activeCid !== cid) { m.setIcon({ ...PIN_IDLE, scale: m.icon?.scale||1 }); document.querySelectorAll('[data-cid="'+cid+'"]').forEach(el => el.classList.remove('highlighted')); } });
+  }
+  m.addListener('click', () => {
+    if (isCluster) { const b = new google.maps.LatLngBounds(); m._group.forEach(g => b.extend({ lat: +g.lat, lng: +g.lng })); _map.fitBounds(b, 80); }
+    else { onPinClick(cid, m); }
+  });
+}
+
+function onPinClick(cid, marker) {
+  _markers.forEach(m => { if (m._cid === _activeCid) m.setIcon({ ...PIN_IDLE, scale: m.icon?.scale||1 }); });
+  _activeCid = cid;
+  if (marker) marker.setIcon(PIN_ACTIVE);
+  highlightCard(cid);
+  scrollCardListTo(cid);
+  const clinic = _allClinics.find(c => String(c.id) === cid);
+  if (clinic) _map.panTo({ lat: +clinic.lat, lng: +clinic.lng });
+  if (!isMobileMapUI()) openMapModal(cid);
+}
+
+async function openMapModal(cid) {
+  const existing = _allClinics.find(c => String(c.id) === String(cid));
+  if (existing) { window.openClinicModal(existing.id); return; }
+}
+
+function sortClinicsMap(clinics, sortKey) {
+  const arr = [...clinics].filter(c => c.lat && c.lng);
+  if (sortKey === 'rating')    return arr.sort((a,b) => (b.rating||0)-(a.rating||0));
+  if (sortKey === 'reviews')   return arr.sort((a,b) => (b.reviews||0)-(a.reviews||0));
+  if (sortKey === 'price-low') return arr.sort((a,b) => (parseFloat(a.price)||999)-(parseFloat(b.price)||999));
+  if (sortKey === 'price-high')return arr.sort((a,b) => (parseFloat(b.price)||-1)-(parseFloat(a.price)||-1));
+  return arr;
+}
+
+function onMapSort(val) { _mapSort = val; renderDesktopList(); }
+
+function renderDesktopList() {
+  const sorted = sortClinicsMap([..._allClinics], _mapSort);
+  const headerCount = document.getElementById('mapListCount');
+  if (headerCount) headerCount.textContent = sorted.length.toLocaleString('zh-TW') + ' 家診所';
+  const cardsEl = document.getElementById('mapListCards');
+  if (cardsEl) cardsEl.innerHTML = sorted.length === 0
+    ? '<div class="map-list-status">找不到診所。</div>'
+    : sorted.map(c => buildMapCard(c, false)).join('');
+  updateViewportCount();
+  if (_activeCid) requestAnimationFrame(() => renderSelection());
+}
+
+function renderCarousel() {
+  if (!_map) return;
+  const bounds = _map.getBounds();
+  if (!bounds) return;
+  const inView = sortClinicsMap(_allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat:+c.lat, lng:+c.lng })), _mapSort);
+  const track = document.getElementById('mapCarouselTrack');
+  const countC = document.getElementById('mapCarouselCount');
+  if (track) {
+    if (countC) countC.textContent = inView.length.toLocaleString('zh-TW') + ' 家診所';
+    track.innerHTML = inView.length === 0
+      ? '<div style="padding:1rem;font-size:0.82rem;color:var(--muted);">此區域無診所</div>'
+      : inView.map(c => buildMapCard(c, true)).join('');
+  }
+  if (_activeCid) requestAnimationFrame(() => renderSelection());
+}
+
+function updateViewportCount() {
+  if (!_map) return;
+  const bounds = _map.getBounds();
+  if (!bounds) return;
+  const inView = _allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat:+c.lat, lng:+c.lng }));
+  const countEl = document.getElementById('mapResultCount');
+  if (countEl) {
+    countEl.textContent = inView.length < _allClinics.length
+      ? inView.length.toLocaleString('zh-TW') + ' 家在視野內'
+      : inView.length.toLocaleString('zh-TW') + ' 家診所';
+    countEl.style.display = 'block';
+  }
+}
+
+function buildMapCard(c, carousel) {
+  const cls = carousel ? 'map-carousel-card' : 'map-clinic-card';
+  const logoHTML = c.logo
+    ? '<img class="map-card-logo" src="' + c.logo + '" alt="" onerror="this.style.display='none'">'
+    : '<div class="map-card-logo-placeholder">' + (c.name||'?').charAt(0) + '</div>';
+  const rating = c.rating ? parseFloat(c.rating).toFixed(1) : '—';
+  const reviews = (c.reviews||0).toLocaleString('zh-TW');
+  const priceHTML = c.price != null
+    ? '<div style="margin-bottom:0.3rem;"><span class="map-card-price">NT$' + c.price + '</span> <span class="map-card-price-unit">/ 單位</span></div>'
+    : '';
+  const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
+  const hoverAttrs = window.matchMedia('(hover: hover)').matches
+    ? 'onmouseenter="highlightPinById('' + c.id + '')" onmouseleave="unhighlightPinById('' + c.id + '')"'
+    : '';
+  return '<div class="' + cls + '" data-cid="' + c.id + '" onclick="onCardClick('' + c.id + '')" ' + hoverAttrs + '>' +
+    '<div class="map-card-top">' + logoHTML +
+    '<div class="map-card-name-block">' +
+    '<div class="map-card-name">' + (c.name||'') + '</div>' +
+    '<div class="map-card-meta">📍 ' + hood + '</div></div>' +
+    '<div class="map-card-rating-badge">' +
+    '<div class="map-card-rating-score">' + rating + '</div>' +
+    '<div class="map-card-rating-star">★★★★★</div>' +
+    '<div class="map-card-rating-reviews">' + reviews + ' 則</div></div></div>' +
+    priceHTML +
+    '<div class="map-card-footer"><a href="#" class="map-card-view" onclick="event.preventDefault();event.stopPropagation();openMapModal('' + c.id + '')">查看資料 →</a></div></div>';
+}
+
+function highlightCard(cid) { document.querySelectorAll('[data-cid]').forEach(el => el.classList.toggle('highlighted', el.dataset.cid === String(cid))); }
+function scrollCardListTo(cid) {
+  const container = document.getElementById('mapCardList');
+  const card = container?.querySelector('[data-cid="' + _normCid(cid) + '"]');
+  if (!container || !card) return;
+  const delta = card.getBoundingClientRect().top - container.getBoundingClientRect().top;
+  container.scrollTo({ top: Math.max(0, container.scrollTop + delta - container.clientHeight * 0.35), behavior: 'smooth' });
+}
+function scrollCarouselTo(cid) {
+  const track = document.getElementById('mapCarouselTrack');
+  const card = track?.querySelector('.map-carousel-card[data-cid="' + _normCid(cid) + '"]');
+  if (!track || !card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+}
+function updateMarkers() { _markers.forEach(m => { if (m._count) return; m.setIcon(m._cid === _activeCid ? PIN_ACTIVE : PIN_IDLE); }); }
+function updateCards() { document.querySelectorAll('[data-cid]').forEach(el => el.classList.toggle('highlighted', el.dataset.cid === _activeCid)); }
+function syncScrollToSelected() { if (!_activeCid) return; if (isMobileMapUI()) scrollCarouselTo(_activeCid); else scrollListTo(_activeCid); }
+function renderSelection() { updateMarkers(); updateCards(); syncScrollToSelected(); }
+function scrollListTo(cid) { scrollCardListTo(cid); }
+function selectClinic(cid) { _activeCid = _normCid(cid); updateMarkers(); updateCards(); if (isMobileMapUI()) syncScrollToSelected(); }
+function panToClinic(cid) { const c = _getClinic(cid); if (c && _map) _map.panTo({ lat: Number(c.lat), lng: Number(c.lng) }); }
+function onCardClick(cid) { selectClinic(cid); panToClinic(cid); if (!isMobileMapUI()) openMapModal(cid); }
+function placeUserPin(lat, lng) {
+  if (_userMarker) { _userMarker.setMap(null); _userMarker = null; }
+  if (!_map) return;
+  _userMarker = new google.maps.Marker({ position: { lat, lng }, map: _map, optimized: false, zIndex: 9999,
+    icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: '#4A90D9', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3, scale: 10 }, title: '您的位置' });
+}
+function highlightPinById(cid) {
+  if (!window.matchMedia('(hover: hover)').matches) return;
+  clearTimeout(_hoverTimer);
+  _hoverTimer = setTimeout(() => {
+    const id = _normCid(cid);
+    if (_activeCid === id) return;
+    const m = _getMarker(id);
+    if (m) m.setIcon(PIN_HOVER);
+    document.querySelectorAll('[data-cid="' + id + '"]').forEach(el => el.classList.add('is-hovered'));
+  }, 40);
+}
+function unhighlightPinById(cid) {
+  clearTimeout(_hoverTimer);
+  const id = _normCid(cid);
+  if (_activeCid === id) return;
+  const m = _getMarker(id);
+  if (m) m.setIcon(PIN_IDLE);
+  document.querySelectorAll('[data-cid="' + id + '"]').forEach(el => el.classList.remove('is-hovered'));
+}
+
 // ─── INIT ─────────────────────────────────────────────────────
 (async function init() {
   const grid = document.getElementById('cardsGrid');
@@ -1624,6 +2171,7 @@ async function clearShortlist() {
 
   if (indexRes.status === 'fulfilled' && Array.isArray(indexRes.value)) {
     clinicsIndex = indexRes.value.map(normaliseClinic);
+    updateNeighbourhoodCounts();
   }
 
   if (pageRes.status === 'fulfilled') {

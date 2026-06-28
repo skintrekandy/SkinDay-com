@@ -101,3 +101,27 @@
   to     = "/.netlify/functions/:splat"
   status = 200
   force  = true
+
+[[redirects]]
+  from   = "/about.html"
+  to     = "/about"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/privacy.html"
+  to     = "/privacy"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/terms.html"
+  to     = "/terms"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/account.html"
+  to     = "/account"
+  status = 301
+  force  = true

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light only" />
+  <title>My Account — SkinDay</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --cream: #FAF7F2; --warm: #F4EDE4; --deep: #1C1714; --deep2: #241E1A;
+      --rose: #C8725A; --rose-m: #D4896E; --rose-bg: #F5E8E3;
+      --gold: #C9A96E; --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8; --green: #3D7A55;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', 'Noto Serif TC', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(28,23,20,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(201,169,110,0.25); padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--cream); letter-spacing: 0.04em; text-decoration: none; }
+    .nav-logo span { color: var(--gold); }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .nav-back { color: var(--dim); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; display: flex; align-items: center; gap: 0.3rem; }
+    .nav-back:hover { color: var(--cream); }
+    .nav-signout-btn { background: transparent; border: 1px solid rgba(201,169,110,0.35); color: var(--dim); padding: 0.35rem 0.85rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+    .nav-signout-btn:hover { border-color: var(--rose); color: var(--rose); }
+
+    /* LOADING STATE */
+    .loading-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 1rem; }
+    .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* SIGNED OUT STATE */
+    .signin-state { max-width: 440px; margin: 0 auto; padding: 120px 5% 80px; text-align: center; }
+    .signin-state h1 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; margin-bottom: 0.75rem; }
+    .signin-state p { font-size: 0.92rem; color: var(--muted); margin-bottom: 2rem; line-height: 1.65; }
+    .auth-google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0.85rem; border: 1.5px solid var(--border); border-radius: 8px; background: #fff; color: var(--deep); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: border-color 0.2s; margin-bottom: 1rem; }
+    .auth-google-btn:hover { border-color: var(--muted); }
+    .auth-google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .auth-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1rem 0; color: var(--dim); font-size: 0.78rem; }
+    .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .auth-input { width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--deep); background: #fff; outline: none; transition: border-color 0.2s; margin-bottom: 0.75rem; }
+    .auth-input:focus { border-color: var(--gold); }
+    .auth-submit-btn { width: 100%; padding: 0.75rem; background: var(--deep); color: var(--cream); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; margin-bottom: 0.75rem; }
+    .auth-submit-btn:hover { opacity: 0.85; }
+    .auth-toggle { text-align: center; font-size: 0.82rem; color: var(--muted); }
+    .auth-toggle button { background: none; border: none; color: var(--rose); font-size: 0.82rem; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; }
+    .auth-error { font-size: 0.8rem; color: var(--rose); text-align: center; margin-top: 0.5rem; min-height: 1.2rem; }
+
+    /* PAGE LAYOUT */
+    .page-wrap { max-width: 900px; margin: 0 auto; padding: 100px 5% 80px; display: none; }
+
+    /* PROFILE HEADER */
+    .profile-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 3rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border); }
+    .profile-avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--gold); color: var(--deep); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; flex-shrink: 0; overflow: hidden; border: 2px solid rgba(201,169,110,0.4); }
+    .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .profile-name { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 400; color: var(--deep); line-height: 1.1; margin-bottom: 0.3rem; }
+    .profile-email { font-size: 0.85rem; color: var(--muted); }
+
+    /* SECTIONS */
+    .account-section { margin-bottom: 3rem; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+    .section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--deep); }
+    .section-count { font-size: 0.78rem; color: var(--muted); background: var(--warm); border: 1px solid var(--border); padding: 0.2rem 0.6rem; border-radius: 20px; }
+    .section-action { font-size: 0.82rem; color: var(--rose); background: none; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; transition: color 0.2s; }
+    .section-action:hover { color: var(--rose-m); }
+
+    /* SAVED CLINIC CARDS */
+    .saved-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .saved-card { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; position: relative; }
+    .saved-card:hover { border-color: var(--rose-m); box-shadow: 0 3px 16px rgba(28,23,20,0.07); }
+    .saved-card-photo { height: 100px; overflow: hidden; background: var(--warm); flex-shrink: 0; }
+    .saved-card-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .saved-card-photo.no-photo { display: flex; align-items: center; justify-content: center; }
+    .saved-card-photo.no-photo::after { content: '診所'; font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--border); }
+    .saved-card-body { padding: 1rem 1.1rem; }
+    .saved-card-top { display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.6rem; }
+    .saved-card-logo { width: 32px; height: 32px; border-radius: 6px; background: var(--warm); border: 1px solid var(--border); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+    .saved-card-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .saved-card-info { flex: 1; min-width: 0; }
+    .saved-card-name { font-family: 'Noto Serif TC', serif; font-size: 0.95rem; font-weight: 500; color: var(--deep); line-height: 1.2; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .saved-card-meta { font-size: 0.72rem; color: var(--muted); }
+    .saved-card-price { font-size: 0.82rem; color: var(--deep); font-weight: 500; margin-top: 0.2rem; }
+    .saved-card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem; padding-top: 0.65rem; border-top: 1px solid var(--border); }
+    .saved-card-view { font-size: 0.75rem; font-weight: 500; color: var(--rose); text-decoration: none; transition: color 0.2s; }
+    .saved-card-view:hover { color: var(--rose-m); }
+    .saved-card-remove { background: none; border: none; color: var(--dim); font-size: 1rem; cursor: pointer; padding: 0.2rem 0.3rem; border-radius: 4px; transition: color 0.2s; }
+    .saved-card-remove:hover { color: var(--rose); }
+
+    /* COMPARE */
+    .btn-compare { background: var(--deep); color: var(--cream); border: none; padding: 0.65rem 1.5rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .btn-compare:hover { opacity: 0.85; }
+    .btn-compare:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    /* COMPARE MODAL */
+    .compare-modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(28,23,20,0.7); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 2vh 3%; }
+    .compare-modal-overlay.open { display: flex; }
+    .compare-modal { background: var(--cream); border-radius: 16px; width: 100%; max-width: 860px; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; }
+    .compare-modal-header { padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .compare-modal-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; }
+    .compare-modal-close { background: none; border: none; font-size: 1.3rem; color: var(--muted); cursor: pointer; }
+    .compare-modal-body { flex: 1; overflow: auto; }
+    .compare-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .compare-table th, .compare-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
+    .compare-table th { width: 100px; background: var(--warm); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--border); white-space: nowrap; }
+    .compare-table td { font-size: 0.88rem; color: var(--deep); }
+    .compare-col-header { background: var(--deep) !important; border-bottom: 1px solid rgba(201,169,110,0.15) !important; }
+    .compare-col-header .col-name { font-family: 'Noto Serif TC', serif; font-size: 1rem; font-weight: 500; color: var(--cream); margin-bottom: 0.2rem; line-height: 1.3; }
+    .compare-col-header .col-meta { font-size: 0.75rem; color: var(--muted); }
+    .compare-price-big { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--deep); line-height: 1; }
+    .compare-no-price { font-size: 0.85rem; color: var(--dim); font-style: italic; }
+    .compare-winner { background: rgba(201,169,110,0.07); }
+    .compare-winner-tag { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(201,169,110,0.2); color: #9A7840; border: 1px solid rgba(201,169,110,0.35); padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+    .compare-modal-footer { padding: 1.2rem 2rem; background: var(--warm); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
+
+    /* EMPTY STATE */
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.4; }
+    .empty-state p { font-size: 0.9rem; line-height: 1.6; margin-bottom: 1.5rem; }
+    .btn-browse { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--rose); color: #fff; border: none; padding: 0.75rem 1.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; border-radius: 4px; text-decoration: none; cursor: pointer; transition: background 0.2s; }
+    .btn-browse:hover { background: var(--rose-m); }
+
+    /* DELETE ACCOUNT */
+    .danger-zone { border: 1px solid rgba(200,114,90,0.2); border-radius: 8px; padding: 1.2rem 1.5rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+    .danger-zone p { font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+    .btn-danger { background: transparent; border: 1px solid rgba(200,114,90,0.4); color: var(--rose); padding: 0.5rem 1.1rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-danger:hover { background: var(--rose); color: #fff; border-color: var(--rose); }
+
+    @media (max-width: 640px) {
+      .saved-grid { grid-template-columns: 1fr; }
+      .profile-header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Skin<span>Day</span></a>
+  <div class="nav-right">
+    <a href="/" class="nav-back">← SkinDay</a>
+    <button class="nav-signout-btn" id="navSignOut" onclick="handleSignOut()" style="display:none;">登出 / Sign Out</button>
+  </div>
+</nav>
+
+<!-- LOADING -->
+<div class="loading-state" id="loadingState">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- SIGNED OUT -->
+<div class="signin-state" id="signinState" style="display:none;">
+  <h1>Welcome to SkinDay</h1>
+  <p>Sign in to save clinics, build your shortlist, and compare across Taiwan and Canada.</p>
+  <button class="auth-google-btn" onclick="handleGoogleSignIn()">
+    <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Continue with Google
+  </button>
+  <div class="auth-divider">or</div>
+  <input class="auth-input" type="email" id="authEmail" placeholder="Email address" autocomplete="email" />
+  <input class="auth-input" type="password" id="authPassword" placeholder="Password" autocomplete="current-password" />
+  <button class="auth-submit-btn" id="authSubmitBtn" onclick="handleEmailAuth()">Sign In</button>
+  <div class="auth-error" id="authError"></div>
+  <div class="auth-toggle">
+    <span id="authToggleText">Don't have an account?</span>
+    <button onclick="toggleAuthMode()">Sign Up</button>
+  </div>
+</div>
+
+<!-- ACCOUNT PAGE -->
+<div class="page-wrap" id="pageWrap">
+  <!-- Profile -->
+  <div class="profile-header">
+    <div class="profile-avatar" id="profileAvatar">?</div>
+    <div>
+      <div class="profile-name" id="profileName">—</div>
+      <div class="profile-email" id="profileEmail"></div>
+    </div>
+  </div>
+
+  <!-- Saved Clinics -->
+  <div class="account-section">
+    <div class="section-header">
+      <div class="section-title">
+        收藏的診所 <span class="section-count" id="savedCount">0</span>
+      </div>
+      <div style="display:flex;gap:0.75rem;align-items:center;">
+        <button class="btn-compare" id="btnCompare" onclick="openCompare()" disabled>比較</button>
+        <button class="section-action" onclick="clearAllSaved()" id="clearBtn" style="display:none;">全部清除</button>
+      </div>
+    </div>
+    <div id="savedGrid" class="saved-grid">
+      <div class="empty-state">
+        <div class="empty-state-icon">♡</div>
+        <p>尚未收藏任何診所。<br>瀏覽診所時點擊愛心即可收藏。</p>
+        <a href="/taiwan" class="btn-browse">瀏覽台灣診所 →</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="account-section" style="border-top:1px solid var(--border);padding-top:2rem;">
+    <div class="section-title" style="margin-bottom:1.2rem;">帳戶設定</div>
+    <div class="danger-zone">
+      <p>刪除您的帳戶將永久移除所有收藏的診所與個人資料，此操作無法復原。</p>
+      <button class="btn-danger" onclick="confirmDeleteAccount()">刪除帳戶</button>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-overlay" id="compareModalOverlay">
+  <div class="compare-modal">
+    <div class="compare-modal-header">
+      <h3>比較診所</h3>
+      <button class="compare-modal-close" onclick="closeCompare()">✕</button>
+    </div>
+    <div class="compare-modal-body" id="compareModalBody"></div>
+    <div class="compare-modal-footer">
+      <button class="btn-compare" onclick="closeCompare()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+const _sb = supabase.createClient(SB_URL, SB_KEY);
+
+let _currentUser = null;
+let _authMode = 'signin';
+let _savedClinics = [];
+let _compareList = [];
+
+// ─── AUTH ─────────────────────────────────────────────────────
+async function initAuth() {
+  let session = (await _sb.auth.getSession()).data.session;
+  if (!session) { await new Promise(r => setTimeout(r, 800)); session = (await _sb.auth.getSession()).data.session; }
+  document.getElementById('loadingState').style.display = 'none';
+  if (session?.user) { _currentUser = session.user; showAccount(); }
+  else { document.getElementById('signinState').style.display = 'block'; }
+  _sb.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+      if (window.location.hash.includes('access_token')) window.history.replaceState({}, document.title, window.location.pathname);
+      _currentUser = session.user;
+      document.getElementById('signinState').style.display = 'none';
+      document.getElementById('loadingState').style.display = 'none';
+      showAccount();
+    } else if (event === 'SIGNED_OUT') {
+      _currentUser = null;
+      document.getElementById('pageWrap').style.display = 'none';
+      document.getElementById('signinState').style.display = 'block';
+    }
+  });
+}
+
+async function handleGoogleSignIn() {
+  const { error } = await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/account', queryParams: { prompt: 'select_account' } } });
+  if (error) document.getElementById('authError').textContent = error.message;
+}
+
+async function handleEmailAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authSubmitBtn');
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Please enter your email and password.'; return; }
+  btn.disabled = true; btn.textContent = _authMode === 'signin' ? 'Signing in…' : 'Creating account…';
+  const result = _authMode === 'signin' ? await _sb.auth.signInWithPassword({ email, password }) : await _sb.auth.signUp({ email, password });
+  btn.disabled = false; btn.textContent = _authMode === 'signin' ? 'Sign In' : 'Create Account';
+  if (result.error) { errEl.textContent = result.error.message; }
+  else if (_authMode === 'signup' && !result.data.session) { errEl.style.color = 'var(--green)'; errEl.textContent = 'Account created! Check your email to confirm.'; }
+}
+
+function toggleAuthMode() {
+  _authMode = _authMode === 'signin' ? 'signup' : 'signin';
+  document.getElementById('authSubmitBtn').textContent = _authMode === 'signin' ? 'Sign In' : 'Create Account';
+  document.getElementById('authToggleText').textContent = _authMode === 'signin' ? "Don't have an account?" : 'Already have an account?';
+  document.querySelector('.auth-toggle button').textContent = _authMode === 'signin' ? 'Sign Up' : 'Sign In';
+  document.getElementById('authError').textContent = '';
+}
+
+async function handleSignOut() { await _sb.auth.signOut(); window.location.reload(); }
+
+// ─── SHOW ACCOUNT ─────────────────────────────────────────────
+async function showAccount() {
+  const user = _currentUser;
+  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || 'User';
+  const initial = name.charAt(0).toUpperCase();
+
+  document.getElementById('profileName').textContent = name;
+  document.getElementById('profileEmail').textContent = user.email || '';
+  document.getElementById('navSignOut').style.display = 'inline-block';
+
+  const avatarEl = document.getElementById('profileAvatar');
+  if (user.user_metadata?.avatar_url) {
+    avatarEl.innerHTML = '<img src="' + user.user_metadata.avatar_url + '" alt="">';
+  } else {
+    avatarEl.textContent = initial;
+  }
+
+  document.getElementById('pageWrap').style.display = 'block';
+  await loadSavedClinics();
+}
+
+// ─── SAVED CLINICS ────────────────────────────────────────────
+async function loadSavedClinics() {
+  if (!_currentUser) return;
+  const { data: saved } = await _sb.from('saved_clinics').select('clinic_id').eq('user_id', _currentUser.id);
+  const ids = (saved || []).map(r => r.clinic_id);
+  if (!ids.length) { renderSavedGrid([]); return; }
+
+  // Fetch full clinic data — works for both Taiwan and Canada clinics
+  const { data: clinics } = await _sb.from('clinics')
+    .select('id, name, neighbourhood, region, country, rating, reviews, price, photo, logo, phone, website, lat, lng, place_id')
+    .in('id', ids).eq('approved', true);
+
+  _savedClinics = clinics || [];
+  renderSavedGrid(_savedClinics);
+}
+
+function renderSavedGrid(clinics) {
+  const grid = document.getElementById('savedGrid');
+  const count = document.getElementById('savedCount');
+  const clearBtn = document.getElementById('clearBtn');
+  const compareBtn = document.getElementById('btnCompare');
+
+  count.textContent = clinics.length;
+  clearBtn.style.display = clinics.length ? 'inline' : 'none';
+  compareBtn.disabled = clinics.length < 2;
+
+  if (!clinics.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-state-icon">♡</div><p>尚未收藏任何診所。<br>瀏覽診所時點擊愛心即可收藏。</p><div style="display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;"><a href="/taiwan" class="btn-browse">台灣診所 →</a><a href="https://skinday.ca" class="btn-browse" style="background:var(--deep);">加拿大診所 →</a></div></div>';
+    return;
+  }
+
+  grid.innerHTML = clinics.map(c => {
+    const hood = getLocation(c);
+    const hasPhoto = c.photo && c.photo !== '';
+    const hasLogo = c.logo && c.logo !== '';
+    const currency = c.country === 'taiwan' ? 'NT$' : 'CA$';
+
+    return '<div class="saved-card">' +
+      (hasPhoto
+        ? '<div class="saved-card-photo"><img src="' + c.photo + '" alt="" loading="lazy" onerror="this.parentElement.classList.add(\'no-photo\');this.remove()"></div>'
+        : '<div class="saved-card-photo no-photo"></div>') +
+      '<div class="saved-card-body">' +
+      '<div class="saved-card-top">' +
+      (hasLogo
+        ? '<div class="saved-card-logo"><img src="' + c.logo + '" alt="" loading="lazy" onerror="this.parentElement.textContent=\'' + (c.name||'?').charAt(0) + '\'"></div>'
+        : '<div class="saved-card-logo">' + (c.name||'?').charAt(0) + '</div>') +
+      '<div class="saved-card-info">' +
+      '<div class="saved-card-name">' + (c.name || '—') + '</div>' +
+      '<div class="saved-card-meta">📍 ' + hood + ' · ★ ' + (c.rating || '—') + '</div>' +
+      (c.price ? '<div class="saved-card-price">' + currency + c.price + ' / 單位</div>' : '') +
+      '</div></div>' +
+      '<div class="saved-card-footer">' +
+      '<a href="' + getDirectoryUrl(c) + '" class="saved-card-view">查看診所 →</a>' +
+      '<button class="saved-card-remove" onclick="removeSaved(\'' + c.id + '\', this)" title="從收藏移除">✕</button>' +
+      '</div></div></div>';
+  }).join('');
+}
+
+function getLocation(c) {
+  if (c.country === 'taiwan') {
+    const LABEL = { 'taipei-daan':'大安區','taipei-zhongshan':'中山區','taipei-songshan':'松山區','taipei-xinyi':'信義區','taipei-zhongzheng':'中正區','taipei-shilin':'士林區','taipei-neihu':'內湖區','new-taipei-banqiao':'板橋區','new-taipei-xinzhuang':'新莊區','new-taipei-sanchong':'三重區','taichung-west':'西區','taichung-xitun':'西屯區','kaohsiung-lingya':'苓雅區','kaohsiung-sanmin':'三民區','tainan-east':'東區' };
+    const city = c.region || '';
+    const dist = LABEL[c.neighbourhood] || '';
+    return dist ? dist + ' · ' + city : city;
+  }
+  return (c.neighbourhood || '') + (c.neighbourhood && c.region ? ' · ' + c.region : '');
+}
+
+function getDirectoryUrl(c) {
+  if (c.country === 'taiwan') return '/taiwan';
+  return 'https://skinday.ca';
+}
+
+async function removeSaved(clinicId, btn) {
+  await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id).eq('clinic_id', String(clinicId));
+  _savedClinics = _savedClinics.filter(c => String(c.id) !== String(clinicId));
+  renderSavedGrid(_savedClinics);
+}
+
+async function clearAllSaved() {
+  if (!confirm('確認要清除所有收藏的診所嗎？')) return;
+  await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id);
+  _savedClinics = [];
+  renderSavedGrid([]);
+}
+
+// ─── COMPARE ─────────────────────────────────────────────────
+function openCompare() {
+  const clinics = _savedClinics.slice(0, 3);
+  if (clinics.length < 2) return;
+  const colClass = 'cols-' + clinics.length;
+  const minPrice = Math.min(...clinics.filter(c => c.price).map(c => parseFloat(c.price)));
+  const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
+  let html = '<table class="compare-table ' + colClass + '"><thead><tr><th></th>';
+  clinics.forEach(c => {
+    html += '<td class="compare-col-header"><div class="col-name">' + c.name + '</div><div class="col-meta">📍 ' + getLocation(c) + '</div></td>';
+  });
+  html += '</tr></thead><tbody><tr><th>評分</th>';
+  clinics.forEach(c => {
+    const isTop = (parseFloat(c.rating)||0) === maxRating;
+    html += '<td' + (isTop?' class="compare-winner"':'') + '>★ <strong>' + (c.rating||'—') + '</strong>' + (isTop?'<span class="compare-winner-tag">最高</span>':'') + '<div style="font-size:0.75rem;color:var(--muted);margin-top:2px;">' + (c.reviews||0).toLocaleString() + ' 則評論</div></td>';
+  });
+  html += '</tr><tr><th>價格</th>';
+  const currency = (c) => c.country === 'taiwan' ? 'NT$' : 'CA$';
+  clinics.forEach(c => {
+    const isLowest = c.price && parseFloat(c.price) === minPrice;
+    html += c.price
+      ? '<td' + (isLowest?' class="compare-winner"':'') + '><span class="compare-price-big">' + currency(c) + c.price + '</span>/單位' + (isLowest?'<span class="compare-winner-tag">最優惠</span>':'') + '</td>'
+      : '<td><span class="compare-no-price">未提供</span></td>';
+  });
+  html += '</tr><tr><th>地區</th>';
+  clinics.forEach(c => { html += '<td>' + getLocation(c) + '</td>'; });
+  html += '</tr><tr><th>電話</th>';
+  clinics.forEach(c => { html += '<td>' + (c.phone ? '<a href="tel:' + c.phone + '" style="color:var(--rose)">' + c.phone + '</a>' : '—') + '</td>'; });
+  html += '</tr><tr><th>網站</th>';
+  clinics.forEach(c => { html += '<td>' + (c.website ? '<a href="' + c.website + '" target="_blank" rel="noopener" style="color:var(--rose);font-size:0.82rem;">前往網站 →</a>' : '—') + '</td>'; });
+  html += '</tr></tbody></table>';
+  document.getElementById('compareModalBody').innerHTML = html;
+  document.getElementById('compareModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCompare() { document.getElementById('compareModalOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+document.getElementById('compareModalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('compareModalOverlay')) closeCompare(); });
+
+// ─── DELETE ACCOUNT ───────────────────────────────────────────
+async function confirmDeleteAccount() {
+  if (!confirm('確認要永久刪除您的帳戶？此操作無法復原。')) return;
+  await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id);
+  await _sb.auth.signOut();
+  alert('您的帳戶已刪除。');
+  window.location.href = '/';
+}
+
+initAuth();
+</script>
+</body>
+</html>
