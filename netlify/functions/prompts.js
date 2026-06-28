@@ -80,12 +80,12 @@ function fillerAreaExpected(a, intensity){
 
 const FILLER_AREAS = {
   chin: {
-    expected: 'slightly more chin projection and a better-balanced lower-face profile',
-    avoid: 'do not lengthen the chin, do not make it pointed or jutting, do not alter the lips or mouth'
+    expected: 'more chin projection and a better-balanced lower-face profile, treating the chin alone: bring the chin point gently forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced with the upper face, keeping the chin width natural. The change comes only from added chin volume and structural support at the chin itself',
+    avoid: 'do not over-lengthen into a long, narrow, pointed, jutting, or witch-like chin, and keep the chin width natural; this is chin filler only, so do not add lateral jawline definition, do not sharpen, square, or carve the mandibular border, and do not change the gonial angle or jaw width; do not slim or carve the cheeks; do not add a double chin and do not alter the neck below the new chin point; do not alter the lips or mouth'
   },
   jawline: {
-    expected: 'subtle definition along the lower mandibular border with slight prejowl support',
-    avoid: 'do not create a sharp, angular, or "superhero" jawline, do not slim the cheeks, do not change the neck'
+    expected: 'cleaner definition along the lower mandibular border with slight prejowl support, treating the jawline alone: a smoother, more continuous border from the chin body back toward the gonial angle, with the prejowl hollow softened where present so the jaw line reads more defined. The change comes only from added structural support along the mandibular border',
+    avoid: 'do not create a sharp, angular, or "superhero" jawline, do not slim the cheeks, do not change the neck; this is jawline filler only, so do not add chin projection, do not lengthen, lower, or strengthen the chin point, and do not change the pogonion position or the chin-to-lip distance; do not widen or square the chin'
   },
   nose: {
     expected: 'smooth one small dorsal bump on the nasal bridge and slightly straighten the side profile (liquid rhinoplasty)',
@@ -93,7 +93,7 @@ const FILLER_AREAS = {
   },
   lips: {
     expected: 'a natural-looking increase in lip body and a slightly more defined vermilion border, with at most a small, even amount of projection, keeping the existing lip shape, the natural upper-to-lower balance, and the position of the lip border and cupid\'s bow',
-    avoid: 'do not add gloss, shine, a wet look, or any lip product; do not change the lip color, redness, or pigment, and do not add lipstick; do not over-fill, evert, shelf, or roll the lips out, and do not create a "duck" or sausage shape; do not move or reshape the vermilion border or cupid\'s bow; do not invert the natural upper-to-lower proportion; do not whiten the teeth'
+    avoid: 'do not add gloss, shine, a wet look, or any lip product; do not change the lip color, redness, or pigment, and do not add lipstick; do not over-fill, evert, shelf, or roll the lips out, and do not create a "duck" or sausage shape; do not move or reshape the vermilion border or cupid\'s bow; do not invert the natural upper-to-lower proportion; do not whiten the teeth; the lip change must stay strictly within the lip body and must not add chin projection, lengthen or strengthen the chin, change the chin point or pogonion, alter the mentolabial fold, or change the lower-lip-to-chin distance; the chin and lower face stay pixel-close to the original except where chin or jawline filler is separately and explicitly selected'
   },
   cheeks: {
     expected: 'restore a little midface and cheekbone volume so the cheek apex and the curve from the lower lid down to the cheek (the ogee curve) look gently fuller and better supported, with a natural, restorative apex rather than an exaggerated or sculpted cheekbone',
@@ -712,6 +712,16 @@ const HA_FILLER_AREA_ALLOWLISTS = {
     'TEAR TROUGH FILLER ONLY. Allowed zones: under-eye hollow and immediately adjacent upper medial cheek. ' +
     'Allowed effects: softer under-eye hollow, smoother lid-cheek junction, reduced shadow from depression being filled. ' +
     'HARD LOCK -- must not change: eye shape, eyelid, iris, midface volume, lips, nose, chin.',
+  chin:
+    'CHIN FILLER ONLY. Allowed zones: chin (mentum), chin point and pogonion, lower-third projection and length. ' +
+    'Allowed effects: forward chin projection, modest vertical lengthening, better-balanced lower-face profile, natural chin width. ' +
+    'HARD LOCK -- must not change: jawline (mandibular border, gonial angle, jaw width), cheeks, lips and mouth, nose, eyes, neck, and skin texture. ' +
+    'This is chin filler only -- not jawline contouring, not a combined lower-face reshape.',
+  jawline:
+    'JAWLINE FILLER ONLY. Allowed zones: lower mandibular border from the chin body back toward the gonial angle, prejowl hollow. ' +
+    'Allowed effects: cleaner, more continuous mandibular border definition, prejowl support, softened jowl shadow. ' +
+    'HARD LOCK -- must not change: chin (projection, length, shape, pogonion position, width), cheeks, lips and mouth, nose, neck, and skin texture. ' +
+    'This is jawline filler only -- not chin filler, not a combined lower-face reshape.',
 };
 
 // Assemble the CORE prompt from selections. The safety base is appended elsewhere.
@@ -947,6 +957,32 @@ const SCENARIO_PROMPTS = {
       SCENARIO_SAFETY
   },
 
+  add_chin_filler: {
+    label: 'Add chin filler',
+    description: 'Sculptra baseline + HA chin filler (chin only)',
+    prompt: SCENARIO_PROMPT_BASE +
+      'Treatment to simulate: Sculptra biostimulator (baseline level) PLUS HA filler to the chin ONLY. ' +
+      'Show: the expected Sculptra lateral scaffold support AND a chin-only change: ' +
+      'gently bring the chin point forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced, keeping the chin width natural. ' +
+      'For a female patient: the chin elongates forward and the lower third reads more balanced. ' +
+      'For a male patient: the chin is wider and squared at the mentum, never tapered or pointed. ' +
+      'This is chin filler only: do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width. ' +
+      'Do not change the midface, cheekbones, upper face, eyes, or brows.' +
+      SCENARIO_SAFETY
+  },
+
+  add_jawline_filler: {
+    label: 'Add jawline filler',
+    description: 'Sculptra baseline + HA jawline filler (jawline only)',
+    prompt: SCENARIO_PROMPT_BASE +
+      'Treatment to simulate: Sculptra biostimulator (baseline level) PLUS HA filler to the jawline ONLY. ' +
+      'Show: the expected Sculptra lateral scaffold support AND a jawline-only change: ' +
+      'a smoother, more continuous mandibular border from the chin body back toward the gonial angle, with the prejowl hollow softened where present, so the jaw line reads more defined. ' +
+      'This is jawline filler only: do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance. ' +
+      'Do not change the midface, cheekbones, upper face, eyes, or brows.' +
+      SCENARIO_SAFETY
+  },
+
   add_temple_support: {
     label: 'Add temple support',
     description: 'Sculptra baseline + focused temple volume',
@@ -1054,6 +1090,12 @@ const CROSS_ADDON_PROMPTS = {
   add_chin_jaw_filler: CROSS_ADDON_BASE +
     'Add hyaluronic acid filler to the chin and jawline: more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support, so the lower third reads more defined and refined. Keep it conservative and natural.' +
     addonSafety('hyaluronic acid filler to the chin and jawline'),
+  add_chin_filler: CROSS_ADDON_BASE +
+    'Add hyaluronic acid filler to the chin ONLY: gently bring the chin point forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced, keeping the chin width natural. This is chin filler only -- do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width.' +
+    addonSafety('hyaluronic acid filler to the chin only'),
+  add_jawline_filler: CROSS_ADDON_BASE +
+    'Add hyaluronic acid filler to the jawline ONLY: a smoother, more continuous mandibular border from the chin body back toward the gonial angle, with the prejowl hollow softened where present, so the jaw line reads more defined. This is jawline filler only -- do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance.' +
+    addonSafety('hyaluronic acid filler to the jawline only'),
   add_cheek_filler: CROSS_ADDON_BASE +
     'Add hyaluronic acid filler to the cheeks (midface): restore soft midface and lateral cheek volume so the cheek reads fuller and better supported, with a smooth continuous transition from the cheekbone into the midface. Subtle and natural, never overfilled, shelf-like, or pillowed.' +
     addonSafety('hyaluronic acid filler to the cheeks and midface'),
@@ -1072,6 +1114,26 @@ const CROSS_ADDON_PROMPTS = {
   add_biostim_lift: CROSS_ADDON_BASE +
     'Add a biostimulator collagen response for more lateral lift: broader, softer support across the lateral cheek and temple so the midface reads lifted and the jawline cleaner, as a diffuse soft-tissue improvement returning under the skin. This is collagen-based volume and lift, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow.' +
     addonSafety('a diffuse biostimulator lateral-lift response across the cheeks and temples'),
+  add_rf: CROSS_ADDON_BASE +
+    'Add a radiofrequency (RF) skin-tightening result on top of the existing filler result: modest firming and tightening of the skin envelope, mainly in the lower face and along the jawline, so the skin reads a little smoother and more taut and the jaw line a little cleaner. ' +
+    'This is energy-based skin tightening, NOT volume: do NOT add, restore, or re-inflate any volume, do NOT plump or round the face, do NOT change the filler result already present. Energy devices tighten existing skin, they cannot add volume. ' +
+    'Keep the change subtle and clearly below what filler or a biostimulator can do. Do NOT de-age the patient or erase wrinkles, texture, or pigmentation: the person must still look their age.' +
+    addonSafety('a modest RF skin-tightening effect in the lower face and jawline'),
+  add_hifu: CROSS_ADDON_BASE +
+    'Add a HIFU (focused ultrasound) lifting result on top of the existing filler result: a modest lift and tightening of the lower face and jawline, with a slightly crisper, more lifted mandibular line and a cleaner transition into the neck. ' +
+    'This is energy-based lifting and tightening, NOT volume: do NOT add, restore, or re-inflate any volume, do NOT plump or round the face, and do NOT change the filler result already present. Energy devices tighten and lift existing tissue, they cannot add volume. ' +
+    'Keep the change subtle and clearly below what filler or a biostimulator can do. Do NOT de-age the patient or erase wrinkles, texture, or pigmentation: the person must still look their age.' +
+    addonSafety('a modest HIFU lifting effect in the lower face and jawline'),
+  add_masseter: CROSS_ADDON_BASE +
+    'Add a neurotoxin masseter-reduction result on top of the existing filler result: over the months a botulinum toxin masseter treatment would take effect, the masseter muscle at the back lateral lower face becomes slimmer, so the lower face reads narrower and softer and the transition from cheek to jaw is smoother, with less lateral fullness at the mandibular angle. ' +
+    'This is muscle slimming from neurotoxin, NOT volume and NOT bone change: do NOT add filler volume, do NOT change the chin, do NOT sharpen or carve the jawline bone, and do NOT alter the existing filler result. The change is only a reduction of lateral lower-face muscle bulk. ' +
+    'Keep it subtle, natural, and symmetric. Preserve identity and the patient\'s ethnicity.' +
+    addonSafety('a neurotoxin masseter-slimming effect that narrows the lateral lower face'),
+  add_nefertiti: CROSS_ADDON_BASE +
+    'Add a neurotoxin Nefertiti-lift result on top of the existing filler result: botulinum toxin along the jawline and upper neck (platysma) relaxes the downward pull, so the jawline reads cleaner and slightly more lifted and the transition from jaw to neck is sharper and more defined. ' +
+    'This is a neurotoxin contour-refinement effect, NOT volume: do NOT add filler volume, do NOT change the chin projection, do NOT carve or sharpen the jaw bone, and do NOT alter the existing filler result. The change is a subtle lift and cleaner jaw-to-neck line only. ' +
+    'Keep it subtle and natural. Preserve identity and the patient\'s ethnicity.' +
+    addonSafety('a neurotoxin Nefertiti-lift effect that cleans and lifts the jawline and neck'),
   stronger_laser:
     'This photograph already shows a subtle energy-based skin-tightening result. Intensify it MODESTLY to represent a strong responder over a full course of multiple sessions (results developing over several months): a bit more firmness and tightening in the LOWER FACE, and a slightly cleaner, more defined jawline. ' +
     'This is still an energy-device result and must stay clearly below what filler or Sculptra can do. Do NOT add any cheek or midface fullness, do NOT re-inflate, plump, or round out the face, do NOT restore lost volume, and do NOT produce a facelift -- energy devices tighten existing skin, they cannot add volume. ' +
