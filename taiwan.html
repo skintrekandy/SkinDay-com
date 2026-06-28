@@ -887,6 +887,74 @@ const NEIGHBOURHOOD_REGION = {
   'pingtung-pingtung':'屏東', 'taitung-taitung':'台東', 'hualien-hualien':'花蓮', 'yilan-yilan':'宜蘭',
 };
 
+
+// ─── NEIGHBOURHOOD CHINESE LABELS ────────────────────────────
+const NEIGHBOURHOOD_LABEL = {
+  'taipei-daan':'大安區','taipei-zhongshan':'中山區','taipei-songshan':'松山區',
+  'taipei-xinyi':'信義區','taipei-zhongzheng':'中正區','taipei-shilin':'士林區',
+  'taipei-neihu':'內湖區','taipei-datong':'大同區','taipei-wanhua':'萬華區',
+  'taipei-nangang':'南港區','taipei-wenshan':'文山區','taipei-beitou':'北投區',
+  'new-taipei-banqiao':'板橋區','new-taipei-xinzhuang':'新莊區','new-taipei-sanchong':'三重區',
+  'new-taipei-zhonghe':'中和區','new-taipei-yonghe':'永和區','new-taipei-xindian':'新店區',
+  'new-taipei-luzhou':'蘆洲區','new-taipei-tucheng':'土城區','new-taipei-taishan':'泰山區',
+  'new-taipei-xizhi':'汐止區','new-taipei-jinshan':'金山區',
+  'taoyuan-taoyuan':'桃園區','taoyuan-zhongli':'中壢區','taoyuan-pingzhen':'平鎮區',
+  'taoyuan-zhongli':'中壢區',
+  'hsinchu-east':'東區','hsinchu-north':'北區','hsinchu-county-zhubei':'竹北市',
+  'taichung-west':'西區','taichung-xitun':'西屯區','taichung-north':'北區',
+  'taichung-nantun':'南屯區','taichung-beitun':'北屯區','taichung-south':'南區',
+  'taichung-east':'東區','taichung-central':'中區',
+  'tainan-east':'東區','tainan-west-central':'中西區','tainan-north':'北區','tainan-south':'南區',
+  'tainan-annan':'安南區','tainan-anping':'安平區',
+  'kaohsiung-lingya':'苓雅區','kaohsiung-sanmin':'三民區','kaohsiung-zuoying':'左營區',
+  'kaohsiung-gushan':'鼓山區','kaohsiung-sinsing':'新興區','kaohsiung-qianjin':'前金區',
+  'kaohsiung-cianjhen':'前鎮區','kaohsiung-nanzi':'楠梓區','kaohsiung-cijin':'旗津區',
+  'keelung-renai':'仁愛區','keelung-zhongzheng':'中正區','keelung-qidu':'七堵區',
+  'miaoli-miaoli':'苗栗市','changhua-changhua':'彰化市',
+  'nantou-nantou':'南投市','yunlin-huwei':'虎尾鎮','yunlin-douliou':'斗六市',
+  'chiayi-west':'西區','chiayi-east':'東區',
+  'pingtung-pingtung':'屏東市','taitung-taitung':'台東市',
+  'hualien-hualien':'花蓮市','yilan-yilan':'宜蘭市',
+  // Extended — covers all slugs seen in DB data
+  'taipei-zhongshan':'中山區',
+  'hsinchu-east':'東區','hsinchu-north':'北區','hsinchu-county-zhubei':'竹北市',
+  'hsinchu-county-zhubei':'竹北市','hsinchu-county-hsinchu':'新竹市',
+  'taichung-beitun':'北屯區','taichung-taiping':'太平區','taichung-dali':'大里區',
+  'taichung-wuri':'烏日區','taichung-fengyuan':'豐原區',
+  'new-taipei-yonghe':'永和區','new-taipei-zhonghe':'中和區',
+  'new-taipei-banciao':'板橋區','new-taipei-linkou':'林口區',
+  'new-taipei-tamsui':'淡水區','new-taipei-shulin':'樹林區',
+  'taoyuan-zhongli':'中壢區','taoyuan-taoyuan':'桃園區',
+  'taoyuan-zhubei':'竹北市','taoyuan-dayuan':'大園區',
+  'kaohsiung-zuoying':'左營區','kaohsiung-fengshan':'鳳山區',
+  'kaohsiung-daliao':'大寮區','kaohsiung-renwu':'仁武區',
+  'tainan-yongkang':'永康區','tainan-rende':'仁德區',
+  'chiayi-county-chiayi':'嘉義縣','pingtung-pingtung':'屏東市',
+  'yunlin-douliou':'斗六市','yunlin-huwei':'虎尾鎮',
+  'changhua-yuanlin':'員林市','changhua-lukang':'鹿港鎮',
+  'miaoli-toufen':'頭份市','miaoli-zhunan':'竹南鎮',
+  'keelung-zhongzheng':'中正區','keelung-qidu':'七堵區',
+  'keelung-nuannuan':'暖暖區',
+};
+
+const CITY_PREFIXES = ['taipei','new-taipei','taoyuan','taichung','tainan','kaohsiung',
+  'hsinchu','hsinchu-county','keelung','chiayi','chiayi-county','yunlin','changhua',
+  'miaoli','nantou','pingtung','hualien','taitung','yilan'];
+
+function getNeighbourhoodLabel(slug) {
+  if (!slug) return '';
+  if (NEIGHBOURHOOD_LABEL[slug]) return NEIGHBOURHOOD_LABEL[slug];
+  // For unknown slugs, try stripping city prefix then return remaining parts
+  for (const prefix of CITY_PREFIXES) {
+    if (slug.startsWith(prefix + '-')) {
+      const rest = slug.slice(prefix.length + 1);
+      // Convert hyphenated remainder to title case as last resort
+      return rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+  }
+  return slug;
+}
+
 // Neighbourhood coords for Near Me
 const HOOD_COORDS = {
   'taipei-daan':[25.0269,121.5434], 'taipei-zhongshan':[25.0637,121.5293],
@@ -1011,7 +1079,7 @@ function renderPageCards(clinicsData, append) {
           <div class="clinic-name">
             ${c.claimed ? `<span class="clinic-name-verified">${c.name}</span>` : c.name}
           </div>
-          <div class="clinic-meta">📍 ${c.neighbourhood || c.region || ''}${distEl}</div>
+          <div class="clinic-meta">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''}${distEl}</div>
           <div class="rating-row">
             <span class="stars">${renderStars(c.rating)}</span>
             <span class="rating-num">${c.rating != null ? c.rating : '—'}</span>
@@ -1201,7 +1269,7 @@ function openCompareModal() {
   const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
   const maxReviews = Math.max(...clinics.map(c => parseInt(c.reviews)||0));
   let html = `<table class="compare-table ${colClass}"><thead><tr><th></th>`;
-  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${c.neighbourhood||''}</div></td>`; });
+  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''}</div></td>`; });
   html += '</tr></thead><tbody>';
   html += '<tr><th>評分</th>';
   clinics.forEach(c => {
@@ -1216,14 +1284,13 @@ function openCompareModal() {
       : '<td><span class="compare-no-price">未提供</span></td>';
   });
   html += '</tr><tr><th>地區</th>';
-  clinics.forEach(c => { html += `<td>${c.neighbourhood||c.region||'—'}</td>`; });
+  clinics.forEach(c => { html += `<td>${getNeighbourhoodLabel(c.neighbourhood) || c.region || '—'}</td>`; });
   html += '</tr><tr><th>電話</th>';
   clinics.forEach(c => { html += `<td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--rose)">${c.phone}</a>` : '—'}</td>`; });
   html += '</tr><tr><th>網站</th>';
   clinics.forEach(c => { html += `<td>${c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="color:var(--rose);font-size:0.82rem;">前往網站 →</a>` : '—'}</td>`; });
   html += '</tr></tbody></table>';
-  document.getElementById('compareTable').outerHTML = html.replace('<table', '<table id="compareTable"');
-  document.getElementById('compareTable').outerHTML = html;
+  document.querySelector('.compare-modal-body').innerHTML = html;
   document.getElementById('compareModalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1249,7 +1316,7 @@ window.openClinicModal = async function(id) {
     c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:8px 8px 0 0;" loading="lazy">` : '',
     `<div style="padding:1.5rem;">`,
     `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.5rem;font-weight:500;margin-bottom:0.5rem;">${c.name}</h2>`,
-    `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">📍 ${c.neighbourhood||c.region||''}</p>`,
+    `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''}</p>`,
     `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">`,
     `<span style="color:var(--gold);">★</span><strong>${c.rating||'—'}</strong>`,
     `<span style="color:var(--muted);font-size:0.82rem;">(${(c.reviews||0).toLocaleString('zh-TW')} 則評論)</span>`,
@@ -1488,7 +1555,7 @@ async function updateShortlistUI() {
       <div class="shortlist-item-logo">${c.logo ? `<img src="${c.logo}" alt="">` : c.name.charAt(0)}</div>
       <div class="shortlist-item-info">
         <div class="shortlist-item-name">${c.name}</div>
-        <div class="shortlist-item-meta">📍 ${c.neighbourhood||c.region||''} · ★${c.rating||'—'}</div>
+        <div class="shortlist-item-meta">📍 ${getNeighbourhoodLabel(c.neighbourhood) || c.region || ''} · ★${c.rating||'—'}</div>
         ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">NT$${c.price}/單位</div>` : ''}
       </div>
       <button class="shortlist-item-remove" onclick="toggleSave('${c.id}', event)">✕</button>
