@@ -1539,31 +1539,73 @@ function findClinic(id) {
 window.openClinicModal = async function(id) {
   const c = findClinic(String(id));
   if (!c) return;
+
+  // Build Google Maps directions URL from place_id or coords
+  let directionsUrl = '';
+  if (c.place_id) directionsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.name) + '&query_place_id=' + c.place_id;
+  else if (c.lat && c.lng) directionsUrl = 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng;
+  const ratingUrl = directionsUrl || '#';
+
+  const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
+  const reviews = (c.reviews || 0).toLocaleString('zh-TW');
+
   const content = [
-    c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:8px 8px 0 0;" loading="lazy">` : '',
-    `<div style="padding:1.5rem;">`,
-    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.5rem;font-weight:500;margin-bottom:0.5rem;">${c.name}</h2>`,
-    `<p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}</p>`,
-    `<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">`,
-    `<span style="color:var(--gold);">★</span><strong>${c.rating||'—'}</strong>`,
-    `<span style="color:var(--muted);font-size:0.82rem;">(${(c.reviews||0).toLocaleString('zh-TW')} 則評論)</span>`,
+    c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:16px 16px 0 0;" loading="lazy">` : '',
+    `<div style="padding:1.75rem;">`,
+    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.6rem;font-weight:500;margin-bottom:0.4rem;line-height:1.2;">${c.name}</h2>`,
+    `<p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">📍 ${hood}</p>`,
+
+    // Rating row links to Google Maps
+    `<a href="${ratingUrl}" ${directionsUrl ? 'target="_blank" rel="noopener"' : ''} style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem;text-decoration:none;">`,
+    `<span style="color:var(--gold);">★</span><strong style="color:var(--deep);">${c.rating || '—'}</strong>`,
+    `<span style="color:var(--muted);font-size:0.82rem;">(${reviews} 則評論)</span>`,
+    `</a>`,
+
+    c.price ? `<p style="margin-bottom:1.25rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/單位</span></p>` : '',
+
+    // Primary action: Directions
+    `<div style="margin-bottom:0.6rem;">`,
+    directionsUrl
+      ? `<a href="${directionsUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--rose);color:#fff;padding:0.85rem;border-radius:10px;font-size:0.92rem;font-weight:500;text-decoration:none;font-family:'DM Sans',sans-serif;">📍 規劃路線</a>`
+      : '',
     `</div>`,
-    c.price ? `<p style="margin-bottom:1rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.5rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/單位</span></p>` : '',
-    c.phone ? `<p style="margin-bottom:0.5rem;font-size:0.9rem;">📞 <a href="tel:${c.phone}" style="color:var(--rose);">${c.phone}</a></p>` : '',
-    c.website ? `<p style="margin-bottom:1rem;font-size:0.9rem;"><a href="${c.website}" target="_blank" rel="noopener" style="color:var(--rose);">前往官網 →</a></p>` : '',
+
+    // Secondary row: Call + Website
+    `<div style="display:grid;grid-template-columns:${c.phone && c.website ? '1fr 1fr' : '1fr'};gap:0.6rem;margin-bottom:1.5rem;">`,
+    c.phone ? `<a href="tel:${c.phone}" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">📞 致電</a>` : '',
+    c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">🌐 官網</a>` : '',
+    `</div>`,
+
+    // Report link
+    `<div style="text-align:center;border-top:1px solid var(--border);padding-top:1rem;">`,
+    `<button onclick="reportTaiwanClinic('${c.id}', this)" style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px;">回報資料有誤</button>`,
+    `</div>`,
+
     `</div>`
   ].join('');
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(28,23,20,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;';
   const modal = document.createElement('div');
-  modal.style.cssText = 'background:var(--cream);border-radius:16px;max-width:480px;width:100%;max-height:85vh;overflow-y:auto;position:relative;animation:fadeUp 0.25s ease;';
-  modal.innerHTML = `<button onclick="this.closest('[data-overlay]').remove();document.body.style.overflow='';" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.3);border:none;color:#fff;width:28px;height:28px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;">✕</button>${content}`;
+  modal.style.cssText = 'background:var(--cream);border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative;animation:fadeUp 0.25s ease;';
+  modal.innerHTML = `<button onclick="this.closest('[data-overlay]').remove();document.body.style.overflow='';" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;">✕</button>${content}`;
   overlay.dataset.overlay = '1';
   overlay.appendChild(modal);
   overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+};
+
+window.reportTaiwanClinic = function(id, btn) {
+  const c = findClinic(String(id));
+  const name = c ? c.name : '';
+  try {
+    fetch('https://skinday.ca/api/submit-claim', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'report', clinic_name: name + ' (Taiwan)', owner_email: '', owner_name: '', owner_role: 'Report' })
+    });
+  } catch(e) {}
+  if (btn) { btn.textContent = '已收到回報，謝謝您'; btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'default'; }
 };
 
 // ─── VISIT SIGNALS ────────────────────────────────────────────
