@@ -510,14 +510,22 @@
     .trust-text span { font-size: 0.82rem; color: var(--muted); }
 
     /* ─── FOOTER ─── */
-    footer { background: var(--deep2); padding: 40px 5%; border-top: 1px solid rgba(201,169,110,0.1); }
-    .footer-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 2rem; flex-wrap: wrap; }
-    .footer-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--dim); text-decoration: none; }
-    .footer-logo span { color: var(--gold); }
-    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
-    .footer-links a { font-size: 0.8rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--cream); }
-    .footer-copy { font-size: 0.75rem; color: var(--muted); }
+    footer { background: var(--deep2); padding: 48px 5% 32px; border-top: 1px solid rgba(201,169,110,0.15); }
+    .footer-top { display: flex; justify-content: space-between; gap: 48px; flex-wrap: wrap; max-width: 1280px; margin: 0 auto 3rem; }
+    .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--cream); text-decoration: none; display: block; margin-bottom: 0.5rem; }
+    .footer-brand span { color: var(--gold); }
+    .footer-tagline { font-size: 0.85rem; color: rgba(250,247,242,0.4); max-width: 200px; line-height: 1.6; font-weight: 300; }
+    .footer-links { display: flex; flex-direction: column; }
+    .footer-links h4 { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,247,242,0.35); margin-bottom: 14px; }
+    .footer-links a { font-size: 0.88rem; color: rgba(250,247,242,0.55); text-decoration: none; margin-bottom: 9px; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-bottom { max-width: 1280px; margin: 0 auto; border-top: 1px solid rgba(250,247,242,0.07); padding-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; text-align: center; }
+    .footer-copy { font-size: 0.82rem; color: rgba(250,247,242,0.35); }
+    .footer-copy a { color: rgba(250,247,242,0.35); text-decoration: none; }
+    .footer-disclaimers { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
+    .footer-disclaimer { font-size: 0.75rem; color: rgba(250,247,242,0.25); line-height: 1.5; }
+    .footer-disclaimer span.disc-num { opacity: 0.5; margin-right: 0.3rem; }
+    @media (max-width: 640px) { .footer-top { flex-direction: column; gap: 2rem; } }
 
     /* ─── LIGHTBOX ─── */
     .sd-lightbox { display: none; position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; }
@@ -926,27 +934,18 @@
     </div>
     <div class="footer-links">
       <h4>探索</h4>
-      <ul>
-        <li><a href="/taiwan">台灣醫美診所</a></li>
-        <li><a href="/canada">加拿大診所</a></li>
-        <li><a href="https://skinday.com">SkinDay 全球</a></li>
-      </ul>
+      <a href="https://skinday.com">SkinDay 全球</a>
     </div>
     <div class="footer-links">
       <h4>診所工具</h4>
-      <ul>
-        <li><a href="https://skinday.com/visualize" style="color:var(--gold);">Visualize — AI 諮詢預覽</a></li>
-        <li><a href="https://skinday.com/studio" style="color:var(--gold);">Studio — 免費照片工具</a></li>
-        <li><a href="https://skinday.com/guide">使用指南</a></li>
-      </ul>
+      <a href="https://skinday.com/visualize" style="color:var(--gold);">Visualize</a>
+      <a href="https://skinday.com/studio" style="color:var(--gold);">Studio</a>
     </div>
     <div class="footer-links">
       <h4>公司</h4>
-      <ul>
-        <li><a href="https://skinday.com/contact">聯絡我們</a></li>
-        <li><a href="https://skinday.com/privacy">隱私政策</a></li>
-        <li><a href="https://skinday.com/terms">服務條款</a></li>
-      </ul>
+      <a href="https://skinday.com/contact">聯絡我們</a>
+      <a href="https://skinday.com/privacy">隱私政策</a>
+      <a href="https://skinday.com/terms">服務條款</a>
     </div>
   </div>
   <div class="footer-bottom">
@@ -1851,10 +1850,14 @@ let _mapSort = 'rating', _lastZoom = null, _idleTimer = null, _hoverTimer = null
 let currentView = 'grid';
 
 const PIN_PATH = 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z';
-const PIN_IDLE   = { path: PIN_PATH, fillColor: '#1C1714', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1,   labelOrigin: new google.maps.Point(0, -30) };
-const PIN_HOVER  = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1.35, labelOrigin: new google.maps.Point(0, -30) };
-const PIN_ACTIVE = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,   scale: 1.5,  labelOrigin: new google.maps.Point(0, -30) };
 const LABEL_STYLE = { color: '#fff', fontSize: '10px', fontWeight: '700', fontFamily: 'DM Sans, sans-serif' };
+let PIN_IDLE, PIN_HOVER, PIN_ACTIVE;
+function initPins() {
+  if (PIN_IDLE) return;
+  PIN_IDLE   = { path: PIN_PATH, fillColor: '#1C1714', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1,   labelOrigin: new google.maps.Point(0, -30) };
+  PIN_HOVER  = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1.35, labelOrigin: new google.maps.Point(0, -30) };
+  PIN_ACTIVE = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,   scale: 1.5,  labelOrigin: new google.maps.Point(0, -30) };
+}
 
 function isMobileMapUI() { return window.matchMedia('(hover: none)').matches; }
 function _normCid(cid) { return String(cid); }
@@ -1912,6 +1915,7 @@ async function fetchMapClinics() {
 }
 
 async function initMap() {
+  initPins();
   const loadingEl = document.getElementById('mapLoading');
   if (loadingEl) loadingEl.classList.remove('hidden');
   try { _allClinics = await fetchMapClinics(); } catch(e) { if (loadingEl) loadingEl.textContent = '載入失敗'; return; }
