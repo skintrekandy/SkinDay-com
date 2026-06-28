@@ -1114,6 +1114,26 @@ const CROSS_ADDON_PROMPTS = {
   add_biostim_lift: CROSS_ADDON_BASE +
     'Add a biostimulator collagen response for more lateral lift: broader, softer support across the lateral cheek and temple so the midface reads lifted and the jawline cleaner, as a diffuse soft-tissue improvement returning under the skin. This is collagen-based volume and lift, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow.' +
     addonSafety('a diffuse biostimulator lateral-lift response across the cheeks and temples'),
+  add_rf: CROSS_ADDON_BASE +
+    'Add a radiofrequency (RF) skin-tightening result on top of the existing filler result: modest firming and tightening of the skin envelope, mainly in the lower face and along the jawline, so the skin reads a little smoother and more taut and the jaw line a little cleaner. ' +
+    'This is energy-based skin tightening, NOT volume: do NOT add, restore, or re-inflate any volume, do NOT plump or round the face, do NOT change the filler result already present. Energy devices tighten existing skin, they cannot add volume. ' +
+    'Keep the change subtle and clearly below what filler or a biostimulator can do. Do NOT de-age the patient or erase wrinkles, texture, or pigmentation: the person must still look their age.' +
+    addonSafety('a modest RF skin-tightening effect in the lower face and jawline'),
+  add_hifu: CROSS_ADDON_BASE +
+    'Add a HIFU (focused ultrasound) lifting result on top of the existing filler result: a modest lift and tightening of the lower face and jawline, with a slightly crisper, more lifted mandibular line and a cleaner transition into the neck. ' +
+    'This is energy-based lifting and tightening, NOT volume: do NOT add, restore, or re-inflate any volume, do NOT plump or round the face, and do NOT change the filler result already present. Energy devices tighten and lift existing tissue, they cannot add volume. ' +
+    'Keep the change subtle and clearly below what filler or a biostimulator can do. Do NOT de-age the patient or erase wrinkles, texture, or pigmentation: the person must still look their age.' +
+    addonSafety('a modest HIFU lifting effect in the lower face and jawline'),
+  add_masseter: CROSS_ADDON_BASE +
+    'Add a neurotoxin masseter-reduction result on top of the existing filler result: over the months a botulinum toxin masseter treatment would take effect, the masseter muscle at the back lateral lower face becomes slimmer, so the lower face reads narrower and softer and the transition from cheek to jaw is smoother, with less lateral fullness at the mandibular angle. ' +
+    'This is muscle slimming from neurotoxin, NOT volume and NOT bone change: do NOT add filler volume, do NOT change the chin, do NOT sharpen or carve the jawline bone, and do NOT alter the existing filler result. The change is only a reduction of lateral lower-face muscle bulk. ' +
+    'Keep it subtle, natural, and symmetric. Preserve identity and the patient\'s ethnicity.' +
+    addonSafety('a neurotoxin masseter-slimming effect that narrows the lateral lower face'),
+  add_nefertiti: CROSS_ADDON_BASE +
+    'Add a neurotoxin Nefertiti-lift result on top of the existing filler result: botulinum toxin along the jawline and upper neck (platysma) relaxes the downward pull, so the jawline reads cleaner and slightly more lifted and the transition from jaw to neck is sharper and more defined. ' +
+    'This is a neurotoxin contour-refinement effect, NOT volume: do NOT add filler volume, do NOT change the chin projection, do NOT carve or sharpen the jaw bone, and do NOT alter the existing filler result. The change is a subtle lift and cleaner jaw-to-neck line only. ' +
+    'Keep it subtle and natural. Preserve identity and the patient\'s ethnicity.' +
+    addonSafety('a neurotoxin Nefertiti-lift effect that cleans and lifts the jawline and neck'),
   stronger_laser:
     'This photograph already shows a subtle energy-based skin-tightening result. Intensify it MODESTLY to represent a strong responder over a full course of multiple sessions (results developing over several months): a bit more firmness and tightening in the LOWER FACE, and a slightly cleaner, more defined jawline. ' +
     'This is still an energy-device result and must stay clearly below what filler or Sculptra can do. Do NOT add any cheek or midface fullness, do NOT re-inflate, plump, or round out the face, do NOT restore lost volume, and do NOT produce a facelift -- energy devices tighten existing skin, they cannot add volume. ' +
@@ -1121,16 +1141,68 @@ const CROSS_ADDON_PROMPTS = {
     'Preserve identity, apparent age, skin tone, ethnicity and all ethnic features, facial asymmetry, eyes, brows, lips, nose, ears, hair, headband, neck, clothing, background, lighting, and camera angle exactly. The result must be understated, natural, and unmistakably the same person. Do not add text, labels, watermarks, or annotations.'
 };
 
-function buildScenarioPrompt(scenarioKey, view, baselineType) {
-  // M14: cross-type baselines (filler / laser) use the generic add-on prompts,
-  // which edit the already-treated baseline image directly. Sculptra baselines
-  // (biostim, or unspecified for backward compatibility) use the original set.
-  const isCrossType = baselineType === 'filler' || baselineType === 'laser' || baselineType === 'tox';
+// M16: Build a short description of the baseline filler that is already present,
+// from the areas + intensity the patient's baseline used. Used to reconstruct the
+// already-treated face in a single pass from the original photo (instead of
+// editing the degraded baseline render). Intensity words map to lay magnitude.
+function describeBaselineFiller(baselineAreas, baselineIntensity) {
+  const areaNames = {
+    chin_jawline: 'the chin and jawline',
+    chin: 'the chin',
+    jawline: 'the jawline',
+    cheeks: 'the cheeks (midface)',
+    temple: 'the temples',
+    tear_trough: 'the under-eye tear troughs',
+    nose: 'the nose bridge',
+    lips: 'the lips'
+  };
+  const list = String(baselineAreas || '')
+    .split(',')
+    .map(a => a.trim())
+    .filter(Boolean)
+    .map(a => areaNames[a] || null)
+    .filter(Boolean);
+  if (!list.length) return '';
+  const mag = baselineIntensity === 'enhanced' ? 'a clearly visible amount of'
+            : baselineIntensity === 'moderate' ? 'a moderate, natural amount of'
+            : 'a small, natural amount of';
+  let areasText;
+  if (list.length === 1) areasText = list[0];
+  else if (list.length === 2) areasText = list[0] + ' and ' + list[1];
+  else areasText = list.slice(0, -1).join(', ') + ', and ' + list[list.length - 1];
+  return 'This patient has ALREADY received ' + mag + ' hyaluronic acid filler in ' +
+    areasText + ', and that result is already present and must be faithfully reproduced. ';
+}
+
+function buildScenarioPrompt(scenarioKey, view, baselineType, opts) {
+  opts = opts || {};
+  const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
+                     view === 'l45' || view === 'r45');
+
+  // M16: FILLER baselines build the add-on in ONE clean pass from the ORIGINAL
+  // photo. The prompt reconstructs the already-present baseline filler (from its
+  // areas + intensity) AND describes the new add-on, so a single generation shows
+  // the full stacked result without the texture loss of editing a prior render.
+  if (baselineType === 'filler') {
+    const cp = CROSS_ADDON_PROMPTS[scenarioKey];
+    if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
+    const viewLead = isOblique
+      ? 'IMPORTANT: this is a three-quarter (oblique) photograph. Preserve the exact head angle, crop, perspective, and facial orientation. Do not rotate the face toward frontal. '
+      : '';
+    const onePassLead =
+      'This is an original medical consultation photograph and is the direct edit target. ' +
+      'Produce the full combined result in a SINGLE generation from this original photo. ' +
+      'Preserve the natural skin texture, pores, fine lines, and tonal variation of the original exactly; do not smooth, retouch, wax, or beautify the skin. ';
+    const baselineClause = describeBaselineFiller(opts.baselineAreas, opts.baselineIntensity);
+    return NO_TEXT_RULE + ' ' + viewLead + onePassLead + baselineClause + cp;
+  }
+
+  // M14: other cross-type baselines (laser / tox) keep editing the already-treated
+  // baseline image directly via the generic add-on prompts.
+  const isCrossType = baselineType === 'laser' || baselineType === 'tox';
   if (isCrossType) {
     const cp = CROSS_ADDON_PROMPTS[scenarioKey];
     if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
-    const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
-                       view === 'l45' || view === 'r45');
     const viewLead = isOblique
       ? 'IMPORTANT: this is a three-quarter (oblique) photograph. Preserve the exact head angle, crop, perspective, and facial orientation. Do not rotate the face toward frontal. '
       : '';
@@ -1139,9 +1211,6 @@ function buildScenarioPrompt(scenarioKey, view, baselineType) {
 
   const s = SCENARIO_PROMPTS[scenarioKey];
   if (!s) throw new Error('Unknown scenario key: ' + scenarioKey);
-
-  const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
-                     view === 'l45' || view === 'r45');
 
   // stronger_sculptra needs an oblique lead that preserves pose WITHOUT saying
   // "minimum change" -- that phrasing suppresses the Sculptra magnitude we want.

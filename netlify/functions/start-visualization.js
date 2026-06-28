@@ -133,7 +133,8 @@ const FIELD_KEYS = [
   'timeline', 'note', 'prompt', 'isStrongPass',
   'angle', 'sex', 'view', 'phenotype', 'sculptraPhenotype', 'patientAge', 'laserType',
   'sourceJobId',
-  'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType'  // M12.2 scenario; M14 baselineType
+  'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType',  // M12.2 scenario; M14 baselineType
+  'baselineAreas', 'baselineIntensity'  // M16: baseline filler description for one-pass cumulative add-on prompt
 ];
 
 exports.handler = async (event) => {
@@ -190,7 +191,11 @@ exports.handler = async (event) => {
         add_tear_trough:     ['biostim', 'filler', 'laser', 'tox'],
         add_nose_filler:     ['biostim', 'filler', 'laser', 'tox'],
         add_lips_filler:     ['biostim', 'filler', 'laser', 'tox'],
-        add_biostim_lift:    ['laser', 'tox'],
+        add_biostim_lift:    ['filler', 'laser', 'tox'],
+        add_rf:              ['filler'],
+        add_hifu:            ['filler'],
+        add_masseter:        ['filler'],
+        add_nefertiti:       ['filler'],
         stronger_laser:      ['laser']
       };
       if (!SCENARIO_SOURCE_TYPES[fields.scenarioKey]) {
