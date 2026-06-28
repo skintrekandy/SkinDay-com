@@ -5384,6 +5384,7 @@ async function downloadScenarioGrid(scenarioKey){
       { img: scenImg, tag: scenarioExportLabel(scenarioKey, panels.label).toUpperCase(), sim: true }
     ];
 
+    ctx.textAlign = 'left';
     cells.forEach((c, i) => {
       const dx = i * (cellW + gap);
       const dy = headerH;
