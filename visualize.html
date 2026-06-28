@@ -971,6 +971,26 @@
         <span data-en="Collagen-based volume restoration on the baseline" data-zh="在基準結果上加入膠原增生帶來的容量支撐">Collagen-based volume restoration on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
+      <button class="scenario-btn" type="button" data-scenario="add_rf" id="scenBtn_add_rf">
+        <strong data-en="Add RF skin tightening" data-zh="加入電波拉皮緊緻">Add RF skin tightening</strong>
+        <span data-en="Energy-based skin tightening on the baseline (no added volume)" data-zh="在基準結果上加入電波拉皮緊緻（不增加容量）">Energy-based skin tightening on the baseline (no added volume)</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_hifu" id="scenBtn_add_hifu">
+        <strong data-en="Add HIFU lifting" data-zh="加入音波拉提">Add HIFU lifting</strong>
+        <span data-en="Focused ultrasound lifting on the baseline (no added volume)" data-zh="在基準結果上加入聚焦超音波拉提（不增加容量）">Focused ultrasound lifting on the baseline (no added volume)</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_masseter" id="scenBtn_add_masseter">
+        <strong data-en="Add masseter slimming (neurotoxin)" data-zh="加入咬肌瘦臉（肉毒）">Add masseter slimming (neurotoxin)</strong>
+        <span data-en="Neurotoxin masseter reduction slims the lower face on the baseline" data-zh="在基準結果上以肉毒放鬆咬肌，使下臉變窄">Neurotoxin masseter reduction slims the lower face on the baseline</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_nefertiti" id="scenBtn_add_nefertiti">
+        <strong data-en="Add Nefertiti lift (neurotoxin)" data-zh="加入娜芙蒂蒂拉提（肉毒）">Add Nefertiti lift (neurotoxin)</strong>
+        <span data-en="Neurotoxin along the jawline and neck for a cleaner lower-face line" data-zh="在下顎線與頸部施打肉毒，使下臉線條更俐落">Neurotoxin along the jawline and neck for a cleaner lower-face line</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
       <button class="scenario-btn" type="button" data-scenario="stronger_laser" id="scenBtn_stronger_laser">
         <strong data-en="Stronger response" data-zh="更明顯反應">Stronger response</strong>
         <span data-en="Upper-range tightening for a strong responder" data-zh="對反應較佳個案呈現較高範圍的緊實變化">Upper-range tightening for a strong responder</span>
@@ -4771,6 +4791,10 @@ const SCENARIO_LABELS = {
   add_nose_filler:    'Add nose filler',
   add_lips_filler:    'Add lip filler',
   add_biostim_lift:   'Add biostimulation',
+  add_rf:             'Add RF skin tightening',
+  add_hifu:           'Add HIFU lifting',
+  add_masseter:       'Add masseter slimming (neurotoxin)',
+  add_nefertiti:      'Add Nefertiti lift (neurotoxin)',
   stronger_laser:     'Stronger response',
   combination_plan:   'Full combination plan'
 };
@@ -4782,16 +4806,44 @@ const SCENARIO_LABELS = {
 const SCENARIOS_BY_TYPE = {
   biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
   hdr:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],
-  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
+  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
   laser:   ['stronger_laser','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
   tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
 };
+// Maps a filler AREA to the add-on scenario key(s) that treat the same area, so
+// we never offer "add lip filler" after a lip-filler baseline, etc.
+const AREA_TO_SCENARIO_KEYS = {
+  chin_jawline: ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler'],
+  chin:         ['add_chin_filler','add_chin_jaw_filler'],
+  jawline:      ['add_jawline_filler','add_chin_jaw_filler'],
+  cheeks:       ['add_cheek_filler'],
+  temple:       ['add_temple_support'],
+  tear_trough:  ['add_tear_trough'],
+  nose:         ['add_nose_filler'],
+  lips:         ['add_lips_filler']
+};
+
 function scenariosForBaseline(){
   // HDR uses its own scenario set (different from Sculptra biostim).
+  let list;
   if(state.type === 'biostim'){
-    return SCENARIOS_BY_TYPE[state.product === 'hdr' ? 'hdr' : 'biostim'] || [];
+    list = SCENARIOS_BY_TYPE[state.product === 'hdr' ? 'hdr' : 'biostim'] || [];
+  } else {
+    list = SCENARIOS_BY_TYPE[state.type] || [];
   }
-  return SCENARIOS_BY_TYPE[state.type] || [];
+  list = list.slice(); // copy so we never mutate the source array
+
+  // Never offer an add-on for an area the baseline already treated. For filler,
+  // the treated areas are in state.areas; remove their matching scenario keys.
+  if(state.type === 'filler' && Array.isArray(state.areas)){
+    const exclude = new Set();
+    state.areas.forEach(a => {
+      (AREA_TO_SCENARIO_KEYS[a] || []).forEach(k => exclude.add(k));
+    });
+    list = list.filter(k => !exclude.has(k));
+  }
+
+  return list;
 }
 
 // Export label: every scenario builds on the biostimulation baseline, so the
@@ -4817,6 +4869,10 @@ const SCENARIO_DESCRIPTIONS = {
   add_nose_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_lips_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_biostim_lift:    'Add-on scenario. Upper-range outcome, not guaranteed.',
+  add_rf:              'Add-on scenario: RF skin tightening (no added volume). Not guaranteed.',
+  add_hifu:            'Add-on scenario: HIFU lifting (no added volume). Not guaranteed.',
+  add_masseter:        'Add-on scenario: neurotoxin masseter slimming. Not guaranteed.',
+  add_nefertiti:       'Add-on scenario: neurotoxin Nefertiti lift. Not guaranteed.',
   stronger_laser:      'Upper-range responder over a full course. Energy devices cannot restore volume. Not guaranteed.',
   combination_plan:    'Full multi-modality combination scenario. Possible upper-range outcome.'
 };
@@ -4919,12 +4975,31 @@ async function runScenario(scenarioKey){
 
     const form = new FormData();
     // M14: Sculptra baselines edit the ORIGINAL photo (planner re-describes the
-    // plan). Cross-type baselines (filler / laser / tox / HDR) edit the BASELINE
-    // image itself, so the add-on stacks on top of the already-treated face.
+    // plan). Cross-type baselines (laser / tox / HDR) edit the BASELINE image
+    // itself, so the add-on stacks on top of the already-treated face.
+    //
+    // M16: FILLER baselines now also edit the ORIGINAL photo in ONE clean pass,
+    // not the baseline render. Editing the already-generated baseline ran
+    // gpt-image-2 on its own prior output, which degraded skin texture (the
+    // "photocopy of a photocopy" effect). Instead we send the original photo as
+    // the edit target and pass the baseline's areas + intensity so the prompt can
+    // reconstruct the already-present filler AND add the new layer in a single
+    // generation from the pristine original. Laser/tox/HDR keep the prior
+    // behavior (their baselines are not cleanly describable from areas).
     const isCrossType = state.type === 'filler' || state.type === 'laser' ||
                         state.type === 'tox' ||
                         (state.type === 'biostim' && state.product === 'hdr');
-    if(isCrossType){
+    const isFillerOnePass = (state.type === 'filler');
+    if(isFillerOnePass){
+      // One clean pass from the original; baseline reconstructed via prompt.
+      form.append('image',         originalBlob, 'original-' + angleId + '.jpg'); // edit target = original
+      form.append('originalImage', originalBlob, 'original-' + angleId + '.jpg');
+      // Tell the backend what the baseline filler was, so the cumulative prompt
+      // can reproduce it before adding the new layer.
+      const volMap = { conservative: 'natural', moderate: 'moderate', enhanced: 'enhanced' };
+      form.append('baselineAreas',     (Array.isArray(state.areas) ? state.areas.join(',') : ''));
+      form.append('baselineIntensity', (volMap[state.fillerVolume] || 'natural'));
+    } else if(isCrossType){
       form.append('image',         baselineBlob, 'baseline-' + angleId + '.jpg'); // edit target = baseline
       form.append('originalImage', baselineBlob, 'baseline-' + angleId + '.jpg'); // planner unused for cross-type
     } else {
