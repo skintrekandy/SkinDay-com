@@ -143,11 +143,19 @@
     <div class="nav-right">
       <div class="nav-links">
         <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
-        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
-        <a href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
+        <div class="nav-dir" id="navViz">
+          <button class="nav-dir-btn" onclick="toggleVizMenu()" aria-expanded="false" aria-haspopup="true">
+            <span data-en="Visualize" data-zh="Visualize">Visualize</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+          </button>
+          <div class="nav-dir-menu" role="menu">
+            <a href="/visualize" class="nav-dir-item" role="menuitem"><span data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</span></a>
+            <a href="/guide" class="nav-dir-item" role="menuitem"><span data-en="Guide" data-zh="使用指南">Guide</span></a>
+          </div>
+        </div>
         <div class="nav-dir" id="navDir">
           <button class="nav-dir-btn" onclick="toggleDirMenu()" aria-expanded="false" aria-haspopup="true">
-            <span data-en="Directory" data-zh="診所目錄">Directory</span>
+            <span data-en="Directory" data-zh="診所搜尋">Directory</span>
             <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
           </button>
           <div class="nav-dir-menu" role="menu">
@@ -354,16 +362,28 @@
 
   function toggleDirMenu() {
     var dir = document.getElementById('navDir');
+    var viz = document.getElementById('navViz');
+    if (viz) { viz.classList.remove('open'); viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false'); }
     var isOpen = dir.classList.toggle('open');
     dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
   }
 
-  document.addEventListener('click', function(e) {
+  function toggleVizMenu() {
+    var viz = document.getElementById('navViz');
     var dir = document.getElementById('navDir');
-    if (dir && !dir.contains(e.target)) {
-      dir.classList.remove('open');
-      dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false');
-    }
+    if (dir) { dir.classList.remove('open'); dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false'); }
+    var isOpen = viz.classList.toggle('open');
+    viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  document.addEventListener('click', function(e) {
+    ['navDir', 'navViz'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && !el.contains(e.target)) {
+        el.classList.remove('open');
+        el.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false');
+      }
+    });
   });
 </script>
 </body>
