@@ -1,189 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy — SkinDay</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="shortcut icon" href="/favicon.ico">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --cream:#FAF7F2;--deep:#1C1714;--rose:#C8725A;--gold:#C9A96E;
-    --deep2:#241E1A;
-    --rose-m:#D4896E;
-    --rose-bg:#F5E8E3;
-    --border:#EAE2D8;
-    --hero-border:rgba(201,169,110,.25);--muted:#8A7B72;--dim:#B5A89F;--border:#EAE2D8;--line-light:rgba(250,247,242,.16); }
-    body { font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--deep);-webkit-font-smoothing:antialiased; }
-    body.zh { font-family:'Noto Serif TC','DM Sans',sans-serif; }
-    body.zh p,body.zh li { letter-spacing:.02em;line-height:1.85; }
-    nav{position:sticky;top:0;z-index:100;background:rgba(28,23,20,.96);backdrop-filter:blur(12px);border-bottom:1px solid var(--hero-border);}
-    .nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1180px;margin:0 auto;padding:18px 28px;}
-    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:600;color:#FAF7F2;text-decoration:none;letter-spacing:.01em;}
-    .nav-logo span{color:var(--gold);}
-    .nav-right{display:flex;align-items:center;gap:20px;}
-    .nav-back{color:var(--dim);text-decoration:none;font-size:.82rem;transition:color .2s;}
-    .nav-back:hover{color:#FAF7F2;}
-    .lang-toggle{display:flex;align-items:center;gap:0;border:1px solid rgba(250,247,242,.28);border-radius:2px;overflow:hidden;flex-shrink:0;}
-    .lang-btn{padding:6px 11px;cursor:pointer;background:none;border:none;color:rgba(250,247,242,.55);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;transition:background .2s,color .2s;}
-    .lang-btn.active{background:rgba(250,247,242,.14);color:#FAF7F2;}
-    .lang-btn:hover:not(.active){color:var(--gold);}
-    .lang-sep{width:1px;background:rgba(250,247,242,.2);align-self:stretch;}
-    .page-wrap{max-width:720px;margin:0 auto;padding:72px 28px 96px;}
-    .page-eyebrow{font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
-    h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3rem);font-weight:400;color:var(--deep);margin-bottom:.5rem;line-height:1.1;}
-    .last-updated{font-size:.8rem;color:var(--muted);margin-bottom:3rem;}
-    h2{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--deep);margin:2.5rem 0 .75rem;}
-    p{font-size:.94rem;line-height:1.78;color:#3a3330;margin-bottom:1rem;}
-    ul{padding-left:1.4rem;margin-bottom:1rem;}
-    ul li{font-size:.94rem;line-height:1.78;color:#3a3330;margin-bottom:.3rem;}
-    a{color:var(--rose);text-decoration:none;}
-    a:hover{text-decoration:underline;}
-    hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0;}
-    .posture-box{background:#fff;border:1px solid var(--border);border-radius:6px;padding:20px 24px;margin:1.5rem 0;}
-    .posture-box p{margin:0;font-size:.88rem;color:var(--muted);}
-    .posture-box strong{color:var(--deep);}
-    footer{background:var(--deep);padding:2rem 5%;text-align:center;}
-    .footer-note{font-size:.78rem;color:var(--muted);}
-    .footer-note a{color:var(--dim);text-decoration:none;}
-    .footer-note a:hover{color:#FAF7F2;}
-    .lang-section{display:block;}
-    .lang-section.hidden{display:none;}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<title>Privacy Policy — SkinDay</title>
+<meta name="description" content="SkinDay's global privacy policy covering skinday.com and skinday.ca. How we collect, use, and protect your information.">
+<link rel="canonical" href="https://skinday.com/privacy">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:light;
+    --deep:#1C1714;--cream:#FAF7F2;--warm:#F4EDE4;
+    --rose:#C8725A;--gold:#C9A96E;--muted:#8A7F76;--dim:#B5A89F;
+    --border:#EAE2D8;--line:rgba(28,23,20,.12);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;}
+  body.zh{font-family:'Noto Serif TC','DM Sans',system-ui,sans-serif;}
+  a{color:var(--rose);text-decoration:none;}
+  a:hover{text-decoration:underline;}
+
+  nav{position:fixed;top:0;left:0;right:0;z-index:20;background:rgba(28,23,20,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,169,110,0.15);padding:0 5%;display:flex;align-items:center;justify-content:space-between;height:64px;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:400;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
+  .brand span{color:var(--gold);}
+  .nav-right{display:flex;align-items:center;gap:16px;}
+  .nav-back{font-size:.82rem;color:var(--dim);text-decoration:none;transition:color .2s;}
+  .nav-back:hover{color:var(--cream);}
+  .lang-toggle{display:flex;align-items:center;gap:8px;border:1px solid rgba(201,169,110,0.25);border-radius:999px;padding:5px 12px;}
+  .lang-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.72rem;letter-spacing:.06em;color:var(--dim);padding:0;transition:color .2s;}
+  .lang-btn.active{color:var(--cream);}
+  .lang-btn:hover:not(.active){color:var(--gold);}
+  .lang-sep{width:1px;height:11px;background:rgba(201,169,110,0.25);}
+
+  .page-wrap{max-width:720px;margin:0 auto;padding:110px 32px 80px;}
+  .eyebrow{font-size:.72rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;}
+  h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3rem);font-weight:300;color:var(--deep);margin-bottom:.5rem;line-height:1.15;}
+  .meta{font-size:.8rem;color:var(--muted);margin-bottom:3rem;}
+  h2{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:500;color:var(--deep);margin:2.5rem 0 .75rem;}
+  p{font-size:.95rem;line-height:1.8;color:#3a3330;margin-bottom:1rem;}
+  ul{padding-left:1.4rem;margin-bottom:1rem;}
+  ul li{font-size:.95rem;line-height:1.8;color:#3a3330;margin-bottom:.35rem;}
+  strong{color:var(--deep);font-weight:500;}
+  hr{border:none;border-top:1px solid var(--border);margin:2.5rem 0;}
+  .jurisdiction-block{background:var(--warm);border:1px solid var(--border);border-radius:8px;padding:1.4rem 1.6rem;margin:1rem 0;}
+  .jurisdiction-block h3{font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:500;color:var(--deep);margin-bottom:.5rem;}
+  .jurisdiction-block p{font-size:.88rem;margin-bottom:.5rem;}
+  .jurisdiction-block p:last-child{margin-bottom:0;}
+
+  footer{background:var(--deep);padding:2rem 5%;text-align:center;border-top:1px solid rgba(201,169,110,0.15);}
+  .foot-note{font-size:.78rem;color:var(--muted);}
+  .foot-note a{color:var(--dim);}
+</style>
 </head>
 <body>
 
 <nav>
-  <div class="nav-inner">
-    <a href="/" class="nav-logo">Skin<span>Day</span></a>
-    <div class="nav-right">
-      <a href="/" class="nav-back" id="navBack">Back to SkinDay</a>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <div class="lang-sep"></div>
-        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
-      </div>
+  <a href="/" class="brand">Skin<span>Day</span></a>
+  <div class="nav-right">
+    <a href="/" class="nav-back" data-en="← Back to SkinDay" data-zh="← 返回 SkinDay">← Back to SkinDay</a>
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" onclick="setLang('zh')">繁中</button>
     </div>
   </div>
 </nav>
 
 <div class="page-wrap">
-  <!-- ENGLISH -->
-  <div class="lang-section" id="sec-en">
-    <div class="page-eyebrow">Legal</div>
-    <h1>Privacy Policy</h1>
-    <div class="last-updated">Last updated: June 2026</div>
-    <p>SkinDay operates skinday.com, a global clinic-growth platform for aesthetic clinics. This Privacy Policy explains how we collect, use, and protect information across our two products: SkinDay Studio and SkinDay Visualize. These two products have different data postures, and we are explicit about both.</p>
-    <hr />
-    <h2>1. SkinDay Studio — Data Posture</h2>
-    <div class="posture-box"><p><strong>Photos never leave your device.</strong> Studio processes all images locally in your browser using client-side computation. No photo is uploaded to SkinDay's servers or any third party. SkinDay does not store, view, or have access to any image processed in Studio.</p></div>
-    <p>For Studio, the only information SkinDay may collect is anonymous usage data (page visits, feature interactions) to improve the product. No personal information or patient images are involved.</p>
-    <h2>2. SkinDay Visualize — Data Posture</h2>
-    <div class="posture-box"><p><strong>Photos are sent to an AI provider for that single request only.</strong> To generate a consultation preview, the photo is transmitted to an AI provider (currently OpenAI). It is used for inference only — it is not stored by SkinDay, and it is not used to train or fine-tune any model.</p></div>
-    <p>For Visualize, we also collect:</p>
-    <ul>
-      <li><strong>Account information:</strong> name and email address when you create an account, or name and email received from Google if you sign in with Google.</li>
-      <li><strong>Credit and transaction records:</strong> purchase history and credit balance, processed via Stripe. SkinDay does not store full payment card details.</li>
-      <li><strong>Usage data:</strong> which treatment types and features are used, to improve the product. No patient-identifying information is stored alongside usage data.</li>
-    </ul>
-    <h2>3. Clinic Responsibility</h2>
-    <p>Obtaining appropriate patient consent before capturing, processing, or sharing any patient image is the clinic's responsibility. The clinic remains the data controller for any patient information involved in a consultation.</p>
-    <h2>4. Data Sharing</h2>
-    <p>We do not sell personal information. We may share data with:</p>
-    <ul>
-      <li><strong>AI provider:</strong> Photos submitted through Visualize are transmitted to an AI provider (currently OpenAI) for inference only.</li>
-      <li><strong>Payment processor:</strong> Credit purchases are processed by Stripe.</li>
-      <li><strong>Infrastructure providers:</strong> We use Supabase for authentication and database services, and Netlify for hosting.</li>
-      <li><strong>Legal requirements:</strong> We may disclose information if required by law.</li>
-    </ul>
-    <h2>5. Cookies and Analytics</h2>
-    <p>SkinDay uses cookies and local browser storage to maintain sessions and remember preferences. We use anonymous analytics to understand how the platform is used. We do not use advertising cookies or third-party tracking pixels.</p>
-    <h2>6. Data Retention</h2>
-    <p>Account data is retained while your account is active. You may request account deletion by contacting <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</p>
-    <h2>7. Security</h2>
-    <p>We use encrypted connections (HTTPS), secure authentication, and row-level security policies on our database.</p>
-    <h2>8. International Use</h2>
-    <p>SkinDay is a global platform. If you are located outside Canada, your information may be processed in Canada or in the country where our infrastructure providers operate. By using SkinDay, you consent to this transfer.</p>
-    <h2>9. Children</h2>
-    <p>SkinDay is intended for use by licensed aesthetic clinics and practitioners. We do not knowingly collect information from minors.</p>
-    <h2>10. Changes</h2>
-    <p>We may update this Privacy Policy from time to time. Registered users will be notified of significant changes by email.</p>
-    <h2>11. Contact</h2>
-    <p>For questions about this Privacy Policy: <a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  <div class="eyebrow" data-en="Legal" data-zh="法律聲明">Legal</div>
+  <h1 data-en="Privacy Policy" data-zh="隱私政策">Privacy Policy</h1>
+  <div class="meta" data-en="Last updated: June 2026 · Applies to skinday.com and skinday.ca" data-zh="最後更新：2026 年 6 月 · 適用於 skinday.com 及 skinday.ca">Last updated: June 2026 · Applies to skinday.com and skinday.ca</div>
+
+  <p data-en='SkinDay ("we," "us," or "our") operates skinday.com and skinday.ca — a global aesthetic clinic discovery platform and clinical image tool suite. This Privacy Policy explains how we collect, use, disclose, and protect your information across all SkinDay properties.' data-zh='SkinDay（以下簡稱「我們」）營運 skinday.com 及 skinday.ca——一個全球醫美診所搜尋平台暨臨床影像工具套組。本隱私政策說明我們如何在所有 SkinDay 平台上收集、使用、揭露及保護您的資訊。'>SkinDay ("we," "us," or "our") operates skinday.com and skinday.ca — a global aesthetic clinic discovery platform and clinical image tool suite. This Privacy Policy explains how we collect, use, disclose, and protect your information across all SkinDay properties.</p>
+  <p data-en="By using any SkinDay product, you agree to the collection and use of information in accordance with this policy." data-zh="使用任何 SkinDay 產品，即表示您同意依本政策收集與使用資訊。">By using any SkinDay product, you agree to the collection and use of information in accordance with this policy.</p>
+
+  <hr>
+
+  <h2 data-en="1. Information We Collect" data-zh="1. 我們收集的資訊">1. Information We Collect</h2>
+  <ul>
+    <li data-en="<strong>Account information:</strong> When you create an account, we collect your name and email address. If you sign in with Google, we receive your name, email, and profile photo from Google." data-zh="<strong>帳戶資訊：</strong>建立帳戶時，我們收集您的姓名與電子郵件地址。使用 Google 登入時，我們會從 Google 取得您的姓名、電子郵件及大頭貼。"><strong>Account information:</strong> When you create an account, we collect your name and email address. If you sign in with Google, we receive your name, email, and profile photo from Google.</li>
+    <li data-en="<strong>Usage data:</strong> Pages visited, clinics viewed, search queries, and interaction with tools including Visualize and Studio." data-zh="<strong>使用資料：</strong>瀏覽頁面、查看的診所、搜尋條件，以及與 Visualize、Studio 等工具的互動紀錄。"><strong>Usage data:</strong> Pages visited, clinics viewed, search queries, and interaction with tools including Visualize and Studio.</li>
+    <li data-en="<strong>Saved clinics:</strong> When you save clinics to your shortlist, we store those preferences linked to your account." data-zh="<strong>收藏診所：</strong>將診所加入收藏時，我們會儲存與您帳戶連結的偏好設定。"><strong>Saved clinics:</strong> When you save clinics to your shortlist, we store those preferences linked to your account.</li>
+    <li data-en="<strong>Clinic data:</strong> Pricing, credentials, and profile information submitted by clinic owners through the Clinic Portal." data-zh="<strong>診所資料：</strong>診所業主透過診所管理後台提交的價格、資歷及個人資料。"><strong>Clinic data:</strong> Pricing, credentials, and profile information submitted by clinic owners through the Clinic Portal.</li>
+    <li data-en="<strong>Visualize sessions:</strong> Photos uploaded for AI treatment previews are sent to our AI provider for that single request only and are not stored by SkinDay." data-zh="<strong>Visualize 使用紀錄：</strong>上傳用於 AI 療程預覽的照片，僅會在當次請求中傳送給 AI 服務供應商，SkinDay 不會儲存這些照片。"><strong>Visualize sessions:</strong> Photos uploaded for AI treatment previews are sent to our AI provider for that single request only and are not stored by SkinDay.</li>
+    <li data-en="<strong>Studio sessions:</strong> Photos processed in Studio are handled entirely in your browser. SkinDay never receives or stores them." data-zh="<strong>Studio 使用紀錄：</strong>在 Studio 中處理的照片完全在您的瀏覽器中運作，SkinDay 不會接收或儲存這些照片。"><strong>Studio sessions:</strong> Photos processed in Studio are handled entirely in your browser. SkinDay never receives or stores them.</li>
+    <li data-en="<strong>Click tracking:</strong> We track clicks on external clinic links to understand patient interest patterns. No personal information is linked to these events unless you are signed in." data-zh="<strong>點擊追蹤：</strong>我們追蹤診所外部連結的點擊，以了解患者興趣趨勢。除非您已登入，否則這些事件不會與個人資料連結。"><strong>Click tracking:</strong> We track clicks on external clinic links to understand patient interest patterns. No personal information is linked to these events unless you are signed in.</li>
+  </ul>
+
+  <h2 data-en="2. How We Use Your Information" data-zh="2. 我們如何使用您的資訊">2. How We Use Your Information</h2>
+  <ul>
+    <li data-en="To provide and improve SkinDay products and services" data-zh="提供並改善 SkinDay 產品與服務">To provide and improve SkinDay products and services</li>
+    <li data-en="To personalise your experience including saving your shortlist across devices" data-zh="個人化您的使用體驗，包括跨裝置同步收藏清單">To personalise your experience including saving your shortlist across devices</li>
+    <li data-en="To communicate with you about your account or platform updates" data-zh="就帳戶或平台更新與您聯繫">To communicate with you about your account or platform updates</li>
+    <li data-en="To analyse aggregate usage patterns and clinic performance data" data-zh="分析整體使用趨勢與診所表現資料">To analyse aggregate usage patterns and clinic performance data</li>
+    <li data-en="To provide anonymised market insights to industry partners — no personal patient data is shared" data-zh="向產業合作夥伴提供匿名市場洞察——不分享任何患者個人資料">To provide anonymised market insights to industry partners — no personal patient data is shared</li>
+  </ul>
+
+  <h2 data-en="3. Data Sharing" data-zh="3. 資料分享">3. Data Sharing</h2>
+  <p data-en="We do not sell your personal information. We may share data in the following circumstances:" data-zh="我們不出售您的個人資訊。我們可能在以下情況下分享資料：">We do not sell your personal information. We may share data in the following circumstances:</p>
+  <ul>
+    <li data-en="<strong>Service providers:</strong> Supabase (database and authentication), Resend (transactional email), Stripe (payments for Visualize credits), and OpenAI (AI image generation for Visualize). Each processes data on our behalf under their own privacy policies." data-zh="<strong>服務供應商：</strong>Supabase（資料庫與身份驗證）、Resend（交易郵件）、Stripe（Visualize 點數付款）及 OpenAI（Visualize AI 圖像生成）。各方依其隱私政策代表我們處理資料。"><strong>Service providers:</strong> Supabase (database and authentication), Resend (transactional email), Stripe (payments for Visualize credits), and OpenAI (AI image generation for Visualize). Each processes data on our behalf under their own privacy policies.</li>
+    <li data-en="<strong>Industry partners:</strong> Aggregate, anonymised market data may be shared with pharmaceutical or device industry partners for research purposes. This data does not identify individual users or patients." data-zh="<strong>產業合作夥伴：</strong>匿名彙總的市場資料可能用於藥廠或醫材產業的研究目的，不包含任何可識別個人的使用者或患者資訊。"><strong>Industry partners:</strong> Aggregate, anonymised market data may be shared with pharmaceutical or device industry partners for research purposes. This data does not identify individual users or patients.</li>
+    <li data-en="<strong>Legal requirements:</strong> We may disclose information if required by applicable law or to protect the rights and safety of our users." data-zh="<strong>法律要求：</strong>在適用法律要求或保護使用者權益與安全的情況下，我們可能揭露相關資訊。"><strong>Legal requirements:</strong> We may disclose information if required by applicable law or to protect the rights and safety of our users.</li>
+  </ul>
+
+  <h2 data-en="4. Cookies and Local Storage" data-zh="4. Cookies 與本地儲存">4. Cookies and Local Storage</h2>
+  <p data-en="SkinDay uses cookies and local browser storage to maintain your session, remember your preferences (such as language choice and saved clinics), and track anonymous usage patterns. We do not use advertising cookies or third-party tracking pixels. You can disable cookies in your browser settings, though this may affect platform functionality." data-zh="SkinDay 使用 cookies 及瀏覽器本地儲存來維持登入狀態、記住您的偏好設定（如語言選擇與收藏診所），並追蹤匿名使用模式。我們不使用廣告 cookies 或第三方追蹤像素。您可以在瀏覽器設定中停用 cookies，但這可能影響部分平台功能。">SkinDay uses cookies and local browser storage to maintain your session, remember your preferences (such as language choice and saved clinics), and track anonymous usage patterns. We do not use advertising cookies or third-party tracking pixels. You can disable cookies in your browser settings, though this may affect platform functionality.</p>
+
+  <h2 data-en="5. Data Retention" data-zh="5. 資料保存">5. Data Retention</h2>
+  <p data-en="We retain your account data for as long as your account is active. You may request deletion of your account and associated personal data at any time by contacting us. Aggregate, anonymised analytics data may be retained indefinitely." data-zh="我們在帳戶有效期間保存您的帳戶資料。您可隨時聯繫我們要求刪除帳戶及相關個人資料。匿名彙總的分析資料可能會無限期保存。">We retain your account data for as long as your account is active. You may request deletion of your account and associated personal data at any time by contacting us. Aggregate, anonymised analytics data may be retained indefinitely.</p>
+
+  <h2 data-en="6. Security" data-zh="6. 資料安全">6. Security</h2>
+  <p data-en="We implement industry-standard security measures including encrypted connections (HTTPS), secure authentication via Supabase, and row-level security policies on our database. No method of transmission over the internet is 100% secure, and we cannot guarantee absolute security." data-zh="我們採用業界標準的安全措施，包括加密連線（HTTPS）、透過 Supabase 的安全身份驗證，以及資料庫層級的存取控制。網路傳輸無法保證 100% 安全，我們無法提供絕對的安全保證。">We implement industry-standard security measures including encrypted connections (HTTPS), secure authentication via Supabase, and row-level security policies on our database. No method of transmission over the internet is 100% secure, and we cannot guarantee absolute security.</p>
+
+  <h2 data-en="7. Your Rights by Jurisdiction" data-zh="7. 各地區的您的權利">7. Your Rights by Jurisdiction</h2>
+  <p data-en="Your privacy rights depend on where you are located. Below are the frameworks that apply to our current markets." data-zh="您的隱私權視所在地區而定。以下為我們現有市場的適用法規框架。">Your privacy rights depend on where you are located. Below are the frameworks that apply to our current markets.</p>
+
+  <div class="jurisdiction-block">
+    <h3 data-en="🍁 Canada (PIPEDA)" data-zh="🍁 加拿大（PIPEDA）">🍁 Canada (PIPEDA)</h3>
+    <p data-en="As a Canadian platform (skinday.ca), we comply with the Personal Information Protection and Electronic Documents Act (PIPEDA). You have the right to access personal information we hold about you, request correction of inaccurate information, withdraw consent and request deletion, and file a complaint with the Office of the Privacy Commissioner of Canada." data-zh="作為加拿大平台（skinday.ca），我們遵守《個人資訊保護及電子文件法》（PIPEDA）。您有權查閱我們持有的個人資訊、要求更正不正確資訊、撤回同意並要求刪除資料，以及向加拿大隱私專員辦公室提出申訴。">As a Canadian platform (skinday.ca), we comply with the Personal Information Protection and Electronic Documents Act (PIPEDA). You have the right to access personal information we hold about you, request correction of inaccurate information, withdraw consent and request deletion, and file a complaint with the Office of the Privacy Commissioner of Canada.</p>
   </div>
 
-  <!-- TRADITIONAL CHINESE -->
-  <div class="lang-section hidden" id="sec-zh">
-    <div class="page-eyebrow">法律文件</div>
-    <h1>隱私政策</h1>
-    <div class="last-updated">最後更新：2026 年 6 月</div>
-    <p>SkinDay 營運 skinday.com，一個面向全球醫美診所的成長平台。本政策說明我們如何收集、使用與保護您在使用 SkinDay Studio 和 SkinDay Visualize 時所涉及的資訊。這兩款產品的資料處理方式不同，我們對此保持透明。</p>
-    <hr />
-    <h2>1. SkinDay Studio — 資料處理說明</h2>
-    <div class="posture-box"><p><strong>照片不會離開您的裝置。</strong> Studio 透過瀏覽器本地運算處理所有影像，不會上傳至 SkinDay 或任何第三方的伺服器。SkinDay 不會儲存、查看或取得 Studio 中的任何影像。</p></div>
-    <p>使用 Studio 時，SkinDay 可能收集的唯一資訊是匿名使用數據（如頁面瀏覽、功能互動），用於改善產品體驗。不涉及任何個人資料或顧客影像。</p>
-    <h2>2. SkinDay Visualize — 資料處理說明</h2>
-    <div class="posture-box"><p><strong>照片只會為了本次生成傳送給 AI 服務供應商。</strong> 為生成諮詢預覽，照片會傳送至 AI 服務供應商（目前為 OpenAI），僅用於推論。SkinDay 不會儲存，也不會用於訓練或微調任何模型。</p></div>
-    <p>使用 Visualize 時，我們還會收集：</p>
-    <ul>
-      <li><strong>帳號資料：</strong>建立帳號時的姓名與電子郵件，或透過 Google 登入時收到的相關資訊。</li>
-      <li><strong>點數與交易紀錄：</strong>透過 Stripe 處理的購買紀錄與點數餘額。SkinDay 不儲存完整的付款卡資訊。</li>
-      <li><strong>使用數據：</strong>使用了哪些療程類型與功能，用於改善產品。使用數據不會與任何顧客識別資訊一同儲存。</li>
-    </ul>
-    <h2>3. 診所的責任</h2>
-    <p>在拍攝、處理或分享任何顧客影像前，取得顧客的適當同意是診所的責任。診所仍是諮詢過程中所涉及顧客資料的資料控制者。</p>
-    <h2>4. 資料分享</h2>
-    <p>我們不出售個人資料。可能的資料分享情況如下：</p>
-    <ul>
-      <li><strong>AI 服務供應商：</strong>透過 Visualize 提交的照片，僅供推論用途傳送至 AI 服務供應商（目前為 OpenAI）。</li>
-      <li><strong>付款處理商：</strong>點數購買透過 Stripe 處理。</li>
-      <li><strong>基礎設施服務商：</strong>我們使用 Supabase 提供驗證與資料庫服務，Netlify 提供主機服務。</li>
-      <li><strong>法律要求：</strong>如法律有所要求，我們可能依規定披露相關資訊。</li>
-    </ul>
-    <h2>5. Cookie 與分析</h2>
-    <p>SkinDay 使用 Cookie 與瀏覽器本地儲存維持工作階段並記住偏好設定。我們使用匿名分析了解平台使用情況，不使用廣告 Cookie 或第三方追蹤像素。</p>
-    <h2>6. 資料保留</h2>
-    <p>帳號資料在帳號有效期間保留。如需刪除帳號，請聯絡 <a href="mailto:hello@skinday.com">hello@skinday.com</a>。</p>
-    <h2>7. 安全性</h2>
-    <p>我們採用加密連線（HTTPS）、安全身份驗證，以及資料庫層級的存取控制政策。</p>
-    <h2>8. 國際使用</h2>
-    <p>SkinDay 是全球性平台。若您位於加拿大境外，您的資訊可能在加拿大或我們基礎設施服務商所在的地區處理。使用 SkinDay 即表示您同意此類資料傳輸。</p>
-    <h2>9. 未成年人</h2>
-    <p>SkinDay 適用於持牌醫美診所與醫療人員，不適用於未成年人。我們不會有意收集未成年人的個人資料。</p>
-    <h2>10. 政策更新</h2>
-    <p>我們可能不定期更新本隱私政策。重大變更將以電子郵件通知已註冊用戶。</p>
-    <h2>11. 聯絡我們</h2>
-    <p>如對本政策有任何疑問，請聯絡：<a href="mailto:hello@skinday.com">hello@skinday.com</a></p>
+  <div class="jurisdiction-block">
+    <h3 data-en="🇹🇼 Taiwan (PDPA)" data-zh="🇹🇼 台灣（個人資料保護法）">🇹🇼 Taiwan (PDPA)</h3>
+    <p data-en="For users accessing SkinDay through skinday.com/taiwan, we comply with Taiwan's Personal Data Protection Act (個人資料保護法, PDPA). You have the right to inquire about and review your personal data, request a copy of your data, request correction or supplementation of incomplete data, request deletion of your data, and object to the processing of your personal data." data-zh="對於透過 skinday.com/taiwan 使用 SkinDay 的使用者，我們遵守台灣《個人資料保護法》（PDPA）。您有權查詢及閱覽個人資料、請求製給複製本、請求補充或更正、請求停止蒐集或刪除個人資料，以及對個人資料的處理提出異議。">For users accessing SkinDay through skinday.com/taiwan, we comply with Taiwan's Personal Data Protection Act (個人資料保護法, PDPA). You have the right to inquire about and review your personal data, request a copy of your data, request correction or supplementation of incomplete data, request deletion of your data, and object to the processing of your personal data.</p>
   </div>
+
+  <p data-en="As SkinDay expands to additional markets, this section will be updated to reflect the applicable privacy frameworks for each jurisdiction." data-zh="隨著 SkinDay 拓展至更多市場，本節內容將持續更新，以反映各地區適用的隱私法規框架。">As SkinDay expands to additional markets, this section will be updated to reflect the applicable privacy frameworks for each jurisdiction.</p>
+
+  <h2 data-en="8. Children's Privacy" data-zh="8. 兒童隱私">8. Children's Privacy</h2>
+  <p data-en="SkinDay is not directed at individuals under the age of 18. We do not knowingly collect personal information from minors. If you believe a minor has provided us with personal information, please contact us and we will delete it promptly." data-zh="SkinDay 不針對 18 歲以下人士。我們不會在知情情況下收集未成年人的個人資訊。如您認為未成年人向我們提供了個人資訊，請聯繫我們，我們將立即予以刪除。">SkinDay is not directed at individuals under the age of 18. We do not knowingly collect personal information from minors. If you believe a minor has provided us with personal information, please contact us and we will delete it promptly.</p>
+
+  <h2 data-en="9. Changes to This Policy" data-zh="9. 政策變更">9. Changes to This Policy</h2>
+  <p data-en="We may update this Privacy Policy from time to time. We will notify registered users of significant changes by email. The updated date at the top of this page indicates when changes were last made. Continued use of SkinDay after changes constitutes acceptance of the updated policy." data-zh="我們可能不定期更新本隱私政策。重大變更將透過電子郵件通知已註冊使用者。頁面頂部的更新日期表示最近一次修改時間。在變更後繼續使用 SkinDay，即表示您接受更新後的政策。">We may update this Privacy Policy from time to time. We will notify registered users of significant changes by email. The updated date at the top of this page indicates when changes were last made. Continued use of SkinDay after changes constitutes acceptance of the updated policy.</p>
+
+  <h2 data-en="10. Contact" data-zh="10. 聯絡我們">10. Contact</h2>
+  <p data-en="For any questions about this Privacy Policy or how we handle your data:" data-zh="如對本隱私政策或資料處理有任何疑問：">For any questions about this Privacy Policy or how we handle your data:</p>
+  <ul>
+    <li data-en='Email: <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>' data-zh='電子郵件：<a href="mailto:hello@skinday.ca">hello@skinday.ca</a>'>Email: <a href="mailto:hello@skinday.ca">hello@skinday.ca</a></li>
+    <li data-en='Website: <a href="https://skinday.com">skinday.com</a>' data-zh='網站：<a href="https://skinday.com">skinday.com</a>'>Website: <a href="https://skinday.com">skinday.com</a></li>
+  </ul>
 </div>
 
 <footer>
-  <div class="footer-note">
-    &#169; 2026 SkinDay &nbsp;&middot;&nbsp;
-    <a href="/privacy" id="f-privacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
-    <a href="/terms" id="f-terms">Terms of Service</a> &nbsp;&middot;&nbsp;
-    <a href="/refund" id="f-refund">Refund Policy</a>
-  </div>
+  <div class="foot-note">© 2026 SkinDay · <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a></div>
 </footer>
 
 <script>
-  var currentLang=sessionStorage.getItem('sd-lang')||'en';
-  function setLang(lang){currentLang=lang;sessionStorage.setItem('sd-lang',lang);applyLang();}
+  function detectLang(){try{var s=localStorage.getItem('sd-lang');if(s==='zh'||s==='en')return s;}catch(e){}try{var n=(navigator.language||(navigator.languages&&navigator.languages[0])||'').toLowerCase();if(n.indexOf('zh')===0)return'zh';}catch(e){}return'en';}
+  var currentLang=detectLang();
+  function setLang(lang){currentLang=lang;try{localStorage.setItem('sd-lang',lang);}catch(e){}applyLang();}
   function applyLang(){
     var isZh=currentLang==='zh';
     document.body.classList.toggle('zh',isZh);
     document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
-    document.getElementById('sec-en').classList.toggle('hidden',isZh);
-    document.getElementById('sec-zh').classList.toggle('hidden',!isZh);
-    document.getElementById('navBack').textContent=isZh?'返回 SkinDay':'Back to SkinDay';
-    document.getElementById('f-privacy').textContent=isZh?'隱私政策':'Privacy Policy';
-    document.getElementById('f-terms').textContent=isZh?'服務條款':'Terms of Service';
-    document.getElementById('f-refund').textContent=isZh?'退款政策':'Refund Policy';
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+      var val=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
+      if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.placeholder=val;}else{el.innerHTML=val;}
+    });
     document.querySelectorAll('.lang-btn').forEach(function(btn){
       btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
     });

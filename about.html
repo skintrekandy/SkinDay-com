@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<title>About SkinDay · The clinic growth platform for aesthetic medicine</title>
+<meta name="description" content="SkinDay helps aesthetic clinics grow by connecting them with the right clients — not just more clients. Directory, Visualize, and Studio work together across the full patient journey.">
+<link rel="canonical" href="https://skinday.com/about">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:light;
+    --deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;
+    --rose:#C8725A;--rose-m:#D4896E;--gold:#C9A96E;
+    --border:#EAE2D8;--muted:#8A7F76;--dim:#B5A89F;
+    --line:rgba(28,23,20,.12);--line-light:rgba(250,247,242,.16);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  .serif{font-family:'Cormorant Garamond',Georgia,serif;}
+  body.zh{font-family:'Noto Serif TC','DM Sans',system-ui,sans-serif;}
+  body.zh .serif{font-family:'Noto Serif TC',Georgia,serif;}
+  a{color:inherit;text-decoration:none;}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
+  .wrap-narrow{max-width:720px;margin:0 auto;padding:0 32px;}
+
+  /* ── NAV ── */
+  .site-nav{position:fixed;top:0;left:0;right:0;z-index:20;padding:30px 0;background:rgba(28,23,20,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(201,169,110,0.15);}
+  .nav-inner{max-width:1080px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:400;letter-spacing:.01em;color:var(--cream);text-decoration:none;}
+  .brand span{color:var(--gold);}
+  .nav-right{display:flex;align-items:center;gap:24px;}
+  .nav-links{display:flex;align-items:center;gap:24px;}
+  .nav-links a{text-decoration:none;font-size:.82rem;letter-spacing:.04em;color:var(--dim);transition:color .25s;}
+  .nav-links a:hover{color:var(--cream);}
+  .lang-toggle{display:flex;align-items:center;gap:8px;border:1px solid rgba(201,169,110,0.25);border-radius:999px;padding:5px 12px;}
+  .lang-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.72rem;letter-spacing:.06em;color:var(--dim);padding:0;transition:color .2s;}
+  .lang-btn.active{color:var(--cream);}
+  .lang-btn:hover:not(.active){color:var(--gold);}
+  .lang-sep{width:1px;height:11px;background:rgba(201,169,110,0.25);}
+  @media(max-width:640px){.nav-links{display:none;}}
+
+  /* ── HERO ── */
+  .hero{background:var(--deep);padding:160px 32px 100px;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse 70% 60% at 70% 40%,rgba(201,169,110,0.07) 0%,transparent 70%),
+               radial-gradient(ellipse 40% 50% at 20% 80%,rgba(200,114,90,0.05) 0%,transparent 60%);
+    pointer-events:none;}
+  .hero-inner{max-width:760px;position:relative;z-index:1;}
+  .eyebrow{font-size:.72rem;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:1.6rem;display:flex;align-items:center;gap:.75rem;}
+  .eyebrow::before{content:'';display:block;width:28px;height:1px;background:var(--gold);}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-size:clamp(2.6rem,5.5vw,4.4rem);font-weight:300;line-height:1.1;color:var(--cream);margin-bottom:1.6rem;letter-spacing:-.01em;}
+  .hero h1 em{font-style:italic;color:var(--gold);}
+  .hero-sub{font-size:1.05rem;color:rgba(250,247,242,0.6);line-height:1.75;max-width:580px;font-weight:300;}
+
+  /* ── SECTIONS ── */
+  .section{padding:96px 32px;}
+  .section.dark{background:var(--deep);}
+  .section.warm{background:var(--warm);}
+  .section-label{font-size:.7rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:1.4rem;}
+  .section h2{font-family:'Cormorant Garamond',serif;font-size:clamp(1.9rem,3.5vw,2.9rem);font-weight:400;line-height:1.15;color:var(--deep);margin-bottom:1.6rem;}
+  .section h2 em{font-style:italic;color:var(--rose);}
+  .section.dark h2{color:var(--cream);}
+  .section.dark h2 em{color:var(--gold);}
+  .prose{font-size:.97rem;line-height:1.85;color:var(--muted);font-weight:300;margin-bottom:1.2rem;max-width:680px;}
+  .prose strong{color:var(--deep);font-weight:500;}
+  .section.dark .prose{color:rgba(250,247,242,0.6);}
+  .section.dark .prose strong{color:var(--cream);}
+
+  /* ── PULL QUOTE ── */
+  .pull-quote{border-left:3px solid var(--gold);padding:1rem 0 1rem 1.8rem;margin:2.5rem 0;}
+  .pull-quote p{font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:400;line-height:1.5;color:var(--deep);font-style:italic;}
+  .section.dark .pull-quote p{color:rgba(250,247,242,0.75);}
+
+  /* ── DATA GRID ── */
+  .data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;border-radius:12px;overflow:hidden;margin:2.5rem 0;}
+  .data-grid.light-grid{background:var(--line);border:1px solid var(--line);}
+  .data-grid.dark-grid{background:rgba(201,169,110,0.15);border:1px solid rgba(201,169,110,0.15);}
+  .data-item{padding:1.6rem 1.8rem;text-align:center;}
+  .data-grid.light-grid .data-item{background:var(--cream);}
+  .data-grid.dark-grid .data-item{background:#241E1A;}
+  .data-num{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:300;color:var(--gold);line-height:1;margin-bottom:.5rem;}
+  .data-desc{font-size:.78rem;line-height:1.55;max-width:160px;margin:0 auto;}
+  .data-grid.light-grid .data-desc{color:var(--muted);}
+  .data-grid.dark-grid .data-desc{color:rgba(250,247,242,0.4);}
+
+  /* ── FEATURE LIST ── */
+  .feature-list{display:flex;flex-direction:column;gap:2rem;margin-top:2.5rem;}
+  .feature-item{display:flex;gap:1.6rem;align-items:flex-start;}
+  .feature-icon{width:40px;height:40px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:600;color:var(--gold);border:1px solid rgba(201,169,110,0.3);background:rgba(201,169,110,0.07);}
+  .section.dark .feature-icon{background:rgba(201,169,110,0.08);border-color:rgba(201,169,110,0.2);}
+  .feature-text h4{font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:500;color:var(--deep);margin-bottom:.4rem;}
+  .section.dark .feature-text h4{color:var(--cream);}
+  .feature-text p{font-size:.9rem;line-height:1.75;color:var(--muted);font-weight:300;}
+  .section.dark .feature-text p{color:rgba(250,247,242,0.55);}
+
+  /* ── DIVIDER ── */
+  .divider{border:none;border-top:1px solid var(--border);margin:3rem 0;}
+  .section.dark .divider{border-color:rgba(201,169,110,0.15);}
+
+  /* ── BUTTONS ── */
+  .btn-primary{display:inline-flex;align-items:center;gap:.5rem;background:var(--rose);color:#fff;border:none;padding:.85rem 2rem;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;border-radius:4px;cursor:pointer;text-decoration:none;transition:background .2s,transform .15s;}
+  .btn-primary:hover{background:var(--rose-m);transform:translateY(-1px);}
+  .btn-ghost{display:inline-flex;align-items:center;gap:.5rem;color:var(--dim);background:transparent;border:1px solid rgba(181,168,159,0.3);padding:.85rem 2rem;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:400;border-radius:4px;cursor:pointer;text-decoration:none;transition:all .2s;}
+  .btn-ghost:hover{border-color:var(--dim);color:var(--cream);}
+  .btn-row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem;}
+
+  /* ── CTA BAND ── */
+  .cta-band{background:var(--deep);padding:80px 32px;text-align:center;border-top:1px solid rgba(201,169,110,0.15);}
+  .cta-band h2{font-family:'Cormorant Garamond',serif;font-size:clamp(2rem,4vw,3.2rem);font-weight:400;color:var(--cream);line-height:1.15;margin-bottom:1rem;}
+  .cta-band h2 em{font-style:italic;color:var(--gold);}
+  .cta-band p{font-size:.97rem;color:rgba(250,247,242,0.55);max-width:520px;margin:0 auto 2rem;line-height:1.7;font-weight:300;}
+  .cta-band .btn-row{justify-content:center;}
+
+  /* ── FOOTER ── */
+  footer{background:var(--deep);padding:48px 32px 32px;border-top:1px solid rgba(201,169,110,0.15);}
+  .foot-top{max-width:1080px;margin:0 auto 3rem;display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap;}
+  .foot-brand{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:400;color:var(--cream);margin-bottom:.5rem;}
+  .foot-brand span{color:var(--gold);}
+  .foot-tagline{font-size:.85rem;color:rgba(250,247,242,0.4);font-weight:300;line-height:1.6;max-width:220px;}
+  .foot-cols{display:flex;gap:48px;flex-wrap:wrap;}
+  .foot-col h4{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(250,247,242,0.35);margin-bottom:14px;font-weight:500;}
+  .foot-col a{display:block;font-size:.88rem;color:rgba(250,247,242,0.55);margin-bottom:9px;transition:color .2s;}
+  .foot-col a:hover{color:var(--gold);}
+  .foot-bottom{max-width:1080px;margin:0 auto;border-top:1px solid rgba(250,247,242,0.07);padding-top:1.5rem;font-size:.78rem;color:rgba(250,247,242,0.3);text-align:center;}
+
+  /* ── FADE IN ── */
+  .fade-in{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
+  .fade-in.visible{opacity:1;transform:none;}
+
+  @media(prefers-reduced-motion:reduce){.fade-in{opacity:1;transform:none;transition:none;}}
+  @media(max-width:640px){
+    .section{padding:64px 24px;}
+    .hero{padding:120px 24px 80px;}
+    .data-grid{grid-template-columns:1fr 1fr;}
+    .feature-item{flex-direction:column;gap:1rem;}
+    .foot-top{flex-direction:column;gap:32px;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="nav-inner">
+    <a href="/" class="brand">Skin<span>Day</span></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+        <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+        <a href="/taiwan" data-en="Directory" data-zh="診所目錄">Directory</a>
+        <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+      </div>
+      <div class="lang-toggle">
+        <button class="lang-btn active" onclick="setLang('en')">EN</button>
+        <div class="lang-sep"></div>
+        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow" data-en="About SkinDay" data-zh="關於 SkinDay">About SkinDay</div>
+    <h1 class="serif" data-en="The right client.<br><em>For the right clinic.</em>" data-zh="找到對的客戶，<br><em>遇見對的診所。</em>">The right client.<br><em>For the right clinic.</em></h1>
+    <p class="hero-sub" data-en="The aesthetic medicine industry is more competitive than ever. Most platforms sell more clicks. SkinDay works differently — we help clinics grow by reducing mismatch, deepening the consultation, and building the patient relationships that actually drive retention." data-zh="醫美市場競爭激烈。多數平台只是販售更多點擊。SkinDay 選擇不同的路——我們協助診所減少客戶不匹配的問題，深化諮詢流程，建立真正帶來留客率的長期關係。">The aesthetic medicine industry is more competitive than ever. Most platforms sell more clicks. SkinDay works differently — we help clinics grow by reducing mismatch, deepening the consultation, and building the patient relationships that actually drive retention.</p>
+  </div>
+</header>
+
+<!-- THE PROBLEM -->
+<section class="section fade-in">
+  <div class="wrap-narrow">
+    <div class="section-label" data-en="The Problem" data-zh="問題所在">The Problem</div>
+    <h2 class="serif" data-en="Acquisition is not<br><em>the hard part.</em>" data-zh="獲客從來<br><em>不是最難的。</em>">Acquisition is not<br><em>the hard part.</em></h2>
+    <p class="prose" data-en="Most clinic growth strategies are built around the top of the funnel — ads, directories, lead gen, more new patients. The assumption is that volume solves everything. It doesn't." data-zh="大多數診所的成長策略都圍繞在漏斗頂端——廣告、目錄、開發更多新客。這種策略的前提是，數量能解決一切。但事實並非如此。">Most clinic growth strategies are built around the top of the funnel — ads, directories, lead gen, more new patients. The assumption is that volume solves everything. It doesn't.</p>
+    <p class="prose" data-en="A patient who books the wrong clinic wastes a consultation slot, leaves a lukewarm review, and doesn't come back. The clinic acquires a cost, not a relationship. Meanwhile the patient — frustrated, not worse off — moves on and tries again somewhere else." data-zh="一位預約了不適合診所的患者，浪費了一個諮詢時段、留下平淡的評論，然後消失不再回來。診所付出了成本，卻沒有建立關係。而這位患者，帶著一絲失望，轉往他處重新尋找。">A patient who books the wrong clinic wastes a consultation slot, leaves a lukewarm review, and doesn't come back. The clinic acquires a cost, not a relationship. Meanwhile the patient — frustrated, not worse off — moves on and tries again somewhere else.</p>
+
+    <div class="pull-quote">
+      <p data-en="The problem isn't finding more patients. It's finding the right ones — and keeping them." data-zh="問題不在於找到更多患者，而是找到對的人，然後留住他們。">The problem isn't finding more patients. It's finding the right ones — and keeping them.</p>
+    </div>
+
+    <p class="prose" data-en="Retention is where the real value lives. A retained patient returns, refers, and reviews with genuine enthusiasm. They're the foundation of a clinic's reputation, not just a transaction on the books." data-zh="留客才是真正的價值所在。回流的患者會再次回診、主動推薦，並留下真誠的好評。他們是診所口碑的根基，而不只是帳本上的一筆交易。">Retention is where the real value lives. A retained patient returns, refers, and reviews with genuine enthusiasm. They're the foundation of a clinic's reputation, not just a transaction on the books.</p>
+
+    <div class="data-grid light-grid" style="margin-top:2.5rem;">
+      <div class="data-item">
+        <div class="data-num">2,172+</div>
+        <div class="data-desc" data-en="aesthetic clinics listed in Taiwan alone" data-zh="僅台灣一地收錄的醫美診所">aesthetic clinics listed in Taiwan alone</div>
+      </div>
+      <div class="data-item">
+        <div class="data-num">4.5★</div>
+        <div class="data-desc" data-en="average Google rating across Taiwan — stars alone don't differentiate" data-zh="台灣診所 Google 平均評分——光靠星數難以區別">average Google rating across Taiwan — stars alone don't differentiate</div>
+      </div>
+      <div class="data-item">
+        <div class="data-num">5×</div>
+        <div class="data-desc" data-en="price spread on per-unit neurotoxin pricing within a single city" data-zh="同一城市內，神經毒素每單位價格的最高落差">price spread on per-unit neurotoxin pricing within a single city</div>
+      </div>
+    </div>
+
+    <p class="prose" data-en="When 75% of clinics share a near-perfect rating and pricing varies by a factor of five, the patient doing their research can't rely on stars alone. And the clinic that happens to rank well on Google isn't necessarily the right fit for the patient searching." data-zh="當 75% 的診所都擁有近乎滿分的評價，而價格卻相差五倍，僅憑星數根本無從判斷。在 Google 排名靠前的診所，未必就是那位搜尋中的患者真正需要的診所。">When 75% of clinics share a near-perfect rating and pricing varies by a factor of five, the patient doing their research can't rely on stars alone. And the clinic that happens to rank well on Google isn't necessarily the right fit for the patient searching.</p>
+  </div>
+</section>
+
+<!-- HOW SKINDAY WORKS -->
+<section class="section dark fade-in">
+  <div class="wrap-narrow">
+    <div class="section-label" data-en="How SkinDay Works" data-zh="SkinDay 如何運作">How SkinDay Works</div>
+    <h2 class="serif" data-en="Not more traffic.<br><em>The right traffic.</em>" data-zh="不是更多流量，<br><em>是對的流量。</em>">Not more traffic.<br><em>The right traffic.</em></h2>
+    <p class="prose" data-en="SkinDay works across the full patient journey — from the moment someone starts researching, through the consultation, to the follow-up that brings them back. Every product we build is in service of that arc." data-zh="SkinDay 覆蓋患者完整的就診旅程——從開始搜尋、完成諮詢，到促成回診的後續追蹤。我們打造的每項產品，都服務於這條完整的旅程。">SkinDay works across the full patient journey — from the moment someone starts researching, through the consultation, to the follow-up that brings them back. Every product we build is in service of that arc.</p>
+
+    <div class="feature-list">
+      <div class="feature-item">
+        <div class="feature-icon">◎</div>
+        <div class="feature-text">
+          <h4 data-en="Directory — Match at the top of the funnel" data-zh="診所目錄——漏斗頂端的精準配對">Directory — Match at the top of the funnel</h4>
+          <p data-en="The SkinDay directory surfaces credential, treatment focus, photos, and pricing alongside ratings — so a patient searching for an injector who specialises in natural results for Asian skin finds exactly that, not just the clinic with the most reviews. The right patient arrives already aligned." data-zh="SkinDay 目錄在評分之外，同步呈現執業資歷、治療專長、診所照片與價格——讓一位尋找亞洲皮膚自然感注射師的患者，能精準找到符合需求的診所，而不只是評論數最多的那家。對的患者，帶著正確的期待前來。">The SkinDay directory surfaces credential, treatment focus, photos, and pricing alongside ratings — so a patient searching for an injector who specialises in natural results for Asian skin finds exactly that, not just the clinic with the most reviews. The right patient arrives already aligned.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">◈</div>
+        <div class="feature-text">
+          <h4 data-en="Visualize — Deepen the consultation" data-zh="Visualize——深化諮詢體驗">Visualize — Deepen the consultation</h4>
+          <p data-en="AI-generated treatment previews built for clinician-led consultations. When a patient can see a realistic preview of what a treatment might look like — Sculptra volume restoration, HA filler contouring, neurotoxin relaxation — they commit with calibrated expectations, not anxiety. Lower dropout. Higher trust. Better outcomes." data-zh="為醫師主導的諮詢而設計的 AI 療程預覽工具。當患者能看到童顏針豐盈、玻尿酸塑形或肉毒放鬆的真實預覽效果，他們帶著合理的期待做決定，而非帶著不安。降低放棄率，建立信任，帶來更好的治療結果。">AI-generated treatment previews built for clinician-led consultations. When a patient can see a realistic preview of what a treatment might look like — Sculptra volume restoration, HA filler contouring, neurotoxin relaxation — they commit with calibrated expectations, not anxiety. Lower dropout. Higher trust. Better outcomes.</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">▣</div>
+        <div class="feature-text">
+          <h4 data-en="Studio — Build the trust assets that close the loop" data-zh="Studio——打造建立信任的視覺資產">Studio — Build the trust assets that close the loop</h4>
+          <p data-en="Polished before-and-after images, aligned and branded, ready in seconds. A clinic's outcome library becomes its most powerful retention and referral tool — the social proof that turns one happy patient into the next aligned patient walking through the door. Free to use, private by design." data-zh="對齊、品牌化、數秒完成的專業前後對比照。診所的成果圖庫，是最有力的留客與轉介工具——讓一位滿意的患者的心得，成為下一位對的患者走進診所的理由。完全免費，以隱私為核心設計。">Polished before-and-after images, aligned and branded, ready in seconds. A clinic's outcome library becomes its most powerful retention and referral tool — the social proof that turns one happy patient into the next aligned patient walking through the door. Free to use, private by design.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA PHILOSOPHY -->
+<section class="section warm fade-in">
+  <div class="wrap-narrow">
+    <div class="section-label" data-en="Our Philosophy" data-zh="我們的理念">Our Philosophy</div>
+    <h2 class="serif" data-en="Honest about<br><em>what we know.</em>" data-zh="對我們所知道的，<br><em>誠實以對。</em>">Honest about<br><em>what we know.</em></h2>
+    <p class="prose" data-en="SkinDay combines publicly available clinic information with details submitted directly by clinics. Some profiles are claimed and maintained by the clinic. Others are built from public data and may be incomplete. We tell you which is which on every listing." data-zh="SkinDay 整合公開的診所資訊與診所直接提供的內容。部分資料已由診所認領並維護，其他則來自公開資料，可能不完整。每筆資料，我們都會標示來源。">SkinDay combines publicly available clinic information with details submitted directly by clinics. Some profiles are claimed and maintained by the clinic. Others are built from public data and may be incomplete. We tell you which is which on every listing.</p>
+    <p class="prose" data-en="Pricing changes. We timestamp what we show and always recommend confirming current rates directly with the clinic. SkinDay is the best place to start your research — not the last word on it." data-zh="價格會改變。我們為所有顯示的資料標記時間戳，並建議直接向診所確認現行價格。SkinDay 是開始研究的最佳起點，但不是最終定論。">Pricing changes. We timestamp what we show and always recommend confirming current rates directly with the clinic. SkinDay is the best place to start your research — not the last word on it.</p>
+
+    <hr class="divider">
+
+    <h2 class="serif" data-en="What SkinDay<br><em>is not.</em>" data-zh="SkinDay<br><em>不是什麼。</em>">What SkinDay<br><em>is not.</em></h2>
+    <p class="prose" data-en="We don't rank clinics by who pays us. We don't sell leads or charge per click. We don't tell you which clinic is the best — that depends on your goals, approach, and the patient in front of you." data-zh="我們不依付費排序診所，不販售名單，不按點擊收費。我們也不告訴你哪家診所最好——那取決於你的目標、方法，以及你面前的那位患者。">We don't rank clinics by who pays us. We don't sell leads or charge per click. We don't tell you which clinic is the best — that depends on your goals, approach, and the patient in front of you.</p>
+    <p class="prose" data-en="We're building the infrastructure for better matches — globally. The directory is growing. The tools are evolving. The goal stays the same: the right client, at the right clinic, who stays." data-zh="我們正在全球打造更好的配對基礎設施。目錄持續擴充，工具持續進化，目標始終如一：讓對的客戶，找到對的診所，然後留下來。">We're building the infrastructure for better matches — globally. The directory is growing. The tools are evolving. The goal stays the same: the right client, at the right clinic, who stays.</p>
+  </div>
+</section>
+
+<!-- FOR CLINICS CTA -->
+<section class="section dark fade-in">
+  <div class="wrap-narrow">
+    <div class="section-label" data-en="For Clinics" data-zh="給診所">For Clinics</div>
+    <h2 class="serif" data-en="Ready to attract<br><em>the right patients?</em>" data-zh="準備好吸引<br><em>對的患者了嗎？</em>">Ready to attract<br><em>the right patients?</em></h2>
+    <p class="prose" data-en="Start with Visualize — bring AI-powered treatment previews into your consultations today. Or explore the directory to see how your clinic appears to patients researching in your market." data-zh="從 Visualize 開始——立即將 AI 療程預覽帶入您的諮詢流程。或瀏覽目錄，了解您的診所在患者搜尋時呈現的樣貌。">Start with Visualize — bring AI-powered treatment previews into your consultations today. Or explore the directory to see how your clinic appears to patients researching in your market.</p>
+    <div class="btn-row">
+      <a href="/visualize" class="btn-primary" data-en="Try Visualize" data-zh="立即體驗 Visualize">Try Visualize</a>
+      <a href="/taiwan" class="btn-ghost" data-en="Browse the Directory" data-zh="瀏覽診所目錄">Browse the Directory</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-top">
+    <div>
+      <div class="foot-brand">Skin<span>Day</span></div>
+      <div class="foot-tagline" data-en="The right client, at the right clinic, who stays." data-zh="讓對的客戶，找到對的診所，然後留下來。">The right client, at the right clinic, who stays.</div>
+    </div>
+    <div class="foot-cols">
+      <div class="foot-col">
+        <h4 data-en="Tools" data-zh="工具">Tools</h4>
+        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
+        <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+        <a href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
+      </div>
+      <div class="foot-col">
+        <h4 data-en="Directory" data-zh="診所目錄">Directory</h4>
+        <a href="/taiwan" data-en="Taiwan" data-zh="台灣">Taiwan</a>
+        <a href="/canada" data-en="Canada" data-zh="加拿大">Canada</a>
+      </div>
+      <div class="foot-col">
+        <h4 data-en="Company" data-zh="公司">Company</h4>
+        <a href="/about" data-en="About" data-zh="關於我們">About</a>
+        <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+        <a href="/privacy" data-en="Privacy" data-zh="隱私政策">Privacy</a>
+        <a href="/terms" data-en="Terms" data-zh="服務條款">Terms</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot-bottom">© 2026 SkinDay. <span data-en="All rights reserved." data-zh="版權所有。">All rights reserved.</span></div>
+</footer>
+
+<script>
+  function detectLang(){try{var s=localStorage.getItem('sd-lang');if(s==='zh'||s==='en')return s;}catch(e){}try{var n=(navigator.language||(navigator.languages&&navigator.languages[0])||'').toLowerCase();if(n.indexOf('zh')===0)return'zh';}catch(e){}return'en';}
+  var currentLang=detectLang();
+  function setLang(lang){currentLang=lang;try{localStorage.setItem('sd-lang',lang);}catch(e){}applyLang();}
+  function applyLang(){
+    var isZh=currentLang==='zh';
+    document.body.classList.toggle('zh',isZh);
+    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+      var val=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
+      if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.placeholder=val;}else{el.innerHTML=val;}
+    });
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
+    });
+    document.title=isZh?'關於 SkinDay · 醫美診所成長平台':'About SkinDay · The clinic growth platform for aesthetic medicine';
+  }
+  applyLang();
+
+  var observer=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});
+  document.querySelectorAll('.fade-in').forEach(function(el){observer.observe(el);});
+</script>
+</body>
+</html>

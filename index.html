@@ -58,6 +58,20 @@
     .nav-mobile .lang-toggle{width:fit-content;}
   }
 
+  /* ── DIRECTORY DROPDOWN ──────────────────────────── */
+  .nav-dir{position:relative;}
+  .nav-dir-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.82rem;letter-spacing:.04em;color:var(--deep-soft);transition:color .25s;display:flex;align-items:center;gap:5px;padding:0;}
+  .nav-dir-btn:hover{color:var(--deep);}
+  .nav-dir-btn svg{transition:transform .2s;}
+  .nav-dir.open .nav-dir-btn svg{transform:rotate(180deg);}
+  .nav-dir-menu{display:none;position:absolute;top:calc(100% + 14px);left:50%;transform:translateX(-50%);background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:8px;min-width:200px;box-shadow:0 8px 32px rgba(28,23,20,.12);z-index:50;}
+  .nav-dir.open .nav-dir-menu{display:block;}
+  .nav-dir-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:5px;text-decoration:none;font-size:.85rem;color:var(--deep);transition:background .15s;}
+  .nav-dir-item:hover{background:var(--warm);}
+  .nav-dir-item.soon{color:#aaa;cursor:default;pointer-events:none;}
+  .nav-dir-badge{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;background:var(--warm);color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 5px;white-space:nowrap;}
+  .nav-dir-badge.live{background:rgba(61,122,85,.1);color:#3D7A55;border-color:rgba(61,122,85,.2);}
+
   /* ── HERO (the silent first screen) ──────────────── */
   .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 32px 80px;}
   .hero-mark{font-family:'Cormorant Garamond',serif;font-size:clamp(3.4rem,9vw,6rem);font-weight:400;letter-spacing:.005em;line-height:1;color:var(--deep);opacity:0;transform:translateY(14px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) .15s forwards;}
@@ -69,6 +83,7 @@
   .pill-name{font-family:'Cormorant Garamond',serif;font-size:1.65rem;font-weight:500;color:var(--deep);letter-spacing:.01em;}
   .pill-sub{margin-top:4px;font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:400;}
   .pill.is-visualize:hover{border-color:var(--rose);background:rgba(200,114,90,.05);}
+  .pill.is-directory:hover{border-color:var(--gold);background:rgba(201,169,110,.05);}
 
   @keyframes rise{to{opacity:1;transform:translateY(0);}}
 
@@ -128,8 +143,28 @@
     <div class="nav-right">
       <div class="nav-links">
         <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
-        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
-        <a href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
+        <div class="nav-dir" id="navViz">
+          <button class="nav-dir-btn" onclick="toggleVizMenu()" aria-expanded="false" aria-haspopup="true">
+            <span data-en="Visualize" data-zh="Visualize">Visualize</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+          </button>
+          <div class="nav-dir-menu" role="menu">
+            <a href="/visualize" class="nav-dir-item" role="menuitem"><span data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</span></a>
+            <a href="/guide" class="nav-dir-item" role="menuitem"><span data-en="Guide" data-zh="使用指南">Guide</span></a>
+          </div>
+        </div>
+        <div class="nav-dir" id="navDir">
+          <button class="nav-dir-btn" onclick="toggleDirMenu()" aria-expanded="false" aria-haspopup="true">
+            <span data-en="Directory" data-zh="診所搜尋">Directory</span>
+            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+          </button>
+          <div class="nav-dir-menu" role="menu">
+            <a href="/canada" class="nav-dir-item" role="menuitem"><span>🍁 Canada</span><span class="nav-dir-badge live">Live</span></a>
+            <a href="/taiwan" class="nav-dir-item" role="menuitem"><span>🇹🇼 Taiwan</span><span class="nav-dir-badge live">Live</span></a>
+            <div class="nav-dir-item soon"><span>🇭🇰 Hong Kong</span><span class="nav-dir-badge">Soon</span></div>
+            <div class="nav-dir-item soon"><span>🇺🇸 United States</span><span class="nav-dir-badge">Soon</span></div>
+          </div>
+        </div>
         <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
       </div>
       <div class="lang-toggle" role="group" aria-label="Language">
@@ -150,6 +185,8 @@
     <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
     <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
     <a href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
+    <a href="/canada" data-en="🍁 Canada Directory" data-zh="🍁 加拿大診所目錄">🍁 Canada Directory</a>
+    <a href="/taiwan" data-en="🇹🇼 Taiwan Directory" data-zh="🇹🇼 台灣醫美目錄">🇹🇼 Taiwan Directory</a>
     <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
     <div class="lang-toggle" role="group" aria-label="Language">
       <button class="lang-btn active" onclick="setLang('en')">EN</button>
@@ -171,6 +208,10 @@
     <a href="/visualize" class="pill is-visualize">
       <span class="pill-name serif">Visualize</span>
       <span class="pill-sub" data-en="AI consultation previews" data-zh="AI 諮詢預覽">AI consultation previews</span>
+    </a>
+    <a href="/taiwan" class="pill is-directory">
+      <span class="pill-name serif">Directory</span>
+      <span class="pill-sub" data-en="Clinic finder · Canada &amp; Taiwan" data-zh="診所搜尋 · 加拿大 &amp; 台灣">Clinic finder · Canada &amp; Taiwan</span>
     </a>
   </div>
 </header>
@@ -223,6 +264,13 @@
           <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
         </div>
         <div class="foot-col">
+          <h4 data-en="Directory" data-zh="診所目錄">Directory</h4>
+          <a href="/canada" data-en="Canada" data-zh="加拿大">Canada</a>
+          <a href="/taiwan" data-en="Taiwan" data-zh="台灣">Taiwan</a>
+          <span style="font-size:.82rem;color:rgba(250,247,242,.3);margin-bottom:10px;display:block;" data-en="Hong Kong · soon" data-zh="香港 · 即將上線">Hong Kong · soon</span>
+          <span style="font-size:.82rem;color:rgba(250,247,242,.3);display:block;" data-en="United States · soon" data-zh="美國 · 即將上線">United States · soon</span>
+        </div>
+        <div class="foot-col">
           <h4 data-en="Company" data-zh="公司">Company</h4>
           <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
         </div>
@@ -235,8 +283,8 @@
       </div>
     </div>
     <div class="foot-legal">
-      <span data-en="Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model." data-zh="Studio 在您的瀏覽器中本地處理照片，SkinDay 不會上傳、儲存或查看這些影像。Visualize 只會為了本次生成將照片傳送給 AI 服務供應商，不會用於模型訓練。">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model.</span>
-      <span data-en="Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice." data-zh="Visualize 輸出內容為 AI 生成的諮詢預覽，並非實際治療結果的預測。在使用或分享任何影像前取得顧客的適當同意，是診所的責任。SkinDay 並非醫療裝置，亦不提供醫療建議。">Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.</span>
+      <span data-en="Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model." data-zh="Studio 會在您的瀏覽器中本地處理照片，SkinDay 不會上傳、儲存或查看這些影像。Visualize 只會為了本次生成，將照片傳送給 AI 服務供應商，不會用於模型訓練。">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model.</span>
+      <span data-en="Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice." data-zh="Visualize 的輸出內容是 AI 生成的諮詢預覽，並非實際治療結果預測。使用或分享任何影像前，診所應先取得顧客的適當同意。SkinDay 並非醫療裝置，亦不提供醫療建議。">Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.</span>
       <div class="foot-copy"><span>&#169; 2026 SkinDay. <span data-en="All rights reserved." data-zh="版權所有。">All rights reserved.</span></span></div>
     </div>
   </div>
@@ -287,7 +335,7 @@
     });
 
     document.title = isZh
-      ? 'SkinDay · 醫美影像工具'
+      ? 'SkinDay · 臨床醫美影像工具'
       : 'SkinDay · Clinical image tools for aesthetic clinics';
   }
 
@@ -308,6 +356,32 @@
       if (btn) {
         btn.setAttribute('aria-expanded', 'false');
         btn.querySelector('svg').innerHTML = '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
+      }
+    });
+  });
+
+  function toggleDirMenu() {
+    var dir = document.getElementById('navDir');
+    var viz = document.getElementById('navViz');
+    if (viz) { viz.classList.remove('open'); viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false'); }
+    var isOpen = dir.classList.toggle('open');
+    dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  function toggleVizMenu() {
+    var viz = document.getElementById('navViz');
+    var dir = document.getElementById('navDir');
+    if (dir) { dir.classList.remove('open'); dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false'); }
+    var isOpen = viz.classList.toggle('open');
+    viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  }
+
+  document.addEventListener('click', function(e) {
+    ['navDir', 'navViz'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && !el.contains(e.target)) {
+        el.classList.remove('open');
+        el.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false');
       }
     });
   });

@@ -1,8 +1,7 @@
 {
+  "name": "skinday-com",
+  "version": "1.0.0",
   "dependencies": {
-    "@netlify/blobs": "^10.7.9",
-    "@supabase/supabase-js": "^2.106.2",
-    "busboy": "^1.6.0",
-    "openai": "^4.104.0"
+    "@supabase/supabase-js": "^2.39.0"
   }
 }

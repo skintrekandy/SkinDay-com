@@ -683,6 +683,8 @@
           <label data-en="Treatment area" data-zh="治療部位">Treatment area</label>
           <div class="area-grid" id="areaGrid">
             <div class="area-chip active" data-area="chin_jawline"><span class="tick">✓</span><span data-en="Chin + Jawline" data-zh="下巴＋下顎線">Chin + Jawline</span></div>
+            <div class="area-chip" data-area="chin"><span class="tick">✓</span><span data-en="Chin only" data-zh="僅下巴">Chin only</span></div>
+            <div class="area-chip" data-area="jawline"><span class="tick">✓</span><span data-en="Jawline only" data-zh="僅下顎線">Jawline only</span></div>
             <div class="area-chip" data-area="cheeks"><span class="tick">✓</span><span data-en="Cheeks" data-zh="臉頰">Cheeks</span></div>
             <div class="area-chip" data-area="temple"><span class="tick">✓</span><span data-en="Temple" data-zh="太陽穴">Temple</span></div>
             <div class="area-chip" data-area="nose"><span class="tick">✓</span><span data-en="Nose" data-zh="鼻部">Nose</span></div>
@@ -929,6 +931,16 @@
         <span data-en="Hyaluronic acid filler added to the chin and jawline" data-zh="在下巴與下顎線加入玻尿酸填充">Hyaluronic acid filler added to the chin and jawline</span>
         <em class="credit-tag">1 credit</em>
       </button>
+      <button class="scenario-btn" type="button" data-scenario="add_chin_filler" id="scenBtn_add_chin_filler">
+        <strong data-en="Add chin filler" data-zh="加入下巴玻尿酸">Add chin filler</strong>
+        <span data-en="Hyaluronic acid added to the chin only" data-zh="僅在下巴加入玻尿酸填充">Hyaluronic acid added to the chin only</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_jawline_filler" id="scenBtn_add_jawline_filler">
+        <strong data-en="Add jawline filler" data-zh="加入下顎線玻尿酸">Add jawline filler</strong>
+        <span data-en="Hyaluronic acid added to the jawline only" data-zh="僅在下顎線加入玻尿酸填充">Hyaluronic acid added to the jawline only</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
       <button class="scenario-btn" type="button" data-scenario="add_cheek_filler" id="scenBtn_add_cheek_filler">
         <strong data-en="Add cheek filler" data-zh="加入臉頰玻尿酸">Add cheek filler</strong>
         <span data-en="Hyaluronic acid midface volume on the baseline" data-zh="在基準結果上加入中臉玻尿酸容量支撐">Hyaluronic acid midface volume on the baseline</span>
@@ -957,6 +969,26 @@
       <button class="scenario-btn" type="button" data-scenario="add_biostim_lift" id="scenBtn_add_biostim_lift">
         <strong data-en="Add biostimulation" data-zh="加入膠原增生">Add biostimulation</strong>
         <span data-en="Collagen-based volume restoration on the baseline" data-zh="在基準結果上加入膠原增生帶來的容量支撐">Collagen-based volume restoration on the baseline</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_rf" id="scenBtn_add_rf">
+        <strong data-en="Add RF skin tightening" data-zh="加入電波拉皮緊緻">Add RF skin tightening</strong>
+        <span data-en="Energy-based skin tightening on the baseline (no added volume)" data-zh="在基準結果上加入電波拉皮緊緻（不增加容量）">Energy-based skin tightening on the baseline (no added volume)</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_hifu" id="scenBtn_add_hifu">
+        <strong data-en="Add HIFU lifting" data-zh="加入音波拉提">Add HIFU lifting</strong>
+        <span data-en="Focused ultrasound lifting on the baseline (no added volume)" data-zh="在基準結果上加入聚焦超音波拉提（不增加容量）">Focused ultrasound lifting on the baseline (no added volume)</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_masseter" id="scenBtn_add_masseter">
+        <strong data-en="Add masseter slimming (neurotoxin)" data-zh="加入咬肌瘦臉（肉毒）">Add masseter slimming (neurotoxin)</strong>
+        <span data-en="Neurotoxin masseter reduction slims the lower face on the baseline" data-zh="在基準結果上以肉毒放鬆咬肌，使下臉變窄">Neurotoxin masseter reduction slims the lower face on the baseline</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_nefertiti" id="scenBtn_add_nefertiti">
+        <strong data-en="Add Nefertiti lift (neurotoxin)" data-zh="加入娜芙蒂蒂拉提（肉毒）">Add Nefertiti lift (neurotoxin)</strong>
+        <span data-en="Neurotoxin along the jawline and neck for a cleaner lower-face line" data-zh="在下顎線與頸部施打肉毒，使下臉線條更俐落">Neurotoxin along the jawline and neck for a cleaner lower-face line</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="stronger_laser" id="scenBtn_stronger_laser">
@@ -2645,6 +2677,8 @@ function updatePhotoGuide(){
 // delicate areas (nose, tear trough, lips) top out around 1-2 syringes.
 const FILLER_VOLUME_LABELS = {
   chin_jawline: { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
+  chin:         { conservative: '1 syringe', moderate: '1-2 syringes', enhanced: '2-3 syringes' },
+  jawline:      { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '3-4 syringes' },
   cheeks:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
   temple:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
   nose:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
@@ -4208,6 +4242,8 @@ function usesResponseModes(){ return state.type === 'biostim' || state.type === 
 // Clinic-facing area labels for filler, used in result tags and exports.
 const FILLER_AREA_LABELS = {
   chin_jawline: 'Chin + Jawline',
+  chin:         'Chin',
+  jawline:      'Jawline',
   cheeks:       'Cheeks',
   temple:       'Temple',
   nose:         'Nose',
@@ -4747,12 +4783,18 @@ function scenarioBucket() {
 const SCENARIO_LABELS = {
   stronger_sculptra:  'Stronger biostimulation response',
   add_chin_jaw_filler: 'Add chin + jawline filler',
+  add_chin_filler:    'Add chin filler',
+  add_jawline_filler: 'Add jawline filler',
   add_cheek_filler:   'Add cheek filler',
   add_temple_support: 'Add temple support',
   add_tear_trough:    'Add under-eye (tear trough) support',
   add_nose_filler:    'Add nose filler',
   add_lips_filler:    'Add lip filler',
   add_biostim_lift:   'Add biostimulation',
+  add_rf:             'Add RF skin tightening',
+  add_hifu:           'Add HIFU lifting',
+  add_masseter:       'Add masseter slimming (neurotoxin)',
+  add_nefertiti:      'Add Nefertiti lift (neurotoxin)',
   stronger_laser:     'Stronger response',
   combination_plan:   'Full combination plan'
 };
@@ -4762,18 +4804,46 @@ const SCENARIO_LABELS = {
 // filler areas plus a biostimulation add-on (volume restoration).
 // HDR and tox: filler volume add-ons + biostimulation (common combination plans).
 const SCENARIOS_BY_TYPE = {
-  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
-  hdr:     ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],
-  filler:  ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
-  laser:   ['stronger_laser','add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
-  tox:     ['add_chin_jaw_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
+  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
+  hdr:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],
+  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
+  laser:   ['stronger_laser','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
+  tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
 };
+// Maps a filler AREA to the add-on scenario key(s) that treat the same area, so
+// we never offer "add lip filler" after a lip-filler baseline, etc.
+const AREA_TO_SCENARIO_KEYS = {
+  chin_jawline: ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler'],
+  chin:         ['add_chin_filler','add_chin_jaw_filler'],
+  jawline:      ['add_jawline_filler','add_chin_jaw_filler'],
+  cheeks:       ['add_cheek_filler'],
+  temple:       ['add_temple_support'],
+  tear_trough:  ['add_tear_trough'],
+  nose:         ['add_nose_filler'],
+  lips:         ['add_lips_filler']
+};
+
 function scenariosForBaseline(){
   // HDR uses its own scenario set (different from Sculptra biostim).
+  let list;
   if(state.type === 'biostim'){
-    return SCENARIOS_BY_TYPE[state.product === 'hdr' ? 'hdr' : 'biostim'] || [];
+    list = SCENARIOS_BY_TYPE[state.product === 'hdr' ? 'hdr' : 'biostim'] || [];
+  } else {
+    list = SCENARIOS_BY_TYPE[state.type] || [];
   }
-  return SCENARIOS_BY_TYPE[state.type] || [];
+  list = list.slice(); // copy so we never mutate the source array
+
+  // Never offer an add-on for an area the baseline already treated. For filler,
+  // the treated areas are in state.areas; remove their matching scenario keys.
+  if(state.type === 'filler' && Array.isArray(state.areas)){
+    const exclude = new Set();
+    state.areas.forEach(a => {
+      (AREA_TO_SCENARIO_KEYS[a] || []).forEach(k => exclude.add(k));
+    });
+    list = list.filter(k => !exclude.has(k));
+  }
+
+  return list;
 }
 
 // Export label: every scenario builds on the biostimulation baseline, so the
@@ -4791,12 +4861,18 @@ function scenarioExportLabel(scenarioKey, baseLabel){
 const SCENARIO_DESCRIPTIONS = {
   stronger_sculptra:   'Higher-dose scenario (6-8+ vials/syringes). Upper-range result, not guaranteed.',
   add_chin_jaw_filler: 'Combination-treatment scenario. Not a guaranteed outcome.',
+  add_chin_filler:     'Add-on scenario. Not a guaranteed outcome.',
+  add_jawline_filler:  'Add-on scenario. Not a guaranteed outcome.',
   add_cheek_filler:    'Add-on scenario. Not a guaranteed outcome.',
   add_temple_support:  'Add-on scenario. Upper-range outcome, not guaranteed.',
   add_tear_trough:     'Add-on scenario. Not a guaranteed outcome.',
   add_nose_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_lips_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_biostim_lift:    'Add-on scenario. Upper-range outcome, not guaranteed.',
+  add_rf:              'Add-on scenario: RF skin tightening (no added volume). Not guaranteed.',
+  add_hifu:            'Add-on scenario: HIFU lifting (no added volume). Not guaranteed.',
+  add_masseter:        'Add-on scenario: neurotoxin masseter slimming. Not guaranteed.',
+  add_nefertiti:       'Add-on scenario: neurotoxin Nefertiti lift. Not guaranteed.',
   stronger_laser:      'Upper-range responder over a full course. Energy devices cannot restore volume. Not guaranteed.',
   combination_plan:    'Full multi-modality combination scenario. Possible upper-range outcome.'
 };

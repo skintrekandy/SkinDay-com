@@ -73,3 +73,55 @@
   to     = "/refund"
   status = 301
   force  = true
+
+[[redirects]]
+  from   = "/taiwan.html"
+  to     = "/taiwan"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/guide.html"
+  to     = "/guide"
+  status = 301
+  force  = true
+
+# ── COUNTRY DIRECTORY REDIRECTS ──────────────────────────────────
+[[redirects]]
+  from   = "/canada"
+  to     = "https://skinday.ca"
+  status = 301
+  force  = true
+
+# ── API SHORTHAND ─────────────────────────────────────────────────
+# Maps /api/* to /.netlify/functions/* so taiwan.html and other pages
+# can call /api/get-clinics instead of the full function path.
+[[redirects]]
+  from   = "/api/*"
+  to     = "/.netlify/functions/:splat"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/about.html"
+  to     = "/about"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/privacy.html"
+  to     = "/privacy"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/terms.html"
+  to     = "/terms"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/account.html"
+  to     = "/account"
+  status = 301
+  force  = true
