@@ -1169,8 +1169,15 @@ function buildScenarioPrompt(scenarioKey, view, baselineType) {
     if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
     const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
                        view === 'l45' || view === 'r45');
+    // Oblique insurance: on three-quarter views the model tends to "resolve" the
+    // busier, more-shadowed side (deeper lid-cheek junction, tear-trough shadow,
+    // more visible laxity) by rebuilding its skin, which reads as degraded or
+    // over-smoothed texture relative to the original on that side. This lock fires
+    // only on obliques and forbids that, independent of the general skin lock in
+    // addonSafety, so the harder oblique side keeps its true texture.
     const viewLead = isOblique
-      ? 'IMPORTANT: this is a three-quarter (oblique) photograph. Preserve the exact head angle, crop, perspective, and facial orientation. Do not rotate the face toward frontal. '
+      ? 'IMPORTANT: this is a three-quarter (oblique) photograph. Preserve the exact head angle, crop, perspective, and facial orientation. Do not rotate the face toward frontal. ' +
+        'Oblique skin-texture lock: at this angle, do NOT rebuild, repaint, smooth, even out, or re-render the skin on the more-shadowed or more-complex side of the face (the lid-cheek junction, tear-trough, under-eye, and lateral cheek). Keep pores, fine lines, surface texture, pigment, freckles, and natural shadow on BOTH sides exactly as in the original photograph; the treated result must not show smoother, cleaner, or more uniform skin texture on one oblique side than the other. Any permitted change is soft-tissue contour or support only, never a change in skin surface texture. '
       : '';
     return NO_TEXT_RULE + ' ' + viewLead + cp;
   }
