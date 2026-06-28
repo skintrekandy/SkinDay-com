@@ -209,6 +209,8 @@
       display: flex; align-items: center; gap: 0.35rem;
     }
     .btn-nearby:hover { background: var(--gold); color: var(--deep); }
+    .map-compact-search .btn-nearby { color: var(--cream); border-color: rgba(201,169,110,0.5); }
+    .map-compact-search .btn-nearby:hover { background: var(--gold); color: var(--deep); }
     .btn-search {
       background: var(--rose); color: #fff; border: none;
       padding: 0.85rem 1.8rem; border-radius: 10px;
@@ -1932,7 +1934,7 @@ function onMapIdle() {
   clearTimeout(_idleTimer);
   _idleTimer = setTimeout(() => {
     placeMarkers();
-    if (isMobileMapUI()) { renderCarousel(); } else { updateViewportCount(); }
+    if (isMobileMapUI()) { renderCarousel(); } else { renderDesktopList(); }
     if (_activeCid) renderSelection();
     _lastZoom = z;
   }, 350);
@@ -2016,12 +2018,19 @@ function sortClinicsMap(clinics, sortKey) {
 function onMapSort(val) { _mapSort = val; renderDesktopList(); }
 
 function renderDesktopList() {
-  const sorted = sortClinicsMap([..._allClinics], _mapSort);
+  // Filter to current map viewport so the list reflects what's on screen.
+  // Falls back to full set if map bounds not ready yet (initial load).
+  let pool = _allClinics;
+  if (_map) {
+    const bounds = _map.getBounds();
+    if (bounds) pool = _allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat: +c.lat, lng: +c.lng }));
+  }
+  const sorted = sortClinicsMap(pool, _mapSort);
   const headerCount = document.getElementById('mapListCount');
   if (headerCount) headerCount.textContent = sorted.length.toLocaleString('zh-TW') + ' 家診所';
   const cardsEl = document.getElementById('mapListCards');
   if (cardsEl) cardsEl.innerHTML = sorted.length === 0
-    ? '<div class="map-list-status">找不到診所。</div>'
+    ? '<div class="map-list-status">此區域沒有診所，請縮小地圖範圍。</div>'
     : sorted.map(c => buildMapCard(c, false)).join('');
   updateViewportCount();
   if (_activeCid) requestAnimationFrame(() => renderSelection());
