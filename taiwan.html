@@ -502,12 +502,6 @@
     .missing-modal-success { display: none; text-align: center; padding: 20px 0; }
     .missing-modal-success .success-icon { font-size: 2rem; margin-bottom: 10px; }
 
-    /* ─── TRUST STRIP ─── */
-    .trust-strip { background: var(--deep); padding: 40px 5%; display: flex; align-items: center; justify-content: center; gap: 4rem; flex-wrap: wrap; border-top: 1px solid rgba(201,169,110,0.15); }
-    .trust-item { display: flex; align-items: center; gap: 0.75rem; }
-    .trust-icon { width: 36px; height: 36px; background: rgba(201,169,110,0.1); border: 1px solid rgba(201,169,110,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-    .trust-text strong { display: block; font-size: 0.85rem; font-weight: 500; color: var(--cream); }
-    .trust-text span { font-size: 0.82rem; color: var(--muted); }
 
     /* ─── FOOTER ─── */
     footer { background: var(--deep2); padding: 48px 5% 32px; border-top: 1px solid rgba(201,169,110,0.15); }
@@ -630,8 +624,8 @@
       .map-section.active { height: calc(100vh - 130px); max-height: 860px; min-height: 520px; }
     }
   </style>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc&loading=async" defer></script>
 </head>
 <body>
 
@@ -899,31 +893,6 @@
     </div>
   </div>
 </section>
-
-<!-- TRUST STRIP -->
-<div class="trust-strip">
-  <div class="trust-item">
-    <div class="trust-icon">📸</div>
-    <div class="trust-text">
-      <strong>診所實景照片</strong>
-      <span>取自 Google Maps 公開資料</span>
-    </div>
-  </div>
-  <div class="trust-item">
-    <div class="trust-icon">⭐</div>
-    <div class="trust-text">
-      <strong>Google 評分與評論</strong>
-      <span>附評論數供您參考</span>
-    </div>
-  </div>
-  <div class="trust-item">
-    <div class="trust-icon">🔍</div>
-    <div class="trust-text">
-      <strong>2,172+ 家診所</strong>
-      <span>涵蓋全台 18 個縣市</span>
-    </div>
-  </div>
-</div>
 
 <!-- FOOTER -->
 <footer>
@@ -2091,28 +2060,29 @@ function updateViewportCount() {
 function buildMapCard(c, carousel) {
   const cls = carousel ? 'map-carousel-card' : 'map-clinic-card';
   const logoHTML = c.logo
-    ? '<img class="map-card-logo" src="' + c.logo + '" alt="" onerror="this.style.display='none'">'
-    : '<div class="map-card-logo-placeholder">' + (c.name||'?').charAt(0) + '</div>';
+    ? `<img class="map-card-logo" src="${c.logo}" alt="">`
+    : `<div class="map-card-logo-placeholder">${(c.name||'?').charAt(0)}</div>`;
   const rating = c.rating ? parseFloat(c.rating).toFixed(1) : '—';
   const reviews = (c.reviews||0).toLocaleString('zh-TW');
   const priceHTML = c.price != null
-    ? '<div style="margin-bottom:0.3rem;"><span class="map-card-price">NT$' + c.price + '</span> <span class="map-card-price-unit">/ 單位</span></div>'
+    ? `<div style="margin-bottom:0.3rem;"><span class="map-card-price">NT$${c.price}</span> <span class="map-card-price-unit">/ 單位</span></div>`
     : '';
   const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
-  const hoverAttrs = window.matchMedia('(hover: hover)').matches
-    ? 'onmouseenter="highlightPinById('' + c.id + '')" onmouseleave="unhighlightPinById('' + c.id + '')"'
+  const canHover = window.matchMedia('(hover: hover)').matches;
+  const hoverAttrs = canHover
+    ? `onmouseenter="highlightPinById('${c.id}')" onmouseleave="unhighlightPinById('${c.id}')"`
     : '';
-  return '<div class="' + cls + '" data-cid="' + c.id + '" onclick="onCardClick('' + c.id + '')" ' + hoverAttrs + '>' +
-    '<div class="map-card-top">' + logoHTML +
-    '<div class="map-card-name-block">' +
-    '<div class="map-card-name">' + (c.name||'') + '</div>' +
-    '<div class="map-card-meta">📍 ' + hood + '</div></div>' +
-    '<div class="map-card-rating-badge">' +
-    '<div class="map-card-rating-score">' + rating + '</div>' +
-    '<div class="map-card-rating-star">★★★★★</div>' +
-    '<div class="map-card-rating-reviews">' + reviews + ' 則</div></div></div>' +
+  return `<div class="${cls}" data-cid="${c.id}" onclick="onCardClick('${c.id}')" ${hoverAttrs}>` +
+    `<div class="map-card-top">${logoHTML}` +
+    `<div class="map-card-name-block">` +
+    `<div class="map-card-name">${c.name||''}</div>` +
+    `<div class="map-card-meta">📍 ${hood}</div></div>` +
+    `<div class="map-card-rating-badge">` +
+    `<div class="map-card-rating-score">${rating}</div>` +
+    `<div class="map-card-rating-star">★★★★★</div>` +
+    `<div class="map-card-rating-reviews">${reviews} 則</div></div></div>` +
     priceHTML +
-    '<div class="map-card-footer"><a href="#" class="map-card-view" onclick="event.preventDefault();event.stopPropagation();openMapModal('' + c.id + '')">查看資料 →</a></div></div>';
+    `<div class="map-card-footer"><a href="#" class="map-card-view" onclick="event.preventDefault();event.stopPropagation();openMapModal('${c.id}')">查看資料 →</a></div></div>`;
 }
 
 function highlightCard(cid) { document.querySelectorAll('[data-cid]').forEach(el => el.classList.toggle('highlighted', el.dataset.cid === String(cid))); }
