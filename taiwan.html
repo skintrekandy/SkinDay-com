@@ -202,22 +202,23 @@
       display: flex; gap: 0.5rem; align-items: center; padding: 0 0.6rem 0 0.9rem;
     }
     .btn-nearby {
-      background: var(--rose); border: 1.5px solid var(--rose); color: #fff;
-      padding: 0.7rem 1rem; border-radius: 10px;
-      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600;
+      background: var(--gold); border: 1.5px solid var(--gold); color: var(--deep);
+      padding: 0.85rem 1.8rem; border-radius: 10px; min-width: 110px;
+      font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
       cursor: pointer; white-space: nowrap; transition: all 0.2s;
-      display: flex; align-items: center; gap: 0.35rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.35rem;
     }
-    .btn-nearby:hover { background: var(--rose-m); border-color: var(--rose-m); color: #fff; }
-    .map-compact-search .btn-nearby { background: var(--rose); border-color: var(--rose); color: #fff; }
-    .map-compact-search .btn-nearby:hover { background: var(--rose-m); border-color: var(--rose-m); color: #fff; }
+    .btn-nearby:hover { background: #b89a5e; border-color: #b89a5e; color: var(--deep); }
+    .map-compact-search .btn-nearby { background: var(--gold); border-color: var(--gold); color: var(--deep); }
+    .map-compact-search .btn-nearby:hover { background: #b89a5e; border-color: #b89a5e; color: var(--deep); }
     .btn-search {
-      background: var(--rose); color: #fff; border: none;
-      padding: 0.85rem 1.8rem; border-radius: 10px;
+      background: var(--rose); color: #fff; border: 1.5px solid var(--rose);
+      padding: 0.85rem 1.8rem; border-radius: 10px; min-width: 110px;
       font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
       cursor: pointer; white-space: nowrap; transition: background 0.2s;
+      display: flex; align-items: center; justify-content: center;
     }
-    .btn-search:hover { background: var(--rose-m); }
+    .btn-search:hover { background: var(--rose-m); border-color: var(--rose-m); }
     @media (max-width: 640px) {
       .search-bar { flex-wrap: wrap; border-radius: 12px; }
       .search-field { flex: 0 0 100%; border-right: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 0.75rem 1.2rem; }
