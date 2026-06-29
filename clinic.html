@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aesthetic Clinic | SkinDay</title>
+  <link rel="canonical" href="https://skinday.com/clinic/" id="meta-canonical" />
+  <meta name="description" content="" id="meta-description" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SkinDay" />
+  <meta property="og:title" content="" id="og-title" />
+  <meta property="og:description" content="" id="og-description" />
+  <meta property="og:url" content="" id="og-url" />
+  <meta property="og:image" content="" id="og-image" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="" id="tw-title" />
+  <meta name="twitter:description" content="" id="tw-description" />
+  <meta name="twitter:image" content="" id="tw-image" />
+  <link rel="icon" href="/favicon.ico" />
+
+  <style>
+    :root {
+      --deep:   #1C1714;
+      --cream:  #FAF7F2;
+      --rose:   #C8725A;
+      --gold:   #C9A96E;
+      --jade:   #2F7D6B;
+      --text:   #2C2724;
+      --muted:  #7A6E68;
+      --border: #E8E0D6;
+      --radius: 12px;
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans:  'DM Sans', system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--cream);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    .nav {
+      background: var(--deep);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-family: var(--font-serif);
+      font-size: 1.4rem;
+      color: var(--cream);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-back {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: color 0.15s;
+    }
+    .nav-back:hover { color: var(--cream); }
+
+    /* HERO PHOTO */
+    .clinic-hero {
+      width: 100%;
+      height: 240px;
+      object-fit: cover;
+      display: block;
+      background: var(--border);
+    }
+    .clinic-hero-placeholder {
+      width: 100%;
+      height: 240px;
+      background: linear-gradient(135deg, #E8E0D6 0%, #D4C8BA 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .clinic-hero-placeholder svg {
+      opacity: 0.3;
+    }
+
+    /* LAYOUT */
+    .clinic-wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* BREADCRUMB */
+    .breadcrumb {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .breadcrumb a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .breadcrumb a:hover { color: var(--rose); }
+    .breadcrumb-sep { opacity: 0.5; }
+
+    /* CLINIC NAME + LOCATION */
+    .clinic-name {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1.2;
+      color: var(--deep);
+      margin-bottom: 8px;
+    }
+    .clinic-location {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* COUNTRY PILL */
+    .country-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: 3px 10px;
+      border-radius: 99px;
+      text-transform: uppercase;
+    }
+    .country-pill.taiwan {
+      background: rgba(200, 114, 90, 0.12);
+      color: var(--rose);
+    }
+    .country-pill.hongkong {
+      background: rgba(47, 125, 107, 0.12);
+      color: var(--jade);
+    }
+
+    /* RATING ROW */
+    .rating-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .rating-stars {
+      color: #E8A030;
+      font-size: 16px;
+      letter-spacing: 1px;
+    }
+    .rating-score {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .rating-count {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    /* DIVIDER */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* INFO GRID */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 500px) {
+      .info-grid { grid-template-columns: 1fr; }
+    }
+    .info-item label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .info-item p {
+      font-size: 14px;
+      color: var(--text);
+    }
+    .info-item a {
+      color: var(--rose);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .info-item a:hover { text-decoration: underline; }
+
+    /* ACTIONS */
+    .action-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 11px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      border: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary {
+      background: var(--deep);
+      color: var(--cream);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* PHOTOS GRID */
+    .photos-section h2 {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      margin-bottom: 14px;
+      color: var(--deep);
+    }
+    .photos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 500px) {
+      .photos-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .photos-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 8px;
+      background: var(--border);
+    }
+
+    /* BACK TO DIRECTORY */
+    .back-section {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .back-section a {
+      font-size: 14px;
+      color: var(--rose);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .back-section a:hover { text-decoration: underline; }
+
+    /* NOT FOUND */
+    .not-found {
+      text-align: center;
+      padding: 80px 24px;
+    }
+    .not-found h2 {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+      color: var(--deep);
+    }
+    .not-found p { color: var(--muted); margin-bottom: 24px; }
+
+    /* LOADING */
+    .loading {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--muted);
+    }
+  </style>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">Skin<span>Day</span></a>
+  <a href="javascript:history.back()" class="nav-back">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back
+  </a>
+</nav>
+
+<div id="clinic-root">
+  <div class="loading">Loading clinic...</div>
+</div>
+
+<script>
+(function() {
+  const SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY5MTI5NjMsImV4cCI6MjAyMjQ4ODk2M30.tCFqfRDrT-aUfXcSaTBnPj2SZXQfxyCBZGhqenL_b9s';
+
+  function toSlug(name) {
+    return (name || '')
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function starsHtml(rating) {
+    if (!rating) return '';
+    const full = Math.floor(rating);
+    const half = rating - full >= 0.5 ? 1 : 0;
+    const empty = 5 - full - half;
+    return '\u2605'.repeat(full) + (half ? '\u00BD' : '') + '\u2606'.repeat(empty);
+  }
+
+  function countryLabel(country, lang) {
+    if (country === 'taiwan') return lang === 'zh' ? '\u53F0\u7063' : 'Taiwan';
+    if (country === 'hongkong') return lang === 'zh' ? '\u9999\u6E2F' : 'Hong Kong';
+    return '';
+  }
+
+  function primaryLang(country) {
+    return (country === 'taiwan' || country === 'hongkong') ? 'zh' : 'en';
+  }
+
+  function dirPath(country) {
+    if (country === 'taiwan') return '/taiwan';
+    if (country === 'hongkong') return '/hongkong';
+    return '/';
+  }
+
+  function updateMeta(clinic) {
+    const lang = primaryLang(clinic.country);
+    const slug = toSlug(clinic.name);
+    const url = 'https://skinday.com/clinic/' + slug;
+    const loc = clinic.neighbourhood || clinic.district || '';
+    const country = countryLabel(clinic.country, lang);
+    const photo = (clinic.photos && clinic.photos.length) ? clinic.photos[0] : 'https://skinday.com/og-default.jpg';
+
+    let title, desc;
+    if (lang === 'zh') {
+      title = clinic.name + ' - ' + loc + '\u91AB\u7F8E\u8A3A\u6240 | SkinDay';
+      desc = clinic.name + '\uFF0C\u4F4D\u65BC' + country + loc + '\u7684\u91AB\u7F8E\u8A3A\u6240\u3002\u5728 SkinDay \u67E5\u770B\u8A3A\u6240\u8CC7\u8A0A\u3001\u670D\u52D9\u9805\u76EE\u8207\u806F\u7D61\u65B9\u5F0F\u3002';
+    } else {
+      title = clinic.name + ' - ' + loc + ' Aesthetic Clinic | SkinDay';
+      desc = clinic.name + ' is an aesthetic clinic in ' + loc + ', ' + country + '. View services, photos and contact details on SkinDay.';
+    }
+
+    document.title = title;
+    document.documentElement.lang = lang === 'zh' ? 'zh-Hant' : 'en';
+
+    const setMeta = (id, attr, val) => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute(attr, val);
+    };
+    const canonical = document.getElementById('meta-canonical');
+    if (canonical) canonical.href = url;
+    setMeta('meta-description', 'content', desc);
+    setMeta('og-title', 'content', title);
+    setMeta('og-description', 'content', desc);
+    setMeta('og-url', 'content', url);
+    setMeta('og-image', 'content', photo);
+    setMeta('tw-title', 'content', title);
+    setMeta('tw-description', 'content', desc);
+    setMeta('tw-image', 'content', photo);
+  }
+
+  function renderClinic(clinic) {
+    updateMeta(clinic);
+
+    const lang = primaryLang(clinic.country);
+    const loc = clinic.neighbourhood || clinic.district || '';
+    const country = countryLabel(clinic.country, lang);
+    const countryClass = clinic.country === 'hongkong' ? 'hongkong' : 'taiwan';
+    const dirUrl = dirPath(clinic.country);
+    const photos = Array.isArray(clinic.photos) ? clinic.photos : [];
+
+    // Breadcrumb labels
+    const homeLbl = lang === 'zh' ? '\u9996\u9801' : 'Home';
+    const dirLbl = lang === 'zh' ? (clinic.country === 'hongkong' ? '\u9999\u6E2F\u76EE\u9304' : '\u53F0\u7063\u76EE\u9304') : (clinic.country === 'hongkong' ? 'Hong Kong Directory' : 'Taiwan Directory');
+    const backLbl = lang === 'zh' ? '\u8FD4\u56DE\u76EE\u9304' : 'Back to directory';
+
+    // Rating
+    let ratingHtml = '';
+    if (clinic.rating) {
+      ratingHtml = '<div class="rating-row">' +
+        '<span class="rating-stars">' + starsHtml(parseFloat(clinic.rating)) + '</span>' +
+        '<span class="rating-score">' + escapeHtml(String(clinic.rating)) + '</span>' +
+        (clinic.reviews ? '<span class="rating-count">(' + escapeHtml(String(clinic.reviews)) + (lang === 'zh' ? ' \u5247\u8A55\u8AD6' : ' reviews') + ')</span>' : '') +
+        '</div>';
+    }
+
+    // Hero photo or placeholder
+    let heroHtml = '';
+    if (photos.length > 0) {
+      heroHtml = '<img class="clinic-hero" src="' + escapeHtml(photos[0]) + '" alt="' + escapeHtml(clinic.name) + '" loading="eager" />';
+    } else {
+      heroHtml = '<div class="clinic-hero-placeholder"><svg width="48" height="48" fill="none" stroke="#999" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>';
+    }
+
+    // Info items
+    const infoItems = [];
+    if (loc) {
+      infoItems.push({ label: lang === 'zh' ? '\u5730\u5340' : 'Location', value: loc + ', ' + country });
+    }
+    if (clinic.phone) {
+      infoItems.push({ label: lang === 'zh' ? '\u96FB\u8A71' : 'Phone', value: '<a href="tel:' + escapeHtml(clinic.phone) + '">' + escapeHtml(clinic.phone) + '</a>' });
+    }
+    if (clinic.website) {
+      const domain = clinic.website.replace(/^https?:\/\//, '').replace(/\/$/, '');
+      infoItems.push({ label: lang === 'zh' ? '\u5B98\u7DB2' : 'Website', value: '<a href="' + escapeHtml(clinic.website) + '" target="_blank" rel="nofollow noopener">' + escapeHtml(domain) + '</a>' });
+    }
+
+    const infoGridHtml = infoItems.length
+      ? '<div class="info-grid">' + infoItems.map(i => '<div class="info-item"><label>' + i.label + '</label><p>' + i.value + '</p></div>').join('') + '</div>'
+      : '';
+
+    // Action buttons
+    const websiteBtn = clinic.website
+      ? '<a href="' + escapeHtml(clinic.website) + '" target="_blank" rel="nofollow noopener" class="btn btn-primary">' +
+        '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+        (lang === 'zh' ? '\u524D\u5F80\u5B98\u7DB2' : 'Visit Website') + '</a>'
+      : '';
+    const mapsBtn = clinic.latitude && clinic.longitude
+      ? '<a href="https://maps.google.com/?q=' + encodeURIComponent(clinic.name + ' ' + loc) + '" target="_blank" rel="noopener" class="btn btn-outline">' +
+        '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+        (lang === 'zh' ? '\u67E5\u770B\u5730\u5716' : 'View on Map') + '</a>'
+      : '';
+
+    // Additional photos
+    let photosHtml = '';
+    if (photos.length > 1) {
+      const morePhotos = photos.slice(1, 7);
+      photosHtml = '<div class="photos-section"><h2>' + (lang === 'zh' ? '\u8A3A\u6240\u7167\u7247' : 'Clinic Photos') + '</h2>' +
+        '<div class="photos-grid">' +
+        morePhotos.map(p => '<img src="' + escapeHtml(p) + '" alt="' + escapeHtml(clinic.name) + '" loading="lazy" />').join('') +
+        '</div></div>';
+    }
+
+    const html = heroHtml +
+      '<div class="clinic-wrap">' +
+        '<div class="breadcrumb">' +
+          '<a href="/">' + homeLbl + '</a>' +
+          '<span class="breadcrumb-sep">/</span>' +
+          '<a href="' + dirUrl + '">' + dirLbl + '</a>' +
+          '<span class="breadcrumb-sep">/</span>' +
+          '<span>' + escapeHtml(clinic.name) + '</span>' +
+        '</div>' +
+        '<span class="country-pill ' + countryClass + '">' + country + '</span>' +
+        '<h1 class="clinic-name">' + escapeHtml(clinic.name) + '</h1>' +
+        '<div class="clinic-location">' +
+          '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>' +
+          escapeHtml(loc) + ', ' + escapeHtml(country) +
+        '</div>' +
+        ratingHtml +
+        '<hr class="divider" />' +
+        infoGridHtml +
+        ((websiteBtn || mapsBtn) ? '<div class="action-row">' + websiteBtn + mapsBtn + '</div>' : '') +
+        photosHtml +
+        '<div class="back-section">' +
+          '<a href="' + dirUrl + '">' +
+            '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>' +
+            backLbl +
+          '</a>' +
+        '</div>' +
+      '</div>';
+
+    document.getElementById('clinic-root').innerHTML = html;
+    // Hide SSR block if present (injected server-side)
+    const ssr = document.getElementById('ssr-content');
+    if (ssr) ssr.style.display = 'none';
+  }
+
+  function renderNotFound(slug) {
+    const html = '<div class="clinic-wrap"><div class="not-found">' +
+      '<h2>Clinic not found</h2>' +
+      '<p>We could not find a clinic matching this URL.</p>' +
+      '<a href="/" class="btn btn-primary">Back to SkinDay</a>' +
+      '</div></div>';
+    document.getElementById('clinic-root').innerHTML = html;
+  }
+
+  async function init() {
+    // Extract slug from URL path: /clinic/my-clinic-name
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    const slug = decodeURIComponent(parts[parts.length - 1] || '');
+
+    if (!slug || slug === 'clinic') {
+      renderNotFound('');
+      return;
+    }
+
+    try {
+      const res = await fetch(
+        SUPABASE_URL + '/rest/v1/clinics' +
+        '?select=id,name,neighbourhood,district,country,phone,website,rating,reviews,latitude,longitude,photos' +
+        '&country=in.(taiwan,hongkong)' +
+        '&order=id',
+        {
+          headers: {
+            apikey: SUPABASE_ANON,
+            Authorization: 'Bearer ' + SUPABASE_ANON
+          }
+        }
+      );
+
+      if (!res.ok) {
+        console.error('clinic-com: fetch failed', res.status);
+        renderNotFound(slug);
+        return;
+      }
+
+      const clinics = await res.json();
+
+      function toSlugLocal(name) {
+        return (name || '')
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
+      }
+
+      const clinic = clinics.find(c => toSlugLocal(c.name) === slug);
+
+      if (!clinic) {
+        renderNotFound(slug);
+        return;
+      }
+
+      // Parse photos if stored as JSON string
+      if (clinic.photos && typeof clinic.photos === 'string') {
+        try { clinic.photos = JSON.parse(clinic.photos); } catch(e) { clinic.photos = []; }
+      }
+
+      renderClinic(clinic);
+
+    } catch (err) {
+      console.error('clinic-com: error', err);
+      renderNotFound(slug);
+    }
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>
