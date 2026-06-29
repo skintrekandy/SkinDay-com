@@ -109,19 +109,49 @@
   force  = true
 
 [[redirects]]
-  from   = "/privacy.html"
-  to     = "/privacy"
-  status = 301
-  force  = true
-
-[[redirects]]
-  from   = "/terms.html"
-  to     = "/terms"
-  status = 301
-  force  = true
-
-[[redirects]]
   from   = "/account.html"
   to     = "/account"
   status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/hk.html"
+  to     = "/hongkong"
+  status = 301
+  force  = true
+
+# ── CLINIC PROFILE PAGES (SSR) ────────────────────────────────────
+# Routes /clinic/* through render-clinic-com so Googlebot sees
+# server-rendered title, meta, structured data for TW + HK clinics.
+# force=true overrides the static clinic.html file.
+[[redirects]]
+  from   = "/clinic/*"
+  to     = "/.netlify/functions/render-clinic-com?slug=:splat"
+  status = 200
+  force  = true
+
+# ── US DIRECTORY PAGES (SSR) ──────────────────────────────────────
+# One function handles all three page depths:
+#   /us                        -> state selector
+#   /us/california             -> metro selector
+#   /us/california/los-angeles -> clinic directory
+# Order matters: more specific paths first.
+[[redirects]]
+  from   = "/us"
+  to     = "/.netlify/functions/render-us"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/us/*"
+  to     = "/.netlify/functions/render-us"
+  status = 200
+  force  = true
+
+# ── DYNAMIC SITEMAP ───────────────────────────────────────────────
+# Serves all TW + HK clinic URLs + static pages from Supabase.
+[[redirects]]
+  from   = "/sitemap.xml"
+  to     = "/.netlify/functions/sitemap-com"
+  status = 200
   force  = true
