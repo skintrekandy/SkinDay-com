@@ -531,7 +531,7 @@
     try {
       const res = await fetch(
         SUPABASE_URL + '/rest/v1/clinics' +
-        '?select=id,name,neighbourhood,district,country,phone,website,rating,reviews,latitude,longitude,photos' +
+        '?select=id,name,neighbourhood,country,phone,website,rating,reviews,latitude,longitude,photos' +
         '&country=in.(taiwan,hongkong)' +
         '&order=id',
         {
