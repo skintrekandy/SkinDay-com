@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="color-scheme" content="light" />
+  <title>SkinDay Hong Kong - 香港醫美診所搜尋 · 1,000+ 間診所</title>
+  <meta name="description" content="搵同比較全港醫美診所。收錄 1,000+ 間診所，涵蓋港島、九龍、新界各區，提供評分、相片、診所資料同療程項目。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://skinday.com/hongkong" />
+  <meta property="og:title" content="SkinDay Hong Kong - 香港醫美診所目錄 · 1,000+ 間診所" />
+  <meta property="og:description" content="比較全港醫美診所嘅評分、相片同療程項目。" />
+  <meta property="og:site_name" content="SkinDay" />
+  <link rel="canonical" href="https://skinday.com/hongkong" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream:   #FAF7F2;
+      --warm:    #F4EDE4;
+      --deep:    #16201C;
+      --deep2:   #1E2A25;
+      --rose:    #2F7D6B;
+      --rose-m:  #3B9081;
+      --rose-bg: #DCEBE5;
+      --gold:    #C9A96E;
+      --muted:   #7C8A82;
+      --dim:     #A8B5AD;
+      --border:  #E2E8E2;
+      --green:   #3D7A55;
+      --hero-border: rgba(201,169,110,0.25);
+    }
+
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body {
+      font-family: 'DM Sans', 'Noto Serif TC', sans-serif;
+      background: var(--cream);
+      color: var(--deep);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(28,23,20,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--hero-border);
+      padding: 0 5%;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem; font-weight: 400;
+      color: var(--cream); letter-spacing: 0.04em;
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--gold); }
+    .nav-ctas { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+    .nav-cta {
+      background: var(--rose); color: #fff !important;
+      padding: 0.3rem 0.75rem; border-radius: 4px;
+      font-size: 0.78rem; font-weight: 500 !important;
+      text-decoration: none !important;
+      transition: background 0.2s !important;
+      display: inline-block; white-space: nowrap;
+    }
+    .nav-cta:hover { background: var(--rose-m) !important; }
+
+    .nav-signin-btn {
+      background: transparent; border: 1px solid rgba(201,169,110,0.35);
+      color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; white-space: nowrap;
+    }
+    .nav-signin-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .lang-toggle { display:flex; align-items:center; gap:2px; margin-right:4px; }
+    .lang-toggle .lang-btn { background:none; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.82rem; color:var(--muted); padding:2px 5px; line-height:1; transition:color .15s; }
+    .lang-toggle .lang-btn:hover { color:var(--deep); }
+    .lang-toggle .lang-btn.active { color:var(--rose); font-weight:600; }
+    .lang-toggle .lang-sep { color:var(--border); font-size:0.8rem; }
+    .nav-user-btn {
+      display: flex; align-items: center; gap: 0.4rem;
+      background: transparent; border: 1px solid rgba(201,169,110,0.35);
+      border-radius: 4px; padding: 0.28rem 0.6rem;
+      cursor: pointer; color: var(--dim);
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem;
+      transition: all 0.2s; position: relative; white-space: nowrap;
+    }
+    .nav-user-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .nav-user-initial { width: 22px; height: 22px; border-radius: 50%; background: var(--gold); color: var(--deep); display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 700; flex-shrink: 0; }
+    .nav-user-avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid var(--gold); }
+    .nav-user-dropdown {
+      position: absolute; top: calc(100% + 8px); right: 0; background: var(--deep2);
+      border: 1px solid rgba(201,169,110,0.2); border-radius: 8px; min-width: 160px;
+      box-shadow: 0 8px 32px rgba(28,23,20,0.3); display: none; flex-direction: column; overflow: hidden; z-index: 500;
+    }
+    .nav-user-dropdown.open { display: flex; }
+    .nav-user-dropdown a, .nav-user-dropdown button {
+      padding: 0.65rem 1rem; font-family: "DM Sans", sans-serif; font-size: 0.82rem; color: var(--dim);
+      text-decoration: none; background: none; border: none; text-align: left; cursor: pointer;
+      transition: background 0.15s, color 0.15s; width: 100%;
+    }
+    .nav-user-dropdown a:hover, .nav-user-dropdown button:hover { background: rgba(255,255,255,0.06); color: var(--cream); }
+    .nav-user-dropdown .signout { color: #e07070; }
+    @media (max-width: 480px) {
+      .nav-country-pill { display: none; }
+      nav { padding: 0 4%; }
+    }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: var(--deep);
+      padding: 130px 5% 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 60% 40%, rgba(176,96,112,0.1) 0%, transparent 70%),
+                  radial-gradient(ellipse 40% 50% at 20% 80%, rgba(201,169,110,0.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-inner { max-width: 820px; position: relative; z-index: 1; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--gold); margin-bottom: 1.4rem;
+    }
+    .hero-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--gold); }
+    h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.6rem, 5.5vw, 4.4rem);
+      font-weight: 300; line-height: 1.1;
+      color: var(--cream); margin-bottom: 1.4rem; letter-spacing: -0.01em;
+    }
+    h1 em { font-style: italic; color: var(--gold); }
+    .hero-sub {
+      font-size: 1rem; color: var(--dim); line-height: 1.7;
+      max-width: 560px; margin-bottom: 2.4rem; font-weight: 300;
+    }
+    .hero-sub-zh {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 0.9rem; color: var(--muted); line-height: 1.8;
+      max-width: 480px; margin-top: -1.6rem; margin-bottom: 2rem;
+    }
+    .hero-stats {
+      display: flex; gap: 3rem; margin-top: 3rem;
+      padding-top: 2rem; border-top: 1px solid rgba(181,168,159,0.15);
+    }
+    .stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem; font-weight: 400; color: var(--cream); line-height: 1;
+    }
+    .stat-label { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 0.3rem; }
+    .btn-primary {
+      background: var(--rose); color: #fff; border: none;
+      padding: 0.85rem 2rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; font-weight: 500; letter-spacing: 0.02em;
+      border-radius: 4px; cursor: pointer; text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary:hover { background: var(--rose-m); transform: translateY(-1px); }
+
+    /* ─── SEARCH ─── */
+    .search-wrap { background: var(--deep); padding: 0 5% 0; position: relative; z-index: 2; }
+    .search-bar {
+      max-width: 920px; margin: 0 auto;
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 16px; padding: 8px;
+      display: flex; gap: 0; align-items: stretch;
+      box-shadow: 0 12px 48px rgba(28,23,20,0.3);
+    }
+    .search-field {
+      flex: 1; display: flex; flex-direction: column;
+      padding: 1rem 1.4rem; border-right: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s; border-radius: 10px 0 0 10px;
+    }
+    .search-field:last-of-type { border-right: none; border-radius: 0; }
+    .search-field:hover { background: var(--warm); }
+    .search-field-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem;
+    }
+    .search-field select, .search-field input {
+      border: none; background: transparent;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 500; color: var(--deep);
+      outline: none; cursor: pointer; width: 100%; padding: 0;
+      appearance: none; -webkit-appearance: none;
+    }
+    .search-field select option { color: var(--deep); background: var(--cream); }
+    .neighbourhood-wrap { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+    .region-badge {
+      display: none; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; background: var(--gold); color: var(--deep);
+      padding: 0.15rem 0.4rem; border-radius: 4px; white-space: nowrap;
+      pointer-events: none; opacity: 0; transition: opacity 0.2s;
+    }
+    .region-badge.visible { display: inline-block; opacity: 1; }
+    .search-actions {
+      display: flex; gap: 0.5rem; align-items: center; padding: 0 0.6rem 0 0.9rem;
+    }
+    .btn-nearby {
+      background: var(--gold); border: 1.5px solid var(--gold); color: var(--deep);
+      padding: 0.85rem 1.8rem; border-radius: 10px; min-width: 110px;
+      font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 0.35rem;
+    }
+    .btn-nearby:hover { background: #b89a5e; border-color: #b89a5e; color: var(--deep); }
+    .map-compact-search .btn-nearby { background: var(--gold); border-color: var(--gold); color: var(--deep); }
+    .map-compact-search .btn-nearby:hover { background: #b89a5e; border-color: #b89a5e; color: var(--deep); }
+    .btn-search {
+      background: var(--rose); color: #fff; border: 1.5px solid var(--rose);
+      padding: 0.85rem 1.8rem; border-radius: 10px; min-width: 110px;
+      font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
+      cursor: pointer; white-space: nowrap; transition: background 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-search:hover { background: var(--rose-m); border-color: var(--rose-m); }
+    @media (max-width: 640px) {
+      .search-bar { flex-wrap: wrap; border-radius: 12px; }
+      .search-field { flex: 0 0 100%; border-right: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 0.75rem 1.2rem; }
+      .search-actions { padding: 0.7rem 0.6rem; width: 100%; justify-content: flex-end; }
+      .search-wrap { padding-bottom: 1.5rem; }
+    }
+
+    /* ─── SECTION ─── */
+    .section-header { text-align: center; padding: 72px 5% 40px; }
+    .section-eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rose); margin-bottom: 0.9rem; }
+    .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; line-height: 1.2; color: var(--deep); margin-bottom: 0.8rem; }
+    .section-title em { font-style: italic; color: var(--rose); }
+    .section-desc { font-size: 0.95rem; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.65; font-weight: 300; }
+
+    /* ─── FILTER BAR ─── */
+    .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; }
+    .filter-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; margin-right: 0.25rem; }
+    .sort-select {
+      background: transparent; border: 1px solid var(--border); color: var(--deep);
+      padding: 0.4rem 1.2rem 0.4rem 0.9rem; border-radius: 20px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; outline: none; appearance: auto;
+    }
+
+    /* ─── CARDS GRID ─── */
+    .comparison-section {
+      background: var(--warm); border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border); padding-bottom: 72px; padding-top: 52px;
+    }
+    .cards-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem; padding: 0 5%; max-width: 1280px; margin: 0 auto;
+    }
+
+    /* CLINIC CARD (HK - with photo) */
+    .clinic-card {
+      background: var(--cream); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s; position: relative;
+    }
+    .clinic-card:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(28,23,20,0.1); }
+
+    /* Photo banner */
+    .card-photo-banner {
+      position: relative; height: 140px; overflow: hidden;
+      background: var(--warm);
+    }
+    .card-photo-banner img.card-cover {
+      width: 100%; height: 100%; object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+    .clinic-card:hover .card-cover { transform: scale(1.04); }
+    .card-photo-banner.no-photo {
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--warm) 0%, #EDE0D8 100%);
+    }
+    .card-photo-banner.no-photo::after {
+      content: '診所';
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2rem; font-weight: 300; color: var(--border); letter-spacing: 0.1em;
+    }
+    /* Logo badge */
+    .card-logo-badge {
+      position: absolute; bottom: 10px; left: 14px;
+      width: 36px; height: 36px; border-radius: 8px;
+      border: 2px solid var(--cream); background: #fff;
+      overflow: hidden; box-shadow: 0 2px 8px rgba(28,23,20,0.15);
+      flex-shrink: 0;
+    }
+    .card-logo-badge img { width: 100%; height: 100%; object-fit: contain; }
+    /* Save button on photo */
+    .card-corner-actions {
+      position: absolute; top: 0.7rem; right: 0.7rem;
+      display: flex; align-items: center; gap: 0.35rem;
+    }
+    .btn-save-card {
+      background: rgba(28,23,20,0.45); backdrop-filter: blur(4px);
+      border: none; border-radius: 50%; width: 30px; height: 30px;
+      cursor: pointer; color: #fff; font-size: 1rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+    .btn-save-card:hover { background: rgba(28,23,20,0.7); }
+    .btn-save-card.saved { background: rgba(176,96,112,0.8); }
+    .heart-icon { display: inline-block; width: 1em; height: 1em; position: relative; }
+    .heart-icon::before { content: '♥'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0; transition: opacity 0.2s; }
+    .heart-icon::after  { content: '♡'; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 1; transition: opacity 0.2s; }
+    .btn-save-card.saved .heart-icon::before { opacity: 1; }
+    .btn-save-card.saved .heart-icon::after  { opacity: 0; }
+
+    /* Card body */
+    .card-header {
+      padding: 1.2rem 1.4rem 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-header.has-logo { padding-top: 1.2rem; }
+    .clinic-name {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1rem; font-weight: 500; color: var(--deep);
+      line-height: 1.3; margin-bottom: 0.3rem;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .clinic-name-verified { display: flex; align-items: center; gap: 5px; }
+    .clinic-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.4rem; }
+    .rating-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.15rem; }
+    .stars { color: var(--gold); font-size: 0.8rem; letter-spacing: 0.05em; }
+    .rating-num { font-size: 0.85rem; font-weight: 600; color: var(--deep); }
+    .review-count { font-size: 0.72rem; color: var(--dim); }
+
+    /* Price block */
+    .card-price { padding: 0.9rem 1.4rem; border-bottom: 1px solid var(--border); }
+    .price-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+    .price-main { display: flex; align-items: baseline; gap: 0.3rem; }
+    .price-from { font-size: 0.7rem; color: var(--muted); font-style: italic; }
+    .price-amount { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 400; color: var(--deep); line-height: 1; }
+    .price-unit { font-size: 0.7rem; color: var(--muted); }
+    .trust-badge { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.03em; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 3px; margin-top: 4px; }
+    .trust-badge-clinic { background: rgba(61,122,85,0.1); color: var(--green); border: 1px solid rgba(61,122,85,0.2); }
+    .trust-badge-inquiry { background: rgba(201,169,110,0.1); color: #8A6830; border: 1px solid rgba(201,169,110,0.25); }
+
+    /* Visit row */
+    .card-visit-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.65rem 1.4rem; border-bottom: 1px solid var(--border);
+      gap: 0.75rem;
+    }
+    .card-visit-prompt { display: flex; flex-direction: column; }
+    .card-visit-line1 { font-size: 0.72rem; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
+    .card-visit-line2 { font-size: 0.68rem; color: var(--dim); }
+    .card-vote-btn { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.1rem 0.25rem; border-radius: 4px; transition: background 0.15s; line-height: 1; }
+    .card-vote-btn:hover { background: rgba(0,0,0,0.06); }
+    .card-vote-btn.voted { opacity: 0.6; cursor: default; pointer-events: none; }
+    .card-vote-btn.voted-on { background: rgba(0,0,0,0.06); transform: scale(1.18); }
+    .card-vote-count { font-size: 0.72rem; color: var(--muted); font-weight: 500; min-width: 0.8rem; display: inline-block; }
+
+    /* Card footer */
+    .card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.4rem;
+    }
+    .view-link {
+      font-size: 0.8rem; font-weight: 500; color: var(--rose);
+      text-decoration: none; letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 0.3rem; transition: gap 0.2s;
+    }
+    .view-link:hover { gap: 0.5rem; }
+    .btn-compare-card {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 0.35rem 0.85rem; border-radius: 4px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-compare-card:hover { border-color: var(--gold); color: var(--gold); }
+    .btn-compare-card.selected { background: var(--gold); border-color: var(--gold); color: var(--deep); font-weight: 600; }
+    .clinic-card.comparing { outline: 2px solid var(--gold); outline-offset: -2px; }
+    .clinic-card.no-price { opacity: 1; }
+
+    /* ─── LOAD MORE ─── */
+    .load-more-wrap { text-align: center; padding: 2.5rem 5% 0; }
+    .btn-outline {
+      background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 0.8rem 2.2rem; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 400; border-radius: 4px;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--deep); color: var(--deep); }
+
+    /* ─── COMPARE BAR ─── */
+    .compare-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+      background: var(--deep); border-top: 1px solid rgba(201,169,110,0.3);
+      padding: 0.9rem 5%; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.35);
+    }
+    .compare-bar.visible { transform: translateY(0); }
+    .compare-bar-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-right: 0.25rem; white-space: nowrap; }
+    .compare-slots { display: flex; gap: 0.6rem; flex: 1; min-width: 0; }
+    .compare-slot { background: rgba(255,255,255,0.06); border: 1px dashed rgba(181,168,159,0.25); border-radius: 6px; padding: 0.45rem 0.9rem; font-size: 0.8rem; color: var(--dim); display: flex; align-items: center; gap: 0.5rem; min-width: 130px; max-width: 200px; white-space: nowrap; overflow: hidden; transition: all 0.2s; }
+    .compare-slot.filled { background: rgba(201,169,110,0.1); border-color: rgba(201,169,110,0.35); color: var(--cream); }
+    .compare-slot-remove { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 0.85rem; line-height: 1; padding: 0; margin-left: auto; flex-shrink: 0; transition: color 0.2s; }
+    .compare-slot-remove:hover { color: var(--rose); }
+    .compare-slot-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+    .compare-bar-actions { display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0; }
+    .btn-compare-now { background: var(--gold); color: var(--deep); border: none; padding: 0.6rem 1.4rem; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; transition: opacity 0.2s; }
+    .btn-compare-now:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-compare-now:not(:disabled):hover { opacity: 0.88; }
+    .btn-compare-clear { background: transparent; border: none; color: var(--muted); font-size: 0.78rem; cursor: pointer; padding: 0.4rem 0.6rem; transition: color 0.2s; white-space: nowrap; }
+    .btn-compare-clear:hover { color: var(--rose); }
+
+    /* ─── SHORTLIST ─── */
+    .nav-shortlist-btn { background: transparent; border: 1px solid rgba(201,169,110,0.35); color: var(--dim); padding: 0.3rem 0.7rem; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: all 0.2s; white-space: nowrap; }
+    .nav-shortlist-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .nav-shortlist-badge { background: var(--rose); color: #fff; font-size: 0.65rem; font-weight: 700; border-radius: 10px; padding: 0.1rem 0.4rem; min-width: 18px; text-align: center; display: none; }
+    .nav-shortlist-badge.visible { display: inline-block; }
+    .shortlist-drawer-overlay { display: none; position: fixed; inset: 0; z-index: 350; background: rgba(28,23,20,0.6); backdrop-filter: blur(4px); }
+    .shortlist-drawer-overlay.open { display: block; }
+    .shortlist-drawer { position: fixed; top: 0; right: 0; bottom: 0; width: 380px; max-width: 95vw; background: var(--cream); z-index: 351; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); box-shadow: -8px 0 40px rgba(28,23,20,0.18); }
+    .shortlist-drawer-overlay.open .shortlist-drawer { transform: translateX(0); }
+    .shortlist-drawer-header { padding: 1.2rem 1.4rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .shortlist-drawer-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 400; color: var(--deep); }
+    .shortlist-drawer-title span { font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--muted); margin-left: 0.5rem; }
+    .shortlist-drawer-close { background: none; border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; padding: 0.2rem 0.4rem; transition: color 0.2s; }
+    .shortlist-drawer-close:hover { color: var(--deep); }
+    .shortlist-drawer-body { flex: 1; overflow-y: auto; padding: 1rem 1.2rem; }
+    .shortlist-empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .shortlist-empty-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+    .shortlist-empty p { font-size: 0.88rem; line-height: 1.6; }
+    .shortlist-item { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.9rem 0; border-bottom: 1px solid var(--border); }
+    .shortlist-item:last-child { border-bottom: none; }
+    .shortlist-item-logo { width: 38px; height: 38px; border-radius: 6px; background: var(--warm); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: var(--muted); overflow: hidden; }
+    .shortlist-item-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .shortlist-item-info { flex: 1; min-width: 0; }
+    .shortlist-item-name { font-size: 0.9rem; font-weight: 500; color: var(--deep); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.15rem; }
+    .shortlist-item-meta { font-size: 0.75rem; color: var(--muted); }
+    .shortlist-item-remove { background: none; border: none; color: var(--dim); font-size: 1rem; cursor: pointer; padding: 0.2rem; transition: color 0.2s; flex-shrink: 0; }
+    .shortlist-item-remove:hover { color: var(--rose); }
+    .shortlist-drawer-footer { padding: 1rem 1.2rem; border-top: 1px solid var(--border); flex-shrink: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+    .shortlist-compare-btn { width: 100%; background: var(--deep); color: var(--cream); border: none; border-radius: 6px; padding: 0.75rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+    .shortlist-compare-btn:hover { opacity: 0.85; }
+    .shortlist-clear-btn { background: none; border: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; text-align: center; padding: 0.3rem; transition: color 0.2s; }
+    .shortlist-clear-btn:hover { color: var(--rose); }
+
+    /* ─── COMPARE MODAL ─── */
+    .compare-modal-overlay { display: none; position: fixed; inset: 0; z-index: 500; background: rgba(28,23,20,0.7); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 2vh 3%; }
+    .compare-modal-overlay.open { display: flex; }
+    .compare-modal { background: var(--cream); border-radius: 16px; width: 100%; max-width: 860px; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; }
+    .compare-modal-header { padding: 1.4rem 2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .compare-modal-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--deep); }
+    .compare-modal-close { background: none; border: none; font-size: 1.3rem; color: var(--muted); cursor: pointer; padding: 0.25rem 0.5rem; transition: color 0.2s; }
+    .compare-modal-close:hover { color: var(--deep); }
+    .compare-modal-body { flex: 1; overflow-y: auto; overflow-x: auto; }
+    .compare-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .compare-table th, .compare-table td { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--border); vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: break-word; }
+    .compare-table th { width: 100px; background: var(--warm); font-size: 0.7rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border-right: 1px solid var(--border); white-space: nowrap; }
+    .compare-table td { font-size: 0.88rem; color: var(--deep); line-height: 1.5; }
+    .compare-table.cols-2 td { width: calc((100% - 100px) / 2); }
+    .compare-table.cols-3 td { width: calc((100% - 100px) / 3); }
+    .compare-col-header { background: var(--deep) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; border-bottom: 1px solid rgba(201,169,110,0.15) !important; }
+    .compare-col-header .col-name { font-family: 'Noto Serif TC', serif; font-size: 1.05rem; font-weight: 500; color: var(--cream); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.2rem; line-height: 1.3; min-height: 2.6em; }
+    .compare-col-header .col-meta { font-size: 0.75rem; color: var(--muted); }
+    .compare-price-big { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 400; color: var(--deep); line-height: 1; }
+    .compare-price-unit { font-size: 0.78rem; color: var(--muted); margin-left: 0.2rem; }
+    .compare-no-price { font-size: 0.85rem; color: var(--dim); font-style: italic; }
+    .compare-stars { color: var(--gold); font-size: 1rem; letter-spacing: 0.04em; }
+    .compare-rating-num { font-weight: 600; font-size: 0.95rem; }
+    .compare-reviews { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
+    .compare-winner { background: rgba(201,169,110,0.07); }
+    .compare-winner-tag { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; background: rgba(201,169,110,0.2); color: #9A7840; border: 1px solid rgba(201,169,110,0.35); padding: 0.15rem 0.45rem; border-radius: 3px; margin-left: 0.5rem; vertical-align: middle; }
+    .compare-modal-footer { padding: 1.2rem 2rem; background: var(--warm); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.75rem; }
+    @media (max-width: 640px) { .compare-modal-overlay { padding: 2vh 3% 2vh; align-items: flex-start; } .compare-modal { border-radius: 12px; } .compare-table th { width: 80px; font-size: 0.6rem; } .compare-price-big { font-size: 1.4rem; } }
+
+    /* ─── AUTH MODAL ─── */
+    .auth-modal-overlay { display: none; position: fixed; inset: 0; z-index: 400; background: rgba(28,23,20,0.7); backdrop-filter: blur(6px); align-items: center; justify-content: center; padding: 1rem; }
+    .auth-modal-overlay.open { display: flex; }
+    .auth-modal { background: var(--cream); border-radius: 16px; width: 100%; max-width: 420px; padding: 2.2rem 2rem 2rem; position: relative; }
+    .auth-modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.2rem; color: var(--muted); cursor: pointer; }
+    .auth-modal-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--deep); text-align: center; margin-bottom: 0.3rem; }
+    .auth-modal-logo span { color: var(--gold); }
+    .auth-modal-tagline { font-size: 0.82rem; color: var(--muted); text-align: center; margin-bottom: 1.6rem; }
+    .auth-google-btn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0.75rem; border: 1.5px solid var(--border); border-radius: 8px; background: #fff; color: var(--deep); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: border-color 0.2s; }
+    .auth-google-btn:hover { border-color: var(--muted); }
+    .auth-google-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .auth-divider { display: flex; align-items: center; gap: 0.75rem; margin: 1.2rem 0; color: var(--dim); font-size: 0.78rem; }
+    .auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .auth-input { width: 100%; padding: 0.7rem 0.9rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--deep); background: #fff; outline: none; transition: border-color 0.2s; margin-bottom: 0.75rem; box-sizing: border-box; }
+    .auth-input:focus { border-color: var(--gold); }
+    .auth-submit-btn { width: 100%; padding: 0.75rem; background: var(--deep); color: var(--cream); border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: opacity 0.2s; margin-top: 0.25rem; }
+    .auth-submit-btn:hover { opacity: 0.85; }
+    .auth-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .auth-toggle { text-align: center; margin-top: 1.1rem; font-size: 0.82rem; color: var(--muted); }
+    .auth-toggle button { background: none; border: none; color: var(--rose); font-size: 0.82rem; cursor: pointer; font-family: 'DM Sans', sans-serif; text-decoration: underline; }
+    .auth-error { font-size: 0.8rem; color: var(--rose); text-align: center; margin-top: 0.5rem; min-height: 1.2rem; }
+
+    /* ─── MISSING CLINIC MODAL ─── */
+    .missing-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(28,23,20,0.55); z-index: 200; align-items: center; justify-content: center; padding: 24px; }
+    .missing-modal-overlay.open { display: flex; }
+    .missing-modal { background: var(--warm); border-radius: 16px; padding: 36px; max-width: 480px; width: 100%; position: relative; box-shadow: 0 20px 60px rgba(28,23,20,0.2); }
+    .missing-modal-close { position: absolute; top: 14px; right: 16px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); }
+    .missing-modal h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; color: var(--deep); margin-bottom: 6px; }
+    .missing-modal p { font-size: 0.85rem; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+    .cm-form-input { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid var(--border); border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; color: var(--deep); background: #fff; outline: none; margin-bottom: 12px; }
+    .missing-modal-success { display: none; text-align: center; padding: 20px 0; }
+    .missing-modal-success .success-icon { font-size: 2rem; margin-bottom: 10px; }
+
+
+    /* ─── FOOTER ─── */
+    footer { background: var(--deep2); padding: 48px 5% 32px; border-top: 1px solid rgba(201,169,110,0.15); }
+    .footer-top { display: flex; justify-content: space-between; gap: 48px; flex-wrap: wrap; max-width: 1280px; margin: 0 auto 3rem; }
+    .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; color: var(--cream); text-decoration: none; display: block; margin-bottom: 0.5rem; }
+    .footer-brand span { color: var(--gold); }
+    .footer-tagline { font-size: 0.85rem; color: rgba(250,247,242,0.4); max-width: 200px; line-height: 1.6; font-weight: 300; }
+    .footer-links { display: flex; flex-direction: column; }
+    .footer-links h4 { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,247,242,0.35); margin-bottom: 14px; }
+    .footer-links a { font-size: 0.88rem; color: rgba(250,247,242,0.55); text-decoration: none; margin-bottom: 9px; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--gold); }
+    .footer-bottom { max-width: 1280px; margin: 0 auto; border-top: 1px solid rgba(250,247,242,0.07); padding-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.4rem; text-align: center; }
+    .footer-copy { font-size: 0.82rem; color: rgba(250,247,242,0.35); }
+    .footer-copy a { color: rgba(250,247,242,0.35); text-decoration: none; }
+    .footer-disclaimers { display: flex; flex-direction: column; gap: 0.3rem; align-items: center; }
+    .footer-disclaimer { font-size: 0.75rem; color: rgba(250,247,242,0.25); line-height: 1.5; }
+    .footer-disclaimer span.disc-num { opacity: 0.5; margin-right: 0.3rem; }
+    @media (max-width: 640px) { .footer-top { flex-direction: column; gap: 2rem; } }
+
+    /* ─── LIGHTBOX ─── */
+    .sd-lightbox { display: none; position: fixed; inset: 0; z-index: 600; background: rgba(0,0,0,0.92); align-items: center; justify-content: center; }
+    .sd-lightbox.open { display: flex; }
+    .sd-lightbox-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; z-index: 10; }
+    .sd-lightbox-img { max-width: 90vw; max-height: 85vh; object-fit: contain; border-radius: 4px; }
+    .sd-lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 2rem; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+    .sd-lightbox-nav.prev { left: 1rem; }
+    .sd-lightbox-nav.next { right: 1rem; }
+    .sd-lightbox-nav:hover { background: rgba(255,255,255,0.25); }
+    .sd-lightbox-nav:disabled { opacity: 0.2; cursor: default; }
+    .sd-lightbox-counter { position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.5); color: #fff; font-size: 0.8rem; padding: 0.25rem 0.75rem; border-radius: 20px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── VIEW TOGGLE ─── */
+    #viewToggleStrip { display: flex; }
+    .view-toggle { display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.15); border-radius: 20px; overflow: hidden; flex-shrink: 0; }
+    .view-toggle-btn { background: transparent; border: none; color: rgba(255,255,255,0.5); padding: 0.42rem 1.1rem; font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.35rem; transition: background 0.18s, color 0.18s; white-space: nowrap; }
+    .view-toggle-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .view-toggle-btn.active { background: var(--cream); color: var(--deep); }
+    .view-toggle-btn:not(.active):hover { background: rgba(255,255,255,0.1); color: var(--cream); }
+
+    /* ─── MAP SECTION ─── */
+    .map-section { display: none; }
+    .map-section.active { display: flex; flex-direction: column; }
+    html.map-view-active .search-wrap { display: none; }
+    html.map-view-active #viewToggleStrip { display: none; }
+
+    /* ─── COMPACT SEARCH ─── */
+    .map-compact-search { background: var(--deep); padding: 10px 5%; display: flex; gap: 10px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0; }
+    .map-compact-search select { flex: 1; max-width: 420px; background: rgba(255,255,255,0.09); border: 1px solid rgba(255,255,255,0.16); border-radius: 8px; padding: 0.52rem 2rem 0.52rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 500; color: var(--cream); outline: none; cursor: pointer; appearance: none; }
+    .map-back-btn { display: none; background: transparent; border: none; color: rgba(255,255,255,0.6); cursor: pointer; padding: 0.3rem; flex-shrink: 0; align-items: center; justify-content: center; transition: color 0.15s; }
+    .map-back-btn:hover { color: var(--cream); }
+    .map-compact-spacer { flex: 1; }
+    .map-compact-toggle { display: flex; gap: 0; }
+    .map-compact-toggle button { background: rgba(255,255,255,0.08); border: none; color: rgba(255,255,255,0.55); padding: 0.42rem 0.9rem; font-family: 'DM Sans', sans-serif; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; gap: 0.3rem; transition: all 0.18s; }
+    .map-compact-toggle button:first-child { border-radius: 6px 0 0 6px; }
+    .map-compact-toggle button:last-child { border-radius: 0 6px 6px 0; }
+    .map-compact-toggle button.active { background: var(--cream); color: var(--deep); }
+
+    /* ─── SPLIT ─── */
+    .map-split { display: flex; width: 100%; flex: 1; min-height: 0; }
+    .map-card-list { width: 25%; flex-shrink: 0; overflow-y: scroll; background: #fff; border-right: 1px solid var(--border); display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+    .map-card-list::-webkit-scrollbar { width: 5px; }
+    .map-card-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    .map-list-header { position: sticky; top: 0; z-index: 2; background: #fff; padding: 0.7rem 0.85rem 0.55rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .map-list-header-count { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .map-list-header-sort { background: transparent; border: 1px solid var(--border); border-radius: 6px; padding: 0.22rem 0.6rem; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; color: var(--muted); cursor: pointer; outline: none; }
+    .map-list-cards { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.65rem 0.75rem 0.75rem; flex: 1; }
+    .map-panel { flex: 1; position: relative; min-height: 0; }
+    #google-map { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    /* ─── MAP CLINIC CARD ─── */
+    .map-clinic-card { background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 0.8rem 0.9rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; flex-shrink: 0; }
+    .map-clinic-card:hover { border-color: var(--rose-m); box-shadow: 0 2px 10px rgba(28,23,20,0.08); }
+    .map-clinic-card.highlighted { border-color: var(--rose) !important; box-shadow: 0 0 0 2px rgba(176,96,112,0.18), 0 3px 14px rgba(28,23,20,0.1); background: rgba(176,96,112,0.04); position: relative; }
+    .map-clinic-card.highlighted::before { content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: 3px; border-radius: 999px; background: var(--rose); }
+    .map-card-top { display: flex; align-items: flex-start; gap: 0.55rem; margin-bottom: 0.45rem; }
+    .map-card-logo { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--cream); flex-shrink: 0; }
+    .map-card-logo-placeholder { width: 34px; height: 34px; border-radius: 6px; background: var(--warm); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); }
+    .map-card-name-block { flex: 1; min-width: 0; }
+    .map-card-name { font-family: 'Noto Serif TC', serif; font-size: 0.95rem; font-weight: 500; color: var(--deep); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .map-card-meta { font-size: 0.68rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .map-card-rating-badge { flex-shrink: 0; text-align: center; padding-left: 0.4rem; }
+    .map-card-rating-score { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; line-height: 1; color: var(--deep); }
+    .map-card-rating-star { color: var(--gold); font-size: 0.62rem; line-height: 1; margin-top: 1px; }
+    .map-card-rating-reviews { font-size: 0.58rem; color: var(--muted); margin-top: 1px; white-space: nowrap; }
+    .map-card-price { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 400; color: var(--deep); }
+    .map-card-price-unit { font-size: 0.65rem; color: var(--muted); }
+    .map-card-footer { display: flex; justify-content: flex-end; margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid var(--border); }
+    .map-card-view { font-size: 0.72rem; font-weight: 500; color: var(--rose); text-decoration: none; }
+    .map-list-status { text-align: center; padding: 2rem 1rem; font-size: 0.82rem; color: var(--muted); }
+
+    /* ─── MAP OVERLAY ─── */
+    .map-loading { position: absolute; inset: 0; background: rgba(250,247,242,0.9); display: flex; align-items: center; justify-content: center; font-size: 0.85rem; color: var(--muted); z-index: 5; transition: opacity 0.4s; }
+    .map-loading.hidden { opacity: 0; pointer-events: none; }
+    .map-result-count { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(28,23,20,0.82); backdrop-filter: blur(6px); color: #FAF7F2; border-radius: 20px; padding: 0.3rem 0.9rem; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.04em; z-index: 5; pointer-events: none; white-space: nowrap; }
+
+    /* ─── MOBILE MAP ─── */
+    @media (max-width: 768px) {
+      .map-compact-toggle { display: none; }
+      .map-compact-spacer { display: none; }
+      body.map-open .search-wrap { display: none; }
+      body.map-open #viewToggleStrip { display: none; }
+      body.map-open #mapSection { position: fixed; inset: 0; z-index: 100; height: 100svh !important; overflow: hidden; }
+      body.map-open { overflow: hidden; }
+      .map-section.active { height: 100%; }
+      .map-split { flex-direction: column; }
+      .map-card-list { display: none; }
+      .map-panel { flex: 1; min-height: 0; position: relative; }
+      .map-back-btn { display: flex; }
+      .map-carousel { position: absolute; bottom: 0; left: 0; right: 0; z-index: 10; padding-bottom: env(safe-area-inset-bottom, 8px); }
+      .map-carousel-count { text-align: center; font-size: 0.7rem; color: #fff; background: rgba(28,23,20,0.6); backdrop-filter: blur(4px); display: inline-block; padding: 0.2rem 0.75rem; border-radius: 20px; margin: 0 auto 6px; position: relative; left: 50%; transform: translateX(-50%); }
+      .map-carousel-track { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 0 16px 16px; }
+      .map-carousel-track::-webkit-scrollbar { display: none; }
+      .map-carousel-card { flex: 0 0 80vw; max-width: 320px; scroll-snap-align: start; background: #fff; border-radius: 12px; padding: 0.9rem 1rem; box-shadow: 0 4px 20px rgba(0,0,0,0.2); cursor: pointer; border: 1.5px solid transparent; transition: border-color 0.15s; flex-shrink: 0; scroll-snap-stop: always; }
+      .map-carousel-card.highlighted { border-color: var(--rose); border-width: 2px; }
+    }
+    @media (min-width: 769px) {
+      .map-carousel { display: none !important; }
+      .map-section.active { height: calc(100vh - 130px); max-height: 860px; min-height: 520px; }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc&loading=async" defer></script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Skin<span>Day</span></a>
+  <div class="nav-ctas">
+    <div class="lang-toggle" id="langToggle">
+      <button class="lang-btn" onclick="setLang('en')">EN</button>
+      <span class="lang-sep">·</span>
+      <button class="lang-btn active" onclick="setLang('zh')">繁</button>
+    </div>
+    <button class="nav-shortlist-btn" id="navShortlistBtn" onclick="openShortlistDrawer()">
+      ♡ <span id="navShortlistBadge" class="nav-shortlist-badge">0</span>
+    </button>
+    <button class="nav-signin-btn" id="navSignInBtn" onclick="openAuthModal()" data-en="Sign in" data-zh="登入">登入</button>
+    <div style="position:relative;display:none;" id="navUserMenu">
+      <button class="nav-user-btn" id="navUserBtn" onclick="toggleUserDropdown()">
+        <span id="navUserInitial" class="nav-user-initial">?</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
+      </button>
+      <div class="nav-user-dropdown" id="navUserDropdown">
+        <a href="/account" data-en="My account" data-zh="我的帳戶">我的帳戶</a>
+        <button class="signout" onclick="handleSignOut()" data-en="Sign out" data-zh="登出">登出</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow" data-en="SkinDay Hong Kong · Clinic Directory" data-zh="SkinDay Hong Kong · 香港醫美診所搜尋">SkinDay Hong Kong · 香港醫美診所搜尋</div>
+    <h1 data-en="Compare aesthetic clinics, <br><em>choose with confidence.</em>" data-zh="比較醫美診所，<br><em>揀得更安心。</em>">比較醫美診所，<br><em>揀得更安心。</em></h1>
+    <p class="hero-sub" data-en="Ratings, photos, clinic details and treatments, so you can see Hong Kong's aesthetic clinics clearly." data-zh="評分、相片、診所資料同療程項目，幫你快速睇清全港醫美診所。">評分、相片、診所資料同療程項目，幫你快速睇清全港醫美診所。</p>
+    <p class="hero-sub-zh" data-en="From Central and Tsim Sha Tsui to Mong Kok and Causeway Bay, we bring together public ratings, photos and clinic information so you can compare with clarity." data-zh="由中環、尖沙咀到旺角、銅鑼灣，我哋整理公開評分、相片同診所資料，等你比較得更清楚。">由中環、尖沙咀到旺角、銅鑼灣，我哋整理公開評分、相片同診所資料，等你比較得更清楚。</p>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num" id="heroClinicCount">1,089+</div>
+        <div class="stat-label" data-en="Clinics" data-zh="診所">診所</div>
+      </div>
+      <div>
+        <div class="stat-num">18</div>
+        <div class="stat-label" data-en="Districts" data-zh="地區">地區</div>
+      </div>
+      <div>
+        <div class="stat-num">4.5★</div>
+        <div class="stat-label" data-en="Avg. rating" data-zh="平均評分">平均評分</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEARCH -->
+<div class="search-wrap">
+  <div class="search-bar">
+    <div class="search-field">
+      <div class="search-field-label" data-en="Location" data-zh="地區 · Location">地區 · Location</div>
+      <div class="neighbourhood-wrap">
+        <select id="searchNeighbourhood" onchange="applySearch()">
+          <option value="all" data-en="All Hong Kong" data-zh="全香港 · All Hong Kong">全香港 · All Hong Kong</option>
+          <optgroup label="── 港島 Hong Kong Island ──────" data-en-label="── HK Island ──" data-zh-label="── 港島 Hong Kong Island ──────">
+            <option value="hk-central" data-en="Central &amp; Western" data-zh="中西區 Central &amp; Western">中西區 Central &amp; Western</option>
+            <option value="hk-wanchai" data-en="Wan Chai" data-zh="灣仔 Wan Chai">灣仔 Wan Chai</option>
+            <option value="hk-causeway-bay" data-en="Causeway Bay" data-zh="銅鑼灣 Causeway Bay">銅鑼灣 Causeway Bay</option>
+            <option value="hk-eastern" data-en="Eastern" data-zh="港島東 Eastern">港島東 Eastern</option>
+            <option value="hk-southern" data-en="Southern" data-zh="港島南 Southern">港島南 Southern</option>
+          </optgroup>
+          <optgroup label="── 九龍 Kowloon ──────────────" data-en-label="── Kowloon ──" data-zh-label="── 九龍 Kowloon ──────────────">
+            <option value="kowloon-tsimshatsui" data-en="Tsim Sha Tsui" data-zh="尖沙咀 Tsim Sha Tsui">尖沙咀 Tsim Sha Tsui</option>
+            <option value="kowloon-mongkok" data-en="Mong Kok" data-zh="旺角 Mong Kok">旺角 Mong Kok</option>
+            <option value="kowloon-jordan" data-en="Jordan / Yau Ma Tei" data-zh="佐敦 / 油麻地 Jordan / Yau Ma Tei">佐敦 / 油麻地 Jordan / Yau Ma Tei</option>
+            <option value="kowloon-shamshuipo" data-en="Sham Shui Po" data-zh="深水埗 Sham Shui Po">深水埗 Sham Shui Po</option>
+            <option value="kowloon-kowlooncity" data-en="Kowloon City" data-zh="九龍城 Kowloon City">九龍城 Kowloon City</option>
+            <option value="kowloon-wongtaisin" data-en="Wong Tai Sin" data-zh="黃大仙 Wong Tai Sin">黃大仙 Wong Tai Sin</option>
+            <option value="kowloon-kwuntong" data-en="Kwun Tong" data-zh="觀塘 Kwun Tong">觀塘 Kwun Tong</option>
+          </optgroup>
+          <optgroup label="── 新界 New Territories ─────────" data-en-label="── New Territories ──" data-zh-label="── 新界 New Territories ─────────">
+            <option value="nt-sha-tin" data-en="Sha Tin" data-zh="沙田 Sha Tin">沙田 Sha Tin</option>
+            <option value="nt-tsuen-wan" data-en="Tsuen Wan" data-zh="荃灣 Tsuen Wan">荃灣 Tsuen Wan</option>
+            <option value="nt-kwai-tsing" data-en="Kwai Tsing" data-zh="葵青 Kwai Tsing">葵青 Kwai Tsing</option>
+            <option value="nt-tuen-mun" data-en="Tuen Mun" data-zh="屯門 Tuen Mun">屯門 Tuen Mun</option>
+            <option value="nt-yuen-long" data-en="Yuen Long" data-zh="元朗 Yuen Long">元朗 Yuen Long</option>
+            <option value="nt-tai-po" data-en="Tai Po" data-zh="大埔 Tai Po">大埔 Tai Po</option>
+            <option value="nt-north" data-en="North" data-zh="北區 North">北區 North</option>
+            <option value="nt-sai-kung" data-en="Sai Kung / TKO" data-zh="將軍澳 / 西貢 Sai Kung / TKO">將軍澳 / 西貢 Sai Kung / TKO</option>
+            <option value="nt-islands" data-en="Islands" data-zh="離島 Islands">離島 Islands</option>
+          </optgroup>
+        </select>
+        <span class="region-badge" id="regionBadge"></span>
+      </div>
+    </div>
+    <div class="search-field">
+      <div class="search-field-label" data-en="Clinic Name" data-zh="診所名稱 · Clinic Name">診所名稱 · Clinic Name</div>
+      <input type="text" id="searchClinicName" placeholder="搜尋診所名稱..." data-en="Search clinic name..." data-zh="搜尋診所名稱..." onkeydown="if(event.key==='Enter')applySearch()" />
+    </div>
+    <div class="search-actions">
+      <button class="btn-nearby" onclick="useNearMe()" data-en="📍 Nearby" data-zh="📍 附近診所">📍 附近診所</button>
+      <button class="btn-search" onclick="applySearch()" data-en="Search" data-zh="搜尋">搜尋</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW TOGGLE STRIP -->
+<div id="viewToggleStrip" style="background:var(--deep);padding:12px 5%;justify-content:center;align-items:center;">
+  <div class="view-toggle" id="viewToggle">
+    <button class="view-toggle-btn active" id="gridToggleBtn" onclick="switchView('grid')" title="Grid view">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      <span data-en="List" data-zh="列表">列表</span>
+    </button>
+    <button class="view-toggle-btn" id="mapToggleBtn" onclick="switchView('map')" title="Map view">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <span data-en="Map" data-zh="地圖">地圖</span>
+    </button>
+  </div>
+</div>
+
+<!-- DIRECTORY SECTION -->
+<section class="comparison-section" id="prices">
+  <div class="section-header">
+    <div class="section-eyebrow" data-en="Hong Kong Clinic Directory" data-zh="全港醫美診所搜尋">全港醫美診所搜尋</div>
+    <h2 class="section-title" data-en="Ratings, photos, details. <br><em>Clear at a glance.</em>" data-zh="評分、相片、資料。<br><em>一眼睇清。</em>">評分、相片、資料。<br><em>一眼睇清。</em></h2>
+    <p class="section-desc" data-en="We bring together ratings, photos and clinic details so you can see beyond the reviews. Clinics without listed prices are kept too, giving you a fuller picture of the market." data-zh="我哋整理評分、相片同診所資料，幫你睇到評論以外嘅細節。未有價格嘅診所都會保留，方便你掌握更完整嘅市場概況。">我哋整理評分、相片同診所資料，幫你睇到評論以外嘅細節。未有價格嘅診所都會保留，方便你掌握更完整嘅市場概況。</p>
+  </div>
+
+  <div class="filter-wrap">
+    <span class="filter-label" data-en="Sort" data-zh="排序">排序</span>
+    <select class="sort-select" onchange="sortCards(this.value)" id="mainSortSelect">
+      <option value="rating" data-en="Highest rated" data-zh="最高評分">最高評分</option>
+      <option value="reviews" selected data-en="Most reviewed" data-zh="最多評論">最多評論</option>
+      <option value="price-high" data-en="Price: high to low" data-zh="價格：高至低">價格：高至低</option>
+      <option value="price-low" data-en="Price: low to high" data-zh="價格：低至高">價格：低至高</option>
+      <option value="nearest" data-en="Nearest" data-zh="距離最近">距離最近</option>
+    </select>
+  </div>
+
+  <div class="cards-grid" id="cardsGrid">
+  </div>
+
+  <div class="load-more-wrap">
+    <button class="btn-outline" id="loadMoreBtn" onclick="loadMore()" style="display:none" data-en="Show more clinics" data-zh="睇更多診所">睇更多診所</button>
+    <p style="margin-top:1.5rem;font-size:0.85rem;color:var(--muted);text-align:center;">
+      <span data-en="Can't find the clinic you're looking for?" data-zh="搵唔到想睇嘅診所？">搵唔到想睇嘅診所？</span>
+      <a href="#" onclick="event.preventDefault();openMissingClinicModal()" style="color:var(--rose);text-decoration:none;border-bottom:1px solid var(--rose-bg);" data-en="Tell us →" data-zh="話我哋知 →">話我哋知 →</a>
+    </p>
+  </div>
+</section>
+
+<!-- MAP VIEW SECTION -->
+<section class="map-section" id="mapSection" style="padding:0;">
+  <div class="map-compact-search" id="mapCompactSearch">
+    <button class="map-back-btn" id="mapBackBtn" onclick="switchView('grid')" title="Back to grid">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <select id="mapCompactSel" onchange="onCompactSearch()">
+      <option value="all" data-en="All Hong Kong" data-zh="全香港 · All Hong Kong">全香港 · All Hong Kong</option>
+      <optgroup label="── 港島 ──" data-en-label="── HK Island ──" data-zh-label="── 港島 ──">
+        <option value="hk-central" data-en="Central & Western" data-zh="中西區">中西區</option>
+        <option value="hk-wanchai" data-en="Wan Chai" data-zh="灣仔">灣仔</option>
+        <option value="hk-causeway-bay" data-en="Causeway Bay" data-zh="銅鑼灣">銅鑼灣</option>
+        <option value="hk-eastern" data-en="Eastern" data-zh="港島東">港島東</option>
+        <option value="hk-southern" data-en="Southern" data-zh="港島南">港島南</option>
+      </optgroup>
+      <optgroup label="── 九龍 ──" data-en-label="── Kowloon ──" data-zh-label="── 九龍 ──">
+        <option value="kowloon-tsimshatsui" data-en="Tsim Sha Tsui" data-zh="尖沙咀">尖沙咀</option>
+        <option value="kowloon-mongkok" data-en="Mong Kok" data-zh="旺角">旺角</option>
+        <option value="kowloon-jordan" data-en="Jordan / Yau Ma Tei" data-zh="佐敦 / 油麻地">佐敦 / 油麻地</option>
+        <option value="kowloon-shamshuipo" data-en="Sham Shui Po" data-zh="深水埗">深水埗</option>
+        <option value="kowloon-kowlooncity" data-en="Kowloon City" data-zh="九龍城">九龍城</option>
+        <option value="kowloon-wongtaisin" data-en="Wong Tai Sin" data-zh="黃大仙">黃大仙</option>
+        <option value="kowloon-kwuntong" data-en="Kwun Tong" data-zh="觀塘">觀塘</option>
+      </optgroup>
+      <optgroup label="── 新界 ──" data-en-label="── New Territories ──" data-zh-label="── 新界 ──">
+        <option value="nt-sha-tin" data-en="Sha Tin" data-zh="沙田">沙田</option>
+        <option value="nt-tsuen-wan" data-en="Tsuen Wan" data-zh="荃灣">荃灣</option>
+        <option value="nt-kwai-tsing" data-en="Kwai Tsing" data-zh="葵青">葵青</option>
+        <option value="nt-tuen-mun" data-en="Tuen Mun" data-zh="屯門">屯門</option>
+        <option value="nt-yuen-long" data-en="Yuen Long" data-zh="元朗">元朗</option>
+        <option value="nt-tai-po" data-en="Tai Po" data-zh="大埔">大埔</option>
+        <option value="nt-north" data-en="North" data-zh="北區">北區</option>
+        <option value="nt-sai-kung" data-en="Sai Kung / TKO" data-zh="將軍澳 / 西貢">將軍澳 / 西貢</option>
+        <option value="nt-islands" data-en="Islands" data-zh="離島">離島</option>
+      </optgroup>
+    </select>
+    <button class="btn-nearby" onclick="useNearMe()" data-en="📍 Nearby" data-zh="📍 附近診所">📍 附近診所</button>
+    <div class="map-compact-spacer"></div>
+    <div class="map-compact-toggle" id="mapCompactToggle">
+      <button id="mapCompactGridBtn" onclick="switchView('grid')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span data-en="List" data-zh="列表">列表</span>
+      </button>
+      <button id="mapCompactMapBtn" class="active" onclick="switchView('map')">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+        <span data-en="Map" data-zh="地圖">地圖</span>
+      </button>
+    </div>
+  </div>
+  <div class="map-split" id="mapSplit">
+    <div class="map-card-list" id="mapCardList">
+      <div class="map-list-header" id="mapListHeader">
+        <span class="map-list-header-count" id="mapListCount"></span>
+        <select class="map-list-header-sort" onchange="onMapSort(this.value)">
+          <option value="rating">最高評分</option>
+          <option value="reviews">最多評論</option>
+          <option value="price-low">價格：低至高</option>
+          <option value="price-high">價格：高至低</option>
+        </select>
+      </div>
+      <div class="map-list-cards" id="mapListCards"></div>
+    </div>
+    <div class="map-panel" id="mapPanel">
+      <div id="google-map"></div>
+      <div class="map-loading" id="mapLoading" data-en="Loading map…" data-zh="地圖載入中…">地圖載入中…</div>
+      <div class="map-result-count" id="mapResultCount" style="display:none;"></div>
+    </div>
+    <div class="map-carousel" id="mapCarousel">
+      <div class="map-carousel-count" id="mapCarouselCount"></div>
+      <div class="map-carousel-track" id="mapCarouselTrack"></div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <a href="https://skinday.com" class="footer-brand">Skin<span>Day</span></a>
+      <div class="footer-tagline" data-en="Find the clinic that's genuinely right for you, not just the best known." data-zh="搵到真正啱你嘅診所，而唔只係最出名嗰間。">搵到真正啱你嘅診所，而唔只係最出名嗰間。</div>
+    </div>
+    <div class="footer-links">
+      <h4 data-en="Explore" data-zh="探索">探索</h4>
+      <a href="https://skinday.com">SkinDay Global</a>
+    </div>
+    <div class="footer-links">
+      <h4 data-en="Clinic Tools" data-zh="診所工具">診所工具</h4>
+      <a href="https://skinday.com/visualize" style="color:var(--gold);">Visualize</a>
+      <a href="https://skinday.com/studio" style="color:var(--gold);">Studio</a>
+    </div>
+    <div class="footer-links">
+      <h4 data-en="Company" data-zh="公司">公司</h4>
+      <a href="https://skinday.com/about" data-en="About" data-zh="關於我們">關於我們</a>
+      <a href="https://skinday.com/contact" data-en="Contact" data-zh="聯絡我們">聯絡我們</a>
+      <a href="https://skinday.com/privacy" data-en="Privacy" data-zh="私隱政策">私隱政策</a>
+      <a href="https://skinday.com/terms" data-en="Terms" data-zh="服務條款">服務條款</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy"><span data-en="© 2026 SkinDay. All rights reserved. · " data-zh="© 2026 SkinDay. 版權所有。· ">© 2026 SkinDay. 版權所有。· </span><a href="https://skinday.com/privacy" style="color:var(--muted);text-decoration:none;" data-en="Privacy" data-zh="私隱政策">私隱政策</a> · <a href="https://skinday.com/terms" style="color:var(--muted);text-decoration:none;">服務條款</a></div>
+    <div class="footer-disclaimers">
+      <div class="footer-disclaimer"><span class="disc-num">1.</span><span data-en="Clinic ratings and information come from public Google Maps data and are for reference only. Please confirm directly with the clinic before booking." data-zh="診所評分同資料來自 Google Maps 公開資料，只供參考。預約前請直接同診所確認。">診所評分同資料來自 Google Maps 公開資料，只供參考。預約前請直接同診所確認。</span></div>
+      <div class="footer-disclaimer"><span class="disc-num">2.</span><span data-en="Clinic information shown here does not constitute medical advice. Please consult a qualified doctor before any treatment." data-zh="本平台顯示嘅診所資料不構成醫療建議。接受療程前，請先諮詢合資格醫生。">本平台顯示嘅診所資料不構成醫療建議。接受療程前，請先諮詢合資格醫生。</span></div>
+    </div>
+  </div>
+</footer>
+
+<!-- COMPARE BAR -->
+<div class="compare-bar" id="compareBar">
+  <span class="compare-bar-label" data-en="Compare" data-zh="比較">比較</span>
+  <div class="compare-slots" id="compareSlots">
+    <div class="compare-slot" id="compareSlot0"><span class="compare-slot-name" data-en="Select a clinic" data-zh="揀選診所">揀選診所</span></div>
+    <div class="compare-slot" id="compareSlot1"><span class="compare-slot-name" data-en="Select a clinic" data-zh="揀選診所">揀選診所</span></div>
+    <div class="compare-slot" id="compareSlot2"><span class="compare-slot-name" data-en="Select a clinic" data-zh="揀選診所">揀選診所</span></div>
+  </div>
+  <div class="compare-bar-actions">
+    <button class="btn-compare-now" id="btnCompareNow" onclick="openCompareModal()" disabled data-en="Compare now" data-zh="開始比較">開始比較</button>
+    <button class="btn-compare-clear" onclick="clearCompare()" data-en="Clear" data-zh="清除">清除</button>
+  </div>
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-overlay" id="compareModalOverlay">
+  <div class="compare-modal">
+    <div class="compare-modal-header">
+      <h3 data-en="Compare clinics" data-zh="比較診所">比較診所</h3>
+      <button class="compare-modal-close" onclick="closeCompareModal()">✕</button>
+    </div>
+    <div class="compare-modal-body">
+      <table class="compare-table" id="compareTable"></table>
+    </div>
+    <div class="compare-modal-footer">
+      <button class="btn-outline" onclick="closeCompareModal()" data-en="Close" data-zh="關閉">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHORTLIST DRAWER -->
+<div class="shortlist-drawer-overlay" id="shortlistDrawerOverlay" onclick="closeShortlistDrawer(event)">
+  <div class="shortlist-drawer" id="shortlistDrawer">
+    <div class="shortlist-drawer-header">
+      <div class="shortlist-drawer-title"><span data-en="My saved" data-zh="我的收藏">我的收藏</span> <span id="shortlistCount">0 間診所</span></div>
+      <button class="shortlist-drawer-close" onclick="closeShortlistDrawer()">✕</button>
+    </div>
+    <div class="shortlist-drawer-body" id="shortlistDrawerBody">
+      <div class="shortlist-empty">
+        <div class="shortlist-empty-icon">♡</div>
+        <p data-en="No saved clinics yet.<br>Tap the heart on any clinic card to add it." data-zh="你仲未收藏任何診所。<br>點擊診所卡片上嘅愛心，就可以加入收藏。">你仲未收藏任何診所。<br>點擊診所卡片上嘅愛心，就可以加入收藏。</p>
+      </div>
+    </div>
+    <div class="shortlist-drawer-footer" id="shortlistDrawerFooter" style="display:none;">
+      <button class="shortlist-compare-btn" id="shortlistCompareBtn" onclick="compareFromShortlist()" data-en="Compare saved clinics" data-zh="比較已收藏診所">比較已收藏診所</button>
+      <button class="shortlist-clear-btn" onclick="clearShortlist()" data-en="Clear saved" data-zh="清除收藏">清除收藏</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="auth-modal-overlay" id="authModalOverlay">
+  <div class="auth-modal">
+    <button class="auth-modal-close" onclick="closeAuthModal()">✕</button>
+    <div class="auth-modal-logo">Skin<span>Day</span></div>
+    <div class="auth-modal-tagline" data-en="Save clinics and build your comparison list." data-zh="收藏診所，建立你嘅比較清單。">收藏診所，建立你嘅比較清單。</div>
+    <button class="auth-google-btn" onclick="handleGoogleSignIn()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      <span data-en="Continue with Google" data-zh="使用 Google 繼續">使用 Google 繼續</span>
+    </button>
+    <div class="auth-divider" data-en="or" data-zh="或">或</div>
+    <div id="authEmailForm">
+      <input class="auth-input" type="email" id="authEmail" placeholder="電郵" data-en="Email" data-zh="電郵" autocomplete="email" />
+      <input class="auth-input" type="password" id="authPassword" placeholder="密碼" data-en="Password" data-zh="密碼" autocomplete="current-password" />
+      <button class="auth-submit-btn" id="authSubmitBtn" onclick="handleEmailAuth()" data-en="Sign in" data-zh="登入">登入</button>
+      <div class="auth-error" id="authError"></div>
+      <div class="auth-toggle">
+        <span id="authToggleText" data-en="No account yet?" data-zh="仲未有帳戶？">仲未有帳戶？</span>
+        <button onclick="toggleAuthMode()" data-en="Register" data-zh="註冊">註冊</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MISSING CLINIC MODAL -->
+<div class="missing-modal-overlay" id="missingClinicModal">
+  <div class="missing-modal">
+    <button class="missing-modal-close" onclick="closeMissingClinicModal()">✕</button>
+    <div id="missing-modal-form">
+      <h3 data-en="Add a missing clinic" data-zh="新增未收錄診所">新增未收錄診所</h3>
+      <p data-en="Can't find your clinic? Send us the details and we'll add it within 2 business days." data-zh="搵唔到你嘅診所？填寫資料，我哋會喺 2 個工作天內新增。">搵唔到你嘅診所？填寫資料，我哋會喺 2 個工作天內新增。</p>
+      <input class="cm-form-input" type="text" id="missing-clinic-name" placeholder="診所名稱" data-en="Clinic name" data-zh="診所名稱" required />
+      <input class="cm-form-input" type="email" id="missing-clinic-email" placeholder="電郵" data-en="Email" data-zh="電郵" required />
+      <input class="cm-form-input" type="text" id="missing-clinic-hood" placeholder="地區（例如：中環、尖沙咀）" data-en="District (e.g. Central, Tsim Sha Tsui)" data-zh="地區（例如：中環、尖沙咀）" />
+      <button class="btn-primary" onclick="submitMissingClinic()" id="missing-submit-btn" style="width:100%;margin-top:4px;" data-en="Submit →" data-zh="提交 →">提交 →</button>
+    </div>
+    <div class="missing-modal-success" id="missing-modal-success">
+      <div class="success-icon">✓</div>
+      <p data-en="Thank you for letting us know.<br>We'll confirm with you within a few days." data-zh="多謝你嘅回報。<br>我哋會喺幾日內同你確認。">多謝你嘅回報。<br>我哋會喺幾日內同你確認。</p>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="sd-lightbox" id="sdLightbox" role="dialog" aria-modal="true" aria-label="Photo viewer">
+  <button class="sd-lightbox-close" id="sdLightboxClose">✕</button>
+  <button class="sd-lightbox-nav prev" id="sdLightboxPrev">‹</button>
+  <img class="sd-lightbox-img" id="sdLightboxImg" src="" alt="" draggable="false" />
+  <button class="sd-lightbox-nav next" id="sdLightboxNext">›</button>
+  <div class="sd-lightbox-counter" id="sdLightboxCounter"></div>
+</div>
+
+<script>
+// ─── CONSTANTS ────────────────────────────────────────────────
+const SB_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+const COUNTRY = 'hongkong';
+const PAGE_SIZE = 24;
+
+let currentFilter = 'all';
+let currentNameQuery = '';
+let currentSort = 'reviews';
+let currentPage = 0;
+let currentTotal = 0;
+let currentPageClinics = [];
+let clinicsIndex = [];
+let compareList = [];
+let isLoading = false;
+let userLocation = null;
+
+// ─── i18n LANGUAGE LAYER ──────────────────────────────────────
+// HK Chinese default; English toggle; browser detection; remembered.
+function detectLang() {
+  try { var s = localStorage.getItem('sd-lang'); if (s === 'zh' || s === 'en') return s; } catch (e) {}
+  try {
+    var n = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
+    if (n.indexOf('zh') === 0) return 'zh';   // zh-HK, zh-TW, zh -> Chinese
+    if (n.indexOf('en') === 0) return 'en';   // en-* -> English
+  } catch (e) {}
+  return 'zh';  // default for Hong Kong market: Traditional Chinese
+}
+let LANG = detectLang();
+
+const T = {
+  loading: { zh: '載入中…', en: 'Loading…' },
+  load_more_loading: { zh: '載入中…', en: 'Loading…' },
+  no_match: { zh: '搵唔到符合條件嘅診所。', en: 'No clinics match your filters.' },
+  load_failed: { zh: '載入失敗，請重新整理後再試。', en: 'Could not load. Please refresh and try again.' },
+  load_failed_short: { zh: '載入失敗', en: 'Load failed' },
+  no_clinics: { zh: '搵唔到診所。', en: 'No clinics found.' },
+  geo_unsupported: { zh: '你嘅瀏覽器唔支援定位功能。', en: 'Your browser does not support location.' },
+  geo_getting: { zh: '正在取得你嘅位置…', en: 'Getting your location…' },
+  geo_failed: { zh: '未能取得你嘅位置，請確認已開啟定位權限。', en: 'Could not get your location. Please check location permissions.' },
+  nearby_locating: { zh: '📍 定位中…', en: '📍 Locating…' },
+  nearby: { zh: '📍 附近診所', en: '📍 Nearby' },
+  compare_max: { zh: '最多可比較 3 間診所。', en: 'You can compare up to 3 clinics.' },
+  pick_clinic: { zh: '揀選診所', en: 'Select a clinic' },
+  cmp_added: { zh: '✓ 已加入', en: '✓ Added' },
+  cmp_add: { zh: '+ 比較', en: '+ Compare' },
+  th_rating: { zh: '評分', en: 'Rating' },
+  th_price: { zh: 'HKD 價格', en: 'Price (HKD)' },
+  th_location: { zh: '地區', en: 'Location' },
+  th_phone: { zh: '電話', en: 'Phone' },
+  th_website: { zh: '網站', en: 'Website' },
+  no_price: { zh: '未提供', en: 'Not listed' },
+  visit_website: { zh: '前往網站 →', en: 'Visit website →' },
+  reviews_paren: { zh: '則評論', en: 'reviews' },
+  unit: { zh: '單位', en: 'unit' },
+  plan_route: { zh: '📍 開啟路線', en: '📍 Directions' },
+  report_error: { zh: '回報資料錯誤', en: 'Report an error' },
+  report_received: { zh: '已收到回報，多謝你', en: 'Report received, thank you' },
+  already_voted: { zh: '你已經為呢間診所投票。', en: 'You have already voted for this clinic.' },
+  fill_name_email: { zh: '請填寫診所名稱同電郵。', en: 'Please enter the clinic name and email.' },
+  submitting: { zh: '提交中…', en: 'Submitting…' },
+  user_fallback: { zh: '用戶', en: 'User' },
+  enter_email_pw: { zh: '請輸入電郵同密碼。', en: 'Please enter your email and password.' },
+  signin_loading: { zh: '登入中…', en: 'Signing in…' },
+  signup_loading: { zh: '建立帳戶中…', en: 'Creating account…' },
+  signin: { zh: '登入', en: 'Sign in' },
+  signup: { zh: '建立帳戶', en: 'Create account' },
+  account_created: { zh: '帳戶已建立。請檢查你嘅電郵。', en: 'Account created. Please check your email.' },
+  clinics_count: { zh: '間診所', en: 'clinics' },
+  shortlist_empty: { zh: '你仲未收藏任何診所。<br>點擊診所卡片上嘅愛心，就可以加入收藏。', en: 'No saved clinics yet.<br>Tap the heart on any clinic card to add it.' },
+  clinics_not_loaded: { zh: '間診所資料尚未載入。', en: 'clinics not yet loaded.' },
+  area_empty_map: { zh: '呢個區域暫時無診所，請縮細地圖範圍。', en: 'No clinics in this area. Try zooming out.' },
+  area_empty_short: { zh: '呢個區域暫時無診所', en: 'No clinics in this area' },
+  in_view: { zh: '間喺視野內', en: 'in view' },
+  reviews_unit: { zh: '則', en: 'reviews' },
+  your_location: { zh: '你嘅位置', en: 'Your location' },
+  view_data: { zh: '睇資料 →', en: 'View details →' },
+  save: { zh: '收藏', en: 'Save' },
+  inquiry_confirm: { zh: '查詢確認', en: 'Inquiry confirmed' },
+  price_label_botox: { zh: 'Botox 肉毒 · 每單位', en: 'Botox · per unit' },
+  google_reviews: { zh: '則 Google 評論', en: 'Google reviews' },
+  visit_line1: { zh: '去過呢間？', en: 'Been here?' },
+  visit_line2: { zh: '會唔會再去？', en: 'Would you go back?' },
+  browser_open_title: { zh: '請用瀏覽器開啟', en: 'Open in your browser' },
+  browser_open_body: { zh: 'Google 登入需要喺瀏覽器進行。請點右上角選單，選擇「在瀏覽器中開啟」。', en: 'Google sign-in needs to run in a browser. Tap the menu in the top-right and choose "Open in browser".' },
+  close: { zh: '關閉', en: 'Close' },
+  route_btn: { zh: '📍 開啟路線', en: '📍 Directions' },
+  call_btn: { zh: '📞 致電', en: '📞 Call' },
+  website_btn: { zh: '🌐 網站', en: '🌐 Website' },
+  auth_no_account: { zh: '仲未有帳戶？', en: 'No account yet?' },
+  auth_has_account: { zh: '已經有帳戶？', en: 'Already have an account?' },
+  auth_register: { zh: '註冊', en: 'Register' },
+  unit_slash: { zh: '/ 單位', en: '/ unit' },
+  clinic_confirmed: { zh: '診所確認', en: 'Clinic confirmed' },
+  cheapest: { zh: '最抵', en: 'Lowest' },
+  highest: { zh: '最高', en: 'Highest' },
+  official_site: { zh: '🌐 官網', en: '🌐 Website' },
+  loading_more: { zh: '載入更多中…', en: 'Loading more…' }
+};
+
+function t(key) {
+  const e = T[key];
+  if (!e) return key;
+  return (LANG === 'en' ? e.en : e.zh);
+}
+
+const CITY_PREFIXES = ['hk','kowloon','nt'];
+
+// Bilingual district + region label maps
+const DISTRICT_LABELS = {
+  'hk-central': { zh: '中西區', en: 'Central & Western' },
+  'hk-wanchai': { zh: '灣仔', en: 'Wan Chai' },
+  'hk-causeway-bay': { zh: '銅鑼灣', en: 'Causeway Bay' },
+  'hk-eastern': { zh: '港島東', en: 'Eastern' },
+  'hk-southern': { zh: '港島南', en: 'Southern' },
+  'kowloon-tsimshatsui': { zh: '尖沙咀', en: 'Tsim Sha Tsui' },
+  'kowloon-mongkok': { zh: '旺角', en: 'Mong Kok' },
+  'kowloon-jordan': { zh: '佐敦 / 油麻地', en: 'Jordan / Yau Ma Tei' },
+  'kowloon-shamshuipo': { zh: '深水埗', en: 'Sham Shui Po' },
+  'kowloon-kowlooncity': { zh: '九龍城', en: 'Kowloon City' },
+  'kowloon-wongtaisin': { zh: '黃大仙', en: 'Wong Tai Sin' },
+  'kowloon-kwuntong': { zh: '觀塘', en: 'Kwun Tong' },
+  'nt-kwai-tsing': { zh: '葵青', en: 'Kwai Tsing' },
+  'nt-tsuen-wan': { zh: '荃灣', en: 'Tsuen Wan' },
+  'nt-tuen-mun': { zh: '屯門', en: 'Tuen Mun' },
+  'nt-yuen-long': { zh: '元朗', en: 'Yuen Long' },
+  'nt-sha-tin': { zh: '沙田', en: 'Sha Tin' },
+  'nt-sai-kung': { zh: '將軍澳 / 西貢', en: 'Sai Kung / TKO' },
+  'nt-tai-po': { zh: '大埔', en: 'Tai Po' },
+  'nt-north': { zh: '北區', en: 'North' },
+  'nt-islands': { zh: '離島', en: 'Islands' }
+};
+const REGION_LABELS = {
+  'hk-central': { zh: '港島', en: 'HK Island' },
+  'hk-wanchai': { zh: '港島', en: 'HK Island' },
+  'hk-causeway-bay': { zh: '港島', en: 'HK Island' },
+  'hk-eastern': { zh: '港島', en: 'HK Island' },
+  'hk-southern': { zh: '港島', en: 'HK Island' },
+  'kowloon-tsimshatsui': { zh: '九龍', en: 'Kowloon' },
+  'kowloon-mongkok': { zh: '九龍', en: 'Kowloon' },
+  'kowloon-jordan': { zh: '九龍', en: 'Kowloon' },
+  'kowloon-shamshuipo': { zh: '九龍', en: 'Kowloon' },
+  'kowloon-kowlooncity': { zh: '九龍', en: 'Kowloon' },
+  'kowloon-wongtaisin': { zh: '九龍', en: 'Kowloon' },
+  'kowloon-kwuntong': { zh: '九龍', en: 'Kowloon' },
+  'nt-kwai-tsing': { zh: '新界', en: 'New Territories' },
+  'nt-tsuen-wan': { zh: '新界', en: 'New Territories' },
+  'nt-tuen-mun': { zh: '新界', en: 'New Territories' },
+  'nt-yuen-long': { zh: '新界', en: 'New Territories' },
+  'nt-sha-tin': { zh: '新界', en: 'New Territories' },
+  'nt-sai-kung': { zh: '新界', en: 'New Territories' },
+  'nt-tai-po': { zh: '新界', en: 'New Territories' },
+  'nt-north': { zh: '新界', en: 'New Territories' },
+  'nt-islands': { zh: '新界', en: 'New Territories' }
+};
+
+function getNeighbourhoodLabel(slug) {
+  if (!slug) return '';
+  const e = DISTRICT_LABELS[slug];
+  if (e) return (LANG === 'en' ? e.en : e.zh);
+  // unknown slug: strip region prefix, title-case
+  for (const prefix of CITY_PREFIXES) {
+    if (slug.startsWith(prefix + '-')) {
+      const rest = slug.slice(prefix.length + 1);
+      return rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+  }
+  return slug;
+}
+
+function getCityFromSlug(slug) {
+  if (!slug) return '';
+  const e = REGION_LABELS[slug];
+  if (e) return (LANG === 'en' ? e.en : e.zh);
+  return '';
+}
+
+function getNeighbourhoodFull(slug) {
+  const district = getNeighbourhoodLabel(slug);
+  const city = getCityFromSlug(slug);
+  if (!district) return city || slug || '';
+  if (!city) return district;
+  return district + ' · ' + city;
+}
+
+// Neighbourhood coords for Near Me
+const HOOD_COORDS = {
+  'hk-central':[22.2820,114.1588], 'hk-wanchai':[22.2783,114.1747],
+  'hk-causeway-bay':[22.2800,114.1850], 'hk-eastern':[22.2845,114.2256],
+  'hk-southern':[22.2470,114.1600],
+  'kowloon-tsimshatsui':[22.2980,114.1722], 'kowloon-mongkok':[22.3193,114.1694],
+  'kowloon-jordan':[22.3050,114.1715], 'kowloon-shamshuipo':[22.3303,114.1622],
+  'kowloon-kowlooncity':[22.3280,114.1910], 'kowloon-wongtaisin':[22.3419,114.1953],
+  'kowloon-kwuntong':[22.3130,114.2260],
+  'nt-kwai-tsing':[22.3570,114.1300], 'nt-tsuen-wan':[22.3710,114.1140],
+  'nt-tuen-mun':[22.3910,113.9730], 'nt-yuen-long':[22.4445,114.0220],
+  'nt-sha-tin':[22.3820,114.1880], 'nt-sai-kung':[22.3120,114.2600],
+  'nt-tai-po':[22.4500,114.1640], 'nt-north':[22.4970,114.1380],
+  'nt-islands':[22.2890,113.9420],
+};
+
+// ─── NEIGHBOURHOOD COUNTS ────────────────────────────────────
+function updateNeighbourhoodCounts() {
+  const counts = {};
+  clinicsIndex.forEach(c => {
+    if (!c.neighbourhood) return;
+    counts[c.neighbourhood] = (counts[c.neighbourhood] || 0) + 1;
+  });
+  const select = document.getElementById('searchNeighbourhood');
+  if (!select) return;
+  Array.from(select.options).forEach(opt => {
+    if (opt.value === 'all' || opt.value === '') return;
+    const count = counts[opt.value];
+    if (count) {
+      const baseName = opt.text.replace(/\s*\(\d+\)$/, '');
+      opt.text = baseName + ' (' + count + ')';
+    }
+  });
+}
+
+// ─── NORMALISE ────────────────────────────────────────────────
+function normaliseClinic(o) {
+  o.id = String(o.id);
+  if (typeof o.injector_credentials === 'string') { try { o.injector_credentials = JSON.parse(o.injector_credentials); } catch(e) { o.injector_credentials = []; } }
+  if (!Array.isArray(o.injector_credentials)) o.injector_credentials = [];
+  if (!Array.isArray(o.categories)) o.categories = [];
+  return o;
+}
+
+// ─── BUILD API URL ─────────────────────────────────────────────
+function buildApiUrl(page) {
+  const params = new URLSearchParams();
+  params.set('page', page);
+  params.set('sort', currentSort);
+  params.set('country', COUNTRY);
+  if (currentNameQuery) params.set('search', currentNameQuery);
+  if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
+  return '/api/get-clinics?' + params.toString();
+}
+
+// ─── RENDER STARS ─────────────────────────────────────────────
+function renderStars(rating) {
+  if (!rating) return '☆☆☆☆☆';
+  const r = parseFloat(rating);
+  const full = Math.floor(r);
+  const half = r - full >= 0.5;
+  return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(Math.max(0, 5 - full - (half ? 1 : 0)));
+}
+
+function formatPriceDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('zh-HK', { year: 'numeric', month: 'short' });
+}
+
+// ─── RENDER CARDS ─────────────────────────────────────────────
+function renderPageCards(clinicsData, append) {
+  const grid = document.getElementById('cardsGrid');
+
+  // Sort
+  if (currentSort === 'price-low') {
+    clinicsData.sort((a,b) => (a.price!=null?parseFloat(a.price):99999) - (b.price!=null?parseFloat(b.price):99999));
+  } else if (currentSort === 'price-high') {
+    clinicsData.sort((a,b) => (b.price!=null?parseFloat(b.price):-1) - (a.price!=null?parseFloat(a.price):-1));
+  } else if (currentSort === 'rating') {
+    clinicsData.sort((a,b) => (b.rating||0) - (a.rating||0));
+  } else if (currentSort === 'reviews') {
+    clinicsData.sort((a,b) => (b.reviews||0) - (a.reviews||0));
+  } else if (currentSort === 'nearest' && userLocation) {
+    clinicsData.sort((a,b) => {
+      const coords = cl => (cl.lat && cl.lng) ? [parseFloat(cl.lat), parseFloat(cl.lng)] : null;
+      const ca = coords(a), cb = coords(b);
+      const da = ca ? haversineKm(userLocation.lat, userLocation.lon, ca[0], ca[1]) : 99999;
+      const db = cb ? haversineKm(userLocation.lat, userLocation.lon, cb[0], cb[1]) : 99999;
+      return da - db;
+    });
+  }
+
+  const html = clinicsData.map(c => {
+    const hasPrice = c.price !== null && c.price !== undefined;
+    const hasPhoto = c.photo && c.photo !== '';
+    const hasLogo = c.logo && c.logo !== '';
+
+    const photoBanner = hasPhoto
+      ? `<div class="card-photo-banner">
+          <img class="card-cover" src="${c.photo}" alt="${c.name}" loading="lazy" onerror="this.parentElement.classList.add('no-photo');this.remove()">
+          ${hasLogo ? `<div class="card-logo-badge"><img src="${c.logo}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+          <div class="card-corner-actions">
+            <button class="btn-save-card" id="save-${c.id}" onclick="toggleSave('${c.id}', event)" title="${t('save')}"><span class="heart-icon"></span></button>
+          </div>
+        </div>`
+      : `<div class="card-photo-banner no-photo">
+          <div class="card-corner-actions">
+            <button class="btn-save-card" id="save-${c.id}" onclick="toggleSave('${c.id}', event)" title="${t('save')}"><span class="heart-icon"></span></button>
+          </div>
+        </div>`;
+
+    const priceSourceLabel = c.price_source === 'clinic'
+      ? `<span class="trust-badge trust-badge-clinic"><svg width="8" height="8" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 6 5 9 10 3"/></svg>${t('clinic_confirmed')} · ${formatPriceDate(c.price_date)}</span>`
+      : c.price_source === 'inquiry'
+      ? `<span class="trust-badge trust-badge-inquiry">${t('inquiry_confirm')} · ${formatPriceDate(c.price_date)}</span>`
+      : '';
+
+    const priceBlockHTML = hasPrice
+      ? `<div class="card-price">
+          <div class="price-label">${t('price_label_botox')}</div>
+          <div class="price-main">
+            <span class="price-from">from</span>
+            <span class="price-amount">HK$${c.price}</span>
+            <span class="price-unit">${t('unit_slash')}</span>
+          </div>
+          ${priceSourceLabel}
+        </div>`
+      : '';
+
+    const distEl = (() => {
+      if (!userLocation || (!c.lat && !c.lng)) return '';
+      const d = haversineKm(userLocation.lat, userLocation.lon, parseFloat(c.lat), parseFloat(c.lng));
+      return ` · ${d < 1 ? (d*1000).toFixed(0)+'m' : d.toFixed(1)+'km'}`;
+    })();
+
+    return `
+      <div class="clinic-card${hasPrice ? '' : ' no-price'}" data-id="${c.id}">
+        ${photoBanner}
+        <div class="card-header${hasLogo && hasPhoto ? ' has-logo' : ''}">
+          <div class="clinic-name">
+            ${c.claimed ? `<span class="clinic-name-verified">${c.name}</span>` : c.name}
+          </div>
+          <div class="clinic-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}${distEl}</div>
+          <div class="rating-row">
+            <span class="stars">${renderStars(c.rating)}</span>
+            <span class="rating-num">${c.rating != null ? c.rating : '–'}</span>
+          </div>
+          <div class="review-count">${(c.reviews||0).toLocaleString('zh-HK')} ${t('google_reviews')}</div>
+        </div>
+        ${priceBlockHTML}
+        <div class="card-visit-row">
+          <span class="card-visit-prompt">
+            <span class="card-visit-line1">${t('visit_line1')}</span>
+            <span class="card-visit-line2">${t('visit_line2')}</span>
+          </span>
+          <span style="display:flex;align-items:center;gap:0.35rem;">
+            <button class="card-vote-btn" id="vote-yes-${c.id}" onclick="event.stopPropagation();window.cardVote('${c.id}','yes',this)">👍</button><span class="card-vote-count" id="vote-yes-count-${c.id}">0</span>
+            <button class="card-vote-btn" id="vote-no-${c.id}" onclick="event.stopPropagation();window.cardVote('${c.id}','no',this)">👎</button><span class="card-vote-count" id="vote-no-count-${c.id}">0</span>
+          </span>
+        </div>
+        <div class="card-footer">
+          <a href="#" class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">${t('view_data')}</a>
+          <button class="btn-compare-card" id="cmp-${c.id}" onclick="toggleCompare('${c.id}')">${t('cmp_add')}</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  if (append) {
+    const sentinel = grid.querySelector('.load-more-sentinel');
+    if (sentinel) sentinel.remove();
+    grid.insertAdjacentHTML('beforeend', html);
+  } else {
+    grid.innerHTML = html;
+  }
+
+  syncCompareButtons();
+  syncSaveButtons().catch(() => {});
+  fetchVisitSignals(clinicsData.map(c => String(c.id))).catch(() => {});
+  fetchMyVotes(clinicsData.map(c => String(c.id))).catch(() => {});
+}
+
+// ─── FETCH PAGE ────────────────────────────────────────────────
+async function fetchPage(page, append) {
+  if (isLoading) return;
+  isLoading = true;
+  const grid = document.getElementById('cardsGrid');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if (!append) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">' + t('loading') + '</div>';
+  } else {
+    grid.insertAdjacentHTML('beforeend', '<div class="load-more-sentinel" style="grid-column:1/-1;text-align:center;padding:24px 0;color:var(--muted);font-size:0.85rem;">' + t('loading_more') + '</div>');
+  }
+  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  try {
+    const res = await fetch(buildApiUrl(page));
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const raw = (data.clinics || []).map(normaliseClinic);
+    if (append) { currentPageClinics = currentPageClinics.concat(raw); }
+    else { currentPageClinics = raw; }
+    currentPage = data.page ?? page;
+    currentTotal = data.total ?? 0;
+    if (raw.length === 0 && !append) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">' + t('no_match') + '</div>';
+    } else {
+      renderPageCards(raw, append);
+    }
+    if (loadMoreBtn) loadMoreBtn.style.display = data.hasMore ? 'inline-block' : 'none';
+  } catch(err) {
+    console.error(err);
+    if (!append) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">' + t('load_failed') + '</div>';
+  } finally {
+    isLoading = false;
+    const sentinel = document.querySelector('.load-more-sentinel');
+    if (sentinel) sentinel.remove();
+  }
+}
+
+function loadMore() { fetchPage(currentPage + 1, true); }
+
+// ─── FILTER / SORT ────────────────────────────────────────────
+function applySearch() {
+  const neighbourhood = document.getElementById('searchNeighbourhood').value;
+  const nameQuery = (document.getElementById('searchClinicName').value || '').trim().toLowerCase();
+  currentFilter = neighbourhood;
+  currentNameQuery = nameQuery;
+  const badge = document.getElementById('regionBadge');
+  const region = NEIGHBOURHOOD_REGION[neighbourhood];
+  if (region && neighbourhood !== 'all') { badge.textContent = region; badge.classList.add('visible'); }
+  else { badge.classList.remove('visible'); }
+  fetchPage(0, false);
+  if (!nameQuery) document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function sortCards(val) {
+  if (val === 'nearest') {
+    if (!userLocation) {
+      if (!navigator.geolocation) { showToast(t('geo_unsupported')); document.getElementById('mainSortSelect').value = currentSort; return; }
+      showToast(t('geo_getting'));
+      navigator.geolocation.getCurrentPosition(
+        pos => { userLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude }; currentSort = 'nearest'; fetchPage(0, false); },
+        () => { showToast(t('geo_failed')); document.getElementById('mainSortSelect').value = currentSort; },
+        { timeout: 8000 }
+      );
+      return;
+    }
+  }
+  currentSort = val;
+  fetchPage(0, false);
+}
+
+function useNearMe() {
+  const btn = document.querySelector('.btn-nearby');
+  btn.textContent = t('nearby_locating'); btn.disabled = true;
+  if (!navigator.geolocation) { btn.textContent = t('nearby'); btn.disabled = false; showToast(t('geo_unsupported')); return; }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+      let nearest = null, nearestDist = Infinity;
+      for (const [hood, [lat, lon]] of Object.entries(HOOD_COORDS)) {
+        const d = haversineKm(userLocation.lat, userLocation.lon, lat, lon);
+        if (d < nearestDist) { nearestDist = d; nearest = hood; }
+      }
+      btn.textContent = t('nearby'); btn.disabled = false;
+      currentSort = 'nearest';
+      if (nearest && nearestDist < 100) { currentFilter = nearest; }
+      fetchPage(0, false);
+      document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+    () => { btn.textContent = t('nearby'); btn.disabled = false; showToast(t('geo_failed')); },
+    { timeout: 8000 }
+  );
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--deep);color:var(--cream);padding:0.75rem 1.5rem;border-radius:6px;font-size:0.82rem;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.25);transition:opacity 0.3s;'; document.body.appendChild(t); }
+  t.textContent = msg; t.style.opacity = '1';
+  setTimeout(() => { t.style.opacity = '0'; }, 3000);
+}
+
+// ─── COMPARE ─────────────────────────────────────────────────
+function toggleCompare(id) {
+  const idx = compareList.indexOf(id);
+  if (idx > -1) { compareList.splice(idx, 1); }
+  else if (compareList.length < 3) { compareList.push(id); }
+  else { showToast(t('compare_max')); return; }
+  updateCompareBar(); syncCompareButtons();
+}
+function updateCompareBar() {
+  const bar = document.getElementById('compareBar');
+  const btn = document.getElementById('btnCompareNow');
+  if (compareList.length === 0) { bar.classList.remove('visible'); return; }
+  bar.classList.add('visible');
+  btn.disabled = compareList.length < 2;
+  for (let i = 0; i < 3; i++) {
+    const slot = document.getElementById('compareSlot'+i);
+    if (compareList[i]) {
+      const c = findClinic(compareList[i]);
+      slot.classList.add('filled');
+      slot.innerHTML = `<span class="compare-slot-name">${c ? c.name : compareList[i]}</span><button class="compare-slot-remove" onclick="toggleCompare('${compareList[i]}')">✕</button>`;
+    } else {
+      slot.classList.remove('filled');
+      slot.innerHTML = '<span class="compare-slot-name">' + t('pick_clinic') + '</span>';
+    }
+  }
+}
+function clearCompare() { compareList = []; updateCompareBar(); syncCompareButtons(); }
+function syncCompareButtons() {
+  document.querySelectorAll('.btn-compare-card').forEach(b => {
+    const id = b.id.replace('cmp-','');
+    if (compareList.includes(id)) { b.classList.add('selected'); b.textContent = t('cmp_added'); b.disabled = false; b.style.opacity = ''; }
+    else { b.classList.remove('selected'); b.textContent = t('cmp_add'); b.disabled = compareList.length >= 3; b.style.opacity = compareList.length >= 3 ? '0.35' : ''; }
+  });
+  document.querySelectorAll('.clinic-card').forEach(card => {
+    card.classList.toggle('comparing', compareList.includes(card.dataset.id));
+  });
+}
+function openCompareModal() {
+  const clinics = compareList.map(id => findClinic(id)).filter(Boolean);
+  if (clinics.length < 2) return;
+  const colClass = 'cols-' + clinics.length;
+  const minPrice = clinics.filter(c => c.price).reduce((m, c) => Math.min(m, parseFloat(c.price)), Infinity);
+  const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
+  const maxReviews = Math.max(...clinics.map(c => parseInt(c.reviews)||0));
+  let html = `<table class="compare-table ${colClass}"><thead><tr><th></th>`;
+  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}</div></td>`; });
+  html += '</tr></thead><tbody>';
+  html += '<tr><th>' + t('th_rating') + '</th>';
+  clinics.forEach(c => {
+    const isTop = (parseFloat(c.rating)||0) === maxRating;
+    html += `<td${isTop?' class="compare-winner"':''}><span class="compare-stars">★</span> <span class="compare-rating-num">${c.rating||'–'}</span>${isTop?'<span class="compare-winner-tag">'+t('highest')+'</span>':''}<div class="compare-reviews">${(c.reviews||0).toLocaleString('zh-HK')} ${t('reviews_paren')}</div></td>`;
+  });
+  html += '</tr><tr><th>' + t('th_price') + '</th>';
+  clinics.forEach(c => {
+    const isLowest = c.price && parseFloat(c.price) === minPrice;
+    html += c.price
+      ? `<td${isLowest?' class="compare-winner"':''}><span class="compare-price-big">HK$${c.price}</span><span class="compare-price-unit">${t('unit_slash')}</span>${isLowest?'<span class="compare-winner-tag">'+t('cheapest')+'</span>':''}</td>`
+      : '<td><span class="compare-no-price">' + t('no_price') + '</span></td>';
+  });
+  html += '</tr><tr><th>' + t('th_location') + '</th>';
+  clinics.forEach(c => { html += `<td>${getNeighbourhoodFull(c.neighbourhood) || c.region || '–'}</td>`; });
+  html += '</tr><tr><th>' + t('th_phone') + '</th>';
+  clinics.forEach(c => { html += `<td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--rose)">${c.phone}</a>` : '–'}</td>`; });
+  html += '</tr><tr><th>' + t('th_website') + '</th>';
+  clinics.forEach(c => { html += `<td>${c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="color:var(--rose);font-size:0.82rem;">${t('visit_website')}</a>` : '–'}</td>`; });
+  html += '</tr></tbody></table>';
+  document.querySelector('.compare-modal-body').innerHTML = html;
+  document.getElementById('compareModalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCompareModal() { document.getElementById('compareModalOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+function compareFromShortlist() {
+  const list = getShortlist().slice(0, 3);
+  compareList = list; updateCompareBar(); syncCompareButtons();
+  closeShortlistDrawer(); openCompareModal();
+}
+document.getElementById('compareModalOverlay').addEventListener('click', e => { if (e.target === document.getElementById('compareModalOverlay')) closeCompareModal(); });
+
+// ─── CLINIC LOOKUP ────────────────────────────────────────────
+function findClinic(id) {
+  const sid = String(id);
+  return currentPageClinics.find(c => String(c.id) === sid) || clinicsIndex.find(c => String(c.id) === sid) || null;
+}
+
+// ─── OPEN CLINIC MODAL (reuse Canada's /api/get-clinics single fetch) ─────
+window.openClinicModal = async function(id) {
+  const c = findClinic(String(id));
+  if (!c) return;
+
+  // Build Google Maps directions URL from place_id or coords
+  let directionsUrl = '';
+  if (c.place_id) directionsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.name) + '&query_place_id=' + c.place_id;
+  else if (c.lat && c.lng) directionsUrl = 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng;
+  const ratingUrl = directionsUrl || '#';
+
+  const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
+  const reviews = (c.reviews || 0).toLocaleString('zh-HK');
+
+  const content = [
+    c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:16px 16px 0 0;" loading="lazy">` : '',
+    `<div style="padding:1.75rem;">`,
+    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.6rem;font-weight:500;margin-bottom:0.4rem;line-height:1.2;">${c.name}</h2>`,
+    `<p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">📍 ${hood}</p>`,
+
+    // Rating row links to Google Maps
+    `<a href="${ratingUrl}" ${directionsUrl ? 'target="_blank" rel="noopener"' : ''} style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem;text-decoration:none;">`,
+    `<span style="color:var(--gold);">★</span><strong style="color:var(--deep);">${c.rating || '–'}</strong>`,
+    `<span style="color:var(--muted);font-size:0.82rem;">(${reviews} ${t('reviews_paren')})</span>`,
+    `</a>`,
+
+    c.price ? `<p style="margin-bottom:1.25rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">HK$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">${t('unit_slash')}</span></p>` : '',
+
+    // Primary action: Directions
+    `<div style="margin-bottom:0.6rem;">`,
+    directionsUrl
+      ? `<a href="${directionsUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--rose);color:#fff;padding:0.85rem;border-radius:10px;font-size:0.92rem;font-weight:500;text-decoration:none;font-family:'DM Sans',sans-serif;">${t('route_btn')}</a>`
+      : '',
+    `</div>`,
+
+    // Secondary row: Call + Website
+    `<div style="display:grid;grid-template-columns:${c.phone && c.website ? '1fr 1fr' : '1fr'};gap:0.6rem;margin-bottom:1.5rem;">`,
+    c.phone ? `<a href="tel:${c.phone}" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">${t('call_btn')}</a>` : '',
+    c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">${t('official_site')}</a>` : '',
+    `</div>`,
+
+    // Report link
+    `<div style="text-align:center;border-top:1px solid var(--border);padding-top:1rem;">`,
+    `<button onclick="reportHKClinic('${c.id}', this)" style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px;">${t('report_error')}</button>`,
+    `</div>`,
+
+    `</div>`
+  ].join('');
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(28,23,20,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;';
+  const modal = document.createElement('div');
+  modal.style.cssText = 'background:var(--cream);border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative;animation:fadeUp 0.25s ease;';
+  modal.innerHTML = `<button onclick="this.closest('[data-overlay]').remove();document.body.style.overflow='';" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;">✕</button>${content}`;
+  overlay.dataset.overlay = '1';
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+};
+
+window.reportHKClinic = function(id, btn) {
+  const c = findClinic(String(id));
+  const name = c ? c.name : '';
+  try {
+    fetch('https://skinday.ca/api/submit-claim', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'report', clinic_name: name + ' (Hong Kong)', owner_email: '', owner_name: '', owner_role: 'Report' })
+    });
+  } catch(e) {}
+  if (btn) { btn.textContent = t('report_received'); btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'default'; }
+};
+
+// ─── VISIT SIGNALS ────────────────────────────────────────────
+async function fetchVisitSignals(ids) {
+  if (!ids.length) return;
+  try {
+    const res = await fetch('/api/get-visit-signals', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinic_ids: ids })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    (data.signals || []).forEach(s => {
+      const yesEl = document.getElementById('vote-yes-count-' + s.clinic_id);
+      const noEl = document.getElementById('vote-no-count-' + s.clinic_id);
+      if (yesEl) yesEl.textContent = s.yes_count || 0;
+      if (noEl) noEl.textContent = s.no_count || 0;
+    });
+  } catch(e) {}
+}
+
+async function fetchMyVotes(ids) {
+  if (!_currentUser || !ids.length) return;
+  try {
+    const res = await fetch('/api/get-my-votes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinic_ids: ids, access_token: (await _sb.auth.getSession()).data.session?.access_token })
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    (data.votes || []).forEach(v => {
+      const yBtn = document.getElementById('vote-yes-' + v.clinic_id);
+      const nBtn = document.getElementById('vote-no-' + v.clinic_id);
+      if (yBtn) yBtn.classList.add('voted', v.would_return ? 'voted-on' : '');
+      if (nBtn) nBtn.classList.add('voted', !v.would_return ? 'voted-on' : '');
+    });
+  } catch(e) {}
+}
+
+window.cardVote = async function(clinicId, vote, btn) {
+  if (!_currentUser) {
+    try { localStorage.setItem('sd_pending_vote', JSON.stringify({ clinic_id: clinicId, vote })); } catch {}
+    sessionStorage.setItem('sd_oauth_return', '1');
+    openAuthModal();
+    return;
+  }
+  const session = (await _sb.auth.getSession()).data.session;
+  if (!session) return;
+  const yBtn = document.getElementById('vote-yes-' + clinicId);
+  const nBtn = document.getElementById('vote-no-' + clinicId);
+  [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.add('voted'));
+  btn.classList.add('voted-on');
+  try {
+    const res = await fetch('/api/submit-visit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote === 'yes', access_token: session.access_token })
+    });
+    if (res.status === 409) { showToast(t('already_voted')); return; }
+    if (res.ok) {
+      const countEl = document.getElementById('vote-' + vote + '-count-' + clinicId);
+      if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+    }
+  } catch(e) {}
+};
+
+// ─── MISSING CLINIC ───────────────────────────────────────────
+function openMissingClinicModal() { document.getElementById('missingClinicModal').classList.add('open'); document.getElementById('missing-modal-form').style.display = ''; document.getElementById('missing-modal-success').style.display = 'none'; }
+function closeMissingClinicModal() { document.getElementById('missingClinicModal').classList.remove('open'); }
+document.addEventListener('DOMContentLoaded', () => { document.getElementById('missingClinicModal')?.addEventListener('click', e => { if (e.target === document.getElementById('missingClinicModal')) closeMissingClinicModal(); }); });
+async function submitMissingClinic() {
+  const name = document.getElementById('missing-clinic-name').value.trim();
+  const email = document.getElementById('missing-clinic-email').value.trim();
+  const hood = document.getElementById('missing-clinic-hood').value.trim();
+  const btn = document.getElementById('missing-submit-btn');
+  if (!name || !email) { showToast(t('fill_name_email')); return; }
+  btn.disabled = true; btn.textContent = t('submitting');
+  try { await fetch('https://skinday.ca/api/submit-claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'missing', clinic_name: name, owner_email: email, clinic_neighbourhood: hood + ' (Hong Kong)', owner_name: '', owner_role: 'Owner' }) }); } catch(e) {}
+  document.getElementById('missing-modal-form').style.display = 'none';
+  document.getElementById('missing-modal-success').style.display = 'block';
+}
+
+// ─── SUPABASE AUTH ────────────────────────────────────────────
+const _SB_URL = SB_URL, _SB_KEY = SB_KEY;
+const _sb = supabase.createClient(_SB_URL, _SB_KEY);
+let _currentUser = null, _authMode = 'signin';
+
+async function initAuth() {
+  let session = (await _sb.auth.getSession()).data.session;
+  if (!session) { await new Promise(r => setTimeout(r, 800)); session = (await _sb.auth.getSession()).data.session; }
+  if (session?.user) setUser(session.user); else setLoggedOut();
+  _sb.auth.onAuthStateChange((event, session) => {
+    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+      if (window.location.hash.includes('access_token') || window.location.hash === '#') window.history.replaceState({}, document.title, window.location.pathname);
+      setUser(session.user); closeAuthModal(); mergeLocalShortlistToSupabase();
+      let pending = null; try { pending = JSON.parse(localStorage.getItem('sd_pending_vote')); } catch {}
+      if (pending?.clinic_id && pending?.vote) {
+        localStorage.removeItem('sd_pending_vote');
+        fetch('/api/submit-visit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clinic_id: String(pending.clinic_id), would_return: pending.vote === 'yes', access_token: session.access_token }) }).catch(() => {});
+      }
+    } else if (event === 'SIGNED_OUT') { setLoggedOut(); }
+  });
+}
+
+function setUser(user) {
+  _currentUser = user;
+  const name = user.user_metadata?.full_name || user.email?.split('@')[0] || t('user_fallback');
+  const firstName = name.split(' ')[0];
+  const initial = firstName.charAt(0).toUpperCase();
+  const signInBtn = document.getElementById('navSignInBtn');
+  const userMenu = document.getElementById('navUserMenu');
+  if (signInBtn) signInBtn.style.display = 'none';
+  if (userMenu) userMenu.style.display = 'block';
+  const nameEl = document.getElementById('navUserName');
+  const initialEl = document.getElementById('navUserInitial');
+  if (nameEl) nameEl.textContent = firstName;
+  if (initialEl) initialEl.textContent = initial;
+  if (user.user_metadata?.avatar_url && initialEl) initialEl.outerHTML = `<img class="nav-user-avatar" id="navUserInitial" src="${user.user_metadata.avatar_url}" alt="">`;
+  closeAuthModal(); syncSaveButtons();
+}
+function setLoggedOut() { _currentUser = null; document.getElementById('navSignInBtn').style.display = 'inline-block'; document.getElementById('navUserMenu').style.display = 'none'; syncSaveButtons(); }
+function toggleUserDropdown() { document.getElementById('navUserDropdown').classList.toggle('open'); }
+document.addEventListener('click', e => { const menu = document.getElementById('navUserMenu'); if (menu && !menu.contains(e.target)) document.getElementById('navUserDropdown').classList.remove('open'); });
+function openAuthModal() { document.getElementById('authModalOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeAuthModal() { document.getElementById('authModalOverlay').classList.remove('open'); document.body.style.overflow = ''; document.getElementById('authError').textContent = ''; }
+document.getElementById('authModalOverlay')?.addEventListener('click', e => { if (e.target === document.getElementById('authModalOverlay')) closeAuthModal(); });
+function toggleAuthMode() { _authMode = _authMode === 'signin' ? 'signup' : 'signin'; document.getElementById('authSubmitBtn').textContent = _authMode === 'signin' ? t('signin') : t('signup'); document.getElementById('authToggleText').textContent = _authMode === 'signin' ? t('auth_no_account') : t('auth_has_account'); document.querySelector('.auth-toggle button').textContent = _authMode === 'signin' ? t('auth_register') : t('signin'); document.getElementById('authError').textContent = ''; }
+
+function isInAppBrowser() {
+  const ua = (navigator.userAgent || '').toLowerCase();
+  return ['micromessenger','wechat','instagram','fban','fbav','line/','twitter','tiktok','kakaotalk'].some(s => ua.includes(s)) ||
+    (/iphone|ipod|ipad/.test(ua) && !/safari/.test(ua));
+}
+function showBrowserPrompt() {
+  if (document.getElementById('sdBrowserPrompt')) return true;
+  const url = window.location.href;
+  const ov = document.createElement('div');
+  ov.id = 'sdBrowserPrompt';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(28,23,20,0.78);display:flex;align-items:center;justify-content:center;padding:24px;';
+  ov.innerHTML = '<div style="background:var(--cream);color:var(--deep);max-width:340px;width:100%;border-radius:14px;padding:24px;font-family:inherit;"><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.5rem;margin-bottom:10px;">' + t('browser_open_title') + '</div><div style="font-size:0.9rem;line-height:1.5;color:var(--muted);margin-bottom:16px;">' + t('browser_open_body') + '</div><button id="sdBrowserPromptClose" style="width:100%;background:none;border:1px solid rgba(0,0,0,0.15);border-radius:8px;padding:10px;font-size:0.85rem;cursor:pointer;">' + t('close') + '</button></div>';
+  document.body.appendChild(ov);
+  document.getElementById('sdBrowserPromptClose')?.addEventListener('click', () => ov.remove());
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  return true;
+}
+function oauthBlockedByWebview() { if (isInAppBrowser()) { showBrowserPrompt(); return true; } return false; }
+
+async function handleGoogleSignIn() {
+  if (oauthBlockedByWebview()) return;
+  const { error } = await _sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/account', queryParams: { prompt: 'select_account' } } });
+  if (error) document.getElementById('authError').textContent = error.message;
+}
+async function handleEmailAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const btn = document.getElementById('authSubmitBtn');
+  const errEl = document.getElementById('authError');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = t('enter_email_pw'); return; }
+  btn.disabled = true; btn.textContent = _authMode === 'signin' ? t('signin_loading') : t('signup_loading');
+  const result = _authMode === 'signin' ? await _sb.auth.signInWithPassword({ email, password }) : await _sb.auth.signUp({ email, password });
+  btn.disabled = false; btn.textContent = _authMode === 'signin' ? t('signin') : t('signup');
+  if (result.error) { errEl.textContent = result.error.message; }
+  else if (_authMode === 'signup' && !result.data.session) { errEl.style.color = 'var(--green)'; errEl.textContent = t('account_created'); }
+}
+async function handleSignOut() { await _sb.auth.signOut(); window.location.reload(); }
+
+// ─── SHORTLIST ────────────────────────────────────────────────
+const SHORTLIST_KEY = 'skinday_hk_shortlist';
+function getShortlist() { try { return JSON.parse(localStorage.getItem(SHORTLIST_KEY) || '[]'); } catch(e) { return []; } }
+function saveShortlist(list) { try { localStorage.setItem(SHORTLIST_KEY, JSON.stringify(list)); } catch(e) {} }
+async function getShortlistIds() {
+  if (_currentUser) { const { data } = await _sb.from('saved_clinics').select('clinic_id').eq('user_id', _currentUser.id); return (data||[]).map(r => r.clinic_id); }
+  return getShortlist();
+}
+window.toggleSave = async function(id, e) {
+  e?.stopPropagation();
+  const btn = document.getElementById('save-'+id);
+  if (_currentUser) {
+    const existing = await _sb.from('saved_clinics').select('id').eq('user_id', _currentUser.id).eq('clinic_id', String(id)).maybeSingle();
+    if (existing.data) { await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id).eq('clinic_id', String(id)); if (btn) btn.classList.remove('saved'); }
+    else { await _sb.from('saved_clinics').insert({ user_id: _currentUser.id, clinic_id: String(id) }); if (btn) btn.classList.add('saved'); }
+  } else {
+    const list = getShortlist();
+    const idx = list.indexOf(String(id));
+    if (idx > -1) { list.splice(idx, 1); if (btn) btn.classList.remove('saved'); }
+    else { list.push(String(id)); if (btn) btn.classList.add('saved'); }
+    saveShortlist(list);
+  }
+  await updateShortlistUI();
+};
+async function syncSaveButtons() { const ids = await getShortlistIds(); document.querySelectorAll('.btn-save-card').forEach(b => { const id = b.id.replace('save-',''); b.classList.toggle('saved', ids.includes(String(id))); }); }
+async function mergeLocalShortlistToSupabase() {
+  const local = getShortlist();
+  if (!local.length || !_currentUser) return;
+  await Promise.all(local.map(id => _sb.from('saved_clinics').upsert({ user_id: _currentUser.id, clinic_id: String(id) }, { onConflict: 'user_id,clinic_id' })));
+  saveShortlist([]);
+}
+async function updateShortlistUI() {
+  const ids = await getShortlistIds();
+  const badge = document.getElementById('navShortlistBadge');
+  if (badge) { badge.textContent = ids.length; badge.classList.toggle('visible', ids.length > 0); }
+  const count = document.getElementById('shortlistCount');
+  if (count) count.textContent = ids.length + ' ' + t('clinics_count');
+  // Render drawer
+  const body = document.getElementById('shortlistDrawerBody');
+  const footer = document.getElementById('shortlistDrawerFooter');
+  if (!body) return;
+  if (ids.length === 0) {
+    body.innerHTML = '<div class="shortlist-empty"><div class="shortlist-empty-icon">♡</div><p>' + t('shortlist_empty') + '</p></div>';
+    if (footer) footer.style.display = 'none';
+    return;
+  }
+  if (footer) footer.style.display = '';
+  const clinics = ids.map(id => findClinic(String(id))).filter(Boolean);
+  body.innerHTML = clinics.map(c => `
+    <div class="shortlist-item">
+      <div class="shortlist-item-logo">${c.logo ? `<img src="${c.logo}" alt="">` : c.name.charAt(0)}</div>
+      <div class="shortlist-item-info">
+        <div class="shortlist-item-name">${c.name}</div>
+        <div class="shortlist-item-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''} · ★${c.rating||'–'}</div>
+        ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">HK$${c.price}${t('unit_slash')}</div>` : ''}
+      </div>
+      <button class="shortlist-item-remove" onclick="toggleSave('${c.id}', event)">✕</button>
+    </div>`).join('') + (ids.length - clinics.length > 0 ? `<p style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">${ids.length - clinics.length} ${t('clinics_not_loaded')}</p>` : '');
+}
+function openShortlistDrawer() { document.getElementById('shortlistDrawerOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; updateShortlistUI(); }
+function closeShortlistDrawer(e) { if (e && e.target !== document.getElementById('shortlistDrawerOverlay')) return; document.getElementById('shortlistDrawerOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+async function clearShortlist() {
+  if (_currentUser) await _sb.from('saved_clinics').delete().eq('user_id', _currentUser.id);
+  saveShortlist([]);
+  document.querySelectorAll('.btn-save-card.saved').forEach(b => b.classList.remove('saved'));
+  await updateShortlistUI();
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────
+(function() {
+  let _lbUrls = [], _lbIdx = 0, _lbTouch = null;
+  function openLightbox(urls, idx) { _lbUrls = urls; _lbIdx = idx||0; renderLightbox(); document.getElementById('sdLightbox').classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeLightbox() { document.getElementById('sdLightbox').classList.remove('open'); document.body.style.overflow = ''; }
+  function renderLightbox() { document.getElementById('sdLightboxImg').src = _lbUrls[_lbIdx]; document.getElementById('sdLightboxCounter').textContent = (_lbIdx+1)+' / '+_lbUrls.length; document.getElementById('sdLightboxPrev').disabled = _lbIdx===0; document.getElementById('sdLightboxNext').disabled = _lbIdx===_lbUrls.length-1; }
+  window.openLightbox = openLightbox;
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('sdLightboxClose').addEventListener('click', closeLightbox);
+    document.getElementById('sdLightboxPrev').addEventListener('click', () => { if (_lbIdx>0){_lbIdx--;renderLightbox();} });
+    document.getElementById('sdLightboxNext').addEventListener('click', () => { if (_lbIdx<_lbUrls.length-1){_lbIdx++;renderLightbox();} });
+    document.getElementById('sdLightbox').addEventListener('click', e => { if (e.target===document.getElementById('sdLightbox')) closeLightbox(); });
+    document.addEventListener('keydown', e => { const lb=document.getElementById('sdLightbox'); if (!lb.classList.contains('open')) return; if (e.key==='Escape') closeLightbox(); if (e.key==='ArrowLeft'&&_lbIdx>0){_lbIdx--;renderLightbox();} if (e.key==='ArrowRight'&&_lbIdx<_lbUrls.length-1){_lbIdx++;renderLightbox();} });
+    document.getElementById('sdLightbox').addEventListener('touchstart', e => { _lbTouch=e.touches[0].clientX; },{passive:true});
+    document.getElementById('sdLightbox').addEventListener('touchend', e => { if(_lbTouch===null)return;const dx=e.changedTouches[0].clientX-_lbTouch;_lbTouch=null;if(Math.abs(dx)<40)return;if(dx<0&&_lbIdx<_lbUrls.length-1){_lbIdx++;renderLightbox();}else if(dx>0&&_lbIdx>0){_lbIdx--;renderLightbox();} },{passive:true});
+  });
+})();
+
+// ─── MAP ─────────────────────────────────────────────────────
+const GMAPS_KEY = 'AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc';
+let _map = null, _markers = [], _userMarker = null, _allClinics = [], _activeCid = null;
+let _mapSort = 'rating', _lastZoom = null, _idleTimer = null, _hoverTimer = null;
+let currentView = 'grid';
+
+const PIN_PATH = 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z';
+const LABEL_STYLE = { color: '#fff', fontSize: '10px', fontWeight: '700', fontFamily: 'DM Sans, sans-serif' };
+let PIN_IDLE, PIN_HOVER, PIN_ACTIVE;
+function initPins() {
+  if (PIN_IDLE) return;
+  PIN_IDLE   = { path: PIN_PATH, fillColor: '#16201C', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1,   labelOrigin: new google.maps.Point(0, -30) };
+  PIN_HOVER  = { path: PIN_PATH, fillColor: '#2F7D6B', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1.35, labelOrigin: new google.maps.Point(0, -30) };
+  PIN_ACTIVE = { path: PIN_PATH, fillColor: '#2F7D6B', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,   scale: 1.5,  labelOrigin: new google.maps.Point(0, -30) };
+}
+
+function isMobileMapUI() { return window.matchMedia('(hover: none)').matches; }
+function _normCid(cid) { return String(cid); }
+function _getClinic(cid) { return _allClinics.find(c => String(c.id) === _normCid(cid)) || null; }
+function _getMarker(cid) { return _markers.find(m => m._cid === _normCid(cid) && !m._count) || null; }
+
+function switchView(view) {
+  currentView = view;
+  document.getElementById('gridToggleBtn').classList.toggle('active', view === 'grid');
+  document.getElementById('mapToggleBtn').classList.toggle('active', view === 'map');
+  const gridSec = document.getElementById('prices');
+  const mapSec  = document.getElementById('mapSection');
+  const moreSec = document.querySelector('.load-more-wrap');
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  if (view === 'map') {
+    gridSec.style.display = 'none';
+    if (moreSec) moreSec.style.display = 'none';
+    mapSec.classList.add('active');
+    document.documentElement.classList.add('map-view-active');
+    if (isMobile) { document.body.dataset.scrollY = window.scrollY; document.body.classList.add('map-open'); }
+    const sel = document.getElementById('mapCompactSel');
+    if (sel) sel.value = currentFilter || 'all';
+    document.getElementById('mapCompactGridBtn')?.classList.remove('active');
+    document.getElementById('mapCompactMapBtn')?.classList.add('active');
+    initMap();
+  } else {
+    mapSec.classList.remove('active');
+    document.documentElement.classList.remove('map-view-active');
+    gridSec.style.display = '';
+    if (moreSec) moreSec.style.display = '';
+    if (isMobile) { document.body.classList.remove('map-open'); window.scrollTo(0, parseInt(document.body.dataset.scrollY || '0')); }
+    document.getElementById('mapCompactGridBtn')?.classList.add('active');
+    document.getElementById('mapCompactMapBtn')?.classList.remove('active');
+    fetchPage(0, false);
+  }
+}
+
+function onCompactSearch() {
+  const val = document.getElementById('mapCompactSel').value;
+  currentFilter = val;
+  currentNameQuery = '';
+  const mainSel = document.getElementById('searchNeighbourhood');
+  if (mainSel) mainSel.value = val;
+  reloadMap();
+}
+
+async function fetchMapClinics() {
+  let url = SB_URL + '/rest/v1/clinics?select=id,name,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&approved=eq.true&country=eq.hongkong&lat=not.is.null&order=rating.desc.nullslast&limit=5000';
+  if (currentFilter && currentFilter !== 'all') {
+    url += '&neighbourhood=eq.' + encodeURIComponent(currentFilter);
+  }
+  const r = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+  if (!r.ok) throw new Error('fetch failed');
+  return (await r.json()).map(normaliseClinic);
+}
+
+async function initMap() {
+  initPins();
+  const loadingEl = document.getElementById('mapLoading');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  try { _allClinics = await fetchMapClinics(); } catch(e) { if (loadingEl) loadingEl.textContent = t('load_failed_short'); return; }
+  if (!_map) {
+    _map = new google.maps.Map(document.getElementById('google-map'), {
+      zoom: 11, center: { lat: 22.3193, lng: 114.1694 },
+      mapTypeControl: false, streetViewControl: false, fullscreenControl: false,
+      zoomControl: true, zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+      gestureHandling: 'greedy',
+      styles: [
+        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+        { featureType: 'transit', elementType: 'labels', stylers: [{ visibility: 'off' }] }
+      ]
+    });
+    _map.addListener('idle', onMapIdle);
+  }
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (userLocation) placeUserPin(userLocation.lat, userLocation.lon);
+  if (_allClinics.length > 0) {
+    const bounds = new google.maps.LatLngBounds();
+    _allClinics.forEach(c => { if (c.lat && c.lng) bounds.extend({ lat: +c.lat, lng: +c.lng }); });
+    _map.fitBounds(bounds, { top: 50, right: 20, bottom: 80, left: 20 });
+    if (!isMobileMapUI()) renderDesktopList();
+  } else {
+    placeMarkers();
+    if (!isMobileMapUI()) renderDesktopList();
+  }
+}
+
+async function reloadMap() {
+  const loadingEl = document.getElementById('mapLoading');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  try { _allClinics = await fetchMapClinics(); } catch(e) { return; }
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (_allClinics.length > 0) {
+    const bounds = new google.maps.LatLngBounds();
+    _allClinics.forEach(c => { if (c.lat && c.lng) bounds.extend({ lat: +c.lat, lng: +c.lng }); });
+    _map.fitBounds(bounds, { top: 50, right: 20, bottom: 80, left: 20 });
+    if (!isMobileMapUI()) renderDesktopList();
+  } else { clearMarkers(); if (!isMobileMapUI()) renderDesktopList(); }
+}
+
+function onMapIdle() {
+  const z = _map.getZoom();
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(() => {
+    placeMarkers();
+    if (isMobileMapUI()) { renderCarousel(); } else { renderDesktopList(); }
+    if (_activeCid) renderSelection();
+    _lastZoom = z;
+  }, 350);
+}
+
+function clearMarkers() { _markers.forEach(m => m.setMap(null)); _markers = []; }
+
+function placeMarkers() {
+  clearMarkers();
+  if (!_map || !_allClinics.length) return;
+  const zoom = _map.getZoom();
+  const bounds = _map.getBounds();
+  if (!bounds) return;
+  const inView = _allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat: +c.lat, lng: +c.lng }));
+  if (zoom >= 12) {
+    inView.slice(0, 300).forEach(c => {
+      const m = new google.maps.Marker({ position: { lat: +c.lat, lng: +c.lng }, map: _map, optimized: false, icon: PIN_IDLE, label: { ...LABEL_STYLE, text: ' ' } });
+      m._cid = String(c.id);
+      wireMarkerEvents(m, c, false);
+      _markers.push(m);
+    });
+  } else {
+    const cellDeg = zoom >= 9 ? 0.1 : zoom >= 7 ? 0.4 : zoom >= 5 ? 1.2 : 3;
+    const cells = {};
+    inView.forEach(c => {
+      const key = Math.floor(+c.lat / cellDeg) + ',' + Math.floor(+c.lng / cellDeg);
+      if (!cells[key]) cells[key] = [];
+      cells[key].push(c);
+    });
+    Object.values(cells).forEach(group => {
+      const rep = group[0];
+      const count = group.length;
+      const label = count > 1 ? { ...LABEL_STYLE, text: count > 999 ? Math.round(count/1000)+'k' : String(count) } : { ...LABEL_STYLE, text: ' ' };
+      const scale = count > 500 ? 1.5 : count > 50 ? 1.25 : count > 1 ? 1.1 : 1;
+      const m = new google.maps.Marker({ position: { lat: +rep.lat, lng: +rep.lng }, map: _map, optimized: false, icon: { ...PIN_IDLE, scale }, label, zIndex: count });
+      m._cid = String(rep.id); m._count = count; m._group = group;
+      wireMarkerEvents(m, rep, count > 1);
+      _markers.push(m);
+    });
+  }
+}
+
+function wireMarkerEvents(m, c, isCluster) {
+  const cid = String(c.id);
+  const canHover = window.matchMedia('(hover: hover)').matches;
+  if (canHover) {
+    m.addListener('mouseover', () => { if (_activeCid !== cid) { m.setIcon({ ...PIN_HOVER, scale: (m.icon?.scale||1)*1.2 }); if (!isCluster) highlightCard(cid); } });
+    m.addListener('mouseout',  () => { if (_activeCid !== cid) { m.setIcon({ ...PIN_IDLE, scale: m.icon?.scale||1 }); document.querySelectorAll('[data-cid="'+cid+'"]').forEach(el => el.classList.remove('highlighted')); } });
+  }
+  m.addListener('click', () => {
+    if (isCluster) { const b = new google.maps.LatLngBounds(); m._group.forEach(g => b.extend({ lat: +g.lat, lng: +g.lng })); _map.fitBounds(b, 80); }
+    else { onPinClick(cid, m); }
+  });
+}
+
+function onPinClick(cid, marker) {
+  _markers.forEach(m => { if (m._cid === _activeCid) m.setIcon({ ...PIN_IDLE, scale: m.icon?.scale||1 }); });
+  _activeCid = cid;
+  if (marker) marker.setIcon(PIN_ACTIVE);
+  highlightCard(cid);
+  scrollCardListTo(cid);
+  const clinic = _allClinics.find(c => String(c.id) === cid);
+  if (clinic) _map.panTo({ lat: +clinic.lat, lng: +clinic.lng });
+  if (!isMobileMapUI()) openMapModal(cid);
+}
+
+async function openMapModal(cid) {
+  const existing = _allClinics.find(c => String(c.id) === String(cid));
+  if (existing) { window.openClinicModal(existing.id); return; }
+}
+
+function sortClinicsMap(clinics, sortKey) {
+  const arr = [...clinics].filter(c => c.lat && c.lng);
+  if (sortKey === 'rating')    return arr.sort((a,b) => (b.rating||0)-(a.rating||0));
+  if (sortKey === 'reviews')   return arr.sort((a,b) => (b.reviews||0)-(a.reviews||0));
+  if (sortKey === 'price-low') return arr.sort((a,b) => (parseFloat(a.price)||999)-(parseFloat(b.price)||999));
+  if (sortKey === 'price-high')return arr.sort((a,b) => (parseFloat(b.price)||-1)-(parseFloat(a.price)||-1));
+  return arr;
+}
+
+function onMapSort(val) { _mapSort = val; renderDesktopList(); }
+
+function renderDesktopList() {
+  // Filter to current map viewport so the list reflects what's on screen.
+  // Falls back to full set if map bounds not ready yet (initial load).
+  let pool = _allClinics;
+  if (_map) {
+    const bounds = _map.getBounds();
+    if (bounds) pool = _allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat: +c.lat, lng: +c.lng }));
+  }
+  const sorted = sortClinicsMap(pool, _mapSort);
+  const headerCount = document.getElementById('mapListCount');
+  if (headerCount) headerCount.textContent = sorted.length.toLocaleString('zh-HK') + ' ' + t('clinics_count');
+  const cardsEl = document.getElementById('mapListCards');
+  if (cardsEl) cardsEl.innerHTML = sorted.length === 0
+    ? '<div class="map-list-status">' + t('area_empty_map') + '</div>'
+    : sorted.map(c => buildMapCard(c, false)).join('');
+  updateViewportCount();
+  if (_activeCid) requestAnimationFrame(() => renderSelection());
+}
+
+function renderCarousel() {
+  if (!_map) return;
+  const bounds = _map.getBounds();
+  if (!bounds) return;
+  const inView = sortClinicsMap(_allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat:+c.lat, lng:+c.lng })), _mapSort);
+  const track = document.getElementById('mapCarouselTrack');
+  const countC = document.getElementById('mapCarouselCount');
+  if (track) {
+    if (countC) countC.textContent = inView.length.toLocaleString('zh-HK') + ' ' + t('clinics_count');
+    track.innerHTML = inView.length === 0
+      ? '<div style="padding:1rem;font-size:0.82rem;color:var(--muted);">' + t('area_empty_short') + '</div>'
+      : inView.map(c => buildMapCard(c, true)).join('');
+  }
+  if (_activeCid) requestAnimationFrame(() => renderSelection());
+}
+
+function updateViewportCount() {
+  if (!_map) return;
+  const bounds = _map.getBounds();
+  if (!bounds) return;
+  const inView = _allClinics.filter(c => c.lat && c.lng && bounds.contains({ lat:+c.lat, lng:+c.lng }));
+  const countEl = document.getElementById('mapResultCount');
+  if (countEl) {
+    countEl.textContent = inView.length < _allClinics.length
+      ? inView.length.toLocaleString('zh-HK') + ' ' + t('in_view')
+      : inView.length.toLocaleString('zh-HK') + ' ' + t('clinics_count');
+    countEl.style.display = 'block';
+  }
+}
+
+function buildMapCard(c, carousel) {
+  const cls = carousel ? 'map-carousel-card' : 'map-clinic-card';
+  const logoHTML = c.logo
+    ? `<img class="map-card-logo" src="${c.logo}" alt="">`
+    : `<div class="map-card-logo-placeholder">${(c.name||'?').charAt(0)}</div>`;
+  const rating = c.rating ? parseFloat(c.rating).toFixed(1) : '–';
+  const reviews = (c.reviews||0).toLocaleString('zh-HK');
+  const priceHTML = c.price != null
+    ? `<div style="margin-bottom:0.3rem;"><span class="map-card-price">HK$${c.price}</span> <span class="map-card-price-unit">${t('unit_slash')}</span></div>`
+    : '';
+  const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
+  const canHover = window.matchMedia('(hover: hover)').matches;
+  const hoverAttrs = canHover
+    ? `onmouseenter="highlightPinById('${c.id}')" onmouseleave="unhighlightPinById('${c.id}')"`
+    : '';
+  return `<div class="${cls}" data-cid="${c.id}" onclick="onCardClick('${c.id}')" ${hoverAttrs}>` +
+    `<div class="map-card-top">${logoHTML}` +
+    `<div class="map-card-name-block">` +
+    `<div class="map-card-name">${c.name||''}</div>` +
+    `<div class="map-card-meta">📍 ${hood}</div></div>` +
+    `<div class="map-card-rating-badge">` +
+    `<div class="map-card-rating-score">${rating}</div>` +
+    `<div class="map-card-rating-star">★★★★★</div>` +
+    `<div class="map-card-rating-reviews">${reviews} ${t('reviews_unit')}</div></div></div>` +
+    priceHTML +
+    `<div class="map-card-footer"><a href="#" class="map-card-view" onclick="event.preventDefault();event.stopPropagation();openMapModal('${c.id}')">${t('view_data')}</a></div></div>`;
+}
+
+function highlightCard(cid) { document.querySelectorAll('[data-cid]').forEach(el => el.classList.toggle('highlighted', el.dataset.cid === String(cid))); }
+function scrollCardListTo(cid) {
+  const container = document.getElementById('mapCardList');
+  const card = container?.querySelector('[data-cid="' + _normCid(cid) + '"]');
+  if (!container || !card) return;
+  const delta = card.getBoundingClientRect().top - container.getBoundingClientRect().top;
+  container.scrollTo({ top: Math.max(0, container.scrollTop + delta - container.clientHeight * 0.35), behavior: 'smooth' });
+}
+function scrollCarouselTo(cid) {
+  const track = document.getElementById('mapCarouselTrack');
+  const card = track?.querySelector('.map-carousel-card[data-cid="' + _normCid(cid) + '"]');
+  if (!track || !card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+}
+function updateMarkers() { _markers.forEach(m => { if (m._count) return; m.setIcon(m._cid === _activeCid ? PIN_ACTIVE : PIN_IDLE); }); }
+function updateCards() { document.querySelectorAll('[data-cid]').forEach(el => el.classList.toggle('highlighted', el.dataset.cid === _activeCid)); }
+function syncScrollToSelected() { if (!_activeCid) return; if (isMobileMapUI()) scrollCarouselTo(_activeCid); else scrollListTo(_activeCid); }
+function renderSelection() { updateMarkers(); updateCards(); syncScrollToSelected(); }
+function scrollListTo(cid) { scrollCardListTo(cid); }
+function selectClinic(cid) { _activeCid = _normCid(cid); updateMarkers(); updateCards(); if (isMobileMapUI()) syncScrollToSelected(); }
+function panToClinic(cid) { const c = _getClinic(cid); if (c && _map) _map.panTo({ lat: Number(c.lat), lng: Number(c.lng) }); }
+function onCardClick(cid) { selectClinic(cid); panToClinic(cid); if (!isMobileMapUI()) openMapModal(cid); }
+function placeUserPin(lat, lng) {
+  if (_userMarker) { _userMarker.setMap(null); _userMarker = null; }
+  if (!_map) return;
+  _userMarker = new google.maps.Marker({ position: { lat, lng }, map: _map, optimized: false, zIndex: 9999,
+    icon: { path: google.maps.SymbolPath.CIRCLE, fillColor: '#4A90D9', fillOpacity: 1, strokeColor: '#ffffff', strokeWeight: 3, scale: 10 }, title: t('your_location') });
+}
+function highlightPinById(cid) {
+  if (!window.matchMedia('(hover: hover)').matches) return;
+  clearTimeout(_hoverTimer);
+  _hoverTimer = setTimeout(() => {
+    const id = _normCid(cid);
+    if (_activeCid === id) return;
+    const m = _getMarker(id);
+    if (m) m.setIcon(PIN_HOVER);
+    document.querySelectorAll('[data-cid="' + id + '"]').forEach(el => el.classList.add('is-hovered'));
+  }, 40);
+}
+function unhighlightPinById(cid) {
+  clearTimeout(_hoverTimer);
+  const id = _normCid(cid);
+  if (_activeCid === id) return;
+  const m = _getMarker(id);
+  if (m) m.setIcon(PIN_IDLE);
+  document.querySelectorAll('[data-cid="' + id + '"]').forEach(el => el.classList.remove('is-hovered'));
+}
+
+// ─── LANGUAGE APPLY / TOGGLE ──────────────────────────────────
+function applyLang() {
+  var isEn = LANG === 'en';
+  document.documentElement.setAttribute('lang', isEn ? 'en' : 'zh-HK');
+
+  // swap text/placeholder for [data-en][data-zh]
+  document.querySelectorAll('[data-en][data-zh]').forEach(function(el) {
+    var val = isEn ? el.getAttribute('data-en') : el.getAttribute('data-zh');
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') { el.placeholder = val; }
+    else { el.innerHTML = val; }
+  });
+  // swap optgroup labels
+  document.querySelectorAll('optgroup[data-en-label][data-zh-label]').forEach(function(og) {
+    og.label = isEn ? og.getAttribute('data-en-label') : og.getAttribute('data-zh-label');
+  });
+  // toggle active state on lang buttons
+  document.querySelectorAll('.lang-toggle .lang-btn').forEach(function(btn) {
+    var txt = btn.textContent.trim();
+    btn.classList.toggle('active', (txt === 'EN' && isEn) || (txt === '繁' && !isEn));
+  });
+  // title + meta
+  document.title = isEn
+    ? 'SkinDay Hong Kong - Aesthetic Clinic Directory · 1,000+ clinics'
+    : 'SkinDay Hong Kong - 香港醫美診所搜尋 · 1,000+ 間診所';
+
+  // re-render dynamic JS-generated content so t() strings update
+  try { if (typeof currentPageClinics !== 'undefined' && currentPageClinics.length) renderPageCards(currentPageClinics, false); } catch (e) {}
+  try { if (typeof updateShortlistUI === 'function') updateShortlistUI(); } catch (e) {}
+  try { if (typeof currentView !== 'undefined' && currentView === 'map' && _allClinics && _allClinics.length && _map) { renderDesktopList(); renderCarousel(); updateViewportCount(); } } catch (e) {}
+  try { if (typeof updateNeighbourhoodCounts === 'function') updateNeighbourhoodCounts(); } catch (e) {}
+  try { if (typeof updateCompareBar === 'function') updateCompareBar(); } catch (e) {}
+}
+
+function setLang(lang) {
+  if (lang !== 'en' && lang !== 'zh') return;
+  LANG = lang;
+  try { localStorage.setItem('sd-lang', lang); } catch (e) {}
+  applyLang();
+}
+
+// apply detected language as early as possible
+applyLang();
+
+// ─── INIT ─────────────────────────────────────────────────────
+(async function init() {
+  const grid = document.getElementById('cardsGrid');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;letter-spacing:0.03em;">' + t('loading') + '</div>';
+
+  const [indexRes, pageRes] = await Promise.allSettled([
+    fetch('/api/get-clinics?mode=index&country=hongkong').then(r => r.ok ? r.json() : []),
+    fetch(buildApiUrl(0)).then(r => r.ok ? r.json() : { clinics: [], total: 0, hasMore: false }),
+  ]);
+
+  if (indexRes.status === 'fulfilled' && Array.isArray(indexRes.value)) {
+    clinicsIndex = indexRes.value.map(normaliseClinic);
+    updateNeighbourhoodCounts();
+  }
+
+  if (pageRes.status === 'fulfilled') {
+    const data = pageRes.value;
+    const raw = (data.clinics || []).map(normaliseClinic);
+    currentPageClinics = raw; currentPage = 0; currentTotal = data.total || 0;
+    if (raw.length === 0) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">' + t('no_clinics') + '</div>'; }
+    else { renderPageCards(raw, false); }
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
+    if (loadMoreBtn) loadMoreBtn.style.display = data.hasMore ? 'inline-block' : 'none';
+  } else {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">' + t('load_failed') + '</div>';
+  }
+
+  await initAuth();
+  await updateShortlistUI();
+
+  // Live clinic count
+  try {
+    const res = await fetch(SB_URL + '/rest/v1/clinics?select=id&approved=eq.true&country=eq.hongkong', { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Prefer': 'count=exact', 'Range': '0-0' } });
+    const count = parseInt((res.headers.get('content-range')||'').split('/')[1]||'0', 10);
+    if (count) { const el = document.getElementById('heroClinicCount'); if (el) el.textContent = count.toLocaleString('zh-HK') + '+'; }
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
