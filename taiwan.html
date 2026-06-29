@@ -1577,6 +1577,12 @@ window.openClinicModal = async function(id) {
     c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">🌐 官網</a>` : '',
     `</div>`,
 
+    // View full profile link
+    (function(){
+      const slug = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
+      return slug ? `<div style="margin-bottom:1rem;"><a href="/clinic/${slug}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">查看完整診所資料 →</a></div>` : '';
+    })(),
+
     // Report link
     `<div style="text-align:center;border-top:1px solid var(--border);padding-top:1rem;">`,
     `<button onclick="reportTaiwanClinic('${c.id}', this)" style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px;">回報資料有誤</button>`,

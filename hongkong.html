@@ -1049,6 +1049,7 @@ const T = {
   unit: { zh: '單位', en: 'unit' },
   plan_route: { zh: '📍 開啟路線', en: '📍 Directions' },
   report_error: { zh: '回報資料錯誤', en: 'Report an error' },
+  view_full_profile: { zh: '查看完整診所資料 →', en: 'View full clinic profile →' },
   report_received: { zh: '已收到回報，多謝你', en: 'Report received, thank you' },
   already_voted: { zh: '你已經為呢間診所投票。', en: 'You have already voted for this clinic.' },
   fill_name_email: { zh: '請填寫診所名稱同電郵。', en: 'Please enter the clinic name and email.' },
@@ -1589,6 +1590,12 @@ window.openClinicModal = async function(id) {
     c.phone ? `<a href="tel:${c.phone}" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">${t('call_btn')}</a>` : '',
     c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">${t('official_site')}</a>` : '',
     `</div>`,
+
+    // View full profile link
+    (function(){
+      const slug = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
+      return slug ? `<div style="margin-bottom:1rem;"><a href="/clinic/${slug}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">${t('view_full_profile')}</a></div>` : '';
+    })(),
 
     // Report link
     `<div style="text-align:center;border-top:1px solid var(--border);padding-top:1rem;">`,
