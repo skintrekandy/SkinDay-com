@@ -102,13 +102,6 @@ function buildSchema(clinic) {
       addressLocality: clinic.neighbourhood || clinic.district || '',
       addressCountry: clinic.country === 'taiwan' ? 'TW' : 'HK'
     },
-    ...(clinic.latitude && clinic.longitude && {
-      geo: {
-        '@type': 'GeoCoordinates',
-        latitude: clinic.latitude,
-        longitude: clinic.longitude
-      }
-    }),
     ...(clinic.rating && {
       aggregateRating: {
         '@type': 'AggregateRating',
@@ -230,7 +223,7 @@ exports.handler = async (event) => {
     // We match against toSlug(name) since we don't store slug column
     const { data: clinics, error } = await supabase
       .from('clinics')
-      .select('id, name, neighbourhood, country, phone, website, rating, reviews, latitude, longitude, photos')
+      .select('id, name, neighbourhood, country, phone, website, rating, reviews, photos')
       .in('country', ['taiwan', 'hongkong'])
       .not('name', 'is', null);
 
