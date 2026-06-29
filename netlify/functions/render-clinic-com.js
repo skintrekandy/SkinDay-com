@@ -229,7 +229,7 @@ exports.handler = async (event) => {
     // We match against toSlug(name) since we don't store slug column
     const { data: clinics, error } = await supabase
       .from('clinics')
-      .select('id, name, neighbourhood, district, country, phone, website, rating, reviews, latitude, longitude, photos')
+      .select('id, name, neighbourhood, country, phone, website, rating, reviews, latitude, longitude, photos')
       .in('country', ['taiwan', 'hongkong'])
       .not('name', 'is', null);
 

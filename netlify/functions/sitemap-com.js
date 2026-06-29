@@ -30,7 +30,7 @@ exports.handler = async () => {
     // Fetch all indexable TW + HK clinics
     const { data: clinics, error } = await supabase
       .from('clinics')
-      .select('id, name, country, neighbourhood, district, rating, reviews, updated_at')
+      .select('id, name, country, neighbourhood, rating, reviews, updated_at')
       .in('country', ['taiwan', 'hongkong'])
       .not('name', 'is', null)
       .not('neighbourhood', 'is', null);
