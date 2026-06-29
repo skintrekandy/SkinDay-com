@@ -32,7 +32,7 @@ exports.handler = async () => {
     const { data: clinics, error } = await supabase
       .from('clinics')
       .select('id, name, country, neighbourhood, rating, reviews, updated_at')
-      .in('country', ['taiwan', 'hongkong'])
+      .in('country', ['taiwan', 'hongkong', 'usa'])
       .not('name', 'is', null)
       .not('neighbourhood', 'is', null);
 
@@ -50,6 +50,16 @@ exports.handler = async () => {
       { path: '/guide',      priority: '0.8' },
       { path: '/taiwan',     priority: '0.9' },
       { path: '/hongkong',   priority: '0.9' },
+      { path: '/us',         priority: '0.9' },
+      { path: '/us/california',                priority: '0.8' },
+      { path: '/us/california/los-angeles',    priority: '0.8' },
+      { path: '/us/california/san-francisco',  priority: '0.8' },
+      { path: '/us/california/san-diego',      priority: '0.8' },
+      { path: '/us/california/orange-county',  priority: '0.8' },
+      { path: '/us/california/sacramento',     priority: '0.8' },
+      { path: '/us/california/inland-empire',  priority: '0.8' },
+      { path: '/us/new-york',                  priority: '0.8' },
+      { path: '/us/new-york/new-york-city',    priority: '0.8' },
       { path: '/studio',     priority: '0.7' },
       { path: '/contact',    priority: '0.5' },
       { path: '/terms',      priority: '0.3' },

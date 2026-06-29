@@ -33,6 +33,7 @@ function toSlug(name) {
 function countryLabel(country, lang) {
   if (country === 'taiwan') return lang === 'zh' ? '\u53F0\u7063' : 'Taiwan';
   if (country === 'hongkong') return lang === 'zh' ? '\u9999\u6E2F' : 'Hong Kong';
+  if (country === 'usa') return 'United States';
   return '';
 }
 
@@ -43,6 +44,7 @@ function primaryLang(country) {
 function dirPath(country) {
   if (country === 'taiwan') return '/taiwan';
   if (country === 'hongkong') return '/hongkong';
+  if (country === 'usa') return '/us';
   return '/';
 }
 
@@ -74,7 +76,7 @@ function buildSchema(clinic, url) {
     address: {
       '@type': 'PostalAddress',
       addressLocality: clinic.neighbourhood || '',
-      addressCountry: clinic.country === 'taiwan' ? 'TW' : 'HK'
+      addressCountry: clinic.country === 'taiwan' ? 'TW' : (clinic.country === 'usa' ? 'US' : 'HK')
     },
     ...(clinic.rating && {
       aggregateRating: {
@@ -317,7 +319,7 @@ exports.handler = async (event) => {
     const { data: clinics, error } = await supabase
       .from('clinics')
       .select('id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url')
-      .in('country', ['taiwan', 'hongkong'])
+      .in('country', ['taiwan', 'hongkong', 'usa'])
       .not('name', 'is', null);
 
     if (error) {
