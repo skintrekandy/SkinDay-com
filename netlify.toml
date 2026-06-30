@@ -130,12 +130,23 @@
   status = 200
   force  = true
 
-# ── US DIRECTORY PAGES (SSR) ──────────────────────────────────────
-# One function handles all three page depths:
-#   /us                        -> state selector
-#   /us/california             -> metro selector
-#   /us/california/los-angeles -> clinic directory
-# Order matters: more specific paths first.
+# ── US DIRECTORY PAGES ────────────────────────────────────────────
+# Metro directory pages (3 segments) -> client-side us-metro.html
+# which reads state/metro from the URL. Full feature parity with
+# taiwan.html/hk.html (photos, compare, shortlist, map).
+[[redirects]]
+  from   = "/us/california/*"
+  to     = "/us-metro.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/us/new-york/*"
+  to     = "/us-metro.html"
+  status = 200
+  force  = true
+
+# State selector + landing (1-2 segments) -> SSR selector pages
 [[redirects]]
   from   = "/us"
   to     = "/.netlify/functions/render-us"
