@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>US Cosmetic Clinic Directory | SkinDay</title>
+  <link rel="canonical" href="https://skinday.com/us" />
+  <meta name="description" content="Find cosmetic clinics across the United States. Choose a state to browse and compare clinics by metro area on SkinDay." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="SkinDay" />
+  <meta property="og:title" content="US Cosmetic Clinic Directory | SkinDay" />
+  <meta property="og:description" content="Find cosmetic clinics across the United States. Choose a state to start comparing." />
+  <meta property="og:url" content="https://skinday.com/us" />
+  <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root{--deep:#1C1714;--cream:#FAF7F2;--warm:#F4EDE4;--rose:#2B4C7E;--us-red:#C0392B;--gold:#C9A96E;--text:#2C2724;--muted:#7A6E68;--border:#E8E0D6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--cream);color:var(--text);font-family:'DM Sans',system-ui,sans-serif;font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+    a{color:inherit;text-decoration:none;}
+    .nav{background:var(--deep);padding:0 5%;height:60px;display:flex;align-items:center;justify-content:space-between;}
+    .nav-logo{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--cream);letter-spacing:.03em;}
+    .nav-logo span{color:var(--gold);}
+    .hero{background:var(--deep);padding:64px 5% 80px;}
+    .hero-inner{max-width:1080px;margin:0 auto;}
+    .hero-eyebrow{display:flex;align-items:center;gap:14px;font-size:.74rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:28px;}
+    .hero-eyebrow::before{content:'';display:block;width:30px;height:1px;background:var(--gold);}
+    .hero h1{font-family:'Cormorant Garamond',serif;font-size:3rem;font-weight:500;line-height:1.08;color:var(--cream);margin-bottom:18px;}
+    .hero h1 em{font-style:italic;color:var(--gold);}
+    .hero-sub{font-size:1.05rem;color:rgba(250,247,242,.7);max-width:560px;}
+    .wrap{max-width:1080px;margin:0 auto;padding:56px 5% 90px;}
+    .section-label{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
+    .section-label:not(:first-child){margin-top:52px;}
+    .state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px;align-items:stretch;}
+    .state-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:30px 28px;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s,border-color .18s;}
+    .state-card:hover{transform:translateY(-4px);box-shadow:0 16px 44px rgba(28,23,20,.1);border-color:var(--rose);}
+    .state-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+    .state-card-name{font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:500;color:var(--deep);}
+    .state-card-metros{font-size:.86rem;color:var(--muted);margin-bottom:18px;line-height:1.5;flex:1;}
+    .state-card-foot{display:flex;align-items:center;justify-content:space-between;}
+    .state-card-count{font-size:.9rem;font-weight:600;color:var(--rose);}
+    .state-card-arrow{font-size:.9rem;color:var(--rose);font-weight:500;}
+    .badge{font-size:.68rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:99px;}
+    .badge.live{background:rgba(200,114,90,.12);color:var(--rose);}
+    .badge.soon{background:var(--border);color:var(--muted);}
+    .soon-card{background:transparent;border:1px dashed var(--border);border-radius:16px;padding:30px 28px;opacity:.7;}
+    .soon-card .state-card-name{color:var(--muted);}
+    .footer{border-top:1px solid var(--border);padding:36px 5%;text-align:center;font-size:.8rem;color:var(--muted);}
+    .footer a{color:var(--rose);}
+    @media(max-width:640px){.hero h1{font-size:2.1rem;}.hero{padding:48px 5% 60px;}}
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/" class="nav-logo">Skin<span>Day</span></a>
+</nav>
+
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">SkinDay United States</div>
+    <h1>Find cosmetic clinics<br><em>across the United States.</em></h1>
+    <p class="hero-sub">Choose a state to start comparing cosmetic clinics by metro area, with ratings, photos and details.</p>
+  </div>
+</section>
+
+<div class="wrap">
+  <div class="section-label">Available now</div>
+  <div class="state-grid">
+
+    <a href="/us/california" class="state-card">
+      <div class="state-card-head">
+        <span class="state-card-name">California</span>
+        <span class="badge live">Live</span>
+      </div>
+      <div class="state-card-metros">Los Angeles &middot; Orange County &middot; San Francisco Bay &middot; San Diego &middot; Sacramento &middot; Inland Empire</div>
+      <div class="state-card-foot">
+        <span class="state-card-count" id="count-california">&nbsp;</span>
+        <span class="state-card-arrow">View California &rarr;</span>
+      </div>
+    </a>
+
+    <a href="/us/new-york" class="state-card">
+      <div class="state-card-head">
+        <span class="state-card-name">New York</span>
+        <span class="badge live">Live</span>
+      </div>
+      <div class="state-card-metros">New York City &middot; Manhattan &middot; Brooklyn &middot; Queens</div>
+      <div class="state-card-foot">
+        <span class="state-card-count" id="count-new-york">&nbsp;</span>
+        <span class="state-card-arrow">View New York &rarr;</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="section-label">Coming soon</div>
+  <div class="state-grid">
+    <div class="soon-card">
+      <div class="state-card-head"><span class="state-card-name">Texas</span><span class="badge soon">Soon</span></div>
+      <div class="state-card-metros">Houston &middot; Dallas &middot; Austin &middot; San Antonio</div>
+    </div>
+    <div class="soon-card">
+      <div class="state-card-head"><span class="state-card-name">Florida</span><span class="badge soon">Soon</span></div>
+      <div class="state-card-metros">Miami &middot; Orlando &middot; Tampa &middot; Jacksonville</div>
+    </div>
+    <div class="soon-card">
+      <div class="state-card-head"><span class="state-card-name">Nevada</span><span class="badge soon">Soon</span></div>
+      <div class="state-card-metros">Las Vegas &middot; Reno &middot; Henderson</div>
+    </div>
+    <div class="soon-card">
+      <div class="state-card-head"><span class="state-card-name">Illinois</span><span class="badge soon">Soon</span></div>
+      <div class="state-card-metros">Chicago &middot; Naperville &middot; Evanston</div>
+    </div>
+    <div class="soon-card">
+      <div class="state-card-head"><span class="state-card-name">Washington</span><span class="badge soon">Soon</span></div>
+      <div class="state-card-metros">Seattle &middot; Bellevue &middot; Tacoma</div>
+    </div>
+    <div class="soon-card">
+      <div class="state-card-head"><span class="state-card-name">Arizona</span><span class="badge soon">Soon</span></div>
+      <div class="state-card-metros">Phoenix &middot; Scottsdale &middot; Tucson</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  SkinDay &middot; Helping cosmetic clinics grow worldwide &middot; <a href="/">skinday.com</a>
+</div>
+
+<script>
+(function(){
+  const SB_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+  async function countState(state, elId) {
+    try {
+      const res = await fetch(SB_URL + '/rest/v1/clinics?select=id&approved=eq.true&country=eq.usa&state=eq.' + state, {
+        headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Prefer': 'count=exact', 'Range': '0-0' }
+      });
+      const total = parseInt((res.headers.get('content-range') || '').split('/')[1] || '0', 10);
+      const el = document.getElementById(elId);
+      if (el && total) el.textContent = total.toLocaleString('en-US') + '+ clinics';
+    } catch(e) {}
+  }
+  countState('california', 'count-california');
+  countState('new-york', 'count-new-york');
+})();
+</script>
+
+</body>
+</html>

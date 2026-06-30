@@ -130,6 +130,41 @@
   status = 200
   force  = true
 
+# ── US DIRECTORY ──────────────────────────────────────────────────
+# /us              -> state selector (us.html)
+# /us/california   -> state directory (us-state.html, reads state from URL)
+# /us/new-york     -> same template
+[[redirects]]
+  from   = "/us/california"
+  to     = "/us-state.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/us/new-york"
+  to     = "/us-state.html"
+  status = 200
+  force  = true
+
+# Any other /us/* (old nested URLs, typos) -> state selector
+[[redirects]]
+  from   = "/us/*"
+  to     = "/us"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/us.html"
+  to     = "/us"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/us"
+  to     = "/us.html"
+  status = 200
+  force  = true
+
 # ── DYNAMIC SITEMAP ───────────────────────────────────────────────
 # Serves all TW + HK clinic URLs + static pages from Supabase.
 [[redirects]]
