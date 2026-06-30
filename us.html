@@ -36,12 +36,12 @@
     .wrap{max-width:1080px;margin:0 auto;padding:56px 5% 90px;}
     .section-label{font-size:.72rem;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:20px;}
     .section-label:not(:first-child){margin-top:52px;}
-    .state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px;}
-    .state-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:30px 28px;display:block;transition:transform .18s,box-shadow .18s,border-color .18s;}
+    .state-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px;align-items:stretch;}
+    .state-card{background:#fff;border:1px solid var(--border);border-radius:16px;padding:30px 28px;display:flex;flex-direction:column;transition:transform .18s,box-shadow .18s,border-color .18s;}
     .state-card:hover{transform:translateY(-4px);box-shadow:0 16px 44px rgba(28,23,20,.1);border-color:var(--rose);}
     .state-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
     .state-card-name{font-family:'Cormorant Garamond',serif;font-size:1.75rem;font-weight:500;color:var(--deep);}
-    .state-card-metros{font-size:.86rem;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+    .state-card-metros{font-size:.86rem;color:var(--muted);margin-bottom:18px;line-height:1.5;flex:1;}
     .state-card-foot{display:flex;align-items:center;justify-content:space-between;}
     .state-card-count{font-size:.9rem;font-weight:600;color:var(--rose);}
     .state-card-arrow{font-size:.9rem;color:var(--rose);font-weight:500;}
@@ -71,7 +71,7 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">SkinDay United States</div>
-    <h1>Find cosmetic clinics<br><em>across America.</em></h1>
+    <h1>Find cosmetic clinics<br><em>across the United States.</em></h1>
     <p class="hero-sub">Choose a state to start comparing cosmetic clinics by metro area, with ratings, photos and details.</p>
   </div>
 </section>
@@ -150,7 +150,7 @@
       });
       const total = parseInt((res.headers.get('content-range') || '').split('/')[1] || '0', 10);
       const el = document.getElementById(elId);
-      if (el && total) el.textContent = total.toLocaleString('en-US') + ' clinics';
+      if (el && total) el.textContent = total.toLocaleString('en-US') + '+ clinics';
     } catch(e) {}
   }
   countState('california', 'count-california');
