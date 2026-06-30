@@ -1,6 +1,6 @@
 // sitemap-com.js
 // Dynamic sitemap for skinday.com.
-// Outputs all Taiwan + HK clinic profile URLs plus static pages.
+// Outputs all Taiwan + Hong Kong + US clinic profile URLs plus static pages.
 // Deploy to: netlify/functions/sitemap-com.js
 
 const { createClient } = require('@supabase/supabase-js');
@@ -28,13 +28,15 @@ exports.handler = async () => {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const today = new Date().toISOString().split('T')[0];
 
-    // Fetch all indexable TW + HK clinics
+    // Fetch all indexable TW + HK + US clinics (approved, with a name + neighbourhood)
     const { data: clinics, error } = await supabase
       .from('clinics')
-      .select('id, name, country, neighbourhood, rating, reviews, updated_at')
+      .select('id, name, country, neighbourhood, reviews, updated_at')
       .in('country', ['taiwan', 'hongkong', 'usa'])
+      .eq('approved', true)
       .not('name', 'is', null)
-      .not('neighbourhood', 'is', null);
+      .not('neighbourhood', 'is', null)
+      .range(0, 29999);
 
     if (error) {
       console.error('sitemap-com: supabase error', error.message);
@@ -43,59 +45,50 @@ exports.handler = async () => {
 
     const entries = [];
 
-    // Static pages
+    // Static + directory pages (final architecture, no dead nested metro URLs)
     const staticPages = [
-      { path: '/',           priority: '1.0' },
-      { path: '/visualize',  priority: '0.9' },
-      { path: '/guide',      priority: '0.8' },
-      { path: '/taiwan',     priority: '0.9' },
-      { path: '/hongkong',   priority: '0.9' },
-      { path: '/us',         priority: '0.9' },
-      { path: '/us/california',                priority: '0.8' },
-      { path: '/us/california/los-angeles',    priority: '0.8' },
-      { path: '/us/california/san-francisco',  priority: '0.8' },
-      { path: '/us/california/san-diego',      priority: '0.8' },
-      { path: '/us/california/orange-county',  priority: '0.8' },
-      { path: '/us/california/sacramento',     priority: '0.8' },
-      { path: '/us/california/inland-empire',  priority: '0.8' },
-      { path: '/us/new-york',                  priority: '0.8' },
-      { path: '/us/new-york/new-york-city',    priority: '0.8' },
-      { path: '/studio',     priority: '0.7' },
-      { path: '/contact',    priority: '0.5' },
-      { path: '/terms',      priority: '0.3' },
-      { path: '/privacy',    priority: '0.3' },
-      { path: '/refund',     priority: '0.3' },
+      { path: '/',                 priority: '1.0' },
+      { path: '/visualize',        priority: '0.9' },
+      { path: '/guide',            priority: '0.8' },
+      { path: '/taiwan',           priority: '0.9' },
+      { path: '/hongkong',         priority: '0.9' },
+      { path: '/us',               priority: '0.9' },
+      { path: '/us/california',    priority: '0.9' },
+      { path: '/us/new-york',      priority: '0.9' },
+      { path: '/studio',           priority: '0.7' },
+      { path: '/contact',          priority: '0.5' },
+      { path: '/terms',            priority: '0.3' },
+      { path: '/privacy',          priority: '0.3' },
+      { path: '/refund',           priority: '0.3' },
     ];
 
     for (const page of staticPages) {
       entries.push(urlEntry(`${SITE}${page.path}`, page.priority, today));
     }
 
-    // Clinic profile pages
-    let twCount = 0;
-    let hkCount = 0;
+    // Clinic profile pages, deduped by slug (different clinics can produce the same slug)
+    const seenSlugs = new Set();
+    const counts = { taiwan: 0, hongkong: 0, usa: 0 };
 
     for (const clinic of clinics || []) {
       const slug = toSlug(clinic.name);
-      if (!slug) continue;
-
-      // Skip clinics with no meaningful data
-      if (!clinic.neighbourhood && !clinic.district) continue;
+      if (!slug) continue;            // Chinese-only names produce empty slug, skip
+      if (seenSlugs.has(slug)) continue;
+      seenSlugs.add(slug);
 
       const lastmod = clinic.updated_at
         ? clinic.updated_at.split('T')[0]
         : today;
 
-      // Clinics with reviews get slightly higher priority
+      // Clinics with more reviews get slightly higher priority
       const priority = (clinic.reviews && clinic.reviews > 10) ? '0.7' : '0.6';
 
       entries.push(urlEntry(`${SITE}/clinic/${slug}`, priority, lastmod));
 
-      if (clinic.country === 'taiwan') twCount++;
-      if (clinic.country === 'hongkong') hkCount++;
+      if (counts[clinic.country] !== undefined) counts[clinic.country]++;
     }
 
-    console.log(`sitemap-com: ${staticPages.length} static + ${twCount} TW + ${hkCount} HK = ${entries.length} total URLs`);
+    console.log(`sitemap-com: ${staticPages.length} static + ${counts.taiwan} TW + ${counts.hongkong} HK + ${counts.usa} US = ${entries.length} total URLs`);
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
