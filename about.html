@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light only">
-<title>About SkinDay · The clinic growth platform for aesthetic medicine</title>
-<meta name="description" content="SkinDay helps aesthetic clinics grow by connecting them with the right clients — not just more clients. Directory, Visualize, and Studio work together across the full patient journey.">
+<title>About SkinDay · Closing the gap between expectation and reality</title>
+<meta name="description" content="SkinDay helps aesthetic clinics build lasting patient relationships by closing the gap between expectation and reality. Directory, Visualize, and Studio across the full patient journey.">
 <link rel="canonical" href="https://skinday.com/about">
 <link rel="icon" href="/favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -133,6 +133,25 @@
   .fade-in{opacity:0;transform:translateY(20px);transition:opacity .7s ease,transform .7s ease;}
   .fade-in.visible{opacity:1;transform:none;}
 
+  /* ── JOURNEY FLOW ── */
+  .journey{display:flex;flex-direction:column;gap:0;margin:2.5rem 0 0;}
+  .journey-step{display:flex;align-items:center;gap:1.2rem;padding:1.1rem 0;}
+  .journey-dot{width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0;}
+  .journey-label{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:400;color:var(--deep);}
+  .section.dark .journey-label{color:var(--cream);}
+  .journey-rule{width:1px;height:24px;background:var(--line);margin-left:4.5px;}
+  .section.dark .journey-rule{background:rgba(201,169,110,0.25);}
+
+  /* ── FOUNDER ── */
+  .founder{border-left:3px solid var(--gold);padding:.4rem 0 .4rem 1.8rem;margin:2rem 0;}
+  .founder-name{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-top:1.2rem;font-weight:500;}
+
+  /* ── TRIO ── */
+  .trio{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:2.5rem 0;}
+  .trio-item{background:var(--cream);padding:2rem 1.6rem;}
+  .trio-name{font-family:'Cormorant Garamond',serif;font-size:1.45rem;font-weight:500;color:var(--rose);margin-bottom:.5rem;}
+  .trio-desc{font-size:.88rem;line-height:1.6;color:var(--muted);font-weight:300;}
+
   @media(prefers-reduced-motion:reduce){.fade-in{opacity:1;transform:none;transition:none;}}
   @media(max-width:640px){
     .section{padding:64px 24px;}
@@ -140,6 +159,8 @@
     .data-grid{grid-template-columns:1fr 1fr;}
     .feature-item{flex-direction:column;gap:1rem;}
     .foot-top{flex-direction:column;gap:32px;}
+    .trio{grid-template-columns:1fr;}
+    .journey-label{font-size:1.2rem;}
   }
 </style>
 </head>
@@ -150,8 +171,8 @@
     <a href="/" class="brand">Skin<span>Day</span></a>
     <div class="nav-right">
       <div class="nav-links">
-        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
         <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+        <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
         <a href="/taiwan" data-en="Directory" data-zh="診所目錄">Directory</a>
         <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
       </div>
@@ -168,103 +189,117 @@
 <header class="hero">
   <div class="hero-inner">
     <div class="eyebrow" data-en="About SkinDay" data-zh="關於 SkinDay">About SkinDay</div>
-    <h1 class="serif" data-en="The right client.<br><em>For the right clinic.</em>" data-zh="找到對的客戶，<br><em>遇見對的診所。</em>">The right client.<br><em>For the right clinic.</em></h1>
-    <p class="hero-sub" data-en="The aesthetic medicine industry is more competitive than ever. Most platforms sell more clicks. SkinDay works differently — we help clinics grow by reducing mismatch, deepening the consultation, and building the patient relationships that actually drive retention." data-zh="醫美市場競爭激烈。多數平台只是販售更多點擊。SkinDay 選擇不同的路——我們協助診所減少客戶不匹配的問題，深化諮詢流程，建立真正帶來留客率的長期關係。">The aesthetic medicine industry is more competitive than ever. Most platforms sell more clicks. SkinDay works differently — we help clinics grow by reducing mismatch, deepening the consultation, and building the patient relationships that actually drive retention.</p>
+    <h1 class="serif" data-en="Why does one patient<br>return for years,<br><em>while another never<br>comes back?</em>" data-zh="為什麼有些患者，<br>願意回診多年，<br><em>有些卻一去<br>不復返？</em>">Why does one patient<br>return for years,<br><em>while another never<br>comes back?</em></h1>
+    <p class="hero-sub" data-en="We don't think the answer is more advertising. We think it starts with the right expectations." data-zh="我們認為答案不在於更多廣告，而在於一開始就建立正確的期待。">We don't think the answer is more advertising. We think it starts with the right expectations.</p>
   </div>
 </header>
 
-<!-- THE PROBLEM -->
+<!-- THE INSIGHT -->
 <section class="section fade-in">
   <div class="wrap-narrow">
-    <div class="section-label" data-en="The Problem" data-zh="問題所在">The Problem</div>
-    <h2 class="serif" data-en="Acquisition is not<br><em>the hard part.</em>" data-zh="獲客從來<br><em>不是最難的。</em>">Acquisition is not<br><em>the hard part.</em></h2>
-    <p class="prose" data-en="Most clinic growth strategies are built around the top of the funnel — ads, directories, lead gen, more new patients. The assumption is that volume solves everything. It doesn't." data-zh="大多數診所的成長策略都圍繞在漏斗頂端——廣告、目錄、開發更多新客。這種策略的前提是，數量能解決一切。但事實並非如此。">Most clinic growth strategies are built around the top of the funnel — ads, directories, lead gen, more new patients. The assumption is that volume solves everything. It doesn't.</p>
-    <p class="prose" data-en="A patient who books the wrong clinic wastes a consultation slot, leaves a lukewarm review, and doesn't come back. The clinic acquires a cost, not a relationship. Meanwhile the patient — frustrated, not worse off — moves on and tries again somewhere else." data-zh="一位預約了不適合診所的患者，浪費了一個諮詢時段、留下平淡的評論，然後消失不再回來。診所付出了成本，卻沒有建立關係。而這位患者，帶著一絲失望，轉往他處重新尋找。">A patient who books the wrong clinic wastes a consultation slot, leaves a lukewarm review, and doesn't come back. The clinic acquires a cost, not a relationship. Meanwhile the patient — frustrated, not worse off — moves on and tries again somewhere else.</p>
-
+    <div class="section-label" data-en="The Insight" data-zh="核心洞察">The Insight</div>
+    <h2 class="serif" data-en="Every treatment has<br><em>two outcomes.</em>" data-zh="每一次療程，<br><em>都有兩種結果。</em>">Every treatment has<br><em>two outcomes.</em></h2>
+    <p class="prose" data-en="The clinical outcome. And the patient's perception of it. The closer those two are, the more likely a patient is to trust, return, and recommend." data-zh="一是臨床上的結果，二是患者心中的感受。當這兩者越接近，患者就越可能信任、回診，並主動推薦。">The clinical outcome. And the patient's perception of it. The closer those two are, the more likely a patient is to trust, return, and recommend.</p>
     <div class="pull-quote">
-      <p data-en="The problem isn't finding more patients. It's finding the right ones — and keeping them." data-zh="問題不在於找到更多患者，而是找到對的人，然後留住他們。">The problem isn't finding more patients. It's finding the right ones — and keeping them.</p>
+      <p data-en="Even an excellent treatment can become a disappointing experience when expectations don't match reality." data-zh="即使是出色的療程，一旦期待與現實落差過大，也會變成令人失望的體驗。">Even an excellent treatment can become a disappointing experience when expectations don't match reality.</p>
     </div>
-
-    <p class="prose" data-en="Retention is where the real value lives. A retained patient returns, refers, and reviews with genuine enthusiasm. They're the foundation of a clinic's reputation, not just a transaction on the books." data-zh="留客才是真正的價值所在。回流的患者會再次回診、主動推薦，並留下真誠的好評。他們是診所口碑的根基，而不只是帳本上的一筆交易。">Retention is where the real value lives. A retained patient returns, refers, and reviews with genuine enthusiasm. They're the foundation of a clinic's reputation, not just a transaction on the books.</p>
-
-    <div class="data-grid light-grid" style="margin-top:2.5rem;">
-      <div class="data-item">
-        <div class="data-num">5×</div>
-        <div class="data-desc" data-en="more profitable to retain a patient than to acquire a new one" data-zh="留住一位患者的價值，是開發新患者的五倍">more profitable to retain a patient than to acquire a new one</div>
-      </div>
-      <div class="data-item">
-        <div class="data-num">4.5★</div>
-        <div class="data-desc" data-en="the rating nearly every clinic shares — stars alone don't differentiate" data-zh="幾乎每間診所都有的評分——光靠星數難以區別">the rating nearly every clinic shares — stars alone don't differentiate</div>
-      </div>
-      <div class="data-item">
-        <div class="data-num">1:1</div>
-        <div class="data-desc" data-en="the right patient matched to the right clinic, every time" data-zh="讓對的患者，遇見對的診所">the right patient matched to the right clinic, every time</div>
-      </div>
-    </div>
-
-    <p class="prose" data-en="When nearly every clinic shares a near-perfect rating and pricing varies widely, the patient doing their research can't rely on stars alone. And the clinic that happens to rank well on Google isn't necessarily the right fit for the patient searching." data-zh="當幾乎每間診所都擁有近乎滿分的評價，而價格落差又極大，僅憑星數根本無從判斷。在 Google 排名靠前的診所，未必就是那位搜尋中的患者真正需要的診所。">When nearly every clinic shares a near-perfect rating and pricing varies widely, the patient doing their research can't rely on stars alone. And the clinic that happens to rank well on Google isn't necessarily the right fit for the patient searching.</p>
+    <p class="prose" data-en="SkinDay exists to bring those two outcomes closer together." data-zh="SkinDay 的存在，就是為了拉近這兩種結果之間的距離。">SkinDay exists to bring those two outcomes closer together.</p>
   </div>
 </section>
 
-<!-- HOW SKINDAY WORKS -->
+<!-- PHILOSOPHY -->
 <section class="section dark fade-in">
   <div class="wrap-narrow">
-    <div class="section-label" data-en="How SkinDay Works" data-zh="SkinDay 如何運作">How SkinDay Works</div>
-    <h2 class="serif" data-en="Not more traffic.<br><em>The right traffic.</em>" data-zh="不是更多流量，<br><em>是對的流量。</em>">Not more traffic.<br><em>The right traffic.</em></h2>
-    <p class="prose" data-en="SkinDay works across the full patient journey — from the moment someone starts researching, through the consultation, to the follow-up that brings them back. Every product we build is in service of that arc." data-zh="SkinDay 覆蓋患者完整的就診旅程——從開始搜尋、完成諮詢，到促成回診的後續追蹤。我們打造的每項產品，都服務於這條完整的旅程。">SkinDay works across the full patient journey — from the moment someone starts researching, through the consultation, to the follow-up that brings them back. Every product we build is in service of that arc.</p>
+    <div class="section-label" data-en="What We Believe" data-zh="我們相信">What We Believe</div>
+    <h2 class="serif" data-en="Most platforms help clinics<br>get more patients.<br><em>We help them keep the<br>right ones.</em>" data-zh="多數平台幫診所<br>吸引更多患者。<br><em>我們幫診所<br>留住對的人。</em>">Most platforms help clinics<br>get more patients.<br><em>We help them keep the<br>right ones.</em></h2>
+    <p class="prose" data-en="A patient who understands their treatment, chooses the right clinic, and trusts the consultation is far more likely to return. That's why SkinDay isn't built around advertising. It's built around the chain that creates lasting patient relationships." data-zh="一位真正理解療程、選對診所、信任諮詢過程的患者，回診的機率遠遠更高。這就是為什麼 SkinDay 的核心不是廣告，而是這條打造長久患者關係的鏈條。">A patient who understands their treatment, chooses the right clinic, and trusts the consultation is far more likely to return. That's why SkinDay isn't built around advertising. It's built around the chain that creates lasting patient relationships.</p>
+    <div class="pull-quote">
+      <p data-en="Right expectations → better consultations → greater trust → higher retention → sustainable growth." data-zh="正確的期待 → 更好的諮詢 → 更深的信任 → 更高的回診率 → 永續的成長。">Right expectations → better consultations → greater trust → higher retention → sustainable growth.</p>
+    </div>
+  </div>
+</section>
 
-    <div class="feature-list">
-      <div class="feature-item">
-        <div class="feature-icon">◎</div>
-        <div class="feature-text">
-          <h4 data-en="Directory — Match at the top of the funnel" data-zh="診所目錄——漏斗頂端的精準配對">Directory — Match at the top of the funnel</h4>
-          <p data-en="The SkinDay directory surfaces credential, treatment focus, photos, and pricing alongside ratings — so a patient searching for an injector who specialises in natural results for Asian skin finds exactly that, not just the clinic with the most reviews. The right patient arrives already aligned." data-zh="SkinDay 目錄在評分之外，同步呈現執業資歷、治療專長、診所照片與價格——讓一位尋找亞洲皮膚自然感注射師的患者，能精準找到符合需求的診所，而不只是評論數最多的那家。對的患者，帶著正確的期待前來。">The SkinDay directory surfaces credential, treatment focus, photos, and pricing alongside ratings — so a patient searching for an injector who specialises in natural results for Asian skin finds exactly that, not just the clinic with the most reviews. The right patient arrives already aligned.</p>
-        </div>
+<!-- THE THREE PRODUCTS -->
+<section class="section fade-in">
+  <div class="wrap-narrow">
+    <div class="section-label" data-en="Three Products, One Purpose" data-zh="三項產品，一個目的">Three Products, One Purpose</div>
+    <h2 class="serif" data-en="Each solves the gap<br><em>from a different angle.</em>" data-zh="從不同的角度，<br><em>解決同一個落差。</em>">Each solves the gap<br><em>from a different angle.</em></h2>
+    <div class="trio">
+      <div class="trio-item">
+        <div class="trio-name serif">Directory</div>
+        <div class="trio-desc" data-en="Helps patients find the right clinic, and helps clinics understand their market." data-zh="幫患者找到對的診所，也幫診所看懂自己的市場。">Helps patients find the right clinic, and helps clinics understand their market.</div>
       </div>
-      <div class="feature-item">
-        <div class="feature-icon">◈</div>
-        <div class="feature-text">
-          <h4 data-en="Visualize — Deepen the consultation" data-zh="Visualize——深化諮詢體驗">Visualize — Deepen the consultation</h4>
-          <p data-en="AI-generated treatment previews built for clinician-led consultations. When a patient can see a realistic preview of what a treatment might look like — Sculptra volume restoration, HA filler contouring, neurotoxin relaxation — they commit with calibrated expectations, not anxiety. Lower dropout. Higher trust. Better outcomes." data-zh="為醫師主導的諮詢而設計的 AI 療程預覽工具。當患者能看到童顏針豐盈、玻尿酸塑形或肉毒放鬆的真實預覽效果，他們帶著合理的期待做決定，而非帶著不安。降低放棄率，建立信任，帶來更好的治療結果。">AI-generated treatment previews built for clinician-led consultations. When a patient can see a realistic preview of what a treatment might look like — Sculptra volume restoration, HA filler contouring, neurotoxin relaxation — they commit with calibrated expectations, not anxiety. Lower dropout. Higher trust. Better outcomes.</p>
-        </div>
+      <div class="trio-item">
+        <div class="trio-name serif">Visualize</div>
+        <div class="trio-desc" data-en="Helps patients understand outcomes, so they begin treatment with realistic expectations." data-zh="幫患者理解可能的結果，帶著務實的期待開始療程。">Helps patients understand outcomes, so they begin treatment with realistic expectations.</div>
       </div>
-      <div class="feature-item">
-        <div class="feature-icon">▣</div>
-        <div class="feature-text">
-          <h4 data-en="Studio — Build the trust assets that close the loop" data-zh="Studio——打造建立信任的視覺資產">Studio — Build the trust assets that close the loop</h4>
-          <p data-en="Polished before-and-after images, aligned and branded, ready in seconds. A clinic's outcome library becomes its most powerful retention and referral tool — the social proof that turns one happy patient into the next aligned patient walking through the door. Free to use, private by design." data-zh="對齊、品牌化、數秒完成的專業前後對比照。診所的成果圖庫，是最有力的留客與轉介工具——讓一位滿意的患者的心得，成為下一位對的患者走進診所的理由。完全免費，以隱私為核心設計。">Polished before-and-after images, aligned and branded, ready in seconds. A clinic's outcome library becomes its most powerful retention and referral tool — the social proof that turns one happy patient into the next aligned patient walking through the door. Free to use, private by design.</p>
-        </div>
+      <div class="trio-item">
+        <div class="trio-name serif">Studio</div>
+        <div class="trio-desc" data-en="Helps patients understand treatment through clear, honest before-and-after proof." data-zh="以清晰真實的前後對比，幫患者理解療程本身。">Helps patients understand treatment through clear, honest before-and-after proof.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- DATA PHILOSOPHY -->
+<!-- PATIENT JOURNEY -->
 <section class="section warm fade-in">
   <div class="wrap-narrow">
-    <div class="section-label" data-en="Our Philosophy" data-zh="我們的理念">Our Philosophy</div>
-    <h2 class="serif" data-en="Honest about<br><em>what we know.</em>" data-zh="對我們所知道的，<br><em>誠實以對。</em>">Honest about<br><em>what we know.</em></h2>
-    <p class="prose" data-en="SkinDay combines publicly available clinic information with details submitted directly by clinics. Some profiles are claimed and maintained by the clinic. Others are built from public data and may be incomplete. We tell you which is which on every listing." data-zh="SkinDay 整合公開的診所資訊與診所直接提供的內容。部分資料已由診所認領並維護，其他則來自公開資料，可能不完整。每筆資料，我們都會標示來源。">SkinDay combines publicly available clinic information with details submitted directly by clinics. Some profiles are claimed and maintained by the clinic. Others are built from public data and may be incomplete. We tell you which is which on every listing.</p>
-    <p class="prose" data-en="Pricing changes. We timestamp what we show and always recommend confirming current rates directly with the clinic. SkinDay is the best place to start your research — not the last word on it." data-zh="價格會改變。我們為所有顯示的資料標記時間戳，並建議直接向診所確認現行價格。SkinDay 是開始研究的最佳起點，但不是最終定論。">Pricing changes. We timestamp what we show and always recommend confirming current rates directly with the clinic. SkinDay is the best place to start your research — not the last word on it.</p>
-
-    <hr class="divider">
-
-    <h2 class="serif" data-en="What SkinDay<br><em>is not.</em>" data-zh="SkinDay<br><em>不是什麼。</em>">What SkinDay<br><em>is not.</em></h2>
-    <p class="prose" data-en="We don't rank clinics by who pays us. We don't sell leads or charge per click. We don't tell you which clinic is the best — that depends on your goals, approach, and the patient in front of you." data-zh="我們不依付費排序診所，不販售名單，不按點擊收費。我們也不告訴你哪家診所最好——那取決於你的目標、方法，以及你面前的那位患者。">We don't rank clinics by who pays us. We don't sell leads or charge per click. We don't tell you which clinic is the best — that depends on your goals, approach, and the patient in front of you.</p>
-    <p class="prose" data-en="We're building the infrastructure for better matches — globally. The directory is growing. The tools are evolving. The goal stays the same: the right client, at the right clinic, who stays." data-zh="我們正在全球打造更好的配對基礎設施。目錄持續擴充，工具持續進化，目標始終如一：讓對的客戶，找到對的診所，然後留下來。">We're building the infrastructure for better matches — globally. The directory is growing. The tools are evolving. The goal stays the same: the right client, at the right clinic, who stays.</p>
+    <div class="section-label" data-en="The Patient Journey" data-zh="患者的就診旅程">The Patient Journey</div>
+    <h2 class="serif" data-en="One simple path,<br><em>start to return.</em>" data-zh="一條簡單的路，<br><em>從開始到回診。</em>">One simple path,<br><em>start to return.</em></h2>
+    <div class="journey">
+      <div class="journey-step"><span class="journey-dot"></span><span class="journey-label" data-en="Find the right clinic" data-zh="找到對的診所">Find the right clinic</span></div>
+      <div class="journey-rule"></div>
+      <div class="journey-step"><span class="journey-dot"></span><span class="journey-label" data-en="Understand the treatment" data-zh="理解療程">Understand the treatment</span></div>
+      <div class="journey-rule"></div>
+      <div class="journey-step"><span class="journey-dot"></span><span class="journey-label" data-en="Visualize realistic outcomes" data-zh="看見務實的結果">Visualize realistic outcomes</span></div>
+      <div class="journey-rule"></div>
+      <div class="journey-step"><span class="journey-dot"></span><span class="journey-label" data-en="Book with confidence" data-zh="安心預約">Book with confidence</span></div>
+      <div class="journey-rule"></div>
+      <div class="journey-step"><span class="journey-dot"></span><span class="journey-label" data-en="Come back again" data-zh="再次回診">Come back again</span></div>
+    </div>
   </div>
 </section>
 
-<!-- FOR CLINICS CTA -->
+<!-- FOUNDER -->
+<section class="section fade-in">
+  <div class="wrap-narrow">
+    <div class="section-label" data-en="From the Founder" data-zh="創辦人的話">From the Founder</div>
+    <div class="founder">
+      <p class="prose" style="margin-bottom:0;" data-en="After more than sixteen years in aesthetic medicine, I realized the biggest determinant of long-term success wasn't attracting more patients. It was helping the right patients choose the right clinic, begin treatment with realistic expectations, and build enough trust to return for years. SkinDay was built around that one idea." data-zh="在醫美領域超過十六年後，我發現決定長期成功的關鍵，從來不是吸引更多患者，而是幫對的患者選對診所、帶著務實的期待開始療程，並建立足以回診多年的信任。SkinDay 就是圍繞這一個信念而生。">After more than sixteen years in aesthetic medicine, I realized the biggest determinant of long-term success wasn't attracting more patients. It was helping the right patients choose the right clinic, begin treatment with realistic expectations, and build enough trust to return for years. SkinDay was built around that one idea.</p>
+      <div class="founder-name" data-en="Dr. Andy · Founder, SkinDay" data-zh="Andy 醫師 · SkinDay 創辦人">Dr. Andy · Founder, SkinDay</div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT WE'VE BUILT -->
 <section class="section dark fade-in">
   <div class="wrap-narrow">
-    <div class="section-label" data-en="For Clinics" data-zh="給診所">For Clinics</div>
-    <h2 class="serif" data-en="Ready to attract<br><em>the right patients?</em>" data-zh="準備好吸引<br><em>對的患者了嗎？</em>">Ready to attract<br><em>the right patients?</em></h2>
-    <p class="prose" data-en="Start with Visualize — bring AI-powered treatment previews into your consultations today. Or explore the directory to see how your clinic appears to patients researching in your market." data-zh="從 Visualize 開始——立即將 AI 療程預覽帶入您的諮詢流程。或瀏覽目錄，了解您的診所在患者搜尋時呈現的樣貌。">Start with Visualize — bring AI-powered treatment previews into your consultations today. Or explore the directory to see how your clinic appears to patients researching in your market.</p>
-    <div class="btn-row">
-      <a href="/visualize" class="btn-primary" data-en="Try Visualize" data-zh="立即體驗 Visualize">Try Visualize</a>
-      <a href="/taiwan" class="btn-ghost" data-en="Browse the Directory" data-zh="瀏覽診所目錄">Browse the Directory</a>
+    <div class="section-label" data-en="What We've Built" data-zh="我們已經建立的">What We've Built</div>
+    <h2 class="serif" data-en="A foundation, <em>already live.</em>" data-zh="一個已經運作的<em>基礎。</em>">A foundation, <em>already live.</em></h2>
+    <div class="data-grid dark-grid">
+      <div class="data-item">
+        <div class="data-num">10,000+</div>
+        <div class="data-desc" data-en="clinics in the directory" data-zh="目錄中的診所">clinics in the directory</div>
+      </div>
+      <div class="data-item">
+        <div class="data-num">4</div>
+        <div class="data-desc" data-en="countries live" data-zh="已上線的國家">countries live</div>
+      </div>
+      <div class="data-item">
+        <div class="data-num">3</div>
+        <div class="data-desc" data-en="products across the patient journey" data-zh="貫穿患者旅程的產品">products across the patient journey</div>
+      </div>
     </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-band fade-in">
+  <h2 class="serif" data-en="Close the gap between<br><em>expectation and reality.</em>" data-zh="拉近期待與現實<br><em>之間的距離。</em>">Close the gap between<br><em>expectation and reality.</em></h2>
+  <p data-en="Bring AI-powered treatment previews into your consultations, or see how your clinic appears to patients researching in your market." data-zh="將 AI 療程預覽帶入您的諮詢流程，或了解您的診所在患者搜尋時呈現的樣貌。">Bring AI-powered treatment previews into your consultations, or see how your clinic appears to patients researching in your market.</p>
+  <div class="btn-row">
+    <a href="/visualize" class="btn-primary" data-en="Try Visualize" data-zh="立即體驗 Visualize">Try Visualize</a>
+    <a href="/us" class="btn-ghost" data-en="Browse the Directory" data-zh="瀏覽診所目錄">Browse the Directory</a>
   </div>
 </section>
 
@@ -273,7 +308,7 @@
   <div class="foot-top">
     <div>
       <div class="foot-brand">Skin<span>Day</span></div>
-      <div class="foot-tagline" data-en="The right client, at the right clinic, who stays." data-zh="讓對的客戶，找到對的診所，然後留下來。">The right client, at the right clinic, who stays.</div>
+      <div class="foot-tagline" data-en="Helping aesthetic clinics build lasting patient relationships." data-zh="協助醫美診所贏得顧客長久的信任。">Helping aesthetic clinics build lasting patient relationships.</div>
     </div>
     <div class="foot-cols">
       <div class="foot-col">
@@ -284,8 +319,10 @@
       </div>
       <div class="foot-col">
         <h4 data-en="Directory" data-zh="診所目錄">Directory</h4>
-        <a href="/taiwan" data-en="Taiwan" data-zh="台灣">Taiwan</a>
+        <a href="/us" data-en="USA" data-zh="美國">USA</a>
         <a href="/canada" data-en="Canada" data-zh="加拿大">Canada</a>
+        <a href="/taiwan" data-en="Taiwan" data-zh="台灣">Taiwan</a>
+        <a href="/hongkong" data-en="Hong Kong" data-zh="香港">Hong Kong</a>
       </div>
       <div class="foot-col">
         <h4 data-en="Company" data-zh="公司">Company</h4>
@@ -314,7 +351,7 @@
     document.querySelectorAll('.lang-btn').forEach(function(btn){
       btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
     });
-    document.title=isZh?'關於 SkinDay · 醫美診所成長平台':'About SkinDay · The clinic growth platform for aesthetic medicine';
+    document.title=isZh?'關於 SkinDay · 拉近期待與現實之間的距離':'About SkinDay · Closing the gap between expectation and reality';
   }
   applyLang();
 
