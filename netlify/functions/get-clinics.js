@@ -5,7 +5,7 @@ const { createClient } = require('@supabase/supabase-js');
 // Includes country + region for multi-country routing
 // Includes lat + lng for Near Me distance calc on the frontend
 const CARD_FIELDS = `
-  id, name, neighbourhood, region, country,
+  id, name, neighbourhood, region, country, state, metro,
   rating, reviews, place_id,
   phone, website,
   claimed, approved, promo, promo_text,
@@ -33,13 +33,16 @@ exports.handler = async (event) => {
     // ── MODE: lightweight index ───────────────────────────────
     // Used by taiwan.html on load to build the clinicsIndex for
     // findClinic() lookups (compare, shortlist, modal). Returns
-    // id, name, neighbourhood, region, photo, logo only — no price.
+    // id, name, neighbourhood, region, photo, logo only, no price.
     if (params.mode === 'index') {
-      const { data, error } = await supabase
+      const metroIdx = params.metro || '';
+      let idxQuery = supabase
         .from('clinics')
         .select('id, name, neighbourhood, region, photo, logo, lat, lng, rating, reviews')
         .eq('approved', true)
-        .eq('country', country)
+        .eq('country', country);
+      if (metroIdx) idxQuery = idxQuery.eq('metro', metroIdx);
+      const { data, error } = await idxQuery
         .order('id', { ascending: true })
         .range(0, 29999);
 
@@ -59,6 +62,7 @@ exports.handler = async (event) => {
     const page          = Math.max(0, parseInt(params.page || '0', 10));
     const sort          = params.sort || 'reviews';
     const neighbourhood = params.neighbourhood || '';
+    const metro         = params.metro || '';
     const search        = (params.search || '').trim();
     const from          = page * PAGE_SIZE;
     const needed        = from + PAGE_SIZE;
@@ -66,7 +70,7 @@ exports.handler = async (event) => {
     // ── BUILD BASE QUERY ─────────────────────────────────────
     // Always scoped to country. Neighbourhood slugs for Taiwan are
     // city-prefixed (e.g. taipei-daan, new-taipei-banqiao) and stored
-    // verbatim in the neighbourhood column — use exact eq() match.
+    // verbatim in the neighbourhood column, use exact eq() match.
     // No fuzzy ilike needed: slugs are clean ASCII, no accent variants.
     const buildBase = () => {
       let q = supabase
@@ -77,6 +81,7 @@ exports.handler = async (event) => {
 
       if (search)        q = q.ilike('name', `%${search}%`);
       if (neighbourhood) q = q.eq('neighbourhood', neighbourhood);
+      if (metro)         q = q.eq('metro', metro);
 
       return q;
     };
@@ -94,7 +99,7 @@ exports.handler = async (event) => {
     // snapshot that can lag. Fetch priced ids so we can surface them
     // in the four-bucket sort regardless of snapshot freshness.
     // Scope to currency matching the country (NTD for taiwan, CAD for canada).
-    const currency = country === 'taiwan' ? 'NTD' : 'CAD';
+    const currency = country === 'taiwan' ? 'NTD' : (country === 'usa' ? 'USD' : (country === 'hongkong' ? 'HKD' : 'CAD'));
 
     const pricedIdsRes = await supabase
       .from('clinic_prices')
@@ -167,7 +172,7 @@ exports.handler = async (event) => {
 
     // ── MERGE ─────────────────────────────────────────────────
     const keep = [
-      'id', 'name', 'neighbourhood', 'region', 'country',
+      'id', 'name', 'neighbourhood', 'region', 'country', 'state', 'metro',
       'rating', 'reviews', 'place_id',
       'phone', 'website',
       'claimed', 'approved', 'promo', 'promo_text',

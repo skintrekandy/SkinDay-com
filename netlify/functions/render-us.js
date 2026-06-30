@@ -152,7 +152,7 @@ function pageHead(title, description, canonical, extraHead) {
 function pageFoot() {
   return `
 <div class="footer">
-  SkinDay \u00B7 Aesthetic clinic directory \u00B7 <a href="/" style="color:var(--rose);text-decoration:none;">skinday.com</a>
+  SkinDay \u00B7 Cosmetic clinic directory \u00B7 <a href="/" style="color:var(--rose);text-decoration:none;">skinday.com</a>
 </div>
 </body>
 </html>`;
@@ -191,8 +191,8 @@ async function renderUsLanding(supabase) {
     </div>`
   ).join('');
 
-  const title = 'US Aesthetic Clinic Directory | SkinDay';
-  const description = 'Find aesthetic and cosmetic clinics across the United States. Browse by state and metro area on SkinDay.';
+  const title = 'US Cosmetic Clinic Directory | SkinDay';
+  const description = 'Find cosmetic clinics across the United States. Browse by state and metro area on SkinDay.';
   const canonical = `${SITE}/us`;
 
   return pageHead(title, description, canonical) + `
@@ -200,8 +200,8 @@ async function renderUsLanding(supabase) {
   <div class="breadcrumb">
     <a href="/">Home</a><span>/</span><span>United States</span>
   </div>
-  <h1 class="hero-h1">Aesthetic clinics across the United States</h1>
-  <p class="hero-sub">Browse cosmetic and aesthetic clinics by state and metro area. Compare ratings, services, and locations.</p>
+  <h1 class="hero-h1">Cosmetic clinics across the United States</h1>
+  <p class="hero-sub">Browse cosmetic clinics by state and metro area. Compare ratings and locations.</p>
 
   <div class="section-label">Available now</div>
   <div class="card-grid">${liveCards}</div>
@@ -239,8 +239,8 @@ async function renderStatePage(supabase, stateSlug) {
     </a>`;
   }).join('');
 
-  const title = `${st.label} Aesthetic Clinics | SkinDay`;
-  const description = `Browse aesthetic and cosmetic clinics across ${st.label} metro areas. Compare clinics on SkinDay.`;
+  const title = `${st.label} Cosmetic Clinics | SkinDay`;
+  const description = `Browse cosmetic clinics across ${st.label} metro areas. Compare clinics on SkinDay.`;
   const canonical = `${SITE}/us/${stateSlug}`;
 
   return pageHead(title, description, canonical) + `
@@ -248,7 +248,7 @@ async function renderStatePage(supabase, stateSlug) {
   <div class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/us">United States</a><span>/</span><span>${escapeHtml(st.label)}</span>
   </div>
-  <h1 class="hero-h1">${escapeHtml(st.label)} aesthetic clinics</h1>
+  <h1 class="hero-h1">${escapeHtml(st.label)} cosmetic clinics</h1>
   <p class="hero-sub">Choose a metro area to browse clinics, compare ratings and find the right injector.</p>
 
   <div class="card-grid">${cards}</div>
@@ -340,8 +340,8 @@ async function renderMetroDirectory(supabase, stateSlug, metroSlug, page) {
     pagination = `<div class="pagination">${prev}<span class="current">${page} of ${totalPages}</span>${next}</div>`;
   }
 
-  const title = `${metro.label} Aesthetic Clinics | SkinDay`;
-  const description = `Browse ${total} aesthetic and cosmetic clinics in ${metro.label}, ${st.label}. Compare ratings and find the right clinic on SkinDay.`;
+  const title = `${metro.label} Cosmetic Clinics | SkinDay`;
+  const description = `Browse ${total} cosmetic clinics in ${metro.label}, ${st.label}. Compare ratings and find the right clinic on SkinDay.`;
   const canonical = page > 1 ? `${SITE}/us/${stateSlug}/${metroSlug}?page=${page}` : `${SITE}/us/${stateSlug}/${metroSlug}`;
 
   return pageHead(title, description, canonical) + `
@@ -349,7 +349,7 @@ async function renderMetroDirectory(supabase, stateSlug, metroSlug, page) {
   <div class="breadcrumb">
     <a href="/">Home</a><span>/</span><a href="/us">United States</a><span>/</span><a href="/us/${stateSlug}">${escapeHtml(st.label)}</a><span>/</span><span>${escapeHtml(metro.label)}</span>
   </div>
-  <h1 class="hero-h1">${escapeHtml(metro.label)} aesthetic clinics</h1>
+  <h1 class="hero-h1">${escapeHtml(metro.label)} cosmetic clinics</h1>
   <p class="hero-sub">${total.toLocaleString()} clinics in ${escapeHtml(metro.label)}, ${escapeHtml(st.label)}. Ranked by rating and reviews.</p>
 
   <div class="clinic-grid">${cards}</div>
