@@ -36,12 +36,14 @@ exports.handler = async (event) => {
     // id, name, neighbourhood, region, photo, logo only, no price.
     if (params.mode === 'index') {
       const metroIdx = params.metro || '';
+      const stateIdx = params.state || '';
       let idxQuery = supabase
         .from('clinics')
         .select('id, name, neighbourhood, region, photo, logo, lat, lng, rating, reviews')
         .eq('approved', true)
         .eq('country', country);
       if (metroIdx) idxQuery = idxQuery.eq('metro', metroIdx);
+      if (stateIdx) idxQuery = idxQuery.eq('state', stateIdx);
       const { data, error } = await idxQuery
         .order('id', { ascending: true })
         .range(0, 29999);
@@ -63,6 +65,7 @@ exports.handler = async (event) => {
     const sort          = params.sort || 'reviews';
     const neighbourhood = params.neighbourhood || '';
     const metro         = params.metro || '';
+    const stateFilter   = params.state || '';
     const search        = (params.search || '').trim();
     const from          = page * PAGE_SIZE;
     const needed        = from + PAGE_SIZE;
@@ -82,6 +85,7 @@ exports.handler = async (event) => {
       if (search)        q = q.ilike('name', `%${search}%`);
       if (neighbourhood) q = q.eq('neighbourhood', neighbourhood);
       if (metro)         q = q.eq('metro', metro);
+      if (stateFilter)   q = q.eq('state', stateFilter);
 
       return q;
     };
