@@ -113,9 +113,10 @@ function renderFullPage(clinic) {
 
   // Breadcrumb labels
   const homeLbl = lang === 'zh' ? '\u9996\u9801' : 'Home';
-  const dirLbl = lang === 'zh'
-    ? (clinic.country === 'hongkong' ? '\u9999\u6E2F\u76EE\u9304' : '\u53F0\u7063\u76EE\u9304')
-    : (clinic.country === 'hongkong' ? 'Hong Kong Directory' : 'Taiwan Directory');
+  let dirLbl;
+  if (clinic.country === 'usa') dirLbl = 'US Directory';
+  else if (clinic.country === 'hongkong') dirLbl = lang === 'zh' ? '\u9999\u6E2F\u76EE\u9304' : 'Hong Kong Directory';
+  else dirLbl = lang === 'zh' ? '\u53F0\u7063\u76EE\u9304' : 'Taiwan Directory';
   const backLbl = lang === 'zh' ? '\u8FD4\u56DE\u76EE\u9304' : 'Back to directory';
 
   // Rating block
