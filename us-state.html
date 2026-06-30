@@ -23,8 +23,9 @@
       --warm:    #F4EDE4;
       --deep:    #1C1714;
       --deep2:   #241E1A;
-      --rose:    #B06070;
-      --rose-m:  #C07585;
+      --rose:    #2B4C7E;
+      --rose-m:  #1F3A63;
+      --us-red:  #C0392B;
       --rose-bg: #F0E0E5;
       --gold:    #C9A96E;
       --muted:   #8A7B72;
@@ -202,15 +203,15 @@
       display: flex; gap: 0.5rem; align-items: center; padding: 0 0.6rem 0 0.9rem;
     }
     .btn-nearby {
-      background: var(--gold); border: 1.5px solid var(--gold); color: var(--deep);
+      background: var(--us-red); border: 1.5px solid var(--us-red); color: #fff;
       padding: 0.85rem 1.8rem; border-radius: 10px; min-width: 110px;
       font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 600;
       cursor: pointer; white-space: nowrap; transition: all 0.2s;
       display: flex; align-items: center; justify-content: center; gap: 0.35rem;
     }
-    .btn-nearby:hover { background: #b89a5e; border-color: #b89a5e; color: var(--deep); }
-    .map-compact-search .btn-nearby { background: var(--gold); border-color: var(--gold); color: var(--deep); }
-    .map-compact-search .btn-nearby:hover { background: #b89a5e; border-color: #b89a5e; color: var(--deep); }
+    .btn-nearby:hover { background: #A93226; border-color: #A93226; color: #fff; }
+    .map-compact-search .btn-nearby { background: var(--us-red); border-color: var(--us-red); color: #fff; }
+    .map-compact-search .btn-nearby:hover { background: #A93226; border-color: #A93226; color: #fff; }
     .btn-search {
       background: var(--rose); color: #fff; border: 1.5px solid var(--rose);
       padding: 0.85rem 1.8rem; border-radius: 10px; min-width: 110px;
@@ -658,7 +659,7 @@
   <div class="hero-inner">
     <div class="hero-eyebrow" id="heroEyebrow">SkinDay US · Cosmetic clinic search</div>
     <h1 id="heroTitle">Compare cosmetic clinics,<br><em>make a more confident choice.</em></h1>
-    <p class="hero-sub" id="heroSub">Ratings, photos, clinic details and treatments to help you compare clinics with confidence.</p>
+    <p class="hero-sub" id="heroSub">Browse ratings, photos, treatment focus, and clinic details to compare options with confidence.</p>
     <div class="hero-stats">
       <div>
         <div class="stat-num" id="heroClinicCount">-</div>
@@ -2109,7 +2110,7 @@ function unhighlightPinById(cid) {
   setTxt('heroEyebrow', 'SkinDay US · ' + STATE_LABEL);
   setTxt('heroMetroLabel', STATE_LABEL);
   const ht = document.getElementById('heroTitle');
-  if (ht) ht.innerHTML = 'Compare cosmetic clinics in ' + STATE_LABEL + ',<br><em>clearly.</em>';
+  if (ht) ht.innerHTML = 'Compare cosmetic clinics in ' + STATE_LABEL + '.<br><em>Find the right fit before you book.</em>';
 
   // ─── Populate metro dropdown for this state ───
   const metroSel = document.getElementById('searchMetro');
