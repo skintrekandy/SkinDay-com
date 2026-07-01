@@ -79,10 +79,10 @@
   .hero-line{margin-top:26px;font-size:clamp(1.15rem,2.8vw,1.5rem);letter-spacing:.02em;color:var(--deep);font-weight:400;line-height:1.35;max-width:18em;opacity:0;transform:translateY(14px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) .4s forwards;}
   .hero-sub{margin-top:14px;font-size:clamp(.9rem,2vw,1.02rem);letter-spacing:.03em;color:var(--muted);font-weight:300;opacity:0;transform:translateY(14px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) .55s forwards;}
   .pills{margin-top:60px;display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:stretch;opacity:0;transform:translateY(16px);animation:rise 1.2s cubic-bezier(.2,.7,.2,1) .7s forwards;}
-  .pill{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-decoration:none;width:240px;height:100%;padding:24px 28px;border:1px solid var(--line);border-radius:999px;background:transparent;transition:border-color .4s,transform .4s,background .4s;}
+  .pill{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-decoration:none;width:240px;height:100%;min-height:140px;padding:28px;border:1px solid var(--line);border-radius:999px;background:transparent;transition:border-color .4s,transform .4s,background .4s;}
   .pill:hover{border-color:var(--gold);transform:translateY(-3px);background:rgba(201,169,110,.05);}
-  .pill-name{font-family:'Cormorant Garamond',serif;font-size:1.65rem;font-weight:500;color:var(--deep);letter-spacing:.01em;}
-  .pill-sub{margin-top:4px;font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:400;}
+  .pill-name{font-family:'Cormorant Garamond',serif;font-size:1.65rem;font-weight:500;color:var(--deep);letter-spacing:.01em;line-height:1.2;display:flex;align-items:flex-end;justify-content:center;height:2.4rem;}
+  .pill-sub{margin-top:6px;font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:400;line-height:1.4;min-height:2.8em;display:flex;align-items:flex-start;justify-content:center;text-align:center;}
   .pill.is-visualize:hover{border-color:var(--rose);background:rgba(200,114,90,.05);}
   .pill.is-directory:hover{border-color:var(--gold);background:rgba(201,169,110,.05);}
 
@@ -228,7 +228,7 @@
     </div>
     <a href="/visualize" class="pill is-visualize">
       <span class="pill-name serif">Visualize</span>
-      <span class="pill-sub" data-en="Align expectations before treatment" data-zh="療程前，建立正確期待。">Align expectations before treatment</span>
+      <span class="pill-sub" data-en="Align expectations before treatment" data-zh="療程前，建立正確期待">Align expectations before treatment</span>
     </a>
     <a href="/studio" class="pill is-studio">
       <span class="pill-name serif">Studio</span>
