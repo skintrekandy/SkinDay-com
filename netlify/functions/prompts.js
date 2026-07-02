@@ -325,27 +325,27 @@ const SCULPTRA_PHENOTYPES = {
     label: 'hollow/deflated',
     clinicalLogic: 'Clinical pattern: this face shows visible volume loss or hollowing, especially around the temple, lateral cheek, midface, or lower-face transition zones. The correct Sculptra visualization is a confident, diffuse collagen-driven rebuild of the lateral scaffold that restores the depleted transition zones, without making the face round, puffy, overfilled, or younger-looking.',
     conservative: 'Magnitude: gentle but real. Add clear lateral temple and lateral cheek support that begins to fill the hollows and improve the transition zones, staying close to the original.',
-    expected: 'Magnitude: a clear, confident structural restoration. Rebuild the lateral scaffold: visible lateral temple and temporal-hollow support that restores temple convexity, clear lateral cheek and zygomatic projection, a continuous temple-to-cheek-to-lid transition (a restored ogee curve) so the lid-cheek junction and under-eye look supported from below, and lower-face and prejowl suspension that lifts and clearly lightens the jowl and leaves a cleaner, more defined jawline. Nasolabial and marionette shadows soften from the support. This should read as the facial scaffold rebuilt, not as smoothed skin.',
+    expected: 'Magnitude: a modest, partial structural restoration at the level of a typical responder, not a full rebuild. Gently support the lateral scaffold: some lateral temple and temporal-hollow support that begins to restore temple convexity, moderate lateral cheek and zygomatic support, a somewhat more continuous temple-to-cheek-to-lid transition (a partially restored ogee curve) so the lid-cheek junction and under-eye look a little better supported from below, and mild lower-face and prejowl suspension that lightens the jowl and leaves a slightly cleaner jawline. Nasolabial and marionette shadows soften modestly from the support. Clearly visible on comparison but understated, with room left for a stronger response. This should read as soft-tissue support returning, not as smoothed skin.',
     optimistic: 'Magnitude: a strong, fully realized Sculptra scaffold restoration at the upper end of real responders: pronounced temple convexity filling the temporal hollow, strong lateral cheek and zygomatic projection, a clearly continuous and well-supported lid-cheek-to-cheek transition, obvious lower-face and prejowl suspension with the jowl markedly lifted and lightened and a clean, defined jawline, and clearly softened folds, all from restored soft-tissue volume and never from smoothing, brightening, or de-aging the skin.'
   },
   full_descended: {
     label: 'full/descended',
     clinicalLogic: 'Clinical pattern: this face retains natural fullness, but the fullness appears insufficiently supported, with visual weight sitting lower or more centrally than ideal. This is a strong Sculptra candidate. The correct Sculptra visualization is NOT slimming, deflating, carving, V-line shaping, or making the face smaller. Preserve the patient\'s natural facial width, fullness, softness, and identity. The goal is the same facial volume character, confidently re-suspended by lateral support. Fullness should look clearly better held, not removed.',
     conservative: 'Magnitude: gentle but real. Preserve natural fullness and face width. Add clear lateral support so the lower and central fullness looks better suspended upward and laterally, without slimming or changing the mouth.',
-    expected: 'Magnitude: a clear, confident re-suspension. Preserve natural fullness and face width. Rebuild lateral cheek and temple support so facial weight is visibly carried upward and laterally instead of pooling low, restore temple convexity and a continuous lid-cheek-to-cheek transition, and clearly lift and lighten the jowl with prejowl support so the lower face looks better suspended and the jawline reads cleaner and more defined. Do not make the face thinner; make the same face look distinctly better supported.',
+    expected: 'Magnitude: a modest, partial re-suspension at the level of a typical responder, not a full rebuild. Preserve natural fullness and face width. Add moderate lateral cheek and temple support so facial weight is somewhat better carried upward and laterally instead of pooling low, partially restore temple convexity and a more continuous lid-cheek-to-cheek transition, and mildly lift and lighten the jowl with prejowl support so the lower face looks a little better suspended and the jawline reads slightly cleaner. Clearly visible on comparison but understated, with room left for a stronger response. Do not make the face thinner; make the same face look modestly better supported.',
     optimistic: 'Magnitude: a strong, fully realized re-suspension. Preserve natural fullness and face width. Add pronounced lateral support so the face looks clearly more suspended and far less downwardly pooled, with strong temple convexity, strong lateral cheek projection, a well-supported lid-cheek transition, and the jowl markedly lifted and lightened over a clean, defined jawline. Do not slim, hollow, carve, sharpen into a hard jaw, V-line, or beautify the face.'
   },
   mixed: {
     label: 'mixed hollowing/descent',
     clinicalLogic: 'Clinical pattern: this face shows a combination of volume loss and soft-tissue descent. The correct Sculptra visualization is a confident, balanced rebuild of the lateral scaffold: restore the transition zones and clearly improve how facial weight is carried, without slimming or beautifying. Preserve natural face width and identity.',
     conservative: 'Magnitude: gentle but real. Add clear lateral temple and cheek support and improved transition-zone continuity, keeping the face close to baseline.',
-    expected: 'Magnitude: a clear, confident structural restoration. Rebuild the lateral scaffold: visible lateral temple and temporal-hollow support restoring temple convexity, clear lateral cheek and zygomatic projection, a continuous temple-to-cheek-to-lid transition so the lid-cheek junction and under-eye look supported from below, and lower-face and prejowl suspension that lifts and clearly lightens the jowl and leaves a cleaner, more defined jawline. Nasolabial and marionette shadows soften from the support. Read as the scaffold rebuilt, not smoothed skin. Do not slim the face.',
+    expected: 'Magnitude: a modest, partial structural restoration at the level of a typical responder, not a full rebuild. Gently support the lateral scaffold: some lateral temple and temporal-hollow support restoring a little temple convexity, moderate lateral cheek and zygomatic support, a somewhat more continuous temple-to-cheek-to-lid transition so the lid-cheek junction and under-eye look a little better supported from below, and mild lower-face and prejowl suspension that lightens the jowl and leaves a slightly cleaner jawline. Nasolabial and marionette shadows soften modestly from the support. Clearly visible on comparison but understated, with room left for a stronger response. Read as soft-tissue support returning, not smoothed skin. Do not slim the face.',
     optimistic: 'Magnitude: a strong, fully realized Sculptra scaffold restoration at the upper end of real responders: pronounced temple convexity, strong lateral cheek and zygomatic projection, a clearly continuous and well-supported lid-cheek-to-cheek transition, obvious lower-face and prejowl suspension with the jowl markedly lifted and lightened and a clean, defined jawline, and clearly softened folds, while preserving identity, age, skin character, and natural face width.'
   }
 };
 
 const SCULPTRA_OUTPUT_RULES =
-  'Output rule: this is a clinical Sculptra visualization, not a beauty portrait, and it should show a confident, real structural result rather than a timid one. At full strength, aim for the magnitude a strong real-world Sculptra responder shows after multiple vials over several months: temples and lateral cheeks visibly re-inflated, the midface re-supported, the lid-cheek transition restored, nasolabial and marionette folds clearly softened, and the lower face re-suspended with a lighter jowl, so the face reads as structurally rebuilt. This is a visible, substantial change, not a faint one. Support must read as added volume and light (the treated areas look filled, lifted, and three-dimensional, with the natural highlight on restored convexity and the natural soft shadow beneath it), never as flat brightening, beautification, or invented brown pigment. Do not darken the skin into a muddy or discoloured patch, but the clean light-and-shadow of real restored volume is correct and expected. Per-patient conservatism is applied afterward by a separate intensity control, so at full strength restore the scaffold clearly and let that control dial it back. The image must remain unmistakably the same person, same age, same skin character, same lips, eyes, brows, lighting, and camera setup; only treatment-relevant soft-tissue support and volume change. The failure modes to avoid are beautification, skin smoothing, evening out tone, de-aging, central pillow fill, jaw carving, and identity drift, NOT insufficient volume. Early, 3-month, and 6-month levels differ ONLY in the amount of soft-tissue support, never in beauty, skin quality, or age.';
+  'Output rule: this is a clinical Sculptra visualization, not a beauty portrait. Show a modest, restrained result at the level of a typical (median) responder, not a maximal one: clearly visible on close comparison but deliberately understated, leaving obvious room for a stronger response. A subtle result is correct here; do not push toward a dramatic, fully rebuilt scaffold. The visible changes are gentle lateral temple and cheek support, a slightly restored midface and lid-cheek transition, modestly softened nasolabial and marionette folds, and a lightly lifted jowl. Support must read as added volume and light (the treated areas look filled, lifted, and three-dimensional, with the natural highlight on restored convexity and the natural soft shadow beneath it), never as flat brightening, beautification, or invented brown pigment. Do not darken the skin into a muddy or discoloured patch, but the clean light-and-shadow of real restored volume is correct and expected. The image must remain unmistakably the same person, same age, same skin character, same lips, eyes, brows, lighting, and camera setup; only treatment-relevant soft-tissue support and volume change. The failure modes to avoid are beautification, skin smoothing, evening out tone, de-aging, central pillow fill, jaw carving, and identity drift. Early, 3-month, and 6-month levels differ ONLY in the amount of soft-tissue support, never in beauty, skin quality, or age.';
 
 // View and phenotype are read from structured fields first (production), then
 // from explicit bracket tags in the note (test hook). Loose words in free text
@@ -438,14 +438,10 @@ const SCULPTRA_NLF_CONSTRAINT =
 const NO_TEXT_RULE =
   'ABSOLUTE RULE: Do not add any text, labels, watermarks, annotations, captions, overlays, logos, or written words anywhere on the output image. The output must be a clean photograph with no visible text of any kind.';
 
-// M16: single-output-image lock for the filler path. The M15 rewrite stripped
-// filler down to the clean three-layer prompt but, unlike the sculptra/laser/tox
-// builders, buildFillerPrompt never prepended NO_TEXT_RULE and carried no
-// single-image constraint. With nothing forbidding it, gpt-image-2 intermittently
-// returned a before/after or split-panel composite (worst on lips, whose outcome
-// text explicitly invoked a "side-by-side comparison"). This lock is prepended to
-// every filler prompt via LEAD so all seven areas inherit it. Subtraction-safe:
-// it restores a constraint filler used to inherit implicitly, it does not pile on.
+// M16: single-output-image lock for the filler path. buildFillerPrompt never
+// prepended NO_TEXT_RULE and carried no single-image constraint, so gpt-image-2
+// intermittently returned a before/after or split-panel composite (worst on
+// lips). Prepended to every filler prompt via LEAD so all areas inherit it.
 const FILLER_SINGLE_IMAGE =
   'Output exactly one photograph: the single post-treatment result only. ' +
   'Do not produce a before-and-after image, a side-by-side comparison, a split panel, a diptych, or any multi-panel or composite layout. The output is one clean after photograph, nothing else.';
@@ -461,63 +457,50 @@ const BIOSTIM_NEGATIVE_GUARDRAIL =
   'This result must look like the same imperfect consultation photo, not a clinic after photo. ' +
   'The only permitted changes are the soft-tissue structural ones described above.';
 
-// ---- Sculptra (PLLA) collagen biostimulation: collapsed single prompt (M16) --
-// M16 rewrite. The v10.1 phenotype stack (phenotype logic + feature lock + view
-// lock + allowed zones + output rules + enhanced magnitude + NLF constraint +
-// negative guardrail) is replaced by ONE coherent four-part narrative:
-// treatment -> outcome -> preservation -> ceiling. gpt-image-2 follows a single
-// clinical instruction better than a reconciled pile of locks.
-//
-// Deliberate changes:
-//   - Phenotype split collapsed to one generic prompt (Andy, M16). The outcome
-//     therefore handles BOTH hollow and full faces in one narrative.
-//   - Brand name dropped -- the model rendered "Sculptra" as on-image text.
-//   - Baseline tuned to a typical responder with clear headroom, so the
-//     Stronger-response pass (isStrongPass / stronger_sculptra scenario) shows a
-//     visible delta instead of bumping an already-maxed baseline.
-//
-// Four guards kept from the old stack -- these counter specific, persistent
-// gpt-image-2 behaviors, NOT GPT-image-1 legacy, so they survive the diet:
-//   (1) NLF inversion: as cheeks fill, folds get SHALLOWER, never deeper.
-//   (2) Shadow-cheat: support reads as volume + light, never darkened shadow.
-//   (3) No-slim: a full face keeps its width. This is now the ONLY thing
-//       protecting full faces, since the full_descended phenotype is gone.
-//   (4) No de-age / no beauty-filter, and a clinical (not glamour) image.
-const SCULPTRA_FRAMING = {
-  frontal: 'Simulate the expected clinical result of a collagen biostimulation treatment on this frontal consultation photograph.',
-  oblique: 'Simulate the expected clinical result of a collagen biostimulation treatment on this three-quarter (oblique) consultation photograph. Preserve the exact head angle, camera angle, crop, and facial orientation, and do not rotate the face toward frontal or rebuild it.'
-};
-
-// Oblique-only texture lock (guard against the model rebuilding the more-shadowed
-// side at three-quarter view). Appended only on oblique.
-const SCULPTRA_OBLIQUE_NOTE =
-  ' At this three-quarter angle, do not repaint, smooth, or re-render the skin on the more-shadowed side of the face; keep pores, fine lines, texture, pigment, and natural shadow on both sides exactly as photographed. Any change is soft-tissue support only, never a change in skin surface.';
-
-const SCULPTRA_OUTCOME =
-  'OUTCOME: Improve the structural support of the midface and lower face while keeping the same facial character. Add moderate, clearly visible lateral cheek and temple support so the face reads better suspended: a little more temple and upper-cheek convexity, a smoother lid-to-cheek transition, softer nasolabial and marionette folds, a lighter jowl, and a slightly cleaner jawline. Where the temples or cheeks are visibly hollow, restore that volume; where the face is already full, keep its full width and simply support it better, never fuller in front. This is the same face with better structural support -- not a slimmer, smaller, younger, or prettier face. Show a typical, realistic responder with clear room left for a stronger result, not the maximum possible improvement.';
-
-const SCULPTRA_OUTCOME_STRONGER =
-  'OUTCOME: Show the upper end of a realistic responder -- clearly stronger than a typical result but still believable and never surgical. Add pronounced lateral cheek and temple support so the midface is distinctly better suspended: fuller temples and upper cheeks, a clearly restored lid-to-cheek transition, visibly softer nasolabial and marionette folds, a markedly lighter and lifted jowl, and a cleaner jawline. Where the temples or cheeks are hollow, restore that volume more completely; where the face is already full, keep its full width and support it strongly without slimming or adding front fullness. The extra strength appears only as more lateral support and lift -- never as a slimmer, smaller, younger, or prettier face.';
-
-const SCULPTRA_PRESERVE =
-  'PRESERVE the patient\'s identity, apparent age, expression, skin character, lighting, exposure, camera angle, and all untreated facial features exactly as photographed. The only change is the treatment effect described above.';
-
-const SCULPTRA_CEILING =
-  'CEILING: The added support must come from restored volume and natural light, never from darkening shadows or raising contrast. As the cheeks fill, the nasolabial folds and cheek hollows must become shallower and lighter, never deeper or darker, and do not darken the prejowl or under-eye. Do not slim, carve, sharpen, or V-line the face, do not smooth or brighten skin, do not reduce apparent age, and do not beautify. The result should look like a real follow-up consultation photograph taken under identical conditions, never an AI beauty filter or glamour portrait.';
-
 function buildSculptraPrompt(sel, m, timelineText) {
   const view = normalizeView(sel);
+  const phenotype = SCULPTRA_PHENOTYPES[normalizeSculptraPhenotype(sel)] || SCULPTRA_PHENOTYPES.mixed;
   const isOblique = view !== 'frontal';
-  const isEnhanced = sel.isStrongPass === 'true' || sel.isStrongPass === true;
 
-  const framing = isOblique ? SCULPTRA_FRAMING.oblique : SCULPTRA_FRAMING.frontal;
-  const obliqueNote = isOblique ? SCULPTRA_OBLIQUE_NOTE : '';
-  const outcome = isEnhanced ? SCULPTRA_OUTCOME_STRONGER : SCULPTRA_OUTCOME;
-  const timeline = timelineText ? (' ' + timelineText) : '';
-  // Enhanced skips the free-text note (its magnitude is primary); baseline keeps it.
+  // M11.1: Enhanced course detection -- declared first because framing and all
+  // other per-mode constants branch on it.
+  const isEnhanced = sel.isStrongPass === 'true' || sel.isStrongPass === true;
+  // M11.1: framing strings no longer contain product names (e.g. "Sculptra collagen-stimulation")
+  // because the model was rendering those words literally as image labels in the output.
+  // Enhanced uses a separate framing that avoids "structural restoration / scaffold" --
+  // those phrases anchor the model toward carving and sharpening rather than soft volume.
+  const framing = isEnhanced
+    ? (isOblique
+        ? 'Produce a clinically realistic photograph of the same person after a mature soft-tissue support response, keeping the same oblique pose, identity, age, skin, lighting, and camera setup.'
+        : 'Produce a clinically realistic photograph of the same person after a mature soft-tissue support response, keeping the same frontal pose, identity, age, skin, lighting, and camera setup.')
+    : (isOblique
+        ? 'Produce a clinically realistic facial structure simulation from this oblique consultation photograph, showing a confident structural restoration of the facial scaffold while keeping the same person, the same pose, and the same skin.'
+        : 'Produce a clinically realistic facial structure simulation from this frontal consultation photograph, showing a confident structural restoration of the facial scaffold while keeping the same person, the same pose, and the same skin.');
+
+  // M11.1: Enhanced course detection. When isStrongPass is set, use ENHANCED_MAGNITUDE
+  // as the primary magnitude instruction and skip sanitizeNote entirely for the note.
+  // The note field for Enhanced contains STRONG_PROMPT_SUFFIX which is now superseded
+  // by ENHANCED_MAGNITUDE injected here at full weight, not as a truncated footnote.
+  //
+  // Enhanced also uses separate allowed-zones and output-rules constants that avoid
+  // zone-anatomy lists and "Sculptra visualization" language -- both caused the model
+  // to either locally paint zones or render brand text as on-image labels.
+  const magnitude = isEnhanced
+    ? ENHANCED_MAGNITUDE
+    : (phenotype[sel.projection] || phenotype.expected);
+  const allowedZones = isEnhanced ? SCULPTRA_ENHANCED_STRUCTURAL_BOUNDS : SCULPTRA_ALLOWED_ZONES;
+  const outputRules  = isEnhanced ? SCULPTRA_ENHANCED_OUTPUT_RULES      : SCULPTRA_OUTPUT_RULES;
   const cleanNote = isEnhanced ? '' : sanitizeNote(stripInternalSculptraTags(sel.note));
 
-  return `${NO_TEXT_RULE} ${framing}${obliqueNote} ${outcome} ${SCULPTRA_PRESERVE} ${SCULPTRA_CEILING}${timeline}${cleanNote}`;
+  // For Enhanced: clinicalLogic is skipped. All three phenotype clinicalLogic
+  // strings contain "Sculptra visualization" or "Sculptra candidate" -- brand
+  // language that prompted the model to render labels onto the output image.
+  // SCULPTRA_ENHANCED_STRUCTURAL_BOUNDS covers the global framing role instead.
+  const clinicalLogicBlock = isEnhanced ? '' : phenotype.clinicalLogic + ' ';
+
+  // NO_TEXT_RULE is prepended first so it is the model's first instruction.
+  // M13: BIOSTIM_NEGATIVE_GUARDRAIL appended last -- explicit defect-preservation list.
+  return `${NO_TEXT_RULE} ${SCULPTRA_NLF_CONSTRAINT} ${framing} ${SCULPTRA_FEATURE_LOCK} ${SCULPTRA_VIEW_LOCKS[view] || SCULPTRA_VIEW_LOCKS.frontal} ${allowedZones} ${clinicalLogicBlock}Make ONLY this change: ${magnitude} ${outputRules} ${timelineText}${cleanNote}${BIOSTIM_NEGATIVE_GUARDRAIL}`;
 }
 
 // M14: Skin & Laser (energy-based skin tightening / lifting).
@@ -605,46 +588,24 @@ const HDR_GUARDRAIL =
   'Preserve identity, ethnicity and all ethnic features, facial asymmetry, hair, headband, neck, clothing, background, lighting, and camera angle exactly. Do not add text, labels, watermarks, or annotations.';
 
 const HDR_EXPECTED =
-  'The dominant change is improved SKIN FIRMNESS and DERMAL DENSITY: the lower-face skin looks firmer, denser, and slightly more elastic, with fine crepey texture and superficial fine lines mildly improved (not erased). Alongside this there is mild lower-face and jawline tightening, a cleaner mandibular border, and a modest reduction in early jowl and prejowl laxity. Any change in volume is minimal -- this firms and tightens the existing skin envelope, it does not re-inflate, plump, or fill.';
+  'The dominant change is a subtle improvement in SKIN FIRMNESS and DERMAL DENSITY: the lower-face skin looks a little firmer and slightly denser, with fine crepey texture and superficial fine lines mildly improved (not erased). Alongside this there is gentle lower-face and jawline tightening, a slightly cleaner mandibular border, and a small reduction in early jowl and prejowl laxity. Any change in volume is minimal -- this firms and tightens the existing skin envelope, it does not re-inflate, plump, or fill. Keep the result understated, at the level of a typical responder, with room left for a stronger response.';
 
 const HDR_AREA_FOCUS =
   ' The visible change should be concentrated in the LOWER FACE and the skin envelope: firmer lower-cheek skin, jawline and mandibular border definition, prejowl and submental tightening, and mild improvement in lower-face and upper-neck crepey skin. Do not change midface volume, the temples, the upper face, eyes, brows, lips, or nose.';
 
 const HDR_MAGNITUDE =
-  ' Magnitude anchor: a modest, believable biostimulation result -- skin quality and firmness clearly improved and the lower-face contour mildly tightened, but volume barely changed and never a facelift. If uncertain, do less rather than more.';
-
-// ---- Hyperdilute CaHA / Radiesse: collapsed single prompt (M16) --------------
-// Same four-part collapse as Sculptra. CaHA's distinct clinical language: this is
-// SKIN FIRMNESS and DERMAL QUALITY, not soft-volume re-inflation, so the outcome
-// leads with firmness and the ceiling forbids added volume. Baseline tuned to a
-// typical responder with headroom for the Stronger-response pass. Brand name
-// dropped (on-image text risk). Preservation reuses SCULPTRA_PRESERVE.
-const HDR_FRAMING = {
-  frontal: 'Simulate the expected clinical result of a hyperdilute calcium-based skin-firming biostimulation treatment on this frontal consultation photograph.',
-  oblique: 'Simulate the expected clinical result of a hyperdilute calcium-based skin-firming biostimulation treatment on this three-quarter (oblique) consultation photograph. Preserve the exact head angle, camera angle, crop, and facial orientation, and do not rotate the face toward frontal or rebuild it.'
-};
-
-const HDR_OUTCOME =
-  'OUTCOME: The dominant change is firmer, denser lower-face skin. The lower cheek, jawline, and prejowl skin looks a little firmer and better supported, fine crepey texture is mildly improved (not erased), and the mandibular border reads slightly cleaner. This firms and tightens the existing skin envelope; it does not re-inflate, plump, or fill, and any change in volume is minimal. Show a typical, realistic responder with clear room left for a stronger result.';
-
-const HDR_OUTCOME_STRONGER =
-  'OUTCOME: Show the upper end of a realistic responder: clearly firmer, denser lower-face skin with a distinctly cleaner mandibular border, a clearer reduction in early jowl and prejowl laxity, and fine crepey texture noticeably (but not completely) improved. Even at this strength the change is skin firmness and tightening of the existing envelope, not added volume: do not re-inflate, plump, round, or fill the face.';
-
-const HDR_CEILING =
-  'CEILING: This is a change in skin firmness and quality, not volume, not filler, not a facelift. Do not add or restore facial volume, do not plump or round the cheeks or temples, and keep any volume change minimal. Preserve apparent age: deep static wrinkles, perioral and nasolabial lines, crow\'s feet, and under-eye hollowing must remain substantially present; mild improvement of fine crepey texture is allowed, but do not resurface, airbrush, brighten, or de-age the skin. Do not carve a sharp jawline or V-line. The result should look like a real follow-up consultation photograph taken under identical conditions, never an AI beauty filter or glamour portrait.';
+  ' Magnitude anchor: a subtle, believable biostimulation result -- skin quality and firmness a little improved and the lower-face contour gently tightened, but volume barely changed and never a facelift. Keep it understated; if uncertain, do less rather than more.';
 
 function buildHdrPrompt(sel, tp) {
   const view = normalizeView(sel);
   const isOblique = view !== 'frontal';
-  const isEnhanced = sel.isStrongPass === 'true' || sel.isStrongPass === true;
-
-  const framing = isOblique ? HDR_FRAMING.oblique : HDR_FRAMING.frontal;
-  const obliqueNote = isOblique ? SCULPTRA_OBLIQUE_NOTE : '';
-  const outcome = isEnhanced ? HDR_OUTCOME_STRONGER : HDR_OUTCOME;
+  const framing = isOblique
+    ? 'Produce a clinically realistic photograph of the same person after a hyperdilute CaHA biostimulation treatment, keeping the same oblique pose, identity, apparent age, skin character, lighting, and camera setup.'
+    : 'Produce a clinically realistic photograph of the same person after a hyperdilute CaHA biostimulation treatment, keeping the same frontal pose, identity, apparent age, skin character, lighting, and camera setup.';
+  const viewLock = SCULPTRA_VIEW_LOCKS[view] || SCULPTRA_VIEW_LOCKS.frontal;
   const timeline = tp ? (' ' + tp) : '';
-  const cleanNote = isEnhanced ? '' : sanitizeNote(sel.note);
-
-  return `${NO_TEXT_RULE} ${framing}${obliqueNote} ${outcome} ${SCULPTRA_PRESERVE} ${HDR_CEILING}${timeline}${cleanNote}`;
+  const cleanNote = sanitizeNote(sel.note);
+  return `${NO_TEXT_RULE} ${framing} ${viewLock} Make ONLY this change: ${HDR_EXPECTED}${HDR_AREA_FOCUS}${HDR_MAGNITUDE}${timeline}${cleanNote}${HDR_GUARDRAIL}`;
 }
 
 // ---- Neurotoxin: lower-face contouring (masseter / nefertiti / combined) ------
