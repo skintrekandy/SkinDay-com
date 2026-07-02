@@ -56,11 +56,11 @@ const SCULPTRA_FRONTAL_HARD_LOCK =
 // magnitude; the per-area `avoid` lists (unchanged) keep the result tasteful.
 const FILLER_AREA_INTENSITY = {
   lips: {
-    // Conservative: subtle but real — about 0.5 cc or less.
+    // Conservative: subtle but real, about 0.5 cc or less.
     conservative: 'a gentle, natural-looking increase in lip body: a touch more volume in both lips, a slightly more defined vermilion border, and a hint more shape -- subtle but real, consistent with a conservative 0.5 cc correction. Keep the natural upper-to-lower balance, cupid\'s bow, and mouth width.',
-    // Moderate: clearly visible — about 0.5-1 cc, noticeable in comparison.
+    // Moderate: clearly visible, about 0.5-1 cc, noticeable in comparison.
     moderate: 'a visibly fuller lip consistent with approximately 0.5 to 1 cc of HA filler: clearly more body in both the upper and lower lip, a more defined vermilion border, and a natural balanced enhancement that is noticeable in side-by-side comparison. Keep the natural upper-to-lower balance, the cupid\'s bow position, and the mouth width.',
-    // Enhanced: clearly noticeable — 1-2 cc, definite with anatomy specifics.
+    // Enhanced: clearly noticeable, 1-2 cc, definite with anatomy specifics.
     enhanced: 'a clearly and noticeably fuller lip consistent with approximately 1 to 2 cc of HA filler: substantially more body in both the upper and lower lip, clear vermilion show, a well-defined Cupid\'s bow, mild eversion of the lip body, and modest anterior projection. The result should be obviously fuller in side-by-side comparison -- a natural but definite correction. Keep the natural upper-to-lower balance and the mouth width. If uncertain, prefer a slightly more visible result rather than an overly subtle one.'
   },
   nose: {
@@ -1101,10 +1101,32 @@ function addonSafety(changeArea){
     'Do not add text, labels, watermarks, or annotations.';
 }
 const CROSS_ADDON_BASE =
-  'This photograph already shows the result of a prior aesthetic treatment on this patient. ' +
-  'Keep that existing result and the identity exactly, and ADD ONLY the single change described below, as one natural-looking combined result. ';
+  'This image already contains a completed aesthetic treatment simulation on this patient. ' +
+  'Preserve every visible improvement exactly as shown. Do not reduce, replace, reinterpret, or undo any existing improvement. ' +
+  'Keep the identity exactly. The only permitted change is the single additional treatment described below, added on top as one natural-looking combined result. ';
 
 const CROSS_ADDON_PROMPTS = {
+  // M15: Sculptra-baseline scenarios now also edit the baseline image directly,
+  // so every add-on stacks on top of the result already shown. stronger_sculptra
+  // intensifies the existing response; it must never show LESS correction than
+  // the baseline it builds on.
+  stronger_sculptra:
+    'This image already contains a completed treatment simulation: a moderate 6-month Sculptra biostimulator response on this patient. ' +
+    'Every improvement already visible in this image must remain and be built upon. Do not reduce, replace, reinterpret, or undo any existing improvement. ' +
+    'Intensify that existing response to a strong, upper-range responder result. ' +
+    'Add clearly more broad, soft, three-dimensional collagen-scaffold support in the temples, lateral cheeks, preauricular and submalar area, lower cheek, prejowl region, and mandibular transition, ' +
+    'so the face reads visibly better suspended, more lifted, and more laterally supported than it does now. ' +
+    'Restore stronger lateral cheek convexity so the zygomatic highlight reads more present and continuous, improve temple-to-cheek continuity further, soften remaining submalar hollowing, and clean the jowl shadow so the lower face reads better suspended. ' +
+    'The direction is LIFT and LATERAL support: do NOT add anterior or central cheek volume, do NOT round or widen the face centrally, do NOT create filler-style focal fullness. ' +
+    'This is a collagen-stimulator response, soft and diffuse, not filler augmentation and not surgery. The result must read as the same patient, several months further into a strong Sculptra response.' +
+    addonSafety('an intensified, upper-range Sculptra biostimulator response building on the response already shown'),
+  combination_plan:
+    CROSS_ADDON_BASE +
+    'Add, on top of the Sculptra biostimulator response already visible in this photo, a full combination plan as one integrated result: ' +
+    '(1) HA chin and jawline filler: clearly more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support. For a female patient the lower third reads more refined, tapered, and oval; for a male patient the chin is wider and squared at the mentum with a structural jaw border. ' +
+    '(2) Focused temple volume: the temporal hollow fills so the forehead-to-cheek transition reads as one continuous convex arc. ' +
+    'The existing cheek and lateral response stays fully intact beneath these additions. All changes must read as one coherent clinical result on the same person, comprehensively supported, never operated on.' +
+    addonSafety('chin and jawline HA filler plus temple volume added on top of the existing biostimulator response'),
   add_chin_jaw_filler: CROSS_ADDON_BASE +
     'Add hyaluronic acid filler to the chin and jawline: more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support, so the lower third reads more defined and refined. Keep it conservative and natural.' +
     addonSafety('hyaluronic acid filler to the chin and jawline'),
@@ -1160,10 +1182,15 @@ const CROSS_ADDON_PROMPTS = {
 };
 
 function buildScenarioPrompt(scenarioKey, view, baselineType) {
-  // M14: cross-type baselines (filler / laser) use the generic add-on prompts,
-  // which edit the already-treated baseline image directly. Sculptra baselines
-  // (biostim, or unspecified for backward compatibility) use the original set.
-  const isCrossType = baselineType === 'filler' || baselineType === 'laser' || baselineType === 'tox';
+  // M15: ALL known baseline types now use the incremental add-on prompts, which
+  // edit the already-treated baseline image directly so add-ons stack on top of
+  // the result already shown. This includes Sculptra ('biostim'), which
+  // previously re-generated from the original photo and could land visibly
+  // worse than the baseline it claimed to build on.
+  // The legacy SCENARIO_PROMPTS path below is kept ONLY for backward
+  // compatibility with jobs that arrive without a baselineType.
+  const isCrossType = baselineType === 'filler' || baselineType === 'laser' ||
+                      baselineType === 'tox'    || baselineType === 'biostim';
   if (isCrossType) {
     const cp = CROSS_ADDON_PROMPTS[scenarioKey];
     if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
