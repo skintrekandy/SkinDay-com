@@ -800,12 +800,18 @@ exports.handler = async (event) => {
 
     // Tail selection: Sculptra none, chin/jaw filler its own base, others the
     // generic tail. The [safety:server] hook forces the generic tail back on.
+    // M16: HA filler now carries its own complete preservation block (buildFillerPrompt),
+    // so filler gets NO tail by default -- same as laser/tox/sculptra. When the
+    // MINIMAL_FILLER_OFF kill-switch is set, prompts.js returns the legacy filler
+    // assembly which still expects the tail, so we re-append it in that mode only.
     const isChinJaw = usesChinJawSafety(f.type, f.areas);
+    const legacyFiller = (process.env.MINIMAL_FILLER_OFF === 'true');
     let tail;
     if (forceServerSafety) tail = SERVER_SAFETY;
     else if (isSculptra) tail = '';
     else if (f.type === 'laser') tail = ''; // laser prompt carries its own complete guardrail
     else if (f.type === 'tox')   tail = ''; // tox prompt carries its own complete guardrail
+    else if (f.type === 'filler' && !legacyFiller) tail = ''; // M16: filler prompt is self-contained
     else if (isChinJaw) tail = CHIN_JAW_SAFETY;
     else tail = SERVER_SAFETY;
     const prompt = core + tail;
