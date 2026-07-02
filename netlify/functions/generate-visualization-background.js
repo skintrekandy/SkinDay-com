@@ -290,7 +290,7 @@ async function resolveReference(f, billing) {
 
 const SCULPTRA_EMPHASIS_SYSTEM = `You are an internal clinical prompt-composer for an aesthetic medicine AI tool.
 
-Return exactly one short patient-specific emphasis sentence for a Sculptra 6-month scenario.
+Return exactly one short patient-specific emphasis sentence for a biostimulator 6-month scenario.
 Do not return JSON. Do not return markdown. Do not write a full image prompt.
 Format exactly:
 Patient-specific emphasis: [priority zone]. Avoid: [specific risk].
@@ -323,7 +323,7 @@ const SCENARIO_PLANNER_USER = {
   // The planner must NOT rewrite the treatment description -- it overthinks and
   // produces cautious language. Its output is appended, never a replacement.
   stronger_sculptra: `TWO IMAGES PROVIDED AS CONTEXT:
-Image 1 = the Visualize baseline (a moderate Sculptra response; THIS is the photo the image model will intensify).
+Image 1 = the Visualize baseline (a moderate biostimulator response; THIS is the photo the image model will intensify).
 Image 2 = the original pre-treatment photo (reference showing where this patient started).
 
 YOUR JOB: Compare the two images and return ONE SHORT patient-specific emphasis sentence only.

@@ -225,11 +225,13 @@ exports.handler = async (event) => {
             return { statusCode: 400, headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ error: 'Cannot build a scenario on top of another scenario.', code: 'SOURCE_JOB_IS_SCENARIO' }) };
           }
-          // stronger_sculptra additionally requires a Sculptra (not HDR) biostim baseline.
+          // M15.2: stronger_sculptra and combination_plan require a biostimulator
+          // baseline: Sculptra (PLLA) or Hyperdilute Radiesse (CaHA/hdr). Both
+          // products share the same intensify mechanism (lateral scaffold).
           if (fields.scenarioKey === 'stronger_sculptra' || fields.scenarioKey === 'combination_plan') {
-            if (srcBilling.type !== 'biostim' || srcBilling.product !== 'sculptra') {
+            if (srcBilling.type !== 'biostim' || (srcBilling.product !== 'sculptra' && srcBilling.product !== 'hdr')) {
               return { statusCode: 400, headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ error: 'This scenario requires a completed Sculptra baseline.', code: 'SOURCE_JOB_NOT_SCULPTRA' }) };
+                body: JSON.stringify({ error: 'This scenario requires a completed biostimulator baseline.', code: 'SOURCE_JOB_NOT_BIOSTIM' }) };
             }
           }
           const allowed = SCENARIO_SOURCE_TYPES[fields.scenarioKey];
