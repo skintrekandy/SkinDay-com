@@ -792,6 +792,29 @@ function buildCorePrompt(sel) {
   areas = areas.map(a => a.trim()).filter(a => FILLER_AREAS[a]);
   if (!areas.length) areas = ['chin'];
 
+  // M15.4: MINIMAL LIPS MODE (A/B experiment).
+  // The accumulated preservation/prohibition layers on the standard lip path
+  // (~415 words, ~80% restrictions) appear to suppress the very edit requested:
+  // the same model produces a stronger, cleaner lip result from a short,
+  // enhancement-first prompt. This branch sends ~110 words: primary task,
+  // magnitude, light aesthetic guardrails, ONE preservation sentence, realism.
+  // Toggle with env LIPS_MINIMAL_MODE=true (Netlify) so it can be A/B'd on
+  // staging against the legacy path without a redeploy. Lips-only selection.
+  const lipsMinimalOn = (typeof process !== 'undefined' && process.env && process.env.LIPS_MINIMAL_MODE === 'true');
+  if (lipsMinimalOn && areas.length === 1 && areas[0] === 'lips') {
+    const mag = sel_.intensity === 'enhanced'
+      ? 'Add a clearly visible but tasteful enhancement to both the upper and lower lip: noticeably more volume, improved vermilion show, gentle forward projection, and slightly better definition of the Cupid\'s bow and lip contour.'
+      : sel_.intensity === 'moderate'
+      ? 'Add a visible, natural enhancement to both the upper and lower lip: more volume, improved vermilion show, and a slightly better-defined Cupid\'s bow and lip contour.'
+      : 'Add a subtle, natural enhancement to both lips: a little more volume and a slightly cleaner vermilion border.';
+    return 'Simulate the appearance a few weeks after a hyaluronic acid lip filler treatment. ' +
+      mag + ' ' +
+      'Keep natural upper-to-lower proportion and the same mouth width; never overfilled, everted, or duck-shaped. ' +
+      'Do not change any other facial structure: preserve the nose, cheeks, jawline, chin, eyes, brows, skin texture, wrinkles, pores, pigmentation, expression, hair, clothing, camera angle, lighting, and background exactly as photographed. ' +
+      'The result should look like a real clinical before-and-after photograph taken under identical conditions, not a beauty filter or glamour retouch.' +
+      (note || '');
+  }
+
   // M10.4: overfilled education anchor. Fires when intensity is 'overfilled'
   // and the selection is chin + jawline. Returns a dedicated AI-heavy prompt
   // that deliberately shows overcorrection for patient education.
