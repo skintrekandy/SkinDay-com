@@ -318,27 +318,27 @@ You must return valid JSON and nothing else. No preamble, no explanation, no mar
 }`;
 
 const SCENARIO_PLANNER_USER = {
-  // M12.7: stronger_sculptra planner returns a SHORT patient-specific emphasis line only.
-  // The full prompt is SCULPTRA_SCENARIO_BASE (fixed, proven). The planner must NOT
-  // rewrite the treatment description -- it overthinks and produces cautious language.
-  // The planner output is appended to the base prompt, not used as a replacement.
+  // M15: stronger_sculptra planner returns a SHORT patient-specific emphasis line only,
+  // appended to the fixed incremental base prompt (which intensifies the baseline).
+  // The planner must NOT rewrite the treatment description -- it overthinks and
+  // produces cautious language. Its output is appended, never a replacement.
   stronger_sculptra: `TWO IMAGES PROVIDED AS CONTEXT:
-Image 1 = the Visualize baseline (shows a moderate Sculptra biostimulator response already achieved).
-Image 2 = the original pre-treatment photo (THIS is the photo the image model will edit).
+Image 1 = the Visualize baseline (a moderate Sculptra response; THIS is the photo the image model will intensify).
+Image 2 = the original pre-treatment photo (reference showing where this patient started).
 
-YOUR JOB: Analyze this patient's face and return ONE SHORT patient-specific emphasis sentence only.
+YOUR JOB: Compare the two images and return ONE SHORT patient-specific emphasis sentence only.
 Do NOT write a full image prompt. Do NOT describe the treatment. The base prompt is already fixed.
-You are adding one sentence of patient-specific anatomical guidance.
+You are adding one sentence of patient-specific anatomical guidance for intensifying the response further.
 
 Analyze:
-- Where this patient shows the most significant hollowing, descent, or lateral support loss
-- What specific zone needs the most emphasis (lateral cheek, preauricular, submalar, temple, prejowl)
+- Where this patient STILL shows hollowing, descent, or lateral support loss in the baseline (Image 1)
+- What specific zone needs the most additional emphasis (lateral cheek, preauricular, submalar, temple, prejowl)
 - What to avoid for this specific face (e.g. do not add anterior cheek volume if the face is already round centrally)
 
 Return ONLY this format (under 40 words):
 "Patient-specific emphasis: [zone/priority for this patient]. Avoid: [specific risk for this patient's anatomy]."
 
-Example: "Patient-specific emphasis: prioritize preauricular and lateral cheek support; submalar hollowing is the dominant concern. Avoid: anterior cheek fill, do not make the face rounder centrally."`,
+Example: "Patient-specific emphasis: prioritize preauricular and lateral cheek support; submalar hollowing is the dominant remaining concern. Avoid: anterior cheek fill, do not make the face rounder centrally."`,
 
   add_chin_jaw_filler: `TWO IMAGES PROVIDED AS CONTEXT:
 Image 1 = the Visualize baseline (shows a moderate Sculptra biostimulator response already achieved).
@@ -558,14 +558,17 @@ exports.handler = async (event) => {
     const f = job.params || {};
 
     // M12.2: SCENARIO MODE
-    // M12.6 ARCHITECTURE: scenarios generate from the ORIGINAL patient photo,
-    // not the Visualize baseline. The planner receives both images as context
-    // and writes a case-specific prompt describing the full combined treatment.
-    // The image model receives only the original photo as the edit target -- one
-    // clean pass, no compositor, no mask, no warp. The raw AI result is displayed
-    // directly. If the result drifts, fix the prompt -- not the compositor.
-    // (Compositor was removed in M12.7 after it caused artifacts and suppressed
-    // aesthetic lift. Do not reintroduce it for scenario generation.)
+    // M15 ARCHITECTURE: scenarios edit the BASELINE image directly, for ALL
+    // baseline types (Sculptra included). Add-ons must stack on top of the
+    // result already shown -- a scenario may never display less correction
+    // than the baseline it builds on. This extends the proven M14 cross-type
+    // direct-edit path (incremental prompt, gpt-image-2, no compositor) to
+    // Sculptra baselines, replacing the M12.6 edit-from-original approach,
+    // which made every scenario an independent draw whose quality had no
+    // floor tied to the baseline.
+    // The raw AI result is still displayed directly: no compositor, no mask,
+    // no warp. (Compositor was removed in M12.7 after it caused artifacts and
+    // suppressed aesthetic lift. Do not reintroduce it for scenario generation.)
     const isScenario = (f.scenarioMode === 'true' || f.scenarioMode === true);
     if (isScenario) {
       const scenarioKey = f.scenarioKey;
@@ -586,27 +589,25 @@ exports.handler = async (event) => {
 
       const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-      // M12.6 role mapping (corrected):
-      // Frontend sends: image = original photo, originalImage = baseline
+      // M15 role mapping:
+      // Frontend sends: image = BASELINE (edit target), originalImage = original photo
       // start-visualization stores: image → job.imageB64, originalImage → job.originalImageB64
-      // So: job.imageB64 = original photo (edit target for image model)
-      //     job.originalImageB64 = baseline (planner context only)
-      // The previous code had this backwards, causing the baseline to be
-      // used as the generation source instead of the original photo.
-      const sourceImageB64  = job.imageB64;                    // original photo = edit target
+      // So: job.imageB64 = baseline image (edit target for the image model)
+      //     job.originalImageB64 = original pre-treatment photo (planner reference only)
+      const sourceImageB64  = job.imageB64;                    // baseline = edit target
       const sourceImageMime = job.mime || 'image/jpeg';
-      const baselineRefB64  = job.originalImageB64 || null;    // baseline = planner context only
-      const baselineRefMime = job.originalMime || 'image/jpeg';
+      const originalRefB64  = job.originalImageB64 || null;    // original photo = planner reference
+      const originalRefMime = job.originalMime || 'image/jpeg';
 
       const primaryBuffer = Buffer.from(sourceImageB64, 'base64');
-      const primaryFile   = await OpenAI.toFile(primaryBuffer, 'original.jpg', { type: sourceImageMime });
-      console.log('[M12.6] scenario image target: original photo (' + sourceImageMime + ') | baseline ref: ' + (baselineRefB64 ? 'present' : 'none'));
+      const primaryFile   = await OpenAI.toFile(primaryBuffer, 'baseline.jpg', { type: sourceImageMime });
+      console.log('[M15] scenario edit target: baseline image (' + sourceImageMime + ') | original ref: ' + (originalRefB64 ? 'present' : 'none'));
 
-      // Planner context: baseline = what Sculptra already achieved (reference)
-      // Original = the photo the image model will edit
-      const baselineB64ForPlanner = baselineRefB64;
-      const originalB64ForPlanner = sourceImageB64;
-      const origMimeForPlanner    = sourceImageMime;
+      // Planner context (stronger_sculptra emphasis only):
+      // baseline = the image being intensified; original = where the patient started
+      const baselineB64ForPlanner = sourceImageB64;
+      const originalB64ForPlanner = originalRefB64;
+      const origMimeForPlanner    = originalRefMime;
 
       // M12.5: SCENARIO PLANNER
       // Before generating the image, run a vision-capable text model to analyze
@@ -617,7 +618,12 @@ exports.handler = async (event) => {
       // (default 'openai') so it can be swapped to 'anthropic' for A/B testing later.
       // add_lips_filler is intentionally NOT in this list: it uses the static
       // prompt only (the planner tends to over-hedge lip changes into invisibility).
-      const PLANNER_SCENARIOS = ['stronger_sculptra', 'combination_plan', 'add_chin_jaw_filler', 'add_temple_support', 'add_tear_trough', 'add_nose_filler'];
+      // M15: planner is now stronger_sculptra ONLY. Its emphasis line (patient-
+      // specific zone priority) composes correctly with the incremental base
+      // prompt. All other planner templates were written for the old edit-from-
+      // original architecture: their output REPLACES the prompt entirely and
+      // re-describes the full plan, which would break stacking on the baseline.
+      const PLANNER_SCENARIOS = ['stronger_sculptra'];
       const plannerProvider = process.env.SCENARIO_PLANNER_PROVIDER || 'openai';
       // Kill switch: set SCENARIO_PLANNER_ENABLED=false in Netlify env to disable
       // the planner without redeploying code. Useful if planner output is unexpected
@@ -640,7 +646,7 @@ exports.handler = async (event) => {
             sex: f.sex || null,
             angle: f.angle || null,
             baselineB64: baselineB64ForPlanner,   // baseline = planner context (what Sculptra achieved)
-            baseMime: baselineRefMime,
+            baseMime: sourceImageMime,
             originalB64: originalB64ForPlanner,   // original = what the image model will edit
             origMime: origMimeForPlanner,
             staticFallback: staticPrompt,
@@ -663,28 +669,26 @@ exports.handler = async (event) => {
         add_tear_trough:     'high'
       };
 
-      // M12.8: swappable image model per scenario.
-      // gpt-image-1 hits a ceiling on diffuse Sculptra (visible change vs identity is a forced tradeoff).
-      // gpt-image-2 has better identity preservation and prompt adherence; the architecture is ready
-      // for it. Controlled by env vars so the model can be swapped without a redeploy once access lands:
-      //   SCENARIO_SCULPTRA_IMAGE_MODEL -- model for stronger_sculptra (the hard diffuse case)
+      // M15: swappable image model per scenario.
+      // ALL scenarios now direct-edit the baseline image -- the exact case
+      // gpt-image-2 was validated for in M14 (better identity preservation and
+      // prompt adherence on contour edits). gpt-image-2 is therefore the default
+      // for every scenario. Env overrides are retained so any scenario can be
+      // pinned to a different model without a redeploy:
+      //   SCENARIO_SCULPTRA_IMAGE_MODEL -- model for stronger_sculptra
+      //   SCENARIO_FILLER_IMAGE_MODEL   -- model for lips / nose / cross-type add-ons
       //   SCENARIO_IMAGE_MODEL          -- model for all other scenarios
-      // IMPORTANT: gpt-image-2 always processes inputs at high fidelity and rejects input_fidelity.
-      // So input_fidelity is omitted for any model other than gpt-image-1.
-      // M14: cross-type scenario baselines (filler / laser) generate on gpt-image-2,
-      // the validated direct-edit model. Sculptra-baseline scenarios keep their
-      // existing per-scenario model routing.
+      // IMPORTANT: gpt-image-2 always processes inputs at high fidelity and rejects
+      // input_fidelity. So input_fidelity is omitted for any model other than gpt-image-1.
       const isCrossTypeScenario = (f.baselineType === 'filler' || f.baselineType === 'laser' || f.baselineType === 'tox');
       const FILLER_SCENARIOS = ['add_lips_filler', 'add_nose_filler'];
-      const imageModel = isCrossTypeScenario
-        ? (process.env.SCENARIO_FILLER_IMAGE_MODEL || 'gpt-image-2')
-        : (scenarioKey === 'stronger_sculptra')
-          ? (process.env.SCENARIO_SCULPTRA_IMAGE_MODEL || 'gpt-image-1')
-          : FILLER_SCENARIOS.includes(scenarioKey)
-            ? (process.env.SCENARIO_FILLER_IMAGE_MODEL || 'gpt-image-2')
-            : (process.env.SCENARIO_IMAGE_MODEL || 'gpt-image-1');
+      const imageModel = (scenarioKey === 'stronger_sculptra')
+        ? (process.env.SCENARIO_SCULPTRA_IMAGE_MODEL || 'gpt-image-2')
+        : (isCrossTypeScenario || FILLER_SCENARIOS.includes(scenarioKey))
+          ? (process.env.SCENARIO_FILLER_IMAGE_MODEL || 'gpt-image-2')
+          : (process.env.SCENARIO_IMAGE_MODEL || 'gpt-image-2');
 
-      // M12.6: image = original photo only. Single image, one clean pass.
+      // M15: image = baseline only. Single image, one clean incremental pass.
       const scenarioParams = {
         model: imageModel,
         image: primaryFile,
