@@ -522,6 +522,9 @@
     .scenario-btn strong { display:block; font-size:.82rem; color:var(--deep); margin-bottom:3px; }
     .scenario-btn span { display:block; font-size:.69rem; color:var(--muted); line-height:1.35; }
     .scenario-btn .credit-tag { display:inline-block; margin-top:5px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--rose); font-weight:600; }
+    .scenario-btn.coming-soon { opacity:.5; cursor:not-allowed; }
+    .scenario-btn.coming-soon:hover { border-color:var(--border); background:var(--warm); }
+    .scenario-btn .soon-tag { display:inline-block; margin-top:5px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); font-weight:600; }
     .scenario-results { margin-top:18px; display:flex; flex-direction:column; gap:18px; }
     .scenario-result-card { border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--warm); }
     .scenario-result-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); gap:12px; }
@@ -4793,6 +4796,16 @@ function scenarioBucket() {
   return scenarioState[angle];
 }
 
+// M15.3: discrete feature-reshaping scenarios (lips, nose) are gated as
+// "coming soon". These require redrawing a sharp-edged feature against a fixed
+// boundary, which the current image model cannot do without global texture
+// regression, so they would violate the baseline <= add-on quality promise.
+// Regional soft-tissue support scenarios (tear trough, cheek, temple, chin,
+// jaw, biostim, energy) blend into surrounding tissue and are reliable, so
+// they stay live. Remove a key here to re-enable once the model or a masked
+// edit path can hold quality.
+const COMING_SOON_SCENARIOS = new Set(['add_lips_filler', 'add_nose_filler']);
+
 const SCENARIO_LABELS = {
   stronger_sculptra:  'Stronger biostimulation response',
   add_chin_jaw_filler: 'Add chin + jawline filler',
@@ -4899,10 +4912,25 @@ function showScenariosPanel(){
   if(panel) panel.classList.remove('hidden');
 
   // M14: show only the scenario buttons relevant to the current baseline type.
+  // M15.3: coming-soon scenarios stay visible but greyed with a Coming soon tag.
   const allowed = scenariosForBaseline();
   Object.keys(SCENARIO_LABELS).forEach(key => {
     const btn = document.getElementById('scenBtn_' + key);
-    if(btn) btn.style.display = allowed.includes(key) ? '' : 'none';
+    if(!btn) return;
+    btn.style.display = allowed.includes(key) ? '' : 'none';
+    const soon = COMING_SOON_SCENARIOS.has(key);
+    btn.classList.toggle('coming-soon', soon);
+    if(soon){
+      const credit = btn.querySelector('.credit-tag');
+      if(credit && !btn.querySelector('.soon-tag')){
+        const tag = document.createElement('em');
+        tag.className = 'soon-tag';
+        tag.setAttribute('data-en','Coming soon');
+        tag.setAttribute('data-zh','即將推出');
+        tag.textContent = (typeof currentLang!=='undefined' && currentLang==='zh') ? '即將推出' : 'Coming soon';
+        credit.replaceWith(tag);
+      }
+    }
   });
 
   // Clear all existing scenario cards before re-rendering the active angle's
@@ -4943,6 +4971,7 @@ function syncScenarioBtns(){
   Object.keys(SCENARIO_LABELS).forEach(key => {
     const btn = document.getElementById('scenBtn_' + key);
     if(!btn) return;
+    if(COMING_SOON_SCENARIOS.has(key)){ btn.disabled = true; return; } // M15.3
     const s = bucket[key];
     const isGenerating = s && s.status === 'generating';
     btn.disabled = isGenerating;
@@ -4951,6 +4980,7 @@ function syncScenarioBtns(){
 }
 
 async function runScenario(scenarioKey){
+  if(COMING_SOON_SCENARIOS.has(scenarioKey)) return; // M15.3: gated, not yet available
   const sl = activeSlot();
   if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
     setStatus(t('scenariosFirst'), 'warn');
