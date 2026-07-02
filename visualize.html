@@ -1440,7 +1440,7 @@ const FREE_REGEN_MS = 60000;
 // stay the same module instance (shared face-detection cache). v35 = M9.0
 // jowl blending (alpha lobes over marionette/jowl shadows + prejowl notch-fill
 // warp kernels) (v34 = M8.2 shade reconciliation; v33 = M8.1 convex chin).
-const MASK_MODULE_VERSION = '77'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp)
+const MASK_MODULE_VERSION = '78'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp); v78 matchToneToReference (add-on tone normalization)
 
 /* M7: a case is one or more ANGLES, each with its own photo, QC result, job,
    and compositor. Treatment settings are shared across the case; the response
@@ -4980,6 +4980,32 @@ function syncScenarioBtns(){
   });
 }
 
+// M17 staging A/B: tone-normalize an add-on scenario result to the ORIGINAL
+// photo's skin, so a global exposure/white-balance drift from gpt-image-2 does
+// not make the result read darker or warmer than the source. Read the mode from
+// the URL: ?tonematch=off (default) | exposure (luminance only) | wb (per-channel,
+// also corrects the warm cast). Scoped to add-on scenarios for this pass; the
+// primary finishSlot path is untouched. applyToneMatch is a no-op when off or
+// when inputs are missing, and fails safe to the uncorrected result.
+function _toneMatchMode(){
+  try {
+    const m = new URLSearchParams(location.search).get('tonematch');
+    return (m === 'exposure' || m === 'wb') ? m : 'off';
+  } catch(e){ return 'off'; }
+}
+async function applyToneMatch(resultDataUrl, refDataUrl){
+  const mode = _toneMatchMode();
+  if(mode === 'off' || !resultDataUrl || !refDataUrl) return resultDataUrl;
+  try {
+    const [genImg, refImg] = await Promise.all([loadImage(resultDataUrl), loadImage(refDataUrl)]);
+    const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+    const matched = await mod.matchToneToReference(genImg, refImg, mode);
+    if(matched){ console.log('[Visualize] tone-match applied (' + mode + ')'); return matched; }
+    console.log('[Visualize] tone-match skipped (negligible or no reliable skin sample)');
+  } catch(e){ console.warn('[Visualize] tone-match error:', e); }
+  return resultDataUrl;
+}
+
 async function runScenario(scenarioKey){
   if(COMING_SOON_SCENARIOS.has(scenarioKey)) return; // M15.3: gated, not yet available
   const sl = activeSlot();
@@ -5085,6 +5111,15 @@ async function runScenario(scenarioKey){
         }
       } catch(e){ console.warn('[Visualize] feature-composite skipped:', e); }
     }
+
+    // M17 (staging A/B): optional tone normalization to the ORIGINAL photo, not
+    // the smoothed baseline. Off unless ?tonematch=exposure|wb. Applies to the
+    // final displayed url so it covers both the chin/jaw raw re-render and the
+    // lips/nose composites. Fails safe.
+    try {
+      const toneRef = (sl && sl.originalDataUrl) || (sl && sl.beforeDataUrl) || null;
+      if(toneRef) displayResultUrl = await applyToneMatch(displayResultUrl, toneRef);
+    } catch(e){ console.warn('[Visualize] scenario tone-match skipped:', e); }
 
     bucket[scenarioKey] = { status: 'done', jobId, resultUrl: displayResultUrl, rawResultUrl, error: null };
     if(accessMode === 'account') refreshCredits(0);
