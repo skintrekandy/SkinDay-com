@@ -165,6 +165,21 @@
   status = 200
   force  = true
 
+# ── SIMULATION LIBRARY ────────────────────────────────────────────
+# /visualize/cases -> the Simulation Library page (indexable marketing
+# page, separate from the gated Visualize tool).
+[[redirects]]
+  from   = "/visualize-cases.html"
+  to     = "/visualize/cases"
+  status = 301
+  force  = true
+
+[[redirects]]
+  from   = "/visualize/cases"
+  to     = "/visualize-cases.html"
+  status = 200
+  force  = true
+
 # ── DYNAMIC SITEMAP ───────────────────────────────────────────────
 # Serves all TW + HK clinic URLs + static pages from Supabase.
 [[redirects]]
