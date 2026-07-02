@@ -4796,15 +4796,14 @@ function scenarioBucket() {
   return scenarioState[angle];
 }
 
-// M15.3: discrete feature-reshaping scenarios (lips, nose) are gated as
-// "coming soon". These require redrawing a sharp-edged feature against a fixed
-// boundary, which the current image model cannot do without global texture
-// regression, so they would violate the baseline <= add-on quality promise.
-// Regional soft-tissue support scenarios (tear trough, cheek, temple, chin,
-// jaw, biostim, energy) blend into surrounding tissue and are reliable, so
-// they stay live. Remove a key here to re-enable once the model or a masked
-// edit path can hold quality.
-const COMING_SOON_SCENARIOS = new Set(['add_lips_filler', 'add_nose_filler']);
+// M15.3 / M16: discrete feature-reshaping scenarios (lips, nose) were gated as
+// "coming soon" because the old prompt stack could not redraw a sharp-edged
+// feature without global texture regression. The M16 filler rewrite (single-image
+// lock + softened comparison wording) is the intended fix, so they are ungated
+// here for staging evaluation. If a stacked lips/nose add-on regresses texture or
+// violates the baseline <= add-on quality promise on staging, re-add its key
+// below to re-gate. Regional soft-tissue scenarios were always live.
+const COMING_SOON_SCENARIOS = new Set([]);
 
 const SCENARIO_LABELS = {
   stronger_sculptra:  'Stronger biostimulation response',
