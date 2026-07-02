@@ -705,7 +705,7 @@
         <div class="field">
           <label data-en="Volume" data-zh="填充量">Volume</label>
           <div class="pill-grid" id="fillerVolumeToggle">
-            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Conservative" data-zh="自然">Conservative</strong></button>
+            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Natural" data-zh="自然">Natural</strong></button>
             <button class="pill" data-volume="moderate" type="button"><strong data-en="Moderate" data-zh="中等">Moderate</strong></button>
             <button class="pill" data-volume="enhanced" type="button"><strong data-en="Enhanced" data-zh="加強">Enhanced</strong></button>
           </div>
@@ -1278,7 +1278,7 @@ var I18N = {
     creditsLabel: 'Credits',
     account: 'Account',
     // Filler volume tier names
-    tierConservative: 'Conservative', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
+    tierConservative: 'Natural', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
     // Laser help
     laserHelpRf: 'RF: radiofrequency skin tightening (e.g. Thermage, XERF). Results develop gradually over about 3 to 6 months.',
     laserHelpHifu: 'HIFU: focused-ultrasound lifting (e.g. Ultherapy, Sofwave). Results develop gradually over about 3 to 6 months.',
@@ -4296,8 +4296,8 @@ function simKicker(angleId){
   if(state.type === 'filler' && sl.apply){
     // M14.1: label from the selected volume tier (conservative/moderate/enhanced),
     // not the stale slider intensityPct which always read "Balanced".
-    const VOLUME_LABEL = { conservative:'Conservative correction', moderate:'Balanced correction', enhanced:'Enhanced correction' };
-    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Balanced correction');
+    const VOLUME_LABEL = { conservative:'Natural', moderate:'Balanced', enhanced:'Enhanced' };
+    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Balanced');
   }
   return parts.join(' · ');
 }
