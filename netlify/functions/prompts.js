@@ -438,6 +438,18 @@ const SCULPTRA_NLF_CONSTRAINT =
 const NO_TEXT_RULE =
   'ABSOLUTE RULE: Do not add any text, labels, watermarks, annotations, captions, overlays, logos, or written words anywhere on the output image. The output must be a clean photograph with no visible text of any kind.';
 
+// M16: single-output-image lock for the filler path. The M15 rewrite stripped
+// filler down to the clean three-layer prompt but, unlike the sculptra/laser/tox
+// builders, buildFillerPrompt never prepended NO_TEXT_RULE and carried no
+// single-image constraint. With nothing forbidding it, gpt-image-2 intermittently
+// returned a before/after or split-panel composite (worst on lips, whose outcome
+// text explicitly invoked a "side-by-side comparison"). This lock is prepended to
+// every filler prompt via LEAD so all seven areas inherit it. Subtraction-safe:
+// it restores a constraint filler used to inherit implicitly, it does not pile on.
+const FILLER_SINGLE_IMAGE =
+  'Output exactly one photograph: the single post-treatment result only. ' +
+  'Do not produce a before-and-after image, a side-by-side comparison, a split panel, a diptych, or any multi-panel or composite layout. The output is one clean after photograph, nothing else.';
+
 // M13: NEGATIVE-LIST GUARDRAIL -- appended to every biostim prompt.
 // The key insight from GPT Image 2 testing: the model must be told explicitly
 // what DEFECTS to keep, not just what changes to make. "Natural" is insufficient.
@@ -765,9 +777,9 @@ const HA_FILLER_AREA_ALLOWLISTS = {
 // Layer 2: per-area visual outcome, by tier. Written as the clinical endpoint.
 const FILLER_OUTCOME = {
   lips: {
-    conservative: 'a natural but clearly visible lip enhancement, roughly 1 mL of HA filler: more body through both the upper and lower lip, improved vermilion show, and a slightly more defined vermilion border, so the lips read fuller and well hydrated. Keep it restrained but plainly noticeable in a side-by-side comparison, never so subtle it looks untreated',
+    conservative: 'a natural but clearly visible lip enhancement, roughly 1 mL of HA filler: more body through both the upper and lower lip, improved vermilion show, and a slightly more defined vermilion border, so the lips read fuller and well hydrated. Keep it restrained but plainly and clearly visible, never so subtle it looks untreated',
     moderate: 'a clearly noticeable lip enhancement, roughly 1.5 mL of HA filler: build the body of both lips with improved vermilion show, gentle anterior projection, and a more defined vermilion border and Cupid\'s bow, so the lips read visibly fuller, hydrated, and well supported and plainly read as tasteful lip filler',
-    enhanced: 'a substantial, clearly visible lip enhancement, about 2 mL of HA filler, as an experienced injector would place it: noticeably build the body of both the upper and lower lip with strong vermilion show, clear anterior projection, a well-defined central tubercle, and a crisp, well-supported vermilion border, so the lips read distinctly fuller, hydrated, and structurally supported. The change must be immediately obvious in a side-by-side comparison, a confident but tasteful result, keeping natural upper-to-lower proportion and the same mouth width, never overfilled, everted, or duck-shaped'
+    enhanced: 'a substantial, clearly visible lip enhancement, about 2 mL of HA filler, as an experienced injector would place it: noticeably build the body of both the upper and lower lip with strong vermilion show, clear anterior projection, a well-defined central tubercle, and a crisp, well-supported vermilion border, so the lips read distinctly fuller, hydrated, and structurally supported. The change must be immediately and clearly visible, a confident but tasteful result, keeping natural upper-to-lower proportion and the same mouth width, never overfilled, everted, or duck-shaped'
   },
   chin: {
     conservative: 'a clearly visible chin refinement: more forward projection at the chin point so the lower-face profile reads more balanced and the chin a little stronger, keeping the chin width natural and the result believable',
@@ -843,7 +855,8 @@ function buildFillerPrompt(sel){
     ? sel.intensity : 'moderate';
   const isChinJawUnit = areas.includes('chin') && areas.includes('jawline');
 
-  const LEAD = 'Simulate the expected result of a hyaluronic acid filler treatment performed by an experienced aesthetic injector. Create ';
+  const LEAD = NO_TEXT_RULE + ' ' + FILLER_SINGLE_IMAGE + ' ' +
+    'Simulate the expected result of a hyaluronic acid filler treatment performed by an experienced aesthetic injector. Create ';
 
   // Overfilled education anchor (chin+jawline unit only).
   if (sel.intensity === 'overfilled' && isChinJawUnit) {
