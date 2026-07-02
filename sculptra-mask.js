@@ -2752,7 +2752,7 @@ export async function compositeSculptra(beforeImg, aiImg, opts){
   // original at its own aspect (uniform downscale, no distortion) and stretching
   // the AI back onto that grid reverses the API resize, so the AI content
   // re-aligns and the output matches the original framing.
-  const maxDim = (opts && opts.maxDim) || 1024;
+  const maxDim = (opts && opts.maxDim) || 1536;
   const gs = Math.min(1, maxDim / Math.max(beforeImg.naturalWidth, beforeImg.naturalHeight));
   const w = Math.round(beforeImg.naturalWidth * gs), h = Math.round(beforeImg.naturalHeight * gs);
   const m = buildTreatAlpha(landmarks, w, h, scope, sex);
@@ -2882,7 +2882,7 @@ export async function compositeSculptra(beforeImg, aiImg, opts){
     }
   }
   cx.putImageData(ai, 0, 0);
-  return c.toDataURL("image/jpeg", 0.92);
+  return c.toDataURL("image/jpeg", 0.95);
 }
 
 /**
@@ -2901,7 +2901,7 @@ export async function makeSculptraCompositor(beforeImg, aiImg, opts){
   // M5b: work on the ORIGINAL's grid, not the AI's (see compositeSculptra). The AI
   // is stretched back onto the original aspect so its content re-aligns and the
   // emitted result matches the original framing for a clean side-by-side export.
-  const maxDim = (opts && opts.maxDim) || 1024;
+  const maxDim = (opts && opts.maxDim) || 1536;
   const gs = Math.min(1, maxDim / Math.max(beforeImg.naturalWidth, beforeImg.naturalHeight));
   const w = Math.round(beforeImg.naturalWidth * gs), h = Math.round(beforeImg.naturalHeight * gs);
   const m = buildTreatAlpha(landmarks, w, h, scope, sex);
@@ -3043,7 +3043,7 @@ export async function makeSculptraCompositor(beforeImg, aiImg, opts){
       }
     }
     cx.putImageData(out, 0, 0);
-    return c.toDataURL("image/jpeg", 0.92);
+    return c.toDataURL("image/jpeg", 0.95);
   };
 }
 
@@ -3079,7 +3079,7 @@ export async function compositeFeatureAddon(baselineImg, addonImg, feature, opts
     if(!lm) return null;
 
     // Composite on the baseline's grid (uniform downscale), matching the other paths.
-    const maxDim = (opts && opts.maxDim) || 1024;
+    const maxDim = (opts && opts.maxDim) || 1536;
     const gs = Math.min(1, maxDim / Math.max(baselineImg.naturalWidth, baselineImg.naturalHeight));
     const w = Math.round(baselineImg.naturalWidth * gs), h = Math.round(baselineImg.naturalHeight * gs);
     const W = faceWidthPx(lm, w, h);
@@ -3113,11 +3113,35 @@ export async function compositeFeatureAddon(baselineImg, addonImg, feature, opts
 
     // Baseline skin everywhere; add-on feature composited on top.
     const out = document.createElement("canvas"); out.width=w; out.height=h;
-    const ox = out.getContext("2d");
+    const ox = out.getContext("2d",{willReadFrequently:true});
     ox.drawImage(baselineImg, 0, 0, w, h);
     ox.drawImage(feat, 0, 0);
 
-    return out.toDataURL("image/jpeg", 0.92);
+    // M16 #2: gentle unsharp INSIDE the feature region only. The feature is the
+    // one area that went through the second gpt-image pass, so it is slightly
+    // softer than the inherited baseline skin. A light high-frequency boost,
+    // masked by the same feathered region, re-crisps just the feature without
+    // touching the inherited skin and without a hard edge. Optional/fail-safe.
+    try {
+      const amount = 0.5, radiusPx = Math.max(1.2, w*0.0013);
+      const bl = document.createElement("canvas"); bl.width=w; bl.height=h;
+      const blx = bl.getContext("2d",{willReadFrequently:true});
+      blx.filter = "blur(" + radiusPx + "px)"; blx.drawImage(out, 0, 0); blx.filter="none";
+      const od = ox.getImageData(0,0,w,h), o = od.data;
+      const bd = blx.getImageData(0,0,w,h), bbuf = bd.data;
+      const md = fbx.getImageData(0,0,w,h), mm = md.data; // feathered mask (red = feature alpha)
+      for(let i=0,p=0;i<w*h;i++,p+=4){
+        const mAlpha = mm[p]/255;
+        if(mAlpha <= 0.01) continue;
+        const k = amount * mAlpha;
+        o[p]   = Math.max(0, Math.min(255, o[p]   + k*(o[p]   - bbuf[p])));
+        o[p+1] = Math.max(0, Math.min(255, o[p+1] + k*(o[p+1] - bbuf[p+1])));
+        o[p+2] = Math.max(0, Math.min(255, o[p+2] + k*(o[p+2] - bbuf[p+2])));
+      }
+      ox.putImageData(od, 0, 0);
+    } catch(e){ /* sharpen is optional */ }
+
+    return out.toDataURL("image/jpeg", 0.95);
   } catch(e){
     console.warn('[Visualize] M16 feature composite failed; using raw add-on.', e);
     return null;
