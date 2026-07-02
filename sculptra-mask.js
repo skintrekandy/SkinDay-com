@@ -3046,3 +3046,80 @@ export async function makeSculptraCompositor(beforeImg, aiImg, opts){
     return c.toDataURL("image/jpeg", 0.92);
   };
 }
+
+// ---- M16: feature add-on skin preservation (approach B) --------------------
+// Lip/nose filler add-ons are a SECOND gpt-image edit of the baseline. A large,
+// salient feature change (e.g. drastic lips) makes the model re-render the whole
+// frame, degrading skin texture everywhere -- while a subtle edit (tear trough)
+// barely re-renders and leaves skin intact. This composite keeps the baseline's
+// real skin over the ENTIRE face and takes ONLY the feathered feature region
+// (lips or nose) from the add-on, so the drastic feature change survives while
+// pores/texture outside it stay pixel-identical to the baseline. The mask is
+// built from landmarks detected on the ADD-ON (the fuller feature), so added
+// volume is not clipped. Fails safe: any error / missing face returns null and
+// the caller falls back to the raw add-on.
+function convexHull(points){
+  const pts = points.slice().sort((a,b)=> a[0]-b[0] || a[1]-b[1]);
+  if(pts.length < 3) return pts;
+  const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lower=[]; for(const p of pts){ while(lower.length>=2 && cross(lower[lower.length-2],lower[lower.length-1],p)<=0) lower.pop(); lower.push(p); }
+  const upper=[]; for(let i=pts.length-1;i>=0;i--){ const p=pts[i]; while(upper.length>=2 && cross(upper[upper.length-2],upper[upper.length-1],p)<=0) upper.pop(); upper.push(p); }
+  lower.pop(); upper.pop(); return lower.concat(upper);
+}
+
+export async function compositeFeatureAddon(baselineImg, addonImg, feature, opts){
+  try {
+    if(!baselineImg || !addonImg) return null;
+    const idx        = (feature === 'nose') ? NOSE : LIPS;
+    const expand     = (feature === 'nose') ? 1.18 : 1.24;   // grow hull outward from centroid
+    const featherFrac= (feature === 'nose') ? 0.018 : 0.024; // blur radius as fraction of face width
+
+    // Landmarks from the ADD-ON (fuller feature) so added volume is not clipped.
+    const lm = await detectFace(addonImg);
+    if(!lm) return null;
+
+    // Composite on the baseline's grid (uniform downscale), matching the other paths.
+    const maxDim = (opts && opts.maxDim) || 1024;
+    const gs = Math.min(1, maxDim / Math.max(baselineImg.naturalWidth, baselineImg.naturalHeight));
+    const w = Math.round(baselineImg.naturalWidth * gs), h = Math.round(baselineImg.naturalHeight * gs);
+    const W = faceWidthPx(lm, w, h);
+
+    // Feature landmarks -> pixels, expanded outward from their centroid.
+    let pts = idx.map(i => lm[i]).filter(Boolean).map(p => [p.x*w, p.y*h]);
+    if(pts.length < 3) return null;
+    const cx0 = pts.reduce((s,p)=>s+p[0],0)/pts.length, cy0 = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    pts = pts.map(p => [cx0 + (p[0]-cx0)*expand, cy0 + (p[1]-cy0)*expand]);
+    const hull = convexHull(pts);
+    if(hull.length < 3) return null;
+
+    // Mask: white feature hull on black.
+    const mk = document.createElement("canvas"); mk.width=w; mk.height=h;
+    const mkx = mk.getContext("2d");
+    mkx.fillStyle="#000"; mkx.fillRect(0,0,w,h);
+    mkx.fillStyle="#fff"; mkx.beginPath(); mkx.moveTo(hull[0][0], hull[0][1]);
+    for(let i=1;i<hull.length;i++) mkx.lineTo(hull[i][0], hull[i][1]);
+    mkx.closePath(); mkx.fill();
+
+    // Feather the mask edge for a seamless blend.
+    const fb = document.createElement("canvas"); fb.width=w; fb.height=h;
+    const fbx = fb.getContext("2d");
+    fbx.filter = "blur(" + Math.max(1, featherFrac*W) + "px)"; fbx.drawImage(mk, 0, 0); fbx.filter="none";
+
+    // Add-on restricted to the feathered feature region.
+    const feat = document.createElement("canvas"); feat.width=w; feat.height=h;
+    const fx = feat.getContext("2d");
+    fx.drawImage(addonImg, 0, 0, w, h);
+    fx.globalCompositeOperation = "destination-in"; fx.drawImage(fb, 0, 0);
+
+    // Baseline skin everywhere; add-on feature composited on top.
+    const out = document.createElement("canvas"); out.width=w; out.height=h;
+    const ox = out.getContext("2d");
+    ox.drawImage(baselineImg, 0, 0, w, h);
+    ox.drawImage(feat, 0, 0);
+
+    return out.toDataURL("image/jpeg", 0.92);
+  } catch(e){
+    console.warn('[Visualize] M16 feature composite failed; using raw add-on.', e);
+    return null;
+  }
+}

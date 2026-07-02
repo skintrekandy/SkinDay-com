@@ -1439,7 +1439,7 @@ const FREE_REGEN_MS = 60000;
 // stay the same module instance (shared face-detection cache). v35 = M9.0
 // jowl blending (alpha lobes over marionette/jowl shadows + prejowl notch-fill
 // warp kernels) (v34 = M8.2 shade reconciliation; v33 = M8.1 convex chin).
-const MASK_MODULE_VERSION = '74';
+const MASK_MODULE_VERSION = '76'; // M16: v75 glow reduction; v76 adds compositeFeatureAddon (lip/nose add-on skin preservation)
 
 /* M7: a case is one or more ANGLES, each with its own photo, QC result, job,
    and compositor. Treatment settings are shared across the case; the response
@@ -5063,7 +5063,28 @@ async function runScenario(scenarioKey){
     const rawResultUrl = polledScenario.image;
     if(polledScenario.model) console.log('[Visualize] scenario ' + scenarioKey + ': model=' + polledScenario.model);
 
-    bucket[scenarioKey] = { status: 'done', jobId, resultUrl: rawResultUrl, rawResultUrl, error: null };
+    // M16: discrete feature add-ons (lips/nose) are a SECOND full-image gpt-image
+    // edit; a drastic feature change makes the model re-render and degrade skin
+    // texture globally (a subtle edit like tear trough does not). Approach B:
+    // keep the baseline's real skin over the whole face and take ONLY the
+    // feathered feature region from the add-on. Fails safe to the raw add-on.
+    let displayResultUrl = rawResultUrl;
+    if(scenarioKey === 'add_lips_filler' || scenarioKey === 'add_nose_filler'){
+      try {
+        const feature = (scenarioKey === 'add_nose_filler') ? 'nose' : 'lips';
+        const skinBaseUrl = (state.type === 'biostim' && sl && sl.apply)
+          ? sl.apply((state.intensityPct || 48) / 100)
+          : (sl && sl.resultDataUrl);
+        if(skinBaseUrl){
+          const [baseImg, addonImg] = await Promise.all([loadImage(skinBaseUrl), loadImage(rawResultUrl)]);
+          const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+          const composited = await mod.compositeFeatureAddon(baseImg, addonImg, feature);
+          if(composited) displayResultUrl = composited;
+        }
+      } catch(e){ console.warn('[Visualize] feature-composite skipped:', e); }
+    }
+
+    bucket[scenarioKey] = { status: 'done', jobId, resultUrl: displayResultUrl, rawResultUrl, error: null };
     if(accessMode === 'account') refreshCredits(0);
 
   } catch(err){
@@ -5118,8 +5139,14 @@ function renderScenarioResult(scenarioKey){
     // This lets the patient see the full journey: where they started, what Sculptra
     // achieves, and what the add-on scenario adds on top.
     const originalUrl = sl ? (sl.beforeDataUrl || sl.originalDataUrl || '') : '';
+    // M16: the baseline PANEL now renders at the user/default response intensity,
+    // matching the main preview. It was hardcoded to sl.apply(1.0) (full compositor
+    // strength), so the triptych always showed a maxed-out baseline regardless of
+    // the intensity setting -- the "baseline too strong" regression. (The add-on
+    // EDIT TARGET is still submitted at apply(1.0) elsewhere so add-ons never stack
+    // on less than the full baseline; only the displayed panel changes here.)
     const baselineDisplayUrl = (state.type === 'biostim' && sl && sl.apply)
-      ? sl.apply(1.0)
+      ? sl.apply((state.intensityPct || 48) / 100)
       : (sl ? (sl.resultDataUrl || '') : '');
     bodyHtml =
       '<div class="scenario-img-triple">' +
