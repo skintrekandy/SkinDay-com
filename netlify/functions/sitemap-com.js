@@ -49,6 +49,7 @@ exports.handler = async () => {
     const staticPages = [
       { path: '/',                 priority: '1.0' },
       { path: '/visualize',        priority: '0.9' },
+      { path: '/visualize/cases',  priority: '0.8' },
       { path: '/guide',            priority: '0.8' },
       { path: '/taiwan',           priority: '0.9' },
       { path: '/hongkong',         priority: '0.9' },
