@@ -668,7 +668,7 @@ const GUARD_EDGE_HI    = 40;
 // be fully safe but may look flat on very dark skin tones.
 const CHROMA_LOCK      = 0.96;
 const LUMA_DARK_FLOOR  = 0;     // treated skin never darker than original (broad tone)
-const GLOW_LUMA        = 6;     // gentle lighten (glow), luma levels at full. M6.3:
+const GLOW_LUMA        = 4;     // M16: 6->4, trims the delta-path glow alongside
                                 // back to 6, and for Sculptra the glow now lives
                                 // OUTSIDE the gained delta (added at apply time,
                                 // never multiplied by the response gain). The gained
@@ -2547,7 +2547,12 @@ const CHIN_JAW_MID_KEEP   = 0.6;
 // v70: 6 -> 9. Combined with CHROMA_LOCK=0.82, raises the collagen glow
 // effect toward what real-world results show. The glow is never gained
 // (see compositor), so this is a ceiling raise not an amplification.
-const SCULPTRA_GLOW_APPLY = 9;
+// M16: 9 -> 5. The v70 bump to 9 was calibrated against CHROMA_LOCK=0.82,
+// which was later reverted to 0.96 (see line ~669) WITHOUT dropping the glow
+// back -- so the glow was over-set relative to its own premise and read as skin
+// beautification (brighter, glowier skin) on staging. 5 keeps a subtle real
+// glow. Raise back toward 6-7 if collagen glow reads flat; do not return to 9.
+const SCULPTRA_GLOW_APPLY = 5;
 // HA chin/jaw: a defined jawline is created by the clean shadow line along the
 // mandibular border, so the path needs SOME darkening to read as definition
 // rather than flat. Colour is locked, so this clean luminance shadow cannot turn

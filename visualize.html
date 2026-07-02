@@ -1475,7 +1475,7 @@ function makeSlot(){
 const state = {
   type:'biostim', areas:['chin_jawline'], intensity:'enhanced', sex:'female',
   product:'sculptra', projection:'expected', timeline:'6',
-  blackBg:true, lastGenAt:0, intensityPct:58, courseMode:'standard', // 'standard' | 'enhanced' -- global across all angles
+  blackBg:true, lastGenAt:0, intensityPct:48, courseMode:'standard', // M16: default lowered 58->48; baseline read too strong. Response slider still overrides per-session.
   responseMode:'expected', // M14.2: always 'expected'. Optimistic/Both selector removed (overpromising). Stronger effect is a post-baseline scenario.
   fillerVolume:'conservative', // 'conservative' | 'moderate' | 'enhanced' -- filler volume tier
   laserType:'rf', // 'rf' or 'hifu' -- Energy-Based Devices type
