@@ -693,6 +693,7 @@
             <div class="area-chip" data-area="nose"><span class="tick">✓</span><span data-en="Nose" data-zh="鼻部">Nose</span></div>
             <div class="area-chip" data-area="tear_trough"><span class="tick">✓</span><span data-en="Tear trough" data-zh="淚溝">Tear trough</span></div>
             <div class="area-chip" data-area="lips"><span class="tick">✓</span><span data-en="Lips" data-zh="嘴唇">Lips</span></div>
+            <div class="area-chip" data-area="nasolabial_folds"><span class="tick">✓</span><span data-en="Smile Lines" data-zh="法令紋">Smile Lines</span></div>
           </div>
         </div>
         <div class="field">
@@ -2686,7 +2687,8 @@ const FILLER_VOLUME_LABELS = {
   temple:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
   nose:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
   tear_trough:  { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
-  lips:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' }
+  lips:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
+  nasolabial_folds: { conservative: '1 syringe', moderate: '1-2 syringes', enhanced: '2 syringes' }
 };
 function fillerVolumeLabel(area, tier){
   const a = FILLER_VOLUME_LABELS[area] || FILLER_VOLUME_LABELS.chin_jawline;
@@ -3088,7 +3090,7 @@ const AREA_TEXT = {
   cheeks:'the cheeks, adding only subtle midface support',
   tear_trough:'the tear troughs, only slightly softening the under-eye hollow',
   chin_jawline:'the chin and jawline together as one lower-face unit, adding a little chin projection and subtle mandibular definition',
-  nasolabial_folds:'the nasolabial folds, only slightly softening the fold while keeping a natural crease'
+  nasolabial_folds:'the upper nasolabial region, restoring deep structural support beside the nose so the fold reads softer without erasing the natural crease'
 };
 const GOAL_TEXT = {
   natural_refinement:'Keep the overall effect minimal and natural.',
@@ -3126,7 +3128,7 @@ const AREA_INSIGHT = {
   cheeks:'Restored midface support',
   tear_trough:'Softened under-eye hollow',
   chin_jawline:'Balanced lower third: chin projection with jawline definition',
-  nasolabial_folds:'Softer nasolabial fold'
+  nasolabial_folds:'Softer nasolabial fold from restored deep support'
 };
 const PRODUCT_INSIGHT = {
   sculptra:'Gradual, collagen-based firmness and contour',
@@ -3406,75 +3408,32 @@ async function prepAndStartSlot(angleId, auth, isRegen, fillerIntensity){
 async function finishSlot(angleId, auth, fillerIntensity){
   const sl = state.slots[angleId];
   const polled = await pollForResult(sl.jobId, auth);
-  const rawModelImage = polled.image; // M17: keep the untouched model output for ?debug=layers
-  sl.resultDataUrl = rawModelImage;
-
-  // M17 #1: PRIMARY discrete-feature filler skin preservation (Approach B).
-  // A discrete-feature primary edit (nose / lips) makes gpt-image-2 re-render the
-  // whole frame and degrade skin texture globally, exactly as the add-on path did.
-  // The primary filler is generated FROM the before image, so we can keep the
-  // before image's real skin over the whole face and take ONLY the feathered
-  // feature region from the model result -- the same Approach B used for add-ons,
-  // but with the ORIGINAL (before) image as the skin source. Landmarks are
-  // detected on the model result (the fuller feature) so added volume is not
-  // clipped. Primary areas are single-select, so featAreas is normally one item;
-  // the loop also handles a hypothetical nose+lips selection by chaining. Fails
-  // safe to the raw model output. sculptra-mask.js is unchanged (MASK_MODULE_VERSION 77).
-  if(state.type === 'filler' && Array.isArray(state.areas)){
-    const featAreas = state.areas.filter(a => a === 'nose' || a === 'lips');
-    const onlyFeatures = featAreas.length > 0 && featAreas.length === state.areas.length;
-    if(onlyFeatures){
-      try {
-        const beforeUrl = sl.beforeDataUrl || sl.originalDataUrl;
-        if(beforeUrl){
-          const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
-          const featImg = await loadImage(rawModelImage);   // feature source (both features live here)
-          let skinImg = await loadImage(beforeUrl);          // skin source: the exact image posted to the model
-          let composedUrl = null;
-          for(const feature of featAreas){
-            const c = await mod.compositeFeatureAddon(skinImg, featImg, feature);
-            if(!c){ composedUrl = null; break; }             // any failure -> fall back to raw
-            composedUrl = c;
-            skinImg = await loadImage(c);                     // chain: next feature composites over the accumulated result
-          }
-          if(composedUrl){
-            sl.resultDataUrl = composedUrl;
-            console.log('%c[Visualize] ' + angleId + ': M17 primary feature composite applied (' + featAreas.join('+') + ').', 'color:#1b5e20;font-weight:bold');
-          }
-        }
-      } catch(e){ console.warn('[Visualize] M17 primary feature composite skipped; using raw model output.', e); }
-    }
-  }
-
-  // M14: pre-compute cropped result for display and export (reflects the composite if applied).
+  sl.resultDataUrl = polled.image;
+  // M14: pre-compute cropped result for display and export.
   if(sl.faceBbox){
     try { sl.cropResultCache = await cropToFace(sl.resultDataUrl, sl.faceBbox); } catch(e){}
   }
   sl.modelUsed = polled.model; // real model name reported by the backend, or null
   // M9.7: pre-composite frame for ?debug=layers. For filler per-level cache,
   // store rawAiDataUrl per level so the debug panel shows the correct Raw AI.
-  // M17: rawAiDataUrl is the RAW model output (pre-composite), so the debug panel
-  // and any "raw" reference stay honest even when Approach B replaces resultDataUrl.
   const cacheKey = (state.type === 'filler' && fillerIntensity) ? fillerIntensity : null;
   if(cacheKey){
     if(!sl.fillerCache) sl.fillerCache = {};
-    sl.fillerCache[cacheKey] = { rawAiDataUrl: rawModelImage };
+    sl.fillerCache[cacheKey] = { rawAiDataUrl: sl.resultDataUrl };
   }
-  sl.rawAiDataUrl = rawModelImage;
+  sl.rawAiDataUrl = sl.resultDataUrl;
 
   // M13: biostim bypasses the compositor entirely. gpt-image-2 direct output
   // is the final result. A passthrough apply() is set so the intensity slider
   // path doesn't break (it simply returns the raw AI at any slider position).
   // M13: BOTH biostim and filler now run gpt-image-2 direct, no compositor.
   if(state.type === 'biostim' || state.type === 'filler' || state.type === 'laser' || state.type === 'tox'){
-    // Passthrough: no slider blend; the display result (raw gpt-image-2 output,
-    // or the M17 feature composite for primary nose/lips) is the final result.
+    // Passthrough: no slider blend; raw gpt-image-2 output is the final result
     sl.apply = () => sl.resultDataUrl;
     sl.status = 'done';
     if(cacheKey){
       if(!sl.fillerCache) sl.fillerCache = {};
-      // M17: rawAiDataUrl stays the pre-composite model output; resultDataUrl/apply carry the composite.
-      sl.fillerCache[cacheKey] = { rawAiDataUrl: rawModelImage, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
+      sl.fillerCache[cacheKey] = { rawAiDataUrl: sl.resultDataUrl, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
     }
     const modelLabel = sl.modelUsed || 'unknown (old backend - model not reported)';
     const labelColor = (sl.modelUsed === 'gpt-image-2') ? '#1b5e20' : '#b26a00';
