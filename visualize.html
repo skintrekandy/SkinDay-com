@@ -1440,7 +1440,7 @@ const FREE_REGEN_MS = 60000;
 // stay the same module instance (shared face-detection cache). v35 = M9.0
 // jowl blending (alpha lobes over marionette/jowl shadows + prejowl notch-fill
 // warp kernels) (v34 = M8.2 shade reconciliation; v33 = M8.1 convex chin).
-const MASK_MODULE_VERSION = '77'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp)
+const MASK_MODULE_VERSION = '78'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp); v78 matchToneToReference (add-on tone normalization)
 
 /* M7: a case is one or more ANGLES, each with its own photo, QC result, job,
    and compositor. Treatment settings are shared across the case; the response
@@ -3423,6 +3423,38 @@ async function finishSlot(angleId, auth, fillerIntensity){
   }
   sl.rawAiDataUrl = sl.resultDataUrl;
 
+  // M17 #1: a primary nose/lips filler is a full-image gpt-image edit, so the
+  // model re-renders and degrades the WHOLE frame (brows, forehead, hair, skin),
+  // not just the treated feature. Approach B (same as the add-on scenario path):
+  // keep the ORIGINAL skin over the entire face and take ONLY the feathered
+  // feature region(s) from the model output. Single-select today, but chained so
+  // a nose+lips selection would composite both. rawAiDataUrl stays the raw model
+  // image for ?debug=layers. Fails safe to the raw model image.
+  const rawModelImage = sl.resultDataUrl;
+  if(state.type === 'filler' && Array.isArray(state.areas) && state.areas.length &&
+     state.areas.every(a => a === 'nose' || a === 'lips')){
+    try {
+      const skinBaseUrl = sl.beforeDataUrl || sl.originalDataUrl;
+      if(skinBaseUrl){
+        const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+        let skinImg = await loadImage(skinBaseUrl);
+        const featImg = await loadImage(rawModelImage);
+        let composited = null;
+        for(const area of state.areas){
+          const out = await mod.compositeFeatureAddon(skinImg, featImg, area);
+          if(out){ composited = out; skinImg = await loadImage(out); }
+        }
+        if(composited){
+          sl.resultDataUrl = composited;
+          if(sl.faceBbox){ try { sl.cropResultCache = await cropToFace(sl.resultDataUrl, sl.faceBbox); } catch(e){} }
+          console.log('[Visualize] M17 primary feature composite applied (' + state.areas.join('+') + ')');
+        } else {
+          console.log('[Visualize] M17 primary feature composite skipped; using raw model image.');
+        }
+      }
+    } catch(e){ console.warn('[Visualize] M17 primary composite failed; using raw model image.', e); }
+  }
+
   // M13: biostim bypasses the compositor entirely. gpt-image-2 direct output
   // is the final result. A passthrough apply() is set so the intensity slider
   // path doesn't break (it simply returns the raw AI at any slider position).
@@ -3433,7 +3465,7 @@ async function finishSlot(angleId, auth, fillerIntensity){
     sl.status = 'done';
     if(cacheKey){
       if(!sl.fillerCache) sl.fillerCache = {};
-      sl.fillerCache[cacheKey] = { rawAiDataUrl: sl.resultDataUrl, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
+      sl.fillerCache[cacheKey] = { rawAiDataUrl: rawModelImage, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
     }
     const modelLabel = sl.modelUsed || 'unknown (old backend - model not reported)';
     const labelColor = (sl.modelUsed === 'gpt-image-2') ? '#1b5e20' : '#b26a00';
@@ -4980,6 +5012,32 @@ function syncScenarioBtns(){
   });
 }
 
+// M17 staging A/B: tone-normalize an add-on scenario result to the ORIGINAL
+// photo's skin, so a global exposure/white-balance drift from gpt-image-2 does
+// not make the result read darker or warmer than the source. Read the mode from
+// the URL: ?tonematch=off (default) | exposure (luminance only) | wb (per-channel,
+// also corrects the warm cast). Scoped to add-on scenarios for this pass; the
+// primary finishSlot path is untouched. applyToneMatch is a no-op when off or
+// when inputs are missing, and fails safe to the uncorrected result.
+function _toneMatchMode(){
+  try {
+    const m = new URLSearchParams(location.search).get('tonematch');
+    return (m === 'exposure' || m === 'wb') ? m : 'off';
+  } catch(e){ return 'off'; }
+}
+async function applyToneMatch(resultDataUrl, refDataUrl){
+  const mode = _toneMatchMode();
+  if(mode === 'off' || !resultDataUrl || !refDataUrl) return resultDataUrl;
+  try {
+    const [genImg, refImg] = await Promise.all([loadImage(resultDataUrl), loadImage(refDataUrl)]);
+    const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+    const matched = await mod.matchToneToReference(genImg, refImg, mode);
+    if(matched){ console.log('[Visualize] tone-match applied (' + mode + ')'); return matched; }
+    console.log('[Visualize] tone-match skipped (negligible or no reliable skin sample)');
+  } catch(e){ console.warn('[Visualize] tone-match error:', e); }
+  return resultDataUrl;
+}
+
 async function runScenario(scenarioKey){
   if(COMING_SOON_SCENARIOS.has(scenarioKey)) return; // M15.3: gated, not yet available
   const sl = activeSlot();
@@ -5085,6 +5143,15 @@ async function runScenario(scenarioKey){
         }
       } catch(e){ console.warn('[Visualize] feature-composite skipped:', e); }
     }
+
+    // M17 (staging A/B): optional tone normalization to the ORIGINAL photo, not
+    // the smoothed baseline. Off unless ?tonematch=exposure|wb. Applies to the
+    // final displayed url so it covers both the chin/jaw raw re-render and the
+    // lips/nose composites. Fails safe.
+    try {
+      const toneRef = (sl && sl.originalDataUrl) || (sl && sl.beforeDataUrl) || null;
+      if(toneRef) displayResultUrl = await applyToneMatch(displayResultUrl, toneRef);
+    } catch(e){ console.warn('[Visualize] scenario tone-match skipped:', e); }
 
     bucket[scenarioKey] = { status: 'done', jobId, resultUrl: displayResultUrl, rawResultUrl, error: null };
     if(accessMode === 'account') refreshCredits(0);

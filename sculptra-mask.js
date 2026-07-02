@@ -3147,3 +3147,112 @@ export async function compositeFeatureAddon(baselineImg, addonImg, feature, opts
     return null;
   }
 }
+
+// ---- M17: tone normalization to a reference photo -------------------------
+// gpt-image-2 sometimes returns a full-frame re-render whose overall exposure
+// and white balance drift from the source (typically a little darker and warmer
+// on contour-change scenarios like add_chin_jaw_filler). That is a GLOBAL cast,
+// not a skin change, so it can be neutralized without touching the contour edit.
+//
+// _skinStats samples small landmark-anchored skin patches (mid-forehead + both
+// mid-cheeks), pooled, and returns the per-channel MEDIAN so a stray hair or
+// edge pixel cannot skew it. matchToneToReference computes per-channel gains
+// from the reference-vs-generated skin medians and applies a single global gain:
+//   mode 'exposure' -> one shared luminance gain (fixes darkness, preserves the
+//                      result's own color balance)
+//   mode 'wb'       -> independent R/G/B gains (fixes darkness AND the warm cast)
+// Gains are clamped to a safe band and a small no-op guard skips negligible
+// corrections. Fails safe: returns null on any failure or unreliable sample, so
+// the caller keeps the uncorrected result. Key this to the ORIGINAL photo, not a
+// smoothed intermediate, so it matches what the patient actually compares against.
+async function _skinStats(img, dim){
+  const lm = await detectFace(img);
+  const gs = Math.min(1, (dim || 640) / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.round(img.naturalWidth * gs), h = Math.round(img.naturalHeight * gs);
+  if(w < 8 || h < 8) return null;
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const cx = c.getContext("2d", { willReadFrequently:true });
+  cx.drawImage(img, 0, 0, w, h);
+  const d = cx.getImageData(0, 0, w, h).data;
+
+  // Patch centers (normalized 0..1). Landmark-anchored when a face is found, with
+  // a coarse fixed fallback so a detection miss still yields a usable sample.
+  let centers;
+  if(lm){
+    const avg = (idxs) => { let sx=0, sy=0, n=0; for(const i of idxs){ const p=lm[i]; if(p){ sx+=p.x; sy+=p.y; n++; } } return n ? { x:sx/n, y:sy/n } : null; };
+    centers = [
+      avg([10,151,9,107,336]), // mid-forehead
+      avg([205,50,116]),       // left mid-cheek
+      avg([425,280,345])       // right mid-cheek
+    ].filter(Boolean);
+  } else {
+    centers = [{x:0.50,y:0.22},{x:0.34,y:0.55},{x:0.66,y:0.55}];
+  }
+  if(!centers.length) return null;
+
+  const hs = Math.max(3, Math.round(Math.min(w, h) * 0.04)); // patch half-size
+  const R=[], G=[], B=[];
+  for(const ct of centers){
+    const cxp = Math.round(ct.x*w), cyp = Math.round(ct.y*h);
+    for(let y=cyp-hs; y<=cyp+hs; y++){
+      if(y<0 || y>=h) continue;
+      for(let x=cxp-hs; x<=cxp+hs; x++){
+        if(x<0 || x>=w) continue;
+        const q=(y*w+x)*4;
+        R.push(d[q]); G.push(d[q+1]); B.push(d[q+2]);
+      }
+    }
+  }
+  if(R.length < 30) return null;
+  const med = arr => { arr.sort((a,b)=>a-b); return arr[arr.length >> 1]; };
+  return { r: med(R), g: med(G), b: med(B), n: R.length };
+}
+
+export async function matchToneToReference(genImg, refImg, mode, opts){
+  try {
+    if(!genImg || !refImg) return null;
+    mode = (mode === 'wb' || mode === 'exposure') ? mode : 'exposure';
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+    const refStat = await _skinStats(refImg, (opts && opts.statDim) || 640);
+    const genStat = await _skinStats(genImg, (opts && opts.statDim) || 640);
+    if(!refStat || !genStat) return null; // no reliable skin sample: fail safe
+
+    const GLO = 0.80, GHI = 1.25; // never over-correct beyond +/- a plausible range
+    let gR, gG, gB;
+    if(mode === 'wb'){
+      gR = clamp(refStat.r / (genStat.r || 1), GLO, GHI);
+      gG = clamp(refStat.g / (genStat.g || 1), GLO, GHI);
+      gB = clamp(refStat.b / (genStat.b || 1), GLO, GHI);
+    } else {
+      const refL = 0.299*refStat.r + 0.587*refStat.g + 0.114*refStat.b;
+      const genL = 0.299*genStat.r + 0.587*genStat.g + 0.114*genStat.b;
+      const g = clamp(refL / (genL || 1), GLO, GHI);
+      gR = gG = gB = g;
+    }
+
+    // No-op guard: negligible correction is not worth a re-encode.
+    if(Math.abs(gR-1) < 0.015 && Math.abs(gG-1) < 0.015 && Math.abs(gB-1) < 0.015) return null;
+
+    // Optional strength blend toward identity (default full).
+    const s = (opts && typeof opts.strength === 'number') ? clamp(opts.strength, 0, 1) : 1;
+    gR = 1 + (gR-1)*s; gG = 1 + (gG-1)*s; gB = 1 + (gB-1)*s;
+
+    const gs = Math.min(1, ((opts && opts.maxDim) || 1536) / Math.max(genImg.naturalWidth, genImg.naturalHeight));
+    const w = Math.round(genImg.naturalWidth * gs), h = Math.round(genImg.naturalHeight * gs);
+    const c = document.createElement("canvas"); c.width = w; c.height = h;
+    const cx = c.getContext("2d", { willReadFrequently:true });
+    cx.drawImage(genImg, 0, 0, w, h);
+    const id = cx.getImageData(0, 0, w, h), d = id.data;
+    for(let p=0; p<d.length; p+=4){
+      d[p]   = Math.max(0, Math.min(255, d[p]   * gR));
+      d[p+1] = Math.max(0, Math.min(255, d[p+1] * gG));
+      d[p+2] = Math.max(0, Math.min(255, d[p+2] * gB));
+    }
+    cx.putImageData(id, 0, 0);
+    return c.toDataURL("image/jpeg", 0.95);
+  } catch(e){
+    console.warn('[Visualize] M17 tone-match failed; using uncorrected result.', e);
+    return null;
+  }
+}
