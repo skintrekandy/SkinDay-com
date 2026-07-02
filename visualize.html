@@ -4959,9 +4959,8 @@ async function runScenario(scenarioKey){
   try {
     const auth = await authHeaders();
 
-    // M12.6: send the original photo as the primary image (edit target).
-    // The baseline is sent as originalImage so the server can pass it to the planner.
-    // The image model generates directly from the original -- one clean pass.
+    // M15: the baseline is the edit target (add-ons stack on the treated face).
+    // The original photo is sent as originalImage for the emphasis planner.
     const originalDataUrl = sl.beforeDataUrl || sl.originalDataUrl;
     const baselineDataUrl = (state.type === 'biostim' && sl.apply) ? sl.apply(1.0) : sl.resultDataUrl;
 
@@ -4974,19 +4973,13 @@ async function runScenario(scenarioKey){
     bucket[scenarioKey].jobId = jobId;
 
     const form = new FormData();
-    // M14: Sculptra baselines edit the ORIGINAL photo (planner re-describes the
-    // plan). Cross-type baselines (filler / laser / tox / HDR) edit the BASELINE
-    // image itself, so the add-on stacks on top of the already-treated face.
-    const isCrossType = state.type === 'filler' || state.type === 'laser' ||
-                        state.type === 'tox' ||
-                        (state.type === 'biostim' && state.product === 'hdr');
-    if(isCrossType){
-      form.append('image',         baselineBlob, 'baseline-' + angleId + '.jpg'); // edit target = baseline
-      form.append('originalImage', baselineBlob, 'baseline-' + angleId + '.jpg'); // planner unused for cross-type
-    } else {
-      form.append('image',         originalBlob,  'original-' + angleId + '.jpg'); // edit target = original
-      form.append('originalImage', baselineBlob,  'baseline-' + angleId + '.jpg'); // planner context
-    }
+    // M15: ALL scenarios edit the BASELINE image, for every treatment type.
+    // Add-ons must stack on top of the result already shown -- a scenario may
+    // never display less correction than the baseline it builds on. The
+    // original photo rides along as originalImage for the stronger_sculptra
+    // emphasis planner (comparison reference only, never the edit target).
+    form.append('image',         baselineBlob, 'baseline-' + angleId + '.jpg'); // edit target = baseline, always
+    form.append('originalImage', originalBlob, 'original-' + angleId + '.jpg'); // planner reference only
     form.append('jobId',         jobId);
     form.append('type',          'biostim');
     form.append('product',       'sculptra');
@@ -5016,10 +5009,10 @@ async function runScenario(scenarioKey){
       throw new Error((e && e.error) || ('Could not start scenario generation (HTTP ' + startRes.status + ').'));
     }
 
-    // M12.6 / M12.7: poll for result and display directly.
+    // M15: poll for result and display directly.
     // No compositor, no mask, no warp, no texture restore.
-    // The original photo + planner prompt + gpt-image-1 is one clean generation.
-    // Trust the model. If it drifts on a specific photo, fix the prompt -- not the compositor.
+    // The baseline image + incremental add-on prompt + gpt-image-2 is one clean
+    // stacking edit. Trust the model. If it drifts, fix the prompt -- not the compositor.
     const polledScenario = await pollForResult(jobId, auth);
     const rawResultUrl = polledScenario.image;
     if(polledScenario.model) console.log('[Visualize] scenario ' + scenarioKey + ': model=' + polledScenario.model);
