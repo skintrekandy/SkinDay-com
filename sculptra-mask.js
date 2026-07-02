@@ -668,7 +668,7 @@ const GUARD_EDGE_HI    = 40;
 // be fully safe but may look flat on very dark skin tones.
 const CHROMA_LOCK      = 0.96;
 const LUMA_DARK_FLOOR  = 0;     // treated skin never darker than original (broad tone)
-const GLOW_LUMA        = 6;     // gentle lighten (glow), luma levels at full. M6.3:
+const GLOW_LUMA        = 4;     // M16: 6->4, trims the delta-path glow alongside
                                 // back to 6, and for Sculptra the glow now lives
                                 // OUTSIDE the gained delta (added at apply time,
                                 // never multiplied by the response gain). The gained
@@ -2547,7 +2547,12 @@ const CHIN_JAW_MID_KEEP   = 0.6;
 // v70: 6 -> 9. Combined with CHROMA_LOCK=0.82, raises the collagen glow
 // effect toward what real-world results show. The glow is never gained
 // (see compositor), so this is a ceiling raise not an amplification.
-const SCULPTRA_GLOW_APPLY = 9;
+// M16: 9 -> 5. The v70 bump to 9 was calibrated against CHROMA_LOCK=0.82,
+// which was later reverted to 0.96 (see line ~669) WITHOUT dropping the glow
+// back -- so the glow was over-set relative to its own premise and read as skin
+// beautification (brighter, glowier skin) on staging. 5 keeps a subtle real
+// glow. Raise back toward 6-7 if collagen glow reads flat; do not return to 9.
+const SCULPTRA_GLOW_APPLY = 5;
 // HA chin/jaw: a defined jawline is created by the clean shadow line along the
 // mandibular border, so the path needs SOME darkening to read as definition
 // rather than flat. Colour is locked, so this clean luminance shadow cannot turn
@@ -2747,7 +2752,7 @@ export async function compositeSculptra(beforeImg, aiImg, opts){
   // original at its own aspect (uniform downscale, no distortion) and stretching
   // the AI back onto that grid reverses the API resize, so the AI content
   // re-aligns and the output matches the original framing.
-  const maxDim = (opts && opts.maxDim) || 1024;
+  const maxDim = (opts && opts.maxDim) || 1536;
   const gs = Math.min(1, maxDim / Math.max(beforeImg.naturalWidth, beforeImg.naturalHeight));
   const w = Math.round(beforeImg.naturalWidth * gs), h = Math.round(beforeImg.naturalHeight * gs);
   const m = buildTreatAlpha(landmarks, w, h, scope, sex);
@@ -2877,7 +2882,7 @@ export async function compositeSculptra(beforeImg, aiImg, opts){
     }
   }
   cx.putImageData(ai, 0, 0);
-  return c.toDataURL("image/jpeg", 0.92);
+  return c.toDataURL("image/jpeg", 0.95);
 }
 
 /**
@@ -2896,7 +2901,7 @@ export async function makeSculptraCompositor(beforeImg, aiImg, opts){
   // M5b: work on the ORIGINAL's grid, not the AI's (see compositeSculptra). The AI
   // is stretched back onto the original aspect so its content re-aligns and the
   // emitted result matches the original framing for a clean side-by-side export.
-  const maxDim = (opts && opts.maxDim) || 1024;
+  const maxDim = (opts && opts.maxDim) || 1536;
   const gs = Math.min(1, maxDim / Math.max(beforeImg.naturalWidth, beforeImg.naturalHeight));
   const w = Math.round(beforeImg.naturalWidth * gs), h = Math.round(beforeImg.naturalHeight * gs);
   const m = buildTreatAlpha(landmarks, w, h, scope, sex);
@@ -3038,6 +3043,107 @@ export async function makeSculptraCompositor(beforeImg, aiImg, opts){
       }
     }
     cx.putImageData(out, 0, 0);
-    return c.toDataURL("image/jpeg", 0.92);
+    return c.toDataURL("image/jpeg", 0.95);
   };
+}
+
+// ---- M16: feature add-on skin preservation (approach B) --------------------
+// Lip/nose filler add-ons are a SECOND gpt-image edit of the baseline. A large,
+// salient feature change (e.g. drastic lips) makes the model re-render the whole
+// frame, degrading skin texture everywhere -- while a subtle edit (tear trough)
+// barely re-renders and leaves skin intact. This composite keeps the baseline's
+// real skin over the ENTIRE face and takes ONLY the feathered feature region
+// (lips or nose) from the add-on, so the drastic feature change survives while
+// pores/texture outside it stay pixel-identical to the baseline. The mask is
+// built from landmarks detected on the ADD-ON (the fuller feature), so added
+// volume is not clipped. Fails safe: any error / missing face returns null and
+// the caller falls back to the raw add-on.
+function convexHull(points){
+  const pts = points.slice().sort((a,b)=> a[0]-b[0] || a[1]-b[1]);
+  if(pts.length < 3) return pts;
+  const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+  const lower=[]; for(const p of pts){ while(lower.length>=2 && cross(lower[lower.length-2],lower[lower.length-1],p)<=0) lower.pop(); lower.push(p); }
+  const upper=[]; for(let i=pts.length-1;i>=0;i--){ const p=pts[i]; while(upper.length>=2 && cross(upper[upper.length-2],upper[upper.length-1],p)<=0) upper.pop(); upper.push(p); }
+  lower.pop(); upper.pop(); return lower.concat(upper);
+}
+
+export async function compositeFeatureAddon(baselineImg, addonImg, feature, opts){
+  try {
+    if(!baselineImg || !addonImg) return null;
+    const idx        = (feature === 'nose') ? NOSE : LIPS;
+    const expand     = (feature === 'nose') ? 1.18 : 1.24;   // grow hull outward from centroid
+    const featherFrac= (feature === 'nose') ? 0.018 : 0.024; // blur radius as fraction of face width
+
+    // Landmarks from the ADD-ON (fuller feature) so added volume is not clipped.
+    const lm = await detectFace(addonImg);
+    if(!lm) return null;
+
+    // Composite on the baseline's grid (uniform downscale), matching the other paths.
+    const maxDim = (opts && opts.maxDim) || 1536;
+    const gs = Math.min(1, maxDim / Math.max(baselineImg.naturalWidth, baselineImg.naturalHeight));
+    const w = Math.round(baselineImg.naturalWidth * gs), h = Math.round(baselineImg.naturalHeight * gs);
+    const W = faceWidthPx(lm, w, h);
+
+    // Feature landmarks -> pixels, expanded outward from their centroid.
+    let pts = idx.map(i => lm[i]).filter(Boolean).map(p => [p.x*w, p.y*h]);
+    if(pts.length < 3) return null;
+    const cx0 = pts.reduce((s,p)=>s+p[0],0)/pts.length, cy0 = pts.reduce((s,p)=>s+p[1],0)/pts.length;
+    pts = pts.map(p => [cx0 + (p[0]-cx0)*expand, cy0 + (p[1]-cy0)*expand]);
+    const hull = convexHull(pts);
+    if(hull.length < 3) return null;
+
+    // Mask: white feature hull on black.
+    const mk = document.createElement("canvas"); mk.width=w; mk.height=h;
+    const mkx = mk.getContext("2d");
+    mkx.fillStyle="#000"; mkx.fillRect(0,0,w,h);
+    mkx.fillStyle="#fff"; mkx.beginPath(); mkx.moveTo(hull[0][0], hull[0][1]);
+    for(let i=1;i<hull.length;i++) mkx.lineTo(hull[i][0], hull[i][1]);
+    mkx.closePath(); mkx.fill();
+
+    // Feather the mask edge for a seamless blend.
+    const fb = document.createElement("canvas"); fb.width=w; fb.height=h;
+    const fbx = fb.getContext("2d");
+    fbx.filter = "blur(" + Math.max(1, featherFrac*W) + "px)"; fbx.drawImage(mk, 0, 0); fbx.filter="none";
+
+    // Add-on restricted to the feathered feature region.
+    const feat = document.createElement("canvas"); feat.width=w; feat.height=h;
+    const fx = feat.getContext("2d");
+    fx.drawImage(addonImg, 0, 0, w, h);
+    fx.globalCompositeOperation = "destination-in"; fx.drawImage(fb, 0, 0);
+
+    // Baseline skin everywhere; add-on feature composited on top.
+    const out = document.createElement("canvas"); out.width=w; out.height=h;
+    const ox = out.getContext("2d",{willReadFrequently:true});
+    ox.drawImage(baselineImg, 0, 0, w, h);
+    ox.drawImage(feat, 0, 0);
+
+    // M16 #2: gentle unsharp INSIDE the feature region only. The feature is the
+    // one area that went through the second gpt-image pass, so it is slightly
+    // softer than the inherited baseline skin. A light high-frequency boost,
+    // masked by the same feathered region, re-crisps just the feature without
+    // touching the inherited skin and without a hard edge. Optional/fail-safe.
+    try {
+      const amount = 0.5, radiusPx = Math.max(1.2, w*0.0013);
+      const bl = document.createElement("canvas"); bl.width=w; bl.height=h;
+      const blx = bl.getContext("2d",{willReadFrequently:true});
+      blx.filter = "blur(" + radiusPx + "px)"; blx.drawImage(out, 0, 0); blx.filter="none";
+      const od = ox.getImageData(0,0,w,h), o = od.data;
+      const bd = blx.getImageData(0,0,w,h), bbuf = bd.data;
+      const md = fbx.getImageData(0,0,w,h), mm = md.data; // feathered mask (red = feature alpha)
+      for(let i=0,p=0;i<w*h;i++,p+=4){
+        const mAlpha = mm[p]/255;
+        if(mAlpha <= 0.01) continue;
+        const k = amount * mAlpha;
+        o[p]   = Math.max(0, Math.min(255, o[p]   + k*(o[p]   - bbuf[p])));
+        o[p+1] = Math.max(0, Math.min(255, o[p+1] + k*(o[p+1] - bbuf[p+1])));
+        o[p+2] = Math.max(0, Math.min(255, o[p+2] + k*(o[p+2] - bbuf[p+2])));
+      }
+      ox.putImageData(od, 0, 0);
+    } catch(e){ /* sharpen is optional */ }
+
+    return out.toDataURL("image/jpeg", 0.95);
+  } catch(e){
+    console.warn('[Visualize] M16 feature composite failed; using raw add-on.', e);
+    return null;
+  }
 }

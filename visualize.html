@@ -705,7 +705,7 @@
         <div class="field">
           <label data-en="Volume" data-zh="填充量">Volume</label>
           <div class="pill-grid" id="fillerVolumeToggle">
-            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Conservative" data-zh="自然">Conservative</strong></button>
+            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Natural" data-zh="自然">Natural</strong></button>
             <button class="pill" data-volume="moderate" type="button"><strong data-en="Moderate" data-zh="中等">Moderate</strong></button>
             <button class="pill" data-volume="enhanced" type="button"><strong data-en="Enhanced" data-zh="加強">Enhanced</strong></button>
           </div>
@@ -1278,7 +1278,7 @@ var I18N = {
     creditsLabel: 'Credits',
     account: 'Account',
     // Filler volume tier names
-    tierConservative: 'Conservative', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
+    tierConservative: 'Natural', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
     // Laser help
     laserHelpRf: 'RF: radiofrequency skin tightening (e.g. Thermage, XERF). Results develop gradually over about 3 to 6 months.',
     laserHelpHifu: 'HIFU: focused-ultrasound lifting (e.g. Ultherapy, Sofwave). Results develop gradually over about 3 to 6 months.',
@@ -1439,7 +1439,7 @@ const FREE_REGEN_MS = 60000;
 // stay the same module instance (shared face-detection cache). v35 = M9.0
 // jowl blending (alpha lobes over marionette/jowl shadows + prejowl notch-fill
 // warp kernels) (v34 = M8.2 shade reconciliation; v33 = M8.1 convex chin).
-const MASK_MODULE_VERSION = '74';
+const MASK_MODULE_VERSION = '77'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp)
 
 /* M7: a case is one or more ANGLES, each with its own photo, QC result, job,
    and compositor. Treatment settings are shared across the case; the response
@@ -1475,7 +1475,7 @@ function makeSlot(){
 const state = {
   type:'biostim', areas:['chin_jawline'], intensity:'enhanced', sex:'female',
   product:'sculptra', projection:'expected', timeline:'6',
-  blackBg:true, lastGenAt:0, intensityPct:58, courseMode:'standard', // 'standard' | 'enhanced' -- global across all angles
+  blackBg:true, lastGenAt:0, intensityPct:48, courseMode:'standard', // M16: default lowered 58->48; baseline read too strong. Response slider still overrides per-session.
   responseMode:'expected', // M14.2: always 'expected'. Optimistic/Both selector removed (overpromising). Stronger effect is a post-baseline scenario.
   fillerVolume:'conservative', // 'conservative' | 'moderate' | 'enhanced' -- filler volume tier
   laserType:'rf', // 'rf' or 'hifu' -- Energy-Based Devices type
@@ -4296,8 +4296,8 @@ function simKicker(angleId){
   if(state.type === 'filler' && sl.apply){
     // M14.1: label from the selected volume tier (conservative/moderate/enhanced),
     // not the stale slider intensityPct which always read "Balanced".
-    const VOLUME_LABEL = { conservative:'Conservative correction', moderate:'Balanced correction', enhanced:'Enhanced correction' };
-    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Balanced correction');
+    const VOLUME_LABEL = { conservative:'Natural', moderate:'Balanced', enhanced:'Enhanced' };
+    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Balanced');
   }
   return parts.join(' · ');
 }
@@ -4796,15 +4796,14 @@ function scenarioBucket() {
   return scenarioState[angle];
 }
 
-// M15.3: discrete feature-reshaping scenarios (lips, nose) are gated as
-// "coming soon". These require redrawing a sharp-edged feature against a fixed
-// boundary, which the current image model cannot do without global texture
-// regression, so they would violate the baseline <= add-on quality promise.
-// Regional soft-tissue support scenarios (tear trough, cheek, temple, chin,
-// jaw, biostim, energy) blend into surrounding tissue and are reliable, so
-// they stay live. Remove a key here to re-enable once the model or a masked
-// edit path can hold quality.
-const COMING_SOON_SCENARIOS = new Set(['add_lips_filler', 'add_nose_filler']);
+// M15.3 / M16: discrete feature-reshaping scenarios (lips, nose) were gated as
+// "coming soon" because the old prompt stack could not redraw a sharp-edged
+// feature without global texture regression. The M16 filler rewrite (single-image
+// lock + softened comparison wording) is the intended fix, so they are ungated
+// here for staging evaluation. If a stacked lips/nose add-on regresses texture or
+// violates the baseline <= add-on quality promise on staging, re-add its key
+// below to re-gate. Regional soft-tissue scenarios were always live.
+const COMING_SOON_SCENARIOS = new Set([]);
 
 const SCENARIO_LABELS = {
   stronger_sculptra:  'Stronger biostimulation response',
@@ -5064,7 +5063,28 @@ async function runScenario(scenarioKey){
     const rawResultUrl = polledScenario.image;
     if(polledScenario.model) console.log('[Visualize] scenario ' + scenarioKey + ': model=' + polledScenario.model);
 
-    bucket[scenarioKey] = { status: 'done', jobId, resultUrl: rawResultUrl, rawResultUrl, error: null };
+    // M16: discrete feature add-ons (lips/nose) are a SECOND full-image gpt-image
+    // edit; a drastic feature change makes the model re-render and degrade skin
+    // texture globally (a subtle edit like tear trough does not). Approach B:
+    // keep the baseline's real skin over the whole face and take ONLY the
+    // feathered feature region from the add-on. Fails safe to the raw add-on.
+    let displayResultUrl = rawResultUrl;
+    if(scenarioKey === 'add_lips_filler' || scenarioKey === 'add_nose_filler'){
+      try {
+        const feature = (scenarioKey === 'add_nose_filler') ? 'nose' : 'lips';
+        const skinBaseUrl = (state.type === 'biostim' && sl && sl.apply)
+          ? sl.apply((state.intensityPct || 48) / 100)
+          : (sl && sl.resultDataUrl);
+        if(skinBaseUrl){
+          const [baseImg, addonImg] = await Promise.all([loadImage(skinBaseUrl), loadImage(rawResultUrl)]);
+          const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+          const composited = await mod.compositeFeatureAddon(baseImg, addonImg, feature);
+          if(composited) displayResultUrl = composited;
+        }
+      } catch(e){ console.warn('[Visualize] feature-composite skipped:', e); }
+    }
+
+    bucket[scenarioKey] = { status: 'done', jobId, resultUrl: displayResultUrl, rawResultUrl, error: null };
     if(accessMode === 'account') refreshCredits(0);
 
   } catch(err){
@@ -5119,8 +5139,14 @@ function renderScenarioResult(scenarioKey){
     // This lets the patient see the full journey: where they started, what Sculptra
     // achieves, and what the add-on scenario adds on top.
     const originalUrl = sl ? (sl.beforeDataUrl || sl.originalDataUrl || '') : '';
+    // M16: the baseline PANEL now renders at the user/default response intensity,
+    // matching the main preview. It was hardcoded to sl.apply(1.0) (full compositor
+    // strength), so the triptych always showed a maxed-out baseline regardless of
+    // the intensity setting -- the "baseline too strong" regression. (The add-on
+    // EDIT TARGET is still submitted at apply(1.0) elsewhere so add-ons never stack
+    // on less than the full baseline; only the displayed panel changes here.)
     const baselineDisplayUrl = (state.type === 'biostim' && sl && sl.apply)
-      ? sl.apply(1.0)
+      ? sl.apply((state.intensityPct || 48) / 100)
       : (sl ? (sl.resultDataUrl || '') : '');
     bodyHtml =
       '<div class="scenario-img-triple">' +
