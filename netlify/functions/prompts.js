@@ -1101,9 +1101,9 @@ function addonSafety(changeArea){
     'Do not add text, labels, watermarks, or annotations.';
 }
 const CROSS_ADDON_BASE =
-  'This image already contains a completed aesthetic treatment simulation on this patient. ' +
-  'Preserve every visible improvement exactly as shown. Do not reduce, replace, reinterpret, or undo any existing improvement. ' +
-  'Keep the identity exactly. The only permitted change is the single additional treatment described below, added on top as one natural-looking combined result. ';
+  'This image shows a patient PART-WAY through a multi-step aesthetic treatment plan. The plan is NOT finished: the next treatment step, described below, must now be applied clearly and visibly. ' +
+  'Preserve every improvement already visible from the earlier steps exactly as shown. Do not reduce, replace, reinterpret, or undo any existing improvement, and keep the identity exactly. ' +
+  'The only zone that changes is the one treated by the next step below, applied as one natural-looking combined result. ';
 
 const CROSS_ADDON_PROMPTS = {
   // M15: Sculptra-baseline scenarios now also edit the baseline image directly,
@@ -1128,34 +1128,53 @@ const CROSS_ADDON_PROMPTS = {
     'The existing cheek and lateral response stays fully intact beneath these additions. All changes must read as one coherent clinical result on the same person, comprehensively supported, never operated on.' +
     addonSafety('chin and jawline HA filler plus temple volume added on top of the existing biostimulator response'),
   add_chin_jaw_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the chin and jawline: more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support, so the lower third reads more defined and refined. Keep it conservative and natural.' +
+    'Add hyaluronic acid filler to the chin and jawline with a CLEARLY VISIBLE structural result, equivalent to about 2 syringes: the chin point moves visibly forward with more vertical height, the mandibular border reads as a clean continuous line from chin to gonial angle, and the prejowl hollow is supported. ' +
+    'The lower-face change MUST be visible in the silhouette and shadow architecture in a side-by-side comparison. A barely perceptible lower-face change is a FAILED edit. ' +
+    'Keep the result natural and structural, never surgical.' +
     addonSafety('hyaluronic acid filler to the chin and jawline'),
   add_chin_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the chin ONLY: gently bring the chin point forward and, where appropriate, slightly lower so the lower third reads stronger and better balanced, keeping the chin width natural. This is chin filler only -- do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width.' +
+    'Add hyaluronic acid filler to the chin ONLY, with a CLEARLY VISIBLE result: the chin point moves distinctly forward and, where appropriate, slightly lower, so the profile silhouette visibly changes and the lower third reads stronger and better balanced, keeping the chin width natural. ' +
+    'The chin change MUST be obvious in a side-by-side comparison of the profile line. A barely perceptible chin change is a FAILED edit. ' +
+    'This is chin filler only -- do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width.' +
     addonSafety('hyaluronic acid filler to the chin only'),
   add_jawline_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the jawline ONLY: a smoother, more continuous mandibular border from the chin body back toward the gonial angle, with the prejowl hollow softened where present, so the jaw line reads more defined. This is jawline filler only -- do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance.' +
+    'Add hyaluronic acid filler to the jawline ONLY, with a CLEARLY VISIBLE result: the mandibular border reads as a distinctly smoother, more continuous, better-defined line from the chin body back toward the gonial angle, with the prejowl hollow visibly softened where present. ' +
+    'The jawline definition MUST be obvious in a side-by-side comparison of the jaw shadow and silhouette. A barely perceptible jawline change is a FAILED edit. ' +
+    'This is jawline filler only -- do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance.' +
     addonSafety('hyaluronic acid filler to the jawline only'),
   add_cheek_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the cheeks (midface): restore soft midface and lateral cheek volume so the cheek reads fuller and better supported, with a smooth continuous transition from the cheekbone into the midface. Subtle and natural, never overfilled, shelf-like, or pillowed.' +
+    'Add hyaluronic acid filler to the cheeks (midface) with a CLEARLY VISIBLE result: the midface and lateral cheek read distinctly fuller and better supported, with restored cheek convexity and a smooth continuous transition from the cheekbone into the midface. ' +
+    'The cheek change MUST be visible in a side-by-side comparison. A barely perceptible cheek change is a FAILED edit. ' +
+    'Natural and structural, never overfilled, shelf-like, or pillowed.' +
     addonSafety('hyaluronic acid filler to the cheeks and midface'),
   add_temple_support: CROSS_ADDON_BASE +
-    'Add focused volume to the temples: fill the temporal hollow so the forehead-to-cheek transition reads as a more continuous convex surface and the upper lateral face reads as a smooth connected arc. Strictly the temporal hollow and immediately adjacent tissue.' +
+    'Add focused volume to the temples with a CLEARLY VISIBLE result: the temporal hollow fills distinctly so the forehead-to-cheek transition reads as a continuous convex surface and the upper lateral face reads as a smooth connected arc. ' +
+    'The temple change MUST be visible in a side-by-side comparison of the upper lateral contour. A barely perceptible temple change is a FAILED edit. ' +
+    'Strictly the temporal hollow and immediately adjacent tissue.' +
     addonSafety('temple (temporal hollow) volume'),
   add_tear_trough: CROSS_ADDON_BASE +
     'Add hyaluronic acid correction of the under-eye (tear trough) hollow: soften the groove so the lid-cheek junction reads as a smooth, well-supported transition and the hollow shadow is reduced because the depression is filled from beneath, never because the skin is brightened. Subtle and natural, never puffy or over-filled. Do not change eye shape, eye size, eyelid, lashes, or iris.' +
     addonSafety('the under-eye tear trough hollow'),
   add_nose_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the nose (liquid rhinoplasty): a visible but believable structural refinement consistent with a skilled injector -- smooth the dorsal line so the profile reads clearly straighter, add bridge definition and gentle radix or tip support where this nose needs it. The change should be clearly noticeable in side-by-side comparison while still looking non-surgical, never like a rhinoplasty. Do not narrow the nostrils, do not shorten or lengthen the nose, do not change the nose width from the front.' +
+    'Add hyaluronic acid filler to the nose (liquid rhinoplasty) with a CLEARLY VISIBLE result consistent with a skilled injector: the dorsal line reads distinctly straighter and better defined, with added bridge height and definition, and gentle radix or tip support where this nose needs it. ' +
+    'The nasal refinement MUST be immediately obvious in a side-by-side comparison of the nasal bridge and profile line. A barely perceptible nose change is a FAILED edit -- the nose is the one zone in this edit where a clear, unmistakable change is required. ' +
+    'The result must still look non-surgical: a visibly refined version of the same nose, never a rhinoplasty. Do not narrow the nostrils, do not shorten or lengthen the nose, do not change the nose width from the front.' +
     addonSafety('hyaluronic acid refinement of the nose'),
-  add_lips_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid lip filler with a CLEARLY VISIBLE result, equivalent to about 1 mL: both the upper and lower lip MUST read distinctly fuller, with more vertical lip height, more forward projection, and a more defined vermilion border. ' +
-    'The increase must be immediately obvious in a side-by-side comparison with the current image. A subtle or barely perceptible lip change is a FAILED edit -- the lips are the one zone in this edit where a clear, unmistakable change is required. ' +
-    'Keep a natural upper-to-lower proportion (the lower lip stays slightly fuller than the upper), keep the cupid\'s bow shape and position, and keep the same mouth width. ' +
-    'The result is a full but tasteful enhancement: clearly fuller and better defined, never duck-shaped, shelf-like, everted, or over-filled.' +
+  // add_lips_filler: deliberately does NOT use CROSS_ADDON_BASE. Lips are a small
+  // zone and gpt-image-2 hedges them toward invisibility when the prompt opens
+  // with preservation language. This prompt leads with the enhancement demand
+  // and states preservation compactly afterward. Anchors: ~1.5 mL, 25-30% fuller.
+  add_lips_filler:
+    'PRIMARY TASK, NON-NEGOTIABLE: make the lips CLEARLY and UNMISTAKABLY fuller. This simulates a full hyaluronic acid lip augmentation. ' +
+    'Both the upper and lower lip must each read roughly 25 to 30 percent fuller than in this image: visibly more vertical lip height, visibly more forward projection, and a sharper, better-defined vermilion border. The lips should look clearly fuller at conversational distance. ' +
+    'The difference must be immediately obvious at a glance in a side-by-side comparison. If the lips look the same or only slightly different, the edit has FAILED. ' +
+    'Shape rules: keep a natural upper-to-lower proportion (the lower lip stays slightly fuller than the upper), keep the cupid\'s bow shape and position, keep the same mouth width. Full and defined, never duck-shaped, shelf-like, everted, or cartoonish. ' +
+    'This image shows a patient part-way through a treatment plan; earlier steps are already visible elsewhere on the face and the plan is not finished. Preserve every other improvement and every other facial feature exactly as shown; the lips are the ONLY zone that changes in this step.' +
     LIP_SAFETY,
   add_biostim_lift: CROSS_ADDON_BASE +
-    'Add a biostimulator collagen response for more lateral lift: broader, softer support across the lateral cheek and temple so the midface reads lifted and the jawline cleaner, as a diffuse soft-tissue improvement returning under the skin. This is collagen-based volume and lift, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow.' +
+    'Add a biostimulator collagen response for more lateral lift, with a CLEARLY VISIBLE result: broader, softer support across the lateral cheek and temple so the midface reads distinctly lifted and the jawline cleaner, as a diffuse soft-tissue improvement returning under the skin. ' +
+    'The lift MUST be visible in a side-by-side comparison. A barely perceptible change is a FAILED edit. ' +
+    'This is collagen-based volume and lift, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow.' +
     addonSafety('a diffuse biostimulator lateral-lift response across the cheeks and temples'),
   add_rf: CROSS_ADDON_BASE +
     'Add a radiofrequency (RF) skin-tightening result on top of the existing filler result: modest firming and tightening of the skin envelope, mainly in the lower face and along the jawline, so the skin reads a little smoother and more taut and the jaw line a little cleaner. ' +
