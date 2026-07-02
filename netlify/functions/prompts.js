@@ -794,24 +794,17 @@ function buildCorePrompt(sel) {
 
   // M15.4: MINIMAL LIPS MODE (A/B experiment).
   // The accumulated preservation/prohibition layers on the standard lip path
-  // (~415 words, ~80% restrictions) appear to suppress the very edit requested:
-  // the same model produces a stronger, cleaner lip result from a short,
-  // enhancement-first prompt. This branch sends ~110 words: primary task,
-  // magnitude, light aesthetic guardrails, ONE preservation sentence, realism.
-  // Toggle with env LIPS_MINIMAL_MODE=true (Netlify) so it can be A/B'd on
-  // staging against the legacy path without a redeploy. Lips-only selection.
+  // (~415 words, ~80% restrictions) suppress the very edit requested: the same
+  // gpt-image-2 model produces a stronger, cleaner lip result from a short,
+  // enhancement-first prompt. This branch sends the exact reference prompt that
+  // produced the target result, verbatim, so the experiment tests the prompt
+  // itself rather than a paraphrase. Toggle with env LIPS_MINIMAL_MODE=true
+  // (Netlify) to A/B against the legacy path without a redeploy. Lips-only.
   const lipsMinimalOn = (typeof process !== 'undefined' && process.env && process.env.LIPS_MINIMAL_MODE === 'true');
   if (lipsMinimalOn && areas.length === 1 && areas[0] === 'lips') {
-    const mag = sel_.intensity === 'enhanced'
-      ? 'Add a clearly visible but tasteful enhancement to both the upper and lower lip: noticeably more volume, improved vermilion show, gentle forward projection, and slightly better definition of the Cupid\'s bow and lip contour.'
-      : sel_.intensity === 'moderate'
-      ? 'Add a visible, natural enhancement to both the upper and lower lip: more volume, improved vermilion show, and a slightly better-defined Cupid\'s bow and lip contour.'
-      : 'Add a subtle, natural enhancement to both lips: a little more volume and a slightly cleaner vermilion border.';
-    return 'Simulate the appearance a few weeks after a hyaluronic acid lip filler treatment. ' +
-      mag + ' ' +
-      'Keep natural upper-to-lower proportion and the same mouth width; never overfilled, everted, or duck-shaped. ' +
-      'Do not change any other facial structure: preserve the nose, cheeks, jawline, chin, eyes, brows, skin texture, wrinkles, pores, pigmentation, expression, hair, clothing, camera angle, lighting, and background exactly as photographed. ' +
-      'The result should look like a real clinical before-and-after photograph taken under identical conditions, not a beauty filter or glamour retouch.' +
+    return 'Simulate the expected result of an enhanced hyaluronic acid lip filler treatment performed by an experienced aesthetic injector. ' +
+      'Create a natural but clearly noticeable enhancement of both lips, approximately equivalent to 1-2 cc of HA filler. Increase the body of both lips, improve vermilion show, create gentle anterior projection, slightly define the vermilion border, and maintain a balanced upper-to-lower lip ratio. Preserve the patient\'s natural mouth width, Cupid\'s bow, facial proportions, and overall expression. The lips should look realistically hydrated and supported rather than overfilled. ' +
+      'Everything outside the lips should remain unchanged. Preserve the patient\'s identity, age, skin texture, pigmentation, wrinkles, lighting, facial anatomy, hairstyle, clothing, camera angle, and background exactly as photographed.' +
       (note || '');
   }
 
