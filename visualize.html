@@ -3423,6 +3423,38 @@ async function finishSlot(angleId, auth, fillerIntensity){
   }
   sl.rawAiDataUrl = sl.resultDataUrl;
 
+  // M17 #1: a primary nose/lips filler is a full-image gpt-image edit, so the
+  // model re-renders and degrades the WHOLE frame (brows, forehead, hair, skin),
+  // not just the treated feature. Approach B (same as the add-on scenario path):
+  // keep the ORIGINAL skin over the entire face and take ONLY the feathered
+  // feature region(s) from the model output. Single-select today, but chained so
+  // a nose+lips selection would composite both. rawAiDataUrl stays the raw model
+  // image for ?debug=layers. Fails safe to the raw model image.
+  const rawModelImage = sl.resultDataUrl;
+  if(state.type === 'filler' && Array.isArray(state.areas) && state.areas.length &&
+     state.areas.every(a => a === 'nose' || a === 'lips')){
+    try {
+      const skinBaseUrl = sl.beforeDataUrl || sl.originalDataUrl;
+      if(skinBaseUrl){
+        const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+        let skinImg = await loadImage(skinBaseUrl);
+        const featImg = await loadImage(rawModelImage);
+        let composited = null;
+        for(const area of state.areas){
+          const out = await mod.compositeFeatureAddon(skinImg, featImg, area);
+          if(out){ composited = out; skinImg = await loadImage(out); }
+        }
+        if(composited){
+          sl.resultDataUrl = composited;
+          if(sl.faceBbox){ try { sl.cropResultCache = await cropToFace(sl.resultDataUrl, sl.faceBbox); } catch(e){} }
+          console.log('[Visualize] M17 primary feature composite applied (' + state.areas.join('+') + ')');
+        } else {
+          console.log('[Visualize] M17 primary feature composite skipped; using raw model image.');
+        }
+      }
+    } catch(e){ console.warn('[Visualize] M17 primary composite failed; using raw model image.', e); }
+  }
+
   // M13: biostim bypasses the compositor entirely. gpt-image-2 direct output
   // is the final result. A passthrough apply() is set so the intensity slider
   // path doesn't break (it simply returns the raw AI at any slider position).
@@ -3433,7 +3465,7 @@ async function finishSlot(angleId, auth, fillerIntensity){
     sl.status = 'done';
     if(cacheKey){
       if(!sl.fillerCache) sl.fillerCache = {};
-      sl.fillerCache[cacheKey] = { rawAiDataUrl: sl.resultDataUrl, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
+      sl.fillerCache[cacheKey] = { rawAiDataUrl: rawModelImage, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
     }
     const modelLabel = sl.modelUsed || 'unknown (old backend - model not reported)';
     const labelColor = (sl.modelUsed === 'gpt-image-2') ? '#1b5e20' : '#b26a00';
