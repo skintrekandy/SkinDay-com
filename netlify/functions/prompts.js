@@ -1111,18 +1111,18 @@ const CROSS_ADDON_PROMPTS = {
   // intensifies the existing response; it must never show LESS correction than
   // the baseline it builds on.
   stronger_sculptra:
-    'This image already contains a completed treatment simulation: a moderate 6-month Sculptra biostimulator response on this patient. ' +
+    'This image already contains a completed treatment simulation: a moderate 6-month biostimulator (collagen-stimulator) response on this patient. ' +
     'Every improvement already visible in this image must remain and be built upon. Do not reduce, replace, reinterpret, or undo any existing improvement. ' +
     'Intensify that existing response to a strong, upper-range responder result. ' +
     'Add clearly more broad, soft, three-dimensional collagen-scaffold support in the temples, lateral cheeks, preauricular and submalar area, lower cheek, prejowl region, and mandibular transition, ' +
     'so the face reads visibly better suspended, more lifted, and more laterally supported than it does now. ' +
     'Restore stronger lateral cheek convexity so the zygomatic highlight reads more present and continuous, improve temple-to-cheek continuity further, soften remaining submalar hollowing, and clean the jowl shadow so the lower face reads better suspended. ' +
     'The direction is LIFT and LATERAL support: do NOT add anterior or central cheek volume, do NOT round or widen the face centrally, do NOT create filler-style focal fullness. ' +
-    'This is a collagen-stimulator response, soft and diffuse, not filler augmentation and not surgery. The result must read as the same patient, several months further into a strong Sculptra response.' +
-    addonSafety('an intensified, upper-range Sculptra biostimulator response building on the response already shown'),
+    'This is a collagen-stimulator response, soft and diffuse, not filler augmentation and not surgery. The result must read as the same patient, several months further into a strong biostimulator response.' +
+    addonSafety('an intensified, upper-range biostimulator response building on the response already shown'),
   combination_plan:
     CROSS_ADDON_BASE +
-    'Add, on top of the Sculptra biostimulator response already visible in this photo, a full combination plan as one integrated result: ' +
+    'Add, on top of the biostimulator response already visible in this photo, a full combination plan as one integrated result: ' +
     '(1) HA chin and jawline filler: clearly more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support. For a female patient the lower third reads more refined, tapered, and oval; for a male patient the chin is wider and squared at the mentum with a structural jaw border. ' +
     '(2) Focused temple volume: the temporal hollow fills so the forehead-to-cheek transition reads as one continuous convex arc. ' +
     'The existing cheek and lateral response stays fully intact beneath these additions. All changes must read as one coherent clinical result on the same person, comprehensively supported, never operated on.' +
