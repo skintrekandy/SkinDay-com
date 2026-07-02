@@ -1149,7 +1149,10 @@ const CROSS_ADDON_PROMPTS = {
     'Add hyaluronic acid filler to the nose (liquid rhinoplasty): a visible but believable structural refinement consistent with a skilled injector -- smooth the dorsal line so the profile reads clearly straighter, add bridge definition and gentle radix or tip support where this nose needs it. The change should be clearly noticeable in side-by-side comparison while still looking non-surgical, never like a rhinoplasty. Do not narrow the nostrils, do not shorten or lengthen the nose, do not change the nose width from the front.' +
     addonSafety('hyaluronic acid refinement of the nose'),
   add_lips_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid lip filler: the lips end up clearly fuller than now while staying natural and tasteful, both upper and lower lip fuller and better defined with a more defined vermilion border, keeping a natural upper-to-lower proportion, the cupid\'s bow shape and position, and the same mouth width. Never duck-shaped, shelf-like, everted, or over-filled.' +
+    'Add hyaluronic acid lip filler with a CLEARLY VISIBLE result, equivalent to about 1 mL: both the upper and lower lip MUST read distinctly fuller, with more vertical lip height, more forward projection, and a more defined vermilion border. ' +
+    'The increase must be immediately obvious in a side-by-side comparison with the current image. A subtle or barely perceptible lip change is a FAILED edit -- the lips are the one zone in this edit where a clear, unmistakable change is required. ' +
+    'Keep a natural upper-to-lower proportion (the lower lip stays slightly fuller than the upper), keep the cupid\'s bow shape and position, and keep the same mouth width. ' +
+    'The result is a full but tasteful enhancement: clearly fuller and better defined, never duck-shaped, shelf-like, everted, or over-filled.' +
     LIP_SAFETY,
   add_biostim_lift: CROSS_ADDON_BASE +
     'Add a biostimulator collagen response for more lateral lift: broader, softer support across the lateral cheek and temple so the midface reads lifted and the jawline cleaner, as a diffuse soft-tissue improvement returning under the skin. This is collagen-based volume and lift, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow.' +
