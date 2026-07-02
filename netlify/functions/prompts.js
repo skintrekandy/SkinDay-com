@@ -743,6 +743,73 @@ const HA_FILLER_AREA_ALLOWLISTS = {
 };
 
 // Assemble the CORE prompt from selections. The safety base is appended elsewhere.
+// M15.5: MINIMAL FILLER MODULE.
+// Rewrites the primary HA-filler prompts around the proven minimal architecture:
+// short, enhancement-first, one preservation sentence, no accumulated prohibition
+// stack. Language follows how injectors actually think -- projection, vermilion
+// show, hydration, support, contour, definition -- not "volume"/"bigger", which
+// the model under-responds to and which reads as a beauty filter. Magnitude is
+// tuned ~25-30% stronger than the first minimal lips pass, which validated at
+// ~65% of target. Each area returns a single clause describing the clinical
+// change; buildMinimalFiller wraps it with realism + one preservation sentence.
+const MINIMAL_FILLER = {
+  lips: {
+    conservative: 'a soft, natural lip enhancement: a little more body through the lip, slightly improved vermilion show, and a cleaner vermilion border, keeping the lips well hydrated and supported rather than fuller for its own sake',
+    moderate: 'a clearly visible, natural lip enhancement: more body through both lips, improved vermilion show, gentle anterior projection, and a slightly more defined vermilion border and Cupid\'s bow, so the lips read hydrated and well supported',
+    enhanced: 'a clearly noticeable lip enhancement equivalent to roughly 1 to 2 cc of HA filler, as an experienced injector would place it: build the body of both lips with improved vermilion show, distinct anterior projection, a defined central tubercle, and a cleaner, better-supported vermilion border, so the lips read well hydrated and structurally supported. The change should immediately read as tasteful lip filler, never overfilled or duck-shaped'
+  },
+  chin: {
+    conservative: 'a subtle chin refinement: a little more anterior projection at the chin point so the lower-face profile reads slightly more balanced, keeping the chin width natural',
+    moderate: 'a visible chin refinement: added anterior projection and gentle vertical support at the chin so the lower third reads stronger and better balanced with the upper face, keeping the chin width natural',
+    enhanced: 'a clearly noticeable chin refinement as an experienced injector would place it: bring the chin point forward with added anterior projection and vertical support so the lower-face profile reads distinctly stronger and better balanced, keeping the chin width natural and the result structural rather than pointed'
+  },
+  jawline: {
+    conservative: 'a subtle jawline refinement: slightly cleaner definition along the mandibular border with light prejowl support',
+    moderate: 'a visible jawline refinement: a smoother, more continuous mandibular border from the chin body toward the gonial angle with prejowl support, so the lower-face contour reads cleaner and better defined',
+    enhanced: 'a clearly noticeable jawline refinement as an experienced injector would place it: a crisp, continuous mandibular border from chin to gonial angle with clear prejowl support, so the lower-face contour reads distinctly cleaner and better defined, structural rather than sharp or artificial'
+  },
+  cheeks: {
+    conservative: 'a subtle midface refinement: light restoration of support at the cheek apex so the ogee curve from lower lid to cheek reads gently fuller',
+    moderate: 'a visible midface refinement: restored support and contour at the cheek apex so the ogee curve reads fuller and better supported, with a natural restorative apex',
+    enhanced: 'a clearly noticeable midface refinement as an experienced injector would place it: restored support and contour at the cheek apex so the ogee curve from lower lid to cheek reads distinctly fuller and better supported, with a natural apex, never over-projected or pillowed'
+  },
+  temple: {
+    conservative: 'a subtle temple refinement: light support filling the temporal hollow so the forehead-to-cheek transition reads slightly more continuous',
+    moderate: 'a visible temple refinement: support filling the temporal hollow so the upper lateral face reads as a smoother, more continuous convex arc',
+    enhanced: 'a clearly noticeable temple refinement as an experienced injector would place it: support filling the temporal hollow so the forehead-to-cheek transition reads as a distinctly continuous convex surface, natural and not over-filled'
+  },
+  tear_trough: {
+    conservative: 'a subtle under-eye refinement: light support beneath the tear-trough hollow so the lid-cheek junction reads slightly smoother and the shadow softens, correcting the hollow rather than brightening the skin',
+    moderate: 'a visible under-eye refinement: support beneath the tear-trough hollow so the lid-cheek junction reads smoother and the shadow softens naturally because the depression is supported, not brightened',
+    enhanced: 'a clearly noticeable under-eye refinement as an experienced injector would place it: support beneath the tear-trough hollow so the lid-cheek junction reads distinctly smoother and the shadow softens because the depression is filled and supported from beneath, never puffy or over-filled and never brightened or retouched'
+  },
+  nose: {
+    conservative: 'a subtle non-surgical nasal refinement: gently smooth the dorsal line so the side profile reads slightly straighter (liquid rhinoplasty)',
+    moderate: 'a visible non-surgical nasal refinement: smooth the dorsal line so the side profile reads clearly straighter, with modest bridge definition and gentle tip support where this nose needs it',
+    enhanced: 'a clearly noticeable non-surgical nasal refinement as an experienced injector would place it: smooth the dorsal line so the side profile reads distinctly straighter, with bridge definition and subtle tip support where appropriate, still believable for HA filler and never surgical. Do not narrow the nostrils, shorten the nose, or change the nose width from the front'
+  },
+  nasolabial_folds: {
+    conservative: 'a subtle refinement of the nasolabial folds: light support so the folds read slightly shallower and less shadowed, keeping a natural crease',
+    moderate: 'a visible refinement of the nasolabial folds: support so the folds read shallower and less shadowed while keeping a natural crease',
+    enhanced: 'a clearly noticeable refinement of the nasolabial folds as an experienced injector would place it: support so the folds read distinctly shallower and less shadowed, keeping a natural crease and never fully erased or ridged'
+  }
+};
+
+const MINIMAL_FILLER_PRESERVE =
+  'Everything outside the treated area should remain unchanged. Preserve the patient\'s identity, age, skin texture, pigmentation, wrinkles, lighting, facial anatomy, hairstyle, clothing, camera angle, and background exactly as photographed.';
+
+function buildMinimalFiller(areas, intensity){
+  const tier = (intensity === 'enhanced' || intensity === 'moderate' || intensity === 'conservative') ? intensity : 'moderate';
+  const clauses = areas
+    .map(a => (MINIMAL_FILLER[a] && MINIMAL_FILLER[a][tier]) || null)
+    .filter(Boolean);
+  if (!clauses.length) return null;
+  const change = clauses.length === 1 ? clauses[0] : clauses.join('; and ');
+  return 'Simulate the expected result of a hyaluronic acid filler treatment performed by an experienced aesthetic injector. ' +
+    'Create ' + change + '. Keep the result natural and proportional, consistent with a skilled clinical outcome, never a beauty filter or glamour retouch. ' +
+    MINIMAL_FILLER_PRESERVE;
+}
+
 function buildCorePrompt(sel) {
   const sel_ = sel || {};
   const note = sanitizeNote(sel_.note);
@@ -792,20 +859,19 @@ function buildCorePrompt(sel) {
   areas = areas.map(a => a.trim()).filter(a => FILLER_AREAS[a]);
   if (!areas.length) areas = ['chin'];
 
-  // M15.4: MINIMAL LIPS MODE (A/B experiment).
-  // The accumulated preservation/prohibition layers on the standard lip path
-  // (~415 words, ~80% restrictions) suppress the very edit requested: the same
-  // gpt-image-2 model produces a stronger, cleaner lip result from a short,
-  // enhancement-first prompt. This branch sends the exact reference prompt that
-  // produced the target result, verbatim, so the experiment tests the prompt
-  // itself rather than a paraphrase. Toggle with env LIPS_MINIMAL_MODE=true
-  // (Netlify) to A/B against the legacy path without a redeploy. Lips-only.
-  const lipsMinimalOn = (typeof process !== 'undefined' && process.env && process.env.LIPS_MINIMAL_MODE === 'true');
-  if (lipsMinimalOn && areas.length === 1 && areas[0] === 'lips') {
-    return 'Simulate the expected result of an enhanced hyaluronic acid lip filler treatment performed by an experienced aesthetic injector. ' +
-      'Create a natural but clearly noticeable enhancement of both lips, approximately equivalent to 1-2 cc of HA filler. Increase the body of both lips, improve vermilion show, create gentle anterior projection, slightly define the vermilion border, and maintain a balanced upper-to-lower lip ratio. Preserve the patient\'s natural mouth width, Cupid\'s bow, facial proportions, and overall expression. The lips should look realistically hydrated and supported rather than overfilled. ' +
-      'Everything outside the lips should remain unchanged. Preserve the patient\'s identity, age, skin texture, pigmentation, wrinkles, lighting, facial anatomy, hairstyle, clothing, camera angle, and background exactly as photographed.' +
-      (note || '');
+  // M15.5: MINIMAL FILLER is now the default path for HA filler. The accumulated
+  // preservation/prohibition stack (~415 words, ~80% restrictions) suppressed the
+  // requested edit and induced beauty-filter drift; the short, injector-concept
+  // minimal prompt validated on lips (strong identity/texture, magnitude tuned up).
+  // Applies to every filler area EXCEPT the combined chin+jawline lower-face unit,
+  // which keeps its dedicated sex-branched module (validated separately), and the
+  // overfilled education anchor. Kill-switch: env MINIMAL_FILLER_OFF=true reverts
+  // to the legacy assembly for the whole filler path without a redeploy.
+  const minimalFillerOff = (typeof process !== 'undefined' && process.env && process.env.MINIMAL_FILLER_OFF === 'true');
+  const isChinJawUnit = areas.includes('chin') && areas.includes('jawline');
+  if (!minimalFillerOff && sel_.intensity !== 'overfilled' && !isChinJawUnit) {
+    const mp = buildMinimalFiller(areas, sel_.intensity || 'moderate');
+    if (mp) return mp + (note || '');
   }
 
   // M10.4: overfilled education anchor. Fires when intensity is 'overfilled'
