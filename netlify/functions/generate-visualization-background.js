@@ -594,18 +594,31 @@ exports.handler = async (event) => {
       // start-visualization stores: image → job.imageB64, originalImage → job.originalImageB64
       // So: job.imageB64 = baseline image (edit target for the image model)
       //     job.originalImageB64 = original pre-treatment photo (planner reference only)
-      const sourceImageB64  = job.imageB64;                    // baseline = edit target
-      const sourceImageMime = job.mime || 'image/jpeg';
-      const originalRefB64  = job.originalImageB64 || null;    // original photo = planner reference
+      const baselineB64     = job.imageB64;                    // baseline (add-on edit target + planner context)
+      const baselineMime    = job.mime || 'image/jpeg';
+      const originalRefB64  = job.originalImageB64 || null;    // original pre-treatment photo
       const originalRefMime = job.originalMime || 'image/jpeg';
 
-      const primaryBuffer = Buffer.from(sourceImageB64, 'base64');
-      const primaryFile   = await OpenAI.toFile(primaryBuffer, 'baseline.jpg', { type: sourceImageMime });
-      console.log('[M15] scenario edit target: baseline image (' + sourceImageMime + ') | original ref: ' + (originalRefB64 ? 'present' : 'none'));
+      // M16: stronger_sculptra is the SAME treatment at a higher dose, generated
+      // FRESH from the original photo -- NOT an add-on stacked on the baseline. Its
+      // prompt (SCULPTRA_SCENARIO_BASE) already instructs the model to edit the
+      // original photo; editing the baseline instead compounds the baseline's own
+      // beautification and leaves no clean delta vs the baseline. So for
+      // stronger_sculptra the edit target is the ORIGINAL photo. Every other
+      // scenario stays an add-on that edits the baseline. The real baseline still
+      // rides along as planner context below.
+      const editFromOriginal = (scenarioKey === 'stronger_sculptra') && !!originalRefB64;
+      const sourceImageB64   = editFromOriginal ? originalRefB64  : baselineB64;
+      const sourceImageMime  = editFromOriginal ? originalRefMime : baselineMime;
 
-      // Planner context (stronger_sculptra emphasis only):
-      // baseline = the image being intensified; original = where the patient started
-      const baselineB64ForPlanner = sourceImageB64;
+      const primaryBuffer = Buffer.from(sourceImageB64, 'base64');
+      const primaryFile   = await OpenAI.toFile(primaryBuffer, editFromOriginal ? 'original.jpg' : 'baseline.jpg', { type: sourceImageMime });
+      console.log('[M16] scenario edit target: ' + (editFromOriginal ? 'ORIGINAL photo' : 'baseline image') + ' (' + sourceImageMime + ') | scenario=' + scenarioKey);
+
+      // Planner context (unchanged): baseline = what Sculptra already achieved
+      // (Image 1), original = where the patient started (Image 2). These stay the
+      // TRUE baseline and TRUE original regardless of which one is the edit target.
+      const baselineB64ForPlanner = baselineB64;
       const originalB64ForPlanner = originalRefB64;
       const origMimeForPlanner    = originalRefMime;
 
@@ -800,12 +813,18 @@ exports.handler = async (event) => {
 
     // Tail selection: Sculptra none, chin/jaw filler its own base, others the
     // generic tail. The [safety:server] hook forces the generic tail back on.
+    // M16: HA filler now carries its own complete preservation block (buildFillerPrompt),
+    // so filler gets NO tail by default -- same as laser/tox/sculptra. When the
+    // MINIMAL_FILLER_OFF kill-switch is set, prompts.js returns the legacy filler
+    // assembly which still expects the tail, so we re-append it in that mode only.
     const isChinJaw = usesChinJawSafety(f.type, f.areas);
+    const legacyFiller = (process.env.MINIMAL_FILLER_OFF === 'true');
     let tail;
     if (forceServerSafety) tail = SERVER_SAFETY;
     else if (isSculptra) tail = '';
     else if (f.type === 'laser') tail = ''; // laser prompt carries its own complete guardrail
     else if (f.type === 'tox')   tail = ''; // tox prompt carries its own complete guardrail
+    else if (f.type === 'filler' && !legacyFiller) tail = ''; // M16: filler prompt is self-contained
     else if (isChinJaw) tail = CHIN_JAW_SAFETY;
     else tail = SERVER_SAFETY;
     const prompt = core + tail;

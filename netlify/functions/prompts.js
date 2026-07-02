@@ -229,7 +229,7 @@ const BIOSTIM = {
     expected: {
       conservative: 'the just-noticeable floor of a Sculptra response: a very subtle collagen-driven firming along the LATERAL face only, a hint more support in the lateral temple and lateral cheek fat pads giving a barely-there upward and outward lift along the line of ligaments that just begins to lift the jowl and tidy the jawline, so faint that without the before photo a viewer might not be sure anything changed. If the face looks round or full from the front WITH signs of descent (flattened temples and lateral cheeks, a jowl, an older face), that roundness is descended tissue and even this subtle lift should begin to draw it up and outward and very slightly narrow the front, never add to it; but a young, well-supported full face is youthful fullness, not descent, and stays at baseline. The central midface, anterior cheek, and under-eye are left unchanged, and facial proportions, apparent age, and skin are unchanged',
       expected: 'a clearly visible but still moderate Sculptra response driven by LATERAL support: subtle collagen-driven volumization of the lateral temple and lateral cheek fat pads that lifts the face upward and outward along the line of ligaments (orbital retaining, zygomatic-cutaneous, mandibular). A face that looks round, full, or heavy from the front WITH SIGNS OF DESCENT (an older face, flattened or hollow temples and lateral cheeks, a jowl, mid-lower-face volume slid downward and centrally) is showing deflation and descent, so the correct response is MORE lateral support that draws that central fullness up and outward: the front becomes narrower, more lifted, and more defined, and the roundness visibly decreases. A young, well-supported full face with no jowl and no lateral hollowing is youthful or constitutional fullness, NOT descent: Sculptra would barely change it, so keep it near baseline and do not narrow or lift it (see the volume-deficit floor). The lower face reads more lifted and supported, the lateral lift travels down the mandibular ligament so the jowl is lifted up and back and visibly but subtly reduced, leaving a cleaner, smoother jawline (not a sharpened or carved one), and the nasolabial and marionette folds soften secondarily from that lateral support, not from being filled. The central midface, anterior cheek, and under-eye stay essentially unchanged. Unmistakably the same person at the same age, never looking filled, puffy, or rounded in front',
-      optimistic: 'the strong end of a realistic Sculptra response (the upper 20–25% of responders), still a LATERAL lift: more collagen-driven support in the lateral temple and lateral cheek fat pads producing an obvious upward and outward lift along the line of ligaments, with the jowl clearly lifted and reduced and a cleaner, smoother jawline (never sharpened or carved) and a more lifted lower face. A round or full front WITH signs of descent (jowl, lateral and temporal hollowing, an older face) is descended tissue, so at this strength the central and lower-face fullness is drawn clearly up and outward and the front reads distinctly narrower and more lifted, never fuller; a young, well-supported full face is youthful fullness and stays near baseline. The extra strength appears as more lateral lift and support, never as central midface or under-eye volume, never as a fuller, rounder, or puffier front of the face, and never as smoothed skin or a younger look. Identity, bone structure, and natural aging are preserved'
+      optimistic: 'the strong end of a realistic Sculptra response (the upper 20 to 25% of responders), still a LATERAL lift: more collagen-driven support in the lateral temple and lateral cheek fat pads producing an obvious upward and outward lift along the line of ligaments, with the jowl clearly lifted and reduced and a cleaner, smoother jawline (never sharpened or carved) and a more lifted lower face. A round or full front WITH signs of descent (jowl, lateral and temporal hollowing, an older face) is descended tissue, so at this strength the central and lower-face fullness is drawn clearly up and outward and the front reads distinctly narrower and more lifted, never fuller; a young, well-supported full face is youthful fullness and stays near baseline. The extra strength appears as more lateral lift and support, never as central midface or under-eye volume, never as a fuller, rounder, or puffier front of the face, and never as smoothed skin or a younger look. Identity, bone structure, and natural aging are preserved'
     },
     avoid: 'this is collagen-driven SUPPORT, not filler SHAPE and not a beauty filter, so keep every feature outside soft-tissue volume identical to the original. These prohibitions are absolute and apply equally at every timeframe and every projection: a longer timeframe or stronger projection increases ONLY soft-tissue support and never relaxes any rule below. ' +
            'Eyebrows (strictest rule, most often violated): keep the brows exactly as in the original. Do not darken, thicken, fill, define, reshape, raise, sharpen, or groom them. Brow shape, density, color, and position must be identical. ' +
@@ -325,27 +325,27 @@ const SCULPTRA_PHENOTYPES = {
     label: 'hollow/deflated',
     clinicalLogic: 'Clinical pattern: this face shows visible volume loss or hollowing, especially around the temple, lateral cheek, midface, or lower-face transition zones. The correct Sculptra visualization is a confident, diffuse collagen-driven rebuild of the lateral scaffold that restores the depleted transition zones, without making the face round, puffy, overfilled, or younger-looking.',
     conservative: 'Magnitude: gentle but real. Add clear lateral temple and lateral cheek support that begins to fill the hollows and improve the transition zones, staying close to the original.',
-    expected: 'Magnitude: a clear, confident structural restoration. Rebuild the lateral scaffold: visible lateral temple and temporal-hollow support that restores temple convexity, clear lateral cheek and zygomatic projection, a continuous temple-to-cheek-to-lid transition (a restored ogee curve) so the lid-cheek junction and under-eye look supported from below, and lower-face and prejowl suspension that lifts and clearly lightens the jowl and leaves a cleaner, more defined jawline. Nasolabial and marionette shadows soften from the support. This should read as the facial scaffold rebuilt, not as smoothed skin.',
+    expected: 'Magnitude: a modest, partial structural restoration at the level of a typical responder, not a full rebuild. Gently support the lateral scaffold: some lateral temple and temporal-hollow support that begins to restore temple convexity, moderate lateral cheek and zygomatic support, a somewhat more continuous temple-to-cheek-to-lid transition (a partially restored ogee curve) so the lid-cheek junction and under-eye look a little better supported from below, and mild lower-face and prejowl suspension that lightens the jowl and leaves a slightly cleaner jawline. Nasolabial and marionette shadows soften modestly from the support. Clearly visible on comparison but understated, with room left for a stronger response. This should read as soft-tissue support returning, not as smoothed skin.',
     optimistic: 'Magnitude: a strong, fully realized Sculptra scaffold restoration at the upper end of real responders: pronounced temple convexity filling the temporal hollow, strong lateral cheek and zygomatic projection, a clearly continuous and well-supported lid-cheek-to-cheek transition, obvious lower-face and prejowl suspension with the jowl markedly lifted and lightened and a clean, defined jawline, and clearly softened folds, all from restored soft-tissue volume and never from smoothing, brightening, or de-aging the skin.'
   },
   full_descended: {
     label: 'full/descended',
     clinicalLogic: 'Clinical pattern: this face retains natural fullness, but the fullness appears insufficiently supported, with visual weight sitting lower or more centrally than ideal. This is a strong Sculptra candidate. The correct Sculptra visualization is NOT slimming, deflating, carving, V-line shaping, or making the face smaller. Preserve the patient\'s natural facial width, fullness, softness, and identity. The goal is the same facial volume character, confidently re-suspended by lateral support. Fullness should look clearly better held, not removed.',
     conservative: 'Magnitude: gentle but real. Preserve natural fullness and face width. Add clear lateral support so the lower and central fullness looks better suspended upward and laterally, without slimming or changing the mouth.',
-    expected: 'Magnitude: a clear, confident re-suspension. Preserve natural fullness and face width. Rebuild lateral cheek and temple support so facial weight is visibly carried upward and laterally instead of pooling low, restore temple convexity and a continuous lid-cheek-to-cheek transition, and clearly lift and lighten the jowl with prejowl support so the lower face looks better suspended and the jawline reads cleaner and more defined. Do not make the face thinner; make the same face look distinctly better supported.',
+    expected: 'Magnitude: a modest, partial re-suspension at the level of a typical responder, not a full rebuild. Preserve natural fullness and face width. Add moderate lateral cheek and temple support so facial weight is somewhat better carried upward and laterally instead of pooling low, partially restore temple convexity and a more continuous lid-cheek-to-cheek transition, and mildly lift and lighten the jowl with prejowl support so the lower face looks a little better suspended and the jawline reads slightly cleaner. Clearly visible on comparison but understated, with room left for a stronger response. Do not make the face thinner; make the same face look modestly better supported.',
     optimistic: 'Magnitude: a strong, fully realized re-suspension. Preserve natural fullness and face width. Add pronounced lateral support so the face looks clearly more suspended and far less downwardly pooled, with strong temple convexity, strong lateral cheek projection, a well-supported lid-cheek transition, and the jowl markedly lifted and lightened over a clean, defined jawline. Do not slim, hollow, carve, sharpen into a hard jaw, V-line, or beautify the face.'
   },
   mixed: {
     label: 'mixed hollowing/descent',
     clinicalLogic: 'Clinical pattern: this face shows a combination of volume loss and soft-tissue descent. The correct Sculptra visualization is a confident, balanced rebuild of the lateral scaffold: restore the transition zones and clearly improve how facial weight is carried, without slimming or beautifying. Preserve natural face width and identity.',
     conservative: 'Magnitude: gentle but real. Add clear lateral temple and cheek support and improved transition-zone continuity, keeping the face close to baseline.',
-    expected: 'Magnitude: a clear, confident structural restoration. Rebuild the lateral scaffold: visible lateral temple and temporal-hollow support restoring temple convexity, clear lateral cheek and zygomatic projection, a continuous temple-to-cheek-to-lid transition so the lid-cheek junction and under-eye look supported from below, and lower-face and prejowl suspension that lifts and clearly lightens the jowl and leaves a cleaner, more defined jawline. Nasolabial and marionette shadows soften from the support. Read as the scaffold rebuilt, not smoothed skin. Do not slim the face.',
+    expected: 'Magnitude: a modest, partial structural restoration at the level of a typical responder, not a full rebuild. Gently support the lateral scaffold: some lateral temple and temporal-hollow support restoring a little temple convexity, moderate lateral cheek and zygomatic support, a somewhat more continuous temple-to-cheek-to-lid transition so the lid-cheek junction and under-eye look a little better supported from below, and mild lower-face and prejowl suspension that lightens the jowl and leaves a slightly cleaner jawline. Nasolabial and marionette shadows soften modestly from the support. Clearly visible on comparison but understated, with room left for a stronger response. Read as soft-tissue support returning, not smoothed skin. Do not slim the face.',
     optimistic: 'Magnitude: a strong, fully realized Sculptra scaffold restoration at the upper end of real responders: pronounced temple convexity, strong lateral cheek and zygomatic projection, a clearly continuous and well-supported lid-cheek-to-cheek transition, obvious lower-face and prejowl suspension with the jowl markedly lifted and lightened and a clean, defined jawline, and clearly softened folds, while preserving identity, age, skin character, and natural face width.'
   }
 };
 
 const SCULPTRA_OUTPUT_RULES =
-  'Output rule: this is a clinical Sculptra visualization, not a beauty portrait, and it should show a confident, real structural result rather than a timid one. At full strength, aim for the magnitude a strong real-world Sculptra responder shows after multiple vials over several months: temples and lateral cheeks visibly re-inflated, the midface re-supported, the lid-cheek transition restored, nasolabial and marionette folds clearly softened, and the lower face re-suspended with a lighter jowl, so the face reads as structurally rebuilt. This is a visible, substantial change, not a faint one. Support must read as added volume and light (the treated areas look filled, lifted, and three-dimensional, with the natural highlight on restored convexity and the natural soft shadow beneath it), never as flat brightening, beautification, or invented brown pigment. Do not darken the skin into a muddy or discoloured patch, but the clean light-and-shadow of real restored volume is correct and expected. Per-patient conservatism is applied afterward by a separate intensity control, so at full strength restore the scaffold clearly and let that control dial it back. The image must remain unmistakably the same person, same age, same skin character, same lips, eyes, brows, lighting, and camera setup; only treatment-relevant soft-tissue support and volume change. The failure modes to avoid are beautification, skin smoothing, evening out tone, de-aging, central pillow fill, jaw carving, and identity drift, NOT insufficient volume. Early, 3-month, and 6-month levels differ ONLY in the amount of soft-tissue support, never in beauty, skin quality, or age.';
+  'Output rule: this is a clinical Sculptra visualization, not a beauty portrait. Show a modest, restrained result at the level of a typical (median) responder, not a maximal one: clearly visible on close comparison but deliberately understated, leaving obvious room for a stronger response. A subtle result is correct here; do not push toward a dramatic, fully rebuilt scaffold. The visible changes are gentle lateral temple and cheek support, a slightly restored midface and lid-cheek transition, modestly softened nasolabial and marionette folds, and a lightly lifted jowl. Support must read as added volume and light (the treated areas look filled, lifted, and three-dimensional, with the natural highlight on restored convexity and the natural soft shadow beneath it), never as flat brightening, beautification, or invented brown pigment. Do not darken the skin into a muddy or discoloured patch, but the clean light-and-shadow of real restored volume is correct and expected. The image must remain unmistakably the same person, same age, same skin character, same lips, eyes, brows, lighting, and camera setup; only treatment-relevant soft-tissue support and volume change. The failure modes to avoid are beautification, skin smoothing, evening out tone, de-aging, central pillow fill, jaw carving, and identity drift. Early, 3-month, and 6-month levels differ ONLY in the amount of soft-tissue support, never in beauty, skin quality, or age.';
 
 // View and phenotype are read from structured fields first (production), then
 // from explicit bracket tags in the note (test hook). Loose words in free text
@@ -437,6 +437,14 @@ const SCULPTRA_NLF_CONSTRAINT =
 // before all other prompt content so it is read first.
 const NO_TEXT_RULE =
   'ABSOLUTE RULE: Do not add any text, labels, watermarks, annotations, captions, overlays, logos, or written words anywhere on the output image. The output must be a clean photograph with no visible text of any kind.';
+
+// M16: single-output-image lock for the filler path. buildFillerPrompt never
+// prepended NO_TEXT_RULE and carried no single-image constraint, so gpt-image-2
+// intermittently returned a before/after or split-panel composite (worst on
+// lips). Prepended to every filler prompt via LEAD so all areas inherit it.
+const FILLER_SINGLE_IMAGE =
+  'Output exactly one photograph: the single post-treatment result only. ' +
+  'Do not produce a before-and-after image, a side-by-side comparison, a split panel, a diptych, or any multi-panel or composite layout. The output is one clean after photograph, nothing else.';
 
 // M13: NEGATIVE-LIST GUARDRAIL -- appended to every biostim prompt.
 // The key insight from GPT Image 2 testing: the model must be told explicitly
@@ -580,13 +588,13 @@ const HDR_GUARDRAIL =
   'Preserve identity, ethnicity and all ethnic features, facial asymmetry, hair, headband, neck, clothing, background, lighting, and camera angle exactly. Do not add text, labels, watermarks, or annotations.';
 
 const HDR_EXPECTED =
-  'The dominant change is improved SKIN FIRMNESS and DERMAL DENSITY: the lower-face skin looks firmer, denser, and slightly more elastic, with fine crepey texture and superficial fine lines mildly improved (not erased). Alongside this there is mild lower-face and jawline tightening, a cleaner mandibular border, and a modest reduction in early jowl and prejowl laxity. Any change in volume is minimal -- this firms and tightens the existing skin envelope, it does not re-inflate, plump, or fill.';
+  'The dominant change is a subtle improvement in SKIN FIRMNESS and DERMAL DENSITY: the lower-face skin looks a little firmer and slightly denser, with fine crepey texture and superficial fine lines mildly improved (not erased). Alongside this there is gentle lower-face and jawline tightening, a slightly cleaner mandibular border, and a small reduction in early jowl and prejowl laxity. Any change in volume is minimal -- this firms and tightens the existing skin envelope, it does not re-inflate, plump, or fill. Keep the result understated, at the level of a typical responder, with room left for a stronger response.';
 
 const HDR_AREA_FOCUS =
   ' The visible change should be concentrated in the LOWER FACE and the skin envelope: firmer lower-cheek skin, jawline and mandibular border definition, prejowl and submental tightening, and mild improvement in lower-face and upper-neck crepey skin. Do not change midface volume, the temples, the upper face, eyes, brows, lips, or nose.';
 
 const HDR_MAGNITUDE =
-  ' Magnitude anchor: a modest, believable biostimulation result -- skin quality and firmness clearly improved and the lower-face contour mildly tightened, but volume barely changed and never a facelift. If uncertain, do less rather than more.';
+  ' Magnitude anchor: a subtle, believable biostimulation result -- skin quality and firmness a little improved and the lower-face contour gently tightened, but volume barely changed and never a facelift. Keep it understated; if uncertain, do less rather than more.';
 
 function buildHdrPrompt(sel, tp) {
   const view = normalizeView(sel);
@@ -743,6 +751,132 @@ const HA_FILLER_AREA_ALLOWLISTS = {
 };
 
 // Assemble the CORE prompt from selections. The safety base is appended elsewhere.
+// M16: HA FILLER PROMPTS -- CLEAN REWRITE (from scratch).
+// Philosophy (validated over M15.4-M15.6 against a reference generation on the
+// same gpt-image-2 model): describe the CLINICAL OUTCOME an injector visualizes,
+// not anatomy or injection technique; keep it short; carry ONE complete
+// preservation block so the worker appends no tail. Structure per ChatGPT's
+// framework:
+//   Layer 1  one sentence naming the treatment
+//   Layer 2  the visual outcome for the selected area(s), by tier
+//   Layer 3  one shared universal preservation block
+// Deliberately REMOVED vs the legacy path: HA_FILLER_FAMILY_RULE, per-area
+// HARD-LOCK allowlists, GOALS, INTENSITY, PROJECTION, BASE_FRAMING, the
+// three-way preservation repetition, and every accumulated "do not ..." list.
+// Jargon the model repaints from (radix, dorsum, columella, gonial angle,
+// pyriform, dorsal aesthetic line, injection planes) is avoided in outcome text.
+// Tiers are spaced so even the lowest is clearly visible: a consultation tier a
+// clinician cannot demonstrate is useless. Magnitude anchored in mL where it
+// helps the model (lips, nose). Kill-switch: MINIMAL_FILLER_OFF=true reverts to
+// the legacy assembly for staging A/B.
+
+// Layer 2: per-area visual outcome, by tier. Written as the clinical endpoint.
+const FILLER_OUTCOME = {
+  lips: {
+    conservative: 'a natural but clearly visible lip enhancement, roughly 1 mL of HA filler: more body through both the upper and lower lip, improved vermilion show, and a slightly more defined vermilion border, so the lips read fuller and well hydrated. Keep it restrained but plainly and clearly visible, never so subtle it looks untreated',
+    moderate: 'a clearly noticeable lip enhancement, roughly 1.5 mL of HA filler: build the body of both lips with improved vermilion show, gentle anterior projection, and a more defined vermilion border and Cupid\'s bow, so the lips read visibly fuller, hydrated, and well supported and plainly read as tasteful lip filler',
+    enhanced: 'a substantial, clearly visible lip enhancement, about 2 mL of HA filler, as an experienced injector would place it: noticeably build the body of both the upper and lower lip with strong vermilion show, clear anterior projection, a well-defined central tubercle, and a crisp, well-supported vermilion border, so the lips read distinctly fuller, hydrated, and structurally supported. The change must be immediately and clearly visible, a confident but tasteful result, keeping natural upper-to-lower proportion and the same mouth width, never overfilled, everted, or duck-shaped'
+  },
+  chin: {
+    conservative: 'a clearly visible chin refinement: more forward projection at the chin point so the lower-face profile reads more balanced and the chin a little stronger, keeping the chin width natural and the result believable',
+    moderate: 'a visible chin refinement: added forward projection and gentle vertical support at the chin so the lower third reads distinctly stronger and better balanced with the upper face, keeping the chin width natural',
+    enhanced: 'a strong, clearly visible chin refinement as an experienced injector would place it: bring the chin point forward with clear forward projection and vertical support so the lower-face profile reads noticeably stronger and better balanced, keeping the chin width natural and the result structural rather than pointed or witch-like'
+  },
+  jawline: {
+    conservative: 'a clearly visible jawline refinement: cleaner, more continuous definition along the lower jaw border with prejowl support, so the lower-face contour reads more defined',
+    moderate: 'a visible jawline refinement: a smoother, more continuous lower jaw border from the chin toward the back of the jaw with prejowl support, so the lower-face contour reads distinctly cleaner and better defined',
+    enhanced: 'a strong, clearly visible jawline refinement as an experienced injector would place it: a crisp, continuous lower jaw border from chin to angle with clear prejowl support, so the lower-face contour reads noticeably cleaner and better defined, structural rather than sharp or artificial'
+  },
+  cheeks: {
+    conservative: 'a clearly visible midface refinement: restored support at the cheek so the curve from lower lid to cheek reads fuller and better supported, with a natural apex',
+    moderate: 'a visible midface refinement: restored support and contour at the cheek so the curve from lower lid to cheek reads distinctly fuller and better supported, with a natural apex',
+    enhanced: 'a strong, clearly visible midface refinement as an experienced injector would place it: restored support and contour at the cheek so the curve from lower lid to cheek reads noticeably fuller and better supported, with a natural apex, never over-projected or pillowed'
+  },
+  temple: {
+    conservative: 'a clearly visible temple refinement: support filling the hollow at the temple so the transition from forehead to cheek reads more continuous',
+    moderate: 'a visible temple refinement: support filling the hollow at the temple so the upper outer face reads as a distinctly smoother, more continuous curve',
+    enhanced: 'a strong, clearly visible temple refinement as an experienced injector would place it: support filling the hollow at the temple so the transition from forehead to cheek reads as a noticeably continuous, convex surface, natural and not over-filled'
+  },
+  tear_trough: {
+    conservative: 'a clearly visible under-eye refinement: support beneath the under-eye hollow so the lid-cheek junction reads smoother and the shadow softens because the hollow is filled, not because the skin is brightened',
+    moderate: 'a visible under-eye refinement: support beneath the under-eye hollow so the lid-cheek junction reads distinctly smoother and the shadow softens naturally because the hollow is supported, not brightened',
+    enhanced: 'a strong, clearly visible under-eye refinement as an experienced injector would place it: support beneath the under-eye hollow so the lid-cheek junction reads noticeably smoother and the shadow softens because the hollow is filled and supported from beneath, never puffy or over-filled and never brightened or retouched'
+  },
+  nose: {
+    conservative: 'a clearly visible non-surgical nose refinement, roughly 1 mL of HA filler (liquid rhinoplasty): a straighter, smoother side profile and a little more bridge height, keeping a natural bridge appropriate for this face. Do not narrow the nose and do not create a high, narrow, surgical, or European-style nose',
+    moderate: 'a visible non-surgical nose refinement, roughly 1.5 mL of HA filler (liquid rhinoplasty): a straighter, smoother side profile, a higher but natural bridge, and slightly improved tip projection and support. Keep the result soft and appropriate for this face, do not narrow the nose, and do not create a high, narrow, surgical, or European-style nose',
+    enhanced: 'a strong, clearly visible non-surgical nose refinement, about 2 mL of HA filler (liquid rhinoplasty), as an experienced injector would place it: a distinctly straighter, smoother side profile, a higher but natural bridge with a smooth continuous line from between the brows to the tip, and improved tip projection and support, staying believable for HA filler and never surgical. Keep the nose width from the front unchanged, keep the result soft and appropriate for this face, and do not narrow the nose or create a high, narrow, surgical, or European-style nose'
+  },
+  nasolabial_folds: {
+    conservative: 'a clearly visible refinement of the smile lines: support so the folds read shallower and less shadowed, keeping a natural crease',
+    moderate: 'a visible refinement of the smile lines: support so the folds read distinctly shallower and less shadowed while keeping a natural crease',
+    enhanced: 'a strong, clearly visible refinement of the smile lines as an experienced injector would place it: support so the folds read noticeably shallower and less shadowed, keeping a natural crease and never fully erased or ridged'
+  }
+};
+
+// Layer 2 special case: the chin+jawline lower-face unit, sex-branched. Chin and
+// jawline selected together read as one lower-face harmonization, and male vs
+// female targets differ (male stays wide/square, female tapers). Kept as an
+// outcome description in the same voice as the single areas.
+const FILLER_OUTCOME_CHINJAW = {
+  female: {
+    conservative: 'a clearly visible lower-face refinement treating chin and jawline as one unit: more forward projection and gentle vertical support at the chin plus a cleaner, more continuous jaw border with prejowl support, so the lower third reads more balanced and defined and tapers gently toward a refined oval, keeping the chin width natural',
+    moderate: 'a visible lower-face refinement treating chin and jawline as one unit: forward chin projection and vertical support plus a smoother, more continuous jaw border with prejowl support, so the lower third reads distinctly stronger, more balanced, and more defined, tapering toward a refined oval, keeping the chin width natural',
+    enhanced: 'a strong, clearly visible lower-face refinement treating chin and jawline as one unit, as an experienced injector would place it: clear forward chin projection and vertical support plus a crisp, continuous jaw border with prejowl support, so the lower third reads noticeably stronger, balanced, and defined and tapers toward a refined oval, keeping the chin width natural and never over-narrowed into a hard, pointed V'
+  },
+  male: {
+    conservative: 'a clearly visible lower-face refinement on a male face treating chin and jawline as one unit: more forward projection at the chin with the chin kept wide and squared, plus a cleaner, more continuous jaw border with prejowl support, so the lower third reads stronger and better defined. Keep the chin and jaw wide, never tapered, pointed, or feminine',
+    moderate: 'a visible lower-face refinement on a male face treating chin and jawline as one unit: forward chin projection with a wide, squared chin, plus a smoother, more continuous jaw border with prejowl support, so the lower third reads distinctly stronger and structurally defined. Keep the full jaw width, never tapered, pointed, or feminine',
+    enhanced: 'a strong, clearly visible lower-face refinement on a male face treating chin and jawline as one unit, as an experienced injector would place it: clear forward projection with a wide, squared chin, plus a crisp, continuous jaw border with prejowl support, so the lower third reads noticeably stronger and structurally defined. Keep the full jaw width and squared chin, never tapered, pointed, feminine, or a superhero jaw'
+  }
+};
+
+// Layer 3: the single universal preservation block. Everything not in the
+// treatment area is locked here, once. This is the ONLY preservation text; the
+// worker appends no tail for filler (see generate-visualization-background.js).
+const FILLER_PRESERVE =
+  'Everything outside the treated area must remain exactly as photographed. ' +
+  'Preserve the patient\'s identity, age, skin texture, pores, wrinkles, pigmentation, expression, facial proportions, hairstyle, clothing, camera angle, lighting, and background unchanged. ' +
+  'The result must read as the same clinical photograph, not a beauty filter or glamour retouch, and must not smooth skin, reduce apparent age, or beautify any untreated feature.';
+
+// Overfilled education anchor: intentionally overcorrected lower face, shown so a
+// patient sees why more is not better. Kept from the legacy path (its exaggerated
+// magnitude is the point). Only fires for the chin+jawline unit at 'overfilled'.
+const FILLER_OUTCOME_OVERFILLED =
+  'an intentionally OVERCORRECTED lower-face filler result, treating chin and jawline as one unit, to demonstrate why excessive filler looks unnatural: too much chin projection and an over-sharp, shelf-like jaw that reads clearly overdone, the kind of result no experienced injector would want. Make the overcorrection obvious while keeping it the same person';
+
+function buildFillerPrompt(sel){
+  const areas = sel.areas;
+  const tier = (sel.intensity === 'enhanced' || sel.intensity === 'moderate' || sel.intensity === 'conservative')
+    ? sel.intensity : 'moderate';
+  const isChinJawUnit = areas.includes('chin') && areas.includes('jawline');
+
+  const LEAD = NO_TEXT_RULE + ' ' + FILLER_SINGLE_IMAGE + ' ' +
+    'Simulate the expected result of a hyaluronic acid filler treatment performed by an experienced aesthetic injector. Create ';
+
+  // Overfilled education anchor (chin+jawline unit only).
+  if (sel.intensity === 'overfilled' && isChinJawUnit) {
+    return LEAD + FILLER_OUTCOME_OVERFILLED + '. ' + FILLER_PRESERVE;
+  }
+
+  let outcome;
+  if (isChinJawUnit) {
+    const branch = (sel.sex === 'male') ? FILLER_OUTCOME_CHINJAW.male : FILLER_OUTCOME_CHINJAW.female;
+    outcome = branch[tier];
+    // Any additional areas selected alongside the unit append as their own clause.
+    const extra = areas.filter(a => a !== 'chin' && a !== 'jawline' && FILLER_OUTCOME[a]);
+    if (extra.length) {
+      outcome += '; and ' + extra.map(a => FILLER_OUTCOME[a][tier]).join('; and ');
+    }
+  } else {
+    const clauses = areas.map(a => FILLER_OUTCOME[a] && FILLER_OUTCOME[a][tier]).filter(Boolean);
+    if (!clauses.length) return null;
+    outcome = clauses.join('; and ');
+  }
+
+  return LEAD + outcome + '. ' + FILLER_PRESERVE;
+}
+
 function buildCorePrompt(sel) {
   const sel_ = sel || {};
   const note = sanitizeNote(sel_.note);
@@ -792,17 +926,27 @@ function buildCorePrompt(sel) {
   areas = areas.map(a => a.trim()).filter(a => FILLER_AREAS[a]);
   if (!areas.length) areas = ['chin'];
 
-  // M10.4: overfilled education anchor. Fires when intensity is 'overfilled'
-  // and the selection is chin + jawline. Returns a dedicated AI-heavy prompt
-  // that deliberately shows overcorrection for patient education.
+  // M16: HA filler uses the clean rewrite (buildFillerPrompt) by default. It is
+  // self-contained -- it carries its own complete preservation block, so the
+  // worker appends NO safety tail for filler (see generate-visualization-background.js,
+  // where filler tail is now ''). Kill-switch MINIMAL_FILLER_OFF=true drops to the
+  // legacy assembly below for staging A/B (the legacy path still expects the
+  // worker's SERVER_SAFETY/CHIN_JAW_SAFETY tail, so the worker keys the tail off
+  // the same env var).
+  const minimalFillerOff = (typeof process !== 'undefined' && process.env && process.env.MINIMAL_FILLER_OFF === 'true');
+  if (!minimalFillerOff) {
+    const fp = buildFillerPrompt({ areas, intensity: sel_.intensity, sex: sel_.sex });
+    if (fp) return fp + (note || '');
+  }
+
+  // ===== LEGACY FILLER ASSEMBLY (kill-switch only: MINIMAL_FILLER_OFF=true) =====
+  // Retained for staging A/B against M16. Expects the worker to append
+  // SERVER_SAFETY (or CHIN_JAW_SAFETY for the chin+jawline unit) as the tail.
   if (sel_.intensity === 'overfilled' && areas.includes('chin') && areas.includes('jawline')) {
     const ov = FILLER_CHIN_JAWLINE_OVERFILLED;
     return `${BASE_FRAMING} ${ov.core} Avoid: ${ov.avoid}`;
   }
 
-  // Chin + jawline are treated as a single lower-face unit when both selected.
-  // M11.1: branched on sex -- male and female have different aesthetic targets.
-  // Any other selected areas still append as their own clauses (full-face cases).
   const intensityKey = sel_.intensity || 'natural';
   let expected, avoid;
   if (areas.includes('chin') && areas.includes('jawline')) {
@@ -823,20 +967,9 @@ function buildCorePrompt(sel) {
   const goal = GOALS[sel_.goal] || GOALS.natural_refinement;
   const mag = INTENSITY[sel_.intensity] || INTENSITY.natural;
 
-  // M12: use anti-rebuild framing at oblique angles, matching what Sculptra does.
   const isOblique = (sel_.view === 'oblique_left' || sel_.view === 'oblique_right' || sel_.view === 'oblique');
   const chinJawFraming = isOblique ? CHIN_JAW_OBLIQUE_FRAMING : BASE_FRAMING;
 
-  // M14: magnitude placed BEFORE the area description so it is not buried
-  // under conservation framing. The oblique anti-rebuild framing ("stay as close
-  // to the original as possible") was coming first and the model weights opening
-  // lines most heavily -- so Balanced and Enhanced were indistinguishable because
-  // the magnitude string arrived after a ceiling of conservation instructions.
-  // Moving mag to immediately follow the framing establishes the response level
-  // before the scope constraints, allowing the model to read: "minimal change,
-  // BUT at this specific magnitude." The anti-rebuild protection stays intact.
-  // M14.2: universal family rule + per-area allowlist prepended so the model
-  // reads "only this zone may change" BEFORE any positive aesthetic instruction.
   const areaAllowlist = (areas.length === 1 && HA_FILLER_AREA_ALLOWLISTS[areas[0]])
     ? HA_FILLER_AREA_ALLOWLISTS[areas[0]] + ' '
     : '';
@@ -926,9 +1059,9 @@ const SCULPTRA_SCENARIO_BASE =
   'Create a realistic clinical-style after-photo simulating an upper-range 6-month Sculptra result. ' +
   'Use the original patient photo as the direct edit target. Keep the same head angle, head position, gaze direction, neutral expression, lighting, clothing, hair, background, and camera framing. ' +
   'This is a strong but believable collagen-stimulator response, not filler augmentation and not surgery. ' +
-  'The improvement must be clearly visible compared with the original photo. Show moderate-to-strong broad soft-tissue restoration and lateral scaffold support in the temples, lateral cheeks, preauricular/submalar area, lower cheek, prejowl region, and mandibular transition. ' +
-  'Restore lateral cheek convexity so the zygomatic/lateral cheek highlight reads more present and continuous. Improve temple-to-cheek continuity. Soften submalar hollowing and the cheek-to-jaw transition. Support the prejowl and jowl shadow so the lower face reads cleaner and better suspended. ' +
-  'The face should look visibly fuller and better supported laterally, with a smoother continuous contour from temple to cheek to jawline. The result should read as a real upper-range Sculptra responder after several months: better collagen support, better suspension, and softer shadows, while still natural and not overfilled. ' +
+  'The improvement must be strong and unmistakable compared with the original photo, clearly more than a typical result. Show a strong, clearly visible restoration of the lateral facial scaffold: fill the temple hollows so the temples look convex and full, and rebuild lateral cheek and zygomatic volume so the lateral cheek soft tissue sits visibly higher and fuller on the cheekbone framework, with a brighter, more present, more continuous zygomatic-to-lateral-cheek highlight. ' +
+  'Restore a clear, continuous temple-to-cheek transition and a supported lid-cheek junction. Fill the submalar hollow and smooth the cheek-to-jaw transition. Support the prejowl and lift the jowl so the lower face reads distinctly cleaner, tighter, and better suspended and the jawline is more defined. ' +
+  'The dominant, unmistakable change is this lateral midface lift: the face should look clearly fuller and lifted from the sides, with a smooth continuous contour from temple to cheek to jawline. The result should read as a real upper-range Sculptra responder after several months: strong collagen support, better suspension, and softer shadows, obviously stronger than a typical result while still natural and not overfilled. ' +
   'Preserve identity exactly. Do not change ethnicity, eye shape, nose, lips, hairstyle, clothing, background, pose, or expression. Do not add makeup. Do not create a beauty-filter look. Preserve natural skin texture, pores, pigmentation, and lighting. Avoid global skin smoothing, brightening, face slimming, teeth changes, or unrelated beautification. ' +
   'The result should look like the same patient photographed in the same setup, only with a clearly visible upper-range 6-month Sculptra improvement.' +
   BIOSTIM_NEGATIVE_GUARDRAIL;
@@ -1092,115 +1225,99 @@ const SCENARIO_PROMPTS = {
 // plan via the (Sculptra-locked) planner -- these edit the BASELINE image directly,
 // adding ONE area on top of what is already shown so add-ons stack correctly.
 // No planner, gpt-image-2 direct.
-function addonSafety(changeArea){
-  return ' ABSOLUTE PROHIBITIONS: The ONLY permitted change is ' + changeArea + '. ' +
-    'Keep the existing treatment result already visible in this photo fully intact. ' +
-    'Preserve identity, apparent age, skin tone, ethnicity and all ethnic features, pores, pigmentation, freckles, facial asymmetry, hair, headband, neck, clothing, background, lighting, and camera angle exactly. ' +
-    'Do not smooth or retouch skin, do not brighten, do not de-age, do not enlarge or alter the eyes, do not reshape the brows, do not add makeup, do not whiten teeth. ' +
-    'The result must be unmistakably the same person with the prior result intact plus only this one added change, never a dramatic or surgical transformation. ' +
-    'Do not add text, labels, watermarks, or annotations.';
-}
-const CROSS_ADDON_BASE =
-  'This image shows a patient PART-WAY through a multi-step aesthetic treatment plan. The plan is NOT finished: the next treatment step, described below, must now be applied clearly and visibly. ' +
-  'Preserve every improvement already visible from the earlier steps exactly as shown. Do not reduce, replace, reinterpret, or undo any existing improvement, and keep the identity exactly. ' +
-  'The only zone that changes is the one treated by the next step below, applied as one natural-looking combined result. ';
+// M16: SCENARIO ADD-ON PROMPTS -- CLEAN REWRITE.
+// Same philosophy as the primary filler path (buildFillerPrompt): describe the
+// clinical outcome, keep it short, carry ONE preservation block. The only
+// structural difference from the primary path is that these edit an ALREADY-
+// TREATED baseline, so the preservation block preserves the existing result too
+// (not just identity), and the lead frames the image as mid-plan so the model
+// adds rather than restarts. Clinical ceilings are retained verbatim in intent:
+// energy devices (RF/HIFU/stronger_laser) tighten, never add volume, never
+// de-age; neurotoxin slims muscle / refines contour, never adds volume; nose
+// carries the anti-European-nose constraint for the TW/HK caseload.
+// The dropped legacy scaffolding: per-scenario addonSafety() blocks, the
+// "FAILED edit" framing, and the long ABSOLUTE PROHIBITIONS lists.
+
+// Shared stacking lead: names the mid-plan context in one sentence.
+const ADDON_LEAD =
+  'This image shows a patient part-way through a multi-step aesthetic treatment plan; the earlier steps are already visible. The plan is not finished. Add the next step below as one natural, integrated result. Create ';
+
+// Shared preservation block for add-ons: keeps the EXISTING result plus identity.
+const ADDON_PRESERVE =
+  'Keep every improvement already visible in this photo fully intact; do not reduce, undo, or reinterpret it. ' +
+  'Everything outside the treated area must remain exactly as photographed: preserve the patient\'s identity, age, skin texture, pores, wrinkles, pigmentation, expression, hair, clothing, camera angle, lighting, and background unchanged. ' +
+  'The result must read as the same clinical photograph with the prior result intact plus this one added step, never a beauty filter, and must not smooth skin, de-age, or beautify any untreated feature.';
 
 const CROSS_ADDON_PROMPTS = {
-  // M15: Sculptra-baseline scenarios now also edit the baseline image directly,
-  // so every add-on stacks on top of the result already shown. stronger_sculptra
-  // intensifies the existing response; it must never show LESS correction than
-  // the baseline it builds on.
+  // Sculptra intensification: builds on the response shown, never shows less.
   stronger_sculptra:
-    'This image already contains a completed treatment simulation: a moderate 6-month biostimulator (collagen-stimulator) response on this patient. ' +
-    'Every improvement already visible in this image must remain and be built upon. Do not reduce, replace, reinterpret, or undo any existing improvement. ' +
-    'Intensify that existing response to a strong, upper-range responder result. ' +
-    'Add clearly more broad, soft, three-dimensional collagen-scaffold support in the temples, lateral cheeks, preauricular and submalar area, lower cheek, prejowl region, and mandibular transition, ' +
-    'so the face reads visibly better suspended, more lifted, and more laterally supported than it does now. ' +
-    'Restore stronger lateral cheek convexity so the zygomatic highlight reads more present and continuous, improve temple-to-cheek continuity further, soften remaining submalar hollowing, and clean the jowl shadow so the lower face reads better suspended. ' +
-    'The direction is LIFT and LATERAL support: do NOT add anterior or central cheek volume, do NOT round or widen the face centrally, do NOT create filler-style focal fullness. ' +
-    'This is a collagen-stimulator response, soft and diffuse, not filler augmentation and not surgery. The result must read as the same patient, several months further into a strong biostimulator response.' +
-    addonSafety('an intensified, upper-range biostimulator response building on the response already shown'),
+    ADDON_LEAD +
+    'a clearly stronger biostimulator (collagen-stimulator) response than the one already visible: more broad, soft, three-dimensional lateral support across the temples, lateral cheeks, preauricular and submalar area, lower cheek, and prejowl region, so the face reads visibly better lifted and more laterally supported than it does now, with stronger lateral cheek highlight and a cleaner jowl. The direction is lift and lateral support, a soft diffuse collagen response, never central or filler-like fullness and never rounding or widening the face centrally. ' +
+    ADDON_PRESERVE,
   combination_plan:
-    CROSS_ADDON_BASE +
-    'Add, on top of the biostimulator response already visible in this photo, a full combination plan as one integrated result: ' +
-    '(1) HA chin and jawline filler: clearly more chin projection and vertical chin height, a clean continuous mandibular border, and prejowl support. For a female patient the lower third reads more refined, tapered, and oval; for a male patient the chin is wider and squared at the mentum with a structural jaw border. ' +
-    '(2) Focused temple volume: the temporal hollow fills so the forehead-to-cheek transition reads as one continuous convex arc. ' +
-    'The existing cheek and lateral response stays fully intact beneath these additions. All changes must read as one coherent clinical result on the same person, comprehensively supported, never operated on.' +
-    addonSafety('chin and jawline HA filler plus temple volume added on top of the existing biostimulator response'),
-  add_chin_jaw_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the chin and jawline with a CLEARLY VISIBLE structural result, equivalent to about 2 syringes: the chin point moves visibly forward with more vertical height, the mandibular border reads as a clean continuous line from chin to gonial angle, and the prejowl hollow is supported. ' +
-    'The lower-face change MUST be visible in the silhouette and shadow architecture in a side-by-side comparison. A barely perceptible lower-face change is a FAILED edit. ' +
-    'Keep the result natural and structural, never surgical.' +
-    addonSafety('hyaluronic acid filler to the chin and jawline'),
-  add_chin_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the chin ONLY, with a CLEARLY VISIBLE result: the chin point moves distinctly forward and, where appropriate, slightly lower, so the profile silhouette visibly changes and the lower third reads stronger and better balanced, keeping the chin width natural. ' +
-    'The chin change MUST be obvious in a side-by-side comparison of the profile line. A barely perceptible chin change is a FAILED edit. ' +
-    'This is chin filler only -- do NOT add lateral jawline definition, do NOT sharpen, square, or carve the mandibular border, and do NOT change the gonial angle or jaw width.' +
-    addonSafety('hyaluronic acid filler to the chin only'),
-  add_jawline_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the jawline ONLY, with a CLEARLY VISIBLE result: the mandibular border reads as a distinctly smoother, more continuous, better-defined line from the chin body back toward the gonial angle, with the prejowl hollow visibly softened where present. ' +
-    'The jawline definition MUST be obvious in a side-by-side comparison of the jaw shadow and silhouette. A barely perceptible jawline change is a FAILED edit. ' +
-    'This is jawline filler only -- do NOT add chin projection, do NOT lengthen, lower, or strengthen the chin point, and do NOT change the pogonion position or the chin-to-lip distance.' +
-    addonSafety('hyaluronic acid filler to the jawline only'),
-  add_cheek_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the cheeks (midface) with a CLEARLY VISIBLE result: the midface and lateral cheek read distinctly fuller and better supported, with restored cheek convexity and a smooth continuous transition from the cheekbone into the midface. ' +
-    'The cheek change MUST be visible in a side-by-side comparison. A barely perceptible cheek change is a FAILED edit. ' +
-    'Natural and structural, never overfilled, shelf-like, or pillowed.' +
-    addonSafety('hyaluronic acid filler to the cheeks and midface'),
-  add_temple_support: CROSS_ADDON_BASE +
-    'Add focused volume to the temples with a CLEARLY VISIBLE result: the temporal hollow fills distinctly so the forehead-to-cheek transition reads as a continuous convex surface and the upper lateral face reads as a smooth connected arc. ' +
-    'The temple change MUST be visible in a side-by-side comparison of the upper lateral contour. A barely perceptible temple change is a FAILED edit. ' +
-    'Strictly the temporal hollow and immediately adjacent tissue.' +
-    addonSafety('temple (temporal hollow) volume'),
-  add_tear_trough: CROSS_ADDON_BASE +
-    'Add hyaluronic acid correction of the under-eye (tear trough) hollow: soften the groove so the lid-cheek junction reads as a smooth, well-supported transition and the hollow shadow is reduced because the depression is filled from beneath, never because the skin is brightened. Subtle and natural, never puffy or over-filled. Do not change eye shape, eye size, eyelid, lashes, or iris.' +
-    addonSafety('the under-eye tear trough hollow'),
-  add_nose_filler: CROSS_ADDON_BASE +
-    'Add hyaluronic acid filler to the nose (liquid rhinoplasty) with a CLEARLY VISIBLE result consistent with a skilled injector: the dorsal line reads distinctly straighter and better defined, with added bridge height and definition, and gentle radix or tip support where this nose needs it. ' +
-    'The nasal refinement MUST be immediately obvious in a side-by-side comparison of the nasal bridge and profile line. A barely perceptible nose change is a FAILED edit -- the nose is the one zone in this edit where a clear, unmistakable change is required. ' +
-    'The result must still look non-surgical: a visibly refined version of the same nose, never a rhinoplasty. Do not narrow the nostrils, do not shorten or lengthen the nose, do not change the nose width from the front.' +
-    addonSafety('hyaluronic acid refinement of the nose'),
-  // add_lips_filler: deliberately does NOT use CROSS_ADDON_BASE. Lips are a small
-  // zone and gpt-image-2 hedges them toward invisibility when the prompt opens
-  // with preservation language. This prompt leads with the enhancement demand
-  // and states preservation compactly afterward. Anchors: ~1.5 mL, 25-30% fuller.
+    ADDON_LEAD +
+    'a full combination result on top of the biostimulator response already visible: clear chin and jawline HA filler (more forward chin projection and vertical height, a clean continuous jaw border with prejowl support; for a female patient the lower third tapers toward a refined oval, for a male patient the chin stays wide and squared) plus focused temple support so the forehead-to-cheek transition reads continuous. The existing lateral response stays fully intact beneath these additions, read as one integrated result. ' +
+    ADDON_PRESERVE,
+  add_chin_jaw_filler:
+    ADDON_LEAD +
+    'a clearly visible chin and jawline HA filler result, about 2 syringes, added on top of what is already shown: more forward chin projection with vertical height plus a clean continuous jaw border from chin to angle with prejowl support, so the lower-face contour reads distinctly stronger and better defined in the silhouette, natural and structural rather than surgical. ' +
+    ADDON_PRESERVE,
+  add_chin_filler:
+    ADDON_LEAD +
+    'a clearly visible chin-only HA filler result added on top of what is already shown: the chin point moves distinctly forward, and slightly lower where appropriate, so the profile reads stronger and better balanced, keeping the chin width natural. This is chin filler only: do not add jawline definition or change the jaw width. ' +
+    ADDON_PRESERVE,
+  add_jawline_filler:
+    ADDON_LEAD +
+    'a clearly visible jawline-only HA filler result added on top of what is already shown: a smoother, more continuous, better-defined lower jaw border from the chin toward the angle, with the prejowl hollow softened, so the lower-face contour reads distinctly cleaner. This is jawline filler only: do not add chin projection or change the chin position. ' +
+    ADDON_PRESERVE,
+  add_cheek_filler:
+    ADDON_LEAD +
+    'a clearly visible cheek (midface) HA filler result added on top of what is already shown: restored support at the cheek so the curve from lower lid to cheek reads distinctly fuller and better supported, with a natural apex and a smooth transition into the midface, never over-projected or pillowed. ' +
+    ADDON_PRESERVE,
+  add_temple_support:
+    ADDON_LEAD +
+    'a clearly visible temple result added on top of what is already shown: support filling the hollow at the temple so the transition from forehead to cheek reads as a distinctly continuous convex surface and the upper outer face reads as a smooth connected curve, natural and not over-filled. ' +
+    ADDON_PRESERVE,
+  add_tear_trough:
+    ADDON_LEAD +
+    'a clearly visible under-eye result added on top of what is already shown: support beneath the under-eye hollow so the lid-cheek junction reads distinctly smoother and the shadow softens because the hollow is filled from beneath, not because the skin is brightened. Subtle and natural, never puffy or over-filled; do not change eye shape, size, eyelid, lashes, or iris, and do not brighten or retouch the skin. ' +
+    ADDON_PRESERVE,
+  add_nose_filler:
+    ADDON_LEAD +
+    'a clearly visible non-surgical nose HA filler result (liquid rhinoplasty) added on top of what is already shown: a distinctly straighter, smoother side profile, a higher but natural bridge, and improved tip projection and support, staying believable for HA filler and never surgical. Keep the nose width from the front unchanged, keep the result soft and appropriate for this face, and do not narrow the nose or create a high, narrow, surgical, or European-style nose. ' +
+    ADDON_PRESERVE,
   add_lips_filler:
-    'PRIMARY TASK, NON-NEGOTIABLE: make the lips CLEARLY and UNMISTAKABLY fuller. This simulates a full hyaluronic acid lip augmentation. ' +
-    'Both the upper and lower lip must each read roughly 25 to 30 percent fuller than in this image: visibly more vertical lip height, visibly more forward projection, and a sharper, better-defined vermilion border. The lips should look clearly fuller at conversational distance. ' +
-    'The difference must be immediately obvious at a glance in a side-by-side comparison. If the lips look the same or only slightly different, the edit has FAILED. ' +
-    'Shape rules: keep a natural upper-to-lower proportion (the lower lip stays slightly fuller than the upper), keep the cupid\'s bow shape and position, keep the same mouth width. Full and defined, never duck-shaped, shelf-like, everted, or cartoonish. ' +
-    'This image shows a patient part-way through a treatment plan; earlier steps are already visible elsewhere on the face and the plan is not finished. Preserve every other improvement and every other facial feature exactly as shown; the lips are the ONLY zone that changes in this step.' +
-    LIP_SAFETY,
-  add_biostim_lift: CROSS_ADDON_BASE +
-    'Add a biostimulator collagen response for more lateral lift, with a CLEARLY VISIBLE result: broader, softer support across the lateral cheek and temple so the midface reads distinctly lifted and the jawline cleaner, as a diffuse soft-tissue improvement returning under the skin. ' +
-    'The lift MUST be visible in a side-by-side comparison. A barely perceptible change is a FAILED edit. ' +
-    'This is collagen-based volume and lift, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow.' +
-    addonSafety('a diffuse biostimulator lateral-lift response across the cheeks and temples'),
-  add_rf: CROSS_ADDON_BASE +
-    'Add a radiofrequency (RF) skin-tightening result on top of the existing filler result: modest firming and tightening of the skin envelope, mainly in the lower face and along the jawline, so the skin reads a little smoother and more taut and the jaw line a little cleaner. ' +
-    'This is energy-based skin tightening, NOT volume: do NOT add, restore, or re-inflate any volume, do NOT plump or round the face, do NOT change the filler result already present. Energy devices tighten existing skin, they cannot add volume. ' +
-    'Keep the change subtle and clearly below what filler or a biostimulator can do. Do NOT de-age the patient or erase wrinkles, texture, or pigmentation: the person must still look their age.' +
-    addonSafety('a modest RF skin-tightening effect in the lower face and jawline'),
-  add_hifu: CROSS_ADDON_BASE +
-    'Add a HIFU (focused ultrasound) lifting result on top of the existing filler result: a modest lift and tightening of the lower face and jawline, with a slightly crisper, more lifted mandibular line and a cleaner transition into the neck. ' +
-    'This is energy-based lifting and tightening, NOT volume: do NOT add, restore, or re-inflate any volume, do NOT plump or round the face, and do NOT change the filler result already present. Energy devices tighten and lift existing tissue, they cannot add volume. ' +
-    'Keep the change subtle and clearly below what filler or a biostimulator can do. Do NOT de-age the patient or erase wrinkles, texture, or pigmentation: the person must still look their age.' +
-    addonSafety('a modest HIFU lifting effect in the lower face and jawline'),
-  add_masseter: CROSS_ADDON_BASE +
-    'Add a neurotoxin masseter-reduction result on top of the existing filler result: over the months a botulinum toxin masseter treatment would take effect, the masseter muscle at the back lateral lower face becomes slimmer, so the lower face reads narrower and softer and the transition from cheek to jaw is smoother, with less lateral fullness at the mandibular angle. ' +
-    'This is muscle slimming from neurotoxin, NOT volume and NOT bone change: do NOT add filler volume, do NOT change the chin, do NOT sharpen or carve the jawline bone, and do NOT alter the existing filler result. The change is only a reduction of lateral lower-face muscle bulk. ' +
-    'Keep it subtle, natural, and symmetric. Preserve identity and the patient\'s ethnicity.' +
-    addonSafety('a neurotoxin masseter-slimming effect that narrows the lateral lower face'),
-  add_nefertiti: CROSS_ADDON_BASE +
-    'Add a neurotoxin Nefertiti-lift result on top of the existing filler result: botulinum toxin along the jawline and upper neck (platysma) relaxes the downward pull, so the jawline reads cleaner and slightly more lifted and the transition from jaw to neck is sharper and more defined. ' +
-    'This is a neurotoxin contour-refinement effect, NOT volume: do NOT add filler volume, do NOT change the chin projection, do NOT carve or sharpen the jaw bone, and do NOT alter the existing filler result. The change is a subtle lift and cleaner jaw-to-neck line only. ' +
-    'Keep it subtle and natural. Preserve identity and the patient\'s ethnicity.' +
-    addonSafety('a neurotoxin Nefertiti-lift effect that cleans and lifts the jawline and neck'),
+    ADDON_LEAD +
+    'a substantial, clearly visible lip HA filler result, about 2 mL, added on top of what is already shown: noticeably build the body of both the upper and lower lip with strong vermilion show, clear anterior projection, a well-defined central tubercle, and a crisp vermilion border, so the lips read distinctly fuller, hydrated, and structurally supported. Keep natural upper-to-lower proportion, the Cupid\'s bow, and the same mouth width, never overfilled, everted, or duck-shaped. ' +
+    ADDON_PRESERVE,
+  add_biostim_lift:
+    ADDON_LEAD +
+    'a clearly visible biostimulator lateral-lift result added on top of what is already shown: broader, softer collagen-based support across the lateral cheek and temple so the midface reads distinctly lifted and the jawline cleaner, a diffuse soft-tissue improvement under the skin, not filler fullness and not shadow sculpting. Keep it soft, gradual, and three-dimensional, and do not deepen or darken any facial shadow. ' +
+    ADDON_PRESERVE,
+  // Energy devices: clinical ceiling retained. Tighten, never add volume, stay
+  // below filler/biostim, never de-age.
+  add_rf:
+    ADDON_LEAD +
+    'a modest radiofrequency (RF) skin-tightening result added on top of the existing result: the skin envelope of the lower face and jawline reads a little firmer, smoother, and more taut and the jaw line a little cleaner. This is energy-based tightening, NOT volume: do not add, restore, or re-inflate any volume, do not plump or round the face, and do not change the existing result. Keep the change subtle and clearly below what filler or a biostimulator can do, and do not de-age the patient or erase wrinkles, texture, or pigmentation. ' +
+    ADDON_PRESERVE,
+  add_hifu:
+    ADDON_LEAD +
+    'a modest HIFU (focused ultrasound) lifting result added on top of the existing result: a subtle lift and tightening of the lower face and jawline, with a slightly crisper mandibular line and a cleaner transition into the neck. This is energy-based lifting and tightening, NOT volume: do not add, restore, or re-inflate any volume, do not plump or round the face, and do not change the existing result. Keep the change subtle and clearly below what filler or a biostimulator can do, and do not de-age the patient or erase wrinkles, texture, or pigmentation. ' +
+    ADDON_PRESERVE,
+  // Neurotoxin: clinical ceiling retained. Muscle/contour, never volume.
+  add_masseter:
+    ADDON_LEAD +
+    'a neurotoxin masseter-slimming result added on top of the existing result: the masseter muscle at the back lateral lower face becomes slimmer, so the lower face reads narrower and softer and the cheek-to-jaw transition smoother, with less fullness at the jaw angle. This is muscle slimming from neurotoxin, NOT volume and NOT bone change: do not add filler volume, do not change the chin, do not carve the jawline bone, and do not change the existing result. Keep it subtle, natural, and symmetric. ' +
+    ADDON_PRESERVE,
+  add_nefertiti:
+    ADDON_LEAD +
+    'a neurotoxin Nefertiti-lift result added on top of the existing result: relaxing the downward pull along the jawline and upper neck so the jawline reads cleaner and slightly more lifted and the jaw-to-neck transition sharper. This is a neurotoxin contour refinement, NOT volume: do not add filler volume, do not change chin projection, do not carve the jaw bone, and do not change the existing result. Keep it subtle and natural. ' +
+    ADDON_PRESERVE,
+  // Energy intensification: clinical ceiling retained, strongest wording.
   stronger_laser:
-    'This photograph already shows a subtle energy-based skin-tightening result. Intensify it MODESTLY to represent a strong responder over a full course of multiple sessions (results developing over several months): a bit more firmness and tightening in the LOWER FACE, and a slightly cleaner, more defined jawline. ' +
-    'This is still an energy-device result and must stay clearly below what filler or Sculptra can do. Do NOT add any cheek or midface fullness, do NOT re-inflate, plump, or round out the face, do NOT restore lost volume, and do NOT produce a facelift -- energy devices tighten existing skin, they cannot add volume. ' +
-    'Do NOT de-age the patient: the person must still clearly look their age. Deep static wrinkles, perioral lines, crow\'s feet, forehead lines, under-eye laxity, skin texture, and pigmentation must REMAIN substantially present. Do NOT erase wrinkles, smooth, retouch, or brighten the skin, and do NOT create a beauty-filter or resurfacing effect. ' +
-    'Preserve identity, apparent age, skin tone, ethnicity and all ethnic features, facial asymmetry, eyes, brows, lips, nose, ears, hair, headband, neck, clothing, background, lighting, and camera angle exactly. The result must be understated, natural, and unmistakably the same person. Do not add text, labels, watermarks, or annotations.'
+    ADDON_LEAD +
+    'a stronger energy-based skin-tightening result than the one already visible, representing a strong responder over a full course: a bit more firmness and tightening in the lower face and a slightly cleaner, more defined jawline. This is still an energy-device result and must stay clearly below what filler or a biostimulator can do: do not add any cheek or midface fullness, do not re-inflate, plump, or round the face, do not restore lost volume, and do not produce a facelift. Do not de-age the patient: deep static wrinkles, perioral lines, crow\'s feet, forehead lines, under-eye laxity, skin texture, and pigmentation must remain substantially present. ' +
+    ADDON_PRESERVE
 };
 
 function buildScenarioPrompt(scenarioKey, view, baselineType) {
