@@ -1444,7 +1444,7 @@ const FREE_REGEN_MS = 60000;
 // stay the same module instance (shared face-detection cache). v35 = M9.0
 // jowl blending (alpha lobes over marionette/jowl shadows + prejowl notch-fill
 // warp kernels) (v34 = M8.2 shade reconciliation; v33 = M8.1 convex chin).
-const MASK_MODULE_VERSION = '78'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp); v78 matchToneToReference (add-on tone normalization)
+const MASK_MODULE_VERSION = '79'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp); v78 matchToneToReference; v79 compositeChinJawAddon (chin/jaw region composite)
 
 /* M7: a case is one or more ANGLES, each with its own photo, QC result, job,
    and compositor. Treatment settings are shared across the case; the response
@@ -5148,6 +5148,23 @@ async function runScenario(scenarioKey){
           if(composited) displayResultUrl = composited;
         }
       } catch(e){ console.warn('[Visualize] feature-composite skipped:', e); }
+    }
+    else if(scenarioKey === 'add_chin_jaw_filler' || scenarioKey === 'add_chin_filler' || scenarioKey === 'add_jawline_filler'){
+      // M17 #3: chin/jaw region composite. Keep the baseline's real skin and
+      // background over the whole frame and take only the jaw/chin/submental
+      // contour region from the re-render, so this path stops repainting skin
+      // and background. Fails safe to the raw add-on.
+      try {
+        const skinBaseUrl = (state.type === 'biostim' && sl && sl.apply)
+          ? sl.apply((state.intensityPct || 48) / 100)
+          : (sl && sl.resultDataUrl);
+        if(skinBaseUrl){
+          const [baseImg, addonImg] = await Promise.all([loadImage(skinBaseUrl), loadImage(rawResultUrl)]);
+          const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+          const composited = await mod.compositeChinJawAddon(baseImg, addonImg);
+          if(composited){ displayResultUrl = composited; console.log('[Visualize] M17 chin/jaw region composite applied (' + scenarioKey + ')'); }
+        }
+      } catch(e){ console.warn('[Visualize] chin/jaw composite skipped:', e); }
     }
 
     // M17 (staging A/B): optional tone normalization to the ORIGINAL photo, not
