@@ -607,6 +607,14 @@ exports.handler = async (event) => {
       // stronger_sculptra the edit target is the ORIGINAL photo. Every other
       // scenario stays an add-on that edits the baseline. The real baseline still
       // rides along as planner context below.
+      // M16: stronger_sculptra is the SAME treatment at a higher dose, generated
+      // FRESH from the original photo -- NOT an add-on stacked on the baseline. Its
+      // prompt (SCULPTRA_SCENARIO_BASE) already instructs the model to edit the
+      // original photo; editing the baseline instead compounds the baseline's own
+      // beautification and leaves no clean delta vs the baseline. So for
+      // stronger_sculptra the edit target is the ORIGINAL photo. Every other
+      // scenario stays an add-on that edits the baseline. The real baseline still
+      // rides along as planner context below.
       const editFromOriginal = (scenarioKey === 'stronger_sculptra') && !!originalRefB64;
       const sourceImageB64   = editFromOriginal ? originalRefB64  : baselineB64;
       const sourceImageMime  = editFromOriginal ? originalRefMime : baselineMime;

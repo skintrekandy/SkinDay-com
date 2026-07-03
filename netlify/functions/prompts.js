@@ -560,7 +560,10 @@ function buildLaserPrompt(sel) {
   // has no honest larger target and the image model fills the gap by destroying
   // skin texture (mottled, waxy, blotchy). The strong/optimistic toggle is
   // therefore intentionally ignored here: laser always renders the expected
-  // result. Do not reintroduce an optimistic projection for laser.
+  // result. Case selection, not a projection knob, sets how dramatic the result
+  // is -- a thick-skinned patient with a double chin naturally shows a bigger
+  // change than a hollow, thin face under the same prompt. Do not reintroduce an
+  // optimistic projection for laser.
   const magnitude = tx.expected;
   const isOblique = view !== 'frontal';
   const framing = isOblique
