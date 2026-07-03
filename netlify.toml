@@ -197,6 +197,17 @@
   status = 200
   force  = true
 
+# ── CRAWLABLE CLINIC INDEX ────────────────────────────────────────
+# Server-rendered, JS-free HTML index of every clinic profile. Gives
+# Googlebot a real link path to all /clinic/* pages (which otherwise
+# exist only in the sitemap). Pagination via ?page=N is preserved by
+# Netlify automatically on the rewrite.
+[[redirects]]
+  from   = "/directory"
+  to     = "/.netlify/functions/directory-index"
+  status = 200
+  force  = true
+
 # ── DYNAMIC SITEMAP ───────────────────────────────────────────────
 # Serves all TW + HK clinic URLs + static pages from Supabase.
 [[redirects]]
