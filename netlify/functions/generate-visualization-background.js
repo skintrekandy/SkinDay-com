@@ -42,7 +42,7 @@
 
 const OpenAI = require('openai');
 const { getStore, connectLambda } = require('@netlify/blobs');
-const { buildCorePrompt, CHIN_JAW_SAFETY, usesChinJawSafety, buildScenarioPrompt, buildStrongerLaserPrompt } = require('./prompts');
+const { buildCorePrompt, CHIN_JAW_SAFETY, usesChinJawSafety, buildScenarioPrompt } = require('./prompts');
 const { logGeneration } = require('./log-generation');
 
 // === VERBATIM from generate-visualization.js. Do not diverge this copy in isolation. ===
@@ -587,17 +587,6 @@ exports.handler = async (event) => {
         return { statusCode: 200 };
       }
 
-      // M17: stronger_laser is the OPTIMISTIC (favourable-responder) energy result,
-      // rendered FROM THE ORIGINAL photo (like stronger_sculptra) rather than
-      // stacked on the already-rendered baseline, so skin texture is preserved
-      // instead of compounded. The prompt branches on laserType (HIFU carries a
-      // stronger brow lift than RF). If laserType is somehow absent it falls back
-      // to the CROSS_ADDON stack prompt from buildScenarioPrompt above.
-      if (scenarioKey === 'stronger_laser' && f.laserType) {
-        try { staticPrompt = buildStrongerLaserPrompt(f.laserType, f.view || 'frontal'); }
-        catch (e) { console.warn('[M17] buildStrongerLaserPrompt failed, using cross-addon fallback:', (e && e.message) || e); }
-      }
-
       const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
       // M15 role mapping:
@@ -618,11 +607,15 @@ exports.handler = async (event) => {
       // stronger_sculptra the edit target is the ORIGINAL photo. Every other
       // scenario stays an add-on that edits the baseline. The real baseline still
       // rides along as planner context below.
-      // stronger_sculptra and stronger_laser (M17) both render the stronger result
-      // FRESH from the original photo, not stacked on the baseline: stacking
-      // compounds the baseline's own re-render (skin texture loss) and leaves no
-      // clean delta. Every other scenario stays an add-on that edits the baseline.
-      const editFromOriginal = (scenarioKey === 'stronger_sculptra' || scenarioKey === 'stronger_laser') && !!originalRefB64;
+      // M16: stronger_sculptra is the SAME treatment at a higher dose, generated
+      // FRESH from the original photo -- NOT an add-on stacked on the baseline. Its
+      // prompt (SCULPTRA_SCENARIO_BASE) already instructs the model to edit the
+      // original photo; editing the baseline instead compounds the baseline's own
+      // beautification and leaves no clean delta vs the baseline. So for
+      // stronger_sculptra the edit target is the ORIGINAL photo. Every other
+      // scenario stays an add-on that edits the baseline. The real baseline still
+      // rides along as planner context below.
+      const editFromOriginal = (scenarioKey === 'stronger_sculptra') && !!originalRefB64;
       const sourceImageB64   = editFromOriginal ? originalRefB64  : baselineB64;
       const sourceImageMime  = editFromOriginal ? originalRefMime : baselineMime;
 
