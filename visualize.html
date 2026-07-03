@@ -706,11 +706,10 @@
         <div class="field">
           <label data-en="Volume" data-zh="填充量">Volume</label>
           <div class="pill-grid" id="fillerVolumeToggle">
-            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Natural" data-zh="自然">Natural</strong></button>
-            <button class="pill" data-volume="moderate" type="button"><strong data-en="Moderate" data-zh="中等">Moderate</strong></button>
+            <button class="pill active" data-volume="moderate" type="button"><strong data-en="Natural" data-zh="自然">Natural</strong></button>
             <button class="pill" data-volume="enhanced" type="button"><strong data-en="Enhanced" data-zh="加強">Enhanced</strong></button>
           </div>
-          <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Conservative: 1 syringe.</div>
+          <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Natural: 1 syringe.</div>
         </div>
       </div>
 
@@ -1483,7 +1482,7 @@ const state = {
   product:'sculptra', projection:'expected', timeline:'6',
   blackBg:true, lastGenAt:0, intensityPct:48, courseMode:'standard', // M16: default lowered 58->48; baseline read too strong. Response slider still overrides per-session.
   responseMode:'expected', // M14.2: always 'expected'. Optimistic/Both selector removed (overpromising). Stronger effect is a post-baseline scenario.
-  fillerVolume:'conservative', // 'conservative' | 'moderate' | 'enhanced' -- filler volume tier
+  fillerVolume:'moderate', // 'moderate' (shown as Natural) | 'enhanced' -- two filler volume tiers
   laserType:'rf', // 'rf' or 'hifu' -- Energy-Based Devices type
   toxMode:'combined', // 'masseter' | 'nefertiti' | 'combined' -- Neurotoxin mode
   enhancedStartedAt: 0, enhancedTimerInterval: null,
@@ -2702,8 +2701,7 @@ function fillerVolumeLabel(area, tier){
 function updateFillerVolumeHelp(){
   const help = document.getElementById('fillerVolumeHelp');
   const area = (state.areas && state.areas[0]) || 'chin_jawline';
-  const tierName = state.fillerVolume === 'conservative' ? t('tierConservative')
-                 : state.fillerVolume === 'moderate' ? t('tierModerate') : t('tierEnhanced');
+  const tierName = state.fillerVolume === 'enhanced' ? t('tierEnhanced') : t('tierConservative');
   if(help) help.textContent = tierName + ': ' + fillerVolumeLabel(area, state.fillerVolume) + '.';
 }
 document.querySelectorAll('#areaGrid .area-chip').forEach(chip => {
@@ -4335,8 +4333,8 @@ function simKicker(angleId){
   if(state.type === 'filler' && sl.apply){
     // M14.1: label from the selected volume tier (conservative/moderate/enhanced),
     // not the stale slider intensityPct which always read "Balanced".
-    const VOLUME_LABEL = { conservative:'Natural', moderate:'Balanced', enhanced:'Enhanced' };
-    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Balanced');
+    const VOLUME_LABEL = { conservative:'Natural', moderate:'Natural', enhanced:'Enhanced' };
+    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Natural');
   }
   return parts.join(' · ');
 }
