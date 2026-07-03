@@ -93,7 +93,7 @@ function buildSchema(clinic, url) {
 
 function renderFullPage(clinic) {
   const lang = primaryLang(clinic.country);
-  const slug = toSlug(clinic.name);
+  const slug = clinic.slug || toSlug(clinic.name);
   const url = `${SITE}/clinic/${slug}`;
   const loc = escapeHtml(clinic.neighbourhood || '');
   const country = countryLabel(clinic.country, lang);
@@ -197,13 +197,6 @@ function renderFullPage(clinic) {
     </div>`;
   }
 
-  // SEO hidden block for Googlebot
-  const seoBlock = `<div id="ssr-content" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;">
-    <h1>${name}</h1>
-    <p>${name} ${lang === 'zh' ? '\u662F\u4F4D\u65BC' + countryEsc + loc + '\u7684\u91AB\u7F8E\u8A3A\u6240\u3002' : 'is an aesthetic clinic in ' + loc + ', ' + countryEsc + '.'}</p>
-    ${clinic.rating ? `<p>${lang === 'zh' ? 'Google\u8A55\u5206' : 'Google rating'}: ${escapeHtml(String(clinic.rating))}</p>` : ''}
-    ${clinic.phone ? `<p>${lang === 'zh' ? '\u96FB\u8A71' : 'Phone'}: ${escapeHtml(clinic.phone)}</p>` : ''}
-  </div>`;
 
   const indexableMeta = clinicIsIndexable(clinic)
     ? `<script type="application/ld+json">${buildSchema(clinic, url)}</script>`
@@ -249,7 +242,6 @@ function renderFullPage(clinic) {
   </style>
 </head>
 <body>
-${seoBlock}
 <nav class="nav">
   <a href="/" class="nav-logo">Skin<span>Day</span></a>
   <a href="${dirUrl}" class="nav-back">
@@ -317,18 +309,48 @@ exports.handler = async (event) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: clinics, error } = await supabase
-      .from('clinics')
-      .select('id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url')
-      .in('country', ['taiwan', 'hongkong', 'usa'])
-      .not('name', 'is', null);
+    const COUNTRIES = ['taiwan', 'hongkong', 'usa'];
+    // Columns including the new slug column (primary, indexed path).
+    const COLS = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url, slug';
+    // Columns without slug (fallback path, works before the migration runs).
+    const COLS_BASE = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url';
 
-    if (error) {
-      console.error('render-clinic-com: supabase error', error.message);
-      return { statusCode: 500, body: 'Database error' };
+    let clinic = null;
+
+    // Primary path: single indexed lookup on the slug column. On a slug
+    // collision the most-reviewed clinic wins, deterministically.
+    {
+      const { data, error } = await supabase
+        .from('clinics')
+        .select(COLS)
+        .eq('slug', slug)
+        .in('country', COUNTRIES)
+        .not('name', 'is', null)
+        .order('reviews', { ascending: false, nullsFirst: false })
+        .limit(1);
+      if (error) {
+        // Most likely cause: slug column not present yet (migration not run).
+        console.warn('render-clinic-com: slug lookup failed, using fallback:', error.message);
+      } else if (data && data.length) {
+        clinic = data[0];
+      }
     }
 
-    const clinic = (clinics || []).find(c => toSlug(c.name) === slug);
+    // Fallback path: if the slug column is missing or not yet backfilled,
+    // fetch and match on the computed slug so no valid clinic ever 404s.
+    if (!clinic) {
+      const { data, error } = await supabase
+        .from('clinics')
+        .select(COLS_BASE)
+        .in('country', COUNTRIES)
+        .not('name', 'is', null)
+        .range(0, 29999);
+      if (error) {
+        console.error('render-clinic-com: fallback fetch error', error.message);
+        return { statusCode: 500, body: 'Database error' };
+      }
+      clinic = (data || []).find(c => toSlug(c.name) === slug) || null;
+    }
 
     if (!clinic) {
       return {
