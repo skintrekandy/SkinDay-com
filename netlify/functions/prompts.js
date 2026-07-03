@@ -1282,6 +1282,10 @@ const CROSS_ADDON_PROMPTS = {
     ADDON_LEAD +
     'a clearly visible under-eye result added on top of what is already shown: support beneath the under-eye hollow so the lid-cheek junction reads distinctly smoother and the shadow softens because the hollow is filled from beneath, not because the skin is brightened. Subtle and natural, never puffy or over-filled; do not change eye shape, size, eyelid, lashes, or iris, and do not brighten or retouch the skin. ' +
     ADDON_PRESERVE,
+  add_nasolabial_filler:
+    ADDON_LEAD +
+    'a clearly visible improvement of the nasolabial fold added on top of what is already shown, achieved by restoring deep structural support beside the nose (at the pyriform aperture and adjacent deep medial cheek): the fold reads distinctly softer and less shadowed and the cheek-to-nose transition improves, so the midface looks better supported, without the face looking fuller or overfilled. Reduce the depth of the fold by restoring underlying support, never by smoothing skin texture or removing normal facial lines; preserve natural facial movement and expression. ' +
+    ADDON_PRESERVE,
   add_nose_filler:
     ADDON_LEAD +
     'a clearly visible non-surgical nose HA filler result (liquid rhinoplasty) added on top of what is already shown: a distinctly straighter, smoother side profile, a higher but natural bridge, and improved tip projection and support, staying believable for HA filler and never surgical. Keep the nose width from the front unchanged, keep the result soft and appropriate for this face, and do not narrow the nose or create a high, narrow, surgical, or European-style nose. ' +
