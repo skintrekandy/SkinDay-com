@@ -23,20 +23,43 @@ function urlEntry(loc, priority, lastmod) {
   return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <priority>${priority}</priority>\n  </url>`;
 }
 
+// Fetch every approved TW+HK+US clinic in 1000-row batches. PostgREST caps
+// each response at the project's Max rows setting, so a single large .range()
+// silently truncates once the table grows past that cap. Batched, ordered
+// paging stays correct no matter how large the table gets.
+async function fetchAllClinics(supabase, columns) {
+  const PAGE = 1000;
+  const all = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('clinics')
+      .select(columns)
+      .in('country', ['taiwan', 'hongkong', 'usa'])
+      .eq('approved', true)
+      .not('name', 'is', null)
+      .not('neighbourhood', 'is', null)
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) return { error };
+    if (data && data.length) all.push(...data);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+  return { data: all };
+}
+
 exports.handler = async () => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
     const today = new Date().toISOString().split('T')[0];
 
-    // Fetch all indexable TW + HK + US clinics (approved, with a name + neighbourhood)
-    const { data: clinics, error } = await supabase
-      .from('clinics')
-      .select('id, name, country, neighbourhood, reviews, updated_at')
-      .in('country', ['taiwan', 'hongkong', 'usa'])
-      .eq('approved', true)
-      .not('name', 'is', null)
-      .not('neighbourhood', 'is', null)
-      .range(0, 29999);
+    // Fetch all indexable TW + HK + US clinics (approved, with a name +
+    // neighbourhood), batched so the Max rows cap can never truncate it.
+    const { data: clinics, error } = await fetchAllClinics(
+      supabase,
+      'id, name, country, neighbourhood, reviews, updated_at'
+    );
 
     if (error) {
       console.error('sitemap-com: supabase error', error.message);

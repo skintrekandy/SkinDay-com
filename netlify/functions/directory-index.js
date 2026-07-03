@@ -46,6 +46,30 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+// Fetch every approved TW+HK+US clinic in 1000-row batches, immune to the
+// project's Max rows cap (a single large .range() truncates past the cap).
+async function fetchAllClinics(supabase, columns) {
+  const PAGE = 1000;
+  const all = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await supabase
+      .from('clinics')
+      .select(columns)
+      .in('country', ['taiwan', 'hongkong', 'usa'])
+      .eq('approved', true)
+      .not('name', 'is', null)
+      .not('neighbourhood', 'is', null)
+      .order('id', { ascending: true })
+      .range(from, from + PAGE - 1);
+    if (error) return { error };
+    if (data && data.length) all.push(...data);
+    if (!data || data.length < PAGE) break;
+    from += PAGE;
+  }
+  return { data: all };
+}
+
 function pageLink(n, label, current) {
   if (n === current) {
     return `<span class="pg pg-current">${esc(label)}</span>`;
@@ -68,14 +92,10 @@ exports.handler = async (event) => {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: clinics, error } = await supabase
-      .from('clinics')
-      .select('id, name, country, neighbourhood, reviews')
-      .in('country', ['taiwan', 'hongkong', 'usa'])
-      .eq('approved', true)
-      .not('name', 'is', null)
-      .not('neighbourhood', 'is', null)
-      .range(0, 29999);
+    const { data: clinics, error } = await fetchAllClinics(
+      supabase,
+      'id, name, country, neighbourhood, reviews'
+    );
 
     if (error) {
       console.error('directory-index: supabase error', error.message);
