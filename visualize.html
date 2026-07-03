@@ -5113,6 +5113,7 @@ async function runScenario(scenarioKey){
     form.append('angle', angleId);
     form.append('view',  promptView);
     if(state.sex) form.append('sex', state.sex);
+    if(state.laserType) form.append('laserType', state.laserType); // M17: stronger_laser branches RF vs HIFU
 
     const startRes = await fetch('/.netlify/functions/start-visualization', {
       method: 'POST', headers: auth, body: form
