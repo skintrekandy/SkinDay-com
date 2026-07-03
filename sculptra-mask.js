@@ -567,6 +567,12 @@ const LEFT_BROW = [276,283,282,295,285,300,293,334,296,336];
 const RIGHT_BROW = [46,53,52,65,55,70,63,105,66,107];
 const LIPS = [61,146,91,181,84,17,314,405,321,375,291,185,40,39,37,0,267,269,270,409,78,95,88,178,87,14,317,402,318,324,308,191,80,81,82,13,312,311,310,415];
 const NOSE = [1,2,98,327,168,6,197,195,5,4,45,275,440,220,134,236,3,51,281,248,419,456,344,440];
+// M17 #3: lower-face perimeter for the chin/jaw region composite. The mandible
+// arc (angle to chin to angle), the jaw angles (58/288), and the mentolabial
+// crease (200) as the center-top bound so the mouth stays above the region and
+// is preserved. The submental / jaw-neck strip has no landmarks and is added at
+// runtime by projecting the chin and jaw angles downward.
+const CHIN_JAW_LOWER = [58,172,136,150,149,176,148,152,377,400,378,379,365,397,288,200];
 const PROTECTED = [...new Set([...LEFT_EYE,...RIGHT_EYE,...LEFT_BROW,...RIGHT_BROW,...LIPS,...NOSE])];
 
 // ---- small helpers (mirror of the validator) ------------------------------
@@ -3144,6 +3150,105 @@ export async function compositeFeatureAddon(baselineImg, addonImg, feature, opts
     return out.toDataURL("image/jpeg", 0.95);
   } catch(e){
     console.warn('[Visualize] M16 feature composite failed; using raw add-on.', e);
+    return null;
+  }
+}
+
+// ---- M17 #3: chin/jaw region composite ------------------------------------
+// The chin/jaw filler add-on is a full-image re-render, so it repaints the whole
+// frame (skin texture, background) even though only the lower-face contour should
+// change, which is what causes the blotchy skin and warm cast on that path. This
+// keeps the ORIGINAL skin and background over the whole image and takes ONLY the
+// jaw/chin/submental contour region from the re-render. Unlike nose/lips, the
+// filler EXTENDS the silhouette outward and downward past the original jaw into
+// the neck, where there are no landmarks: landmarks are read from the ADD-ON
+// (projected) image so the new contour is not clipped, and the submental strip is
+// added by projecting the chin and jaw angles downward. Fails safe to the raw
+// add-on. Same feather + in-region unsharp as compositeFeatureAddon.
+export async function compositeChinJawAddon(baselineImg, addonImg, opts){
+  try {
+    if(!baselineImg || !addonImg) return null;
+    const featherFrac = 0.030;  // softer blend for a larger region
+    const neckFrac    = 0.14;   // downward extension into submental / upper neck, as a fraction of face height
+
+    // Landmarks from the ADD-ON (projected chin/jaw) so the added contour is not clipped.
+    const lm = await detectFace(addonImg);
+    if(!lm) return null;
+
+    const maxDim = (opts && opts.maxDim) || 1536;
+    const gs = Math.min(1, maxDim / Math.max(baselineImg.naturalWidth, baselineImg.naturalHeight));
+    const w = Math.round(baselineImg.naturalWidth * gs), h = Math.round(baselineImg.naturalHeight * gs);
+    const W = faceWidthPx(lm, w, h);
+
+    // Face height from the landmark span (forehead top to chin) for the neck offset.
+    const ys = lm.map(p => p && p.y).filter(v => typeof v === 'number');
+    if(ys.length < 3) return null;
+    const faceH = (Math.max.apply(null, ys) - Math.min.apply(null, ys)) * h;
+    const dy = neckFrac * faceH;
+
+    // Lower-face perimeter points.
+    let pts = CHIN_JAW_LOWER.map(i => lm[i]).filter(Boolean).map(p => [p.x*w, p.y*h]);
+    if(pts.length < 5) return null;
+
+    // Neck extension: project chin + jaw angles downward to cover the submental and
+    // jaw-neck transition, which have no landmarks and are where jaw filler shows.
+    const P = i => lm[i] ? [lm[i].x*w, lm[i].y*h] : null;
+    const chin = P(152), lAng = P(172), rAng = P(397);
+    if(chin) pts.push([chin[0], chin[1] + dy]);
+    if(lAng) pts.push([lAng[0], lAng[1] + dy*0.7]);
+    if(rAng) pts.push([rAng[0], rAng[1] + dy*0.7]);
+
+    const hull = convexHull(pts);
+    if(hull.length < 3) return null;
+
+    // Mask: white region hull on black.
+    const mk = document.createElement("canvas"); mk.width=w; mk.height=h;
+    const mkx = mk.getContext("2d");
+    mkx.fillStyle="#000"; mkx.fillRect(0,0,w,h);
+    mkx.fillStyle="#fff"; mkx.beginPath(); mkx.moveTo(hull[0][0], hull[0][1]);
+    for(let i=1;i<hull.length;i++) mkx.lineTo(hull[i][0], hull[i][1]);
+    mkx.closePath(); mkx.fill();
+
+    // Feather the mask edge for a seamless blend.
+    const fb = document.createElement("canvas"); fb.width=w; fb.height=h;
+    const fbx = fb.getContext("2d");
+    fbx.filter = "blur(" + Math.max(1, featherFrac*W) + "px)"; fbx.drawImage(mk, 0, 0); fbx.filter="none";
+
+    // Add-on restricted to the feathered region.
+    const feat = document.createElement("canvas"); feat.width=w; feat.height=h;
+    const fx = feat.getContext("2d");
+    fx.drawImage(addonImg, 0, 0, w, h);
+    fx.globalCompositeOperation = "destination-in"; fx.drawImage(fb, 0, 0);
+
+    // Baseline skin/background everywhere; add-on contour region composited on top.
+    const out = document.createElement("canvas"); out.width=w; out.height=h;
+    const ox = out.getContext("2d",{willReadFrequently:true});
+    ox.drawImage(baselineImg, 0, 0, w, h);
+    ox.drawImage(feat, 0, 0);
+
+    // Gentle in-region unsharp (same rationale as compositeFeatureAddon).
+    try {
+      const amount = 0.5, radiusPx = Math.max(1.2, w*0.0013);
+      const bl = document.createElement("canvas"); bl.width=w; bl.height=h;
+      const blx = bl.getContext("2d",{willReadFrequently:true});
+      blx.filter = "blur(" + radiusPx + "px)"; blx.drawImage(out, 0, 0); blx.filter="none";
+      const od = ox.getImageData(0,0,w,h), o = od.data;
+      const bd = blx.getImageData(0,0,w,h), bbuf = bd.data;
+      const md = fbx.getImageData(0,0,w,h), mm = md.data;
+      for(let i=0,p=0;i<w*h;i++,p+=4){
+        const mAlpha = mm[p]/255;
+        if(mAlpha <= 0.01) continue;
+        const k = amount * mAlpha;
+        o[p]   = Math.max(0, Math.min(255, o[p]   + k*(o[p]   - bbuf[p])));
+        o[p+1] = Math.max(0, Math.min(255, o[p+1] + k*(o[p+1] - bbuf[p+1])));
+        o[p+2] = Math.max(0, Math.min(255, o[p+2] + k*(o[p+2] - bbuf[p+2])));
+      }
+      ox.putImageData(od, 0, 0);
+    } catch(e){ /* sharpen is optional */ }
+
+    return out.toDataURL("image/jpeg", 0.95);
+  } catch(e){
+    console.warn('[Visualize] M17 chin/jaw composite failed; using raw add-on.', e);
     return null;
   }
 }
