@@ -291,6 +291,11 @@
     .auth-google-btn:hover { background:var(--cream); border-color:var(--muted); }
     .auth-google-btn svg { width:18px; height:18px; flex-shrink:0; }
     .auth-divider { display:flex; align-items:center; gap:10px; color:var(--dim); font-size:.72rem; margin:4px 0; }
+    .auth-inapp { text-align:left; border:1px solid var(--gold); background:rgba(201,169,110,.09); border-radius:6px; padding:12px 14px; margin-bottom:2px; display:flex; flex-direction:column; gap:9px; }
+    .auth-inapp-msg { font-size:.8rem; color:var(--deep); font-weight:500; line-height:1.5; margin:0; }
+    .auth-inapp-alt { font-size:.74rem; color:var(--muted); line-height:1.5; margin:0; }
+    .auth-inapp-open { display:inline-flex; align-items:center; justify-content:center; width:100%; padding:10px 14px; background:var(--deep); color:var(--cream); border:none; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:500; cursor:pointer; transition:.2s; }
+    .auth-inapp-open:hover { background:#000; }
     .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
     .acct-bar { display:none; justify-content:flex-end; align-items:center; gap:14px; padding:8px 28px; background:rgba(28,23,20,.04); border-bottom:1px solid rgba(28,23,20,.07); font-size:.76rem; color:var(--muted); }
     .acct-bar .credits { color:var(--deep); font-weight:500; }
@@ -596,6 +601,16 @@
           <button type="button" data-mode="signup">Create account</button>
         </div>
         <div class="lock-form auth-form" id="authForm" style="display:none;">
+          <div class="auth-inapp" id="authInApp" style="display:none;">
+            <p class="auth-inapp-msg"
+               data-en="Google sign-in does not work inside in-app browsers (LINE, Instagram, Facebook, WeChat)."
+               data-zh="在 App 內建瀏覽器（LINE、Instagram、Facebook、WeChat）中無法使用 Google 登入。">Google sign-in does not work inside in-app browsers (LINE, Instagram, Facebook, WeChat).</p>
+            <button type="button" class="auth-inapp-open" id="authInAppOpen" style="display:none;" onclick="openInExternalBrowser()"
+               data-en="Open in browser" data-zh="用外部瀏覽器開啟">Open in browser</button>
+            <p class="auth-inapp-alt"
+               data-en="Or open this page in Safari or Chrome, then sign in with Google. You can also use email and password below."
+               data-zh="或在 Safari、Chrome 中開啟此頁面再用 Google 登入；也可以直接使用下方的電子郵件與密碼登入。">Or open this page in Safari or Chrome, then sign in with Google. You can also use email and password below.</p>
+          </div>
           <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -1434,6 +1449,7 @@ function applyLang(){
     ? 'SkinDay Visualize \u00b7 \u91ab\u7f8e\u8a3a\u6240 AI \u7642\u7a0b\u9810\u89bd\u5de5\u5177'
     : 'SkinDay Visualize - AI Treatment Preview for Aesthetic Clinics';
   if (typeof refreshDynamicLang === 'function') refreshDynamicLang();
+  if (typeof applyInAppBrowserNotice === 'function') applyInAppBrowserNotice();
 }
 
 const KEY_STORE = 'sd_visualize_key';
@@ -1710,7 +1726,48 @@ async function submitAuth(){
     btn.disabled = false;
   }
 }
+// In-app browsers (LINE, Instagram, Facebook, WeChat) embed a webview that
+// Google blocks for OAuth with 403 disallowed_useragent. Detect them so we can
+// steer the user to the system browser (LINE can be forced) and keep the
+// email/password path, which works everywhere, prominent.
+function inAppBrowserInfo(){
+  var ua = navigator.userAgent || '';
+  if(/\bLine\//i.test(ua))         return { app:'LINE',      canForce:true  };
+  if(/FBAN|FBAV|FB_IAB/i.test(ua)) return { app:'Facebook',  canForce:false };
+  if(/Instagram/i.test(ua))        return { app:'Instagram', canForce:false };
+  if(/MicroMessenger/i.test(ua))   return { app:'WeChat',    canForce:false };
+  return null;
+}
+// LINE honours openExternalBrowser=1: navigating to the URL with this param
+// reopens the page in the system browser, where Google OAuth is allowed.
+function openInExternalBrowser(){
+  try {
+    var u = new URL(window.location.href);
+    u.searchParams.set('openExternalBrowser', '1');
+    window.location.href = u.toString();
+  } catch(e){ location.reload(); }
+}
+// Show the notice (and, for LINE, the one-tap open button) when we are inside a
+// known in-app browser. Bilingual text is handled by applyLang via data-en/zh.
+function applyInAppBrowserNotice(){
+  var box = document.getElementById('authInApp');
+  if(!box) return;
+  var info = inAppBrowserInfo();
+  box.style.display = info ? 'flex' : 'none';
+  var openBtn = document.getElementById('authInAppOpen');
+  if(openBtn) openBtn.style.display = (info && info.canForce) ? 'inline-flex' : 'none';
+}
+
 async function handleGoogleAuthVisualize(){
+  // In an in-app browser Google will 403. For LINE, jump straight to the system
+  // browser; for the others, surface the notice instead of dead-ending.
+  var inApp = inAppBrowserInfo();
+  if(inApp){
+    if(inApp.canForce){ openInExternalBrowser(); return; }
+    var box = document.getElementById('authInApp');
+    if(box){ box.style.display = 'flex'; try { box.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e){} }
+    return;
+  }
   if(!sb){ document.getElementById('authErr').textContent = t('authNotAvailable'); return; }
   const btn = document.getElementById('googleAuthBtn');
   if(btn){ btn.disabled = true; btn.textContent = t('authRedirecting'); }
@@ -4395,7 +4452,7 @@ async function drawPair(ctx, angleId, yOff, panelW, panelH, gap, includeText){
 
     ctx.font = '400 58px "Cormorant Garamond", serif';
     ctx.fillStyle = 'rgba(250,247,242,.97)';
-    ctx.fillText(sim ? 'Simulated' : 'Original', x + 38, yB - 34);
+    ctx.fillText(sim ? baselinePanelLabel() : 'Original', x + 38, yB - 34);
   }
   label(0, false);
   label(panelW + gap, true);
@@ -4607,8 +4664,9 @@ async function drawExport(includeText, angleIds){
     cover(after, x, yBot, panelW, panelH);
     ctx.restore();
 
-    // Labels -- compact, bottom-left of each panel. Treatment name lives in
-    // the header, so panels only need Original / Simulated.
+    // Labels -- compact, bottom-left of each panel. The treated row is labelled
+    // with the treatment name and timepoint (e.g. "After HIFU · 6 months") so the
+    // export is unambiguous on its own, matching the scenario triptych.
     if(includeText){
       ctx.save();
       // Gradient fade for readability
@@ -4623,9 +4681,9 @@ async function drawExport(includeText, angleIds){
       ctx.font = '400 34px "Cormorant Garamond", serif';
       ctx.fillStyle = 'rgba(250,247,242,0.92)'; ctx.textAlign = 'left';
       ctx.fillText('Original',  x + 22, yTop + panelH - 22);
-      // "Simulated"
+      // Treatment-specific simulated label
       ctx.fillStyle = 'rgba(201,169,110,0.95)';
-      ctx.fillText('Simulated', x + 22, yBot + panelH - 22);
+      ctx.fillText(baselinePanelLabel(), x + 22, yBot + panelH - 22);
       ctx.restore();
     }
   }
