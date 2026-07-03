@@ -1000,8 +1000,8 @@
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="stronger_laser" id="scenBtn_stronger_laser">
-        <strong data-en="Stronger response" data-zh="更明顯反應">Stronger response</strong>
-        <span data-en="Upper-range tightening for a strong responder" data-zh="對反應較佳個案呈現較高範圍的緊實變化">Upper-range tightening for a strong responder</span>
+        <strong data-en="Optimistic estimate" data-zh="樂觀預估">Optimistic estimate</strong>
+        <span data-en="The favorable end of a response range" data-zh="反應因人而異，此為較樂觀的一端">The favorable end of a response range</span>
         <em class="credit-tag">1 credit</em>
       </button>
     </div>
@@ -4864,7 +4864,7 @@ const SCENARIO_LABELS = {
   add_hifu:           'Add HIFU lifting',
   add_masseter:       'Add masseter slimming (neurotoxin)',
   add_nefertiti:      'Add Nefertiti lift (neurotoxin)',
-  stronger_laser:     'Stronger response',
+  stronger_laser:     'Optimistic estimate',
   combination_plan:   'Full combination plan'
 };
 
@@ -4880,7 +4880,7 @@ const SCENARIOS_BY_TYPE = {
   // a biostim baseline (and biostim-on-biostim is clinically nonsensical).
   hdr:     ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
   filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
-  laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift'],
+  laser:   ['stronger_laser','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift'],
   tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
 };
 // Maps a filler AREA to the add-on scenario key(s) that treat the same area, so
@@ -4928,7 +4928,8 @@ function scenarioExportLabel(scenarioKey, baseLabel){
   const lbl = baseLabel || SCENARIO_LABELS[scenarioKey] || scenarioKey;
   // M14: prefix reflects the baseline treatment the scenario builds on.
   const prefix = treatmentName();
-  if(scenarioKey === 'stronger_sculptra' || scenarioKey === 'stronger_laser') return prefix + ' + stronger response';
+  if(scenarioKey === 'stronger_sculptra') return prefix + ' + stronger response';
+  if(scenarioKey === 'stronger_laser')    return prefix + ' + optimistic estimate';
   return prefix + ' + ' + lbl.replace(/^Add\s+/i, '');
 }
 
@@ -4948,7 +4949,7 @@ const SCENARIO_DESCRIPTIONS = {
   add_hifu:            'Add-on scenario: HIFU lifting (no added volume). Not guaranteed.',
   add_masseter:        'Add-on scenario: neurotoxin masseter slimming. Not guaranteed.',
   add_nefertiti:       'Add-on scenario: neurotoxin Nefertiti lift. Not guaranteed.',
-  stronger_laser:      'Upper-range responder over a full course. Energy devices cannot restore volume. Not guaranteed.',
+  stronger_laser:      'Favorable end of a response range. Energy devices cannot restore volume. Not guaranteed.',
   combination_plan:    'Full multi-modality combination scenario. Possible upper-range outcome.'
 };
 
