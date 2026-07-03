@@ -4315,7 +4315,13 @@ function treatmentName(){
 function baselinePanelLabel(){
   if(state.type === 'biostim') return (state.product === 'hdr' ? 'After CaHA' : 'After PLLA') + ' · 6 months';
   if(state.type === 'laser') return (state.laserType === 'hifu' ? 'After HIFU' : 'After RF') + ' · 6 months';
-  if(state.type === 'filler') return 'After HA Filler';
+  if(state.type === 'filler'){
+    // Name the primary area treated, e.g. "After Nose HA Filler", so the middle
+    // panel is not ambiguous when an add-on (chin/jaw, nose, etc.) follows.
+    const area  = (state.areas && state.areas[0]);
+    const label = area && FILLER_AREA_LABELS[area];
+    return label ? ('After ' + label + ' HA Filler') : 'After HA Filler';
+  }
   if(state.type === 'tox') return 'After Neurotoxin';
   return 'After treatment';
 }
