@@ -51,6 +51,7 @@ exports.handler = async () => {
       { path: '/visualize',        priority: '0.9' },
       { path: '/visualize/cases',  priority: '0.8' },
       { path: '/guide',            priority: '0.8' },
+      { path: '/directory',        priority: '0.8' },
       { path: '/taiwan',           priority: '0.9' },
       { path: '/hongkong',         priority: '0.9' },
       { path: '/us',               priority: '0.9' },
