@@ -522,11 +522,26 @@ const LASER_NEGATIVE_GUARDRAIL =
 // laser prompt. These keep the change clinically plausible for a single course.
 const LASER_AREA_FOCUS = {
   rf: ' The visible change should be concentrated in the LOWER FACE: the lower cheek, jawline, prejowl area, and submental region, with at most a hint of upper-neck tightening. Do not change the upper face, forehead, brows, eye area, midface volume, lips, or nose.',
-  hifu: ' The visible change has TWO hero targets that must both read clearly. FIRST, the LOWER-FACE AND SUBMENTAL LIFT VECTOR: the lower cheek, jawline, and prejowl tighten and lift up-and-back so the mandibular border becomes distinctly cleaner and more defined, AND the submental region (under the chin) tightens markedly so any soft under-chin fullness or early double chin is visibly reduced and the cervicomental angle (the chin-to-neck transition) becomes sharper and more defined. This jawline-plus-double-chin correction is the single most important change and should be obvious in a side-by-side, especially on oblique and profile views. SECOND, a clear LATERAL BROW LIFT: the brow tails sit meaningfully higher and more open, lifting the lateral upper-eyelid hood so the eye area looks more awake and less heavy -- more than a hint, but still natural and never a surprised, over-arched, or over-elevated look. Do not change midface volume, eye size, lips, or nose, and do not erase the forehead lines.'
+  hifu: ' The visible change has TWO targets. FIRST, the LOWER-FACE LIFT VECTOR: the lower cheek, jawline, and prejowl tighten and lift up-and-back so the mandibular border becomes cleaner and more defined, and the submental region (under the chin) tightens modestly so soft under-chin fullness is partially reduced and the cervicomental angle (the chin-to-neck transition) reads a little sharper -- a visible but restrained improvement, not a dramatic double-chin correction. SECOND, a gentle LATERAL BROW LIFT: the brow tails sit a little higher so the eye area looks slightly more open and awake, subtle and natural. Do not change midface volume, eye size, lips, or nose, and do not erase the forehead lines.'
 };
 const LASER_MAGNITUDE = {
   rf: ' Magnitude anchor: roughly a 15 to 20 percent lower-face tightening effect -- clearly visible in a side-by-side comparison as a cleaner jawline and reduced jowl, but still unmistakably non-surgical. This is the dominant change and it should read clearly; the failure mode to avoid is NOT overcorrection but invisibility -- a result where nothing meaningful changed is a worse outcome than one that is slightly too firm. Concentrate the visible effect at the jawline and prejowl.',
-  hifu: ' Magnitude anchor: roughly a 25 to 35 percent lifting and tightening effect -- clearly more than radiofrequency, with the jawline definition and submental (double-chin) correction reading as the dominant changes, plus a visible lateral brow lift. Still clearly non-surgical and never a facelift, but the lift must be evident, not subtle: the failure mode to avoid is an under-rendered result where the jawline, under-chin, and brow barely move. Concentrate the effect on the jawline, submental region, and lateral brow.'
+  hifu: ' Magnitude anchor: roughly a 20 to 25 percent lifting and tightening effect -- clearly more than radiofrequency, with jawline definition as the dominant change and a modest, partial submental improvement rather than a full double-chin correction. Clearly non-surgical and never a facelift; this should read as a believable typical-responder result, with obvious room left for a stronger response. Concentrate the effect on the jawline and prejowl.'
+};
+
+// Optimistic-pass anchors for the stronger_laser scenario (favourable responder).
+// These REPLACE the expected anchors above when the optimistic estimate renders,
+// so the expected result can stay restrained (point 1) while the optimistic
+// result carries the stronger submental correction and, for HIFU, a clearly
+// stronger lateral brow lift than a typical responder (point 3). RF has no honest
+// brow lift, so RF stays a lower-face-only intensification.
+const LASER_AREA_FOCUS_OPT = {
+  rf: ' The visible change should be concentrated in the LOWER FACE: the lower cheek, jawline, prejowl, and submental region tighten clearly so the mandibular border is distinctly cleaner and jowl and under-chin fullness are clearly reduced, with a hint of upper-neck tightening. Do not change the upper face, forehead, brows, eye area, midface volume, lips, or nose.',
+  hifu: ' The visible change has TWO hero targets that must both read clearly. FIRST, the LOWER-FACE AND SUBMENTAL LIFT VECTOR: the lower cheek, jawline, and prejowl tighten and lift up-and-back so the mandibular border becomes distinctly cleaner and more defined, AND the submental region tightens markedly so soft under-chin fullness or an early double chin is clearly reduced and the cervicomental angle becomes distinctly sharper -- this jawline-plus-double-chin correction is obvious in a side-by-side, especially on oblique and profile views. SECOND, a STRONG LATERAL BROW LIFT: the brow tails sit clearly and noticeably higher and more open, distinctly lifting the lateral upper-eyelid hood so the eyes read markedly more awake and lifted -- clearly more brow elevation than a typical responder, but still natural and never a surprised, over-arched, or surgical look. Do not change midface volume, eye size, lips, or nose, and do not erase the forehead lines.'
+};
+const LASER_MAGNITUDE_OPT = {
+  rf: ' Magnitude anchor: the favourable end of a single radiofrequency course -- roughly a 20 to 30 percent lower-face tightening effect, clearly visible as a cleaner jawline, reduced jowl, and a firmer submental region, but still unmistakably non-surgical. Concentrate the visible effect at the jawline, prejowl, and submental region.',
+  hifu: ' Magnitude anchor: the favourable end of a single HIFU course in a strong responder -- roughly a 35 to 45 percent lifting and tightening effect, with jawline definition and submental (double-chin) correction as the dominant changes PLUS a clearly stronger lateral brow lift than a typical responder. Clearly more than radiofrequency and clearly more than the expected HIFU result, but still non-surgical and never a facelift. Concentrate the effect on the jawline, submental region, and lateral brow.'
 };
 
 const LASER_TX = {
@@ -541,7 +556,7 @@ const LASER_TX = {
     optimistic: 'Magnitude: an upper-range but still realistic single-course radiofrequency tightening result (e.g. Thermage) shown at roughly 6 months -- the response of a good responder, NOT a different or stronger treatment. The change is the SAME KIND as a typical RF result, only at the favourable end: a cleaner jawline, a clear reduction in jowl and prejowl heaviness, and modest submental tightening so the lower-face tissue drapes more firmly. Critically, "stronger" here means slightly more of the SAME lower-face contour tightening -- it does NOT mean more skin change, more smoothing, more brightening, or any texture alteration. Skin lock is absolute and stricter than at the expected level: pores, fine lines, deep static wrinkles, pigment, freckles, redness, and surface texture must remain exactly as photographed; do NOT smooth, resurface, brighten, even out, blur, or retouch the skin in any way, and never let a stronger setting introduce a processed, mottled, blotchy, waxy, or beauty-filter texture. If there is any tension between showing more effect and protecting skin texture, protect the skin texture. The upper face, midface volume, and identity stay unchanged.'
   },
   hifu: {
-    expected: 'Magnitude: a believable single-course focused-ultrasound lifting and tightening result (e.g. Ultherapy) shown at roughly 6 months -- clearly more lift than radiofrequency, but still non-surgical. There are three changes that must read clearly. (1) JAWLINE: the lower face and jawline lift up-and-back so the mandibular border becomes distinctly cleaner and more defined and jowl heaviness visibly reduces. (2) SUBMENTAL / DOUBLE CHIN: the under-chin region tightens markedly so soft submental fullness or an early double chin is visibly reduced and the cervicomental angle (chin-to-neck transition) becomes sharper -- on oblique and profile views this under-chin correction should be one of the most noticeable changes. (3) LATERAL BROW: a clear lateral brow lift where the brow tails sit meaningfully higher and more open, lifting the lateral lid hood so the eyes read more awake. These three lifts are the point of the treatment and should be evident in a side-by-side, while skin texture, pores, deep wrinkles, pigment, and midface volume stay essentially unchanged. Tasteful and natural, but clearly visible -- the failure mode to avoid is an under-rendered result where the jawline, under-chin, and brow barely move.',
+    expected: 'Magnitude: a believable single-course focused-ultrasound lifting and tightening result (e.g. Ultherapy) shown at roughly 6 months -- clearly more lift than radiofrequency, but still non-surgical. There are three changes that must read clearly. (1) JAWLINE: the lower face and jawline lift up-and-back so the mandibular border becomes distinctly cleaner and more defined and jowl heaviness visibly reduces. (2) SUBMENTAL: the under-chin region tightens modestly so soft submental fullness is partially reduced and the cervicomental angle (chin-to-neck transition) reads a little sharper -- a restrained, believable improvement at a typical-responder level, not a full double-chin correction (that stronger result is reserved for the optimistic estimate). (3) LATERAL BROW: a clear lateral brow lift where the brow tails sit meaningfully higher and more open, lifting the lateral lid hood so the eyes read more awake. These three lifts are the point of the treatment and should be evident in a side-by-side, while skin texture, pores, deep wrinkles, pigment, and midface volume stay essentially unchanged. Tasteful and natural, but clearly visible -- the failure mode to avoid is an under-rendered result where the jawline, under-chin, and brow barely move.',
     // Stronger HIFU is clinically real (responder variability): a good responder
     // gets meaningfully more lift from the same single course. "Stronger" means
     // MORE of the same three lift vectors, never more skin manipulation. The skin
@@ -552,25 +567,41 @@ const LASER_TX = {
   }
 };
 
-function buildLaserPrompt(sel) {
+function buildLaserPromptCore(sel, magnitudeKey) {
   const view = normalizeView(sel);
   const tx = LASER_TX[sel.laserType] || LASER_TX.rf;
-  // Energy devices (RF, HIFU) do NOT offer a stronger-response pass. A single
-  // energy course has a low, fixed visual ceiling, so a forced "stronger" pass
-  // has no honest larger target and the image model fills the gap by destroying
-  // skin texture (mottled, waxy, blotchy). The strong/optimistic toggle is
-  // therefore intentionally ignored here: laser always renders the expected
-  // result. Do not reintroduce an optimistic projection for laser.
-  const magnitude = tx.expected;
+  const opt = (magnitudeKey === 'optimistic');
+  // Initial projection (buildLaserPrompt) always renders the EXPECTED result: a
+  // single energy course has a low, fixed ceiling, so the first-shown result must
+  // stay restrained. The OPTIMISTIC pass is reached only via the stronger_laser
+  // scenario (buildStrongerLaserPrompt), which renders FROM THE ORIGINAL photo so
+  // skin texture is preserved rather than compounded off an already-rendered
+  // baseline. Its larger target is an excellent responder, never more energy, and
+  // the skin lock in the optimistic text forbids texture destruction outright.
+  const magnitude = opt ? (tx.optimistic || tx.expected) : tx.expected;
   const isOblique = view !== 'frontal';
   const framing = isOblique
     ? 'Produce a clinically realistic photograph of the same person after an energy-based skin-tightening treatment, keeping the same oblique pose, identity, apparent age, skin character, lighting, and camera setup.'
     : 'Produce a clinically realistic photograph of the same person after an energy-based skin-tightening treatment, keeping the same frontal pose, identity, apparent age, skin character, lighting, and camera setup.';
   const viewLock = SCULPTRA_VIEW_LOCKS[view] || SCULPTRA_VIEW_LOCKS.frontal;
   const cleanNote = sanitizeNote(sel.note);
-  const areaFocus = LASER_AREA_FOCUS[sel.laserType] || LASER_AREA_FOCUS.rf;
-  const magnitudeAnchor = LASER_MAGNITUDE[sel.laserType] || LASER_MAGNITUDE.rf;
+  const areaFocus = opt ? (LASER_AREA_FOCUS_OPT[sel.laserType] || LASER_AREA_FOCUS_OPT.rf)
+                        : (LASER_AREA_FOCUS[sel.laserType] || LASER_AREA_FOCUS.rf);
+  const magnitudeAnchor = opt ? (LASER_MAGNITUDE_OPT[sel.laserType] || LASER_MAGNITUDE_OPT.rf)
+                              : (LASER_MAGNITUDE[sel.laserType] || LASER_MAGNITUDE.rf);
   return `${NO_TEXT_RULE} ${framing} ${viewLock} Make ONLY this change: ${magnitude}${areaFocus}${magnitudeAnchor}${cleanNote}${LASER_NEGATIVE_GUARDRAIL}`;
+}
+
+function buildLaserPrompt(sel) {
+  return buildLaserPromptCore(sel, 'expected');
+}
+
+// stronger_laser scenario prompt: the optimistic (favourable-responder) estimate,
+// rendered from the ORIGINAL photo (see worker editFromOriginal) to preserve skin
+// quality. Branches on laserType so HIFU carries a stronger brow lift than RF.
+function buildStrongerLaserPrompt(laserType, view) {
+  const lt = (laserType === 'hifu' || laserType === 'rf') ? laserType : 'rf';
+  return buildLaserPromptCore({ laserType: lt, view: view || 'frontal', note: '' }, 'optimistic');
 }
 
 // ---- Hyperdilute CaHA / Radiesse (biostimulatory skin firmness) -------------
@@ -1382,4 +1413,4 @@ function buildScenarioPrompt(scenarioKey, view, baselineType) {
   return NO_TEXT_RULE + ' ' + viewLead + s.prompt;
 }
 
-module.exports = { buildCorePrompt, VERSIONS, CHIN_JAW_SAFETY, usesChinJawSafety, FILLER_CHIN_JAWLINE_OVERFILLED, SCENARIO_PROMPTS, buildScenarioPrompt, BIOSTIM_NEGATIVE_GUARDRAIL };
+module.exports = { buildCorePrompt, VERSIONS, CHIN_JAW_SAFETY, usesChinJawSafety, FILLER_CHIN_JAWLINE_OVERFILLED, SCENARIO_PROMPTS, buildScenarioPrompt, buildStrongerLaserPrompt, BIOSTIM_NEGATIVE_GUARDRAIL };
