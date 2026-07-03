@@ -693,7 +693,7 @@
             <div class="area-chip" data-area="nose"><span class="tick">✓</span><span data-en="Nose" data-zh="鼻部">Nose</span></div>
             <div class="area-chip" data-area="tear_trough"><span class="tick">✓</span><span data-en="Tear trough" data-zh="淚溝">Tear trough</span></div>
             <div class="area-chip" data-area="lips"><span class="tick">✓</span><span data-en="Lips" data-zh="嘴唇">Lips</span></div>
-            <div class="area-chip" data-area="nasolabial_folds"><span class="tick">✓</span><span data-en="Smile Lines" data-zh="法令紋">Smile Lines</span></div>
+            <div class="area-chip" data-area="nasolabial_folds"><span class="tick">✓</span><span data-en="Nasolabial Folds" data-zh="法令紋">Nasolabial Folds</span></div>
           </div>
         </div>
         <div class="field">
@@ -958,6 +958,11 @@
       <button class="scenario-btn" type="button" data-scenario="add_tear_trough" id="scenBtn_add_tear_trough">
         <strong data-en="Add under-eye (tear trough) support" data-zh="加入淚溝支撐">Add under-eye (tear trough) support</strong>
         <span data-en="Softens the under-eye hollow on the baseline" data-zh="在基準結果上柔化眼下凹陷">Softens the under-eye hollow on the baseline</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
+      <button class="scenario-btn" type="button" data-scenario="add_nasolabial_filler" id="scenBtn_add_nasolabial_filler">
+        <strong data-en="Add nasolabial fold support" data-zh="加入法令紋支撐">Add nasolabial fold support</strong>
+        <span data-en="Deep support beside the nose softens the fold on the baseline" data-zh="在基準結果上以鼻旁深層支撐柔化法令紋">Deep support beside the nose softens the fold on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_nose_filler" id="scenBtn_add_nose_filler">
@@ -4847,6 +4852,7 @@ const SCENARIO_LABELS = {
   add_cheek_filler:   'Add cheek filler',
   add_temple_support: 'Add temple support',
   add_tear_trough:    'Add under-eye (tear trough) support',
+  add_nasolabial_filler: 'Add nasolabial fold support',
   add_nose_filler:    'Add nose filler',
   add_lips_filler:    'Add lip filler',
   add_biostim_lift:   'Add biostimulation',
@@ -4863,14 +4869,14 @@ const SCENARIO_LABELS = {
 // filler areas plus a biostimulation add-on (volume restoration).
 // HDR and tox: filler volume add-ons + biostimulation (common combination plans).
 const SCENARIOS_BY_TYPE = {
-  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
+  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
   // M15.2: HDR (CaHA) is a biostimulator and offers the SAME scenario set as
   // Sculptra. The old cross-type-flavored HDR list wrongly offered
   // add_cheek_filler and add_biostim_lift, both of which the server rejects on
   // a biostim baseline (and biostim-on-biostim is clinically nonsensical).
-  hdr:     ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
-  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
-  laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
+  hdr:     ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
+  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
+  laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift'],
   tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
 };
 // Maps a filler AREA to the add-on scenario key(s) that treat the same area, so
@@ -4882,6 +4888,7 @@ const AREA_TO_SCENARIO_KEYS = {
   cheeks:       ['add_cheek_filler'],
   temple:       ['add_temple_support'],
   tear_trough:  ['add_tear_trough'],
+  nasolabial_folds: ['add_nasolabial_filler'],
   nose:         ['add_nose_filler'],
   lips:         ['add_lips_filler']
 };
@@ -4929,6 +4936,7 @@ const SCENARIO_DESCRIPTIONS = {
   add_cheek_filler:    'Add-on scenario. Not a guaranteed outcome.',
   add_temple_support:  'Add-on scenario. Upper-range outcome, not guaranteed.',
   add_tear_trough:     'Add-on scenario. Not a guaranteed outcome.',
+  add_nasolabial_filler: 'Add-on scenario. Not a guaranteed outcome.',
   add_nose_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_lips_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_biostim_lift:    'Add-on scenario. Upper-range outcome, not guaranteed.',
