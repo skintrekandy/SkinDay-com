@@ -20,9 +20,9 @@
 // price, shown struck through in the buy modal as forward-looking framing
 // ("regular after beta"), never as a fake former price.
 const DEFAULT_PACKS = [
-  { id: 'starter', label: 'Starter', credits: 2000,  cad: 2900,  regularCad: 5900  },
-  { id: 'clinic',  label: 'Clinic',  credits: 6000,  cad: 6900,  regularCad: 14900 },
-  { id: 'studio',  label: 'Studio',  credits: 15000, cad: 13900, regularCad: 32900 }
+  { id: 'starter', label: 'Essential', credits: 2000,  cad: 2900,  regularCad: 5900  },
+  { id: 'clinic',  label: 'Signature', credits: 6000,  cad: 6900,  regularCad: 14900 },
+  { id: 'studio',  label: 'Premier',   credits: 15000, cad: 13900, regularCad: 32900 }
 ];
 
 function packs() {
