@@ -2469,7 +2469,7 @@ window.addEventListener('message', (ev) => {
             const restoreJobs = Object.entries(pending.slots || {}).map(async ([id, dataUrl]) => {
               const sl = state.slots[id];
               if(!sl || !dataUrl) return;
-              sl.originalDataUrl = dataUrl;
+              sl.originalDataUrl = await boundWorkingImage(dataUrl, 1600); // M20: bound restored photos to avoid mobile OOM on re-generate
               sl.status = 'checking'; sl.qcMsg = 'Re-checking photo…';
               try {
                 const img = await loadImage(dataUrl);
@@ -2621,6 +2621,28 @@ async function loadImage(src){
   });
 }
 
+// M20: cap the working copy of an uploaded photo to a bounded long edge before
+// any heavy client-side step (face analysis, background removal, cropping, the
+// upload encode). Phone photos are 12-24 MP; decoding several of them, plus the
+// background-removal model and its native-resolution canvas, is the dominant
+// cause of the browser tab being killed and reloaded mid-generation on mobile.
+// The model upload is capped at 1536 regardless, so bounding the working copy to
+// 1600 costs no output quality while cutting peak memory by roughly an order of
+// magnitude. Small uploads are never upscaled, so the resolution confidence
+// check still sees their true (low) size.
+async function boundWorkingImage(dataUrl, max){
+  max = max || 1600;
+  const img = await loadImage(dataUrl);
+  const long = Math.max(img.naturalWidth, img.naturalHeight);
+  if(long <= max) return dataUrl;
+  const scale = max / long;
+  const w = Math.round(img.naturalWidth * scale), h = Math.round(img.naturalHeight * scale);
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', .95);
+}
+
 // Resize the longest edge to <=1024 to keep uploads small. Returns a Blob.
 async function resizeToUpload(dataUrl){
   const img = await loadImage(dataUrl);
@@ -2724,11 +2746,12 @@ function gradePhoto(a, img){
     else if(a.meanLuma > 185)  add('light', false, 'soft', 'bright');
     else                       add('light', true);
   }
-  if(a.faceFrac != null){
-    if(a.faceFrac < 0.08)      add('face', false, 'hard');
-    else if(a.faceFrac < 0.14) add('face', false, 'soft');
-    else                       add('face', true);
-  }
+  // M20: face size is deliberately NOT scored here. Face-area fraction is
+  // naturally lower for oblique and portrait-orientation photos, so it
+  // false-flagged perfectly good 45-degree shots as low confidence. The genuine
+  // "too distant / full body" case is already hard-gated upstream by poseMatches
+  // (QC.MIN_FACE_FRAC), so dropping it here removes the false negatives without
+  // losing real protection.
   const longEdge = (img && img.naturalWidth && img.naturalHeight) ? Math.max(img.naturalWidth, img.naturalHeight) : null;
   if(longEdge != null){
     if(longEdge < 700)       add('res', false, 'hard');
@@ -2803,7 +2826,7 @@ async function onSlotFile(angleId, file){
   const sl = state.slots[angleId];
   if(!file.type.startsWith('image/')){ setStatus('Please upload an image file.', 'warn'); return; }
   sl.file = file;
-  sl.originalDataUrl = await fileToDataUrl(file);
+  sl.originalDataUrl = await boundWorkingImage(await fileToDataUrl(file), 1600); // M20: cap working resolution to prevent mobile OOM during generation
   sl.blackBgCache = null; sl.beforeDataUrl = null; sl.resultDataUrl = null; sl.apply = null; sl.error = null; sl.hiRes = null; sl.rawAiDataUrl = null; sl.cropCache = null;
   sl.cropBeforeCache = null; sl.cropResultCache = null; sl.cropStrongCache = null;
   sl.photoGrade = null;
