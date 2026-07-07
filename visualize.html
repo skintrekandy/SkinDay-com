@@ -4128,12 +4128,11 @@ function renderActiveSlot(){
   let tag = t('simulatedPrefix') + ' · ' + treatmentName();
   if(multi) tag += ' · ' + ANGLE_DEF[state.activeAngle].short;
   if(usesResponseModes()){
-    // M13: label reflects what was generated
-    let respLabel;
-    if(state.responseMode === 'optimistic') respLabel = 'Optimistic';
-    else if(state.courseMode === 'enhanced') respLabel = 'Optimistic';
-    else respLabel = 'Expected';
-    tag += ' · ' + respLabel;
+    // M20: "Expected" is the default baseline (the only result shown at
+    // generation), so labeling it just adds redundant noise in the tag, the
+    // fullscreen header (derived from this tag), and the export. Show a mode
+    // suffix only when the viewer is actually the Optimistic (enhanced) result.
+    if(state.responseMode === 'optimistic' || state.courseMode === 'enhanced') tag += ' · Optimistic';
   }
   if(sl.status === 'error') tag = 'Generation failed for this angle · Re-generate to retry';
   document.getElementById('simTag').textContent = tag;
@@ -4494,7 +4493,7 @@ function applyActiveView(){
     if(helpEl) helpEl.textContent = 'Expected: realistic outcome after 3-4 vials for most patients.';
     applyActiveView();
     document.getElementById('simTag').textContent = t('simulatedPrefix') + ' · ' + treatmentName() +
-      (state.selectedAngles.length > 1 ? ' · ' + ANGLE_DEF[state.activeAngle].short : '') + ' · Expected';
+      (state.selectedAngles.length > 1 ? ' · ' + ANGLE_DEF[state.activeAngle].short : '');
   });
   if(optBtn) optBtn.addEventListener('click', () => {
     const sl = activeSlot();
@@ -5233,12 +5232,12 @@ const SCENARIO_LABELS = {
 // filler areas plus a biostimulation add-on (volume restoration).
 // HDR and tox: filler volume add-ons + biostimulation (common combination plans).
 const SCENARIOS_BY_TYPE = {
-  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
+  biostim: ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
   // M15.2: HDR (CaHA) is a biostimulator and offers the SAME scenario set as
   // Sculptra. The old cross-type-flavored HDR list wrongly offered
   // add_cheek_filler and add_biostim_lift, both of which the server rejects on
   // a biostim baseline (and biostim-on-biostim is clinically nonsensical).
-  hdr:     ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
+  hdr:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
   filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
   laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift'],
   tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
