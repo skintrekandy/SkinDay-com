@@ -1582,14 +1582,21 @@ window.cardVote = async function(clinicId, vote, btn) {
   try {
     const res = await fetch('/api/submit-visit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote === 'yes', access_token: session.access_token })
+      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote, access_token: session.access_token })
     });
     if (res.status === 409) { showToast('You have already voted for this clinic.'); return; }
     if (res.ok) {
       const countEl = document.getElementById('vote-' + vote + '-count-' + clinicId);
       if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+    } else {
+      // Revert the optimistic button state and let the user know it did not save.
+      [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.remove('voted', 'voted-on'));
+      showToast('Could not record your vote. Please try again.');
     }
-  } catch(e) {}
+  } catch(e) {
+    [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.remove('voted', 'voted-on'));
+    showToast('Could not record your vote. Please try again.');
+  }
 };
 
 // ─── MISSING CLINIC ───────────────────────────────────────────

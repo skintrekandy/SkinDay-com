@@ -1672,14 +1672,20 @@ window.cardVote = async function(clinicId, vote, btn) {
   try {
     const res = await fetch('/api/submit-visit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote === 'yes', access_token: session.access_token })
+      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote, access_token: session.access_token })
     });
     if (res.status === 409) { showToast('您已為此診所投票。'); return; }
     if (res.ok) {
       const countEl = document.getElementById('vote-' + vote + '-count-' + clinicId);
       if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+    } else {
+      [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.remove('voted', 'voted-on'));
+      showToast('無法記錄您的投票，請再試一次。');
     }
-  } catch(e) {}
+  } catch(e) {
+    [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.remove('voted', 'voted-on'));
+    showToast('無法記錄您的投票，請再試一次。');
+  }
 };
 
 // ─── MISSING CLINIC ───────────────────────────────────────────
