@@ -291,6 +291,11 @@
     .auth-google-btn:hover { background:var(--cream); border-color:var(--muted); }
     .auth-google-btn svg { width:18px; height:18px; flex-shrink:0; }
     .auth-divider { display:flex; align-items:center; gap:10px; color:var(--dim); font-size:.72rem; margin:4px 0; }
+    .auth-inapp { text-align:left; border:1px solid var(--gold); background:rgba(201,169,110,.09); border-radius:6px; padding:12px 14px; margin-bottom:2px; display:flex; flex-direction:column; gap:9px; }
+    .auth-inapp-msg { font-size:.8rem; color:var(--deep); font-weight:500; line-height:1.5; margin:0; }
+    .auth-inapp-alt { font-size:.74rem; color:var(--muted); line-height:1.5; margin:0; }
+    .auth-inapp-open { display:inline-flex; align-items:center; justify-content:center; width:100%; padding:10px 14px; background:var(--deep); color:var(--cream); border:none; border-radius:6px; font-family:'DM Sans',sans-serif; font-size:.84rem; font-weight:500; cursor:pointer; transition:.2s; }
+    .auth-inapp-open:hover { background:#000; }
     .auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background:var(--border); }
     .acct-bar { display:none; justify-content:flex-end; align-items:center; gap:14px; padding:8px 28px; background:rgba(28,23,20,.04); border-bottom:1px solid rgba(28,23,20,.07); font-size:.76rem; color:var(--muted); }
     .acct-bar .credits { color:var(--deep); font-weight:500; }
@@ -306,11 +311,19 @@
     .pack-row { display:flex; align-items:center; justify-content:space-between; gap:14px; border:1px solid rgba(28,23,20,.12); border-radius:10px; padding:14px 16px; margin-top:10px; }
     .pack-row .pack-name { font-weight:500; color:var(--deep); font-size:.92rem; }
     .pack-row .pack-sub { font-size:.74rem; color:var(--muted); margin-top:2px; }
+    .pack-row .pack-consult { font-size:.76rem; color:var(--gold); font-weight:500; margin-top:3px; }
     .pack-sub strong { color:var(--rose); font-size:.86rem; }
     .pack-sub s { color:var(--dim); margin:0 2px; }
     .launch-badge { display:inline-block; margin:2px 0 4px; padding:5px 12px; border-radius:999px; background:rgba(201,169,110,.14); border:1px solid rgba(201,169,110,.35); color:#8A6D3B; font-size:.72rem; letter-spacing:.04em; }
     .hidden { display:none !important; }
-    @media(max-width:720px){ .grid,.result-grid,.result-grid.three-up{grid-template-columns:1fr;} .page{padding-left:16px;padding-right:16px;} .pill-grid,.area-grid,.type-toggle{grid-template-columns:1fr;} .nav-link{display:none;} }
+    @media(max-width:720px){ .grid{grid-template-columns:1fr;} .page{padding-left:16px;padding-right:16px;} .pill-grid,.area-grid,.type-toggle{grid-template-columns:1fr;} .nav-link{display:none;} }
+    /* M9 mobile: keep the result panels SIDE BY SIDE (shrunk to fit width) so the
+       comparison stays visible at a glance. Do not collapse to one column. */
+    @media(max-width:720px){
+      .result-grid { grid-template-columns:1fr 1fr; gap:6px; }
+      .result-grid.three-up { grid-template-columns:1fr 1fr 1fr; gap:4px; }
+      .result-grid .result-tag { font-size:.55rem; padding:4px 6px; }
+    }
 
     /* ── Mobile slider bar ── */
     #mobileSliderBar {
@@ -522,6 +535,9 @@
     .scenario-btn strong { display:block; font-size:.82rem; color:var(--deep); margin-bottom:3px; }
     .scenario-btn span { display:block; font-size:.69rem; color:var(--muted); line-height:1.35; }
     .scenario-btn .credit-tag { display:inline-block; margin-top:5px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--rose); font-weight:600; }
+    .scenario-btn.coming-soon { opacity:.5; cursor:not-allowed; }
+    .scenario-btn.coming-soon:hover { border-color:var(--border); background:var(--warm); }
+    .scenario-btn .soon-tag { display:inline-block; margin-top:5px; font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); font-weight:600; }
     .scenario-results { margin-top:18px; display:flex; flex-direction:column; gap:18px; }
     .scenario-result-card { border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--warm); }
     .scenario-result-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); gap:12px; }
@@ -529,7 +545,8 @@
     .scenario-result-disclaimer { font-size:.66rem; color:var(--rose); letter-spacing:.04em; text-transform:uppercase; font-weight:600; }
     .scenario-img-pair { display:grid; grid-template-columns:1fr 1fr; gap:0; }
     .scenario-img-triple { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; }
-    @media(max-width:600px){ .scenario-img-triple { grid-template-columns:1fr; } }
+    /* M9 mobile: keep the add-on triptych side by side (shrunk), never stacked. */
+    @media(max-width:600px){ .scenario-img-triple { grid-template-columns:1fr 1fr 1fr; gap:2px; } .scenario-img-triple .scenario-cell-tag { font-size:.5rem; padding:4px 5px; letter-spacing:.05em; } }
     .scenario-img-cell { position:relative; aspect-ratio:4/5; background:var(--deep); overflow:hidden; }
     .scenario-img-cell img { display:block; width:100%; height:100%; object-fit:cover; }
     .scenario-cell-tag { position:absolute; bottom:0; left:0; right:0; padding:7px 10px; background:linear-gradient(transparent,rgba(28,23,20,.72)); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(250,247,242,.9); }
@@ -552,33 +569,11 @@
     .scenario-fs-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; font-size:.72rem; font-weight:600; color:var(--cream); background:transparent; border:1px solid rgba(250,247,242,.35); border-radius:6px; cursor:pointer; }
     .scenario-fs-btn:hover { border-color:var(--gold); color:var(--gold); }
     .scenario-fs-grid { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; min-height:0; }
-    /* M9 mobile: on a portrait phone, keep panels SIDE BY SIDE and shrink them to
-       fit the screen width (2-up or 3-up), so the comparison is visible at a
-       glance without turning the phone. The panels are smaller but readable; the
-       user can tap "View larger" to enter the optional rotated landscape view. */
-    @media (max-width:700px) and (orientation:portrait) {
-      .scenario-fs-grid { gap:6px; }
-      .scenario-fs-cell img,
-      #previewFsGrid .scenario-fs-cell img {
-        object-fit:contain !important; width:100% !important; height:100% !important;
-        max-width:100% !important; max-height:100% !important;
-      }
-      /* Optional rotated "view larger" state, toggled by button (class on overlay). */
-      .scenario-fs-overlay.fs-rotated .scenario-fs-grid {
-        position:fixed; top:50%; left:50%;
-        width:100vh; height:100vw;
-        transform:translate(-50%,-50%) rotate(90deg);
-        transform-origin:center center; gap:8px; z-index:1;
-      }
-      .scenario-fs-overlay.fs-rotated .scenario-fs-bar { position:relative; z-index:2; }
-    }
-    /* "View larger" button only shows on portrait phones. */
-    .fs-viewlarger-btn { display:none; }
-    @media (max-width:700px) and (orientation:portrait) {
-      .fs-viewlarger-btn { display:inline-flex; }
-    }
+    /* Fullscreen is intended for landscape viewing: keep panels side by side so
+       the comparison holds. Do not stack on small screens. */
+    @media(max-width:700px){ .scenario-fs-grid { gap:6px; } }
     .scenario-fs-cell { position:relative; min-height:0; background:#000; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-    .scenario-fs-cell img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; will-change:transform; user-select:none; -webkit-user-drag:none; }
+    .scenario-fs-cell img { width:100%; height:100%; object-fit:contain; will-change:transform; user-select:none; -webkit-user-drag:none; }
     /* Preview fullscreen (before/after): always fill the cell regardless of pixel size */
     #previewFsGrid .scenario-fs-cell img { object-fit:cover; width:100%; height:100%; }
     .scenario-fs-cell .scenario-cell-tag { position:absolute; }
@@ -616,6 +611,16 @@
           <button type="button" data-mode="signup">Create account</button>
         </div>
         <div class="lock-form auth-form" id="authForm" style="display:none;">
+          <div class="auth-inapp" id="authInApp" style="display:none;">
+            <p class="auth-inapp-msg"
+               data-en="Google sign-in does not work inside in-app browsers (LINE, Instagram, Facebook, WeChat)."
+               data-zh="在 App 內建瀏覽器（LINE、Instagram、Facebook、WeChat）中無法使用 Google 登入。">Google sign-in does not work inside in-app browsers (LINE, Instagram, Facebook, WeChat).</p>
+            <button type="button" class="auth-inapp-open" id="authInAppOpen" style="display:none;" onclick="openInExternalBrowser()"
+               data-en="Open in browser" data-zh="用外部瀏覽器開啟">Open in browser</button>
+            <p class="auth-inapp-alt"
+               data-en="Or open this page in Safari or Chrome, then sign in with Google. You can also use email and password below."
+               data-zh="或在 Safari、Chrome 中開啟此頁面再用 Google 登入；也可以直接使用下方的電子郵件與密碼登入。">Or open this page in Safari or Chrome, then sign in with Google. You can also use email and password below.</p>
+          </div>
           <button class="auth-google-btn" id="googleAuthBtn" type="button" onclick="handleGoogleAuthVisualize()">
             <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -713,6 +718,7 @@
             <div class="area-chip" data-area="nose"><span class="tick">✓</span><span data-en="Nose" data-zh="鼻部">Nose</span></div>
             <div class="area-chip" data-area="tear_trough"><span class="tick">✓</span><span data-en="Tear trough" data-zh="淚溝">Tear trough</span></div>
             <div class="area-chip" data-area="lips"><span class="tick">✓</span><span data-en="Lips" data-zh="嘴唇">Lips</span></div>
+            <div class="area-chip" data-area="nasolabial_folds"><span class="tick">✓</span><span data-en="Nasolabial Folds" data-zh="法令紋">Nasolabial Folds</span></div>
           </div>
         </div>
         <div class="field">
@@ -725,11 +731,10 @@
         <div class="field">
           <label data-en="Volume" data-zh="填充量">Volume</label>
           <div class="pill-grid" id="fillerVolumeToggle">
-            <button class="pill active" data-volume="conservative" type="button"><strong data-en="Conservative" data-zh="自然">Conservative</strong></button>
-            <button class="pill" data-volume="moderate" type="button"><strong data-en="Moderate" data-zh="中等">Moderate</strong></button>
+            <button class="pill active" data-volume="moderate" type="button"><strong data-en="Natural" data-zh="自然">Natural</strong></button>
             <button class="pill" data-volume="enhanced" type="button"><strong data-en="Enhanced" data-zh="加強">Enhanced</strong></button>
           </div>
-          <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Conservative: 1 syringe.</div>
+          <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Natural: 1 syringe.</div>
         </div>
       </div>
 
@@ -979,6 +984,11 @@
         <span data-en="Softens the under-eye hollow on the baseline" data-zh="在基準結果上柔化眼下凹陷">Softens the under-eye hollow on the baseline</span>
         <em class="credit-tag">1 credit</em>
       </button>
+      <button class="scenario-btn" type="button" data-scenario="add_nasolabial_filler" id="scenBtn_add_nasolabial_filler">
+        <strong data-en="Add nasolabial fold support" data-zh="加入法令紋支撐">Add nasolabial fold support</strong>
+        <span data-en="Deep support beside the nose softens the fold on the baseline" data-zh="在基準結果上以鼻旁深層支撐柔化法令紋">Deep support beside the nose softens the fold on the baseline</span>
+        <em class="credit-tag">1 credit</em>
+      </button>
       <button class="scenario-btn" type="button" data-scenario="add_nose_filler" id="scenBtn_add_nose_filler">
         <strong data-en="Add nose filler" data-zh="加入鼻部玻尿酸">Add nose filler</strong>
         <span data-en="Liquid rhinoplasty on the baseline" data-zh="在基準結果上加入非手術鼻部調整">Liquid rhinoplasty on the baseline</span>
@@ -1015,8 +1025,8 @@
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="stronger_laser" id="scenBtn_stronger_laser">
-        <strong data-en="Stronger response" data-zh="更明顯反應">Stronger response</strong>
-        <span data-en="Upper-range tightening for a strong responder" data-zh="對反應較佳個案呈現較高範圍的緊實變化">Upper-range tightening for a strong responder</span>
+        <strong data-en="Optimistic estimate" data-zh="樂觀預估">Optimistic estimate</strong>
+        <span data-en="The favorable end of a response range" data-zh="反應因人而異，此為較樂觀的一端">The favorable end of a response range</span>
         <em class="credit-tag">1 credit</em>
       </button>
     </div>
@@ -1036,7 +1046,6 @@
           <span class="fs-zoom-label" id="scnZoomLabel">100%</span>
           <button class="scenario-fs-btn fs-zoom-btn" type="button" id="scnZoomIn" aria-label="Zoom in">+</button>
         </div>
-        <button class="scenario-fs-btn fs-viewlarger-btn" type="button" id="scenarioFsViewLarger"><span data-en="View larger" data-zh="放大檢視">View larger</span></button>
         <button class="scenario-fs-btn" type="button" id="scenarioFsDownload"><span data-en="Download" data-zh="下載">Download</span></button>
         <button class="scenario-fs-btn" type="button" id="scenarioFsClose" data-en="Close" data-zh="關閉">Close</button>
       </div>
@@ -1057,7 +1066,6 @@
           <span class="fs-zoom-label" id="prvZoomLabel">100%</span>
           <button class="scenario-fs-btn fs-zoom-btn" type="button" id="prvZoomIn" aria-label="Zoom in">+</button>
         </div>
-        <button class="scenario-fs-btn fs-viewlarger-btn" type="button" id="previewFsViewLarger"><span data-en="View larger" data-zh="放大檢視">View larger</span></button>
         <button class="scenario-fs-btn" type="button" id="previewFsDownload"><span data-en="Download" data-zh="下載">Download</span></button>
         <button class="scenario-fs-btn" type="button" id="previewFsClose" data-en="Close" data-zh="關閉">Close</button>
       </div>
@@ -1300,7 +1308,7 @@ var I18N = {
     creditsLabel: 'Credits',
     account: 'Account',
     // Filler volume tier names
-    tierConservative: 'Conservative', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
+    tierConservative: 'Natural', tierModerate: 'Moderate', tierEnhanced: 'Enhanced',
     // Laser help
     laserHelpRf: 'RF: radiofrequency skin tightening (e.g. Thermage, XERF). Results develop gradually over about 3 to 6 months.',
     laserHelpHifu: 'HIFU: focused-ultrasound lifting (e.g. Ultherapy, Sofwave). Results develop gradually over about 3 to 6 months.',
@@ -1312,7 +1320,7 @@ var I18N = {
     scenariosSubtitle: function(sc){ return 'Build on the baseline simulation to explore what is possible. Each scenario consumes ' + sc + (sc === 1 ? ' credit' : ' credits') + ' and generates in the background.'; },
     creditTag: function(n){ return n + (n === 1 ? ' credit' : ' credits'); },
     // Buy/pack
-    buy: 'Buy', opening: 'Opening…', credits: 'credits',
+    buy: 'Buy', opening: 'Opening…', credits: 'credits', consults: 'consultations',
     payNote: function(cur){ return 'Payments are processed by Stripe in ' + cur + '. Credits land on your account the moment payment completes.'; },
     // Status messages
     stChooseTreatment: 'Choose a treatment, then add the patient photos',
@@ -1368,7 +1376,7 @@ var I18N = {
     toxHelpCombined: '\u7626\u54ac\u808c\uff0bNefertiti \u4e0b\u81c9\u7dda\u689d\u62c9\u63d0\u3002\u50c5\u5448\u73fe\u4fdd\u5b88\u7684\u4e0b\u81c9\u8f2a\u5ed3\u8b8a\u5316\u3002\u6548\u679c\u7d04 4 \u81f3 6 \u9031\u9010\u6f38\u51fa\u73fe\u3002',
     scenariosSubtitle: function(sc){ return '\u5728\u57fa\u6e96\u6a21\u64ec\u4e0a\u52a0\u5165\u5176\u4ed6\u7642\u7a0b\u60c5\u5883\uff0c\u63a2\u7d22\u66f4\u591a\u53ef\u80fd\u6027\u3002\u6bcf\u500b\u60c5\u5883\u6703\u6d88\u8017 ' + sc + ' \u9ede\uff0c\u4e26\u5728\u80cc\u666f\u4e2d\u751f\u6210\u3002'; },
     creditTag: function(n){ return n + ' \u9ede'; },
-    buy: '\u8cfc\u8cb7', opening: '\u958b\u555f\u4e2d\u2026', credits: '\u9ede',
+    buy: '\u8cfc\u8cb7', opening: '\u958b\u555f\u4e2d\u2026', credits: '\u9ede', consults: '\u6b21\u8ac7\u8a62',
     payNote: function(cur){ return '\u4ed8\u6b3e\u7531 Stripe \u4ee5 ' + cur + ' \u8655\u7406\u3002\u4ed8\u6b3e\u5b8c\u6210\u5f8c\uff0c\u9ede\u6578\u6703\u7acb\u5373\u52a0\u5165\u60a8\u7684\u5e33\u6236\u3002'; },
     stChooseTreatment: '\u8acb\u5148\u9078\u64c7\u7642\u7a0b\uff0c\u518d\u52a0\u5165\u9867\u5ba2\u7167\u7247',
     stCheckoutPopup: '\u8acb\u5728\u5f48\u51fa\u8996\u7a97\u4e2d\u5b8c\u6210\u8cfc\u8cb7\u3002\u60a8\u7684\u6a21\u64ec\u9810\u89bd\u6703\u4fdd\u7559\u5728\u6b64\u3002',
@@ -1451,6 +1459,7 @@ function applyLang(){
     ? 'SkinDay Visualize \u00b7 \u91ab\u7f8e\u8a3a\u6240 AI \u7642\u7a0b\u9810\u89bd\u5de5\u5177'
     : 'SkinDay Visualize - AI Treatment Preview for Aesthetic Clinics';
   if (typeof refreshDynamicLang === 'function') refreshDynamicLang();
+  if (typeof applyInAppBrowserNotice === 'function') applyInAppBrowserNotice();
 }
 
 const KEY_STORE = 'sd_visualize_key';
@@ -1461,7 +1470,7 @@ const FREE_REGEN_MS = 60000;
 // stay the same module instance (shared face-detection cache). v35 = M9.0
 // jowl blending (alpha lobes over marionette/jowl shadows + prejowl notch-fill
 // warp kernels) (v34 = M8.2 shade reconciliation; v33 = M8.1 convex chin).
-const MASK_MODULE_VERSION = '74';
+const MASK_MODULE_VERSION = '79'; // M16: v76 feature composite; v77 quality (grid 1024->1536, jpeg .92->.95, lip-region unsharp); v78 matchToneToReference; v79 compositeChinJawAddon (chin/jaw region composite)
 
 /* M7: a case is one or more ANGLES, each with its own photo, QC result, job,
    and compositor. Treatment settings are shared across the case; the response
@@ -1497,9 +1506,9 @@ function makeSlot(){
 const state = {
   type:'biostim', areas:['chin_jawline'], intensity:'enhanced', sex:'female',
   product:'sculptra', projection:'expected', timeline:'6',
-  blackBg:true, lastGenAt:0, intensityPct:58, courseMode:'standard', // 'standard' | 'enhanced' -- global across all angles
+  blackBg:true, lastGenAt:0, intensityPct:48, courseMode:'standard', // M16: default lowered 58->48; baseline read too strong. Response slider still overrides per-session.
   responseMode:'expected', // M14.2: always 'expected'. Optimistic/Both selector removed (overpromising). Stronger effect is a post-baseline scenario.
-  fillerVolume:'conservative', // 'conservative' | 'moderate' | 'enhanced' -- filler volume tier
+  fillerVolume:'moderate', // 'moderate' (shown as Natural) | 'enhanced' -- two filler volume tiers
   laserType:'rf', // 'rf' or 'hifu' -- Energy-Based Devices type
   toxMode:'combined', // 'masseter' | 'nefertiti' | 'combined' -- Neurotoxin mode
   enhancedStartedAt: 0, enhancedTimerInterval: null,
@@ -1727,7 +1736,48 @@ async function submitAuth(){
     btn.disabled = false;
   }
 }
+// In-app browsers (LINE, Instagram, Facebook, WeChat) embed a webview that
+// Google blocks for OAuth with 403 disallowed_useragent. Detect them so we can
+// steer the user to the system browser (LINE can be forced) and keep the
+// email/password path, which works everywhere, prominent.
+function inAppBrowserInfo(){
+  var ua = navigator.userAgent || '';
+  if(/\bLine\//i.test(ua))         return { app:'LINE',      canForce:true  };
+  if(/FBAN|FBAV|FB_IAB/i.test(ua)) return { app:'Facebook',  canForce:false };
+  if(/Instagram/i.test(ua))        return { app:'Instagram', canForce:false };
+  if(/MicroMessenger/i.test(ua))   return { app:'WeChat',    canForce:false };
+  return null;
+}
+// LINE honours openExternalBrowser=1: navigating to the URL with this param
+// reopens the page in the system browser, where Google OAuth is allowed.
+function openInExternalBrowser(){
+  try {
+    var u = new URL(window.location.href);
+    u.searchParams.set('openExternalBrowser', '1');
+    window.location.href = u.toString();
+  } catch(e){ location.reload(); }
+}
+// Show the notice (and, for LINE, the one-tap open button) when we are inside a
+// known in-app browser. Bilingual text is handled by applyLang via data-en/zh.
+function applyInAppBrowserNotice(){
+  var box = document.getElementById('authInApp');
+  if(!box) return;
+  var info = inAppBrowserInfo();
+  box.style.display = info ? 'flex' : 'none';
+  var openBtn = document.getElementById('authInAppOpen');
+  if(openBtn) openBtn.style.display = (info && info.canForce) ? 'inline-flex' : 'none';
+}
+
 async function handleGoogleAuthVisualize(){
+  // In an in-app browser Google will 403. For LINE, jump straight to the system
+  // browser; for the others, surface the notice instead of dead-ending.
+  var inApp = inAppBrowserInfo();
+  if(inApp){
+    if(inApp.canForce){ openInExternalBrowser(); return; }
+    var box = document.getElementById('authInApp');
+    if(box){ box.style.display = 'flex'; try { box.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e){} }
+    return;
+  }
   if(!sb){ document.getElementById('authErr').textContent = t('authNotAvailable'); return; }
   const btn = document.getElementById('googleAuthBtn');
   if(btn){ btn.disabled = true; btn.textContent = t('authRedirecting'); }
@@ -1765,7 +1815,13 @@ function openBuyModal(){
     const price = reg
       ? '<strong>' + sym + (pk.cad/100).toFixed(2) + '</strong> <s>' + sym + (reg/100).toFixed(2) + '</s> <span>regular price</span>'
       : sym + (pk.cad/100).toFixed(2);
+    const cLo = Math.floor(pk.credits / 500);
+    const cHi = Math.floor(pk.credits / 300);
+    const consult = (cLo > 0 && cHi >= cLo)
+      ? '<div class="pack-consult">' + (currentLang === 'zh' ? ('\u7d04 ' + cLo + '-' + cHi + ' ') : ('\u2248 ' + cLo + '-' + cHi + ' ')) + t('consults') + '</div>'
+      : '';
     left.innerHTML = '<div class="pack-name">' + pk.label + ' · ' + pk.credits + ' ' + t('credits') + '</div>'
+      + consult
       + '<div class="pack-sub">' + price + '</div>';
     const btn = document.createElement('button'); btn.className = 'btn btn-primary'; btn.type = 'button';
     btn.textContent = t('buy');
@@ -2708,7 +2764,8 @@ const FILLER_VOLUME_LABELS = {
   temple:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
   nose:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
   tear_trough:  { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
-  lips:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' }
+  lips:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
+  nasolabial_folds: { conservative: '1 syringe', moderate: '1-2 syringes', enhanced: '2 syringes' }
 };
 function fillerVolumeLabel(area, tier){
   const a = FILLER_VOLUME_LABELS[area] || FILLER_VOLUME_LABELS.chin_jawline;
@@ -2717,8 +2774,7 @@ function fillerVolumeLabel(area, tier){
 function updateFillerVolumeHelp(){
   const help = document.getElementById('fillerVolumeHelp');
   const area = (state.areas && state.areas[0]) || 'chin_jawline';
-  const tierName = state.fillerVolume === 'conservative' ? t('tierConservative')
-                 : state.fillerVolume === 'moderate' ? t('tierModerate') : t('tierEnhanced');
+  const tierName = state.fillerVolume === 'enhanced' ? t('tierEnhanced') : t('tierConservative');
   if(help) help.textContent = tierName + ': ' + fillerVolumeLabel(area, state.fillerVolume) + '.';
 }
 document.querySelectorAll('#areaGrid .area-chip').forEach(chip => {
@@ -3110,7 +3166,7 @@ const AREA_TEXT = {
   cheeks:'the cheeks, adding only subtle midface support',
   tear_trough:'the tear troughs, only slightly softening the under-eye hollow',
   chin_jawline:'the chin and jawline together as one lower-face unit, adding a little chin projection and subtle mandibular definition',
-  nasolabial_folds:'the nasolabial folds, only slightly softening the fold while keeping a natural crease'
+  nasolabial_folds:'the upper nasolabial region, restoring deep structural support beside the nose so the fold reads softer without erasing the natural crease'
 };
 const GOAL_TEXT = {
   natural_refinement:'Keep the overall effect minimal and natural.',
@@ -3148,7 +3204,7 @@ const AREA_INSIGHT = {
   cheeks:'Restored midface support',
   tear_trough:'Softened under-eye hollow',
   chin_jawline:'Balanced lower third: chin projection with jawline definition',
-  nasolabial_folds:'Softer nasolabial fold'
+  nasolabial_folds:'Softer nasolabial fold from restored deep support'
 };
 const PRODUCT_INSIGHT = {
   sculptra:'Gradual, collagen-based firmness and contour',
@@ -3443,6 +3499,38 @@ async function finishSlot(angleId, auth, fillerIntensity){
   }
   sl.rawAiDataUrl = sl.resultDataUrl;
 
+  // M17 #1: a primary nose/lips filler is a full-image gpt-image edit, so the
+  // model re-renders and degrades the WHOLE frame (brows, forehead, hair, skin),
+  // not just the treated feature. Approach B (same as the add-on scenario path):
+  // keep the ORIGINAL skin over the entire face and take ONLY the feathered
+  // feature region(s) from the model output. Single-select today, but chained so
+  // a nose+lips selection would composite both. rawAiDataUrl stays the raw model
+  // image for ?debug=layers. Fails safe to the raw model image.
+  const rawModelImage = sl.resultDataUrl;
+  if(state.type === 'filler' && Array.isArray(state.areas) && state.areas.length &&
+     state.areas.every(a => a === 'nose' || a === 'lips')){
+    try {
+      const skinBaseUrl = sl.beforeDataUrl || sl.originalDataUrl;
+      if(skinBaseUrl){
+        const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+        let skinImg = await loadImage(skinBaseUrl);
+        const featImg = await loadImage(rawModelImage);
+        let composited = null;
+        for(const area of state.areas){
+          const out = await mod.compositeFeatureAddon(skinImg, featImg, area);
+          if(out){ composited = out; skinImg = await loadImage(out); }
+        }
+        if(composited){
+          sl.resultDataUrl = composited;
+          if(sl.faceBbox){ try { sl.cropResultCache = await cropToFace(sl.resultDataUrl, sl.faceBbox); } catch(e){} }
+          console.log('[Visualize] M17 primary feature composite applied (' + state.areas.join('+') + ')');
+        } else {
+          console.log('[Visualize] M17 primary feature composite skipped; using raw model image.');
+        }
+      }
+    } catch(e){ console.warn('[Visualize] M17 primary composite failed; using raw model image.', e); }
+  }
+
   // M13: biostim bypasses the compositor entirely. gpt-image-2 direct output
   // is the final result. A passthrough apply() is set so the intensity slider
   // path doesn't break (it simply returns the raw AI at any slider position).
@@ -3453,7 +3541,7 @@ async function finishSlot(angleId, auth, fillerIntensity){
     sl.status = 'done';
     if(cacheKey){
       if(!sl.fillerCache) sl.fillerCache = {};
-      sl.fillerCache[cacheKey] = { rawAiDataUrl: sl.resultDataUrl, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
+      sl.fillerCache[cacheKey] = { rawAiDataUrl: rawModelImage, apply: sl.apply, resultDataUrl: sl.resultDataUrl };
     }
     const modelLabel = sl.modelUsed || 'unknown (old backend - model not reported)';
     const labelColor = (sl.modelUsed === 'gpt-image-2') ? '#1b5e20' : '#b26a00';
@@ -4292,6 +4380,25 @@ function treatmentName(){
   return 'AI Visualization';
 }
 
+// M15.1: middle-panel label for scenario cards, fullscreen view, and exports.
+// "Baseline (expected)" was generic; the panel now names the treatment it shows.
+// Biostimulators and energy devices develop over months, so those labels carry
+// the standard 6-month timepoint. HA filler and neurotoxin read as settled
+// results, so no timepoint is shown.
+function baselinePanelLabel(){
+  if(state.type === 'biostim') return (state.product === 'hdr' ? 'After CaHA' : 'After PLLA') + ' · 6 months';
+  if(state.type === 'laser') return (state.laserType === 'hifu' ? 'After HIFU' : 'After RF') + ' · 6 months';
+  if(state.type === 'filler'){
+    // Name the primary area treated, e.g. "After Nose HA Filler", so the middle
+    // panel is not ambiguous when an add-on (chin/jaw, nose, etc.) follows.
+    const area  = (state.areas && state.areas[0]);
+    const label = area && FILLER_AREA_LABELS[area];
+    return label ? ('After ' + label + ' HA Filler') : 'After HA Filler';
+  }
+  if(state.type === 'tox') return 'After Neurotoxin';
+  return 'After treatment';
+}
+
 function simKicker(angleId){
   const multiDone = state.selectedAngles.filter(id => state.slots[id].status === 'done').length > 1;
   const sl = state.slots[angleId];
@@ -4305,8 +4412,8 @@ function simKicker(angleId){
   if(state.type === 'filler' && sl.apply){
     // M14.1: label from the selected volume tier (conservative/moderate/enhanced),
     // not the stale slider intensityPct which always read "Balanced".
-    const VOLUME_LABEL = { conservative:'Conservative correction', moderate:'Balanced correction', enhanced:'Enhanced correction' };
-    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Balanced correction');
+    const VOLUME_LABEL = { conservative:'Natural', moderate:'Natural', enhanced:'Enhanced' };
+    parts.push(VOLUME_LABEL[state.fillerVolume] || 'Natural');
   }
   return parts.join(' · ');
 }
@@ -4361,7 +4468,7 @@ async function drawPair(ctx, angleId, yOff, panelW, panelH, gap, includeText){
 
     ctx.font = '400 58px "Cormorant Garamond", serif';
     ctx.fillStyle = 'rgba(250,247,242,.97)';
-    ctx.fillText(sim ? 'Simulated' : 'Original', x + 38, yB - 34);
+    ctx.fillText(sim ? baselinePanelLabel() : 'Original', x + 38, yB - 34);
   }
   label(0, false);
   label(panelW + gap, true);
@@ -4573,8 +4680,9 @@ async function drawExport(includeText, angleIds){
     cover(after, x, yBot, panelW, panelH);
     ctx.restore();
 
-    // Labels -- compact, bottom-left of each panel. Treatment name lives in
-    // the header, so panels only need Original / Simulated.
+    // Labels -- compact, bottom-left of each panel. The treated row is labelled
+    // with the treatment name and timepoint (e.g. "After HIFU · 6 months") so the
+    // export is unambiguous on its own, matching the scenario triptych.
     if(includeText){
       ctx.save();
       // Gradient fade for readability
@@ -4589,9 +4697,9 @@ async function drawExport(includeText, angleIds){
       ctx.font = '400 34px "Cormorant Garamond", serif';
       ctx.fillStyle = 'rgba(250,247,242,0.92)'; ctx.textAlign = 'left';
       ctx.fillText('Original',  x + 22, yTop + panelH - 22);
-      // "Simulated"
+      // Treatment-specific simulated label
       ctx.fillStyle = 'rgba(201,169,110,0.95)';
-      ctx.fillText('Simulated', x + 22, yBot + panelH - 22);
+      ctx.fillText(baselinePanelLabel(), x + 22, yBot + panelH - 22);
       ctx.restore();
     }
   }
@@ -4805,6 +4913,15 @@ function scenarioBucket() {
   return scenarioState[angle];
 }
 
+// M15.3 / M16: discrete feature-reshaping scenarios (lips, nose) were gated as
+// "coming soon" because the old prompt stack could not redraw a sharp-edged
+// feature without global texture regression. The M16 filler rewrite (single-image
+// lock + softened comparison wording) is the intended fix, so they are ungated
+// here for staging evaluation. If a stacked lips/nose add-on regresses texture or
+// violates the baseline <= add-on quality promise on staging, re-add its key
+// below to re-gate. Regional soft-tissue scenarios were always live.
+const COMING_SOON_SCENARIOS = new Set([]);
+
 const SCENARIO_LABELS = {
   stronger_sculptra:  'Stronger biostimulation response',
   add_chin_jaw_filler: 'Add chin + jawline filler',
@@ -4813,6 +4930,7 @@ const SCENARIO_LABELS = {
   add_cheek_filler:   'Add cheek filler',
   add_temple_support: 'Add temple support',
   add_tear_trough:    'Add under-eye (tear trough) support',
+  add_nasolabial_filler: 'Add nasolabial fold support',
   add_nose_filler:    'Add nose filler',
   add_lips_filler:    'Add lip filler',
   add_biostim_lift:   'Add biostimulation',
@@ -4820,7 +4938,7 @@ const SCENARIO_LABELS = {
   add_hifu:           'Add HIFU lifting',
   add_masseter:       'Add masseter slimming (neurotoxin)',
   add_nefertiti:      'Add Nefertiti lift (neurotoxin)',
-  stronger_laser:     'Stronger response',
+  stronger_laser:     'Optimistic estimate',
   combination_plan:   'Full combination plan'
 };
 
@@ -4829,10 +4947,14 @@ const SCENARIO_LABELS = {
 // filler areas plus a biostimulation add-on (volume restoration).
 // HDR and tox: filler volume add-ons + biostimulation (common combination plans).
 const SCENARIOS_BY_TYPE = {
-  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler'],
-  hdr:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift'],
-  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
-  laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nose_filler','add_lips_filler','add_biostim_lift'],
+  biostim: ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
+  // M15.2: HDR (CaHA) is a biostimulator and offers the SAME scenario set as
+  // Sculptra. The old cross-type-flavored HDR list wrongly offered
+  // add_cheek_filler and add_biostim_lift, both of which the server rejects on
+  // a biostim baseline (and biostim-on-biostim is clinically nonsensical).
+  hdr:     ['stronger_sculptra','add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler'],
+  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
+  laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_tear_trough','add_nasolabial_filler','add_nose_filler','add_lips_filler','add_biostim_lift'],
   tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler','add_cheek_filler','add_temple_support','add_biostim_lift']
 };
 // Maps a filler AREA to the add-on scenario key(s) that treat the same area, so
@@ -4844,12 +4966,13 @@ const AREA_TO_SCENARIO_KEYS = {
   cheeks:       ['add_cheek_filler'],
   temple:       ['add_temple_support'],
   tear_trough:  ['add_tear_trough'],
+  nasolabial_folds: ['add_nasolabial_filler'],
   nose:         ['add_nose_filler'],
   lips:         ['add_lips_filler']
 };
 
 function scenariosForBaseline(){
-  // HDR uses its own scenario set (different from Sculptra biostim).
+  // M15.2: Sculptra and HDR share the same biostimulator scenario set.
   let list;
   if(state.type === 'biostim'){
     list = SCENARIOS_BY_TYPE[state.product === 'hdr' ? 'hdr' : 'biostim'] || [];
@@ -4879,7 +5002,8 @@ function scenarioExportLabel(scenarioKey, baseLabel){
   const lbl = baseLabel || SCENARIO_LABELS[scenarioKey] || scenarioKey;
   // M14: prefix reflects the baseline treatment the scenario builds on.
   const prefix = treatmentName();
-  if(scenarioKey === 'stronger_sculptra' || scenarioKey === 'stronger_laser') return prefix + ' + stronger response';
+  if(scenarioKey === 'stronger_sculptra') return prefix + ' + stronger response';
+  if(scenarioKey === 'stronger_laser')    return prefix + ' + optimistic estimate';
   return prefix + ' + ' + lbl.replace(/^Add\s+/i, '');
 }
 
@@ -4891,6 +5015,7 @@ const SCENARIO_DESCRIPTIONS = {
   add_cheek_filler:    'Add-on scenario. Not a guaranteed outcome.',
   add_temple_support:  'Add-on scenario. Upper-range outcome, not guaranteed.',
   add_tear_trough:     'Add-on scenario. Not a guaranteed outcome.',
+  add_nasolabial_filler: 'Add-on scenario. Not a guaranteed outcome.',
   add_nose_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_lips_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_biostim_lift:    'Add-on scenario. Upper-range outcome, not guaranteed.',
@@ -4898,7 +5023,7 @@ const SCENARIO_DESCRIPTIONS = {
   add_hifu:            'Add-on scenario: HIFU lifting (no added volume). Not guaranteed.',
   add_masseter:        'Add-on scenario: neurotoxin masseter slimming. Not guaranteed.',
   add_nefertiti:       'Add-on scenario: neurotoxin Nefertiti lift. Not guaranteed.',
-  stronger_laser:      'Upper-range responder over a full course. Energy devices cannot restore volume. Not guaranteed.',
+  stronger_laser:      'Favorable end of a response range. Energy devices cannot restore volume. Not guaranteed.',
   combination_plan:    'Full multi-modality combination scenario. Possible upper-range outcome.'
 };
 
@@ -4907,10 +5032,25 @@ function showScenariosPanel(){
   if(panel) panel.classList.remove('hidden');
 
   // M14: show only the scenario buttons relevant to the current baseline type.
+  // M15.3: coming-soon scenarios stay visible but greyed with a Coming soon tag.
   const allowed = scenariosForBaseline();
   Object.keys(SCENARIO_LABELS).forEach(key => {
     const btn = document.getElementById('scenBtn_' + key);
-    if(btn) btn.style.display = allowed.includes(key) ? '' : 'none';
+    if(!btn) return;
+    btn.style.display = allowed.includes(key) ? '' : 'none';
+    const soon = COMING_SOON_SCENARIOS.has(key);
+    btn.classList.toggle('coming-soon', soon);
+    if(soon){
+      const credit = btn.querySelector('.credit-tag');
+      if(credit && !btn.querySelector('.soon-tag')){
+        const tag = document.createElement('em');
+        tag.className = 'soon-tag';
+        tag.setAttribute('data-en','Coming soon');
+        tag.setAttribute('data-zh','即將推出');
+        tag.textContent = (typeof currentLang!=='undefined' && currentLang==='zh') ? '即將推出' : 'Coming soon';
+        credit.replaceWith(tag);
+      }
+    }
   });
 
   // Clear all existing scenario cards before re-rendering the active angle's
@@ -4951,6 +5091,7 @@ function syncScenarioBtns(){
   Object.keys(SCENARIO_LABELS).forEach(key => {
     const btn = document.getElementById('scenBtn_' + key);
     if(!btn) return;
+    if(COMING_SOON_SCENARIOS.has(key)){ btn.disabled = true; return; } // M15.3
     const s = bucket[key];
     const isGenerating = s && s.status === 'generating';
     btn.disabled = isGenerating;
@@ -4958,7 +5099,34 @@ function syncScenarioBtns(){
   });
 }
 
+// M17 staging A/B: tone-normalize an add-on scenario result to the ORIGINAL
+// photo's skin, so a global exposure/white-balance drift from gpt-image-2 does
+// not make the result read darker or warmer than the source. Read the mode from
+// the URL: ?tonematch=off (default) | exposure (luminance only) | wb (per-channel,
+// also corrects the warm cast). Scoped to add-on scenarios for this pass; the
+// primary finishSlot path is untouched. applyToneMatch is a no-op when off or
+// when inputs are missing, and fails safe to the uncorrected result.
+function _toneMatchMode(){
+  try {
+    const m = new URLSearchParams(location.search).get('tonematch');
+    return (m === 'exposure' || m === 'wb') ? m : 'off';
+  } catch(e){ return 'off'; }
+}
+async function applyToneMatch(resultDataUrl, refDataUrl){
+  const mode = _toneMatchMode();
+  if(mode === 'off' || !resultDataUrl || !refDataUrl) return resultDataUrl;
+  try {
+    const [genImg, refImg] = await Promise.all([loadImage(resultDataUrl), loadImage(refDataUrl)]);
+    const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+    const matched = await mod.matchToneToReference(genImg, refImg, mode);
+    if(matched){ console.log('[Visualize] tone-match applied (' + mode + ')'); return matched; }
+    console.log('[Visualize] tone-match skipped (negligible or no reliable skin sample)');
+  } catch(e){ console.warn('[Visualize] tone-match error:', e); }
+  return resultDataUrl;
+}
+
 async function runScenario(scenarioKey){
+  if(COMING_SOON_SCENARIOS.has(scenarioKey)) return; // M15.3: gated, not yet available
   const sl = activeSlot();
   if(!sl || sl.status !== 'done' || !sl.resultDataUrl){
     setStatus(t('scenariosFirst'), 'warn');
@@ -4984,9 +5152,8 @@ async function runScenario(scenarioKey){
   try {
     const auth = await authHeaders();
 
-    // M12.6: send the original photo as the primary image (edit target).
-    // The baseline is sent as originalImage so the server can pass it to the planner.
-    // The image model generates directly from the original -- one clean pass.
+    // M15: the baseline is the edit target (add-ons stack on the treated face).
+    // The original photo is sent as originalImage for the emphasis planner.
     const originalDataUrl = sl.beforeDataUrl || sl.originalDataUrl;
     const baselineDataUrl = (state.type === 'biostim' && sl.apply) ? sl.apply(1.0) : sl.resultDataUrl;
 
@@ -4999,19 +5166,13 @@ async function runScenario(scenarioKey){
     bucket[scenarioKey].jobId = jobId;
 
     const form = new FormData();
-    // M14: Sculptra baselines edit the ORIGINAL photo (planner re-describes the
-    // plan). Cross-type baselines (filler / laser / tox / HDR) edit the BASELINE
-    // image itself, so the add-on stacks on top of the already-treated face.
-    const isCrossType = state.type === 'filler' || state.type === 'laser' ||
-                        state.type === 'tox' ||
-                        (state.type === 'biostim' && state.product === 'hdr');
-    if(isCrossType){
-      form.append('image',         baselineBlob, 'baseline-' + angleId + '.jpg'); // edit target = baseline
-      form.append('originalImage', baselineBlob, 'baseline-' + angleId + '.jpg'); // planner unused for cross-type
-    } else {
-      form.append('image',         originalBlob,  'original-' + angleId + '.jpg'); // edit target = original
-      form.append('originalImage', baselineBlob,  'baseline-' + angleId + '.jpg'); // planner context
-    }
+    // M15: ALL scenarios edit the BASELINE image, for every treatment type.
+    // Add-ons must stack on top of the result already shown -- a scenario may
+    // never display less correction than the baseline it builds on. The
+    // original photo rides along as originalImage for the stronger_sculptra
+    // emphasis planner (comparison reference only, never the edit target).
+    form.append('image',         baselineBlob, 'baseline-' + angleId + '.jpg'); // edit target = baseline, always
+    form.append('originalImage', originalBlob, 'original-' + angleId + '.jpg'); // planner reference only
     form.append('jobId',         jobId);
     form.append('type',          'biostim');
     form.append('product',       'sculptra');
@@ -5041,15 +5202,62 @@ async function runScenario(scenarioKey){
       throw new Error((e && e.error) || ('Could not start scenario generation (HTTP ' + startRes.status + ').'));
     }
 
-    // M12.6 / M12.7: poll for result and display directly.
+    // M15: poll for result and display directly.
     // No compositor, no mask, no warp, no texture restore.
-    // The original photo + planner prompt + gpt-image-1 is one clean generation.
-    // Trust the model. If it drifts on a specific photo, fix the prompt -- not the compositor.
+    // The baseline image + incremental add-on prompt + gpt-image-2 is one clean
+    // stacking edit. Trust the model. If it drifts, fix the prompt -- not the compositor.
     const polledScenario = await pollForResult(jobId, auth);
     const rawResultUrl = polledScenario.image;
     if(polledScenario.model) console.log('[Visualize] scenario ' + scenarioKey + ': model=' + polledScenario.model);
 
-    bucket[scenarioKey] = { status: 'done', jobId, resultUrl: rawResultUrl, rawResultUrl, error: null };
+    // M16: discrete feature add-ons (lips/nose) are a SECOND full-image gpt-image
+    // edit; a drastic feature change makes the model re-render and degrade skin
+    // texture globally (a subtle edit like tear trough does not). Approach B:
+    // keep the baseline's real skin over the whole face and take ONLY the
+    // feathered feature region from the add-on. Fails safe to the raw add-on.
+    let displayResultUrl = rawResultUrl;
+    if(scenarioKey === 'add_lips_filler' || scenarioKey === 'add_nose_filler'){
+      try {
+        const feature = (scenarioKey === 'add_nose_filler') ? 'nose' : 'lips';
+        const skinBaseUrl = (state.type === 'biostim' && sl && sl.apply)
+          ? sl.apply((state.intensityPct || 48) / 100)
+          : (sl && sl.resultDataUrl);
+        if(skinBaseUrl){
+          const [baseImg, addonImg] = await Promise.all([loadImage(skinBaseUrl), loadImage(rawResultUrl)]);
+          const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+          const composited = await mod.compositeFeatureAddon(baseImg, addonImg, feature);
+          if(composited) displayResultUrl = composited;
+        }
+      } catch(e){ console.warn('[Visualize] feature-composite skipped:', e); }
+    }
+    else if(scenarioKey === 'add_chin_jaw_filler' || scenarioKey === 'add_chin_filler' || scenarioKey === 'add_jawline_filler'){
+      // M17 #3: chin/jaw region composite. Keep the baseline's real skin and
+      // background over the whole frame and take only the jaw/chin/submental
+      // contour region from the re-render, so this path stops repainting skin
+      // and background. Fails safe to the raw add-on.
+      try {
+        const skinBaseUrl = (state.type === 'biostim' && sl && sl.apply)
+          ? sl.apply((state.intensityPct || 48) / 100)
+          : (sl && sl.resultDataUrl);
+        if(skinBaseUrl){
+          const [baseImg, addonImg] = await Promise.all([loadImage(skinBaseUrl), loadImage(rawResultUrl)]);
+          const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+          const composited = await mod.compositeChinJawAddon(baseImg, addonImg);
+          if(composited){ displayResultUrl = composited; console.log('[Visualize] M17 chin/jaw region composite applied (' + scenarioKey + ')'); }
+        }
+      } catch(e){ console.warn('[Visualize] chin/jaw composite skipped:', e); }
+    }
+
+    // M17 (staging A/B): optional tone normalization to the ORIGINAL photo, not
+    // the smoothed baseline. Off unless ?tonematch=exposure|wb. Applies to the
+    // final displayed url so it covers both the chin/jaw raw re-render and the
+    // lips/nose composites. Fails safe.
+    try {
+      const toneRef = (sl && sl.originalDataUrl) || (sl && sl.beforeDataUrl) || null;
+      if(toneRef) displayResultUrl = await applyToneMatch(displayResultUrl, toneRef);
+    } catch(e){ console.warn('[Visualize] scenario tone-match skipped:', e); }
+
+    bucket[scenarioKey] = { status: 'done', jobId, resultUrl: displayResultUrl, rawResultUrl, error: null };
     if(accessMode === 'account') refreshCredits(0);
 
   } catch(err){
@@ -5104,13 +5312,19 @@ function renderScenarioResult(scenarioKey){
     // This lets the patient see the full journey: where they started, what Sculptra
     // achieves, and what the add-on scenario adds on top.
     const originalUrl = sl ? (sl.beforeDataUrl || sl.originalDataUrl || '') : '';
+    // M16: the baseline PANEL now renders at the user/default response intensity,
+    // matching the main preview. It was hardcoded to sl.apply(1.0) (full compositor
+    // strength), so the triptych always showed a maxed-out baseline regardless of
+    // the intensity setting -- the "baseline too strong" regression. (The add-on
+    // EDIT TARGET is still submitted at apply(1.0) elsewhere so add-ons never stack
+    // on less than the full baseline; only the displayed panel changes here.)
     const baselineDisplayUrl = (state.type === 'biostim' && sl && sl.apply)
-      ? sl.apply(1.0)
+      ? sl.apply((state.intensityPct || 48) / 100)
       : (sl ? (sl.resultDataUrl || '') : '');
     bodyHtml =
       '<div class="scenario-img-triple">' +
         '<div class="scenario-img-cell"><img src="' + originalUrl + '" alt="Original" /><div class="scenario-cell-tag">Original</div></div>' +
-        '<div class="scenario-img-cell"><img src="' + baselineDisplayUrl + '" alt="Sculptra baseline" /><div class="scenario-cell-tag">Baseline (expected)</div></div>' +
+        '<div class="scenario-img-cell"><img src="' + baselineDisplayUrl + '" alt="Baseline result" /><div class="scenario-cell-tag">' + baselinePanelLabel() + '</div></div>' +
         '<div class="scenario-img-cell"><img src="' + s.resultUrl + '" alt="' + escapeHtml(label) + ' scenario" /><div class="scenario-cell-tag sim">' + escapeHtml(label) + '</div></div>' +
       '</div>';
     // Stash the three panel URLs on the card so fullscreen/download can use them.
@@ -5284,7 +5498,7 @@ function openScenarioFullscreen(scenarioKey){
   title.textContent = panels.label || 'Scenario';
   grid.innerHTML =
     '<div class="scenario-fs-cell"><img src="' + panels.originalUrl + '" alt="Original" /><div class="scenario-cell-tag">Original</div></div>' +
-    '<div class="scenario-fs-cell"><img src="' + panels.baselineDisplayUrl + '" alt="Baseline" /><div class="scenario-cell-tag">Baseline (expected)</div></div>' +
+    '<div class="scenario-fs-cell"><img src="' + panels.baselineDisplayUrl + '" alt="Baseline" /><div class="scenario-cell-tag">' + baselinePanelLabel() + '</div></div>' +
     '<div class="scenario-fs-cell"><img src="' + panels.scenarioUrl + '" alt="' + escapeHtml(panels.label) + '" /><div class="scenario-cell-tag sim">' + escapeHtml(panels.label) + '</div></div>';
 
   // Download button inside the overlay targets the same scenario
@@ -5298,7 +5512,7 @@ function openScenarioFullscreen(scenarioKey){
 
 function closeScenarioFullscreen(){
   const overlay = document.getElementById('scenarioFsOverlay');
-  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotated'); }
+  if(overlay) overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
 
@@ -5405,7 +5619,7 @@ async function downloadScenarioGrid(scenarioKey){
 
     const cells = [
       { img: origImg, tag: 'ORIGINAL', sim: false },
-      { img: baseImg, tag: 'BASELINE (EXPECTED)', sim: false },
+      { img: baseImg, tag: baselinePanelLabel().toUpperCase(), sim: false },
       { img: scenImg, tag: scenarioExportLabel(scenarioKey, panels.label).toUpperCase(), sim: true }
     ];
 
@@ -5523,76 +5737,9 @@ function openPreviewFullscreen(){
   document.body.style.overflow = 'hidden';
   if(prvFsZoom) prvFsZoom.reset();
 }
-
-// M9 mobile: panels are side-by-side and fit-to-width by default on a portrait
-// phone (CSS handles that). "View larger" is an OPTIONAL toggle that rotates the
-// grid into landscape for a bigger look; tapping it again returns to fit-to-width.
-// The rotated state is a class on the overlay; the transform sizing is applied in
-// JS so it is reliable across engines. Cleared automatically if the phone is
-// physically turned to landscape (no longer needed there).
-function isPortraitPhone(){
-  return window.matchMedia('(max-width:700px) and (orientation:portrait)').matches;
-}
-function applyRotatedSizing(overlay){
-  const grid = overlay.querySelector('.scenario-fs-grid');
-  if(!grid) return;
-  if(overlay.classList.contains('fs-rotated') && isPortraitPhone()){
-    grid.style.position = 'fixed';
-    grid.style.top = '50%'; grid.style.left = '50%';
-    grid.style.width = window.innerHeight + 'px';
-    grid.style.height = window.innerWidth + 'px';
-    grid.style.transform = 'translate(-50%,-50%) rotate(90deg)';
-    grid.style.transformOrigin = 'center center';
-  } else {
-    grid.style.position = ''; grid.style.top = ''; grid.style.left = '';
-    grid.style.width = ''; grid.style.height = '';
-    grid.style.transform = ''; grid.style.transformOrigin = '';
-  }
-}
-function toggleFsViewLarger(overlayId){
-  const overlay = document.getElementById(overlayId);
-  if(!overlay) return;
-  overlay.classList.toggle('fs-rotated');
-  applyRotatedSizing(overlay);
-  // update the button label so it reads as a toggle
-  const btn = overlay.querySelector('.fs-viewlarger-btn span');
-  if(btn){
-    const rotated = overlay.classList.contains('fs-rotated');
-    btn.setAttribute('data-en', rotated ? 'Exit larger view' : 'View larger');
-    btn.setAttribute('data-zh', rotated ? '結束放大' : '放大檢視');
-    btn.textContent = (typeof currentLang!=='undefined' && currentLang==='zh')
-      ? (rotated ? '結束放大' : '放大檢視')
-      : (rotated ? 'Exit larger view' : 'View larger');
-  }
-}
-// If the phone is physically turned to landscape while in the rotated view, drop
-// the rotation (it is redundant there) and re-fit.
-window.addEventListener('orientationchange', function(){
-  setTimeout(function(){
-    ['scenarioFsOverlay','previewFsOverlay'].forEach(function(id){
-      const ov = document.getElementById(id);
-      if(ov && ov.classList.contains('open')){
-        if(!isPortraitPhone()) ov.classList.remove('fs-rotated');
-        applyRotatedSizing(ov);
-      }
-    });
-  }, 120);
-});
-window.addEventListener('resize', function(){
-  ['scenarioFsOverlay','previewFsOverlay'].forEach(function(id){
-    const ov = document.getElementById(id);
-    if(ov && ov.classList.contains('open')) applyRotatedSizing(ov);
-  });
-});
-(function wireViewLargerBtns(){
-  const s = document.getElementById('scenarioFsViewLarger');
-  if(s) s.addEventListener('click', function(){ toggleFsViewLarger('scenarioFsOverlay'); });
-  const p = document.getElementById('previewFsViewLarger');
-  if(p) p.addEventListener('click', function(){ toggleFsViewLarger('previewFsOverlay'); });
-})();
 function closePreviewFullscreen(){
   const overlay = document.getElementById('previewFsOverlay');
-  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotated'); }
+  if(overlay) overlay.classList.remove('open');
   document.body.style.overflow = '';
 }
 (function wirePreviewFsOverlay(){
