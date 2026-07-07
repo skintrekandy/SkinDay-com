@@ -280,10 +280,18 @@
     .slot-status { font-size:.7rem; line-height:1.4; color:var(--muted); min-height:2.1em; }
     .slot-status.ok { color:#3D7A55; }
     .slot-status.bad { color:var(--rose); }
-    .photo-grade { font-size:.67rem; margin-top:3px; letter-spacing:.01em; }
-    .grade-ex  { color:#3D7A55; }
-    .grade-ok  { color:var(--gold); }
-    .grade-lim { color:var(--rose); }
+    /* M19 Simulation Confidence (replaces the 1-3 star grade) */
+    .photo-conf { margin-top:5px; display:flex; flex-direction:column; gap:4px; }
+    .conf-chip { font-size:.68rem; font-weight:600; letter-spacing:.02em; }
+    .conf-high .conf-chip { color:#3D7A55; }
+    .conf-mod  .conf-chip { color:var(--gold); }
+    .conf-low  .conf-chip { color:var(--rose); }
+    .conf-dims { display:flex; flex-wrap:wrap; gap:4px 8px; }
+    .conf-dims .cd { font-size:.62rem; letter-spacing:.01em; white-space:nowrap; }
+    .conf-dims .cd.ok  { color:var(--muted); }
+    .conf-dims .cd.bad { color:var(--rose); font-weight:600; }
+    .conf-advice { font-size:.66rem; color:var(--deep); line-height:1.45; }
+    .occlusion-note { font-size:.66rem; color:var(--muted); line-height:1.5; margin-top:8px; }
     .guide-link { border:none; background:transparent; color:var(--rose); font-size:.78rem; cursor:pointer; text-decoration:underline; padding:0; margin-top:10px; font-family:'DM Sans',sans-serif; }
     .angle-tabs { display:flex; gap:8px; justify-content:center; margin:0 0 14px; flex-wrap:wrap; }
     .guide-modal { position:fixed; inset:0; z-index:300; background:rgba(28,23,20,.55); display:flex; align-items:center; justify-content:center; padding:20px; }
@@ -858,6 +866,7 @@
       <div class="photo-guide" id="photoGuide" data-en="<strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong>" data-zh="<strong>僅限臉部照片。</strong>Visualize 用於臉部療程預覽，請上傳清楚的臉部近照，不要使用全身照或距離太遠的照片。<strong>照片品質是影響生成效果最重要的因素。</strong>光線不足、背景雜亂或裁切太緊，都容易造成瑕疵或效果不明顯，即使 AI 再進步也一樣。<strong>上傳前請先閱讀拍攝指南。</strong>"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
       <button class="guide-link" id="guideBtn" type="button" data-en="📷 Photo guide &amp; quality checklist (important - read before uploading)" data-zh="📷 拍攝指南與照片品質檢查表（重要，請先閱讀）">📷 Photo guide &amp; quality checklist (important - read before uploading)</button>
       <div class="slot-grid" id="uploadSlots"></div>
+      <div class="occlusion-note" data-en="Before uploading, make sure hair, hands, glasses, and masks are off the face. These are not detected automatically." data-zh="上傳前，請確認頭髮、手、眼鏡或口罩沒有遮住臉部。系統不會自動偵測這些遮擋。">Before uploading, make sure hair, hands, glasses, and masks are off the face. These are not detected automatically.</div>
       <label class="bg-toggle"><input type="checkbox" id="blackBgChk" checked /><span data-en="Replace background with black on the generated image." data-zh="在生成圖片中替換為黑色背景。">Replace background with black on the generated image.</span></label>
       <div class="privacy-note"><span>🔒</span><span data-en="The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading." data-zh="在您按下「生成」前，照片會保留在此瀏覽器中。按下生成後，照片只會為了本次請求傳送給 AI 影像服務供應商（OpenAI），不會用於模型訓練。上傳前，您必須已取得顧客同意。">The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading.</span></div>
 
@@ -1409,6 +1418,20 @@ var I18N = {
     genAnglesCount: function(n){ return n + (n > 1 ? ' angles' : ' angle'); },
     genElapsedLabel: 'Elapsed', genTypicalLabel: 'Typical',
     genTypical: function(n){ return n > 1 ? ('~' + n + '-' + (n + 2) + ' min') : '~1-2 min'; },
+    qcConfLabel: 'Simulation confidence',
+    qcConfLevel: function(l){ return l === 'high' ? 'High' : l === 'moderate' ? 'Moderate' : 'Low'; },
+    qcDim: function(k){ return ({ sharp:'Sharpness', light:'Lighting', face:'Face size', res:'Resolution' })[k] || k; },
+    qcAdvice: function(w){
+      if(!w) return '';
+      if(w.key === 'sharp') return 'Photo is soft. Refocus and hold the phone steady in good light.';
+      if(w.key === 'light') return w.note === 'bright'
+        ? 'Photo is overexposed. Reduce direct light or step away from the window.'
+        : 'Photo is dark. Add light or face a window.';
+      if(w.key === 'face') return 'Face is small in the frame. Move closer so the face fills most of it.';
+      if(w.key === 'res') return 'Image resolution is low. Upload the original photo, not a screenshot or thumbnail.';
+      return '';
+    },
+    qcLowConfirm: function(names){ return 'The photo for ' + names + ' is low quality and likely to produce an unreliable simulation.\n\nPress OK to generate anyway, or Cancel to retake.'; },
     // M18: staged, clinical headlines. They describe the rendering process only
     // (never the treatment or the patient) and advance on a client-side timer,
     // reframing the wait as a procedure rather than a spinner. Honest by design:
@@ -1475,6 +1498,20 @@ var I18N = {
     genAnglesCount: function(n){ return n + ' \u500b\u89d2\u5ea6'; },
     genElapsedLabel: '\u5df2\u7528\u6642\u9593', genTypicalLabel: '\u4e00\u822c\u9700\u6642',
     genTypical: function(n){ return n > 1 ? ('\u7d04 ' + n + '-' + (n + 2) + ' \u5206\u9418') : '\u7d04 1-2 \u5206\u9418'; },
+    qcConfLabel: '\u6a21\u64ec\u4fe1\u5fc3\u5ea6',
+    qcConfLevel: function(l){ return l === 'high' ? '\u9ad8' : l === 'moderate' ? '\u4e2d' : '\u4f4e'; },
+    qcDim: function(k){ return ({ sharp:'\u6e05\u6670\u5ea6', light:'\u5149\u7dda', face:'\u81c9\u90e8\u5927\u5c0f', res:'\u89e3\u6790\u5ea6' })[k] || k; },
+    qcAdvice: function(w){
+      if(!w) return '';
+      if(w.key === 'sharp') return '\u7167\u7247\u504f\u6a21\u7cca\u3002\u8acb\u91cd\u65b0\u5c0d\u7126\uff0c\u4e26\u5728\u5145\u8db3\u5149\u7dda\u4e0b\u7a69\u5b9a\u62cd\u651d\u3002';
+      if(w.key === 'light') return w.note === 'bright'
+        ? '\u7167\u7247\u66dd\u5149\u904e\u5ea6\u3002\u8acb\u6e1b\u5c11\u76f4\u5c04\u5149\u6216\u9060\u96e2\u7a97\u6236\u3002'
+        : '\u7167\u7247\u504f\u6697\u3002\u8acb\u589e\u52a0\u5149\u7dda\u6216\u9762\u5411\u7a97\u6236\u3002';
+      if(w.key === 'face') return '\u81c9\u90e8\u5728\u756b\u9762\u4e2d\u592a\u5c0f\u3002\u8acb\u9760\u8fd1\u4e00\u9ede\uff0c\u8b93\u81c9\u90e8\u4f54\u6eff\u5927\u90e8\u5206\u756b\u9762\u3002';
+      if(w.key === 'res') return '\u5f71\u50cf\u89e3\u6790\u5ea6\u904e\u4f4e\u3002\u8acb\u4e0a\u50b3\u539f\u59cb\u7167\u7247\uff0c\u800c\u975e\u622a\u5716\u6216\u7e2e\u5716\u3002';
+      return '';
+    },
+    qcLowConfirm: function(names){ return names + ' \u7684\u7167\u7247\u54c1\u8cea\u8f03\u4f4e\uff0c\u53ef\u80fd\u7522\u751f\u4e0d\u53ef\u9760\u7684\u6a21\u64ec\u7d50\u679c\u3002\n\n\u6309\u300c\u78ba\u5b9a\u300d\u4ecd\u8981\u751f\u6210\uff0c\u6216\u6309\u300c\u53d6\u6d88\u300d\u91cd\u65b0\u62cd\u651d\u3002'; },
     genStages: [
       '\u6b63\u5728\u6e96\u5099\u8ac7\u8a62',
       '\u6b63\u5728\u5206\u6790\u81c9\u90e8\u7d50\u69cb',
@@ -1570,7 +1607,7 @@ function makeSlot(){
            status:'empty', qcMsg:'',
            faceBbox:null, cropCache:null,
            cropBeforeCache:null, cropResultCache:null, cropStrongCache:null, // M14: face/neck crop caches
-           photoGrade:null, // M14: photo quality grade { stars:1-3, grade, note }
+           photoGrade:null, // M19: photo confidence { level:'high'|'moderate'|'low', dims:[...], worst }
            // Strong Response second pass (biostim only)
            strongDataUrl:null, strongJobId:null, strongStatus:'idle',
            viewMode:'standard' }; // 'standard' | 'strong'
@@ -2445,7 +2482,7 @@ window.addEventListener('message', (ev) => {
                 }
                 sl.status = 'ready';
                 sl.qcMsg = gate.ok ? ('✓ ' + gate.msg) : ('Note: ' + gate.msg);
-                sl.photoGrade = gradePhoto(a);
+                sl.photoGrade = gradePhoto(a, img);
               } catch(qcErr){
                 sl.status = 'ready'; sl.qcMsg = 'Photo restored. Ready to generate.';
               }
@@ -2660,35 +2697,50 @@ function poseMatches(angleId, a){
   return { ok:true, msg:(want === 'right' ? 'Right' : 'Left') + ' 45° confirmed (yaw ~' + Math.round(a.yawDeg) + '°).' };
 }
 
-// Photo quality grade: uses analyzePhoto metrics to produce a 1-3 star score
-// that guides the clinician without blocking generation. Shown under the slot
-// thumbnail after upload.
-function gradePhoto(a){
+// M19 photo confidence: turns the analyzePhoto metrics into a Simulation
+// Confidence level (high/moderate/low) plus a per-dimension breakdown, so the
+// clinician sees WHY a photo is weak, not just a number. Only dimensions we can
+// measure honestly are scored: sharpness (Laplacian variance), lighting
+// (exposure), face size (faceFrac), and capture resolution (raw pixels). Pose is
+// handled separately by poseMatches. Occlusion and lighting DIRECTION are not
+// reliably detectable client-side, so they are never scored here (a wrong red
+// check erodes the trust this gate exists to build); occlusion is surfaced as a
+// static advisory reminder instead. img carries the true capture resolution.
+function gradePhoto(a, img){
   if(!a || (a.faceFrac == null && a.meanLuma == null && a.sharpness == null)) return null;
-  let score = 100;
-  const issues = [];
-  // Sharpness -- highest impact on generation quality
+  const dims = [];
+  let hard = 0, soft = 0;
+  function add(key, ok, sev, note){ dims.push({ key, ok, sev: sev || null, note: note || null }); if(!ok){ if(sev === 'hard') hard++; else soft++; } }
+
   if(a.sharpness != null){
-    if(a.sharpness < 16)       { score -= 42; issues.push('blurry'); }
-    else if(a.sharpness < 35)  { score -= 18; issues.push('slightly soft'); }
+    if(a.sharpness < 16)      add('sharp', false, 'hard');
+    else if(a.sharpness < 35) add('sharp', false, 'soft');
+    else                      add('sharp', true);
   }
-  // Exposure
   if(a.meanLuma != null){
-    if(a.meanLuma < 50)        { score -= 35; issues.push('very dark'); }
-    else if(a.meanLuma < 70)   { score -= 15; issues.push('somewhat dark'); }
-    else if(a.meanLuma > 205)  { score -= 30; issues.push('overexposed'); }
-    else if(a.meanLuma > 185)  { score -= 12; issues.push('quite bright'); }
+    if(a.meanLuma < 50)        add('light', false, 'hard', 'dark');
+    else if(a.meanLuma > 205)  add('light', false, 'hard', 'bright');
+    else if(a.meanLuma < 70)   add('light', false, 'soft', 'dark');
+    else if(a.meanLuma > 185)  add('light', false, 'soft', 'bright');
+    else                       add('light', true);
   }
-  // Face size in frame
   if(a.faceFrac != null){
-    if(a.faceFrac < 0.08)      { score -= 35; issues.push('face too small'); }
-    else if(a.faceFrac < 0.14) { score -= 15; issues.push('face small in frame'); }
-    else if(a.faceFrac > 0.80) { score -= 12; issues.push('frame very tight'); }
+    if(a.faceFrac < 0.08)      add('face', false, 'hard');
+    else if(a.faceFrac < 0.14) add('face', false, 'soft');
+    else                       add('face', true);
   }
-  const note = issues.length > 0 ? issues[0] : null;
-  if(score >= 80) return { stars:3, grade:'Excellent', note:null };
-  if(score >= 50) return { stars:2, grade:'OK',        note };
-  return           { stars:1, grade:'Limited',  note };
+  const longEdge = (img && img.naturalWidth && img.naturalHeight) ? Math.max(img.naturalWidth, img.naturalHeight) : null;
+  if(longEdge != null){
+    if(longEdge < 700)       add('res', false, 'hard');
+    else if(longEdge < 1100) add('res', false, 'soft');
+    else                     add('res', true);
+  }
+
+  const level = hard > 0 ? 'low' : (soft > 0 ? 'moderate' : 'high');
+  // Worst failing dimension drives the single actionable line (hard before soft).
+  const worstDim = dims.find(d => !d.ok && d.sev === 'hard') || dims.find(d => !d.ok && d.sev === 'soft') || null;
+  const worst = worstDim ? { key: worstDim.key, note: worstDim.note } : null;
+  return { level, dims, worst };
 }
 
 function readySummary(){
@@ -2717,12 +2769,24 @@ function renderSlots(){
     const st = document.createElement('div');
     st.className = 'slot-status' + (sl.status === 'ready' || sl.status === 'done' ? ' ok' : sl.status === 'bad' ? ' bad' : '');
     st.textContent = sl.qcMsg || A.help;
-    if(sl.photoGrade){
+    if(sl.photoGrade && sl.photoGrade.level){
       const g = sl.photoGrade;
-      const gradeEl = document.createElement('div');
-      gradeEl.className = 'photo-grade ' + (g.stars === 3 ? 'grade-ex' : g.stars === 2 ? 'grade-ok' : 'grade-lim');
-      gradeEl.textContent = '★'.repeat(g.stars) + '☆'.repeat(3 - g.stars) + ' ' + g.grade + (g.note ? ' · ' + g.note : '');
-      st.appendChild(gradeEl);
+      const cls = g.level === 'high' ? 'conf-high' : g.level === 'moderate' ? 'conf-mod' : 'conf-low';
+      const box = document.createElement('div');
+      box.className = 'photo-conf ' + cls;
+      let html = '<span class="conf-chip">' + t('qcConfLabel') + ': ' + t('qcConfLevel')(g.level) + '</span>';
+      if(g.level !== 'high' && Array.isArray(g.dims) && g.dims.length){
+        html += '<span class="conf-dims">';
+        for(const d of g.dims){
+          html += '<span class="cd ' + (d.ok ? 'ok' : 'bad') + '">' + t('qcDim')(d.key) + ' ' + (d.ok ? '\u2713' : '\u2717') + '</span>';
+        }
+        html += '</span>';
+      }
+      if(g.level !== 'high' && g.worst){
+        html += '<span class="conf-advice">' + t('qcAdvice')(g.worst) + '</span>';
+      }
+      box.innerHTML = html;
+      st.appendChild(box);
     }
     cell.appendChild(st);
     wrap.appendChild(cell);
@@ -2764,7 +2828,7 @@ async function onSlotFile(angleId, file){
     sl.qcMsg = gate.ok
       ? ('✓ ' + gate.msg + extraNote)
       : ('Note: ' + gate.msg + extraNote);
-    sl.photoGrade = gradePhoto(a);
+    sl.photoGrade = gradePhoto(a, img);
   } catch(err){
     console.warn('[Visualize] Photo QC failed; accepting the photo (mask fail-safes still apply).', err);
     sl.status = 'ready'; sl.qcMsg = 'Pose check unavailable; photo accepted.';
@@ -3837,6 +3901,18 @@ async function runGeneration(isRegen){
     }
   }
 
+  // M19: low-confidence photo gate. When a photo is likely to produce an
+  // unreliable simulation, warn before spending credits, but let the clinician
+  // proceed (agency for the edge cases where they know the photo is fine).
+  // Regeneration skips this: the choice was already made on the first run.
+  if(!isRegen){
+    const lowAngles = angles.filter(id => state.slots[id].photoGrade && state.slots[id].photoGrade.level === 'low');
+    if(lowAngles.length){
+      const names = lowAngles.map(id => angleLabel(id)).join(', ');
+      if(!confirm(t('qcLowConfirm')(names))) return;
+    }
+  }
+
   generateBtn.disabled = true; regenBtn.disabled = true;
 
   _genPhases = {};
@@ -4587,10 +4663,14 @@ function simKicker(angleId){
   const sl = state.slots[angleId];
   const parts = [treatmentName()];
   if(multiDone) parts.push(ANGLE_DEF[angleId].label);
-  // M14.2: Optimistic/Both removed, so the initial result is always Expected.
-  // Laser additionally carries the gradual 6-month timeframe in the label.
+  // M20: "Expected" is now the only baseline mode (the Optimistic/Both selector
+  // was removed for overpromising), so naming it in the export kicker reads as
+  // redundant noise. Label the mode only when the export is actually the
+  // Optimistic (enhanced) result; otherwise omit it. The timeframe is already
+  // carried by the headline (e.g. "After PLLA · 6 months").
   if(usesResponseModes()){
-    parts.push(state.type === 'laser' ? 'Expected (~6 mo)' : state.type === 'tox' ? 'Expected (~4-6 wk)' : 'Expected');
+    const isStrong = state.courseMode === 'enhanced' && sl.strongStatus === 'done' && sl.strongDataUrl;
+    if(isStrong) parts.push('Optimistic');
   }
   if(state.type === 'filler' && sl.apply){
     // M14.1: label from the selected volume tier (conservative/moderate/enhanced),
