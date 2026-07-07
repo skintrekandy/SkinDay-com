@@ -552,46 +552,31 @@
     .scenario-fs-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; font-size:.72rem; font-weight:600; color:var(--cream); background:transparent; border:1px solid rgba(250,247,242,.35); border-radius:6px; cursor:pointer; }
     .scenario-fs-btn:hover { border-color:var(--gold); color:var(--gold); }
     .scenario-fs-grid { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; min-height:0; }
-    /* M9 mobile: instead of stacking panels vertically (which defeats side-by-side
-       comparison), rotate the fullscreen comparison into landscape so panels run
-       along the phone's long axis at a usable size. The user turns the phone to
-       view it upright. Only applies to PORTRAIT phones; landscape phones and all
-       larger screens keep the normal side-by-side layout. */
+    /* M9 mobile: on a portrait phone, keep panels SIDE BY SIDE and shrink them to
+       fit the screen width (2-up or 3-up), so the comparison is visible at a
+       glance without turning the phone. The panels are smaller but readable; the
+       user can tap "View larger" to enter the optional rotated landscape view. */
     @media (max-width:700px) and (orientation:portrait) {
-      .scenario-fs-overlay.open { overflow:hidden; }
-      .scenario-fs-grid {
-        position:fixed;
-        top:50%; left:50%;
-        /* swap dimensions: rotated width = viewport height, height = viewport width */
-        width:100vh; height:100vw;
-        transform:translate(-50%,-50%) rotate(90deg);
-        transform-origin:center center;
-        gap:8px;
-        z-index:1;
-      }
-      /* in the rotated comparison, never crop a face: contain, fill the cell */
+      .scenario-fs-grid { gap:6px; }
       .scenario-fs-cell img,
       #previewFsGrid .scenario-fs-cell img {
         object-fit:contain !important; width:100% !important; height:100% !important;
         max-width:100% !important; max-height:100% !important;
       }
-      /* rotate-your-phone hint, shown until the device is physically turned */
-      .fs-rotate-hint {
-        position:fixed; left:50%; bottom:18px; transform:translateX(-50%);
-        z-index:5; display:flex; align-items:center; gap:8px;
-        padding:8px 16px; border-radius:99px;
-        background:rgba(28,23,20,.82); color:var(--cream);
-        font-size:.74rem; font-weight:600; letter-spacing:.02em;
-        pointer-events:none; animation:fsRotatePulse 2s ease-in-out infinite;
+      /* Optional rotated "view larger" state, toggled by button (class on overlay). */
+      .scenario-fs-overlay.fs-rotated .scenario-fs-grid {
+        position:fixed; top:50%; left:50%;
+        width:100vh; height:100vw;
+        transform:translate(-50%,-50%) rotate(90deg);
+        transform-origin:center center; gap:8px; z-index:1;
       }
-      .fs-rotate-hint svg { width:16px; height:16px; }
+      .scenario-fs-overlay.fs-rotated .scenario-fs-bar { position:relative; z-index:2; }
     }
-    /* Landscape phone (already turned, or tablet in landscape): normal layout,
-       hint hidden. */
-    @media (max-width:900px) and (orientation:landscape) {
-      .fs-rotate-hint { display:none !important; }
+    /* "View larger" button only shows on portrait phones. */
+    .fs-viewlarger-btn { display:none; }
+    @media (max-width:700px) and (orientation:portrait) {
+      .fs-viewlarger-btn { display:inline-flex; }
     }
-    @keyframes fsRotatePulse { 0%,100%{opacity:.85;} 50%{opacity:.45;} }
     .scenario-fs-cell { position:relative; min-height:0; background:#000; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
     .scenario-fs-cell img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; will-change:transform; user-select:none; -webkit-user-drag:none; }
     /* Preview fullscreen (before/after): always fill the cell regardless of pixel size */
@@ -1051,15 +1036,12 @@
           <span class="fs-zoom-label" id="scnZoomLabel">100%</span>
           <button class="scenario-fs-btn fs-zoom-btn" type="button" id="scnZoomIn" aria-label="Zoom in">+</button>
         </div>
+        <button class="scenario-fs-btn fs-viewlarger-btn" type="button" id="scenarioFsViewLarger"><span data-en="View larger" data-zh="放大檢視">View larger</span></button>
         <button class="scenario-fs-btn" type="button" id="scenarioFsDownload"><span data-en="Download" data-zh="下載">Download</span></button>
         <button class="scenario-fs-btn" type="button" id="scenarioFsClose" data-en="Close" data-zh="關閉">Close</button>
       </div>
     </div>
     <div class="scenario-fs-grid" id="scenarioFsGrid"></div>
-    <div class="fs-rotate-hint" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M2 12a10 10 0 0 1 10-10"/><polyline points="2 8 2 12 6 12"/></svg>
-      <span data-en="Rotate your phone to view" data-zh="旋轉手機以檢視">Rotate your phone to view</span>
-    </div>
   </div>
 
   <!-- Fullscreen overlay for the main before/after consultation preview -->
@@ -1075,15 +1057,12 @@
           <span class="fs-zoom-label" id="prvZoomLabel">100%</span>
           <button class="scenario-fs-btn fs-zoom-btn" type="button" id="prvZoomIn" aria-label="Zoom in">+</button>
         </div>
+        <button class="scenario-fs-btn fs-viewlarger-btn" type="button" id="previewFsViewLarger"><span data-en="View larger" data-zh="放大檢視">View larger</span></button>
         <button class="scenario-fs-btn" type="button" id="previewFsDownload"><span data-en="Download" data-zh="下載">Download</span></button>
         <button class="scenario-fs-btn" type="button" id="previewFsClose" data-en="Close" data-zh="關閉">Close</button>
       </div>
     </div>
     <div class="scenario-fs-grid two" id="previewFsGrid"></div>
-    <div class="fs-rotate-hint" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M2 12a10 10 0 0 1 10-10"/><polyline points="2 8 2 12 6 12"/></svg>
-      <span data-en="Rotate your phone to view" data-zh="旋轉手機以檢視">Rotate your phone to view</span>
-    </div>
   </div>
 </div>
 
@@ -5315,12 +5294,11 @@ function openScenarioFullscreen(scenarioKey){
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   if(scnFsZoom) scnFsZoom.reset();
-  applyFsOrientation(overlay);
 }
 
 function closeScenarioFullscreen(){
   const overlay = document.getElementById('scenarioFsOverlay');
-  if(overlay) overlay.classList.remove('open');
+  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotated'); }
   document.body.style.overflow = '';
 }
 
@@ -5544,62 +5522,77 @@ function openPreviewFullscreen(){
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   if(prvFsZoom) prvFsZoom.reset();
-  applyFsOrientation(overlay);
 }
 
-// M9 mobile: rotate the fullscreen comparison grid into landscape on a portrait
-// phone, so the side-by-side panels run along the phone's long axis at usable
-// size. Applied via JS (not CSS alone) so the transform is reliable across
-// engines. When the phone is physically turned to landscape, we clear the
-// rotation and hide the hint; the natural side-by-side layout takes over.
+// M9 mobile: panels are side-by-side and fit-to-width by default on a portrait
+// phone (CSS handles that). "View larger" is an OPTIONAL toggle that rotates the
+// grid into landscape for a bigger look; tapping it again returns to fit-to-width.
+// The rotated state is a class on the overlay; the transform sizing is applied in
+// JS so it is reliable across engines. Cleared automatically if the phone is
+// physically turned to landscape (no longer needed there).
 function isPortraitPhone(){
   return window.matchMedia('(max-width:700px) and (orientation:portrait)').matches;
 }
-function applyFsOrientation(overlay){
-  if(!overlay) return;
+function applyRotatedSizing(overlay){
   const grid = overlay.querySelector('.scenario-fs-grid');
-  const hint = overlay.querySelector('.fs-rotate-hint');
   if(!grid) return;
-  if(isPortraitPhone()){
-    // rotate the grid to fill the phone's long axis
+  if(overlay.classList.contains('fs-rotated') && isPortraitPhone()){
     grid.style.position = 'fixed';
-    grid.style.top = '50%';
-    grid.style.left = '50%';
+    grid.style.top = '50%'; grid.style.left = '50%';
     grid.style.width = window.innerHeight + 'px';
     grid.style.height = window.innerWidth + 'px';
     grid.style.transform = 'translate(-50%,-50%) rotate(90deg)';
     grid.style.transformOrigin = 'center center';
-    if(hint) hint.style.display = 'flex';
   } else {
-    // landscape phone / tablet / desktop: clear any rotation, normal layout
-    grid.style.position = '';
-    grid.style.top = '';
-    grid.style.left = '';
-    grid.style.width = '';
-    grid.style.height = '';
-    grid.style.transform = '';
-    grid.style.transformOrigin = '';
-    if(hint) hint.style.display = 'none';
+    grid.style.position = ''; grid.style.top = ''; grid.style.left = '';
+    grid.style.width = ''; grid.style.height = '';
+    grid.style.transform = ''; grid.style.transformOrigin = '';
   }
 }
-// Re-apply on rotation / resize for whichever overlay is open.
+function toggleFsViewLarger(overlayId){
+  const overlay = document.getElementById(overlayId);
+  if(!overlay) return;
+  overlay.classList.toggle('fs-rotated');
+  applyRotatedSizing(overlay);
+  // update the button label so it reads as a toggle
+  const btn = overlay.querySelector('.fs-viewlarger-btn span');
+  if(btn){
+    const rotated = overlay.classList.contains('fs-rotated');
+    btn.setAttribute('data-en', rotated ? 'Exit larger view' : 'View larger');
+    btn.setAttribute('data-zh', rotated ? '結束放大' : '放大檢視');
+    btn.textContent = (typeof currentLang!=='undefined' && currentLang==='zh')
+      ? (rotated ? '結束放大' : '放大檢視')
+      : (rotated ? 'Exit larger view' : 'View larger');
+  }
+}
+// If the phone is physically turned to landscape while in the rotated view, drop
+// the rotation (it is redundant there) and re-fit.
 window.addEventListener('orientationchange', function(){
   setTimeout(function(){
     ['scenarioFsOverlay','previewFsOverlay'].forEach(function(id){
       const ov = document.getElementById(id);
-      if(ov && ov.classList.contains('open')) applyFsOrientation(ov);
+      if(ov && ov.classList.contains('open')){
+        if(!isPortraitPhone()) ov.classList.remove('fs-rotated');
+        applyRotatedSizing(ov);
+      }
     });
   }, 120);
 });
 window.addEventListener('resize', function(){
   ['scenarioFsOverlay','previewFsOverlay'].forEach(function(id){
     const ov = document.getElementById(id);
-    if(ov && ov.classList.contains('open')) applyFsOrientation(ov);
+    if(ov && ov.classList.contains('open')) applyRotatedSizing(ov);
   });
 });
+(function wireViewLargerBtns(){
+  const s = document.getElementById('scenarioFsViewLarger');
+  if(s) s.addEventListener('click', function(){ toggleFsViewLarger('scenarioFsOverlay'); });
+  const p = document.getElementById('previewFsViewLarger');
+  if(p) p.addEventListener('click', function(){ toggleFsViewLarger('previewFsOverlay'); });
+})();
 function closePreviewFullscreen(){
   const overlay = document.getElementById('previewFsOverlay');
-  if(overlay) overlay.classList.remove('open');
+  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotated'); }
   document.body.style.overflow = '';
 }
 (function wirePreviewFsOverlay(){
