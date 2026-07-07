@@ -147,6 +147,14 @@
     .gen-row-st.done { color:#3D7A55; font-weight:500; }
     .gen-row-st.err { color:var(--rose); }
     .gen-elapsed { font-size:.7rem; color:var(--muted); text-align:right; margin-top:7px; }
+    /* ── M18 Consultation-preparation card ── */
+    .gen-stage { font-size:.87rem; font-weight:600; color:var(--deep); margin-bottom:3px; }
+    .gen-foot { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; padding-top:9px; border-top:1px solid var(--border); }
+    .gen-working { display:inline-flex; align-items:center; gap:7px; font-size:.72rem; color:var(--muted); }
+    .gen-working .gen-pulse { width:7px; height:7px; border-radius:50%; background:var(--gold); animation:gen-pulse 1.15s ease-in-out infinite; }
+    @keyframes gen-pulse { 0%,100%{opacity:.25;transform:scale(.8);} 50%{opacity:1;transform:scale(1);} }
+    .gen-timer { font-size:.72rem; color:var(--deep); font-variant-numeric:tabular-nums; font-weight:600; }
+    .pre-submit-note { font-size:.72rem; color:var(--muted); line-height:1.5; text-align:center; margin-top:9px; max-width:420px; margin-left:auto; margin-right:auto; }
     .btn-gold { background:var(--gold); color:#fff; border-color:var(--gold); font-weight:600; }
     .btn-gold:hover { background:#b8954f; border-color:#b8954f; }
     .btn-gold:disabled { opacity:.45; cursor:not-allowed; }
@@ -887,6 +895,7 @@
 
       <div class="btn-row" style="text-align:center;margin-top:18px;"><button class="btn btn-primary" id="generateBtn" disabled data-en="Generate simulated preview" data-zh="生成模擬預覽">Generate simulated preview</button></div>
       <div class="cost-note" id="costNote"></div>
+      <div class="pre-submit-note" id="preSubmitNote"></div>
     </div>
   </section>
 
@@ -1387,17 +1396,26 @@ var I18N = {
     changeLogo: 'Change logo', uploadLogo: 'Upload logo',
     scenariosFirst: 'Generate the baseline first before exploring scenarios.',
     simulatedPrefix: 'Simulated',
-    genReady: 'Ready', genFailed: 'Failed', genPreparing: 'Preparing photo...', genWaiting: 'Waiting...',
+    genReady: 'Ready', genFailed: 'Failed', genPreparing: 'Preparing photo', genWaiting: 'Waiting...',
+    genQueued: 'Queued', genRowActive: 'Creating preview', genWorking: 'Working',
     genElapsed: function(s){ return s + 's elapsed'; },
-    genWaitQuotes: [
-      'This usually takes 30 to 90 seconds. Keep this tab open.',
-      'Almost there. Good things are worth the wait.',
-      'Hang tight. Refining the details.',
-      'Working on it. Quality takes a moment.',
-      'Just a little longer. Smoothing the finish.'
+    genTimer: function(s){ var m = Math.floor(s / 60), r = s % 60; return (m > 0 ? m + 'm ' : '') + r + 's'; },
+    // M18: staged, clinical headlines. They describe the rendering process only
+    // (never the treatment or the patient) and advance on a client-side timer,
+    // reframing the wait as a procedure rather than a spinner. Honest by design:
+    // the backend flips pending -> done in one step and cannot report sub-stages.
+    genStages: [
+      'Preparing your consultation',
+      'Analyzing facial anatomy',
+      'Planning treatment response',
+      'Creating consultation preview'
     ],
-    genWaitLong: 'Still working. Detailed previews can take a little longer.',
+    genExpectation: 'This can take a few minutes, especially with multiple angles. Please keep this tab open.',
+    genWaitLong: 'Still preparing. Detailed previews can take a few minutes.',
     genWaitVeryLong: 'Taking longer than usual. You can keep waiting or regenerate.',
+    genPreSubmit: function(n){ return n > 1
+      ? 'Generating ' + n + ' angles can take a few minutes. You can keep this tab open - each result appears as soon as it is ready.'
+      : 'This takes a minute or two. You can keep this tab open - the preview appears as soon as it is ready.'; },
     angleFrontal: 'Frontal', angleR45: 'Right 45°', angleL45: 'Left 45°',
     angleHintFrontal: 'Frontal photo', angleHintR45: 'Right 45° photo', angleHintL45: 'Left 45° photo',
     fullscreen: 'Fullscreen', download: 'Download', scenarioDisc: 'Scenario simulation, not a guaranteed outcome'
@@ -1441,17 +1459,22 @@ var I18N = {
     changeLogo: '\u66f4\u63db Logo', uploadLogo: '\u4e0a\u50b3 Logo',
     scenariosFirst: '\u8acb\u5148\u751f\u6210\u57fa\u6e96\u7d50\u679c\uff0c\u518d\u63a2\u7d22\u52a0\u9078\u60c5\u5883\u3002',
     simulatedPrefix: '\u6a21\u64ec\u9810\u89bd',
-    genReady: '\u5b8c\u6210', genFailed: '\u5931\u6557', genPreparing: '\u6b63\u5728\u6e96\u5099\u7167\u7247\u2026', genWaiting: '\u7b49\u5f85\u4e2d\u2026',
+    genReady: '\u5b8c\u6210', genFailed: '\u5931\u6557', genPreparing: '\u6b63\u5728\u6e96\u5099\u7167\u7247', genWaiting: '\u7b49\u5f85\u4e2d\u2026',
+    genQueued: '\u6392\u968a\u4e2d', genRowActive: '\u6b63\u5728\u751f\u6210\u9810\u89bd', genWorking: '\u8655\u7406\u4e2d',
     genElapsed: function(s){ return '\u5df2\u7d93\u904e ' + s + ' \u79d2'; },
-    genWaitQuotes: [
-      '\u901a\u5e38\u9700\u8981 30 \u81f3 90 \u79d2\u3002\u8acb\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\u3002',
-      '\u5feb\u5b8c\u6210\u4e86\u3002\u597d\u7d50\u679c\u503c\u5f97\u7b49\u5f85\u3002',
-      '\u8acb\u7a0d\u5019\uff0c\u6b63\u5728\u7d30\u8abf\u7d30\u7bc0\u3002',
-      '\u8655\u7406\u4e2d\uff0c\u7cbe\u7dfb\u9700\u8981\u4e00\u9ede\u6642\u9593\u3002',
-      '\u5feb\u597d\u4e86\uff0c\u6b63\u5728\u512a\u5316\u6700\u5f8c\u7684\u6210\u679c\u3002'
+    genTimer: function(s){ var m = Math.floor(s / 60), r = s % 60; return (m > 0 ? m + ' \u5206 ' : '') + r + ' \u79d2'; },
+    genStages: [
+      '\u6b63\u5728\u6e96\u5099\u8ac7\u8a62',
+      '\u6b63\u5728\u5206\u6790\u81c9\u90e8\u7d50\u69cb',
+      '\u6b63\u5728\u898f\u5283\u7642\u7a0b\u53cd\u61c9',
+      '\u6b63\u5728\u751f\u6210\u8ac7\u8a62\u9810\u89bd'
     ],
-    genWaitLong: '\u4ecd\u5728\u8655\u7406\u4e2d\u3002\u7d30\u7dfb\u7684\u9810\u89bd\u53ef\u80fd\u9700\u8981\u8f03\u9577\u6642\u9593\u3002',
+    genExpectation: '\u9019\u53ef\u80fd\u9700\u8981\u5e7e\u5206\u9418\uff0c\u5c24\u5176\u662f\u591a\u500b\u89d2\u5ea6\u6642\u3002\u8acb\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\u3002',
+    genWaitLong: '\u4ecd\u5728\u6e96\u5099\u4e2d\u3002\u7d30\u7dfb\u7684\u9810\u89bd\u53ef\u80fd\u9700\u8981\u5e7e\u5206\u9418\u3002',
     genWaitVeryLong: '\u6bd4\u5e73\u5e38\u8017\u6642\u8f03\u4e45\u3002\u60a8\u53ef\u4ee5\u7e7c\u7e8c\u7b49\u5f85\u6216\u91cd\u65b0\u751f\u6210\u3002',
+    genPreSubmit: function(n){ return n > 1
+      ? '\u751f\u6210 ' + n + ' \u500b\u89d2\u5ea6\u53ef\u80fd\u9700\u8981\u5e7e\u5206\u9418\u3002\u60a8\u53ef\u4ee5\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\uff0c\u6bcf\u500b\u7d50\u679c\u5b8c\u6210\u5f8c\u6703\u7acb\u5373\u986f\u793a\u3002'
+      : '\u9019\u9700\u8981\u4e00\u5230\u5169\u5206\u9418\u3002\u60a8\u53ef\u4ee5\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\uff0c\u9810\u89bd\u5b8c\u6210\u5f8c\u6703\u7acb\u5373\u986f\u793a\u3002'; },
     angleFrontal: '\u6b63\u9762', angleR45: '\u53f3\u5074 45\u00b0', angleL45: '\u5de6\u5074 45\u00b0',
     angleHintFrontal: '\u6b63\u9762\u7167\u7247', angleHintR45: '\u53f3\u5074 45\u00b0 \u7167\u7247', angleHintL45: '\u5de6\u5074 45\u00b0 \u7167\u7247',
     fullscreen: '\u5168\u87a2\u5e55', download: '\u4e0b\u8f09', scenarioDisc: '\u60c5\u5883\u6a21\u64ec\uff0c\u4e26\u975e\u4fdd\u8b49\u7d50\u679c'
@@ -2515,6 +2538,20 @@ function syncGenerateBtn(){
       if(msbCN2) msbCN2.style.display = 'none';
     }
   }
+
+  // M18: honest, up-front wait expectation shown while the case is ready to
+  // generate (photos in, consent given, nothing already in flight). Cleared once
+  // generation starts, since the consultation-preparation card takes over.
+  const preNote = document.getElementById('preSubmitNote');
+  if(preNote){
+    if(ready && consentChk.checked && !anyInFlight && ids.length){
+      preNote.textContent = t('genPreSubmit')(ids.length);
+      preNote.style.display = '';
+    } else {
+      preNote.textContent = '';
+      preNote.style.display = 'none';
+    }
+  }
 }
 
 function fileToDataUrl(file){
@@ -3386,10 +3423,26 @@ compareCard.addEventListener('pointercancel', () => { cmpDragging = false; });
 // synchronous request that used to 504.
 async function pollForResult(jobId, auth){
   const startedAt = Date.now();
-  const MAX_MS = 4 * 60 * 1000;   // hard stop after 4 minutes
-  const INTERVAL_MS = 3000;
+  // Single-angle budget. Angles poll in parallel, so this is per angle, not the
+  // whole case; a slow single generation can run past four minutes without being
+  // a failure, so the ceiling is generous to avoid a false timeout.
+  const MAX_MS = 6 * 60 * 1000;
+  // M18 adaptive cadence. The old flat 3000ms interval, with the sleep at the
+  // top of the loop, meant a finished image could sit up to 3s behind the next
+  // poll. Now: a short first check (nothing ever finishes faster), a steady early
+  // cadence, then a tighter cadence once a result is plausibly ready, so the
+  // reveal lands within ~1s of completion. The backend still flips pending ->
+  // done in one step, so this only trims reveal latency, it does not fake stages.
+  const FIRST_MS = 1500;
+  const EARLY_MS = 2500;
+  const TIGHT_MS = 1200;
+  const TIGHTEN_AFTER_MS = 40 * 1000;
+  let first = true;
   while(true){
-    await new Promise(r => setTimeout(r, INTERVAL_MS));
+    const el = Date.now() - startedAt;
+    const wait = first ? FIRST_MS : (el > TIGHTEN_AFTER_MS ? TIGHT_MS : EARLY_MS);
+    first = false;
+    await new Promise(r => setTimeout(r, wait));
     // status text is owned by the per-case ticker in runGeneration (M7: several
     // angles poll concurrently, so a per-poll status line would fight itself).
     let res;
@@ -3404,7 +3457,7 @@ async function pollForResult(jobId, auth){
       // 'pending' (or status not written yet): keep polling
     }
     if(Date.now() - startedAt > MAX_MS){
-      throw new Error('The simulation is taking unusually long (over 4 minutes). It may have failed. Please try again.');
+      throw new Error('The simulation is taking unusually long (over 6 minutes). It may have failed. Please try again.');
     }
   }
 }
@@ -3600,43 +3653,49 @@ let creditShortfall = false; // M8: set on any 402 during a run
 let _genPhases = {};   // { angleId: 'waiting'|'preparing'|'generating'|'done'|'error' }
 let _genT0     = 0;    // generation start timestamp (ms)
 let _genTicker = null; // interval handle
+let _progressiveRevealed = false; // M18: reset per run; true once this run has revealed the output section
 
 function _renderGenCard(angles, isRegen){
   const card = document.getElementById('genCard');
   if(!card || card.style.display === 'none') return;
   const secs = Math.round((Date.now() - _genT0) / 1000);
 
-  // Subtitle: rotate through reassuring lines for the first ~60s, then shift to
-  // honest "still working" / "taking longer" messaging so it never feels glib.
+  // M18: staged, clinical headline that advances on a client-side timer. This is
+  // the reframe from "waiting" to "consultation preparation" (procedure, not
+  // spinner). Process-only wording, never treatment or patient advice. The
+  // backend genuinely cannot report sub-stages, so these are time-driven and
+  // honest by design.
+  const stages = t('genStages');
+  let si = 0;
+  if(secs >= 35) si = 3; else if(secs >= 20) si = 2; else if(secs >= 7) si = 1;
+  if(si > stages.length - 1) si = stages.length - 1;
+  const stage = stages[si];
+
+  // Honest expectation underneath, shifting to plainer "taking longer" copy past
+  // the usual window so it never sounds glib at minute three.
   let sub;
-  if(secs < 60){
-    const quotes = t('genWaitQuotes');
-    // Advance one quote roughly every 6 seconds.
-    sub = quotes[Math.floor(secs / 6) % quotes.length];
-  } else if(secs < 120){
-    sub = t('genWaitLong');
-  } else {
-    sub = t('genWaitVeryLong');
-  }
+  if(secs < 90) sub = t('genExpectation');
+  else if(secs < 180) sub = t('genWaitLong');
+  else sub = t('genWaitVeryLong');
 
-  const title = t('genTitle')(isRegen);
-
-  // Per-angle status rows.
+  // Per-angle rows. Each flips to a settled state the moment its slot does, which
+  // (together with progressive reveal) is a real "something changed" event rather
+  // than a decorative animation.
   let rows = '';
   for(const id of angles){
     const slSt = state.slots[id] ? state.slots[id].status : '';
     const phase = _genPhases[id] || 'waiting';
     let icon = '', stText, stCls;
     if(slSt === 'done'){
-      icon = '✓'; stCls = 'done'; stText = t('genReady');
+      icon = '\u2713'; stCls = 'done'; stText = t('genReady');
     } else if(slSt === 'error'){
-      icon = '✗'; stCls = 'err'; stText = t('genFailed');
+      icon = '\u2717'; stCls = 'err'; stText = t('genFailed');
     } else if(phase === 'preparing'){
-      stCls = 'active'; stText = t('genPreparing');
+      stCls = 'active'; stText = t('genPreparing') + '\u2026';
     } else if(phase === 'generating' || slSt === 'generating'){
-      stCls = 'active'; stText = t('generating');
+      stCls = 'active'; stText = t('genRowActive') + '\u2026';
     } else {
-      stCls = ''; stText = t('genWaiting');
+      stCls = ''; stText = t('genQueued');
     }
     rows +=
       '<div class="gen-row">' +
@@ -3646,21 +3705,26 @@ function _renderGenCard(angles, isRegen){
       '</div>';
   }
 
-  const elapsed = secs >= 10 ? '<div class="gen-elapsed">' + t('genElapsed')(secs) + '</div>' : '';
+  // Footer: a live "Working" pulse and a timer that ticks every second from the
+  // start. Constant, honest motion so the screen never reads as frozen.
   card.innerHTML =
     '<div class="gen-card-head">' +
       '<div class="gen-spin"></div>' +
       '<div>' +
-        '<div class="gen-card-title">' + title + '</div>' +
+        '<div class="gen-stage">' + stage + '</div>' +
         '<div class="gen-card-sub">' + sub + '</div>' +
       '</div>' +
     '</div>' +
     '<div class="gen-rows">' + rows + '</div>' +
-    elapsed;
+    '<div class="gen-foot">' +
+      '<span class="gen-working"><span class="gen-pulse"></span>' + t('genWorking') + '</span>' +
+      '<span class="gen-timer">' + t('genTimer')(secs) + '</span>' +
+    '</div>';
 }
 
 function _showGenCard(angles, isRegen){
   _genT0 = Date.now();
+  _progressiveRevealed = false; // M18: new run, nothing revealed yet
   angles.forEach(id => { _genPhases[id] = 'waiting'; });
   const card = document.getElementById('genCard');
   const statusEl = document.querySelector('.status');
@@ -3677,6 +3741,40 @@ function _hideGenCard(){
   const statusEl = document.querySelector('.status');
   if(card) card.style.display = 'none';
   if(statusEl) statusEl.style.display = '';
+}
+
+// M18 progressive reveal: show each angle's result the moment it lands instead of
+// waiting for every angle to finish. The first successful angle reveals and
+// scrolls the output section and becomes the active tab; later angles just
+// refresh the tab strip (and the active view if they are the one showing). A
+// completed image appearing is the strongest possible "it is working" signal, so
+// this is the single biggest change against the "is it stalled?" feeling. The
+// gen card stays up above until every angle settles, so the remaining angles keep
+// their live rows and the timer keeps ticking. Called once per angle from
+// runGeneration as each finishSlot settles (success or failure).
+function _progressiveOnDone(id){
+  const sl = state.slots[id];
+  if(!sl) return;
+  const out = document.getElementById('outputSection');
+  if(sl.status === 'done'){
+    if(!_progressiveRevealed){
+      _progressiveRevealed = true;
+      state.activeAngle = id;
+      state.lastGenAt = Date.now();
+      if(out) out.classList.add('visible');
+      renderTabs();
+      renderActiveSlot();
+      if(out) out.scrollIntoView({ behavior:'smooth', block:'start' });
+      try { updateRegenNote(); } catch(e){}
+      try { syncScenariosVisibility(); } catch(e){}
+    } else {
+      renderTabs();
+      if(state.activeAngle === id) renderActiveSlot();
+    }
+  } else {
+    // Failed (or otherwise not done): reflect the tab state right away.
+    renderTabs();
+  }
 }
 
 async function runGeneration(isRegen){
@@ -3760,10 +3858,13 @@ async function runGeneration(isRegen){
     }
     if(started.length){
       await Promise.allSettled(started.map(id =>
-        finishSlot(id, auth, fillerIntensity).catch(err => {
-          const sl = state.slots[id];
-          sl.status = 'error'; sl.error = (err && err.message) || 'Generation failed.';
-        })
+        finishSlot(id, auth, fillerIntensity)
+          .then(() => _progressiveOnDone(id)) // M18: reveal this angle as soon as it lands
+          .catch(err => {
+            const sl = state.slots[id];
+            sl.status = 'error'; sl.error = (err && err.message) || 'Generation failed.';
+            _progressiveOnDone(id);
+          })
       ));
     }
   } finally {
@@ -3779,7 +3880,12 @@ async function runGeneration(isRegen){
     renderTabs();
     renderActiveSlot();
     document.getElementById('outputSection').classList.add('visible');
-    document.getElementById('outputSection').scrollIntoView({ behavior:'smooth', block:'start' });
+    // M18: progressive reveal already revealed and scrolled to the first finished
+    // angle mid-run, so only scroll here in the fallback case where it did not
+    // fire (avoids a second, jarring scroll once everything settles).
+    if(!_progressiveRevealed){
+      document.getElementById('outputSection').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
     updateRegenNote();
     syncScenariosVisibility(); // M12.2: show Explore Scenarios panel for Sculptra
     // M13: Both mode already fired Optimistic in parallel above. Nothing to do here.
@@ -3817,7 +3923,14 @@ function renderTabs(){
     b.type = 'button';
     b.className = 'tab' + (id === state.activeAngle ? ' active' : '');
     b.textContent = ANGLE_DEF[id].short + (sl.status === 'error' ? ' ⚠' : sl.status === 'done' ? '' : ' …');
-    b.addEventListener('click', () => { state.activeAngle = id; renderTabs(); renderActiveSlot(); });
+    b.addEventListener('click', () => {
+      // M18: with progressive reveal, a still-generating tab can be on screen.
+      // Ignore clicks on it until it is ready (or failed) so the view never
+      // switches to a slot that has no result yet.
+      const s = state.slots[id];
+      if(s && s.status !== 'done' && s.status !== 'error') return;
+      state.activeAngle = id; renderTabs(); renderActiveSlot();
+    });
     tabs.appendChild(b);
   }
 }
