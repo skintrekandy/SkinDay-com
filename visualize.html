@@ -4752,7 +4752,7 @@ async function drawPair(ctx, angleId, yOff, panelW, panelH, gap, includeText){
     ctx.fillText((sim ? simKicker(angleId) : 'As photographed').toUpperCase(), x + 40, yB - 80);
     ctx.letterSpacing = '0px';
 
-    ctx.font = '400 58px "Cormorant Garamond", serif';
+    ctx.font = '500 50px "DM Sans", sans-serif';
     ctx.fillStyle = 'rgba(250,247,242,.97)';
     ctx.fillText(sim ? baselinePanelLabel() : 'Original', x + 38, yB - 34);
   }
@@ -4818,7 +4818,7 @@ async function drawTriple(ctx, angleId, panelW, panelH, gap, includeText){
     ctx.fillStyle = sim ? 'rgba(201,169,110,.96)' : 'rgba(181,168,159,.82)';
     ctx.fillText(kicker, x + 36, yB - 80);
     ctx.letterSpacing = '0px';
-    ctx.font = '400 52px "Cormorant Garamond", serif';
+    ctx.font = '500 44px "DM Sans", sans-serif';
     ctx.fillStyle = 'rgba(250,247,242,.97)';
     ctx.fillText(headline, x + 34, yB - 34);
   }
@@ -4980,7 +4980,7 @@ async function drawExport(includeText, angleIds){
       ctx.fillStyle = fadeTop(yTop, panelH); ctx.fillRect(x, yTop, panelW, panelH);
       ctx.fillStyle = fadeTop(yBot, panelH); ctx.fillRect(x, yBot, panelW, panelH);
       // "Original"
-      ctx.font = '400 34px "Cormorant Garamond", serif';
+      ctx.font = '500 30px "DM Sans", sans-serif';
       ctx.fillStyle = 'rgba(250,247,242,0.92)'; ctx.textAlign = 'left';
       ctx.fillText('Original',  x + 22, yTop + panelH - 22);
       // Treatment-specific simulated label
