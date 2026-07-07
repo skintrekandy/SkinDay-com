@@ -18,11 +18,9 @@
 //   and still counts. approve = clear the flag (vote stays). remove = set hidden
 //   (drops from the count) and clear the flag.
 //
-// Auth: ADMIN_SECRET env var, checked via the x-admin-secret header on every
-// request. NOTE: this is a DIFFERENT secret/mechanism than admin-costs.js
-// (which uses Bearer + VISUALIZE_ADMIN_SECRET). For the flagged-votes tab to
-// authenticate, skinday.com must have ADMIN_SECRET set to the value the admin
-// signs in with.
+// Auth: unified with the rest of the .com global admin. Accepts either the
+// x-admin-secret header or a Bearer token, matched against either ADMIN_SECRET
+// or VISUALIZE_ADMIN_SECRET. One login secret works across the whole console.
 //
 // clinic_visits.id and clinic_visits.clinic_id are TEXT; all id filters use
 // strings.
@@ -37,7 +35,7 @@ const supabase = createClient(
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret',
+    'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret, Authorization',
     'Content-Type': 'application/json'
   };
 
@@ -45,9 +43,16 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers, body: '' };
   }
 
-  // Auth check
-  const secret = event.headers['x-admin-secret'] || event.headers['X-Admin-Secret'];
-  if (!secret || secret !== process.env.ADMIN_SECRET) {
+  // Unified auth: accept EITHER the x-admin-secret header (this endpoint's
+  // original scheme) OR a Bearer token (the scheme admin-costs uses), and match
+  // against EITHER ADMIN_SECRET or VISUALIZE_ADMIN_SECRET. This makes the .com
+  // global admin a single console under one login: the same secret the operator
+  // types works for Costs and for vote moderation, regardless of which env var
+  // name is set on the .com site. At least one of the two env vars must be set.
+  const bearer = (event.headers['authorization'] || event.headers['Authorization'] || '').replace(/^Bearer\s+/i, '');
+  const secret = event.headers['x-admin-secret'] || event.headers['X-Admin-Secret'] || bearer;
+  const validSecrets = [process.env.ADMIN_SECRET, process.env.VISUALIZE_ADMIN_SECRET].filter(Boolean);
+  if (!secret || !validSecrets.includes(secret)) {
     return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorised' }) };
   }
 
