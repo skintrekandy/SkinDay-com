@@ -591,10 +591,10 @@
       /* Rotate the whole fullscreen overlay content into a landscape frame that
          fills the phone's long axis. The overlay is already flex-column, so we
          size it to the swapped viewport and rotate it as one block. */
+      /* Sizing + transform for the rotated overlay is applied inline by
+         applyFsRotate() using explicit pixels (100vh is unreliable on iOS). This
+         rule only needs to exist so the class is meaningful; JS drives layout. */
       .scenario-fs-overlay.fs-rotate.open {
-        width:100vh; height:100vw;
-        top:50%; left:50%; inset:auto;
-        transform:translate(-50%,-50%) rotate(90deg);
         transform-origin:center center;
       }
       .fs-rotate-hint {
@@ -5559,23 +5559,42 @@ function applyFsRotate(overlay){
   if(!overlay) return;
   const on = fsIsPortraitPhone();
   overlay.classList.toggle('fs-rotate', on);
-  if(on){
-    overlay.style.width = window.innerHeight + 'px';
-    overlay.style.height = window.innerWidth + 'px';
-    overlay.style.top = '50%';
-    overlay.style.left = '50%';
-    overlay.style.inset = 'auto';
-    overlay.style.transform = 'translate(-50%,-50%) rotate(90deg)';
-    overlay.style.transformOrigin = 'center center';
-  } else {
-    overlay.style.width = '';
-    overlay.style.height = '';
-    overlay.style.top = '';
-    overlay.style.left = '';
-    overlay.style.inset = '';
-    overlay.style.transform = '';
-    overlay.style.transformOrigin = '';
+  // Keep the overlay itself full-viewport (inset:0) so it always establishes
+  // layout. Rotate only the GRID inside it into a landscape frame. This avoids
+  // the zero-size collapse that happens when the fixed overlay's own box is
+  // repositioned with top/left + transform.
+  const grid = overlay.querySelector('.scenario-fs-grid');
+  const bar  = overlay.querySelector('.scenario-fs-bar');
+  if(on && grid){
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    // account for the bar height + overlay padding so the grid fills the rest
+    grid.style.position = 'fixed';
+    grid.style.top = (vh / 2) + 'px';
+    grid.style.left = (vw / 2) + 'px';
+    grid.style.width = vh + 'px';
+    grid.style.height = (vw - 96) + 'px'; // leave room for the action bar
+    grid.style.transform = 'translate(-50%,-50%) rotate(90deg)';
+    grid.style.transformOrigin = 'center center';
+    grid.style.zIndex = '1';
+  } else if(grid){
+    grid.style.position = '';
+    grid.style.top = '';
+    grid.style.left = '';
+    grid.style.width = '';
+    grid.style.height = '';
+    grid.style.transform = '';
+    grid.style.transformOrigin = '';
+    grid.style.zIndex = '';
   }
+  // overlay itself stays at its CSS defaults (inset:0)
+  overlay.style.position = '';
+  overlay.style.inset = '';
+  overlay.style.top = '';
+  overlay.style.left = '';
+  overlay.style.width = '';
+  overlay.style.height = '';
+  overlay.style.transform = '';
 }
 window.addEventListener('orientationchange', function(){
   setTimeout(function(){
