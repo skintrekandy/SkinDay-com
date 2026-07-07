@@ -833,18 +833,16 @@ function switchTab(tab){
 }
 
 // ── FLAGGED VOTES (M36 moderation via admin-action.js) ──────
-// Auth: admin-action.js checks the ADMIN_SECRET env var via the x-admin-secret
-// header (NOT the Bearer/VISUALIZE_ADMIN_SECRET that admin-costs uses). We send
-// the same secret the user signed in with. For this tab to work, .com must have
-// ADMIN_SECRET set to the same value the user types here. If it 401s, that env
-// var is missing or differs from what was entered.
+// Auth is unified: admin-action.js accepts the same secret the operator signs
+// in with (sent here as x-admin-secret), matched server-side against either
+// ADMIN_SECRET or VISUALIZE_ADMIN_SECRET, so one login covers Costs and votes.
 async function adminAction(payload){
   const res = await fetch('/.netlify/functions/admin-action', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
     body: JSON.stringify(payload)
   });
-  if (res.status === 401) { throw new Error('Unauthorised (check ADMIN_SECRET on .com)'); }
+  if (res.status === 401) { throw new Error('Unauthorised (admin-action not deployed, or no admin secret set on .com)'); }
   if (!res.ok) { throw new Error('Request failed (' + res.status + ')'); }
   return res.json();
 }
