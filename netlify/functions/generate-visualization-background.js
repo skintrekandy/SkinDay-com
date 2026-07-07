@@ -716,7 +716,7 @@ exports.handler = async (event) => {
         prompt: scenarioPrompt,
         size: 'auto',
         output_format: 'jpeg',
-        output_compression: 85
+        output_compression: 92
       };
       // input_fidelity only applies to gpt-image-1. gpt-image-2 always runs high-fidelity
       // and will error if the param is passed.
@@ -882,7 +882,7 @@ exports.handler = async (event) => {
       prompt:             finalPrompt,
       size:               'auto',
       output_format:      'jpeg',
-      output_compression: 85
+      output_compression: 92
     };
     // input_fidelity only applies to gpt-image-1
     if (modelName === 'gpt-image-1') {
