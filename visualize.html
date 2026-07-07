@@ -180,7 +180,10 @@
     .result-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
     .result-grid.three-up { grid-template-columns:1fr 1fr 1fr; }
     .result-card { border:1px solid var(--border); border-radius:8px; background:var(--deep); overflow:hidden; position:relative; aspect-ratio:4/5; touch-action:pan-y; }
-    .result-card img { display:block; width:100%; height:100%; object-fit:cover; transform-origin:center center; }
+    /* object-fit:contain + top anchor keeps the original and simulated images at
+       the same scale and vertical position, so faces align even when the AI
+       reframes the head slightly higher/lower than the original. */
+    .result-card img { display:block; width:100%; height:100%; object-fit:contain; object-position:center top; transform-origin:center center; }
     .result-card.zoomable { cursor:grab; touch-action:none; }
     .result-card.panning { cursor:grabbing; }
     .zoom-bar { display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:12px; }
@@ -316,14 +319,7 @@
     .pack-sub s { color:var(--dim); margin:0 2px; }
     .launch-badge { display:inline-block; margin:2px 0 4px; padding:5px 12px; border-radius:999px; background:rgba(201,169,110,.14); border:1px solid rgba(201,169,110,.35); color:#8A6D3B; font-size:.72rem; letter-spacing:.04em; }
     .hidden { display:none !important; }
-    @media(max-width:720px){ .grid{grid-template-columns:1fr;} .page{padding-left:16px;padding-right:16px;} .pill-grid,.area-grid,.type-toggle{grid-template-columns:1fr;} .nav-link{display:none;} }
-    /* M9 mobile: keep the result panels SIDE BY SIDE (shrunk to fit width) so the
-       comparison stays visible at a glance. Do not collapse to one column. */
-    @media(max-width:720px){
-      .result-grid { grid-template-columns:1fr 1fr; gap:6px; }
-      .result-grid.three-up { grid-template-columns:1fr 1fr 1fr; gap:4px; }
-      .result-grid .result-tag { font-size:.55rem; padding:4px 6px; }
-    }
+    @media(max-width:720px){ .grid,.result-grid,.result-grid.three-up{grid-template-columns:1fr;} .page{padding-left:16px;padding-right:16px;} .pill-grid,.area-grid,.type-toggle{grid-template-columns:1fr;} .nav-link{display:none;} }
 
     /* ── Mobile slider bar ── */
     #mobileSliderBar {
@@ -542,13 +538,11 @@
     .scenario-result-card { border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--warm); }
     .scenario-result-header { display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--border); gap:12px; }
     .scenario-result-label { font-size:.74rem; font-weight:600; color:var(--deep); }
-    .scenario-result-disclaimer { font-size:.66rem; color:var(--rose); letter-spacing:.04em; text-transform:uppercase; font-weight:600; }
     .scenario-img-pair { display:grid; grid-template-columns:1fr 1fr; gap:0; }
     .scenario-img-triple { display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; }
-    /* M9 mobile: keep the add-on triptych side by side (shrunk), never stacked. */
-    @media(max-width:600px){ .scenario-img-triple { grid-template-columns:1fr 1fr 1fr; gap:2px; } .scenario-img-triple .scenario-cell-tag { font-size:.5rem; padding:4px 5px; letter-spacing:.05em; } }
+    @media(max-width:600px){ .scenario-img-triple { grid-template-columns:1fr; } }
     .scenario-img-cell { position:relative; aspect-ratio:4/5; background:var(--deep); overflow:hidden; }
-    .scenario-img-cell img { display:block; width:100%; height:100%; object-fit:cover; }
+    .scenario-img-cell img { display:block; width:100%; height:100%; object-fit:contain; object-position:center top; }
     .scenario-cell-tag { position:absolute; bottom:0; left:0; right:0; padding:7px 10px; background:linear-gradient(transparent,rgba(28,23,20,.72)); font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:rgba(250,247,242,.9); }
     .scenario-cell-tag.sim { color:rgba(201,169,110,.95); }
     .scenario-status { font-size:.76rem; color:var(--muted); padding:10px 14px; }
@@ -564,18 +558,14 @@
     .scenario-fs-overlay.open { display:flex; }
     .scenario-fs-bar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; flex-shrink:0; }
     .scenario-fs-title { font-size:.9rem; font-weight:600; color:var(--cream); }
-    .scenario-fs-disclaimer { font-size:.66rem; color:var(--rose); letter-spacing:.04em; text-transform:uppercase; font-weight:600; }
     .scenario-fs-actions { display:flex; gap:10px; align-items:center; }
     .scenario-fs-btn { display:inline-flex; align-items:center; gap:6px; padding:8px 14px; font-size:.72rem; font-weight:600; color:var(--cream); background:transparent; border:1px solid rgba(250,247,242,.35); border-radius:6px; cursor:pointer; }
     .scenario-fs-btn:hover { border-color:var(--gold); color:var(--gold); }
     .scenario-fs-grid { flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; min-height:0; }
-    /* Fullscreen is intended for landscape viewing: keep panels side by side so
-       the comparison holds. Do not stack on small screens. */
-    @media(max-width:700px){ .scenario-fs-grid { gap:6px; } }
     .scenario-fs-cell { position:relative; min-height:0; background:#000; border-radius:6px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
-    .scenario-fs-cell img { width:100%; height:100%; object-fit:contain; will-change:transform; user-select:none; -webkit-user-drag:none; }
-    /* Preview fullscreen (before/after): always fill the cell regardless of pixel size */
-    #previewFsGrid .scenario-fs-cell img { object-fit:cover; width:100%; height:100%; }
+    .scenario-fs-cell img { width:100%; height:100%; object-fit:contain; object-position:center top; will-change:transform; user-select:none; -webkit-user-drag:none; }
+    /* Preview fullscreen: contain + top anchor so original and simulated align */
+    #previewFsGrid .scenario-fs-cell img { object-fit:contain; object-position:center top; width:100%; height:100%; }
     .scenario-fs-cell .scenario-cell-tag { position:absolute; }
     /* fullscreen zoom controls */
     .fs-zoom { display:inline-flex; align-items:center; gap:6px; }
@@ -584,6 +574,42 @@
     /* two-panel variant (before/after consultation preview) */
     .scenario-fs-grid.two { grid-template-columns:1fr 1fr; }
     @media(max-width:540px){ .scenarios-grid { grid-template-columns:1fr; } }
+
+    /* M9 fullscreen on a PORTRAIT phone: iOS Safari cannot force landscape
+       orientation, so instead we rotate the fullscreen CONTENT 90 degrees into a
+       landscape frame that fills the phone's long axis. The user turns the phone
+       to view it upright and large, with the panels side by side. A rotate hint
+       shows until the phone is physically turned. Landscape phones and larger
+       screens are unaffected. */
+    @media (max-width:820px) and (orientation:portrait) {
+      /* Rotate the whole fullscreen overlay content into a landscape frame that
+         fills the phone's long axis. The overlay is already flex-column, so we
+         size it to the swapped viewport and rotate it as one block. */
+      .scenario-fs-overlay.fs-rotate.open {
+        width:100vh; height:100vw;
+        top:50%; left:50%; inset:auto;
+        transform:translate(-50%,-50%) rotate(90deg);
+        transform-origin:center center;
+      }
+      .fs-rotate-hint {
+        position:fixed; left:50%; bottom:16px; transform:translateX(-50%);
+        z-index:9500; display:flex; align-items:center; gap:8px;
+        padding:9px 16px; border-radius:99px;
+        background:rgba(28,23,20,.9); color:var(--cream);
+        font-size:.76rem; font-weight:600; pointer-events:none;
+        animation:fsRotatePulse 1.8s ease-in-out infinite;
+      }
+      .fs-rotate-hint svg { width:16px; height:16px; }
+    }
+    @media (orientation:landscape) { .fs-rotate-hint { display:none !important; } }
+    @keyframes fsRotatePulse { 0%,100%{opacity:.9;} 50%{opacity:.45;} }
+    /* Action bar: allow wrapping so Download/Close never clip on a narrow bar. */
+    .scenario-fs-actions { flex-wrap:wrap; justify-content:flex-end; }
+    @media(max-width:700px){
+      .scenario-fs-bar { flex-wrap:wrap; gap:8px; }
+      .scenario-fs-btn { padding:7px 11px; font-size:.68rem; }
+      .fs-zoom-btn { padding:5px 9px; }
+    }
   </style>
 </head>
 <body>
@@ -1038,7 +1064,6 @@
     <div class="scenario-fs-bar">
       <div>
         <div class="scenario-fs-title" id="scenarioFsTitle"></div>
-        <div class="scenario-fs-disclaimer" data-en="Scenario simulation, not a guaranteed outcome" data-zh="情境模擬，並非保證結果">Scenario simulation, not a guaranteed outcome</div>
       </div>
       <div class="scenario-fs-actions">
         <div class="fs-zoom">
@@ -1051,6 +1076,10 @@
       </div>
     </div>
     <div class="scenario-fs-grid" id="scenarioFsGrid"></div>
+    <div class="fs-rotate-hint" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M2 12a10 10 0 0 1 10-10"/><polyline points="2 8 2 12 6 12"/></svg>
+      <span data-en="Turn your phone to view" data-zh="旋轉手機以檢視">Turn your phone to view</span>
+    </div>
   </div>
 
   <!-- Fullscreen overlay for the main before/after consultation preview -->
@@ -1058,7 +1087,6 @@
     <div class="scenario-fs-bar">
       <div>
         <div class="scenario-fs-title" id="previewFsTitle"></div>
-        <div class="scenario-fs-disclaimer">AI-generated visualization for consultation purposes only</div>
       </div>
       <div class="scenario-fs-actions">
         <div class="fs-zoom">
@@ -1071,6 +1099,10 @@
       </div>
     </div>
     <div class="scenario-fs-grid two" id="previewFsGrid"></div>
+    <div class="fs-rotate-hint" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M2 12a10 10 0 0 1 10-10"/><polyline points="2 8 2 12 6 12"/></svg>
+      <span data-en="Turn your phone to view" data-zh="旋轉手機以檢視">Turn your phone to view</span>
+    </div>
   </div>
 </div>
 
@@ -5348,7 +5380,6 @@ function renderScenarioResult(scenarioKey){
   card.innerHTML =
     '<div class="scenario-result-header">' +
       '<span class="scenario-result-label">' + escapeHtml(label) + '</span>' +
-      '<span class="scenario-result-disclaimer">' + t('scenarioDisc') + '</span>' +
       actionsHtml +
     '</div>' +
     bodyHtml;
@@ -5508,11 +5539,56 @@ function openScenarioFullscreen(scenarioKey){
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   if(scnFsZoom) scnFsZoom.reset();
+  applyFsRotate(overlay);
 }
+
+// M9: iOS Safari cannot lock orientation, so on a portrait phone we rotate the
+// fullscreen overlay content into a landscape frame (class fs-rotate; sizing in
+// CSS). The user turns the phone to view it upright, panels side by side. When
+// the phone is physically landscape, no rotation is needed.
+function fsIsPortraitPhone(){
+  return window.matchMedia('(max-width:820px) and (orientation:portrait)').matches;
+}
+function applyFsRotate(overlay){
+  if(!overlay) return;
+  const on = fsIsPortraitPhone();
+  overlay.classList.toggle('fs-rotate', on);
+  if(on){
+    overlay.style.width = window.innerHeight + 'px';
+    overlay.style.height = window.innerWidth + 'px';
+    overlay.style.top = '50%';
+    overlay.style.left = '50%';
+    overlay.style.inset = 'auto';
+    overlay.style.transform = 'translate(-50%,-50%) rotate(90deg)';
+    overlay.style.transformOrigin = 'center center';
+  } else {
+    overlay.style.width = '';
+    overlay.style.height = '';
+    overlay.style.top = '';
+    overlay.style.left = '';
+    overlay.style.inset = '';
+    overlay.style.transform = '';
+    overlay.style.transformOrigin = '';
+  }
+}
+window.addEventListener('orientationchange', function(){
+  setTimeout(function(){
+    ['scenarioFsOverlay','previewFsOverlay'].forEach(function(id){
+      const ov = document.getElementById(id);
+      if(ov && ov.classList.contains('open')) applyFsRotate(ov);
+    });
+  }, 150);
+});
+window.addEventListener('resize', function(){
+  ['scenarioFsOverlay','previewFsOverlay'].forEach(function(id){
+    const ov = document.getElementById(id);
+    if(ov && ov.classList.contains('open')) applyFsRotate(ov);
+  });
+});
 
 function closeScenarioFullscreen(){
   const overlay = document.getElementById('scenarioFsOverlay');
-  if(overlay) overlay.classList.remove('open');
+  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotate'); }
   document.body.style.overflow = '';
 }
 
@@ -5736,10 +5812,11 @@ function openPreviewFullscreen(){
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   if(prvFsZoom) prvFsZoom.reset();
+  applyFsRotate(overlay);
 }
 function closePreviewFullscreen(){
   const overlay = document.getElementById('previewFsOverlay');
-  if(overlay) overlay.classList.remove('open');
+  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotate'); }
   document.body.style.overflow = '';
 }
 (function wirePreviewFsOverlay(){
