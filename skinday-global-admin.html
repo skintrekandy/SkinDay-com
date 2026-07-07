@@ -672,6 +672,9 @@
     <button class="nav-tab active" data-tab="costs" onclick="switchTab('costs')">
       $ Costs
     </button>
+    <button class="nav-tab" data-tab="flagged" onclick="switchTab('flagged')">
+      &#9873; Flagged Votes <span class="tab-count zero" id="flagged-count">0</span>
+    </button>
   </nav>
 
   <main class="admin-main">
@@ -741,6 +744,22 @@
         </div>
       </div>
     </div>
+
+    <div id="flagged-panel" style="display:none">
+      <div class="add-clinic-form" style="max-width:1000px;">
+        <div class="form-title">Flagged Votes</div>
+        <div class="form-subtitle">Votes flagged for review. A flagged vote still counts publicly until you remove it. Pass keeps the vote and clears the flag; Remove hides it and drops it from the count.</div>
+        <div id="flagged-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">Loading...</div>
+        <div id="flagged-error" style="display:none;color:var(--rose);padding:20px 0;font-size:.85rem;"></div>
+        <div id="flagged-empty" style="display:none;text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">No votes awaiting review.</div>
+        <div id="flagged-content" style="display:none;">
+          <div id="flagged-groups"></div>
+          <div style="text-align:right;margin-top:1rem;">
+            <button onclick="loadFlagged()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -791,9 +810,13 @@ async function enterApp(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   await loadCosts();
+  refreshFlaggedCount(); // show pending-review badge immediately
 }
 
-function refresh(){ costsLoaded = false; loadCosts(); }
+function refresh(){
+  if (currentTab === 'flagged') { loadFlagged(); }
+  else { costsLoaded = false; loadCosts(); }
+}
 
 // Single-tab for now; structured so more tabs slot in later.
 function switchTab(tab){
@@ -801,7 +824,158 @@ function switchTab(tab){
   document.querySelectorAll('.nav-tab').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === tab);
   });
+  var costsP = document.getElementById('costs-panel');
+  var flaggedP = document.getElementById('flagged-panel');
+  if (costsP) costsP.style.display = (tab === 'costs') ? 'block' : 'none';
+  if (flaggedP) flaggedP.style.display = (tab === 'flagged') ? 'block' : 'none';
   if (tab === 'costs' && !costsLoaded) loadCosts();
+  if (tab === 'flagged') loadFlagged();
+}
+
+// ── FLAGGED VOTES (M36 moderation via admin-action.js) ──────
+// Auth: admin-action.js checks the ADMIN_SECRET env var via the x-admin-secret
+// header (NOT the Bearer/VISUALIZE_ADMIN_SECRET that admin-costs uses). We send
+// the same secret the user signed in with. For this tab to work, .com must have
+// ADMIN_SECRET set to the same value the user types here. If it 401s, that env
+// var is missing or differs from what was entered.
+async function adminAction(payload){
+  const res = await fetch('/.netlify/functions/admin-action', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+    body: JSON.stringify(payload)
+  });
+  if (res.status === 401) { throw new Error('Unauthorised (check ADMIN_SECRET on .com)'); }
+  if (!res.ok) { throw new Error('Request failed (' + res.status + ')'); }
+  return res.json();
+}
+
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+async function loadFlagged(){
+  var loading = document.getElementById('flagged-loading');
+  var errEl   = document.getElementById('flagged-error');
+  var emptyEl = document.getElementById('flagged-empty');
+  var content = document.getElementById('flagged-content');
+  loading.style.display = 'block';
+  errEl.style.display = 'none';
+  emptyEl.style.display = 'none';
+  content.style.display = 'none';
+  try {
+    var data = await adminAction({ action: 'list-flagged-votes' });
+    var votes = data.votes || [];
+    document.getElementById('flagged-count').textContent = votes.length;
+    document.getElementById('flagged-count').classList.toggle('zero', votes.length === 0);
+    loading.style.display = 'none';
+    if (!votes.length) { emptyEl.style.display = 'block'; return; }
+    renderFlagged(votes);
+    content.style.display = 'block';
+  } catch (e) {
+    loading.style.display = 'none';
+    errEl.textContent = e.message || 'Failed to load flagged votes.';
+    errEl.style.display = 'block';
+  }
+}
+
+// Group flagged votes by account (user_id): the common case is one account that
+// voted across many clinics, and the reviewer usually wants to approve or remove
+// the whole group at once (the Rejuuv correction path).
+function renderFlagged(votes){
+  var groups = {};
+  votes.forEach(function(v){ (groups[v.user_id] = groups[v.user_id] || []).push(v); });
+
+  var host = document.getElementById('flagged-groups');
+  host.innerHTML = '';
+
+  Object.keys(groups).forEach(function(uid){
+    var rows = groups[uid];
+    var ids = rows.map(function(r){ return r.id; });
+    var reason = rows[0].reason || 'Flagged for review';
+    var acctTotal = rows[0].user_total_votes || rows.length;
+
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'border:1px solid rgba(201,169,110,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;';
+
+    var head = '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;">' +
+      '<div style="font-size:.8rem;color:var(--cream);">' +
+        '<span style="color:var(--gold);font-weight:600;">' + rows.length + ' vote' + (rows.length>1?'s':'') + '</span> from one account' +
+        '<div style="font-size:.72rem;color:var(--muted);margin-top:2px;">' + esc(reason) + ' &middot; account has voted on ' + acctTotal + ' clinics total</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;">' +
+        '<button onclick="reviewGroup(\'' + esc(uid) + '\',\'approve\')" style="background:none;border:1px solid rgba(120,180,120,.5);color:#8fbf8f;padding:.35rem .9rem;border-radius:5px;cursor:pointer;font-family:inherit;font-size:.78rem;">Pass all</button>' +
+        '<button onclick="reviewGroup(\'' + esc(uid) + '\',\'remove\')" style="background:none;border:1px solid rgba(200,114,90,.5);color:var(--rose);padding:.35rem .9rem;border-radius:5px;cursor:pointer;font-family:inherit;font-size:.78rem;">Remove all</button>' +
+      '</div>' +
+    '</div>';
+
+    var list = rows.map(function(r){
+      var pct = r.clinic_total ? Math.round((r.clinic_yes / r.clinic_total) * 100) : 0;
+      return '<div id="fvote-' + esc(r.id) + '" style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(201,169,110,.1);font-size:.8rem;">' +
+        '<div style="color:var(--cream);">' +
+          esc(r.clinic_name) +
+          ' <span style="color:' + (r.would_return==='yes'?'#8fbf8f':'var(--rose)') + ';font-weight:600;">' + (r.would_return==='yes'?'Would return':'Would not') + '</span>' +
+          '<div style="font-size:.7rem;color:var(--muted);margin-top:2px;">' +
+            (r.treatment_type ? esc(r.treatment_type) + ' &middot; ' : '') +
+            (r.visit_month ? esc(r.visit_month) + ' &middot; ' : '') +
+            'clinic ' + r.clinic_yes + '/' + r.clinic_total + ' yes (' + pct + '%)' +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-shrink:0;">' +
+          '<button onclick="reviewOne(\'' + esc(r.id) + '\',\'approve\')" style="background:none;border:1px solid rgba(120,180,120,.4);color:#8fbf8f;padding:.25rem .7rem;border-radius:5px;cursor:pointer;font-family:inherit;font-size:.72rem;">Pass</button>' +
+          '<button onclick="reviewOne(\'' + esc(r.id) + '\',\'remove\')" style="background:none;border:1px solid rgba(200,114,90,.4);color:var(--rose);padding:.25rem .7rem;border-radius:5px;cursor:pointer;font-family:inherit;font-size:.72rem;">Remove</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    wrap.innerHTML = head + list;
+    host.appendChild(wrap);
+  });
+}
+
+async function reviewOne(visitId, decision){
+  try {
+    await adminAction({ action: 'review-vote', visit_id: visitId, decision: decision });
+    var el = document.getElementById('fvote-' + visitId);
+    if (el) el.remove();
+    showToast(decision === 'approve' ? 'Vote passed.' : 'Vote removed.');
+    refreshFlaggedCount();
+  } catch (e) { showToast(e.message || 'Failed.', true); }
+}
+
+async function reviewGroup(userId, decision){
+  // Collect the visible vote ids for this account from the DOM group.
+  var data;
+  try { data = await adminAction({ action: 'list-flagged-votes' }); }
+  catch (e) { showToast(e.message || 'Failed.', true); return; }
+  var ids = (data.votes || []).filter(function(v){ return v.user_id === userId; }).map(function(v){ return v.id; });
+  if (!ids.length) { loadFlagged(); return; }
+  try {
+    await adminAction({ action: 'review-votes-bulk', visit_ids: ids, decision: decision });
+    showToast(decision === 'approve' ? ('Passed ' + ids.length + ' votes.') : ('Removed ' + ids.length + ' votes.'));
+    loadFlagged();
+  } catch (e) { showToast(e.message || 'Failed.', true); }
+}
+
+async function refreshFlaggedCount(){
+  try {
+    var data = await adminAction({ action: 'list-flagged-votes' });
+    var n = (data.votes || []).length;
+    var badge = document.getElementById('flagged-count');
+    badge.textContent = n;
+    badge.classList.toggle('zero', n === 0);
+    if (n === 0 && currentTab === 'flagged') {
+      document.getElementById('flagged-content').style.display = 'none';
+      document.getElementById('flagged-empty').style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+function showToast(msg, isError){
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.remove('success','error');
+  t.classList.add(isError ? 'error' : 'success');
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2600);
 }
 
 // ── COSTS (ported from the Canada admin Costs tab) ──────────
