@@ -57,7 +57,6 @@ const SCULPTRA_FRONTAL_HARD_LOCK =
 const FILLER_AREA_INTENSITY = {
   lips: {
     // Conservative: subtle but real, about 0.5 cc or less.
-    conservative: 'a gentle, natural-looking increase in lip body: a touch more volume in both lips, a slightly more defined vermilion border, and a hint more shape -- subtle but real, consistent with a conservative 0.5 cc correction. Keep the natural upper-to-lower balance, cupid\'s bow, and mouth width.',
     // Moderate: clearly visible, about 0.5-1 cc, noticeable in comparison.
     moderate: 'a visibly fuller lip consistent with approximately 0.5 to 1 cc of HA filler: clearly more body in both the upper and lower lip, a more defined vermilion border, and a natural balanced enhancement that is noticeable in side-by-side comparison. Keep the natural upper-to-lower balance, the cupid\'s bow position, and the mouth width.',
     // Enhanced: clearly noticeable, 1-2 cc, definite with anatomy specifics.
@@ -65,7 +64,6 @@ const FILLER_AREA_INTENSITY = {
   },
   nose: {
     // Conservative: minimal refinement, barely-there change.
-    conservative: 'very subtle non-surgical nasal refinement: gently soften a small dorsal bump or add a hint of radix or tip support so the profile reads barely smoother -- minimal but perceptible in comparison, consistent with a conservative liquid rhinoplasty.',
     // Moderate: clearly visible profile improvement.
     moderate: 'a visible non-surgical nasal refinement (liquid rhinoplasty): smooth the dorsal bump so the side profile reads clearly straighter, add modest bridge definition and gentle radix or tip support where this nose needs it -- a visible improvement that looks like a skilled non-surgical correction.',
     // Enhanced: clearly noticeable structural refinement with anatomy.
@@ -776,42 +774,34 @@ const HA_FILLER_AREA_ALLOWLISTS = {
 // Layer 2: per-area visual outcome, by tier. Written as the clinical endpoint.
 const FILLER_OUTCOME = {
   lips: {
-    conservative: 'a natural but clearly visible lip enhancement, roughly 1 mL of HA filler: more body through both the upper and lower lip, improved vermilion show, and a slightly more defined vermilion border, so the lips read fuller and well hydrated. Keep it restrained but plainly and clearly visible, never so subtle it looks untreated',
     moderate: 'a clearly noticeable lip enhancement, roughly 1.5 mL of HA filler: build the body of both lips with improved vermilion show, gentle anterior projection, and a more defined vermilion border and Cupid\'s bow, so the lips read visibly fuller, hydrated, and well supported and plainly read as tasteful lip filler',
     enhanced: 'a substantial, clearly visible lip enhancement, about 2 mL of HA filler, as an experienced injector would place it: noticeably build the body of both the upper and lower lip with strong vermilion show, clear anterior projection, a well-defined central tubercle, and a crisp, well-supported vermilion border, so the lips read distinctly fuller, hydrated, and structurally supported. The change must be immediately and clearly visible, a confident but tasteful result, keeping natural upper-to-lower proportion and the same mouth width, never overfilled, everted, or duck-shaped'
   },
   chin: {
-    conservative: 'a clearly visible chin refinement: more forward projection at the chin point so the lower-face profile reads more balanced and the chin a little stronger, keeping the chin width natural and the result believable',
     moderate: 'a visible chin refinement: added forward projection and gentle vertical support at the chin so the lower third reads distinctly stronger and better balanced with the upper face, keeping the chin width natural',
     enhanced: 'a strong, clearly visible chin refinement as an experienced injector would place it: bring the chin point forward with clear forward projection and vertical support so the lower-face profile reads noticeably stronger and better balanced, keeping the chin width natural and the result structural rather than pointed or witch-like'
   },
   jawline: {
-    conservative: 'a clearly visible jawline refinement: cleaner, more continuous definition along the lower jaw border with prejowl support, so the lower-face contour reads more defined',
     moderate: 'a visible jawline refinement: a smoother, more continuous lower jaw border from the chin toward the back of the jaw with prejowl support, so the lower-face contour reads distinctly cleaner and better defined',
     enhanced: 'a strong, clearly visible jawline refinement as an experienced injector would place it: a crisp, continuous lower jaw border from chin to angle with clear prejowl support, so the lower-face contour reads noticeably cleaner and better defined, structural rather than sharp or artificial'
   },
   cheeks: {
-    conservative: 'a clearly visible midface refinement: restored support at the cheek so the curve from lower lid to cheek reads fuller and better supported, with a natural apex',
     moderate: 'a visible midface refinement: restored support and contour at the cheek so the curve from lower lid to cheek reads distinctly fuller and better supported, with a natural apex',
     enhanced: 'a strong, clearly visible midface refinement as an experienced injector would place it: restored support and contour at the cheek so the curve from lower lid to cheek reads noticeably fuller and better supported, with a natural apex, never over-projected or pillowed'
   },
   temple: {
-    conservative: 'a clearly visible temple refinement: support filling the hollow at the temple so the transition from forehead to cheek reads more continuous',
     moderate: 'a visible temple refinement: support filling the hollow at the temple so the upper outer face reads as a distinctly smoother, more continuous curve',
     enhanced: 'a strong, clearly visible temple refinement as an experienced injector would place it: support filling the hollow at the temple so the transition from forehead to cheek reads as a noticeably continuous, convex surface, natural and not over-filled'
   },
   tear_trough: {
-    conservative: 'a clearly visible under-eye refinement: support beneath the under-eye hollow so the lid-cheek junction reads smoother and the shadow softens because the hollow is filled, not because the skin is brightened',
     moderate: 'a visible under-eye refinement: support beneath the under-eye hollow so the lid-cheek junction reads distinctly smoother and the shadow softens naturally because the hollow is supported, not brightened',
     enhanced: 'a strong, clearly visible under-eye refinement as an experienced injector would place it: support beneath the under-eye hollow so the lid-cheek junction reads noticeably smoother and the shadow softens because the hollow is filled and supported from beneath, never puffy or over-filled and never brightened or retouched'
   },
   nose: {
-    conservative: 'a clearly visible non-surgical nose refinement, roughly 1 mL of HA filler (liquid rhinoplasty): a straighter, smoother side profile and a little more bridge height, keeping a natural bridge appropriate for this face. Do not narrow the nose and do not create a high, narrow, surgical, or European-style nose',
     moderate: 'a clearly visible non-surgical nose refinement, roughly 1.5 mL of HA filler (liquid rhinoplasty): a distinctly straighter, smoother side profile with a clearly higher bridge, added support at the radix (the top of the bridge, between the brows), and improved tip projection, so the improvement reads at both frontal and oblique views. Keep it believable for HA filler and appropriate for this face, do not narrow the nose, keep the frontal nose and nostril width unchanged, and do not create a high, narrow, surgical, pinched, or European-style nose',
     enhanced: 'a strong, clearly visible non-surgical nose refinement, about 2 mL of HA filler (liquid rhinoplasty), as an experienced injector would place it: clearly build the bridge higher with a markedly straighter side profile and clear support at the radix (the top of the bridge, between the brows), giving a smooth continuous line from the brows to the tip, plus more tip projection and support. On oblique and side views the raised, straighter bridge must be clearly and obviously visible. From the front the bridge should read more defined and better delineated, with a clearer, more continuous dorsal light reflection (a brighter highlight running straight down the center of the bridge), so the nose looks more refined and structured, but not taller and not narrower. The change must be obvious at both frontal and oblique views; if uncertain, prefer the more visible result. Keep it believable for HA filler and never surgical: do not narrow the nose, keep the frontal nose and nostril width unchanged, and do not create a high, narrow, surgical, pinched, or European-style nose'
   },
   nasolabial_folds: {
-    conservative: 'a clearly visible but conservative improvement of the upper nasolabial region, achieved by restoring deep structural support beside the nose (at the pyriform aperture and adjacent deep medial cheek): a softer transition from the nose to the cheek, reduced upper nasolabial shadowing, and improved midface support, without making the folds disappear. Reduce the depth of the fold by restoring underlying support, never by smoothing skin texture or removing normal facial lines. Preserve natural facial movement and expression, so the result looks rested rather than corrected',
     moderate: 'a clearly visible improvement of deep structural support beside the nose (at the pyriform aperture and adjacent deep medial cheek), with greater soft-tissue support through the upper nasolabial region: the upper portion of the fold becomes noticeably softer while remaining natural, and the cheek-to-nose transition improves without making the face look fuller or overfilled. Reduce the depth of the fold by restoring underlying support, never by smoothing skin texture or removing normal facial lines. Maintain realistic facial character',
     enhanced: 'a strong but believable restoration of deep support beside the nose (at the pyriform aperture and adjacent deep medial cheek), as an experienced injector would place it: obvious improvement of the upper nasolabial contour while maintaining natural anatomy and facial expression, so the fold becomes substantially softer but never disappears completely, the improvement coming from restored support rather than skin smoothing. Reduce the depth of the fold by restoring underlying support, never by smoothing skin texture or removing normal facial lines'
   }
@@ -823,12 +813,10 @@ const FILLER_OUTCOME = {
 // outcome description in the same voice as the single areas.
 const FILLER_OUTCOME_CHINJAW = {
   female: {
-    conservative: 'a clearly visible lower-face refinement treating chin and jawline as one unit: more forward projection and gentle vertical support at the chin plus a cleaner, more continuous jaw border with prejowl support, so the lower third reads more balanced and defined and tapers gently toward a refined oval, keeping the chin width natural',
     moderate: 'a visible lower-face refinement treating chin and jawline as one unit: forward chin projection and vertical support plus a smoother, more continuous jaw border with prejowl support, so the lower third reads distinctly stronger, more balanced, and more defined, tapering toward a refined oval, keeping the chin width natural',
     enhanced: 'a strong, clearly visible lower-face refinement treating chin and jawline as one unit, as an experienced injector would place it: clear forward chin projection and vertical support plus a crisp, continuous jaw border with prejowl support, so the lower third reads noticeably stronger, balanced, and defined and tapers toward a refined oval, keeping the chin width natural and never over-narrowed into a hard, pointed V'
   },
   male: {
-    conservative: 'a clearly visible lower-face refinement on a male face treating chin and jawline as one unit: more forward projection at the chin with the chin kept wide and squared, plus a cleaner, more continuous jaw border with prejowl support, so the lower third reads stronger and better defined. Keep the chin and jaw wide, never tapered, pointed, or feminine',
     moderate: 'a visible lower-face refinement on a male face treating chin and jawline as one unit: forward chin projection with a wide, squared chin, plus a smoother, more continuous jaw border with prejowl support, so the lower third reads distinctly stronger and structurally defined. Keep the full jaw width, never tapered, pointed, or feminine',
     enhanced: 'a strong, clearly visible lower-face refinement on a male face treating chin and jawline as one unit, as an experienced injector would place it: clear forward projection with a wide, squared chin, plus a crisp, continuous jaw border with prejowl support, so the lower third reads noticeably stronger and structurally defined. Keep the full jaw width and squared chin, never tapered, pointed, feminine, or a superhero jaw'
   }
@@ -850,8 +838,9 @@ const FILLER_OUTCOME_OVERFILLED =
 
 function buildFillerPrompt(sel){
   const areas = sel.areas;
-  const tier = (sel.intensity === 'enhanced' || sel.intensity === 'moderate' || sel.intensity === 'conservative')
-    ? sel.intensity : 'moderate';
+  // Two live filler tiers only: 'moderate' (shown as Natural) and 'enhanced'.
+  // The 'conservative' tier was removed; any unexpected value maps to Natural.
+  const tier = (sel.intensity === 'enhanced') ? 'enhanced' : 'moderate';
   const isChinJawUnit = areas.includes('chin') && areas.includes('jawline');
 
   const LEAD = NO_TEXT_RULE + ' ' + FILLER_SINGLE_IMAGE + ' ' +
