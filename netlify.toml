@@ -5,6 +5,12 @@
   functions = "netlify/functions"
   publish   = "."
 
+# sharp (used by clinic-case-upload) ships a native binary; esbuild must leave
+# it external so it deploys intact.
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["sharp"]
+
 # ── STAGING / BRANCH DEPLOYS: BLOCK SEARCH INDEXING ──────────────
 # Applies ONLY to branch deploys (staging--skindayglobal.netlify.app
 # and any other non-production branch). Production (skinday.com) is
@@ -19,6 +25,23 @@
 [context.deploy-preview.headers]
   [context.deploy-preview.headers.values]
     X-Robots-Tag = "noindex, nofollow"
+
+# ── CANONICAL HOST: FORCE APEX (non-www) ─────────────────────────
+# All real content (directory, clinic profiles, app routes) lives on
+# the apex skinday.com. GSC was indexing the homepage and marketing
+# pages under BOTH www.skinday.com and skinday.com, splitting ranking
+# signals across two hosts. This 301 collapses every www request onto
+# the apex so Google consolidates on a single canonical host.
+#
+# Placed first so host canonicalization runs before the path-level
+# redirects below. A www request to a .html path takes one extra hop
+# (www/studio.html -> apex/studio.html -> apex/studio), which is
+# acceptable and still resolves to the clean canonical URL.
+[[redirects]]
+  from   = "https://www.skinday.com/*"
+  to     = "https://skinday.com/:splat"
+  status = 301
+  force  = true
 
 # ── CLEAN URLS ───────────────────────────────────────────────────
 # Redirect every *.html request to its extensionless path so the
@@ -177,6 +200,17 @@
 [[redirects]]
   from   = "/visualize/cases"
   to     = "/visualize-cases.html"
+  status = 200
+  force  = true
+
+# ── CRAWLABLE CLINIC INDEX ────────────────────────────────────────
+# Server-rendered, JS-free HTML index of every clinic profile. Gives
+# Googlebot a real link path to all /clinic/* pages (which otherwise
+# exist only in the sitemap). Pagination via ?page=N is preserved by
+# Netlify automatically on the rewrite.
+[[redirects]]
+  from   = "/directory"
+  to     = "/.netlify/functions/directory-index"
   status = 200
   force  = true
 
