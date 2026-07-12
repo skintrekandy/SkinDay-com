@@ -39,6 +39,11 @@
   header .rule { width:1px; height:20px; background:rgba(250,247,242,.22); }
   header .who { font-size:13px; color:rgba(250,247,242,.72); }
   header .spacer { flex:1; }
+  header .credits {
+    font-size:12px; color:var(--gold);
+    letter-spacing:.04em; margin-right:20px;
+  }
+  header .credits b { color:var(--cream); font-weight:500; }
   header button {
     background:none; border:0; color:rgba(250,247,242,.6);
     font:inherit; font-size:12.5px; cursor:pointer;
@@ -240,6 +245,7 @@
   <span class="rule"></span>
   <span class="who" id="clinicName"></span>
   <span class="spacer"></span>
+  <span class="credits" id="credits"></span>
   <button id="signOut">Sign out</button>
 </header>
 
@@ -487,7 +493,21 @@ async function start() {
   // it in, so a future refactor of Visualize cannot silently break grounding.
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
+  loadCredits();
   loadCases();
+}
+
+// The embedded pages' own account strip is hidden, so the balance lives here.
+async function loadCredits() {
+  try {
+    const t = await token();
+    const r = await fetch('/.netlify/functions/get-credits', {
+      headers: { Authorization: 'Bearer ' + t }
+    });
+    const d = await r.json();
+    const n = (d && (d.credits != null ? d.credits : d.balance));
+    if (n != null) $('credits').innerHTML = 'Credits <b>' + n + '</b>';
+  } catch (e) { /* a missing balance is not worth an error */ }
 }
 
 sb.auth.getSession().then(({ data }) => { if (data && data.session) start(); });
@@ -593,7 +613,14 @@ function dressFrame(frameId) {
   if (!d || !d.head) return;
   const style = d.createElement('style');
   style.textContent =
+    // The page's own chrome. The portal already provides a header and tabs.
     'nav, footer, .nav-overlay { display:none !important; }' +
+    // The signed-in strip (email, credits, sign out) duplicates the portal
+    // header and looked like a second account bar stacked on the first.
+    '.acct-bar { display:none !important; }' +
+    // .page carries 88px of top padding to clear the fixed nav. With the nav
+    // hidden that padding became an empty band under the tabs.
+    '.page { padding-top:0 !important; }' +
     'body { background:#FAF7F2 !important; }';
   d.head.appendChild(style);
   fitFrame(frameId);
