@@ -216,6 +216,8 @@ exports.handler = async (event) => {
     const treatment = (fields.treatment || '').trim() || null;
     const subtype = (fields.subtype || '').trim() || null;
     const angle = (fields.angle || '').trim() || null;
+    const beforeDate = (fields.before_date || '').trim() || null;
+    const afterDate = (fields.after_date || '').trim() || null;
     const phenotype = (fields.phenotype || '').trim() || null;
     const sourceJobId = (fields.source_job_id || '').trim() || null;
 
@@ -293,6 +295,8 @@ exports.handler = async (event) => {
         p_subtype: subtype,
         p_angle: angle,
         p_phenotype: phenotype,
+        p_before_date: beforeDate,
+        p_after_date: afterDate,
         p_residency: 'ca',
         p_source_job_id: sourceJobId
       })
