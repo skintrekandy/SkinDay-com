@@ -4,263 +4,469 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Clinic Portal | SkinDay</title>
+<title>Clinic Portal · SkinDay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --deep: #1C1714;
-    --cream: #FAF7F2;
-    --rose: #C8725A;
-    --rose-deep: #a85a52;
-    --gold: #C9A96E;
-    --line: #e6ddd3;
-    --muted: #6b615a;
+    --deep:   #1C1714;
+    --cream:  #FAF7F2;
+    --rose:   #C8725A;
+    --gold:   #C9A96E;
+    --ink:    #2b2320;
+    --muted:  #857a70;
+    --line:   #e7ded3;
+    --paper:  #ffffff;
   }
   * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
   body {
     margin: 0;
     background: var(--cream);
     color: var(--deep);
-    font-family: 'DM Sans', sans-serif;
-    line-height: 1.55;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
   }
+  ::selection { background: rgba(201,169,110,.28); }
+  :focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: 3px; }
+
+  /* ---- type ---- */
+  .display {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: .005em;
+    line-height: 1.15;
+  }
+  .eyebrow {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* ---- header ---- */
   header {
     background: var(--deep);
     color: var(--cream);
-    padding: 18px 24px;
+    border-bottom: 1px solid var(--gold);
+    padding: 20px 32px;
     display: flex;
-    align-items: baseline;
-    gap: 14px;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
   }
-  header h1 {
-    font-family: 'Cormorant Garamond', serif;
-    font-weight: 500;
-    font-size: 26px;
-    margin: 0;
-    letter-spacing: .01em;
-  }
-  header .clinic { color: var(--gold); font-size: 14px; }
+  header .mark { font-size: 25px; color: var(--cream); }
+  header .mark em { font-style: italic; color: var(--gold); }
+  header .rule { width: 1px; height: 22px; background: rgba(250,247,242,.22); }
+  header .who { font-size: 13px; color: rgba(250,247,242,.72); }
   header .spacer { flex: 1; }
   header button {
-    background: transparent;
-    border: 1px solid rgba(250,247,242,.35);
-    color: var(--cream);
-    border-radius: 8px;
-    padding: 6px 12px;
-    font-size: 13px;
+    background: none;
+    border: 0;
+    color: rgba(250,247,242,.6);
+    font: inherit;
+    font-size: 12.5px;
     cursor: pointer;
+    padding: 4px 2px;
+    border-bottom: 1px solid transparent;
   }
-  main { max-width: 1000px; margin: 0 auto; padding: 28px 24px 80px; }
-  .card {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 22px;
-    margin-bottom: 22px;
+  header button:hover { color: var(--cream); border-bottom-color: var(--gold); }
+
+  main { max-width: 940px; margin: 0 auto; padding: 40px 32px 100px; }
+
+  /* ---- tabs ---- */
+  .tabs {
+    display: flex;
+    gap: 28px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 40px;
   }
-  h2 {
+  .tab {
+    background: none; border: 0; cursor: pointer;
     font-family: 'Cormorant Garamond', serif;
-    font-weight: 600;
-    font-size: 22px;
-    margin: 0 0 4px;
+    font-size: 21px;
+    color: var(--muted);
+    padding: 0 0 12px;
+    margin-bottom: -1px;
+    border-bottom: 1px solid transparent;
+    transition: color .18s ease, border-color .18s ease;
   }
-  .sub { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
-  label { display: block; font-size: 12px; font-weight: 700; margin: 12px 0 5px; letter-spacing: .02em; }
-  input[type=text], input[type=email], input[type=password], select, input[type=file] {
+  .tab:hover { color: var(--ink); }
+  .tab.active { color: var(--deep); border-bottom-color: var(--rose); }
+
+  /* ---- sections ---- */
+  .sec { margin-bottom: 56px; animation: rise .5s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .sec { animation: none; } * { transition: none !important; } }
+
+  .sec-head { margin-bottom: 22px; }
+  .sec-head h2 { font-size: 30px; margin: 4px 0 2px; }
+  .sec-head p { color: var(--muted); font-size: 13.5px; margin: 0; max-width: 56ch; }
+
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 28px;
+  }
+
+  /* ---- form ---- */
+  label { display: block; margin-bottom: 6px; }
+  .field { margin-bottom: 18px; }
+  input[type=text], input[type=email], input[type=password], select {
     width: 100%;
-    padding: 10px 11px;
-    border: 1px solid #d9d0c6;
-    border-radius: 9px;
-    font-size: 14px;
-    font-family: inherit;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
     background: var(--cream);
     color: var(--deep);
-  }
-  .row { display: flex; gap: 14px; flex-wrap: wrap; }
-  .row > div { flex: 1; min-width: 150px; }
-  button.primary, button.ghost {
-    font-family: inherit;
+    font: inherit;
     font-size: 14px;
-    font-weight: 700;
-    border-radius: 9px;
-    padding: 10px 18px;
+  }
+  input[type=file] { font-size: 13px; width: 100%; color: var(--muted); }
+  input:hover, select:hover { border-color: #d6cabb; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; }
+
+  button.act {
+    font: inherit; font-weight: 700; font-size: 13.5px;
+    letter-spacing: .02em;
+    background: var(--deep); color: var(--cream);
+    border: 1px solid var(--deep);
+    border-radius: 2px;
+    padding: 12px 26px;
     cursor: pointer;
-    border: 1px solid transparent;
-    margin-top: 16px;
+    transition: background .18s ease;
   }
-  button.primary { background: var(--deep); color: var(--cream); }
-  button.primary:hover { background: #2c241f; }
-  button.ghost { background: transparent; color: var(--deep); border-color: #d9d0c6; }
-  button:disabled { opacity: .45; cursor: default; }
-  .consent {
-    background: var(--cream);
+  button.act:hover { background: #322822; }
+  button.act:disabled { opacity: .4; cursor: default; }
+  button.quiet {
+    font: inherit; font-size: 12.5px;
+    background: none; color: var(--ink);
     border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-top: 16px;
+    border-radius: 2px;
+    padding: 7px 13px;
+    cursor: pointer;
+    transition: border-color .18s ease, color .18s ease;
   }
-  .consent h3 { font-size: 13px; margin: 0 0 4px; letter-spacing: .02em; }
-  .consent p { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
-  .check { display: flex; gap: 9px; align-items: flex-start; margin: 8px 0; font-size: 13px; }
-  .check input { margin-top: 3px; }
-  .check span small { display: block; color: var(--muted); font-size: 11.5px; }
-  .gate {
-    border-left: 3px solid var(--rose);
-    background: #fdf3f0;
-    padding: 10px 13px;
-    border-radius: 6px;
+  button.quiet:hover { border-color: var(--gold); }
+  button.quiet.warn:hover { border-color: var(--rose); color: var(--rose); }
+  button.quiet:disabled { opacity: .4; cursor: default; }
+
+  /* ---- consent block ---- */
+  .consent { border-top: 1px solid var(--line); margin-top: 26px; padding-top: 22px; }
+  .consent .eyebrow { margin-bottom: 12px; }
+  .perm {
+    display: flex; gap: 11px; align-items: flex-start;
+    padding: 11px 0;
+    border-bottom: 1px dotted var(--line);
+    cursor: pointer;
+  }
+  .perm:last-of-type { border-bottom: 0; }
+  .perm input { margin-top: 4px; accent-color: var(--rose); }
+  .perm b { font-weight: 500; font-size: 14px; display: block; }
+  .perm small { color: var(--muted); font-size: 12.5px; }
+
+  .caution {
+    margin-top: 18px;
+    padding: 12px 15px;
+    border-left: 2px solid var(--rose);
+    background: #fbf1ee;
+    color: #82443a;
     font-size: 12.5px;
-    color: #7a4034;
-    margin-top: 14px;
   }
-  .case {
-    display: flex;
-    gap: 16px;
-    padding: 16px 0;
+
+  /* ---- case plate (signature) ---- */
+  .plate {
+    display: grid;
+    grid-template-columns: 232px 1fr;
+    gap: 26px;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .plate:last-child { border-bottom: 0; }
+  .diptych {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1px; background: var(--line);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .frame { position: relative; background: var(--cream); overflow: hidden; }
+  .frame img {
+    display: block; width: 100%; aspect-ratio: 4/5;
+    object-fit: cover;
+    transition: transform .5s cubic-bezier(.2,.7,.3,1);
+  }
+  .plate:hover .frame img { transform: scale(1.035); }
+  .frame figcaption {
+    position: absolute; left: 0; bottom: 0;
+    background: rgba(28,23,20,.78);
+    color: var(--cream);
+    font-size: 9px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: 3px 7px;
+  }
+
+  .plate-body { min-width: 0; }
+  .plate-title { font-size: 23px; text-transform: capitalize; }
+  .plate-meta { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
+
+  /* the ledger: this clinic's permissions, legible at a glance */
+  .ledger {
+    display: flex; align-items: center; gap: 16px;
+    margin: 16px 0 4px; padding: 9px 0;
+    border-top: 1px solid var(--line);
     border-bottom: 1px solid var(--line);
     flex-wrap: wrap;
   }
-  .case:last-child { border-bottom: 0; }
-  .thumbs { display: flex; gap: 6px; }
-  .thumbs img {
-    width: 74px; height: 92px; object-fit: cover;
-    border-radius: 7px; border: 1px solid var(--line); background: var(--cream);
+  .perm-mark {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: .13em; text-transform: uppercase;
+    color: var(--muted);
   }
-  .case-body { flex: 1; min-width: 240px; }
-  .case-title { font-weight: 700; text-transform: capitalize; font-size: 15px; }
-  .case-meta { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
-  .badges { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
-  .badge {
-    font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
-    padding: 3px 8px; border-radius: 20px; font-weight: 700;
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    border: 1px solid var(--muted);
   }
-  .b-pub { background: #e7f0e9; color: #2f6b45; }
-  .b-ref { background: #f3ecdd; color: #856224; }
-  .b-test { background: #efe9e4; color: var(--muted); }
-  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
-  .actions button {
-    margin-top: 0; font-size: 12.5px; padding: 7px 12px; font-weight: 500;
+  .perm-mark.on { color: var(--ink); }
+  .perm-mark.on .dot { background: var(--gold); border-color: var(--gold); }
+  .perm-mark.live .dot { background: var(--rose); border-color: var(--rose); }
+
+  .plate-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .note { font-size: 12.5px; margin-top: 10px; color: var(--muted); }
+  .note.ok { color: #3d6b4c; }
+  .note.bad { color: #a9503f; }
+
+  .empty {
+    padding: 44px 0; text-align: center;
   }
-  .danger { color: var(--rose-deep); border-color: #e5c3bc !important; }
-  .status { font-size: 12.5px; margin-top: 10px; }
-  .ok { color: #2f6b45; }
-  .bad { color: var(--rose-deep); }
-  .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
-  .login { max-width: 380px; margin: 90px auto; }
+  .empty p { color: var(--muted); font-size: 13.5px; margin: 6px 0 0; }
+  .empty .display { font-size: 22px; }
+
+  /* ---- visualize ---- */
+  .result { margin-top: 26px; }
+  .grounded {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12.5px;
+    padding: 11px 14px;
+    background: #faf4e9;
+    border-left: 2px solid var(--gold);
+    color: #6d5628;
+  }
+  .grounded.off { background: var(--cream); border-left-color: var(--line); color: var(--muted); }
+  .result img {
+    display: block; width: 100%; max-width: 480px;
+    margin-top: 14px; border: 1px solid var(--line);
+  }
+  .working { display: inline-block; color: var(--muted); font-size: 13px; }
+  .working::after {
+    content: '·'; animation: dots 1.2s steps(4, end) infinite;
+  }
+  @keyframes dots { 0% { content: '·'; } 33% { content: '··'; } 66% { content: '···'; } }
+
+  /* ---- sign in ---- */
+  .gate { max-width: 360px; margin: 14vh auto; text-align: left; }
+  .gate .display { font-size: 38px; margin: 10px 0 6px; }
+  .gate p.lede { color: var(--muted); font-size: 13.5px; margin: 0 0 28px; }
+  .gate button.act { width: 100%; margin-top: 8px; }
+
+  @media (max-width: 700px) {
+    main { padding: 28px 20px 80px; }
+    .plate { grid-template-columns: 1fr; }
+    .diptych { max-width: 260px; }
+    header { padding: 16px 20px; }
+  }
 </style>
 </head>
 <body>
 
 <header id="hdr" style="display:none;">
-  <h1>SkinDay Clinic</h1>
-  <span class="clinic" id="clinicName"></span>
+  <span class="display mark">Skin<em>Day</em></span>
+  <span class="rule"></span>
+  <span class="who" id="clinicName"></span>
   <span class="spacer"></span>
   <button id="signOut">Sign out</button>
 </header>
 
 <main>
 
-  <div class="card login" id="loginCard">
-    <h2>Clinic portal</h2>
-    <p class="sub">Case library, gallery, and your clinic's Visualize.</p>
-    <label>Email</label>
-    <input type="email" id="email" autocomplete="username">
-    <label>Password</label>
-    <input type="password" id="password" autocomplete="current-password">
-    <button class="primary" id="signIn">Sign in</button>
-    <div class="status bad" id="loginStatus"></div>
-  </div>
+  <!-- sign in -->
+  <section class="gate sec" id="gate">
+    <span class="eyebrow">Clinic portal</span>
+    <h1 class="display">Your cases,<br>your Visualize.</h1>
+    <p class="lede">Every case you add teaches your own simulation tool and, if the patient agrees, appears on your website.</p>
+    <div class="field">
+      <label class="eyebrow" for="email">Email</label>
+      <input type="email" id="email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="password">Password</label>
+      <input type="password" id="password" autocomplete="current-password">
+    </div>
+    <button class="act" id="signIn">Sign in</button>
+    <div class="note bad" id="gateNote"></div>
+  </section>
 
   <div id="app" style="display:none;">
 
-    <div class="card">
-      <h2>Add a case</h2>
-      <p class="sub">Upload once. The case feeds your Visualize, and you choose separately whether it appears on your website gallery.</p>
+    <nav class="tabs">
+      <button class="tab active" id="tabCases">Cases</button>
+      <button class="tab" id="tabVis">Visualize</button>
+    </nav>
 
-      <div class="row">
-        <div>
-          <label>Treatment</label>
-          <input type="text" id="treatment" placeholder="sculptra" value="sculptra">
+    <!-- CASES -->
+    <div id="panelCases">
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="eyebrow">Add a case</span>
+          <h2 class="display">One upload, three decisions.</h2>
+          <p>Store it, let it teach your Visualize, show it on your website. Each is the patient's to give, and each is theirs to take back.</p>
         </div>
-        <div>
-          <label>Angle</label>
-          <select id="angle">
-            <option value="frontal">frontal</option>
-            <option value="oblique_right">oblique right</option>
-            <option value="oblique_left">oblique left</option>
-          </select>
+
+        <div class="panel">
+          <div class="grid">
+            <div class="field">
+              <label class="eyebrow" for="treatment">Treatment</label>
+              <input type="text" id="treatment" value="sculptra">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="angle">Angle</label>
+              <select id="angle">
+                <option value="frontal">Frontal</option>
+                <option value="oblique_right">Oblique right</option>
+                <option value="oblique_left">Oblique left</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="phenotype">Phenotype</label>
+              <input type="text" id="phenotype" placeholder="optional">
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="field">
+              <label class="eyebrow" for="beforeFile">Before</label>
+              <input type="file" id="beforeFile" accept="image/*">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="afterFile">After</label>
+              <input type="file" id="afterFile" accept="image/*">
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="field">
+              <label class="eyebrow" for="classification">Subject</label>
+              <select id="classification">
+                <option value="staff_test">Staff or test</option>
+                <option value="synthetic">Synthetic</option>
+                <option value="paid_model">Paid model</option>
+                <option value="patient">Patient</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="consentVersion">Consent form</label>
+              <input type="text" id="consentVersion" value="skintrek-v1">
+            </div>
+          </div>
+
+          <div class="consent">
+            <div class="eyebrow">What the patient agreed to</div>
+
+            <label class="perm">
+              <input type="checkbox" id="cStore" checked disabled>
+              <span><b>Store this case</b>
+                <small>Required. Permission to hold the photographs.</small></span>
+            </label>
+
+            <label class="perm">
+              <input type="checkbox" id="cVisualize" checked>
+              <span><b>Teach our Visualize</b>
+                <small>Private. Guides your simulations. Never shown to anyone.</small></span>
+            </label>
+
+            <label class="perm">
+              <input type="checkbox" id="cGallery">
+              <span><b>Show on our website</b>
+                <small>Public. Anyone can see it. Removing it later cannot recall copies already cached elsewhere.</small></span>
+            </label>
+          </div>
+
+          <div class="caution" id="patientGate" style="display:none;">
+            Patient uploads stay closed until the consent wording has been reviewed. Use staff, synthetic, or paid model for now.
+          </div>
+
+          <div style="margin-top:24px;">
+            <button class="act" id="uploadBtn">Add case</button>
+            <div class="note" id="uploadNote"></div>
+          </div>
         </div>
-        <div>
-          <label>Phenotype (optional)</label>
-          <input type="text" id="phenotype" placeholder="e.g. deflation">
+      </section>
+
+      <section class="sec">
+        <div class="sec-head">
+          <span class="eyebrow">Library</span>
+          <h2 class="display" id="libTitle">Your cases</h2>
+          <p id="libSub">Each case carries its own permissions, and shows them.</p>
         </div>
-      </div>
+        <div id="cases"><div class="empty"><span class="working">Loading</span></div></div>
+      </section>
 
-      <div class="row">
-        <div>
-          <label>Before photo</label>
-          <input type="file" id="beforeFile" accept="image/*">
-        </div>
-        <div>
-          <label>After photo</label>
-          <input type="file" id="afterFile" accept="image/*">
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Subject</label>
-          <select id="classification">
-            <option value="staff_test">staff / test</option>
-            <option value="synthetic">synthetic</option>
-            <option value="paid_model">paid model</option>
-            <option value="patient">patient</option>
-          </select>
-        </div>
-        <div>
-          <label>Consent form version</label>
-          <input type="text" id="consentVersion" value="skintrek-v1">
-        </div>
-      </div>
-
-      <div class="consent">
-        <h3>What the patient agreed to</h3>
-        <p>Record only what they actually consented to. Each permission is separate, and each can be withdrawn later.</p>
-
-        <label class="check">
-          <input type="checkbox" id="cStore" checked disabled>
-          <span><strong>Store this case</strong>
-            <small>Required. Permission for SkinDay to hold the photos.</small></span>
-        </label>
-
-        <label class="check">
-          <input type="checkbox" id="cVisualize" checked>
-          <span><strong>Use to ground our Visualize</strong>
-            <small>Private. The case guides simulations, never shown publicly.</small></span>
-        </label>
-
-        <label class="check">
-          <input type="checkbox" id="cGallery">
-          <span><strong>Show on our website gallery</strong>
-            <small>Public. Anyone can see it. Removal cannot recall cached copies.</small></span>
-        </label>
-      </div>
-
-      <div class="gate" id="patientGate" style="display:none;">
-        Real patient uploads are disabled until the consent wording has been reviewed. Choose staff, synthetic, or paid model for now. The server enforces this regardless of what is selected here.
-      </div>
-
-      <button class="primary" id="uploadBtn">Add case</button>
-      <div class="status" id="uploadStatus"></div>
     </div>
 
-    <div class="card">
-      <h2>Case library</h2>
-      <p class="sub" id="libSub">Your stored cases.</p>
-      <div id="cases"><div class="empty">Loading...</div></div>
+    <!-- VISUALIZE -->
+    <div id="panelVis" style="display:none;">
+      <section class="sec">
+        <div class="sec-head">
+          <span class="eyebrow">Visualize</span>
+          <h2 class="display">Grounded in your own work.</h2>
+          <p>A Sculptra simulation shaped by the cases you approved, not by a stranger's idea of a good result.</p>
+        </div>
+
+        <div class="panel">
+          <div class="grid">
+            <div class="field">
+              <label class="eyebrow" for="visPhoto">Patient photo</label>
+              <input type="file" id="visPhoto" accept="image/*">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="visAngle">Angle</label>
+              <select id="visAngle">
+                <option value="frontal">Frontal</option>
+                <option value="r45">Oblique right</option>
+                <option value="l45">Oblique left</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="field">
+              <label class="eyebrow" for="visPhenotype">Phenotype</label>
+              <input type="text" id="visPhenotype" placeholder="optional">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="visTimeline">Timeline</label>
+              <select id="visTimeline">
+                <option value="3">3 months</option>
+                <option value="6" selected>6 months</option>
+                <option value="12">12 months</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:12px;">
+            <button class="act" id="visBtn">Generate</button>
+            <div class="note" id="visNote"></div>
+          </div>
+
+          <div class="result" id="visResultWrap" style="display:none;">
+            <div class="grounded" id="visGrounding"></div>
+            <img id="visResult" alt="Simulation">
+          </div>
+        </div>
+      </section>
     </div>
 
   </div>
@@ -271,20 +477,36 @@
   'use strict';
 
   var SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
-  // Public, RLS-protected anon key. Same one already embedded in Studio and the
-  // directory portal. It is safe in client code by design; the service role key
-  // is the one that must never appear here.
+  // Public, RLS-protected anon key. The service role key never appears client-side.
   var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
 
   var session = null;
   var clinicId = null;
-  var clinicName = '';
 
   function $(id) { return document.getElementById(id); }
-  function setStatus(el, msg, cls) {
-    var e = $(el);
-    e.className = 'status ' + (cls || '');
+  function note(id, msg, cls) {
+    var e = $(id);
+    e.className = 'note ' + (cls || '');
     e.textContent = msg || '';
+  }
+  function working(id, msg) {
+    $(id).className = 'note';
+    $(id).innerHTML = '<span class="working">' + msg + '</span>';
+  }
+
+  function rest(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign({
+      apikey: ANON_KEY,
+      Authorization: 'Bearer ' + session.access_token,
+      'Content-Type': 'application/json'
+    }, opts.headers || {});
+    return fetch(SUPABASE_URL + path, opts).then(function (r) {
+      return r.text().then(function (t) {
+        var b; try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
+        return { status: r.status, body: b };
+      });
+    });
   }
 
   function api(path, opts) {
@@ -295,76 +517,72 @@
     );
     return fetch(path, opts).then(function (r) {
       return r.text().then(function (t) {
-        var b;
-        try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
+        var b; try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
         return { status: r.status, body: b };
       });
     });
   }
 
-  function rest(path, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign(
-      {
-        apikey: ANON_KEY,
-        Authorization: 'Bearer ' + session.access_token,
-        'Content-Type': 'application/json'
-      },
-      opts.headers || {}
-    );
-    return fetch(SUPABASE_URL + path, opts).then(function (r) {
-      return r.text().then(function (t) {
-        var b;
-        try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
-        return { status: r.status, body: b };
-      });
+  // Sanitize in the browser: the canvas re-encode drops all EXIF (GPS, camera
+  // identifiers, timestamps) and bakes orientation into the pixels before the
+  // photo leaves this device. The server refuses anything still carrying EXIF.
+  function sanitize(file, name) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        var max = 2400;
+        var s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * s);
+        c.height = Math.round(img.naturalHeight * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (b) {
+          if (!b) { reject(new Error('That image could not be read.')); return; }
+          resolve(new File([b], name + '.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.9);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That image could not be read.')); };
+      img.src = url;
     });
   }
 
-  // ---- auth -----------------------------------------------------------
+  // ---- sign in ----------------------------------------------------------
 
-  $('signIn').addEventListener('click', function () {
-    setStatus('loginStatus', 'Signing in...', '');
+  $('signIn').addEventListener('click', signIn);
+  $('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
+
+  function signIn() {
+    note('gateNote', '');
+    working('gateNote', 'Signing in');
     fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
       method: 'POST',
       headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: $('email').value.trim(),
-        password: $('password').value
-      })
+      body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value })
     }).then(function (r) { return r.json(); })
       .then(function (j) {
         if (!j.access_token) {
-          setStatus('loginStatus', j.error_description || j.msg || 'Sign in failed.', 'bad');
+          note('gateNote', 'That email and password did not match an account.', 'bad');
           return;
         }
         session = j;
-        try { sessionStorageSet(j); } catch (e) {}
         loadClinic();
       })
-      .catch(function (e) { setStatus('loginStatus', e.message, 'bad'); });
-  });
+      .catch(function () { note('gateNote', 'Could not reach the server. Try again.', 'bad'); });
+  }
 
-  // Session is held in memory only. Closing the tab signs you out, which is the
-  // right default for a screen that shows patient photographs.
-  function sessionStorageSet() { /* intentionally not persisted */ }
-
-  $('signOut').addEventListener('click', function () {
-    session = null;
-    clinicId = null;
-    location.reload();
-  });
-
-  // ---- clinic resolution ----------------------------------------------
+  // Session lives in memory only. Closing the tab signs you out, which is the
+  // right default for a screen showing patient photographs on a shared computer.
+  $('signOut').addEventListener('click', function () { location.reload(); });
 
   function loadClinic() {
-    rest('/rest/v1/clinic_memberships?status=eq.active&revoked_at=is.null&select=clinic_id,role')
+    rest('/rest/v1/clinic_memberships?status=eq.active&revoked_at=is.null&select=clinic_id')
       .then(function (res) {
         var rows = Array.isArray(res.body) ? res.body : [];
         if (!rows.length) {
-          setStatus('loginStatus',
-            'This account is signed in, but it is not a member of any clinic in the case library.', 'bad');
-          return;
+          note('gateNote', 'This account is not attached to a clinic case library.', 'bad');
+          return null;
         }
         clinicId = rows[0].clinic_id;
         return rest('/rest/v1/clinics?id=eq.' + encodeURIComponent(clinicId) + '&select=name');
@@ -372,61 +590,44 @@
       .then(function (res) {
         if (!res) return;
         var rows = Array.isArray(res.body) ? res.body : [];
-        clinicName = (rows[0] && rows[0].name) || ('Clinic ' + clinicId);
-        $('clinicName').textContent = clinicName;
-        $('loginCard').style.display = 'none';
+        $('clinicName').textContent = (rows[0] && rows[0].name) || ('Clinic ' + clinicId);
+        $('gate').style.display = 'none';
         $('hdr').style.display = 'flex';
         $('app').style.display = 'block';
         loadCases();
       });
   }
 
-  // ---- upload ----------------------------------------------------------
+  // ---- tabs -------------------------------------------------------------
+
+  function tab(on, off, showId, hideId) {
+    $(on).classList.add('active');
+    $(off).classList.remove('active');
+    $(showId).style.display = 'block';
+    $(hideId).style.display = 'none';
+  }
+  $('tabCases').addEventListener('click', function () { tab('tabCases', 'tabVis', 'panelCases', 'panelVis'); });
+  $('tabVis').addEventListener('click', function () { tab('tabVis', 'tabCases', 'panelVis', 'panelCases'); });
+
+  // ---- add a case -------------------------------------------------------
 
   $('classification').addEventListener('change', function () {
     $('patientGate').style.display = this.value === 'patient' ? 'block' : 'none';
   });
 
-  // Browser-side sanitization: the canvas re-encode drops all EXIF (GPS, camera
-  // identifiers, timestamps) and bakes orientation into the pixels before the
-  // image ever leaves this device. The server verifies and refuses anything
-  // that still carries EXIF.
-  function sanitize(file, name) {
-    return new Promise(function (resolve, reject) {
-      var img = new Image();
-      var url = URL.createObjectURL(file);
-      img.onload = function () {
-        var maxEdge = 2400;
-        var scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight));
-        var c = document.createElement('canvas');
-        c.width = Math.round(img.naturalWidth * scale);
-        c.height = Math.round(img.naturalHeight * scale);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (blob) {
-          if (!blob) { reject(new Error('could not encode ' + name)); return; }
-          resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.9);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('could not read ' + name)); };
-      img.src = url;
-    });
-  }
-
   $('uploadBtn').addEventListener('click', function () {
     var bf = $('beforeFile').files[0];
     var af = $('afterFile').files[0];
-    if (!bf || !af) { setStatus('uploadStatus', 'Both a before and an after photo are needed.', 'bad'); return; }
-
+    if (!bf || !af) { note('uploadNote', 'Add both a before and an after photograph.', 'bad'); return; }
     var version = $('consentVersion').value.trim();
-    if (!version) { setStatus('uploadStatus', 'Record which consent form version the patient signed.', 'bad'); return; }
+    if (!version) { note('uploadNote', 'Record which consent form the patient signed.', 'bad'); return; }
 
-    var consents = [{ purpose: 'store', granted: true, version: version, method: 'clinic_portal' }];
-    if ($('cVisualize').checked) consents.push({ purpose: 'visualize', granted: true, version: version, method: 'clinic_portal' });
-    if ($('cGallery').checked) consents.push({ purpose: 'gallery_site', granted: true, version: version, method: 'clinic_portal' });
+    var c = [{ purpose: 'store', granted: true, version: version, method: 'clinic_portal' }];
+    if ($('cVisualize').checked) c.push({ purpose: 'visualize', granted: true, version: version, method: 'clinic_portal' });
+    if ($('cGallery').checked) c.push({ purpose: 'gallery_site', granted: true, version: version, method: 'clinic_portal' });
 
     $('uploadBtn').disabled = true;
-    setStatus('uploadStatus', 'Removing photo metadata...', '');
+    working('uploadNote', 'Removing photo metadata');
 
     Promise.all([sanitize(bf, 'before'), sanitize(af, 'after')])
       .then(function (clean) {
@@ -436,181 +637,282 @@
         fd.append('treatment', $('treatment').value.trim());
         fd.append('angle', $('angle').value);
         fd.append('phenotype', $('phenotype').value.trim());
-        fd.append('consents', JSON.stringify(consents));
+        fd.append('consents', JSON.stringify(c));
         fd.append('before', clean[0]);
         fd.append('after', clean[1]);
-        setStatus('uploadStatus', 'Storing case...', '');
+        working('uploadNote', 'Storing the case');
         return api('/api/clinic-case-upload', { method: 'POST', body: fd });
       })
       .then(function (res) {
         if (res.status === 200 && res.body.ok) {
-          setStatus('uploadStatus', 'Case stored.', 'ok');
+          note('uploadNote', 'Case added.', 'ok');
           $('beforeFile').value = '';
           $('afterFile').value = '';
           loadCases();
         } else {
-          setStatus('uploadStatus', (res.body && res.body.error) || 'Upload failed.', 'bad');
+          note('uploadNote', (res.body && res.body.error) || 'The case was not stored.', 'bad');
         }
       })
-      .catch(function (e) { setStatus('uploadStatus', e.message, 'bad'); })
+      .catch(function (e) { note('uploadNote', e.message, 'bad'); })
       .then(function () { $('uploadBtn').disabled = false; });
   });
 
-  // ---- case library ----------------------------------------------------
+  // ---- library ----------------------------------------------------------
 
-  // Private images are proxied, not signed: <img src> cannot send an auth
-  // header, so fetch the bytes with the token and render them from a blob URL
-  // that exists only in this tab, for this session. Nothing shareable is created.
-  function thumb(caseId, which, imgEl) {
+  // Private images are proxied, not signed: <img src> cannot carry an auth
+  // header, so fetch the bytes with the token and render from a blob URL that
+  // exists only in this tab. No shareable link to a patient photo is created.
+  function loadImage(caseId, which, el) {
     fetch('/api/clinic-case-image?case_id=' + encodeURIComponent(caseId) + '&which=' + which, {
       headers: { Authorization: 'Bearer ' + session.access_token }
     })
-      .then(function (r) {
-        if (!r.ok) throw new Error('image ' + r.status);
-        return r.blob();
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
+      .then(function (b) {
+        el.src = URL.createObjectURL(b);
+        el.onload = function () { URL.revokeObjectURL(el.src); };
       })
-      .then(function (blob) {
-        imgEl.src = URL.createObjectURL(blob);
-        imgEl.onload = function () { URL.revokeObjectURL(imgEl.src); };
-      })
-      .catch(function (e) {
-        imgEl.alt = 'image unavailable';
-        console.warn('[portal] thumbnail failed', caseId, which, e.message);
-      });
+      .catch(function () { el.alt = 'Image unavailable'; });
   }
 
   function loadCases() {
-    rest('/rest/v1/clinic_reference_cases?clinic_id=eq.' + encodeURIComponent(clinicId) +
-         '&select=id,treatment,angle,phenotype,data_classification,visualize_approved,published_before_path,created_at' +
-         '&order=created_at.desc')
-      .then(function (res) {
-        var rows = Array.isArray(res.body) ? res.body : [];
-        var host = $('cases');
-        if (!rows.length) {
-          host.innerHTML = '<div class="empty">No cases yet. Add one above.</div>';
-          return;
-        }
-        host.innerHTML = '';
-        rows.forEach(function (r) { host.appendChild(caseRow(r)); });
+    Promise.all([
+      rest('/rest/v1/clinic_reference_cases?clinic_id=eq.' + encodeURIComponent(clinicId) +
+           '&select=id,treatment,angle,phenotype,data_classification,visualize_approved,published_before_path,created_at' +
+           '&order=created_at.desc'),
+      rest('/rest/v1/clinic_case_consents?clinic_id=eq.' + encodeURIComponent(clinicId) +
+           '&granted=eq.true&revoked_at=is.null&select=case_id,purpose')
+    ]).then(function (r) {
+      var rows = Array.isArray(r[0].body) ? r[0].body : [];
+      var consents = Array.isArray(r[1].body) ? r[1].body : [];
+      var byCase = {};
+      consents.forEach(function (c) {
+        (byCase[c.case_id] = byCase[c.case_id] || {})[c.purpose] = true;
       });
+
+      var host = $('cases');
+      if (!rows.length) {
+        host.innerHTML =
+          '<div class="empty"><div class="display">Nothing here yet.</div>' +
+          '<p>Add your first case above. One case is enough to start grounding your Visualize.</p></div>';
+        return;
+      }
+      $('libSub').textContent = rows.length === 1
+        ? 'One case. Each carries its own permissions, and shows them.'
+        : rows.length + ' cases. Each carries its own permissions, and shows them.';
+      host.innerHTML = '';
+      rows.forEach(function (row) { host.appendChild(plate(row, byCase[row.id] || {})); });
+    });
   }
 
-  function caseRow(r) {
-    var el = document.createElement('div');
-    el.className = 'case';
+  function mark(label, on, live) {
+    return '<span class="perm-mark' + (on ? ' on' : '') + (live ? ' live' : '') + '">' +
+           '<span class="dot"></span>' + label + '</span>';
+  }
 
-    var thumbs = document.createElement('div');
-    thumbs.className = 'thumbs';
-    var b = document.createElement('img');
-    var a = document.createElement('img');
-    thumbs.appendChild(b);
-    thumbs.appendChild(a);
-    thumb(r.id, 'before', b);
-    thumb(r.id, 'after', a);
+  function plate(r, perms) {
+    var el = document.createElement('article');
+    el.className = 'plate';
 
-    var body = document.createElement('div');
-    body.className = 'case-body';
+    var dip = document.createElement('div');
+    dip.className = 'diptych';
+    ['before', 'after'].forEach(function (which) {
+      var fig = document.createElement('figure');
+      fig.className = 'frame';
+      fig.style.margin = '0';
+      var img = document.createElement('img');
+      var cap = document.createElement('figcaption');
+      cap.textContent = which;
+      fig.appendChild(img);
+      fig.appendChild(cap);
+      dip.appendChild(fig);
+      loadImage(r.id, which, img);
+    });
 
     var published = !!r.published_before_path;
-    var badges = '';
-    if (published) badges += '<span class="badge b-pub">On website</span>';
-    if (r.visualize_approved) badges += '<span class="badge b-ref">Visualize reference</span>';
-    if (r.data_classification !== 'patient') {
-      badges += '<span class="badge b-test">' + r.data_classification + '</span>';
-    }
+    var body = document.createElement('div');
+    body.className = 'plate-body';
+
+    var meta = [r.angle, r.phenotype, new Date(r.created_at).toLocaleDateString('en-CA')]
+      .filter(Boolean).join(' · ');
 
     body.innerHTML =
-      '<div class="case-title">' + (r.treatment || 'case') + '</div>' +
-      '<div class="case-meta">' + (r.angle || '') +
-        (r.phenotype ? ' &middot; ' + r.phenotype : '') +
-        ' &middot; ' + new Date(r.created_at).toLocaleDateString() + '</div>' +
-      '<div class="badges">' + badges + '</div>';
+      '<div class="display plate-title">' + (r.treatment || 'Case') + '</div>' +
+      '<div class="plate-meta">' + meta +
+        (r.data_classification !== 'patient' ? ' · ' + r.data_classification.replace('_', ' ') : '') +
+      '</div>' +
+      '<div class="ledger">' +
+        mark('Stored', !!perms.store, false) +
+        mark('Visualize', !!perms.visualize && r.visualize_approved, false) +
+        mark('Website', published, published) +
+      '</div>';
 
-    var actions = document.createElement('div');
-    actions.className = 'actions';
+    var acts = document.createElement('div');
+    acts.className = 'plate-actions';
+    var st = document.createElement('div');
+    st.className = 'note';
 
-    var pubBtn = document.createElement('button');
-    pubBtn.className = 'ghost';
-    pubBtn.textContent = published ? 'Remove from website' : 'Show on website';
-    pubBtn.onclick = function () {
-      act(pubBtn, '/api/clinic-case-publish', {
+    var pub = document.createElement('button');
+    pub.className = 'quiet';
+    pub.textContent = published ? 'Remove from website' : 'Show on website';
+    pub.disabled = !perms.gallery_site && !published;
+    if (pub.disabled) pub.title = 'The patient did not agree to public display.';
+    pub.onclick = function () {
+      run(pub, st, '/api/clinic-case-publish', {
         action: published ? 'unpublish' : 'publish',
-        case_id: r.id,
-        clinic_id: clinicId
-      }, st);
+        case_id: r.id, clinic_id: clinicId
+      });
     };
 
-    var refBtn = document.createElement('button');
-    refBtn.className = 'ghost';
-    refBtn.textContent = r.visualize_approved ? 'Remove as reference' : 'Use as Visualize reference';
-    refBtn.onclick = function () {
-      refBtn.disabled = true;
+    var ref = document.createElement('button');
+    ref.className = 'quiet';
+    ref.textContent = r.visualize_approved ? 'Stop using as reference' : 'Use as reference';
+    ref.disabled = !perms.visualize && !r.visualize_approved;
+    if (ref.disabled) ref.title = 'The patient did not agree to this use.';
+    ref.onclick = function () {
+      ref.disabled = true;
       rest('/rest/v1/rpc/set_visualize_approval', {
         method: 'POST',
         body: JSON.stringify({
-          p_case_id: r.id,
-          p_clinic_id: clinicId,
-          p_approved: !r.visualize_approved
+          p_case_id: r.id, p_clinic_id: clinicId, p_approved: !r.visualize_approved
         })
       }).then(function (res) {
-        if (res.status >= 200 && res.status < 300) { loadCases(); }
+        if (res.status >= 200 && res.status < 300) loadCases();
         else {
-          st.className = 'status bad';
-          st.textContent = (res.body && res.body.message) || 'Refused.';
-          refBtn.disabled = false;
+          st.className = 'note bad';
+          st.textContent = (res.body && res.body.message) || 'That change was refused.';
+          ref.disabled = false;
         }
       });
     };
 
-    var delBtn = document.createElement('button');
-    delBtn.className = 'ghost danger';
-    delBtn.textContent = 'Patient withdrew consent';
-    delBtn.onclick = function () {
-      if (!confirm('This withdraws the patient\'s consent to store this case. It will be removed from your website and your Visualize, and the case will be deleted. This cannot be undone.')) return;
-      act(delBtn, '/api/clinic-case-consent', {
-        action: 'revoke',
-        case_id: r.id,
-        clinic_id: clinicId,
-        purpose: 'store',
-        reason: 'patient withdrew consent'
-      }, st);
+    var wd = document.createElement('button');
+    wd.className = 'quiet warn';
+    wd.textContent = 'Patient withdrew consent';
+    wd.onclick = function () {
+      if (!confirm('This removes the case from your website and your Visualize, and deletes it. It cannot be undone.')) return;
+      run(wd, st, '/api/clinic-case-consent', {
+        action: 'revoke', case_id: r.id, clinic_id: clinicId,
+        purpose: 'store', reason: 'patient withdrew consent'
+      });
     };
 
-    actions.appendChild(pubBtn);
-    actions.appendChild(refBtn);
-    actions.appendChild(delBtn);
-
-    var st = document.createElement('div');
-    st.className = 'status';
-
-    body.appendChild(actions);
+    acts.appendChild(pub);
+    acts.appendChild(ref);
+    acts.appendChild(wd);
+    body.appendChild(acts);
     body.appendChild(st);
-    el.appendChild(thumbs);
+    el.appendChild(dip);
     el.appendChild(body);
     return el;
   }
 
-  function act(btn, path, payload, st) {
+  function run(btn, st, path, payload) {
     btn.disabled = true;
-    st.className = 'status';
-    st.textContent = 'Working...';
+    st.className = 'note';
+    st.innerHTML = '<span class="working">Working</span>';
     api(path, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     }).then(function (res) {
-      if (res.status === 200 && res.body.ok) {
-        loadCases();
-      } else {
-        st.className = 'status bad';
-        st.textContent = (res.body && res.body.error) || 'Did not succeed.';
+      if (res.status === 200 && res.body.ok) loadCases();
+      else {
+        st.className = 'note bad';
+        st.textContent = (res.body && res.body.error) || 'That did not go through.';
         btn.disabled = false;
       }
     }).catch(function (e) {
-      st.className = 'status bad';
+      st.className = 'note bad';
       st.textContent = e.message;
       btn.disabled = false;
     });
+  }
+
+  // ---- visualize --------------------------------------------------------
+  //
+  // The CLINIC route. It sends clinicId explicitly, which is what grounds the
+  // generation in this clinic's own approved, consented cases. The consumer
+  // Visualize on skinday.com sends no clinic context and is untouched by this.
+
+  var VIEW = { frontal: 'frontal', r45: 'oblique_right', l45: 'oblique_left' };
+
+  $('visBtn').addEventListener('click', function () {
+    var photo = $('visPhoto').files[0];
+    if (!photo) { note('visNote', 'Choose a patient photograph.', 'bad'); return; }
+    var angle = $('visAngle').value;
+
+    $('visBtn').disabled = true;
+    $('visResultWrap').style.display = 'none';
+    working('visNote', 'Removing photo metadata');
+
+    sanitize(photo, 'patient')
+      .then(function (clean) {
+        var jobId = (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : (Date.now() + '-' + Math.random().toString(36).slice(2));
+        var fd = new FormData();
+        fd.append('image', clean, 'patient-' + angle + '.jpg');
+        fd.append('type', 'biostim');
+        fd.append('product', 'sculptra');
+        fd.append('timeline', $('visTimeline').value);
+        fd.append('projection', 'expected');
+        fd.append('jobId', jobId);
+        fd.append('angle', angle);
+        fd.append('view', VIEW[angle]);
+        var ph = $('visPhenotype').value.trim();
+        if (ph) fd.append('sculptraPhenotype', ph);
+        fd.append('clinicId', clinicId);  // the one field that separates the routes
+
+        working('visNote', 'Starting');
+        return fetch('/.netlify/functions/start-visualization', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + session.access_token },
+          body: fd
+        }).then(function (r) {
+          return r.json().then(function (j) { return { status: r.status, body: j, jobId: jobId }; });
+        });
+      })
+      .then(function (res) {
+        if (res.status !== 200 && res.status !== 202) {
+          throw new Error((res.body && res.body.error) || 'The simulation could not be started.');
+        }
+        working('visNote', 'Generating, usually under a minute');
+        return poll(res.jobId, 0);
+      })
+      .catch(function (e) { note('visNote', e.message, 'bad'); })
+      .then(function () { $('visBtn').disabled = false; });
+  });
+
+  function poll(jobId, n) {
+    if (n > 90) { note('visNote', 'The simulation timed out. Try again.', 'bad'); return; }
+    return new Promise(function (r) { setTimeout(r, 2000); })
+      .then(function () {
+        return fetch('/.netlify/functions/get-visualization?jobId=' + encodeURIComponent(jobId), {
+          headers: { Authorization: 'Bearer ' + session.access_token }
+        });
+      })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.state === 'done' && d.image) { show(d); return; }
+        if (d.state === 'error') { note('visNote', d.error || 'The simulation failed.', 'bad'); return; }
+        return poll(jobId, n + 1);
+      });
+  }
+
+  // Say plainly whether the clinic's own case shaped this result. A clinic paying
+  // for a personalized Visualize should never have to guess.
+  function show(d) {
+    note('visNote', '');
+    var g = $('visGrounding');
+    if (d.referenceMode === 'clinic_case') {
+      g.className = 'grounded';
+      g.textContent = 'Shaped by one of your approved cases.';
+    } else {
+      g.className = 'grounded off';
+      g.textContent = 'No case of yours matched this treatment and angle, so the simulation is ungrounded. Approve a matching case to change that.';
+    }
+    $('visResult').src = d.image;
+    $('visResultWrap').style.display = 'block';
   }
 })();
 </script>
