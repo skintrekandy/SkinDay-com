@@ -190,6 +190,15 @@
     <pre id="consentOut" style="display:none;"></pre>
     <p class="note">Uses the case_id in section 6. Every grant and revoke writes an event to clinic_case_events.</p>
   </fieldset>
+
+  <fieldset>
+    <legend>8. Visualize reference</legend>
+    <p class="note" style="margin-top:0;">Marks the case as a reference for this clinic's Visualize. Separate from publication: a case can be gallery-worthy but a poor AI reference (angle, lighting, timeline). Requires an active visualize consent.</p>
+    <button id="approveBtn" disabled>Approve as reference</button>
+    <button id="unapproveBtn" class="secondary" disabled>Remove approval</button>
+    <div class="note" id="approveStatus"></div>
+    <pre id="approveOut" style="display:none;"></pre>
+  </fieldset>
 </div>
 
 <script>
@@ -514,12 +523,73 @@
   $('grantBtn').addEventListener('click', function () { callConsent('grant'); });
   $('revokeBtn').addEventListener('click', function () { callConsent('revoke'); });
 
+  // Approval has no storage side effect, so the browser calls the RPC directly
+  // with the user's token. No Netlify function needed.
+  function callApproval(approved) {
+    if (!session) { return; }
+    var caseId = $('pubCaseId').value.trim();
+    if (!caseId) {
+      $('approveStatus').className = 'note bad';
+      $('approveStatus').textContent = 'Enter a case_id in section 6.';
+      return;
+    }
+    var c = cfg();
+    $('approveBtn').disabled = true;
+    $('unapproveBtn').disabled = true;
+    $('approveStatus').className = 'note';
+    $('approveStatus').textContent = 'Working...';
+
+    fetch(c.url + '/rest/v1/rpc/set_visualize_approval', {
+      method: 'POST',
+      headers: {
+        apikey: c.anon,
+        Authorization: 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_case_id: caseId,
+        p_clinic_id: $('clinicId').value.trim(),
+        p_approved: approved
+      })
+    }).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); })
+      .then(function (res) {
+        var b;
+        try { b = JSON.parse(res.text); } catch (e) { b = res.text; }
+        var out = $('approveOut');
+        out.style.display = 'block';
+        out.textContent = JSON.stringify({ http_status: res.status, response: b }, null, 2);
+        var el = $('approveStatus');
+        if (res.status >= 200 && res.status < 300) {
+          el.className = 'note ok';
+          el.textContent = approved
+            ? 'Approved as a Visualize reference.'
+            : 'Approval removed.';
+        } else {
+          el.className = 'note bad';
+          el.textContent = 'Refused. See response.';
+        }
+      })
+      .catch(function (e) {
+        $('approveStatus').className = 'note bad';
+        $('approveStatus').textContent = 'Error: ' + e.message;
+      })
+      .then(function () {
+        $('approveBtn').disabled = false;
+        $('unapproveBtn').disabled = false;
+      });
+  }
+
+  $('approveBtn').addEventListener('click', function () { callApproval(true); });
+  $('unapproveBtn').addEventListener('click', function () { callApproval(false); });
+
   function readBack(c, caseId) {
     $('pubCaseId').value = caseId;
     $('publishBtn').disabled = false;
     $('unpublishBtn').disabled = false;
     $('grantBtn').disabled = false;
     $('revokeBtn').disabled = false;
+    $('approveBtn').disabled = false;
+    $('unapproveBtn').disabled = false;
     var idFilter = 'id=eq.' + encodeURIComponent(caseId);
     var caseFilter = 'case_id=eq.' + encodeURIComponent(caseId);
     Promise.all([
