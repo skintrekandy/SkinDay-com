@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>SkinDay Studio — AI-Assisted Before & After Photo Tool for Clinics</title>
-  <meta name="description" content="AI-assisted before & after photos for aesthetic clinics. Aligned, branded, ready in seconds. Photos are processed locally in your browser — SkinDay does not upload, store, or view patient images. Free for all clinics." />
+<meta name="color-scheme" content="light only">
+  <title>SkinDay Studio - Before & After Photo Tool for Clinics</title>
+  <link rel="canonical" href="https://skinday.com/studio" />
+  <meta name="description" content="Free before & after photo tool for aesthetic clinics. Multi-angle grids, background removal, clinic branding. All processing happens in your browser." />
   <link rel="icon" href="/favicon.ico" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,7 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
+    :root {color-scheme:light;
       --cream: #FAF7F2; --warm: #F4EDE4; --deep: #1C1714; --deep2: #241E1A;
       --rose: #C8725A; --rose-m: #D4896E; --gold: #C9A96E;
       --muted: #8A7B72; --dim: #B5A89F; --border: #EAE2D8;
@@ -20,61 +22,100 @@
     }
     html { scroll-behavior: smooth; overflow-x: hidden; }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--deep); -webkit-font-smoothing: antialiased; }
+
+    /* ── Nav (global site style) ── */
     nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(28,23,20,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--hero-border); padding: 0 5%; display: flex; align-items: center; justify-content: space-between; height: 64px; }
     .nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 400; color: var(--cream); letter-spacing: 0.04em; text-decoration: none; }
     .nav-logo span { color: var(--gold); }
     .nav-ctas { display: flex; align-items: center; gap: 0.6rem; }
-    .nav-signin-btn { background: transparent; border: 1px solid rgba(201,169,110,0.4); color: var(--dim); padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; font-family: 'DM Sans', sans-serif; cursor: pointer; }
-    .nav-signin-btn:hover { border-color: var(--gold); color: var(--cream); }
-    .nav-cta { background: var(--rose); color: #fff !important; padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; font-weight: 500; text-decoration: none; transition: background 0.2s; display: inline-block; white-space: nowrap; }
+    .nav-link { background: transparent; border: 1px solid rgba(201,169,110,0.4); color: var(--dim); padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; text-decoration: none; transition: all 0.2s; }
+    .lang-toggle { display: flex; align-items: center; gap: 8px; border: 1px solid rgba(201,169,110,0.4); border-radius: 999px; padding: 5px 12px; }
+    .lang-btn { background: none; border: none; cursor: pointer; font-family: inherit; font-size: 0.72rem; letter-spacing: 0.06em; color: var(--dim); padding: 0; transition: color 0.2s; }
+    .lang-btn.active { color: var(--cream); }
+    .lang-btn:hover:not(.active) { color: var(--gold); }
+    .lang-sep { width: 1px; height: 11px; background: rgba(201,169,110,0.4); }
+    .nav-link:hover { border-color: var(--gold); color: var(--cream); }
+    .nav-cta { background: var(--rose); color: #fff; padding: 0.3rem 0.75rem; border-radius: 4px; font-size: 0.78rem; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background 0.2s; }
     .nav-cta:hover { background: var(--rose-m); }
-    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 4px; background: none; border: none; z-index: 201; }
-    .hamburger span { display: block; width: 24px; height: 1.5px; background: var(--gold); transition: transform 0.35s ease, opacity 0.35s ease; transform-origin: center; }
-    .hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
-    .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-    .hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
-    .nav-overlay { position: fixed; inset: 0; z-index: 200; background: var(--deep); display: flex; flex-direction: column; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
-    .nav-overlay.open { opacity: 1; pointer-events: all; }
-    .nav-overlay-logo { position: absolute; top: 0; left: 0; right: 0; height: 60px; display: flex; align-items: center; padding: 0 5%; border-bottom: 1px solid rgba(201,169,110,0.15); font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; color: var(--cream); text-decoration: none; }
-    .nav-overlay-logo span { color: var(--gold); }
-    .nav-overlay-links { display: flex; flex-direction: column; align-items: center; width: 100%; }
-    .nav-overlay-links a { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem,8vw,3rem); font-weight: 300; color: var(--cream); text-decoration: none; padding: 0.6rem 0; width: 100%; text-align: center; border-bottom: 1px solid rgba(201,169,110,0.08); opacity: 0; transform: translateY(16px); transition: opacity 0.4s ease, transform 0.4s ease, color 0.2s; }
-    .nav-overlay.open .nav-overlay-links a { opacity: 1; transform: none; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(1) { transition-delay: 0.05s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(2) { transition-delay: 0.10s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(3) { transition-delay: 0.15s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(4) { transition-delay: 0.20s; }
-    .nav-overlay.open .nav-overlay-links a:nth-child(5) { transition-delay: 0.25s; }
-    .nav-overlay-links a:hover { color: var(--gold); }
-    .nav-overlay-links a.cta-link { color: var(--rose); }
-    .nav-overlay-bottom { position: absolute; bottom: 2rem; font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
-    @media (max-width: 640px) { .hamburger { display: flex; } .nav-signin-btn { display: none; } }
-    @media (max-width: 480px) { nav { padding: 0 4%; } .nav-cta { padding: 0.28rem 0.55rem; font-size: 0.72rem; } }
+
+    /* ── Layout ── */
     .page { max-width: 860px; margin: 0 auto; padding: 88px 20px 80px; }
     .hero { text-align: center; padding: 44px 0 48px; border-bottom: 1px solid var(--border); margin-bottom: 48px; }
     .eyebrow { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; }
     .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem,5vw,3rem); font-weight: 300; line-height: 1.15; margin-bottom: 14px; }
     .hero h1 em { font-style: italic; color: var(--rose); }
-    .hero p { font-size: 0.92rem; color: var(--muted); max-width: 420px; margin: 0 auto; line-height: 1.7; }
+    .hero p { font-size: 0.92rem; color: var(--muted); max-width: 460px; margin: 0 auto; line-height: 1.7; }
     .step { margin-bottom: 36px; }
-    .step-num { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); margin-bottom: 14px; }
-    .upload-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .upload-zone { border: 1.5px dashed var(--border); border-radius: 8px; aspect-ratio: 3/4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; background: var(--warm); transition: border-color 0.2s; cursor: pointer; }
+    .step-num { font-size: 0.82rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--deep); margin-bottom: 16px; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+
+    /* ── Grid picker ── */
+    .grid-picker { display: grid; grid-template-columns: repeat(5,1fr); gap: 10px; margin-bottom: 20px; }
+    .grid-btn { border: 1.5px solid var(--border); border-radius: 8px; padding: 14px 6px 12px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 7px; }
+    .grid-btn:hover { border-color: var(--gold); background: var(--warm); }
+    .grid-btn.active { border-color: var(--rose); background: #fdf1ee; }
+    .grid-icon { width: 48px; height: 36px; display: flex; align-items: center; justify-content: center; gap: 3px; }
+    .gi-cell { background: var(--border); border-radius: 2px; }
+    .grid-btn.active .gi-cell { background: var(--rose-m); }
+    .grid-btn:hover .gi-cell { background: var(--gold); }
+    .grid-name { font-size: 0.82rem; font-weight: 600; color: var(--deep); }
+    .grid-desc { font-size: 0.7rem; color: var(--muted); line-height: 1.35; }
+
+    /* Subject toggle */
+    .subject-toggle { display: flex; gap: 8px; margin-bottom: 20px; }
+    .subj-btn { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 11px 8px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; }
+    .subj-btn:hover { border-color: var(--gold); background: var(--warm); }
+    .subj-btn.active { border-color: var(--rose); background: #fdf1ee; }
+    .subj-btn strong { display: block; font-size: 0.83rem; margin-bottom: 3px; }
+    .subj-btn span { font-size: 0.74rem; color: var(--muted); }
+
+    /* ── Upload zones ── */
+    .upload-grid { display: grid; gap: 12px; }
+    .upload-grid.g-2h { grid-template-columns: 1fr 1fr; }
+    .upload-grid.g-2v { grid-template-columns: 1fr; max-width: 420px; margin: 0 auto; }
+    .upload-grid.g-2v .upload-zone { aspect-ratio: 4/3; }
+    .upload-grid.g-3h { grid-template-columns: 1fr 1fr 1fr; }
+    .upload-grid.g-2x2 { grid-template-columns: 1fr 1fr; }
+    .upload-grid.g-2x3 { grid-template-columns: 1fr 1fr 1fr; }
+    .upload-grid.g-2v .upload-zone,
+    .upload-grid.g-2x2 .upload-zone,
+    .upload-grid.g-2x3 .upload-zone { aspect-ratio: 4/5; }
+    .upload-grid.g-2h .upload-zone,
+    .upload-grid.g-3h .upload-zone { aspect-ratio: 3/4; }
+    .row-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); grid-column: 1 / -1; margin-bottom: -4px; padding-bottom: 2px; border-bottom: 1px solid var(--border); }
+    .row-label-wrap { grid-column: 1 / -1; display: flex; align-items: center; gap: 5px; margin-bottom: -4px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+    .row-label-input { background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--deep); cursor: pointer; padding: 0; width: auto; min-width: 60px; }
+    .row-label-input:focus { cursor: text; color: var(--deep); text-transform: none; letter-spacing: 0.02em; }
+    .row-edit-btn { background: rgba(201,169,110,0.12); border: 1px solid rgba(201,169,110,0.4); border-radius: 4px; color: var(--gold); font-size: 0.58rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
+    .row-edit-btn:hover { background: rgba(201,169,110,0.22); color: var(--deep); }
+
+    .upload-zone { border: 1.5px dashed var(--border); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; position: relative; overflow: hidden; background: var(--warm); transition: border-color 0.2s; cursor: pointer; }
     .upload-zone:hover { border-color: var(--gold); }
     .upload-zone.filled { border-style: solid; border-color: var(--border); }
+    .upload-zone.bg-removed { border-color: rgba(201,169,110,0.5); }
     .upload-zone img.thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .upload-zone.bg-black img.thumb { background: #1C1714; }
     .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
     .upload-zone.filled input.main-input { display: none; }
-    .upload-plus { width: 32px; height: 32px; border: 1.5px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 18px; }
-    .upload-txt { font-size: 0.78rem; color: var(--muted); }
-    .zone-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 9px 12px; background: linear-gradient(transparent, rgba(28,23,20,0.72)); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,247,242,0.8); pointer-events: none; }
-    .change-btn { position: absolute; top: 8px; right: 8px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.7rem; font-family: 'DM Sans', sans-serif; padding: 3px 9px; border-radius: 3px; cursor: pointer; display: none; }
+    .upload-plus { width: 30px; height: 30px; border: 1.5px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 16px; }
+    .upload-txt { font-size: 0.74rem; color: var(--muted); }
+
+    /* Slot label (editable) */
+    .slot-label-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; background: linear-gradient(transparent, rgba(28,23,20,0.72)); padding: 8px 10px 7px; gap: 4px; }
+    .slot-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; flex: 1; min-width: 0; cursor: default; }
+    .slot-label:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.6); }
+    .slot-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
+    .slot-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .change-btn { position: absolute; top: 7px; right: 7px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.68rem; font-family: 'DM Sans', sans-serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; display: none; }
     .upload-zone.filled .change-btn { display: block; }
-    .change-input { position: absolute; top: 8px; right: 8px; z-index: 4; opacity: 0; width: 60px; height: 24px; cursor: pointer; display: none; }
+    .change-input { position: absolute; top: 7px; right: 7px; z-index: 4; opacity: 0; width: 56px; height: 22px; cursor: pointer; display: none; }
     .upload-zone.filled .change-input { display: block; }
-    .status { display: flex; align-items: center; gap: 10px; padding: 11px 15px; background: #fff; border: 1px solid var(--border); border-radius: 6px; font-size: 0.83rem; color: var(--muted); margin-top: 14px; }
+    .bg-badge { position: absolute; top: 7px; left: 7px; z-index: 3; background: rgba(201,169,110,0.85); color: #fff; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; display: none; font-weight: 600; }
+    .upload-zone.bg-removed .bg-badge,
+    .upload-zone.bg-black .bg-badge { display: block; }
+
     .privacy-note { display: flex; align-items: flex-start; gap: 8px; padding: 10px 14px; background: rgba(201,169,110,0.06); border: 1px solid rgba(201,169,110,0.18); border-radius: 6px; font-size: 0.78rem; color: var(--muted); line-height: 1.5; margin-top: 12px; }
-    .privacy-icon { flex-shrink: 0; font-size: 0.9rem; line-height: 1.5; opacity: 0.7; }
+    .status { display: flex; align-items: center; gap: 10px; padding: 11px 15px; background: #fff; border: 1px solid var(--border); border-radius: 6px; font-size: 0.83rem; color: var(--muted); margin-top: 14px; }
     .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); flex-shrink: 0; transition: background 0.3s; }
     .dot.spin { background: var(--gold); animation: blink 1s infinite; }
     .dot.ok { background: #3D7A55; }
@@ -83,36 +124,74 @@
     .progress { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; margin-top: 8px; display: none; }
     .progress.on { display: block; }
     .progress-fill { height: 100%; background: var(--gold); width: 0%; transition: width 0.4s; }
+
+    /* ── Background controls ── */
+    .bg-controls { margin-top: 0; }
+    .bg-intro { font-size: 0.84rem; color: var(--muted); line-height: 1.55; margin-bottom: 16px; max-width: 600px; }
+    .bg-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 12px; }
+    .bg-btn { border: 1.5px solid var(--border); border-radius: 6px; padding: 10px 16px; background: #fff; cursor: pointer; font-size: 0.83rem; font-family: 'DM Sans', sans-serif; color: var(--deep); transition: all 0.2s; display: flex; align-items: center; gap: 7px; }
+    .bg-btn:hover:not(:disabled) { border-color: var(--gold); background: var(--warm); }
+    .bg-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .bg-btn.active { border-color: var(--rose); background: #fdf1ee; }
+    .bg-btn .bg-swatch { width: 13px; height: 13px; border-radius: 2px; flex-shrink: 0; }
+    .bg-btn .bg-swatch.black { background: #1C1714; border: 1px solid rgba(28,23,20,0.3); }
+    .bg-selectall-row { margin-bottom: 8px; }
+    .bg-slot-select { display: flex; gap: 8px; flex-wrap: wrap; }
+    .bg-check-item { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: 0.82rem; background: #fff; cursor: pointer; transition: all 0.2s; color: var(--deep); font-family: 'DM Sans', sans-serif; user-select: none; }
+    .bg-check-item:hover { border-color: var(--gold); }
+    .bg-check-item.checked { border-color: var(--rose); background: #fdf1ee; }
+    .bg-check-item.done { border-color: rgba(28,23,20,0.35); background: var(--deep); color: var(--cream); }
+    .bg-check-item input { width: 15px; height: 15px; accent-color: var(--rose); cursor: pointer; flex-shrink: 0; margin: 0; }
+    .bg-check-item.done input { accent-color: var(--gold); }
+    .bg-check-item .done-tag { font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); font-weight: 600; }
+    .bg-selectall { border-style: dashed; background: var(--warm); }
+    .bg-selectall.checked { border-style: solid; }
+    .bg-hint { font-size: 0.78rem; color: var(--muted); margin-top: 10px; line-height: 1.45; }
+    .bg-progress { font-size: 0.8rem; color: var(--gold); font-weight: 500; margin-top: 10px; display: none; }
+    .bg-progress.on { display: block; }
+    .bg-continue-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+    .bg-continue-note { font-size: 0.82rem; color: var(--muted); }
+    .btn-continue { background: var(--deep); color: var(--cream); border: none; padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+    .btn-continue:hover { background: var(--deep2); }
+
+    /* ── Crop section ── */
     .crop-section { display: none; margin-top: 8px; }
     .crop-section.visible { display: block; }
-    .divider { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
-    .preset-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 20px; }
+    .preset-grid { display: grid; gap: 10px; margin-bottom: 20px; }
+    .preset-grid.face-presets { grid-template-columns: repeat(4,1fr); }
     .preset-btn { border: 1.5px solid var(--border); border-radius: 8px; padding: 14px 8px 12px; background: #fff; cursor: pointer; text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .preset-btn:hover { border-color: var(--gold); background: var(--warm); }
     .preset-btn.active { border-color: var(--rose); background: #fdf1ee; }
     .preset-icon { font-size: 18px; line-height: 1; }
     .preset-name { font-size: 0.78rem; font-weight: 500; color: var(--deep); }
     .preset-desc { font-size: 0.67rem; color: var(--muted); line-height: 1.4; }
-
-    /* Zoom controls */
-    .zoom-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    .zoom-controls { display: grid; gap: 12px; margin-bottom: 20px; }
     .zoom-box { display: flex; flex-direction: column; gap: 6px; }
-    .zoom-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); display: flex; justify-content: space-between; }
-    .zoom-label span { color: var(--deep); font-weight: 400; }
+    .zoom-label { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--deep); display: flex; justify-content: space-between; }
+    .zoom-label span { color: var(--rose); font-weight: 600; }
     input[type=range].zoom-slider { width: 100%; accent-color: var(--rose); cursor: pointer; }
-
-    .preview-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+    .preview-area { display: grid; gap: 12px; margin-bottom: 8px; }
+    .preview-area.p-2 { grid-template-columns: 1fr 1fr; }
+    .preview-area.p-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .preview-area.p-4 { grid-template-columns: 1fr 1fr; }
+    .preview-area.p-6 { grid-template-columns: 1fr 1fr 1fr; }
     .preview-box { border: 1px solid var(--border); border-radius: 6px; overflow: hidden; background: var(--deep); position: relative; }
     .preview-box canvas { display: block; width: 100%; }
-    .preview-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 12px; background: linear-gradient(transparent,rgba(28,23,20,0.75)); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(250,247,242,0.8); pointer-events: none; }
+    .preview-tag { position: absolute; bottom: 0; left: 0; right: 0; padding: 6px 10px; background: linear-gradient(transparent,rgba(28,23,20,0.75)); font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.8); pointer-events: none; }
+    .preview-tag-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; gap: 4px; padding: 6px 8px 6px 10px; background: linear-gradient(transparent,rgba(28,23,20,0.78)); }
+    .preview-tag-input { flex: 1; min-width: 0; background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); cursor: pointer; }
+    .preview-tag-input:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.7); text-transform: none; letter-spacing: 0.02em; }
+    .preview-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
+    .preview-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
+    .drag-hint { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: -6px; margin-bottom: 8px; }
+
+    /* ── Branding ── */
     .brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; margin-bottom: 24px; }
     .field { display: flex; flex-direction: column; gap: 5px; }
-    .field label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+    .field label { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--deep); }
     .field input, .field select { background: #fff; border: 1px solid var(--border); color: var(--deep); padding: 10px 12px; font-size: 0.88rem; font-family: 'DM Sans', sans-serif; border-radius: 6px; outline: none; transition: border-color 0.2s; }
     .field input:focus, .field select:focus { border-color: var(--rose); }
     .field input::placeholder { color: var(--dim); }
-
-    /* Watermark position picker */
     .wm-pos-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 6px; }
     .wm-pos-btn { border: 1.5px solid var(--border); border-radius: 6px; padding: 8px 4px; background: #fff; cursor: pointer; font-size: 0.72rem; color: var(--muted); text-align: center; transition: all 0.2s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .wm-pos-btn:hover { border-color: var(--gold); }
@@ -121,6 +200,7 @@
     .wm-pos-hint { font-size: 0.72rem; color: var(--muted); margin-top: 8px; }
     .wm-pos-icon { font-size: 14px; }
 
+    /* ── Generate ── */
     .gen-wrap { display: flex; justify-content: center; margin: 8px 0 28px; }
     .btn-gen { background: var(--rose); color: #fff; border: none; padding: 14px 52px; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 500; letter-spacing: 0.06em; border-radius: 6px; cursor: pointer; transition: background 0.2s, opacity 0.2s; }
     .btn-gen:hover:not(:disabled) { background: var(--rose-m); }
@@ -128,38 +208,54 @@
     .consent-row { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 14px 16px; margin-bottom: 16px; }
     .consent-label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 0.8rem; color: var(--muted); line-height: 1.55; }
     .consent-checkbox { flex-shrink: 0; margin-top: 2px; width: 16px; height: 16px; accent-color: var(--rose); cursor: pointer; }
-    .consent-label:hover { color: var(--deep); }
+
+    /* ── Output ── */
     .output { display: none; }
     .output.visible { display: block; }
     .output-wrap { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--deep); }
     #outputCanvas { display: block; width: 100%; }
-    .output-actions { display: flex; gap: 12px; margin-top: 16px; }
-    .btn-dl { background: var(--deep); color: var(--cream); border: none; padding: 12px 32px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+    .export-formats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-bottom: 12px; }
+    .btn-dl { background: var(--deep); color: var(--cream); border: none; padding: 10px 8px; font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; text-align: center; }
     .btn-dl:hover { background: var(--deep2); }
-    .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
-    .btn-reset:hover { border-color: var(--muted); color: var(--deep); }
+    .btn-dl span { display: block; font-size: 0.64rem; opacity: 0.85; font-weight: 300; margin-top: 2px; }
+    .btn-dl-single { display: flex; align-items: center; justify-content: center; }
+    .btn-dl-single span { font-size: 0.75rem; opacity: 1; font-weight: 500; margin-top: 0; }
+    .output-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
     .btn-new-case { background: var(--rose); color: #fff; border: 1px solid var(--rose); padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
     .btn-new-case:hover { background: var(--rose-m); border-color: var(--rose-m); }
-    footer { background: var(--deep); padding: 48px 5% 32px; border-top: 1px solid rgba(201,169,110,0.15); margin-top: 80px; }
-    .footer-top { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 2.5rem; max-width: 1280px; margin: 0 auto 3rem; }
-    .footer-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 400; color: var(--cream); margin-bottom: 0.6rem; }
-    .footer-brand span { color: var(--gold); }
-    .footer-tagline { font-size: 0.88rem; color: var(--muted); max-width: 220px; line-height: 1.6; }
-    .footer-links h4 { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); margin-bottom: 0.9rem; }
-    .footer-links ul { list-style: none; }
-    .footer-links li { margin-bottom: 0.6rem; }
-    .footer-links a { font-size: 0.88rem; color: var(--muted); text-decoration: none; transition: color 0.2s; }
-    .footer-links a:hover { color: var(--cream); }
-    .footer-bottom { max-width: 1280px; margin: 0 auto; border-top: 1px solid rgba(181,168,159,0.1); padding-top: 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; text-align: center; }
-    .footer-copy { font-size: 0.82rem; color: var(--muted); }
-    .footer-disclaimer { font-size: 0.78rem; color: var(--muted); opacity: 0.7; line-height: 1.5; }
-    @media (max-width: 580px) { .preset-grid { grid-template-columns: repeat(2,1fr); } .brand-grid { grid-template-columns: 1fr; } .wm-pos-grid { grid-template-columns: repeat(2,1fr); } }
+    .btn-reset { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 12px 24px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .btn-reset:hover { border-color: var(--muted); color: var(--deep); }
+
+    /* ── Footer ── */
+    footer { background: var(--deep); padding: 32px 5%; margin-top: 80px; color: var(--muted); text-align: center; font-size: 0.82rem; border-top: 1px solid rgba(201,169,110,0.15); }
+    footer .brand { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: var(--cream); margin-bottom: 0.5rem; }
+    footer .brand span { color: var(--gold); }
+
+    /* ── Save settings row ── */
+    .save-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .save-msg { font-size: 0.75rem; color: #3D7A55; }
+    .btn-save { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 8px 18px; font-family: 'DM Sans', sans-serif; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; border-radius: 4px; cursor: pointer; }
+    .btn-save:hover { border-color: var(--gold); color: var(--deep); }
+
+    @media (max-width: 600px) {
+      .grid-picker { grid-template-columns: repeat(3,1fr); }
+      .grid-picker .grid-btn:nth-child(4),
+      .grid-picker .grid-btn:nth-child(5) { grid-column: auto; }
+      .brand-grid { grid-template-columns: 1fr; }
+      .wm-pos-grid { grid-template-columns: repeat(2,1fr); }
+      .preset-grid.face-presets { grid-template-columns: repeat(2,1fr); }
+      .export-formats { grid-template-columns: repeat(2,1fr); }
+    }
+    @media (max-width: 460px) {
+      .upload-grid.g-2x3 { grid-template-columns: 1fr 1fr; }
+      .upload-grid.g-3h { grid-template-columns: 1fr 1fr; }
+    }
   </style>
-  <!-- Privacy-friendly analytics by Plausible -->
   <script async src="https://plausible.io/js/pa-s9ic7e_4fbKlTLHHXTR_P.js"></script>
   <script>
-    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-    plausible.init()
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)};
+    plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init();
   </script>
 </head>
 <body>
@@ -167,913 +263,1595 @@
 <nav>
   <a href="/" class="nav-logo">Skin<span>Day</span></a>
   <div class="nav-ctas">
-    <button class="nav-signin-btn">Client Sign In</button>
-    <a href="/editor.html" class="nav-cta">Clinic Portal</a>
+    <a href="/visualize" class="nav-link" data-en="Visualize" data-zh="Visualize">Visualize</a>
+    <div class="lang-toggle" role="group" aria-label="Language">
+      <button class="lang-btn active" type="button" onclick="setLang('en')">EN</button>
+      <div class="lang-sep"></div>
+      <button class="lang-btn" type="button" onclick="setLang('zh')">繁中</button>
+    </div>
   </div>
-  <button class="hamburger" id="hamburger" aria-label="Menu"><span></span><span></span><span></span></button>
 </nav>
-
-<div class="nav-overlay" id="navOverlay">
-  <a href="/" class="nav-overlay-logo">Skin<span>Day</span></a>
-  <div class="nav-overlay-links">
-    <a href="/">Browse Clinics</a>
-    <a href="/about.html">About</a>
-    <a href="/studio.html" style="color:var(--gold);">Studio</a>
-    <a href="/account.html" class="cta-link">Client Sign In</a>
-    <a href="/editor.html" class="cta-link">Clinic Portal</a>
-  </div>
-  <div class="nav-overlay-bottom">skinday.ca</div>
-</div>
 
 <div class="page">
   <div class="hero">
     <div class="eyebrow">SkinDay Studio</div>
-    <h1>AI-assisted before & after photos.<br><em>Aligned, branded, ready in seconds.</em></h1>
-    <p>Choose two photos, let Studio help align the crop, add your clinic branding, then download a polished image ready to post.</p>
+    <h1 data-en="Before &amp; after photos,<br><em>ready in seconds.</em>" data-zh="製作前後對比圖，<br><em>數秒完成。</em>">Before &amp; after photos,<br><em>ready in seconds.</em></h1>
+    <p data-en="Multi-angle grids, background removal, clinic branding. Everything processed locally in your browser." data-zh="多角度版面、背景處理、診所品牌標示。所有照片都在您的瀏覽器中本地處理。">Multi-angle grids, background removal, clinic branding. Everything processed locally in your browser.</p>
   </div>
 
+  <!-- STEP 1: Grid + Subject -->
   <div class="step">
-    <div class="step-num">Step 1 — Choose your photos</div>
-    <div class="upload-row">
-      <div class="upload-zone" id="zone-before">
-        <div class="upload-plus">+</div>
-        <div class="upload-txt">Before photo</div>
-        <input type="file" accept="image/*" class="main-input" id="input-before"/>
-        <div class="zone-tag">Before</div>
-        <button class="change-btn">Change</button>
-        <input type="file" accept="image/*" class="change-input" id="change-before"/>
-      </div>
-      <div class="upload-zone" id="zone-after">
-        <div class="upload-plus">+</div>
-        <div class="upload-txt">After photo</div>
-        <input type="file" accept="image/*" class="main-input" id="input-after"/>
-        <div class="zone-tag">After</div>
-        <button class="change-btn">Change</button>
-        <input type="file" accept="image/*" class="change-input" id="change-after"/>
-      </div>
+    <div class="step-num" data-en="Step 1 - Choose your layout" data-zh="步驟 1：選擇版面">Step 1 - Choose your layout</div>
+
+    <div class="grid-picker" id="gridPicker">
+      <!-- 2-up horizontal -->
+      <button class="grid-btn active" data-grid="2h" onclick="selGrid('2h')">
+        <div class="grid-icon">
+          <div class="gi-cell" style="width:22px;height:30px;"></div>
+          <div class="gi-cell" style="width:22px;height:30px;"></div>
+        </div>
+        <div class="grid-name" data-en="2 Side" data-zh="左右對比">2 Side</div>
+        <div class="grid-desc" data-en="Before / After" data-zh="治療前／治療後">Before / After</div>
+      </button>
+      <!-- 2-up vertical -->
+      <button class="grid-btn" data-grid="2v" onclick="selGrid('2v')">
+        <div class="grid-icon" style="flex-direction:column;">
+          <div class="gi-cell" style="width:38px;height:14px;"></div>
+          <div class="gi-cell" style="width:38px;height:14px;"></div>
+        </div>
+        <div class="grid-name" data-en="2 Stack" data-zh="上下對比">2 Stack</div>
+        <div class="grid-desc" data-en="Top / Bottom" data-zh="上／下排列">Top / Bottom</div>
+      </button>
+      <!-- 3-up horizontal -->
+      <button class="grid-btn" data-grid="3h" onclick="selGrid('3h')">
+        <div class="grid-icon">
+          <div class="gi-cell" style="width:14px;height:30px;"></div>
+          <div class="gi-cell" style="width:14px;height:30px;"></div>
+          <div class="gi-cell" style="width:14px;height:30px;"></div>
+        </div>
+        <div class="grid-name" data-en="3 Side" data-zh="三圖並排">3 Side</div>
+        <div class="grid-desc" data-en="3 timepoints" data-zh="三個時間點">3 timepoints</div>
+      </button>
+      <!-- 2x2 -->
+      <button class="grid-btn" data-grid="2x2" onclick="selGrid('2x2')">
+        <div class="grid-icon" style="flex-direction:column;gap:3px;">
+          <div style="display:flex;gap:3px;">
+            <div class="gi-cell" style="width:21px;height:14px;"></div>
+            <div class="gi-cell" style="width:21px;height:14px;"></div>
+          </div>
+          <div style="display:flex;gap:3px;">
+            <div class="gi-cell" style="width:21px;height:14px;"></div>
+            <div class="gi-cell" style="width:21px;height:14px;"></div>
+          </div>
+        </div>
+        <div class="grid-name" data-en="2 x 2" data-zh="2 x 2">2 x 2</div>
+        <div class="grid-desc" data-en="2 angles" data-zh="兩個角度">2 angles</div>
+      </button>
+      <!-- 2x3 -->
+      <button class="grid-btn" data-grid="2x3" onclick="selGrid('2x3')">
+        <div class="grid-icon" style="flex-direction:column;gap:3px;">
+          <div style="display:flex;gap:3px;">
+            <div class="gi-cell" style="width:13px;height:14px;"></div>
+            <div class="gi-cell" style="width:13px;height:14px;"></div>
+            <div class="gi-cell" style="width:13px;height:14px;"></div>
+          </div>
+          <div style="display:flex;gap:3px;">
+            <div class="gi-cell" style="width:13px;height:14px;"></div>
+            <div class="gi-cell" style="width:13px;height:14px;"></div>
+            <div class="gi-cell" style="width:13px;height:14px;"></div>
+          </div>
+        </div>
+        <div class="grid-name" data-en="2 x 3" data-zh="2 x 3">2 x 3</div>
+        <div class="grid-desc" data-en="3 angles" data-zh="三個角度">3 angles</div>
+      </button>
+    </div>
+
+    <div class="subject-toggle">
+      <button class="subj-btn active" id="subjFace" onclick="selSubject('face')">
+        <strong data-en="Face" data-zh="臉部">Face</strong>
+        <span data-en="Facial alignment + crop presets" data-zh="臉部對齊與裁切預設">Facial alignment + crop presets</span>
+      </button>
+      <button class="subj-btn" id="subjBody" onclick="selSubject('body')">
+        <strong data-en="Body" data-zh="身體">Body</strong>
+        <span data-en="Full photos, no cropping" data-zh="完整照片，不裁切">Full photos, no cropping</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2: Upload photos -->
+  <div class="step" id="uploadStep">
+    <div class="step-num" data-en="Step 2 - Upload photos" data-zh="步驟 2：上傳照片">Step 2 - Upload photos</div>
+    <div class="upload-grid g-2h" id="uploadGrid">
+      <!-- Slots injected by JS -->
     </div>
     <div class="privacy-note">
-      <span class="privacy-icon" aria-hidden="true">🔒</span>
-      <span>Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images.</span>
+      <span style="flex-shrink:0;font-size:0.9rem;line-height:1.5;opacity:0.7;">🔒</span>
+      <span data-en="Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images." data-zh="照片會在您的瀏覽器中本地處理。SkinDay 不會上傳、儲存或查看顧客影像。">Photos are processed locally in your browser. SkinDay does not upload, store, or view patient images.</span>
     </div>
-    <div class="status"><div class="dot" id="dot"></div><span id="statusText">Choose a before and after photo to begin</span></div>
+    <div class="status"><div class="dot" id="dot"></div><span id="statusText" data-en="Upload your photos to begin" data-zh="上傳照片開始製作">Upload your photos to begin</span></div>
     <div class="progress" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <!-- STEP 3: Background (optional) -->
+    <div class="bg-controls" id="bgControls" style="display:none;">
+      <hr class="divider" style="margin-top:24px;">
+      <div class="step-num" data-en="Step 3 - Background (optional)" data-zh="步驟 3：背景處理（可選）">Step 3 - Background (optional)</div>
+      <p class="bg-intro" data-en="Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping." data-zh="想要更乾淨的攝影棚風格？您可以將任何照片的背景替換為純黑背景。原始背景會在您的裝置上移除，主體會保留下來。每張照片約需數秒，因此會在裁切前先完成。">Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping.</p>
+      <div class="bg-selectall-row">
+        <label class="bg-check-item bg-selectall">
+          <input type="checkbox" id="bgSelectAll" onchange="toggleSelectAllBg(this.checked)"/>
+          <span data-en="Select all photos" data-zh="選取全部照片">Select all photos</span>
+        </label>
+      </div>
+      <div class="bg-slot-select" id="bgSlotSelect"></div>
+      <div class="bg-actions">
+        <button class="bg-btn" id="btnBgBlack" onclick="applyBgBlack()" disabled>
+          <div class="bg-swatch black"></div>
+          <span data-en="Apply black background" data-zh="套用黑色背景">Apply black background</span>
+        </button>
+        <button class="bg-btn" id="btnBgReset" onclick="resetBg()" disabled style="color:var(--muted);">
+          <span data-en="Reset selected" data-zh="重設已選照片">Reset selected</span>
+        </button>
+      </div>
+      <div class="bg-hint" id="bgHint" data-en="Tick the photos you want, then apply a black background." data-zh="勾選要處理的照片，再套用黑色背景。">Tick the photos you want, then apply a black background.</div>
+      <div class="bg-progress" id="bgProgress"></div>
+      <div class="bg-continue-row" id="bgContinueRow" style="display:none;">
+        <span class="bg-continue-note" id="bgContinueNote" data-en="Backgrounds set? Move on to crop and branding." data-zh="背景設定完成後，可繼續裁切與品牌設定。">Backgrounds set? Move on to crop and branding.</span>
+        <button class="btn-continue" id="bgContinueBtn" onclick="continueToCrop()" data-en="Continue to crop" data-zh="繼續裁切">Continue to crop</button>
+      </div>
+    </div>
   </div>
 
+  <!-- STEP 4: Crop & align -->
   <div class="crop-section" id="cropSection">
-    <hr class="divider" style="margin-top:0">
-    <div class="step">
-      <div class="step-num">Step 2 — Choose crop area</div>
-      <div class="preset-grid">
+    <hr class="divider" id="cropDivider" style="margin-top:0">
+    <div class="step" id="cropStep">
+      <div class="step-num" data-en="Step 4 - Adjust crop" data-zh="步驟 4：調整裁切">Step 4 - Adjust crop</div>
+      <div class="preset-grid face-presets" id="presetGrid">
         <button class="preset-btn" data-preset="full" onclick="selPreset('full')">
-          <div class="preset-icon">🧍</div><div class="preset-name">Full Face</div><div class="preset-desc">Head to chin</div>
+          <div class="preset-icon">🧍</div><div class="preset-name" data-en="Full Face" data-zh="全臉">Full Face</div><div class="preset-desc" data-en="Head to chin" data-zh="頭頂至下巴">Head to chin</div>
         </button>
         <button class="preset-btn active" data-preset="lower" onclick="selPreset('lower')">
-          <div class="preset-icon">💉</div><div class="preset-name">Lower Face</div><div class="preset-desc">Cheeks to jaw</div>
+          <div class="preset-icon">💉</div><div class="preset-name" data-en="Lower Face" data-zh="下臉部">Lower Face</div><div class="preset-desc" data-en="Cheeks to jaw" data-zh="臉頰至下顎">Cheeks to jaw</div>
         </button>
         <button class="preset-btn" data-preset="upper" onclick="selPreset('upper')">
-          <div class="preset-icon">👁</div><div class="preset-name">Upper Face</div><div class="preset-desc">Forehead to brows</div>
+          <div class="preset-icon">👁</div><div class="preset-name" data-en="Upper Face" data-zh="上臉部">Upper Face</div><div class="preset-desc" data-en="Forehead to brows" data-zh="額頭至眉毛">Forehead to brows</div>
         </button>
         <button class="preset-btn" data-preset="eyes" onclick="selPreset('eyes')">
-          <div class="preset-icon">✨</div><div class="preset-name">Eye Area</div><div class="preset-desc">Brows to nose</div>
+          <div class="preset-icon">✨</div><div class="preset-name" data-en="Eye Area" data-zh="眼周">Eye Area</div><div class="preset-desc" data-en="Brows to nose" data-zh="眉毛至鼻部">Brows to nose</div>
         </button>
       </div>
-
-      <!-- Zoom sliders -->
-      <div class="zoom-row">
-        <div class="zoom-box">
-          <div class="zoom-label">Before zoom <span id="zoomBVal">100%</span></div>
-          <input type="range" class="zoom-slider" id="zoomB" min="60" max="160" value="100" step="5" oninput="onZoom('before',this.value)"/>
-        </div>
-        <div class="zoom-box">
-          <div class="zoom-label">After zoom <span id="zoomAVal">100%</span></div>
-          <input type="range" class="zoom-slider" id="zoomA" min="60" max="160" value="100" step="5" oninput="onZoom('after',this.value)"/>
-        </div>
-      </div>
-
-      <div class="preview-row">
-        <div class="preview-box"><canvas id="cvBefore"></canvas><div class="preview-tag">Before</div></div>
-        <div class="preview-box"><canvas id="cvAfter"></canvas><div class="preview-tag">After</div></div>
-      </div>
-      <div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:-10px;margin-bottom:8px;">Drag each photo to reposition</div>
+      <div class="zoom-controls" id="zoomControls"></div>
+      <div class="preview-area p-2" id="previewArea"></div>
+      <div class="drag-hint" data-en="Drag each photo to reposition" data-zh="拖曳每張照片以調整位置">Drag each photo to reposition</div>
     </div>
 
-    <hr class="divider">
+    <!-- Branding -->
+    <hr class="divider" id="brandDivider">
     <div class="step">
-      <div class="step-num">Step 3 — Add your branding (optional)</div>
+      <div class="step-num" id="brandStepNum" data-en="Step 5 - Branding (optional)" data-zh="步驟 5：品牌設定（可選）">Step 5 - Branding (optional)</div>
 
-      <!-- Row 1: Clinic + Injector -->
       <div class="brand-grid" style="margin-top:14px;">
-        <div class="field"><label>Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" maxlength="60"/></div>
-        <div class="field"><label>Injector name</label><input type="text" id="injectorName" placeholder="Injector name" maxlength="60"/></div>
+        <div class="field"><label data-en="Clinic name" data-zh="診所名稱">Clinic name</label><input type="text" id="clinicName" placeholder="Your clinic name" data-en="Your clinic name" data-zh="您的診所名稱" maxlength="60"/></div>
+        <div class="field"><label data-en="Injector name" data-zh="施作人員">Injector name</label><input type="text" id="injectorName" placeholder="Injector name" data-en="Injector name" data-zh="施作人員" maxlength="60"/></div>
       </div>
-
-      <!-- Row 2: Treatment + Logo -->
       <div class="brand-grid">
         <div class="field">
-          <label>Treatment label</label>
-          <input type="text" id="treatmentLabel" placeholder="e.g. Sculptra · 3 sessions" maxlength="60"/>
+          <label data-en="Treatment label" data-zh="療程標籤">Treatment label</label>
+          <input type="text" id="treatmentLabel" placeholder="e.g. Sculptra · 3 sessions" data-en="e.g. Sculptra · 3 sessions" data-zh="例如 Sculptra · 3 次療程" maxlength="60"/>
         </div>
         <div class="field">
-          <label>Clinic logo <span style="font-weight:300;font-size:0.65rem;color:var(--dim);">PNG transparent bg best</span></label>
+          <label><span data-en="Clinic logo" data-zh="診所 Logo">Clinic logo</span> <span style="font-weight:300;font-size:0.65rem;color:var(--dim);" data-en="PNG transparent bg best" data-zh="建議使用透明背景 PNG">PNG transparent bg best</span></label>
           <div style="display:flex;align-items:center;gap:8px;">
-            <label for="logoUpload" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;font-size:0.83rem;color:var(--muted);cursor:pointer;white-space:nowrap;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">Upload logo</label>
+            <label for="logoUpload" style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;font-size:0.83rem;color:var(--muted);cursor:pointer;white-space:nowrap;transition:border-color .2s;" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'" data-en="Upload logo" data-zh="上傳 Logo">Upload logo</label>
             <input type="file" id="logoUpload" accept="image/*" style="display:none;"/>
-            <span id="logoFileName" style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;">No logo</span>
-            <button id="logoClearBtn" onclick="clearLogo()" style="display:none;background:transparent;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;flex-shrink:0;">✕</button>
+            <span id="logoFileName" style="font-size:0.75rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px;" data-en="No logo" data-zh="不使用 Logo">No logo</span>
+            <button id="logoClearBtn" onclick="clearLogo()" style="display:none;background:transparent;border:none;color:var(--muted);font-size:0.75rem;cursor:pointer;flex-shrink:0;">x</button>
           </div>
         </div>
       </div>
 
-      <!-- Row 3: Dates -->
       <div class="brand-grid">
         <div class="field">
-          <label>Before date</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <select id="beforeMonth"><option value="">Month</option><option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option><option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option><option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option><option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option></select>
-            <select id="beforeYear"><option value="">Year</option><option value="2020">2020</option><option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
-          </div>
-        </div>
-        <div class="field">
-          <label>After date</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-            <select id="afterMonth"><option value="">Month</option><option value="Jan">Jan</option><option value="Feb">Feb</option><option value="Mar">Mar</option><option value="Apr">Apr</option><option value="May">May</option><option value="Jun">Jun</option><option value="Jul">Jul</option><option value="Aug">Aug</option><option value="Sep">Sep</option><option value="Oct">Oct</option><option value="Nov">Nov</option><option value="Dec">Dec</option></select>
-            <select id="afterYear"><option value="">Year</option><option value="2020">2020</option><option value="2021">2021</option><option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 4: Layout + Format -->
-      <div class="brand-grid">
-        <div class="field"><label>Layout</label><select id="layout"><option value="side">Side by side</option><option value="stack">Top & bottom</option></select></div>
-        <div class="field"><label>Export format</label><select id="exportFormat"><option value="square">Square 1:1 (Instagram post)</option><option value="portrait" selected>Portrait 4:5 (Instagram feed)</option><option value="story">Story 9:16 (Instagram story)</option><option value="free">Original — match crop</option></select></div>
-      </div>
-
-      <!-- Row 5: Exposure + Clarity -->
-      <div class="brand-grid">
-        <div class="field"><label>Normalize exposure</label><select id="norm"><option value="1">Yes — match brightness</option><option value="0">No — keep original</option></select></div>
-        <div class="field"><label>Image clarity</label><select id="enhance"><option value="0">None</option><option value="1" selected>Subtle — reduce noise & sharpen</option><option value="2">Strong — reduce noise & sharpen</option></select></div>
-      </div>
-
-      <!-- Row 6: Logo position (only shown when logo uploaded) -->
-      <div class="brand-grid" id="logoPosField" style="display:none;">
-        <div class="field">
-          <label>Logo position</label>
-          <select id="logoPos">
-            <option value="tr">Top right</option>
-            <option value="tl">Top left</option>
-            <option value="center">Middle</option>
-            <option value="br">Bottom right</option>
-            <option value="bl">Bottom left</option>
+          <label data-en="Export format" data-zh="匯出格式">Export format</label>
+          <select id="exportFormat">
+            <option value="square" data-en="Square 1:1 (Instagram post)" data-zh="正方形 1:1（Instagram 貼文）">Square 1:1 (Instagram post)</option>
+            <option value="portrait" selected data-en="Portrait 4:5 (Instagram feed)" data-zh="直式 4:5（Instagram 動態牆）">Portrait 4:5 (Instagram feed)</option>
+            <option value="story" data-en="Story 9:16 (Instagram story)" data-zh="限時動態 9:16（Instagram Story）">Story 9:16 (Instagram story)</option>
+            <option value="free" data-en="Original - match crop" data-zh="原始比例（依裁切範圍）">Original - match crop</option>
           </select>
         </div>
-        <div class="field"></div>
-      </div>
-
-      <!-- Watermark text position -->
-      <div class="field" style="margin-bottom:20px;">
-        <label>Watermark text position</label>
-        <div class="wm-pos-grid" id="wmPosGrid" style="margin-top:8px;">
-          <button class="wm-pos-btn" data-pos="tl" onclick="selWmPos('tl')"><span class="wm-pos-icon">↖</span>Top left</button>
-          <button class="wm-pos-btn" data-pos="tr" onclick="selWmPos('tr')"><span class="wm-pos-icon">↗</span>Top right</button>
-          <button class="wm-pos-btn active" data-pos="br" onclick="selWmPos('br')"><span class="wm-pos-icon">↘</span>Bottom right</button>
-          <button class="wm-pos-btn" data-pos="bl" onclick="selWmPos('bl')"><span class="wm-pos-icon">↙</span>Bottom left</button>
-          <button class="wm-pos-btn" data-pos="center" onclick="selWmPos('center')"><span class="wm-pos-icon">⊙</span>Centre</button>
-          <button class="wm-pos-btn" data-pos="tile" onclick="selWmPos('tile')"><span class="wm-pos-icon">⊞</span>Tiled</button>
+        <div class="field">
+          <label data-en="Image clarity" data-zh="影像清晰度">Image clarity</label>
+          <select id="enhance">
+            <option value="0" data-en="None" data-zh="不處理">None</option>
+            <option value="1" selected data-en="Subtle - reduce noise &amp; sharpen" data-zh="輕微：降噪並銳化">Subtle - reduce noise &amp; sharpen</option>
+            <option value="2" data-en="Strong - reduce noise &amp; sharpen" data-zh="加強：降噪並銳化">Strong - reduce noise &amp; sharpen</option>
+          </select>
         </div>
-        <div class="wm-pos-hint" id="wmPosHint">Add a clinic or injector name above to enable the watermark.</div>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <span id="saveMsg" style="font-size:0.75rem;color:#3D7A55;"></span>
-        <button onclick="saveSettings()" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 18px;font-family:'DM Sans',sans-serif;font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;border-radius:4px;cursor:pointer;" onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--deep)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'">Save settings</button>
+      <div class="brand-grid">
+        <div class="field">
+          <label data-en="Normalize exposure" data-zh="亮度校正">Normalize exposure</label>
+          <select id="norm">
+            <option value="1" data-en="Yes - match brightness" data-zh="是：統一亮度">Yes - match brightness</option>
+            <option value="0" data-en="No - keep original" data-zh="否：保留原始亮度">No - keep original</option>
+          </select>
+        </div>
+        <div class="field" id="logoPosField" style="display:none;">
+          <label data-en="Logo position" data-zh="Logo 位置">Logo position</label>
+          <select id="logoPos">
+            <option value="tr" data-en="Top right" data-zh="右上">Top right</option>
+            <option value="tl" data-en="Top left" data-zh="左上">Top left</option>
+            <option value="br" data-en="Bottom right" data-zh="右下">Bottom right</option>
+            <option value="bl" data-en="Bottom left" data-zh="左下">Bottom left</option>
+          </select>
+        </div>
       </div>
+
+      <div class="field" style="margin-bottom:20px;">
+        <label data-en="Watermark text position" data-zh="浮水印文字位置">Watermark text position</label>
+        <div class="wm-pos-grid disabled" id="wmPosGrid" style="margin-top:8px;">
+          <button class="wm-pos-btn" data-pos="tl" onclick="selWmPos('tl')"><span class="wm-pos-icon">↖</span><span data-en="Top left" data-zh="左上">Top left</span></button>
+          <button class="wm-pos-btn" data-pos="tr" onclick="selWmPos('tr')"><span class="wm-pos-icon">↗</span><span data-en="Top right" data-zh="右上">Top right</span></button>
+          <button class="wm-pos-btn active" data-pos="br" onclick="selWmPos('br')"><span class="wm-pos-icon">↘</span><span data-en="Bottom right" data-zh="右下">Bottom right</span></button>
+          <button class="wm-pos-btn" data-pos="bl" onclick="selWmPos('bl')"><span class="wm-pos-icon">↙</span><span data-en="Bottom left" data-zh="左下">Bottom left</span></button>
+          <button class="wm-pos-btn" data-pos="center" onclick="selWmPos('center')"><span class="wm-pos-icon">⊙</span><span data-en="Centre" data-zh="置中">Centre</span></button>
+          <button class="wm-pos-btn" data-pos="tile" onclick="selWmPos('tile')"><span class="wm-pos-icon">⊞</span><span data-en="Tiled" data-zh="平鋪">Tiled</span></button>
+        </div>
+        <div class="wm-pos-hint" id="wmPosHint" data-en="Add a clinic or injector name above to enable the watermark." data-zh="請先輸入診所名稱或施作人員名稱，即可啟用浮水印。">Add a clinic or injector name above to enable the watermark.</div>
+      </div>
+
+      <div class="save-row">
+        <span class="save-msg" id="saveMsg"></span>
+        <button class="btn-save" onclick="saveSettings()" data-en="Save settings" data-zh="儲存設定">Save settings</button>
+      </div>
+
       <div class="consent-row">
         <label class="consent-label">
           <input type="checkbox" id="consentCheck" class="consent-checkbox"/>
-          <span>I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility.</span>
+          <span data-en="I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility." data-zh="我已取得顧客同意，可將這些影像用於行銷或社群發布。SkinDay Studio 只協助排版與格式化；在分享前取得適當同意，仍是診所的責任。">I have patient consent to use these images for marketing or social media. SkinDay Studio formats images for you, but obtaining appropriate consent before sharing remains the clinic's responsibility.</span>
         </label>
       </div>
-      <div class="gen-wrap"><button class="btn-gen" id="genBtn" onclick="generate()" disabled>Generate image</button></div>
+      <div class="gen-wrap"><button class="btn-gen" id="genBtn" onclick="generate()" disabled data-en="Generate image" data-zh="生成圖片">Generate image</button></div>
     </div>
   </div>
 
+  <!-- OUTPUT -->
   <div class="output" id="outputSection">
     <hr class="divider" style="margin-top:0">
-    <div class="step-num" style="margin-bottom:16px;">Your image</div>
+    <div class="step-num" style="margin-bottom:16px;" data-en="Your image" data-zh="您的圖片">Your image</div>
     <div class="output-wrap"><canvas id="outputCanvas"></canvas></div>
-    <div style="margin-bottom:12px;">
-      <div class="step-num" style="margin-bottom:10px;">Export format</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-        <button class="btn-dl" onclick="downloadFormat('original')" style="font-size:0.75rem;padding:10px 8px;">
-          Original<br><span style="font-size:0.65rem;opacity:0.6;font-weight:300;">As generated</span>
-        </button>
-        <button class="btn-dl" onclick="downloadFormat('square')" style="font-size:0.75rem;padding:10px 8px;">
-          Square 1:1<br><span style="font-size:0.65rem;opacity:0.6;font-weight:300;">Instagram post</span>
-        </button>
-        <button class="btn-dl" onclick="downloadFormat('story')" style="font-size:0.75rem;padding:10px 8px;">
-          Story 9:16<br><span style="font-size:0.65rem;opacity:0.6;font-weight:300;">Instagram story</span>
-        </button>
+    <div style="margin-top:16px;margin-bottom:12px;">
+      <div class="step-num" style="margin-bottom:10px;" data-en="Export format" data-zh="匯出格式">Export format</div>
+      <div class="export-formats">
+        <button class="btn-dl btn-dl-single" onclick="downloadFormat('original')"><span data-en="Original" data-zh="原始圖片">Original</span></button>
+        <button class="btn-dl" onclick="downloadFormat('square')"><span data-en="Square 1:1" data-zh="正方形 1:1">Square 1:1</span><span data-en="Instagram post" data-zh="Instagram 貼文">Instagram post</span></button>
+        <button class="btn-dl" onclick="downloadFormat('story')"><span data-en="Story 9:16" data-zh="限時動態 9:16">Story 9:16</span><span data-en="Instagram story" data-zh="Instagram 限時動態">Instagram story</span></button>
       </div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-      <button class="btn-new-case" onclick="newCase()">New case</button>
-      <button class="btn-reset" onclick="saveBrand()" style="border-color:var(--gold);color:var(--gold);">Save brand profile</button>
-      <span id="brandSaved" style="font-size:0.75rem;color:#3D7A55;display:none;">✓ Saved</span>
+    <div class="output-row">
+      <button class="btn-new-case" onclick="newCase()" data-en="New case" data-zh="建立新案例">New case</button>
+      <button class="btn-reset" onclick="saveSettings()" style="border-color:var(--gold);color:var(--gold);" data-en="Save brand profile" data-zh="儲存品牌設定">Save brand profile</button>
+      <span id="brandSaved" style="font-size:0.75rem;color:#3D7A55;display:none;" data-en="Saved" data-zh="已儲存">Saved</span>
     </div>
   </div>
 </div>
 
 <footer>
-  <div class="footer-top">
-    <div>
-      <div class="footer-brand">Skin<span>Day</span></div>
-      <div class="footer-tagline">Not the best clinic. Just the right one for you.</div>
-    </div>
-    <div class="footer-links">
-      <h4>Discover</h4>
-      <ul>
-        <li><a href="/guide/botox-cost-toronto">Botox Guide Toronto</a></li>
-        <li><a href="/guide/botox-cost-vancouver">Botox Guide Vancouver</a></li>
-        <li><a href="/insights">SkinDay Insights</a></li>
-        <li><a href="/#directory">All Clinics</a></li>
-      </ul>
-    </div>
-    <div class="footer-links">
-      <h4>Clinics</h4>
-      <ul>
-        <li><a href="/#claim">Claim Your Listing</a></li>
-        <li><a href="/studio.html" style="color:var(--gold);">Studio — Free Photo Tool</a></li>
-      </ul>
-    </div>
-    <div class="footer-links">
-      <h4>Company</h4>
-      <ul>
-        <li><a href="/about.html">About SkinDay</a></li>
-        <li><a href="/contact.html">Contact</a></li>
-        <li><a href="/privacy.html">Privacy Policy</a></li>
-        <li><a href="/terms.html">Terms of Service</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <div class="footer-copy">© 2026 SkinDay. All rights reserved. · <a href="/privacy.html" style="color:var(--muted);text-decoration:none;">Privacy Policy</a> · <a href="/terms.html" style="color:var(--muted);text-decoration:none;">Terms</a></div>
-    <div class="footer-disclaimer">Prices shown are user-reported or clinic-verified. Always confirm directly with the clinic before booking.</div>
-  </div>
+  <div class="brand">Skin<span>Day</span></div>
+  <div data-en="SkinDay Studio · Free before &amp; after tool for clinics · All processing is local, no images are uploaded" data-zh="SkinDay Studio · 免費的醫美前後對比圖工具 · 所有處理皆在本地完成，影像不會上傳">SkinDay Studio · Free before &amp; after tool for clinics · All processing is local, no images are uploaded</div>
 </footer>
 
 <script>
-const S = {
-  beforeImg:null, afterImg:null, fm:null,
-  preset:'lower', wmPos:'br',
-  bLm:null, aLm:null,
-  bZoom:1.0, aZoom:1.0,
-  bPan:{x:0,y:0}, aPan:{x:0,y:0}
+// ============================================================
+// i18n - bilingual EN / 繁中 (shares sd-lang with the rest of the site)
+// ============================================================
+var I18N = {
+  en: {
+    photo: 'Photo', before: 'BEFORE', after: 'AFTER',
+    uploadBegin: 'Upload your photos to begin',
+    loadedSome: function(n,tot,more){ return n+' of '+tot+' photos loaded - add '+more+' more.'; },
+    analysing: 'Analysing photos...',
+    facesDetected: 'Faces detected. Choose backgrounds below, or continue to crop.',
+    noFaces: 'No faces detected. Choose backgrounds below, or continue to crop.',
+    someFaces: function(w){ return w+' photo(s) had no detectable face. Choose backgrounds below, or continue to crop.'; },
+    bodyMode: 'Body mode. Choose backgrounds below, or continue to crop.',
+    continueBranding: 'Continue to branding',
+    continueCrop: 'Continue to crop',
+    noteBranding: 'Backgrounds set? Add branding and generate.',
+    noteCrop: 'Backgrounds set? Move on to crop and branding.',
+    addBranding: 'Add branding, then generate.',
+    adjustCrop: 'Adjust the crop for each photo.',
+    removingBg: function(i,tot,label){ return 'Removing background ('+i+' of '+tot+'): "'+label+'"...'; },
+    bgDone: function(n){ return 'Black background applied to '+n+' photo'+(n===1?'':'s')+'.'; },
+    bgPartial: function(done,failed){ return 'Applied to '+done+', but '+failed+' could not be isolated. Try clearer, well-lit photos.'; },
+    bgReset: function(n){ return 'Reset '+n+' photo'+(n===1?'':'s')+' to original.'; },
+    doneDownload: 'Done - your image is ready to download.',
+    noLogo: 'No logo', logoLoaded: 'Logo loaded',
+    settingsSaved: 'Settings saved'
+  },
+  zh: {
+    photo: '\u7167\u7247', before: '\u6cbb\u7642\u524d', after: '\u6cbb\u7642\u5f8c',
+    uploadBegin: '\u4e0a\u50b3\u7167\u7247\u958b\u59cb\u88fd\u4f5c',
+    loadedSome: function(n,tot,more){ return '\u5df2\u8f09\u5165 '+n+' / '+tot+' \u5f35\u7167\u7247\uff0c\u9084\u9700 '+more+' \u5f35\u3002'; },
+    analysing: '\u6b63\u5728\u5206\u6790\u7167\u7247\u2026',
+    facesDetected: '\u5df2\u5075\u6e2c\u5230\u81c9\u90e8\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002',
+    noFaces: '\u672a\u5075\u6e2c\u5230\u81c9\u90e8\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002',
+    someFaces: function(w){ return '\u6709 '+w+' \u5f35\u7167\u7247\u672a\u5075\u6e2c\u5230\u81c9\u90e8\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002'; },
+    bodyMode: '\u8eab\u9ad4\u6a21\u5f0f\u3002\u53ef\u5728\u4e0b\u65b9\u9078\u64c7\u80cc\u666f\uff0c\u6216\u7e7c\u7e8c\u88c1\u5207\u3002',
+    continueBranding: '\u7e7c\u7e8c\u54c1\u724c\u8a2d\u5b9a',
+    continueCrop: '\u7e7c\u7e8c\u88c1\u5207',
+    noteBranding: '\u80cc\u666f\u8a2d\u5b9a\u5b8c\u6210\u5f8c\uff0c\u53ef\u52a0\u5165\u54c1\u724c\u4e26\u751f\u6210\u3002',
+    noteCrop: '\u80cc\u666f\u8a2d\u5b9a\u5b8c\u6210\u5f8c\uff0c\u53ef\u7e7c\u7e8c\u88c1\u5207\u8207\u54c1\u724c\u8a2d\u5b9a\u3002',
+    addBranding: '\u52a0\u5165\u54c1\u724c\u8a2d\u5b9a\uff0c\u518d\u751f\u6210\u3002',
+    adjustCrop: '\u8abf\u6574\u6bcf\u5f35\u7167\u7247\u7684\u88c1\u5207\u7bc4\u570d\u3002',
+    removingBg: function(i,tot,label){ return '\u6b63\u5728\u79fb\u9664\u80cc\u666f\uff08'+i+' / '+tot+'\uff09\uff1a\u300c'+label+'\u300d\u2026'; },
+    bgDone: function(n){ return '\u5df2\u70ba '+n+' \u5f35\u7167\u7247\u5957\u7528\u9ed1\u8272\u80cc\u666f\u3002'; },
+    bgPartial: function(done,failed){ return '\u5df2\u8655\u7406 '+done+' \u5f35\uff0c\u4f46\u6709 '+failed+' \u5f35\u7121\u6cd5\u5206\u96e2\u4e3b\u9ad4\u3002\u8acb\u4f7f\u7528\u66f4\u6e05\u6670\u3001\u5149\u7dda\u5145\u8db3\u7684\u7167\u7247\u3002'; },
+    bgReset: function(n){ return '\u5df2\u5c07 '+n+' \u5f35\u7167\u7247\u91cd\u8a2d\u70ba\u539f\u59cb\u72c0\u614b\u3002'; },
+    doneDownload: '\u5b8c\u6210\uff1a\u60a8\u7684\u5716\u7247\u5df2\u53ef\u4e0b\u8f09\u3002',
+    noLogo: '\u4e0d\u4f7f\u7528 Logo', logoLoaded: '\u5df2\u8f09\u5165 Logo',
+    settingsSaved: '\u8a2d\u5b9a\u5df2\u5132\u5b58'
+  }
 };
-const NOSE=1,CHIN=152,LEYE=33,REYE=263,BROWL=70,BROWR=300,JAWL=172,JAWR=397;
-
-document.getElementById('hamburger').addEventListener('click',function(){
-  this.classList.toggle('open');
-  document.getElementById('navOverlay').classList.toggle('open');
-});
-
-function setSt(msg,t='idle'){
-  document.getElementById('statusText').textContent=msg;
-  const d=document.getElementById('dot');
-  d.className='dot'+(t!=='idle'?' '+t:'');
+function detectLang(){
+  try { var saved = localStorage.getItem('sd-lang'); if (saved === 'zh' || saved === 'en') return saved; } catch(e){}
+  try { var nl = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase(); if (nl.indexOf('zh') === 0) return 'zh'; } catch(e){}
+  return 'en';
 }
-function setProg(p){
-  const b=document.getElementById('progressBar'),f=document.getElementById('progressFill');
-  if(p>0&&p<100){b.classList.add('on');f.style.width=p+'%';}
-  else{b.classList.remove('on');f.style.width='0%';}
+var currentLang = detectLang();
+function t(key){ var v = (I18N[currentLang] && I18N[currentLang][key]); if (v == null) v = I18N.en[key]; return v; }
+function setLang(lang){
+  currentLang = (lang === 'zh') ? 'zh' : 'en';
+  try { localStorage.setItem('sd-lang', currentLang); } catch(e){}
+  applyLang();
+}
+function applyLang(){
+  var isZh = currentLang === 'zh';
+  document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
+  document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+    var val = isZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = val;
+    else el.innerHTML = val;
+  });
+  document.querySelectorAll('.lang-btn').forEach(function(btn){
+    btn.classList.toggle('active', (btn.textContent.trim() === 'EN' && !isZh) || (btn.textContent.trim() === '\u7e41\u4e2d' && isZh));
+  });
+  document.title = isZh ? 'SkinDay Studio \u00b7 \u91ab\u7f8e\u8a3a\u6240\u524d\u5f8c\u5c0d\u6bd4\u5716\u5de5\u5177' : 'SkinDay Studio - Before & After Photo Tool for Clinics';
+  // Refresh any dynamically built UI that holds translatable text
+  if (typeof refreshDynamicLang === 'function') refreshDynamicLang();
 }
 
-// M20: cap each uploaded photo to a bounded long edge before it is stored and
-// run through FaceMesh, the crop canvases, and the clarity pass. Clinic phone
-// photos are 12-24 MP; holding two of them at native size, plus the MediaPipe
-// WebGL context and full-resolution canvases, is what kills and reloads the tab
-// on mobile. The export composite is only 1080 tall, so 1800 keeps exports sharp
-// even on a moderately tight crop while dropping peak memory by roughly 85%.
-// Small photos are never upscaled.
-function boundImage(img, max){
-  return new Promise(resolve=>{
-    const long=Math.max(img.naturalWidth,img.naturalHeight);
-    if(long<=max){ resolve(img); return; }
-    const scale=max/long;
-    const w=Math.round(img.naturalWidth*scale), h=Math.round(img.naturalHeight*scale);
-    const c=document.createElement('canvas');
-    c.width=w; c.height=h;
-    c.getContext('2d').drawImage(img,0,0,w,h);
-    const out=new Image();
-    out.onload=()=>resolve(out);
-    out.src=c.toDataURL('image/jpeg',.95);
+// ============================================================
+// STATE
+// ============================================================
+const S = {
+  grid: '2h',
+  subject: 'face',
+  preset: 'lower',
+  wmPos: 'br',
+  fm: null,
+  // slots: array of { img, lm, zoom, pan, label, origDataUrl, processedDataUrl, bgMode }
+  slots: [],
+  logoImg: null,
+  logoDataUrl: null,
+  bgChecked: {},
+  rowLabelValues: null,
+};
+
+// Grid config: { count, rows, cols, defaultLabels, rowLabels }
+const GRID_CONFIG = {
+  '2h':  { count:2, rows:1, cols:2, defaultLabels:['Before','After'], rowLabels:[] },
+  '2v':  { count:2, rows:2, cols:1, defaultLabels:['Before','After'], rowLabels:[] },
+  '3h':  { count:3, rows:1, cols:3, defaultLabels:['Photo 1','Photo 2','Photo 3'], rowLabels:[] },
+  '2x2': { count:4, rows:2, cols:2, defaultLabels:['Before','Before','After','After'], rowLabels:['Before','After'] },
+  '2x3': { count:6, rows:2, cols:3, defaultLabels:['Before','Before','Before','After','After','After'], rowLabels:['Before','After'] },
+};
+
+// Localized default slot labels (Before/After/Photo N). Used only for the
+// auto-generated defaults; once a user edits a label it is preserved as typed.
+function defaultLabelFor(grid, i){
+  var cfg = GRID_CONFIG[grid];
+  var raw = (cfg && cfg.defaultLabels[i]) || ('Photo ' + (i+1));
+  if (currentLang !== 'zh') return raw;
+  if (raw === 'Before') return t('before');
+  if (raw === 'After') return t('after');
+  var m = raw.match(/^Photo (\d+)$/);
+  if (m) return t('photo') + ' ' + m[1];
+  return raw;
+}
+
+// Called by applyLang() when the user switches language at runtime. Re-localizes
+// any slot still showing a default label (Before/After/Photo N) without touching
+// labels the user has customized.
+function refreshDynamicLang(){
+  var DEFAULTS_EN = ['Before','After','Photo 1','Photo 2','Photo 3','Photo 4','Photo 5','Photo 6'];
+  var DEFAULTS_ZH = [t('before'),t('after')].concat([1,2,3,4,5,6].map(function(n){return I18N.zh.photo+' '+n;}));
+  if (!S.slots || !S.slots.length) return;
+  S.slots.forEach(function(sl, i){
+    var isDefault = DEFAULTS_EN.indexOf(sl.label) >= 0 || DEFAULTS_ZH.indexOf(sl.label) >= 0;
+    if (isDefault) {
+      sl.label = defaultLabelFor(S.grid, i);
+      var z = document.getElementById('label-' + i);
+      if (z) z.value = sl.label;
+      var pv = document.getElementById('preview-label-' + i);
+      if (pv) pv.value = sl.label;
+      var bgl = document.getElementById('bg-check-label-' + i);
+      if (bgl) bgl.textContent = sl.label;
+    }
   });
 }
 
-function loadFile(file,which){
-  if(!file)return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    const img=new Image();
-    img.onload=()=>{
-      boundImage(img,1800).then(bimg=>{
-        S[which+'Img']=bimg;
-        S[which==='before'?'bLm':'aLm']=null;
-        S[which==='before'?'bZoom':'aZoom']=1.0;
-        if(which==='before') S.bPan={x:0,y:0}; else S.aPan={x:0,y:0};
-        if(which==='before') document.getElementById('zoomB').value=100;
-        else document.getElementById('zoomA').value=100;
-        const zone=document.getElementById('zone-'+which);
-        zone.classList.add('filled');
-        let old=zone.querySelector('img.thumb'); if(old)old.remove();
-        const th=document.createElement('img'); th.className='thumb'; th.src=bimg.src;
-        zone.insertBefore(th,zone.querySelector('.zone-tag'));
-        if(S.beforeImg&&S.afterImg) runDetect();
-        else setSt(which==='before'?'Before loaded. Now choose the after photo.':'After loaded. Now choose the before photo.','warn');
-      });
+// Body crop presets (no landmarks needed)
+const FACE_PRESETS = [
+  { key:'full',   icon:'🧍', name:'Full Face',  desc:'Head to chin' },
+  { key:'lower',  icon:'💉', name:'Lower Face', desc:'Cheeks to jaw' },
+  { key:'upper',  icon:'👁',  name:'Upper Face', desc:'Forehead to brows' },
+  { key:'eyes',   icon:'✨', name:'Eye Area',   desc:'Brows to nose' },
+];
+
+const NOSE=1,CHIN=152,LEYE=33,REYE=263,BROWL=70,BROWR=300,JAWL=172,JAWR=397;
+
+// ============================================================
+// GRID / SUBJECT SELECTION
+// ============================================================
+function selGrid(g) {
+  S.grid = g;
+  document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-grid="${g}"]`).classList.add('active');
+  rebuildUploadGrid();
+  hideCropSection();
+}
+
+function selSubject(s) {
+  S.subject = s;
+  document.getElementById('subjFace').classList.toggle('active', s === 'face');
+  document.getElementById('subjBody').classList.toggle('active', s === 'body');
+  if (s === 'face') {
+    // Reset to a sensible face preset if coming from body
+    if (!FACE_PRESETS.find(p => p.key === S.preset)) S.preset = 'lower';
+    rebuildPresetGrid();
+  }
+  // Re-run detection (face) or skip to background step (body)
+  const allFilled = S.slots.every(sl => sl.img);
+  if (allFilled) runDetectAll();
+}
+
+function selPreset(k) {
+  S.preset = k;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-preset="${k}"]`);
+  if (btn) btn.classList.add('active');
+  renderPreviews();
+}
+
+// Face crop presets only. Body mode does not crop, so it has no preset grid.
+function rebuildPresetGrid() {
+  const grid = document.getElementById('presetGrid');
+  grid.className = 'preset-grid face-presets';
+  grid.innerHTML = FACE_PRESETS.map(p => `
+    <button class="preset-btn${S.preset === p.key ? ' active' : ''}" data-preset="${p.key}" onclick="selPreset('${p.key}')">
+      <div class="preset-icon">${p.icon}</div>
+      <div class="preset-name">${p.name}</div>
+      <div class="preset-desc">${p.desc}</div>
+    </button>
+  `).join('');
+}
+
+// ============================================================
+// UPLOAD GRID CONSTRUCTION
+// ============================================================
+function rebuildUploadGrid() {
+  const cfg = GRID_CONFIG[S.grid];
+  const grid = document.getElementById('uploadGrid');
+  grid.className = 'upload-grid g-' + S.grid;
+
+  // Init/preserve slots
+  const newSlots = [];
+  for (let i = 0; i < cfg.count; i++) {
+    const old = S.slots[i];
+    newSlots.push(old && old.img ? old : {
+      img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
+      label: defaultLabelFor(S.grid, i),
+      origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
+    });
+  }
+  S.slots = newSlots;
+
+  // Build HTML
+  let html = '';
+  const hasRowLabels = cfg.rowLabels.length > 0;
+  if (hasRowLabels) {
+    // 2x2: row 0 = cols 0-1, row 1 = cols 2-3
+    // 2x3: row 0 = cols 0-2, row 1 = cols 3-5
+    const cols = cfg.cols;
+    // Ensure rowLabelValues exist on state
+    if (!S.rowLabelValues || S.rowLabelValues.length !== cfg.rows) {
+      S.rowLabelValues = cfg.rowLabels.slice();
+    }
+    for (let row = 0; row < cfg.rows; row++) {
+      html += `<div class="row-label-wrap">
+        <input class="row-label-input" id="row-label-${row}" value="${S.rowLabelValues[row] || ''}" readonly
+          onfocus="this.readOnly=false;this.select()"
+          onblur="this.readOnly=true;updateRowLabel(${row},this.value)"
+          onkeydown="if(event.key==='Enter'){this.blur()}"
+        />
+        <button class="row-edit-btn" onclick="document.getElementById('row-label-${row}').focus()" title="Edit label">Edit</button>
+      </div>`;
+      for (let c = 0; c < cols; c++) {
+        html += makeSlotHTML(row * cols + c, true);
+      }
+    }
+  } else {
+    S.rowLabelValues = null;
+    for (let i = 0; i < cfg.count; i++) {
+      html += makeSlotHTML(i, false);
+    }
+  }
+  grid.innerHTML = html;
+
+  // Wire file inputs
+  for (let i = 0; i < cfg.count; i++) {
+    document.getElementById(`main-input-${i}`).addEventListener('change', e => loadFile(e.target.files[0], i));
+    document.getElementById(`change-input-${i}`).addEventListener('change', e => loadFile(e.target.files[0], i));
+  }
+
+  // Restore thumbnails for pre-existing slots
+  for (let i = 0; i < cfg.count; i++) {
+    if (S.slots[i].img) restoreThumb(i);
+  }
+
+  rebuildBgSlotSelect();
+  rebuildZoomControls();
+  rebuildPreviewArea();
+  checkBgControlsVisibility();
+}
+
+function makeSlotHTML(i, hideLabel) {
+  const sl = S.slots[i];
+  const filled = sl.img ? ' filled' : '';
+  const bgCls = sl.bgMode === 'black' ? ' bg-black' : '';
+  const labelBar = hideLabel ? '' : `
+      <div class="slot-label-wrap">
+        <input class="slot-label" id="slot-label-${i}" value="${sl.label}" readonly
+          onfocus="this.readOnly=false"
+          onblur="this.readOnly=true;updateSlotLabel(${i},this.value)"
+          onkeydown="if(event.key==='Enter'){this.blur()}"
+        />
+        <button class="slot-edit-btn" onclick="document.getElementById('slot-label-${i}').focus()" title="Edit label">Edit</button>
+      </div>`;
+  return `
+    <div class="upload-zone${filled}${bgCls}" id="zone-${i}">
+      <div class="upload-plus">+</div>
+      <div class="upload-txt">${hideLabel ? 'Add photo' : sl.label}</div>
+      <input type="file" accept="image/*" class="main-input" id="main-input-${i}"/>
+      ${labelBar}
+      <div class="bg-badge" id="bg-badge-${i}">Black bg</div>
+      <button class="change-btn">Change</button>
+      <input type="file" accept="image/*" class="change-input" id="change-input-${i}"/>
+    </div>
+  `;
+}
+
+function updateSlotLabel(i, val) {
+  const label = val.trim() || defaultLabelFor(S.grid, i);
+  S.slots[i].label = label;
+  // Sync upload-zone label input
+  const zoneInp = document.getElementById(`slot-label-${i}`);
+  if (zoneInp) zoneInp.value = label;
+  // Sync upload-zone placeholder text
+  const zone = document.getElementById(`zone-${i}`);
+  if (zone) {
+    const txt = zone.querySelector('.upload-txt');
+    if (txt && !zone.classList.contains('filled')) txt.textContent = label;
+  }
+  // Sync zoom slider label
+  const zoomBox = document.getElementById(`zoom-${i}`);
+  if (zoomBox) {
+    const lblEl = zoomBox.closest('.zoom-box')?.querySelector('.zoom-label');
+    if (lblEl) lblEl.innerHTML = `${label} zoom <span id="zVal-${i}">${Math.round(S.slots[i].zoom*100)}%</span>`;
+  }
+  // Sync preview tag input
+  const prevInp = document.getElementById(`preview-label-${i}`);
+  if (prevInp) prevInp.value = label;
+  // Sync background checkbox item label
+  const bgItemLabel = document.getElementById(`bg-check-label-${i}`);
+  if (bgItemLabel) bgItemLabel.textContent = label;
+}
+
+function updateRowLabel(row, val) {
+  const cfg = GRID_CONFIG[S.grid];
+  const label = val.trim() || cfg.rowLabels[row] || `Row ${row+1}`;
+  if (!S.rowLabelValues) S.rowLabelValues = cfg.rowLabels.slice();
+  S.rowLabelValues[row] = label;
+  const inp = document.getElementById(`row-label-${row}`);
+  if (inp) inp.value = label;
+}
+
+function restoreThumb(i) {
+  const zone = document.getElementById(`zone-${i}`);
+  if (!zone) return;
+  const sl = S.slots[i];
+  zone.classList.add('filled');
+  let old = zone.querySelector('img.thumb');
+  if (old) old.remove();
+  const th = document.createElement('img');
+  th.className = 'thumb';
+  th.src = sl.processedDataUrl || sl.origDataUrl;
+  zone.insertBefore(th, zone.querySelector('.bg-badge') || zone.querySelector('.change-btn'));
+  if (sl.bgMode !== 'orig') {
+    zone.classList.toggle('bg-black', sl.bgMode === 'black');
+    zone.classList.toggle('bg-removed', sl.bgMode === 'removed');
+    const badge = document.getElementById(`bg-badge-${i}`);
+    if (badge) { badge.textContent = sl.bgMode === 'black' ? 'Black bg' : 'Bg removed'; badge.style.display = 'block'; }
+  }
+}
+
+// ============================================================
+// FILE LOADING
+// ============================================================
+function loadFile(file, idx) {
+  if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      S.slots[idx].img = img;
+      S.slots[idx].lm = null;
+      S.slots[idx].zoom = 1.0;
+      S.slots[idx].pan = {x:0,y:0};
+      S.slots[idx].origDataUrl = ev.target.result;
+      S.slots[idx].processedDataUrl = null;
+      S.slots[idx]._processedImg = null;
+      S.slots[idx].bgMode = 'orig';
+
+      const zone = document.getElementById(`zone-${idx}`);
+      zone.classList.add('filled');
+      zone.classList.remove('bg-black','bg-removed');
+      const badge = document.getElementById(`bg-badge-${idx}`);
+      if (badge) badge.style.display = 'none';
+      let old = zone.querySelector('img.thumb');
+      if (old) old.remove();
+      const th = document.createElement('img');
+      th.className = 'thumb';
+      th.src = ev.target.result;
+      zone.insertBefore(th, zone.querySelector('.bg-badge') || zone.querySelector('.change-btn'));
+
+      rebuildBgSlotSelect();
+      checkBgControlsVisibility();
+      rebuildZoomControls();
+
+      const allFilled = S.slots.every(sl => sl.img);
+      if (allFilled) {
+        runDetectAll();
+      } else {
+        const missing = S.slots.filter(sl => !sl.img).length;
+        setSt(t('loadedSome')(S.slots.filter(sl => sl.img).length, S.slots.length, missing), 'warn');
+      }
     };
-    img.src=ev.target.result;
+    img.src = ev.target.result;
   };
   r.readAsDataURL(file);
 }
-['before','after'].forEach(w=>{
-  document.getElementById('input-'+w).addEventListener('change',e=>loadFile(e.target.files[0],w));
-  document.getElementById('change-'+w).addEventListener('change',e=>loadFile(e.target.files[0],w));
-});
 
-function initFM(){
-  return new Promise(res=>{
-    const fm=new FaceMesh({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
-    fm.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
-    fm.initialize().then(()=>{S.fm=fm;res(fm);});
+// ============================================================
+// FACE DETECTION
+// ============================================================
+function initFM() {
+  return new Promise(res => {
+    const fm = new FaceMesh({locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`});
+    fm.setOptions({maxNumFaces:1, refineLandmarks:true, minDetectionConfidence:0.4, minTrackingConfidence:0.4});
+    fm.initialize().then(() => { S.fm = fm; res(fm); });
   });
 }
-function detect(img){
-  return new Promise(async(res,rej)=>{
-    S.fm.onResults(r=>{
-      if(r.multiFaceLandmarks?.length>0)res(r.multiFaceLandmarks[0]);
+
+function detect(img) {
+  return new Promise(async (res, rej) => {
+    S.fm.onResults(r => {
+      if (r.multiFaceLandmarks?.length > 0) res(r.multiFaceLandmarks[0]);
       else rej(new Error('no face'));
     });
-    const c=document.createElement('canvas');
-    c.width=img.naturalWidth; c.height=img.naturalHeight;
-    c.getContext('2d').drawImage(img,0,0);
-    await S.fm.send({image:c});
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    c.getContext('2d').drawImage(img, 0, 0);
+    await S.fm.send({image: c});
   });
 }
 
-async function runDetect(){
-  setSt('Analysing photos…','spin'); setProg(15);
-  if(!S.fm) await initFM();
-  let warns=[];
-  for(const w of['before','after']){
-    try{
-      setProg(w==='before'?35:65);
-      if(w==='before') S.bLm=await detect(S.beforeImg);
-      else S.aLm=await detect(S.afterImg);
-    }catch{warns.push(w);}
+async function runDetectAll() {
+  if (S.subject === 'body') {
+    // Body mode: skip detection, use fallback crop
+    S.slots.forEach(sl => { sl.lm = null; });
+    showBackgroundStep(t('bodyMode'));
+    return;
+  }
+  setSt(t('analysing'), 'spin');
+  setProg(10);
+  if (!S.fm) await initFM();
+  let warns = 0;
+  const n = S.slots.length;
+  for (let i = 0; i < n; i++) {
+    try {
+      setProg(10 + Math.round((i / n) * 80));
+      S.slots[i].lm = await detect(S.slots[i].img);
+    } catch(e) {
+      S.slots[i].lm = null;
+      warns++;
+    }
   }
   setProg(100);
-  document.getElementById('cropSection').classList.add('visible');
-  document.getElementById('cropSection').scrollIntoView({behavior:'smooth',block:'start'});
-  S.bPan={x:0,y:0}; S.aPan={x:0,y:0};
-  renderPreviews();
-  setupDrag('cvBefore','b');
-  setupDrag('cvAfter','a');
-  if(warns.length===0) setSt('Face detected — choose your crop area.','ok');
-  else if(warns.length===2) setSt('Profile or angled photos — centre crop applied.','warn');
-  else setSt(`Could not detect face in ${warns[0]} photo — centre crop applied.`,'warn');
+  let msg;
+  if (warns === 0) msg = t('facesDetected');
+  else if (warns === n) msg = t('noFaces');
+  else msg = t('someFaces')(warns);
+  showBackgroundStep(msg);
   setProg(0);
 }
 
-function selPreset(k){
-  S.preset=k;
-  document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`[data-preset="${k}"]`).classList.add('active');
+// After upload + detection, surface the background decision before crop.
+// Black-background removal is a heavy step, so it belongs here (an explicit
+// choice) rather than stalling mid-crop.
+function showBackgroundStep(message) {
+  setSt(message, 'ok');
+  const bg = document.getElementById('bgControls');
+  if (bg) {
+    bg.style.display = 'block';
+    bg.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  // The continue button advances to crop (Face) or straight to branding (Body).
+  const cont = document.getElementById('bgContinueRow');
+  if (cont) cont.style.display = 'flex';
+  const contBtn = document.getElementById('bgContinueBtn');
+  const contNote = document.getElementById('bgContinueNote');
+  if (S.subject === 'body') {
+    if (contBtn) contBtn.textContent = t('continueBranding');
+    if (contNote) contNote.textContent = t('noteBranding');
+  } else {
+    if (contBtn) contBtn.textContent = t('continueCrop');
+    if (contNote) contNote.textContent = t('noteCrop');
+  }
+}
+
+function continueToCrop() {
+  const cs = document.getElementById('cropSection');
+  cs.classList.add('visible');
+  if (S.subject === 'body') {
+    // Body mode: no cropping. Use photos as uploaded, go straight to branding.
+    setCropStepVisible(false);
+    setSt(t('addBranding'), 'ok');
+  } else {
+    setCropStepVisible(true);
+    rebuildZoomControls();
+    rebuildPreviewArea();
+    renderPreviews();
+    setSt(t('adjustCrop'), 'ok');
+  }
+  cs.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// Show or hide the crop sub-step (Body mode hides it; branding stays visible).
+function setCropStepVisible(visible) {
+  const step = document.getElementById('cropStep');
+  const div = document.getElementById('cropDivider');
+  if (step) step.style.display = visible ? '' : 'none';
+  if (div) div.style.display = visible ? '' : 'none';
+  // Branding becomes Step 4 when crop is skipped, Step 5 when crop is shown.
+  const brandNum = document.getElementById('brandStepNum');
+  if (brandNum) brandNum.textContent = visible ? 'Step 5 - Branding (optional)' : 'Step 4 - Branding (optional)';
+  // When crop is hidden, the branding divider is the first thing in the section,
+  // so suppress its top margin to avoid a double rule under the background step.
+  const brandDiv = document.getElementById('brandDivider');
+  if (brandDiv) brandDiv.style.marginTop = visible ? '' : '0';
+}
+
+function showCropSection() {
+  const cs = document.getElementById('cropSection');
+  cs.classList.add('visible');
+  cs.scrollIntoView({behavior:'smooth', block:'start'});
+  setCropStepVisible(S.subject !== 'body');
+  if (S.subject !== 'body') {
+    rebuildZoomControls();
+    rebuildPreviewArea();
+  }
+}
+
+function hideCropSection() {
+  document.getElementById('cropSection').classList.remove('visible');
+  document.getElementById('outputSection').classList.remove('visible');
+  const bg = document.getElementById('bgControls');
+  if (bg) bg.style.display = 'none';
+  const cont = document.getElementById('bgContinueRow');
+  if (cont) cont.style.display = 'none';
+}
+
+// ============================================================
+// LANDMARK / BOX MATH
+// ============================================================
+function eyeDistPx(lm, imgW) {
+  return Math.abs(lm[REYE].x - lm[LEYE].x) * imgW;
+}
+
+function lmToBaseBox(lm, iw, ih, preset) {
+  const px = i => ({x: lm[i].x * iw, y: lm[i].y * ih});
+  const nose = px(NOSE), chin = px(CHIN), le = px(LEYE), re = px(REYE);
+  const browL = px(BROWL), browR = px(BROWR), jawL = px(JAWL), jawR = px(JAWR);
+  const browY = (browL.y + browR.y) / 2;
+  const foreY = browY - (nose.y - browY) * 0.85;
+  const faceH = chin.y - browY;
+  const eyeDist = Math.abs(re.x - le.x);
+  const eyeRatio = eyeDist / iw;
+  const isProfile = eyeRatio < 0.07;
+  const isAngled = eyeRatio >= 0.07 && eyeRatio < 0.14;
+  const cx = (le.x + re.x) / 2;
+  const jawW = jawR.x - jawL.x;
+  const facingLeft = nose.x < cx;
+  let halfW, cxA;
+  if (isProfile) {
+    halfW = Math.max(eyeDist * 4.2, iw * 0.35);
+    cxA = cx + (facingLeft ? halfW * 0.18 : -halfW * 0.18);
+  } else if (isAngled) {
+    halfW = Math.max(jawW * 0.88, eyeDist * 2.2);
+    const earShift = halfW * 0.14;
+    cxA = cx + (facingLeft ? earShift : -earShift);
+  } else {
+    halfW = jawW * 0.65;
+    cxA = cx;
+  }
+  let top, bot;
+  if (preset === 'full')  { top = foreY - faceH * .42; bot = chin.y + faceH * .28; }
+  if (preset === 'lower') { top = nose.y - faceH * .10; bot = chin.y + faceH * .38; }
+  if (preset === 'upper') { top = foreY - faceH * .15; bot = nose.y - faceH * .05; }
+  if (preset === 'eyes')  { top = browY - faceH * .20; bot = nose.y + faceH * .08; }
+  const box = {x: cxA - halfW, y: top, w: halfW * 2, h: bot - top, cx: cxA, cy: (top + bot) / 2};
+  if (preset === 'full') {
+    const targetAR = 4/5;
+    const ar = box.w / box.h;
+    if (ar < targetAR) box.w = box.h * targetAR;
+    else if (ar > targetAR) box.h = box.w / targetAR;
+    box.x = box.cx - box.w / 2;
+    box.y = box.cy - box.h / 2;
+  }
+  return box;
+}
+
+function faceFallbackBox(iw, ih, preset) {
+  const p = {full:[.03,.96,.08,.92], lower:[.40,.90,.08,.92], upper:[.03,.40,.08,.92], eyes:[.25,.56,.08,.92]};
+  const [t, b, l, r] = p[preset] || [.03,.96,.08,.92];
+  return {x: l*iw, y: t*ih, w: (r-l)*iw, h: (b-t)*ih, cx: (l+r)/2*iw, cy: (t+b)/2*ih};
+}
+
+function getBoxForSlot(idx, targetEyePx) {
+  const sl = S.slots[idx];
+  const img = sl.img;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  const zoom = sl.zoom;
+  const preset = S.preset;
+
+  // Body mode: no cropping. Use the whole photo as uploaded.
+  if (S.subject === 'body') {
+    return {x: 0, y: 0, w: iw, h: ih};
+  }
+
+  if (!sl.lm) {
+    const fb = faceFallbackBox(iw, ih, preset);
+    const nw = fb.w / zoom, nh = fb.h / zoom;
+    return {x: Math.max(0, fb.cx - nw/2), y: Math.max(0, fb.cy - nh/2), w: Math.min(nw, iw), h: Math.min(nh, ih)};
+  }
+  const base = lmToBaseBox(sl.lm, iw, ih, preset);
+  const thisEyePx = eyeDistPx(sl.lm, iw);
+  if (!thisEyePx || thisEyePx < 1) return faceFallbackBox(iw, ih, preset);
+  const scale = (targetEyePx / thisEyePx) / zoom;
+  const nw = base.w * scale, nh = base.h * scale;
+  const nx = base.cx - nw/2, ny = base.cy - nh/2;
+  return {
+    x: Math.max(0, Math.min(nx, iw - nw)),
+    y: Math.max(0, Math.min(ny, ih - nh)),
+    w: Math.min(nw, iw), h: Math.min(nh, ih)
+  };
+}
+
+function getAllBoxes() {
+  // Find common target eye distance from slots that have landmarks
+  const withLm = S.slots.filter(sl => sl.lm);
+  let target = 100;
+  if (withLm.length > 0) {
+    target = Math.max(...withLm.map(sl => eyeDistPx(sl.lm, sl.img.naturalWidth)));
+  }
+  return S.slots.map((_, i) => getBoxForSlot(i, target));
+}
+
+function clampBox(box, img) {
+  return {
+    x: Math.max(0, Math.min(box.x, img.naturalWidth - box.w)),
+    y: Math.max(0, Math.min(box.y, img.naturalHeight - box.h)),
+    w: box.w, h: box.h
+  };
+}
+
+function getPannedBoxes() {
+  const boxes = getAllBoxes();
+  return boxes.map((box, i) => {
+    const sl = S.slots[i];
+    return clampBox({...box, x: box.x + sl.pan.x, y: box.y + sl.pan.y}, sl.img);
+  });
+}
+
+// ============================================================
+// ZOOM CONTROLS (dynamic per slot count)
+// ============================================================
+function rebuildZoomControls() {
+  const wrap = document.getElementById('zoomControls');
+  const filled = S.slots.filter(sl => sl.img);
+  if (!filled.length) { wrap.innerHTML = ''; return; }
+  const cols = filled.length >= 3 ? 3 : filled.length === 1 ? 1 : 2;
+  wrap.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  wrap.innerHTML = S.slots.map((sl, i) => sl.img ? `
+    <div class="zoom-box">
+      <div class="zoom-label">${sl.label} zoom <span id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
+      <input type="range" class="zoom-slider" id="zoom-${i}" min="60" max="160" value="${Math.round(sl.zoom*100)}" step="5"
+        oninput="onZoom(${i},this.value)"/>
+    </div>
+  ` : '').join('');
+}
+
+function onZoom(idx, val) {
+  S.slots[idx].zoom = parseInt(val) / 100;
+  const lbl = document.getElementById(`zVal-${idx}`);
+  if (lbl) lbl.textContent = val + '%';
   renderPreviews();
 }
 
-function selWmPos(pos){
-  // Watermark text is the clinic/injector name, so the position picker only
-  // applies when at least one name is present.
-  if(document.getElementById('wmPosGrid').classList.contains('disabled')) return;
-  S.wmPos=pos;
-  document.querySelectorAll('.wm-pos-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelector(`[data-pos="${pos}"]`).classList.add('active');
+// ============================================================
+// PREVIEW AREA (dynamic)
+// ============================================================
+function rebuildPreviewArea() {
+  const wrap = document.getElementById('previewArea');
+  const cfg = GRID_CONFIG[S.grid];
+  const countClass = {2:'p-2', 3:'p-3', 4:'p-4', 6:'p-6'}[cfg.count] || 'p-2';
+  wrap.className = 'preview-area ' + countClass;
+  wrap.innerHTML = S.slots.map((sl, i) => `
+    <div class="preview-box">
+      <canvas id="cv-${i}"></canvas>
+      <div class="preview-tag-wrap">
+        <input class="preview-tag-input" id="preview-label-${i}" value="${sl.label}" readonly
+          onfocus="this.readOnly=false;this.select()"
+          onblur="this.readOnly=true;updateSlotLabel(${i},this.value)"
+          onkeydown="if(event.key==='Enter'){this.blur()}"
+          onmousedown="event.stopPropagation()"
+          ontouchstart="event.stopPropagation()"
+        />
+        <button class="preview-edit-btn" onclick="document.getElementById('preview-label-${i}').focus()" title="Edit label">Edit</button>
+      </div>
+    </div>
+  `).join('');
+  // Attach drag handlers
+  S.slots.forEach((_, i) => setupDrag(`cv-${i}`, i));
 }
 
-// Enable the watermark position picker only when a clinic or injector name is set.
-function updateWmPosState(){
+function renderPreviews() {
+  const filledSlots = S.slots.filter(sl => sl.img);
+  if (!filledSlots.length) return;
+  // Only compute boxes for filled slots to avoid crashing on empty ones
+  const allFilled = S.slots.every(sl => sl.img);
+  const boxes = allFilled ? getPannedBoxes() : null;
+  const pH = 300;
+  let pW = pH; // fallback aspect
+  if (boxes) {
+    const aspect = boxes.reduce((sum, b) => sum + b.w / b.h, 0) / boxes.length;
+    pW = Math.round(pH * aspect);
+  }
+  S.slots.forEach((sl, i) => {
+    const cv = document.getElementById(`cv-${i}`);
+    if (!cv || !sl.img) return;
+    const box = boxes ? boxes[i] : (() => {
+      const target = eyeDistPx(sl.lm, sl.img.naturalWidth) || 100;
+      return clampBox({...getBoxForSlot(i, target), x: getBoxForSlot(i, target).x + sl.pan.x, y: getBoxForSlot(i, target).y + sl.pan.y}, sl.img);
+    })();
+    if (sl.processedDataUrl) {
+      if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) {
+        drawToCanvas(cv, sl._processedImg, box, pW, pH, 1);
+      } else {
+        const img = new Image();
+        img.onload = () => { sl._processedImg = img; drawToCanvas(cv, img, box, pW, pH, 1); };
+        img.src = sl.processedDataUrl;
+      }
+    } else {
+      sl._processedImg = null;
+      drawToCanvas(cv, sl.img, box, pW, pH, 1);
+    }
+  });
+}
+
+function setupDrag(canvasId, idx) {
+  const cv = document.getElementById(canvasId);
+  if (!cv || cv.dataset.dragInit === '1') return;
+  cv.dataset.dragInit = '1';
+  let drag = null;
+  const start = e => {
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    drag = {sx: pt.clientX, sy: pt.clientY, ox: S.slots[idx].pan.x, oy: S.slots[idx].pan.y};
+  };
+  const move = e => {
+    if (!drag) return; e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const boxes = getAllBoxes();
+    const box = boxes[idx];
+    const scale = box.w / cv.offsetWidth;
+    S.slots[idx].pan.x = Math.max(-box.w*.3, Math.min(drag.ox - (pt.clientX - drag.sx) * scale, box.w*.3));
+    S.slots[idx].pan.y = Math.max(-box.h*.3, Math.min(drag.oy - (pt.clientY - drag.sy) * scale, box.h*.3));
+    renderPreviews();
+  };
+  const end = () => { drag = null; };
+  cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', move);
+  cv.addEventListener('mouseup', end); cv.addEventListener('mouseleave', end);
+  cv.addEventListener('touchstart', start, {passive:false});
+  cv.addEventListener('touchmove', move, {passive:false});
+  cv.addEventListener('touchend', end);
+  cv.style.cursor = 'grab';
+}
+
+function drawToCanvas(cv, img, box, tw, th, bf) {
+  cv.width = tw; cv.height = th;
+  const ctx = cv.getContext('2d');
+  if (!img.complete || !img.naturalWidth) return;
+  ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, tw, th);
+  if (bf && bf !== 1) {
+    const id = ctx.getImageData(0,0,tw,th);
+    for (let i = 0; i < id.data.length; i+=4) {
+      id.data[i]   = Math.min(255, id.data[i]   * bf);
+      id.data[i+1] = Math.min(255, id.data[i+1] * bf);
+      id.data[i+2] = Math.min(255, id.data[i+2] * bf);
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+}
+
+// ============================================================
+// BACKGROUND CONTROLS
+// ============================================================
+function checkBgControlsVisibility() {
+  // The background step is revealed by showBackgroundStep() once all photos are
+  // uploaded and analysed. Here we only ensure it is hidden when there are no
+  // photos at all (e.g. after New case).
+  const anyFilled = S.slots.some(sl => sl.img);
+  if (!anyFilled) {
+    const bg = document.getElementById('bgControls');
+    if (bg) bg.style.display = 'none';
+    const cont = document.getElementById('bgContinueRow');
+    if (cont) cont.style.display = 'none';
+  }
+}
+
+function rebuildBgSlotSelect() {
+  const wrap = document.getElementById('bgSlotSelect');
+  // Drop checks for slots that no longer have a photo
+  Object.keys(S.bgChecked).forEach(k => { if (!S.slots[k] || !S.slots[k].img) delete S.bgChecked[k]; });
+  wrap.innerHTML = S.slots.map((sl, i) => sl.img ? `
+    <label class="bg-check-item${S.bgChecked[i] ? ' checked' : ''}${sl.bgMode === 'black' ? ' done' : ''}" id="bg-check-item-${i}">
+      <input type="checkbox" ${S.bgChecked[i] ? 'checked' : ''} onchange="toggleBgCheck(${i}, this.checked)"/>
+      <span id="bg-check-label-${i}">${sl.label}</span>
+      ${sl.bgMode === 'black' ? '<span class="done-tag">Black</span>' : ''}
+    </label>
+  ` : '').join('');
+  syncSelectAllState();
+  updateBgButtons();
+}
+
+function toggleBgCheck(i, checked) {
+  if (checked) S.bgChecked[i] = true; else delete S.bgChecked[i];
+  const item = document.getElementById(`bg-check-item-${i}`);
+  if (item) item.classList.toggle('checked', !!checked);
+  syncSelectAllState();
+  updateBgButtons();
+}
+
+function toggleSelectAllBg(checked) {
+  S.slots.forEach((sl, i) => {
+    if (!sl.img) return;
+    if (checked) S.bgChecked[i] = true; else delete S.bgChecked[i];
+    const cb = document.querySelector(`#bg-check-item-${i} input`);
+    if (cb) cb.checked = checked;
+    const item = document.getElementById(`bg-check-item-${i}`);
+    if (item) item.classList.toggle('checked', checked);
+  });
+  updateBgButtons();
+}
+
+// Keep the "Select all" checkbox in sync (checked only when every photo is ticked).
+function syncSelectAllState() {
+  const filledIdxs = S.slots.map((sl, i) => sl.img ? i : -1).filter(i => i >= 0);
+  const all = filledIdxs.length > 0 && filledIdxs.every(i => S.bgChecked[i]);
+  const sa = document.getElementById('bgSelectAll');
+  if (sa) sa.checked = all;
+  const saItem = sa ? sa.closest('.bg-check-item') : null;
+  if (saItem) saItem.classList.toggle('checked', all);
+}
+
+function selectedBgIndices() {
+  return S.slots.map((sl, i) => (sl.img && S.bgChecked[i]) ? i : -1).filter(i => i >= 0);
+}
+
+function updateBgButtons() {
+  const sel = selectedBgIndices();
+  const anyToApply = sel.some(i => S.slots[i].bgMode !== 'black');
+  const anyToReset = sel.some(i => S.slots[i].bgMode === 'black');
+  document.getElementById('btnBgBlack').disabled = !anyToApply;
+  document.getElementById('btnBgReset').disabled = !anyToReset;
+}
+
+// Background removal loader, mirroring the working SkinDay Visualize pattern.
+let bgRemover = null;
+async function getBgRemover() {
+  if (!bgRemover) {
+    const mod = await import('https://esm.sh/@imgly/background-removal');
+    bgRemover = mod.removeBackground;
+  }
+  return bgRemover;
+}
+
+// Cut out the subject and composite onto solid black. Accepts a data URL
+// directly, exactly like Visualize's toBlackBackground().
+async function toBlackBackground(dataUrl) {
+  const remove = await getBgRemover();
+  const cutout = await remove(dataUrl);
+  const url = URL.createObjectURL(cutout);
+  const img = new Image();
+  await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+  URL.revokeObjectURL(url);
+  return canvas.toDataURL('image/jpeg', 0.92);
+}
+
+async function applyBgBlack() {
+  const targets = selectedBgIndices().filter(i => S.slots[i].bgMode !== 'black');
+  if (!targets.length) return;
+  document.getElementById('btnBgBlack').disabled = true;
+  document.getElementById('btnBgReset').disabled = true;
+  let done = 0, failed = 0;
+  for (let n = 0; n < targets.length; n++) {
+    const i = targets[n];
+    const sl = S.slots[i];
+    setBgProgress(t('removingBg')(n+1, targets.length, sl.label));
+    try {
+      sl.processedDataUrl = await toBlackBackground(sl.origDataUrl);
+      sl._processedImg = null;
+      sl.bgMode = 'black';
+      updateZoneAfterBg(i);
+      renderPreviews();
+      done++;
+    } catch(e) {
+      console.error('[Studio] background removal failed for slot', i, e);
+      failed++;
+    }
+  }
+  rebuildBgSlotSelect();
+  if (failed === 0) setBgProgress(t('bgDone')(done), 2600);
+  else setBgProgress(t('bgPartial')(done, failed), 4000);
+}
+
+function setBgProgress(msg, autoclearMs) {
+  const prog = document.getElementById('bgProgress');
+  if (!prog) return;
+  if (!msg) { prog.classList.remove('on'); prog.textContent = ''; return; }
+  prog.textContent = msg;
+  prog.classList.add('on');
+  if (autoclearMs) setTimeout(() => { prog.classList.remove('on'); }, autoclearMs);
+}
+
+function resetBg() {
+  const targets = selectedBgIndices().filter(i => S.slots[i].bgMode === 'black');
+  if (!targets.length) return;
+  targets.forEach(i => {
+    const sl = S.slots[i];
+    sl.processedDataUrl = null;
+    sl._processedImg = null;
+    sl.bgMode = 'orig';
+    const zone = document.getElementById(`zone-${i}`);
+    if (zone) zone.classList.remove('bg-black', 'bg-removed');
+    const badge = document.getElementById(`bg-badge-${i}`);
+    if (badge) badge.style.display = 'none';
+    const th = zone ? zone.querySelector('img.thumb') : null;
+    if (th) th.src = sl.origDataUrl;
+  });
+  renderPreviews();
+  rebuildBgSlotSelect();
+  setBgProgress(t('bgReset')(targets.length), 2200);
+}
+
+function updateZoneAfterBg(i) {
+  const sl = S.slots[i];
+  const zone = document.getElementById(`zone-${i}`);
+  zone.classList.toggle('bg-black', sl.bgMode === 'black');
+  zone.classList.toggle('bg-removed', sl.bgMode === 'removed');
+  const badge = document.getElementById(`bg-badge-${i}`);
+  if (badge) {
+    badge.textContent = sl.bgMode === 'black' ? 'Black bg' : 'Bg removed';
+    badge.style.display = sl.bgMode !== 'orig' ? 'block' : 'none';
+  }
+  const th = zone.querySelector('img.thumb');
+  if (th && sl.processedDataUrl) th.src = sl.processedDataUrl;
+}
+
+// ============================================================
+// STATUS / PROGRESS
+// ============================================================
+function setSt(msg, t='idle') {
+  document.getElementById('statusText').textContent = msg;
+  const d = document.getElementById('dot');
+  d.className = 'dot' + (t !== 'idle' ? ' ' + t : '');
+}
+function setProg(p) {
+  const b = document.getElementById('progressBar'), f = document.getElementById('progressFill');
+  if (p > 0 && p < 100) { b.classList.add('on'); f.style.width = p + '%'; }
+  else { b.classList.remove('on'); f.style.width = '0%'; }
+}
+
+// ============================================================
+// WATERMARK / LOGO POSITION
+// ============================================================
+function selWmPos(pos) {
+  if (document.getElementById('wmPosGrid').classList.contains('disabled')) return;
+  S.wmPos = pos;
+  document.querySelectorAll('.wm-pos-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-pos="${pos}"]`)?.classList.add('active');
+}
+
+function updateWmPosState() {
   const hasName = !!(
     (document.getElementById('clinicName').value || '').trim() ||
     (document.getElementById('injectorName').value || '').trim()
   );
   const grid = document.getElementById('wmPosGrid');
   const hint = document.getElementById('wmPosHint');
-  if(grid){
+  if (grid) {
     grid.classList.toggle('disabled', !hasName);
     grid.querySelectorAll('.wm-pos-btn').forEach(b => { b.disabled = !hasName; });
   }
-  if(hint) hint.style.display = hasName ? 'none' : 'block';
+  if (hint) hint.style.display = hasName ? 'none' : 'block';
 }
 ['clinicName','injectorName'].forEach(id => {
   const el = document.getElementById(id);
-  if(el) el.addEventListener('input', updateWmPosState);
+  if (el) el.addEventListener('input', updateWmPosState);
 });
 updateWmPosState();
 
-function onZoom(which,val){
-  const pct=parseInt(val);
-  if(which==='before'){
-    S.bZoom=pct/100;
-    document.getElementById('zoomBVal').textContent=pct+'%';
-  } else {
-    S.aZoom=pct/100;
-    document.getElementById('zoomAVal').textContent=pct+'%';
+// ============================================================
+// DRAWING HELPERS
+// ============================================================
+// Average luminance of the non-background pixels. Near-black pixels (the
+// solid black backdrop, or naturally very dark areas) are skipped so exposure
+// matching compares subject-to-subject rather than frame-to-frame. Without
+// this, photos with black backgrounds normalize against their black area and
+// come out unevenly dark.
+function avgBright(ctx, w, h) {
+  const d = ctx.getImageData(0,0,w,h).data;
+  let s = 0, n = 0;
+  for (let i = 0; i < d.length; i+=4) {
+    const lum = .299*d[i] + .587*d[i+1] + .114*d[i+2];
+    if (lum < 18) continue; // skip background / near-black
+    s += lum; n++;
   }
-  renderPreviews();
-}
-
-// Eye distance in pixels
-function eyeDistPx(lm,imgW){
-  return Math.abs(lm[REYE].x-lm[LEYE].x)*imgW;
-}
-
-// Base crop box from landmarks
-function lmToBaseBox(lm,iw,ih,preset){
-  const px=i=>({x:lm[i].x*iw,y:lm[i].y*ih});
-  const nose=px(NOSE),chin=px(CHIN),le=px(LEYE),re=px(REYE);
-  const browL=px(BROWL),browR=px(BROWR),jawL=px(JAWL),jawR=px(JAWR);
-  const browY=(browL.y+browR.y)/2;
-  const foreY=browY-(nose.y-browY)*0.85;
-  const faceH=chin.y-browY;
-  const eyeDist=Math.abs(re.x-le.x);
-  const eyeRatio=eyeDist/iw;
-  const isProfile=eyeRatio<0.07;
-  const isAngled=eyeRatio>=0.07&&eyeRatio<0.14;
-  const cx=(le.x+re.x)/2;
-  const jawW=jawR.x-jawL.x;
-  const facingLeft=nose.x<cx;
-  let halfW,cxAdjusted;
-  if(isProfile){
-    halfW=Math.max(eyeDist*4.2,iw*0.35);
-    cxAdjusted=cx+(facingLeft?halfW*0.18:-halfW*0.18);
-  } else if(isAngled){
-    halfW=Math.max(jawW*0.88,eyeDist*2.2);
-    const earShift=halfW*0.14;
-    cxAdjusted=cx+(facingLeft?earShift:-earShift);
-  } else {
-    halfW=jawW*0.65;
-    cxAdjusted=cx;
+  // Fall back to a full-frame average if almost everything was dark.
+  if (n < (d.length / 4) * 0.04) {
+    s = 0;
+    for (let i = 0; i < d.length; i+=4) s += .299*d[i] + .587*d[i+1] + .114*d[i+2];
+    return s / (d.length / 4);
   }
-  let top,bot;
-  // Full Face: generous crown/hairline headroom and a little neck room. The box
-  // is then normalized to a fixed 4:5 portrait panel below.
-  if(preset==='full') {top=foreY-faceH*.42;bot=chin.y+faceH*.28;}
-  if(preset==='lower'){top=nose.y-faceH*.10;bot=chin.y+faceH*.38;}
-  if(preset==='upper'){top=foreY-faceH*.15;bot=nose.y-faceH*.05;}
-  if(preset==='eyes') {top=browY-faceH*.20;bot=nose.y+faceH*.08;}
-  const box={x:cxAdjusted-halfW,y:top,w:halfW*2,h:bot-top,cx:cxAdjusted,cy:(top+bot)/2};
-  if(preset==='full'){
-    // Frame Full Face to a fixed 4:5 portrait. Expand the deficient dimension to
-    // reach the ratio so the face is never cropped just to fit it.
-    const targetAR=4/5;
-    const ar=box.w/box.h;
-    if(ar<targetAR) box.w=box.h*targetAR;        // too narrow -> widen
-    else if(ar>targetAR) box.h=box.w/targetAR;   // too wide -> add height
-    box.x=box.cx-box.w/2;
-    box.y=box.cy-box.h/2;
-  }
-  return box;
+  return s / n;
 }
 
-function fallbackBox(iw,ih,preset){
-  const p={full:[.03,.96,.08,.92],lower:[.40,.90,.08,.92],upper:[.03,.40,.08,.92],eyes:[.25,.56,.08,.92]};
-  const[t,b,l,r]=p[preset];
-  return{x:l*iw,y:t*ih,w:(r-l)*iw,h:(b-t)*ih,cx:(l+r)/2*iw,cy:(t+b)/2*ih};
-}
-
-// Scale-normalized box + zoom applied
-function getScaledBox(which,targetEyePx){
-  const img=which==='before'?S.beforeImg:S.afterImg;
-  const lm=which==='before'?S.bLm:S.aLm;
-  const zoom=which==='before'?S.bZoom:S.aZoom;
-  const iw=img.naturalWidth,ih=img.naturalHeight;
-  if(!lm) {
-    const fb=fallbackBox(iw,ih,S.preset);
-    // Apply zoom to fallback
-    const nw=fb.w/zoom, nh=fb.h/zoom;
-    return{x:Math.max(0,fb.cx-nw/2),y:Math.max(0,fb.cy-nh/2),w:Math.min(nw,iw),h:Math.min(nh,ih)};
-  }
-  const base=lmToBaseBox(lm,iw,ih,S.preset);
-  const thisEyePx=eyeDistPx(lm,iw);
-  if(!thisEyePx||thisEyePx<1) return fallbackBox(iw,ih,S.preset);
-  const scale=(targetEyePx/thisEyePx)/zoom;
-  const newW=base.w*scale, newH=base.h*scale;
-  const newX=base.cx-newW/2, newY=base.cy-newH/2;
-  return{
-    x:Math.max(0,Math.min(newX,iw-newW)),
-    y:Math.max(0,Math.min(newY,ih-newH)),
-    w:Math.min(newW,iw),
-    h:Math.min(newH,ih)
-  };
-}
-
-function getBothBoxes(){
-  const bHasLm=!!S.bLm, aHasLm=!!S.aLm;
-  let target;
-  if(bHasLm&&aHasLm){
-    const bEye=eyeDistPx(S.bLm,S.beforeImg.naturalWidth);
-    const aEye=eyeDistPx(S.aLm,S.afterImg.naturalWidth);
-    // Use MAX so both normalize to the larger face scale for consistent alignment
-    target=Math.max(bEye,aEye);
-  } else if(bHasLm){
-    target=eyeDistPx(S.bLm,S.beforeImg.naturalWidth);
-  } else if(aHasLm){
-    target=eyeDistPx(S.aLm,S.afterImg.naturalWidth);
-  }
-  // Always go through getScaledBox so zoom applies even for fallback (no landmarks)
-  // Use a dummy target of 100 when no landmarks at all
-  return{
-    bBox:getScaledBox('before', target||100),
-    aBox:getScaledBox('after',  target||100)
-  };
-}
-
-function clampBox(box, img){
-  return{
-    x:Math.max(0,Math.min(box.x,img.naturalWidth-box.w)),
-    y:Math.max(0,Math.min(box.y,img.naturalHeight-box.h)),
-    w:box.w, h:box.h
-  };
-}
-
-function renderPreviews(){
-  if(!S.beforeImg||!S.afterImg)return;
-  const{bBox,aBox}=getBothBoxes();
-  const pH=460;
-  const aspect=(bBox.w/bBox.h+aBox.w/aBox.h)/2;
-  const pW=Math.round(pH*aspect);
-  // Apply pan offsets with clamping
-  const bBoxP=clampBox({...bBox,x:bBox.x+S.bPan.x,y:bBox.y+S.bPan.y},S.beforeImg);
-  const aBoxP=clampBox({...aBox,x:aBox.x+S.aPan.x,y:aBox.y+S.aPan.y},S.afterImg);
-  drawToCanvas(document.getElementById('cvBefore'),S.beforeImg,bBoxP,pW,pH,1);
-  drawToCanvas(document.getElementById('cvAfter'), S.afterImg, aBoxP,pW,pH,1);
-}
-
-// Setup drag-to-pan on a preview canvas
-// Guards against attaching duplicate listeners if called multiple times
-// (runDetect() runs on every photo change — without this guard, listeners stack up)
-function setupDrag(canvasId, which){
-  const cv=document.getElementById(canvasId);
-  if(cv.dataset.dragInit==='1') return;
-  cv.dataset.dragInit='1';
-  let drag=null;
-  const start=e=>{
-    e.preventDefault();
-    const pt=e.touches?e.touches[0]:e;
-    drag={sx:pt.clientX,sy:pt.clientY,ox:S[which+'Pan'].x,oy:S[which+'Pan'].y};
-  };
-  const move=e=>{
-    if(!drag)return; e.preventDefault();
-    const pt=e.touches?e.touches[0]:e;
-    const{bBox,aBox}=getBothBoxes();
-    const box=which==='b'?bBox:aBox;
-    const scale=box.w/cv.offsetWidth;
-    const newPx=drag.ox-(pt.clientX-drag.sx)*scale;
-    const newPy=drag.oy-(pt.clientY-drag.sy)*scale;
-    S[which+'Pan'].x=Math.max(-box.w*.3,Math.min(newPx,box.w*.3));
-    S[which+'Pan'].y=Math.max(-box.h*.3,Math.min(newPy,box.h*.3));
-    renderPreviews();
-  };
-  const end=()=>{drag=null;};
-  cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); cv.addEventListener('mouseup',end); cv.addEventListener('mouseleave',end);
-  cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
-  cv.style.cursor='grab';
-}
-
-function drawToCanvas(cv,img,box,tw,th,bf){
-  cv.width=tw; cv.height=th;
-  const ctx=cv.getContext('2d');
-  ctx.drawImage(img,box.x,box.y,box.w,box.h,0,0,tw,th);
-  if(bf&&bf!==1){
-    const id=ctx.getImageData(0,0,tw,th);
-    for(let i=0;i<id.data.length;i+=4){id.data[i]=Math.min(255,id.data[i]*bf);id.data[i+1]=Math.min(255,id.data[i+1]*bf);id.data[i+2]=Math.min(255,id.data[i+2]*bf);}
-    ctx.putImageData(id,0,0);
-  }
-}
-
-function avgBright(ctx,w,h){
-  const d=ctx.getImageData(0,0,w,h).data; let s=0;
-  for(let i=0;i<d.length;i+=4)s+=.299*d[i]+.587*d[i+1]+.114*d[i+2];
-  return s/(d.length/4);
-}
-
-function drawWatermark(ctx,cW,cH,clinic,inj,pos){
-  const lines=[clinic,inj].filter(Boolean); if(!lines.length)return;
-
-  // Tiled mode — repeating diagonal watermark across full canvas
-  if(pos==='tile'){
-    const fs=Math.max(18,Math.round(cH*.018));
-    const text=lines.join('  ·  ');
-    ctx.save();
-    ctx.font=`400 ${fs}px 'DM Sans',sans-serif`;
-    const tw=ctx.measureText(text).width;
-    const spacing=tw+fs*3;
-    const rowH=fs*3.5;
-    ctx.globalAlpha=0.18;
-    ctx.fillStyle='#ffffff';
-    ctx.translate(cW/2,cH/2);
-    ctx.rotate(-Math.PI/6);
-    const cols=Math.ceil((cW+cH)/spacing)+2;
-    const rows=Math.ceil((cW+cH)/rowH)+2;
-    for(let row=-rows;row<=rows;row++){
-      for(let col=-cols;col<=cols;col++){
-        ctx.fillText(text, col*spacing, row*rowH);
-      }
-    }
-    ctx.restore();
-    return;
-  }
-
-  // Single block modes
-  const fs=Math.max(20,Math.round(cH*.022));
-  const lh=fs*1.5,px=18,py=14;
-  ctx.font=`500 ${fs}px 'DM Sans',sans-serif`;
-  const mw=lines.reduce((m,l)=>Math.max(m,ctx.measureText(l).width),0);
-  const bw=mw+px*2, bh=lines.length*lh+py*2;
-  const margin=20;
-  let bx,by;
-  if(pos==='tl')     {bx=margin;by=margin;}
-  else if(pos==='tr'){bx=cW-bw-margin;by=margin;}
-  else if(pos==='bl'){bx=margin;by=cH-bh-margin;}
-  else if(pos==='center'){bx=cW/2-bw/2;by=cH/2-bh/2;}
-  else               {bx=cW-bw-margin;by=cH-bh-margin;} // br
-  ctx.fillStyle='rgba(28,23,20,0.58)';
-  if(ctx.roundRect)ctx.roundRect(bx,by,bw,bh,5); else ctx.rect(bx,by,bw,bh);
-  ctx.fill();
-  ctx.textBaseline='top';
-  lines.forEach((line,i)=>{
-    ctx.font=i===0?`500 ${fs}px 'DM Sans',sans-serif`:`300 ${Math.round(fs*.85)}px 'DM Sans',sans-serif`;
-    ctx.fillStyle='rgba(250,247,242,0.92)';
-    ctx.fillText(line,bx+px,by+py+i*lh);
-  });
-}
-
-// ── Image enhancement ─────────────────────────────────────────
 function denoise(ctx, w, h) {
-  // Use canvas blur for natural noise reduction (better than channel scaling)
-  const tmp = document.createElement('canvas');
-  tmp.width=w; tmp.height=h;
-  const tctx=tmp.getContext('2d');
-  tctx.filter='blur(0.7px)';
-  tctx.drawImage(ctx.canvas,0,0);
-  tctx.filter='none';
-  ctx.clearRect(0,0,w,h);
-  ctx.drawImage(tmp,0,0);
+  const tmp = document.createElement('canvas'); tmp.width=w; tmp.height=h;
+  const tctx = tmp.getContext('2d');
+  tctx.filter = 'blur(0.7px)';
+  tctx.drawImage(ctx.canvas, 0, 0);
+  tctx.filter = 'none';
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(tmp, 0, 0);
 }
 
 function sharpen(ctx, w, h) {
   const src = ctx.getImageData(0,0,w,h);
   const dst = ctx.createImageData(w,h);
   const sd = src.data, dd = dst.data;
-  // Copy source to destination first so edge pixels (which the convolution loop
-  // below skips) are preserved instead of being left transparent/black.
   dd.set(sd);
-  for(let y=1;y<h-1;y++){
-    for(let x=1;x<w-1;x++){
-      for(let c=0;c<3;c++){
+  for (let y=1; y<h-1; y++) {
+    for (let x=1; x<w-1; x++) {
+      for (let c=0; c<3; c++) {
         const val =
-          sd[((y-1)*w+x)*4+c] * -1 +
-          sd[(y*w+(x-1))*4+c] * -1 +
-          sd[(y*w+x)*4+c]     *  5 +
-          sd[(y*w+(x+1))*4+c] * -1 +
-          sd[((y+1)*w+x)*4+c] * -1;
-        dd[(y*w+x)*4+c] = Math.min(255,Math.max(0,val));
+          sd[((y-1)*w+x)*4+c]*-1 + sd[(y*w+(x-1))*4+c]*-1 +
+          sd[(y*w+x)*4+c]*5 +
+          sd[(y*w+(x+1))*4+c]*-1 + sd[((y+1)*w+x)*4+c]*-1;
+        dd[(y*w+x)*4+c] = Math.min(255, Math.max(0, val));
       }
       dd[(y*w+x)*4+3] = 255;
     }
   }
-  ctx.putImageData(dst,0,0);
+  ctx.putImageData(dst, 0, 0);
 }
 
 function applyEnhancement(ctx, w, h, level) {
-  if(level === 0) return;
+  if (level === 0) return;
   denoise(ctx, w, h);
   sharpen(ctx, w, h);
-  if(level === 2) sharpen(ctx, w, h); // second pass for strong
+  if (level === 2) sharpen(ctx, w, h);
 }
 
-function generate(){
-  const{bBox,aBox}=getBothBoxes();
-  // Apply pan offsets to final render
-  const bBoxF=clampBox({...bBox,x:bBox.x+S.bPan.x,y:bBox.y+S.bPan.y},S.beforeImg);
-  const aBoxF=clampBox({...aBox,x:aBox.x+S.aPan.x,y:aBox.y+S.aPan.y},S.afterImg);
-  const norm=document.getElementById('norm').value==='1';
-  const layout=document.getElementById('layout').value;
-  const clinic=document.getElementById('clinicName').value.trim();
-  const inj=document.getElementById('injectorName').value.trim();
-  const treatment=document.getElementById('treatmentLabel').value.trim();
-  const fmt=document.getElementById('exportFormat').value;
-
-  // Panel dimensions: always use natural crop aspect ratio — NO stretching
-  // Both panels use averaged aspect ratio so they match each other
-  const cropAspect=bBoxF.w/bBoxF.h; // use before as reference — more stable
-  const panelH=1080;
-  const panelW=Math.round(panelH*cropAspect);
-
-  // Canvas panels — draw at natural aspect, no distortion
-  const cB=document.createElement('canvas'); cB.width=panelW; cB.height=panelH;
-  const cA=document.createElement('canvas'); cA.width=panelW; cA.height=panelH;
-  cB.getContext('2d').drawImage(S.beforeImg,bBoxF.x,bBoxF.y,bBoxF.w,bBoxF.h,0,0,panelW,panelH);
-  cA.getContext('2d').drawImage(S.afterImg, aBoxF.x,aBoxF.y,aBoxF.w,aBoxF.h,0,0,panelW,panelH);
-  const enhance=parseInt(document.getElementById('enhance').value);
-  // Enhancement applied to after only — keeps before raw, halves compute time
-  applyEnhancement(cA.getContext('2d'),panelW,panelH,enhance);
-
-  if(norm){
-    const ab=avgBright(cB.getContext('2d'),panelW,panelH),aa=avgBright(cA.getContext('2d'),panelW,panelH);
-    const f=Math.max(.72,Math.min(1.38,ab/aa));
-    // Apply brightness directly — don't redraw from source (would wipe enhancement)
-    const ctxA=cA.getContext('2d');
-    const id=ctxA.getImageData(0,0,panelW,panelH);
-    for(let i=0;i<id.data.length;i+=4){
-      id.data[i]=Math.min(255,id.data[i]*f);
-      id.data[i+1]=Math.min(255,id.data[i+1]*f);
-      id.data[i+2]=Math.min(255,id.data[i+2]*f);
+function drawWatermark(ctx, cW, cH, clinic, inj, pos) {
+  const lines = [clinic, inj].filter(Boolean);
+  if (!lines.length) return;
+  if (pos === 'tile') {
+    const fs = Math.max(18, Math.round(cH * .018));
+    const text = lines.join('  ·  ');
+    ctx.save();
+    ctx.font = `400 ${fs}px 'DM Sans',sans-serif`;
+    const tw = ctx.measureText(text).width;
+    const spacing = tw + fs*3, rowH = fs*3.5;
+    ctx.globalAlpha = 0.18;
+    ctx.fillStyle = '#ffffff';
+    ctx.translate(cW/2, cH/2);
+    ctx.rotate(-Math.PI/6);
+    const cols = Math.ceil((cW+cH)/spacing)+2, rows = Math.ceil((cW+cH)/rowH)+2;
+    for (let row=-rows; row<=rows; row++) {
+      for (let col=-cols; col<=cols; col++) {
+        ctx.fillText(text, col*spacing, row*rowH);
+      }
     }
-    ctxA.putImageData(id,0,0);
+    ctx.restore();
+    return;
   }
-  const gap=4,oc=document.getElementById('outputCanvas');
-  // Composite dimensions
-  const compW=layout==='side'?panelW*2+gap:panelW;
-  const compH=layout==='side'?panelH:panelH*2+gap;
+  const fs = Math.max(20, Math.round(cH * .022));
+  const lh = fs*1.5, px2 = 18, py = 14;
+  ctx.font = `500 ${fs}px 'DM Sans',sans-serif`;
+  const mw = lines.reduce((m, l) => Math.max(m, ctx.measureText(l).width), 0);
+  const bw = mw + px2*2, bh = lines.length*lh + py*2;
+  const margin = 20;
+  let bx, by;
+  if (pos === 'tl')      { bx = margin; by = margin; }
+  else if (pos === 'tr') { bx = cW-bw-margin; by = margin; }
+  else if (pos === 'bl') { bx = margin; by = cH-bh-margin; }
+  else if (pos === 'center') { bx = cW/2-bw/2; by = cH/2-bh/2; }
+  else                   { bx = cW-bw-margin; by = cH-bh-margin; }
+  ctx.fillStyle = 'rgba(28,23,20,0.58)';
+  if (ctx.roundRect) ctx.roundRect(bx, by, bw, bh, 5); else ctx.rect(bx, by, bw, bh);
+  ctx.fill();
+  ctx.textBaseline = 'top';
+  lines.forEach((line, i) => {
+    ctx.font = i === 0 ? `500 ${fs}px 'DM Sans',sans-serif` : `300 ${Math.round(fs*.85)}px 'DM Sans',sans-serif`;
+    ctx.fillStyle = 'rgba(250,247,242,0.92)';
+    ctx.fillText(line, bx+px2, by+py+i*lh);
+  });
+}
 
-  // Format letterboxing — fit composite into target format with black bars
-  let oW=compW, oH=compH, offX=0, offY=0;
-  if(fmt==='square')  { oW=1080; oH=1080; }
-  else if(fmt==='story'){ oW=1080; oH=1920; }
-  else if(fmt==='portrait'){ oW=1080; oH=1350; }
-  // else 'free' — use composite dimensions as-is
+function drawLogo(ctx, canvasW, canvasH, logo, pos) {
+  if (!logo) return;
+  const maxH = Math.round(canvasH * 0.08);
+  const scale = maxH / logo.naturalHeight;
+  const lw = Math.round(logo.naturalWidth * scale), lh = maxH;
+  const margin = 24;
+  let lx, ly;
+  if (pos === 'tl')          { lx = margin; ly = margin; }
+  else if (pos === 'tr')     { lx = canvasW-lw-margin; ly = margin; }
+  else if (pos === 'bl')     { lx = margin; ly = canvasH-lh-margin; }
+  else if (pos === 'center') { lx = Math.round((canvasW-lw)/2); ly = Math.round((canvasH-lh)/2); }
+  else                       { lx = canvasW-lw-margin; ly = canvasH-lh-margin; }
+  ctx.drawImage(logo, lx, ly, lw, lh);
+}
 
-  if(fmt!=='free'){
-    const scale=Math.min(oW/compW, oH/compH);
-    const sw=Math.round(compW*scale), sh=Math.round(compH*scale);
-    offX=Math.round((oW-sw)/2); offY=Math.round((oH-sh)/2);
+function drawPanelLabel(cctx, ox, oy, pw, ph, label, date) {
+  const gradH = date ? 100 : 70;
+  const g = cctx.createLinearGradient(ox, oy+ph-gradH, ox, oy+ph);
+  g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,.85)');
+  cctx.fillStyle = g; cctx.fillRect(ox, oy+ph-gradH, pw, gradH);
+  cctx.fillStyle = 'rgba(250,247,242,.92)';
+  cctx.font = '600 32px "DM Sans",sans-serif';
+  cctx.letterSpacing = '2px';
+  cctx.fillText(label, ox+24, oy+ph-22);
+  cctx.letterSpacing = '0px';
+  if (date) { cctx.font = '300 22px "DM Sans",sans-serif'; cctx.fillStyle = 'rgba(250,247,242,.65)'; cctx.fillText(date, ox+24, oy+ph-60); }
+}
+
+// ============================================================
+// GENERATE
+// ============================================================
+function getImgForSlot(i) {
+  const sl = S.slots[i];
+  if (sl.processedDataUrl) {
+    // Prefer the already-decoded cached image
+    if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) {
+      return sl._processedImg;
+    }
+    const img = new Image();
+    img.src = sl.processedDataUrl;
+    return img;
   }
-  oc.width=oW; oc.height=oH;
-  const ctx=oc.getContext('2d');
-  ctx.fillStyle='#1C1714'; ctx.fillRect(0,0,oW,oH);
-  const bM=document.getElementById('beforeMonth').value, bY=document.getElementById('beforeYear').value;
-  const aM=document.getElementById('afterMonth').value,  aY=document.getElementById('afterYear').value;
-  const beforeDate=[bM,bY].filter(Boolean).join(' ');
-  const afterDate=[aM,aY].filter(Boolean).join(' ');
+  return sl.img;
+}
 
-  // Draw composite onto output canvas (with letterbox offset if formatted)
-  const compCanvas=document.createElement('canvas');
-  compCanvas.width=compW; compCanvas.height=compH;
-  const cctx=compCanvas.getContext('2d');
-  cctx.fillStyle='#1C1714'; cctx.fillRect(0,0,compW,compH);
+// Ensure every processed slot has a fully decoded image cached before generate
+function preloadProcessedImages() {
+  const jobs = S.slots.map(sl => {
+    if (!sl.processedDataUrl) return Promise.resolve();
+    if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) return Promise.resolve();
+    return new Promise(res => {
+      const img = new Image();
+      img.onload = () => { sl._processedImg = img; res(); };
+      img.onerror = () => res();
+      img.src = sl.processedDataUrl;
+    });
+  });
+  return Promise.all(jobs);
+}
 
-  if(layout==='side'){
-    cctx.drawImage(cB,0,0,panelW,panelH);
-    cctx.drawImage(cA,panelW+gap,0,panelW,panelH);
+async function generate() {
+  await preloadProcessedImages();
+  const boxes = getPannedBoxes();
+  const clinic = document.getElementById('clinicName').value.trim();
+  const inj = document.getElementById('injectorName').value.trim();
+  const treatment = document.getElementById('treatmentLabel').value.trim();
+  const fmt = document.getElementById('exportFormat').value;
+  const norm = document.getElementById('norm').value === '1';
+  const enhance = parseInt(document.getElementById('enhance').value);
+  const cfg = GRID_CONFIG[S.grid];
+  const gap = 4;
+  const panelH = 1080;
 
-    // BEFORE/AFTER labels + dates
-    function drawCompLabel(ox,oy,pw,ph,label,date){
-      const gradH=date?100:70;
-      const g=cctx.createLinearGradient(ox,oy+ph-gradH,ox,oy+ph);
-      g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.85)');
-      cctx.fillStyle=g;cctx.fillRect(ox,oy+ph-gradH,pw,gradH);
-      cctx.fillStyle='rgba(250,247,242,.92)';
-      cctx.font='600 32px "DM Sans",sans-serif';
-      cctx.letterSpacing='2px';
-      cctx.fillText(label,ox+24,oy+ph-22);
-      cctx.letterSpacing='0px';
-      if(date){cctx.font='300 22px "DM Sans",sans-serif';cctx.fillStyle='rgba(250,247,242,.65)';cctx.fillText(date,ox+24,oy+ph-60);}
-    }
-    drawCompLabel(0,0,panelW,panelH,'BEFORE',beforeDate);
-    drawCompLabel(panelW+gap,0,panelW,panelH,'AFTER',afterDate);
+  // Draw each slot to a panel canvas
+  const panels = S.slots.map((sl, i) => {
+    const box = boxes[i];
+    const aspect = box.w / box.h;
+    const pw = Math.round(panelH * aspect);
+    const c = document.createElement('canvas'); c.width = pw; c.height = panelH;
+    const img = getImgForSlot(i);
+    c.getContext('2d').drawImage(img, box.x, box.y, box.w, box.h, 0, 0, pw, panelH);
+    return {canvas: c, w: pw, h: panelH};
+  });
 
-    // Treatment label — editorial text, no pill, restrained
-    if(treatment){
-      const tfs=Math.round(panelH*0.022);
-      cctx.save();
-      cctx.font=`300 ${tfs}px "DM Sans",sans-serif`;
-      cctx.letterSpacing='2px';
-      cctx.textAlign='center';
-      cctx.textBaseline='top';
-      // Subtle shadow so text reads on any background
-      cctx.shadowColor='rgba(0,0,0,0.55)';
-      cctx.shadowBlur=8;
-      cctx.fillStyle='rgba(250,247,242,0.82)';
-      cctx.fillText(treatment.toUpperCase(), compW/2, Math.round(panelH*0.028));
-      cctx.restore();
-    }
-
-    drawWatermark(cctx,compW,compH,clinic,inj,S.wmPos);
-    if(S.logoImg) drawLogo(cctx,compW,compH,S.logoImg,document.getElementById('logoPos').value);
-  }else{
-    cctx.drawImage(cB,0,0,panelW,panelH);
-    cctx.drawImage(cA,0,panelH+gap,panelW,panelH);
-
-    function drawCompLabel(ox,oy,pw,ph,label,date){
-      const gradH=date?100:70;
-      const g=cctx.createLinearGradient(ox,oy+ph-gradH,ox,oy+ph);
-      g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.85)');
-      cctx.fillStyle=g;cctx.fillRect(ox,oy+ph-gradH,pw,gradH);
-      cctx.fillStyle='rgba(250,247,242,.92)';
-      cctx.font='600 32px "DM Sans",sans-serif';
-      cctx.letterSpacing='2px';
-      cctx.fillText(label,ox+24,oy+ph-22);
-      cctx.letterSpacing='0px';
-      if(date){cctx.font='300 22px "DM Sans",sans-serif';cctx.fillStyle='rgba(250,247,242,.65)';cctx.fillText(date,ox+24,oy+ph-60);}
-    }
-    drawCompLabel(0,0,panelW,panelH,'BEFORE',beforeDate);
-    drawCompLabel(0,panelH+gap,panelW,panelH,'AFTER',afterDate);
-
-    // Treatment label — editorial text, no pill, restrained
-    if(treatment){
-      const tfs=Math.round(panelH*0.022);
-      cctx.save();
-      cctx.font=`300 ${tfs}px "DM Sans",sans-serif`;
-      cctx.letterSpacing='2px';
-      cctx.textAlign='center';
-      cctx.textBaseline='top';
-      // Subtle shadow so text reads on any background
-      cctx.shadowColor='rgba(0,0,0,0.55)';
-      cctx.shadowBlur=8;
-      cctx.fillStyle='rgba(250,247,242,0.82)';
-      cctx.fillText(treatment.toUpperCase(), compW/2, Math.round(panelH*0.028));
-      cctx.restore();
-    }
-
-    drawWatermark(cctx,compW,compH,clinic,inj,S.wmPos);
-    if(S.logoImg) drawLogo(cctx,compW,compH,S.logoImg,document.getElementById('logoPos').value);
+  // Normalize exposure (apply to all but first panel)
+  if (norm) {
+    const refBright = avgBright(panels[0].canvas.getContext('2d'), panels[0].w, panels[0].h);
+    panels.slice(1).forEach(p => {
+      const ctx = p.canvas.getContext('2d');
+      const f = Math.max(.72, Math.min(1.38, refBright / avgBright(ctx, p.w, p.h)));
+      const id = ctx.getImageData(0, 0, p.w, p.h);
+      for (let j = 0; j < id.data.length; j+=4) {
+        id.data[j]   = Math.min(255, id.data[j]   * f);
+        id.data[j+1] = Math.min(255, id.data[j+1] * f);
+        id.data[j+2] = Math.min(255, id.data[j+2] * f);
+      }
+      ctx.putImageData(id, 0, 0);
+    });
   }
 
-  // Stamp composite onto output canvas (letterboxed into chosen format)
-  if(fmt==='free'){
-    oc.width=compW; oc.height=compH;
-    ctx.fillStyle='#1C1714'; ctx.fillRect(0,0,compW,compH);
-    ctx.drawImage(compCanvas,0,0);
+  // Enhancement on all panels except first
+  panels.slice(1).forEach(p => {
+    applyEnhancement(p.canvas.getContext('2d'), p.w, p.h, enhance);
+  });
+
+  // Use consistent panel width (average)
+  const avgW = Math.round(panels.reduce((s, p) => s + p.w, 0) / panels.length);
+  panels.forEach(p => p.normW = avgW);
+
+  // Build composite
+  let compW, compH;
+  const cols = cfg.cols, rows = cfg.rows;
+  compW = cols * avgW + (cols - 1) * gap;
+  compH = rows * panelH + (rows - 1) * gap;
+
+  const compCanvas = document.createElement('canvas');
+  compCanvas.width = compW; compCanvas.height = compH;
+  const cctx = compCanvas.getContext('2d');
+  cctx.fillStyle = '#1C1714'; cctx.fillRect(0, 0, compW, compH);
+
+  // Place panels
+  const usesRowLabels = cfg.rowLabels.length > 0;
+  const rowVals = S.rowLabelValues || cfg.rowLabels;
+  panels.forEach((p, i) => {
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const ox = col * (avgW + gap);
+    const oy = row * (panelH + gap);
+    // Scale panel to avgW if needed
+    if (p.w !== avgW) {
+      cctx.drawImage(p.canvas, 0, 0, p.w, panelH, ox, oy, avgW, panelH);
+    } else {
+      cctx.drawImage(p.canvas, ox, oy);
+    }
+    // Caption: for multi-angle grids (2x2/2x3) label only the first panel of
+    // each row with the row label; otherwise label every panel with its slot label.
+    if (usesRowLabels) {
+      if (col === 0) {
+        drawPanelLabel(cctx, ox, oy, avgW, panelH, (rowVals[row] || '').toUpperCase(), '');
+      }
+    } else {
+      drawPanelLabel(cctx, ox, oy, avgW, panelH, S.slots[i].label.toUpperCase(), '');
+    }
+  });
+
+  // Treatment label at top center
+  if (treatment) {
+    const tfs = Math.round(panelH * 0.022);
+    cctx.save();
+    cctx.font = `300 ${tfs}px "DM Sans",sans-serif`;
+    cctx.letterSpacing = '2px';
+    cctx.textAlign = 'center';
+    cctx.textBaseline = 'top';
+    cctx.shadowColor = 'rgba(0,0,0,0.55)';
+    cctx.shadowBlur = 8;
+    cctx.fillStyle = 'rgba(250,247,242,0.82)';
+    cctx.fillText(treatment.toUpperCase(), compW/2, Math.round(panelH*0.028));
+    cctx.restore();
+  }
+
+  drawWatermark(cctx, compW, compH, clinic, inj, S.wmPos);
+  if (S.logoImg) drawLogo(cctx, compW, compH, S.logoImg, document.getElementById('logoPos').value);
+
+  // Letterbox into export format
+  let oW = compW, oH = compH;
+  if (fmt === 'square')   { oW = 1080; oH = 1080; }
+  else if (fmt === 'story')   { oW = 1080; oH = 1920; }
+  else if (fmt === 'portrait') { oW = 1080; oH = 1350; }
+
+  const oc = document.getElementById('outputCanvas');
+  oc.width = oW; oc.height = oH;
+  const ctx = oc.getContext('2d');
+  ctx.fillStyle = '#1C1714'; ctx.fillRect(0, 0, oW, oH);
+  if (fmt !== 'free') {
+    const scale = Math.min(oW/compW, oH/compH);
+    const sw = Math.round(compW*scale), sh = Math.round(compH*scale);
+    const ox2 = Math.round((oW-sw)/2), oy2 = Math.round((oH-sh)/2);
+    ctx.drawImage(compCanvas, ox2, oy2, sw, sh);
   } else {
-    const scale=Math.min(oW/compW,oH/compH);
-    const sw=Math.round(compW*scale),sh=Math.round(compH*scale);
-    const ox2=Math.round((oW-sw)/2),oy2=Math.round((oH-sh)/2);
-    ctx.drawImage(compCanvas,ox2,oy2,sw,sh);
+    oc.width = compW; oc.height = compH;
+    const ctx2 = oc.getContext('2d');
+    ctx2.fillStyle = '#1C1714'; ctx2.fillRect(0, 0, compW, compH);
+    ctx2.drawImage(compCanvas, 0, 0);
   }
 
   document.getElementById('outputSection').classList.add('visible');
   document.getElementById('outputSection').scrollIntoView({behavior:'smooth'});
-  setSt('Done — your image is ready to download.','ok');
+  setSt(t('doneDownload'), 'ok');
 }
 
-// ── Multi-format export ───────────────────────────────────────
+// ============================================================
+// DOWNLOAD
+// ============================================================
 function downloadFormat(format) {
   const src = document.getElementById('outputCanvas');
   const sw = src.width, sh = src.height;
-  let tw, th;
-
-  if(format === 'square') {
-    const size = 1080;
-    tw = size; th = size;
-  } else if(format === 'story') {
-    tw = 1080; th = 1920;
-  } else {
-    // original — direct download
+  if (format === 'original') {
     const a = document.createElement('a');
     a.download = 'before-after.jpg';
     a.href = src.toDataURL('image/jpeg', .95);
     a.click();
     return;
   }
-
-  // Create export canvas with black background, image centered
-  const ec = document.createElement('canvas');
-  ec.width = tw; ec.height = th;
+  const tw = 1080, th = format === 'story' ? 1920 : 1080;
+  const ec = document.createElement('canvas'); ec.width = tw; ec.height = th;
   const ectx = ec.getContext('2d');
-  ectx.fillStyle = '#1C1714';
-  ectx.fillRect(0, 0, tw, th);
-
-  // Fit image within target, centered
+  ectx.fillStyle = '#1C1714'; ectx.fillRect(0, 0, tw, th);
   const scale = Math.min(tw/sw, th/sh);
   const dw = Math.round(sw*scale), dh = Math.round(sh*scale);
-  const dx = Math.round((tw-dw)/2), dy = Math.round((th-dh)/2);
-  ectx.drawImage(src, dx, dy, dw, dh);
-
+  ectx.drawImage(src, Math.round((tw-dw)/2), Math.round((th-dh)/2), dw, dh);
   const a = document.createElement('a');
   a.download = `before-after-${format}.jpg`;
   a.href = ec.toDataURL('image/jpeg', .95);
   a.click();
 }
 
-// ── Brand profile (localStorage) ─────────────────────────────
-// ── Logo upload ───────────────────────────────────────────────
-S.logoImg = null;
-S.logoDataUrl = null;
-
+// ============================================================
+// LOGO
+// ============================================================
+S.logoImg = null; S.logoDataUrl = null;
 document.getElementById('logoUpload').addEventListener('change', function(e) {
-  const file = e.target.files[0]; if(!file) return;
+  const file = e.target.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
     const img = new Image();
@@ -1091,122 +1869,88 @@ document.getElementById('logoUpload').addEventListener('change', function(e) {
 
 function clearLogo() {
   S.logoImg = null; S.logoDataUrl = null;
-  document.getElementById('logoFileName').textContent = 'No logo';
+  document.getElementById('logoFileName').textContent = t('noLogo');
   document.getElementById('logoClearBtn').style.display = 'none';
   document.getElementById('logoPosField').style.display = 'none';
   document.getElementById('logoUpload').value = '';
   try { localStorage.removeItem('skinday_logo'); } catch(e) {}
 }
 
-function drawLogo(ctx, canvasW, canvasH, logo, pos) {
-  if(!logo) return;
-  const maxH = Math.round(canvasH * 0.08);
-  const scale = maxH / logo.naturalHeight;
-  const lw = Math.round(logo.naturalWidth * scale);
-  const lh = maxH;
-  const margin = 24;
-  let lx, ly;
-  if(pos==='tl')          { lx=margin;             ly=margin; }
-  else if(pos==='tr')     { lx=canvasW-lw-margin;  ly=margin; }
-  else if(pos==='bl')     { lx=margin;             ly=canvasH-lh-margin; }
-  else if(pos==='center') { lx=Math.round((canvasW-lw)/2); ly=Math.round((canvasH-lh)/2); }
-  else                    { lx=canvasW-lw-margin;  ly=canvasH-lh-margin; }
-  ctx.drawImage(logo, lx, ly, lw, lh);
-}
-
-function saveSettings(){
-  const s={
+// ============================================================
+// SETTINGS PERSISTENCE
+// ============================================================
+function saveSettings() {
+  const s = {
     clinic:    document.getElementById('clinicName').value.trim(),
     injector:  document.getElementById('injectorName').value.trim(),
     treatment: document.getElementById('treatmentLabel').value.trim(),
     wmPos:     S.wmPos,
-    layout:    document.getElementById('layout').value,
     format:    document.getElementById('exportFormat').value,
     norm:      document.getElementById('norm').value,
     enhance:   document.getElementById('enhance').value,
+    grid:      S.grid,
+    subject:   S.subject,
   };
-  localStorage.setItem('skinday_studio', JSON.stringify(s));
-  // Update both save buttons
-  const msg=document.getElementById('saveMsg');
-  if(msg){msg.textContent='Settings saved ✓';setTimeout(()=>{msg.textContent='';},2500);}
-  const bs=document.getElementById('brandSaved');
-  if(bs){bs.style.display='inline';setTimeout(()=>{bs.style.display='none';},2500);}
+  try { localStorage.setItem('skinday_studio', JSON.stringify(s)); } catch(e) {}
+  const msg = document.getElementById('saveMsg');
+  if (msg) { msg.textContent = t('settingsSaved'); setTimeout(() => { msg.textContent = ''; }, 2500); }
+  const bs = document.getElementById('brandSaved');
+  if (bs) { bs.style.display = 'inline'; setTimeout(() => { bs.style.display = 'none'; }, 2500); }
 }
 
-// Keep saveBrand as alias
-const saveBrand = saveSettings;
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('skinday_studio'); if (!raw) return;
+    const s = JSON.parse(raw);
+    if (s.clinic)    document.getElementById('clinicName').value = s.clinic;
+    if (s.injector)  document.getElementById('injectorName').value = s.injector;
+    if (s.treatment) document.getElementById('treatmentLabel').value = s.treatment;
+    if (s.format)    document.getElementById('exportFormat').value = s.format;
+    if (s.norm)      document.getElementById('norm').value = s.norm;
+    if (s.enhance)   document.getElementById('enhance').value = s.enhance;
+    if (s.grid)      selGrid(s.grid);
+    if (s.subject)   selSubject(s.subject);
+    updateWmPosState();
+    if (s.wmPos)     selWmPos(s.wmPos);
+  } catch(e) {}
+}
 
-// New case — clears photos, treatment label, and dates, but preserves brand profile
-// (clinic name, injector, logo, layout, format, watermark position, enhancement, etc.)
-function newCase(){
-  // Clear image state
-  S.beforeImg=null; S.afterImg=null;
-  S.bLm=null; S.aLm=null;
-  S.bZoom=1.0; S.aZoom=1.0;
-  S.bPan={x:0,y:0}; S.aPan={x:0,y:0};
-
-  // Reset upload zones
-  ['before','after'].forEach(w=>{
-    const zone=document.getElementById('zone-'+w);
-    zone.classList.remove('filled');
-    const thumb=zone.querySelector('img.thumb');
-    if(thumb) thumb.remove();
-    const input=document.getElementById('input-'+w);
-    if(input) input.value='';
-    const changeInput=document.getElementById('change-'+w);
-    if(changeInput) changeInput.value='';
-  });
-
-  // Clear treatment + dates (case-specific, shouldn't carry over)
-  const treatment=document.getElementById('treatmentLabel');
-  if(treatment) treatment.value='';
-  ['beforeMonth','beforeYear','afterMonth','afterYear'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el) el.value='';
-  });
-
-  // Reset zoom sliders to 100%
-  const zB=document.getElementById('zoomB'); if(zB) zB.value=100;
-  const zA=document.getElementById('zoomA'); if(zA) zA.value=100;
-  const zBVal=document.getElementById('zoomBVal'); if(zBVal) zBVal.textContent='100%';
-  const zAVal=document.getElementById('zoomAVal'); if(zAVal) zAVal.textContent='100%';
-
-  // Hide crop and output sections
-  document.getElementById('cropSection').classList.remove('visible');
-  document.getElementById('outputSection').classList.remove('visible');
-
-  // Reset status and scroll to top of page
-  setSt('Choose a before and after photo to begin','idle');
+// ============================================================
+// NEW CASE
+// ============================================================
+function newCase() {
+  S.slots = S.slots.map((sl, i) => ({
+    img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
+    label: sl.label,
+    origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
+  }));
+  S.bgChecked = {};
+  const sa = document.getElementById('bgSelectAll');
+  if (sa) sa.checked = false;
+  rebuildUploadGrid();
+  hideCropSection();
+  document.getElementById('treatmentLabel').value = '';
+  setSt(t('uploadBegin'), 'idle');
   setProg(0);
-  window.scrollTo({top:0,behavior:'smooth'});
+  checkBgControlsVisibility();
+  window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
-function loadSettings(){
-  try{
-    const raw=localStorage.getItem('skinday_studio'); if(!raw)return;
-    const s=JSON.parse(raw);
-    if(s.clinic)    document.getElementById('clinicName').value=s.clinic;
-    if(s.injector)  document.getElementById('injectorName').value=s.injector;
-    if(s.treatment) document.getElementById('treatmentLabel').value=s.treatment;
-    if(s.layout)    document.getElementById('layout').value=s.layout;
-    if(s.format)    document.getElementById('exportFormat').value=s.format;
-    if(s.norm)      document.getElementById('norm').value=s.norm;
-    if(s.enhance)   document.getElementById('enhance').value=s.enhance;
-    updateWmPosState(); // names may now be set, so enable the picker before restoring position
-    if(s.wmPos)     selWmPos(s.wmPos);
-  }catch(e){}
-}
-
+// ============================================================
+// INIT
+// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
+  applyLang();
+  rebuildUploadGrid();
   loadSettings();
-  // Restore logo from localStorage
+  // Restore logo
   try {
     const savedLogo = localStorage.getItem('skinday_logo');
-    if(savedLogo) {
+    if (savedLogo) {
       const img = new Image();
       img.onload = () => {
         S.logoImg = img; S.logoDataUrl = savedLogo;
-        document.getElementById('logoFileName').textContent = 'Logo loaded';
+        document.getElementById('logoFileName').textContent = t('logoLoaded');
         document.getElementById('logoClearBtn').style.display = 'inline';
         document.getElementById('logoPosField').style.display = 'block';
       };
@@ -1214,21 +1958,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) {}
 
-  // Wire up consent checkbox to enable/disable Generate button
+  // Consent
   const consent = document.getElementById('consentCheck');
   const genBtn = document.getElementById('genBtn');
-  if(consent && genBtn) {
-    // Restore session consent so clinics aren't re-prompted every case
+  if (consent && genBtn) {
     try {
-      if(sessionStorage.getItem('skinday_consent') === '1') {
-        consent.checked = true;
-        genBtn.disabled = false;
+      if (sessionStorage.getItem('skinday_consent') === '1') {
+        consent.checked = true; genBtn.disabled = false;
       }
     } catch(e) {}
     consent.addEventListener('change', () => {
       genBtn.disabled = !consent.checked;
       try {
-        if(consent.checked) sessionStorage.setItem('skinday_consent','1');
+        if (consent.checked) sessionStorage.setItem('skinday_consent','1');
         else sessionStorage.removeItem('skinday_consent');
       } catch(e) {}
     });
