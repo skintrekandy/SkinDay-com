@@ -219,6 +219,7 @@ exports.handler = async (event) => {
     const clinicId = (fields.clinic_id || '').trim();
     const classification = (fields.data_classification || '').trim();
     const treatment = (fields.treatment || '').trim() || null;
+    const subtype = (fields.subtype || '').trim() || null;
     const angle = (fields.angle || '').trim() || null;
     const phenotype = (fields.phenotype || '').trim() || null;
     const sourceJobId = (fields.source_job_id || '').trim() || null;
@@ -302,6 +303,7 @@ exports.handler = async (event) => {
         p_consents: consents,
         p_real_patient_allowed: REAL_PATIENT_ALLOWED,
         p_treatment: treatment,
+        p_subtype: subtype,
         p_angle: angle,
         p_phenotype: phenotype,
         p_residency: 'ca',
