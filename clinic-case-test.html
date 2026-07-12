@@ -164,6 +164,32 @@
     <div class="thumbs" id="pubThumbs"></div>
     <p class="note">Publishing copies the private image to a randomized public key. Unpublishing deletes the public object; cached copies elsewhere cannot be recalled.</p>
   </fieldset>
+
+  <fieldset>
+    <legend>7. Consent grant / revoke</legend>
+    <div class="row">
+      <div>
+        <label>purpose</label>
+        <select id="consentPurpose">
+          <option value="gallery_site">gallery_site</option>
+          <option value="visualize">visualize</option>
+          <option value="store">store (revoking this soft-deletes the case)</option>
+          <option value="directory_search">directory_search</option>
+          <option value="skinday_marketing">skinday_marketing</option>
+          <option value="cross_clinic_training">cross_clinic_training</option>
+        </select>
+      </div>
+      <div>
+        <label>version (for grant)</label>
+        <input id="consentVersion" value="skintrek-test-v1">
+      </div>
+    </div>
+    <button id="grantBtn" class="secondary" disabled>Grant consent</button>
+    <button id="revokeBtn" disabled>Revoke consent</button>
+    <div class="note" id="consentStatus"></div>
+    <pre id="consentOut" style="display:none;"></pre>
+    <p class="note">Uses the case_id in section 6. Every grant and revoke writes an event to clinic_case_events.</p>
+  </fieldset>
 </div>
 
 <script>
@@ -423,10 +449,77 @@
   $('publishBtn').addEventListener('click', function () { callPublish('publish'); });
   $('unpublishBtn').addEventListener('click', function () { callPublish('unpublish'); });
 
+  function callConsent(action) {
+    if (!session) { return; }
+    var caseId = $('pubCaseId').value.trim();
+    if (!caseId) {
+      $('consentStatus').className = 'note bad';
+      $('consentStatus').textContent = 'Enter a case_id in section 6.';
+      return;
+    }
+    var purpose = $('consentPurpose').value;
+    $('grantBtn').disabled = true;
+    $('revokeBtn').disabled = true;
+    $('consentStatus').className = 'note';
+    $('consentStatus').textContent = action === 'grant' ? 'Granting...' : 'Revoking...';
+
+    var payload = {
+      action: action,
+      case_id: caseId,
+      clinic_id: $('clinicId').value.trim(),
+      purpose: purpose
+    };
+    if (action === 'grant') {
+      payload.version = $('consentVersion').value.trim();
+      payload.method = 'harness_test';
+    } else {
+      payload.reason = 'harness test revocation';
+    }
+
+    fetch('/api/clinic-case-consent', {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); })
+      .then(function (res) {
+        var b;
+        try { b = JSON.parse(res.text); } catch (e) { b = res.text; }
+        var out = $('consentOut');
+        out.style.display = 'block';
+        out.textContent = JSON.stringify({ http_status: res.status, response: b }, null, 2);
+        var el = $('consentStatus');
+        if (res.status === 200 && b && b.ok) {
+          el.className = 'note ok';
+          el.textContent = action === 'grant'
+            ? purpose + ' consent granted.'
+            : purpose + ' consent revoked.' + (b.case_soft_deleted ? ' Case soft-deleted.' : '');
+        } else {
+          el.className = 'note bad';
+          el.textContent = 'Did not succeed. See response.';
+        }
+      })
+      .catch(function (e) {
+        $('consentStatus').className = 'note bad';
+        $('consentStatus').textContent = 'Error: ' + e.message;
+      })
+      .then(function () {
+        $('grantBtn').disabled = false;
+        $('revokeBtn').disabled = false;
+      });
+  }
+
+  $('grantBtn').addEventListener('click', function () { callConsent('grant'); });
+  $('revokeBtn').addEventListener('click', function () { callConsent('revoke'); });
+
   function readBack(c, caseId) {
     $('pubCaseId').value = caseId;
     $('publishBtn').disabled = false;
     $('unpublishBtn').disabled = false;
+    $('grantBtn').disabled = false;
+    $('revokeBtn').disabled = false;
     var idFilter = 'id=eq.' + encodeURIComponent(caseId);
     var caseFilter = 'case_id=eq.' + encodeURIComponent(caseId);
     Promise.all([
