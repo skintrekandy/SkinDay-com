@@ -455,10 +455,10 @@ async function start() {
   $('tabs').style.display = 'flex';
   $('panel-studio').style.display = 'block';
 
-  // The real Visualize, loaded exactly as a consumer would get it. The clinic
-  // context is attached by the portal when the generation request goes out, so
-  // visualize.html itself knows nothing about clinics and is never modified.
-  $('visFrame').src = '/visualize.html';
+  // The real Visualize, carrying explicit clinic context. Visualize itself reads
+  // ?clinic= and attaches it to the generation; the portal does not have to slip
+  // it in, so a future refactor of Visualize cannot silently break grounding.
+  $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
   watchStudio();
   loadCases();
@@ -479,21 +479,16 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 /* ---- embedded Visualize ----
-   visualize.html loads exactly as a consumer gets it and is never modified. The
-   portal wraps that page's fetch and attaches clinicId to the generation request
-   on its way out. Consumer Visualize, opened directly, has no portal around it
-   and so sends no clinic context: its behaviour is untouched.
+   visualize.html is the real page, opened with ?clinic=. IT attaches the clinic
+   context to the generation itself, so grounding does not depend on anything the
+   portal does. A future refactor of Visualize cannot silently un-ground clinic
+   simulations.
 
-   The same wrapper reads the jobId out of the request, so the portal can poll
-   the job itself and say plainly whether the clinic's own case shaped the
-   result. A clinic paying for a personalized Visualize should never have to
-   guess whether the personalization happened.
-
-   This depends on one thing: that Visualize posts a FormData to
-   start-visualization via the page's own fetch. If that ever changes, the
-   attachment silently stops and generations quietly come back ungrounded. The
-   banner below is the tell: it will start reporting "no case of yours matched"
-   for cases that should have matched. */
+   The wrapper below is only for the banner: it reads the jobId as the request
+   goes past so the portal can poll the job and say plainly whether one of the
+   clinic's own cases shaped the result. If this ever stops working, the banner
+   simply does not appear. Grounding still happens. A missing banner is visible;
+   a silently ungrounded simulation would not be. */
 
 const groundNote = (msg, cls) => {
   const el = $('visGrounding');
@@ -512,20 +507,14 @@ $('visFrame').addEventListener('load', () => {
     try {
       const url = typeof input === 'string' ? input : (input && input.url) || '';
       const body = init && init.body;
-
       if (url.indexOf('start-visualization') !== -1 && body instanceof w.FormData) {
-        // Attach the clinic context. start-visualization verifies the claim
-        // against clinic_memberships before honouring it, and the background
-        // worker verifies it again.
-        body.set('clinicId', clinicId);
-
         const jobId = body.get('jobId');
         if (jobId) {
           groundNote('Generating. Checking which of your cases shapes this result…', 'wait');
           watchJob(String(jobId));
         }
       }
-    } catch (e) { /* never break a generation over the banner */ }
+    } catch (e) { /* never break a generation over a banner */ }
 
     return realFetch.call(w, input, init);
   };
