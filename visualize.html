@@ -1573,6 +1573,21 @@ function applyLang(){
 }
 
 const KEY_STORE = 'sd_visualize_key';
+
+// M11 CLINIC CONTEXT.
+// Empty for every consumer visit, which is the entire consumer product: no
+// clinic context is sent, no clinic's private patient imagery grounds the
+// result, and behaviour is exactly as it was.
+//
+// The clinic portal opens this page as visualize.html?clinic=386. That id is a
+// CLAIM, not a fact: start-visualization verifies it against clinic_memberships
+// before honouring it, and the background worker verifies it again before
+// touching any of that clinic's cases. Sending a clinic you do not belong to
+// gets a 403, not someone else's photographs.
+const CLINIC_ID = (function(){
+  try { return new URLSearchParams(location.search).get('clinic') || ''; }
+  catch(e){ return ''; }
+})();
 const FREE_REGEN_MS = 60000;
 
 // Bump this whenever sculptra-mask.js changes, so the browser fetches the new
@@ -3659,6 +3674,8 @@ async function prepAndStartSlot(angleId, auth, isRegen, fillerIntensity){
   if(state.patientAge) form.append('patientAge', String(state.patientAge));
   sl.jobId = jobId;
 
+  if(CLINIC_ID) form.append('clinicId', CLINIC_ID);
+
   const startRes = await fetch('/.netlify/functions/start-visualization', {
     method:'POST', headers: auth, body:form
   });
@@ -4265,6 +4282,7 @@ async function startEnhancedSlot(angleId, auth){
   // for filler's post-generation compositor safety clamp.
 
   console.log('[Visualize Enhanced] ' + angleId + ': sending to start-visualization…');
+  if(CLINIC_ID) formData.append('clinicId', CLINIC_ID);
   let startRes;
   try {
     startRes = await fetch('/.netlify/functions/start-visualization', {
@@ -5472,6 +5490,8 @@ async function runScenario(scenarioKey){
     form.append('angle', angleId);
     form.append('view',  promptView);
     if(state.sex) form.append('sex', state.sex);
+
+    if(CLINIC_ID) form.append('clinicId', CLINIC_ID);
 
     const startRes = await fetch('/.netlify/functions/start-visualization', {
       method: 'POST', headers: auth, body: form
