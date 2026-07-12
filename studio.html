@@ -104,6 +104,10 @@
     .slot-label-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; background: linear-gradient(transparent, rgba(28,23,20,0.72)); padding: 8px 10px 7px; gap: 4px; }
     .slot-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; flex: 1; min-width: 0; cursor: default; }
     .slot-label:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.6); }
+    .slot-date-wrap { position: absolute; bottom: 32px; left: 10px; right: 10px; }
+    .slot-date { width: 100%; font-size: 0.66rem; color: rgba(250,247,242,0.72); background: transparent; border: none; border-bottom: 1px solid rgba(250,247,242,0.16); outline: none; font-family: 'DM Sans', sans-serif; padding: 2px 0; }
+    .slot-date::placeholder { color: rgba(250,247,242,0.38); }
+    .slot-date:focus { color: #fff; border-bottom-color: rgba(201,169,110,0.6); }
     .slot-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
     .slot-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
     .change-btn { position: absolute; top: 7px; right: 7px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.68rem; font-family: 'DM Sans', sans-serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; display: none; }
@@ -485,6 +489,7 @@
             <option value="tl" data-en="Top left" data-zh="左上">Top left</option>
             <option value="br" data-en="Bottom right" data-zh="右下">Bottom right</option>
             <option value="bl" data-en="Bottom left" data-zh="左下">Bottom left</option>
+            <option value="center" data-en="Centre" data-zh="置中">Centre</option>
           </select>
         </div>
       </div>
@@ -754,6 +759,7 @@ function rebuildUploadGrid() {
     newSlots.push(old && old.img ? old : {
       img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
       label: defaultLabelFor(S.grid, i),
+      date: '',
       origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
     });
   }
@@ -820,6 +826,13 @@ function makeSlotHTML(i, hideLabel) {
           onkeydown="if(event.key==='Enter'){this.blur()}"
         />
         <button class="slot-edit-btn" onclick="document.getElementById('slot-label-${i}').focus()" title="Edit label">Edit</button>
+      </div>
+      <div class="slot-date-wrap">
+        <input class="slot-date" id="slot-date-${i}" type="text" value="${sl.date || ''}"
+          placeholder="Treatment date"
+          onclick="event.stopPropagation()"
+          oninput="updateSlotDate(${i}, this.value)"
+        />
       </div>`;
   return `
     <div class="upload-zone${filled}${bgCls}" id="zone-${i}">
@@ -832,6 +845,14 @@ function makeSlotHTML(i, hideLabel) {
       <input type="file" accept="image/*" class="change-input" id="change-input-${i}"/>
     </div>
   `;
+}
+
+// Free text on purpose: clinics write "Jan 2026", "6 weeks post", "Day 90".
+// A date picker would force a precision the caption does not want.
+function updateSlotDate(i, val) {
+  S.slots[i].date = val;
+  const pv = document.getElementById('preview-date-' + i);
+  if (pv && pv.value !== val) pv.value = val;
 }
 
 function updateSlotLabel(i, val) {
@@ -1767,11 +1788,16 @@ async function generate() {
     // Caption: for multi-angle grids (2x2/2x3) label only the first panel of
     // each row with the row label; otherwise label every panel with its slot label.
     if (usesRowLabels) {
+      // Multi-angle grids label the first panel of each row. The row's date is
+      // the date of that row's first photo.
       if (col === 0) {
-        drawPanelLabel(cctx, ox, oy, avgW, panelH, (rowVals[row] || '').toUpperCase(), '');
+        const rowSlot = S.slots[row * cols];
+        drawPanelLabel(cctx, ox, oy, avgW, panelH,
+          (rowVals[row] || '').toUpperCase(), (rowSlot && rowSlot.date) || '');
       }
     } else {
-      drawPanelLabel(cctx, ox, oy, avgW, panelH, S.slots[i].label.toUpperCase(), '');
+      drawPanelLabel(cctx, ox, oy, avgW, panelH,
+        S.slots[i].label.toUpperCase(), S.slots[i].date || '');
     }
   });
 
@@ -1859,7 +1885,7 @@ document.getElementById('logoUpload').addEventListener('change', function(e) {
       S.logoImg = img; S.logoDataUrl = ev.target.result;
       document.getElementById('logoFileName').textContent = file.name;
       document.getElementById('logoClearBtn').style.display = 'inline';
-      document.getElementById('logoPosField').style.display = 'block';
+      document.getElementById('logoPosField').style.display = '';
       try { localStorage.setItem('skinday_logo', ev.target.result); } catch(e) {}
     };
     img.src = ev.target.result;
@@ -1922,6 +1948,7 @@ function newCase() {
   S.slots = S.slots.map((sl, i) => ({
     img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
     label: sl.label,
+    date: '',
     origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
   }));
   S.bgChecked = {};
@@ -1952,7 +1979,7 @@ document.addEventListener('DOMContentLoaded', () => {
         S.logoImg = img; S.logoDataUrl = savedLogo;
         document.getElementById('logoFileName').textContent = t('logoLoaded');
         document.getElementById('logoClearBtn').style.display = 'inline';
-        document.getElementById('logoPosField').style.display = 'block';
+        document.getElementById('logoPosField').style.display = '';
       };
       img.src = savedLogo;
     }
