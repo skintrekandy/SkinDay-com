@@ -104,10 +104,6 @@
     .slot-label-wrap { position: absolute; bottom: 0; left: 0; right: 0; display: flex; align-items: center; background: linear-gradient(transparent, rgba(28,23,20,0.72)); padding: 8px 10px 7px; gap: 4px; }
     .slot-label { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(250,247,242,0.85); background: transparent; border: none; outline: none; font-family: 'DM Sans', sans-serif; flex: 1; min-width: 0; cursor: default; }
     .slot-label:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.6); }
-    .slot-date-wrap { position: absolute; bottom: 32px; left: 10px; right: 10px; }
-    .slot-date { width: 100%; font-size: 0.66rem; color: rgba(250,247,242,0.72); background: transparent; border: none; border-bottom: 1px solid rgba(250,247,242,0.16); outline: none; font-family: 'DM Sans', sans-serif; padding: 2px 0; }
-    .slot-date::placeholder { color: rgba(250,247,242,0.38); }
-    .slot-date:focus { color: #fff; border-bottom-color: rgba(201,169,110,0.6); }
     .slot-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
     .slot-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
     .change-btn { position: absolute; top: 7px; right: 7px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.68rem; font-family: 'DM Sans', sans-serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; display: none; }
@@ -192,6 +188,11 @@
     /* ── Branding ── */
     .brand-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; margin-bottom: 24px; }
     .field { display: flex; flex-direction: column; gap: 5px; }
+    .date-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 4px; }
+    .date-item { display: flex; flex-direction: column; gap: 5px; }
+    .date-item > span { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+    .date-selects { display: grid; grid-template-columns: 1.4fr 0.9fr 1fr; gap: 6px; }
+    .date-selects select { min-width: 0; }
     .field label { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--deep); }
     .field input, .field select { background: #fff; border: 1px solid var(--border); color: var(--deep); padding: 10px 12px; font-size: 0.88rem; font-family: 'DM Sans', sans-serif; border-radius: 6px; outline: none; transition: border-color 0.2s; }
     .field input:focus, .field select:focus { border-color: var(--rose); }
@@ -494,6 +495,11 @@
         </div>
       </div>
 
+      <div class="field" id="dateFieldsBlock" style="margin-bottom:20px;">
+        <label data-en="Treatment dates (optional)" data-zh="療程日期（選填）">Treatment dates (optional)</label>
+        <div class="date-grid" id="dateFields"></div>
+      </div>
+
       <div class="field" style="margin-bottom:20px;">
         <label data-en="Watermark text position" data-zh="浮水印文字位置">Watermark text position</label>
         <div class="wm-pos-grid disabled" id="wmPosGrid" style="margin-top:8px;">
@@ -759,11 +765,12 @@ function rebuildUploadGrid() {
     newSlots.push(old && old.img ? old : {
       img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
       label: defaultLabelFor(S.grid, i),
-      date: '',
+      date: '', dateParts: {},
       origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
     });
   }
   S.slots = newSlots;
+  renderDateFields();
 
   // Build HTML
   let html = '';
@@ -826,13 +833,6 @@ function makeSlotHTML(i, hideLabel) {
           onkeydown="if(event.key==='Enter'){this.blur()}"
         />
         <button class="slot-edit-btn" onclick="document.getElementById('slot-label-${i}').focus()" title="Edit label">Edit</button>
-      </div>
-      <div class="slot-date-wrap">
-        <input class="slot-date" id="slot-date-${i}" type="text" value="${sl.date || ''}"
-          placeholder="Treatment date"
-          onclick="event.stopPropagation()"
-          oninput="updateSlotDate(${i}, this.value)"
-        />
       </div>`;
   return `
     <div class="upload-zone${filled}${bgCls}" id="zone-${i}">
@@ -847,12 +847,80 @@ function makeSlotHTML(i, hideLabel) {
   `;
 }
 
-// Free text on purpose: clinics write "Jan 2026", "6 weeks post", "Day 90".
-// A date picker would force a precision the caption does not want.
-function updateSlotDate(i, val) {
-  S.slots[i].date = val;
-  const pv = document.getElementById('preview-date-' + i);
-  if (pv && pv.value !== val) pv.value = val;
+// One date per caption. On 2x2 and 2x3 the caption belongs to the whole row, so
+// there is one date per row, not per photo: asking for six dates when the export
+// only prints two would be busywork.
+//
+// Free text on purpose. Clinics write "Jan 2026", "6 weeks post", "Day 90". A
+// date picker would force a precision the caption does not want.
+const MONTHS = [
+  ['1','Jan','1月'], ['2','Feb','2月'], ['3','Mar','3月'], ['4','Apr','4月'],
+  ['5','May','5月'], ['6','Jun','6月'], ['7','Jul','7月'], ['8','Aug','8月'],
+  ['9','Sep','9月'], ['10','Oct','10月'], ['11','Nov','11月'], ['12','Dec','12月']
+];
+
+function dateYears() {
+  const now = new Date().getFullYear();
+  const out = [];
+  for (let y = now + 1; y >= now - 12; y--) out.push(y);
+  return out;
+}
+
+// Composed for the export caption. Day is optional, because a clinic often knows
+// the month of a treatment but not the day, and a caption reading "Jan 2026" is
+// more honest than one inventing a day it does not have.
+function composeDate(parts) {
+  if (!parts || !parts.y) return '';
+  const m = MONTHS.find(x => x[0] === String(parts.m));
+  if (!m) return String(parts.y);
+  return parts.d
+    ? m[1] + ' ' + parts.d + ', ' + parts.y
+    : m[1] + ' ' + parts.y;
+}
+
+function renderDateFields() {
+  const host = document.getElementById('dateFields');
+  if (!host) return;
+  const cfg = GRID_CONFIG[S.grid];
+  const rowLabels = cfg.rowLabels || [];
+  const items = rowLabels.length
+    ? rowLabels.map((lab, r) => ({ slot: r * cfg.cols, label: lab }))
+    : S.slots.map((sl, i) => ({ slot: i, label: sl.label }));
+
+  const days = ['<option value="">Day</option>'];
+  for (let d = 1; d <= 31; d++) days.push('<option value="' + d + '">' + d + '</option>');
+  const years = ['<option value="">Year</option>']
+    .concat(dateYears().map(y => '<option value="' + y + '">' + y + '</option>'));
+  const months = ['<option value="">Month</option>']
+    .concat(MONTHS.map(m => '<option value="' + m[0] + '" data-en="' + m[1] + '" data-zh="' + m[2] + '">' + m[1] + '</option>'));
+
+  host.innerHTML = items.map(it => {
+    const p = (S.slots[it.slot] && S.slots[it.slot].dateParts) || {};
+    const sel = (html, val) => html.replace(
+      'value="' + val + '"', 'value="' + val + '" selected'
+    );
+    let mo = months.join(''), dy = days.join(''), yr = years.join('');
+    if (p.m) mo = sel(mo, p.m);
+    if (p.d) dy = sel(dy, p.d);
+    if (p.y) yr = sel(yr, p.y);
+    return `
+    <div class="date-item">
+      <span>${it.label}</span>
+      <div class="date-selects">
+        <select id="date-m-${it.slot}" onchange="updateSlotDate(${it.slot})">${mo}</select>
+        <select id="date-d-${it.slot}" onchange="updateSlotDate(${it.slot})">${dy}</select>
+        <select id="date-y-${it.slot}" onchange="updateSlotDate(${it.slot})">${yr}</select>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSlotDate(i) {
+  const sl = S.slots[i];
+  if (!sl) return;
+  const g = id => { const e = document.getElementById(id + i); return e ? e.value : ''; };
+  sl.dateParts = { m: g('date-m-'), d: g('date-d-'), y: g('date-y-') };
+  sl.date = composeDate(sl.dateParts);
 }
 
 function updateSlotLabel(i, val) {
@@ -1788,8 +1856,7 @@ async function generate() {
     // Caption: for multi-angle grids (2x2/2x3) label only the first panel of
     // each row with the row label; otherwise label every panel with its slot label.
     if (usesRowLabels) {
-      // Multi-angle grids label the first panel of each row. The row's date is
-      // the date of that row's first photo.
+      // The row caption carries the row's date, taken from its first photo.
       if (col === 0) {
         const rowSlot = S.slots[row * cols];
         drawPanelLabel(cctx, ox, oy, avgW, panelH,
@@ -1948,7 +2015,7 @@ function newCase() {
   S.slots = S.slots.map((sl, i) => ({
     img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
     label: sl.label,
-    date: '',
+    date: '', dateParts: {},
     origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
   }));
   S.bgChecked = {};
