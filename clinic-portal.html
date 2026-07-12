@@ -114,6 +114,36 @@
   .perm b { font-weight:500; font-size:14px; display:block; }
   .perm small { color:var(--muted); font-size:12.5px; }
 
+  .attest {
+    margin-top:18px; padding:14px 16px;
+    background:var(--cream); border:1px solid var(--line); border-radius:3px;
+  }
+  .attest b { font-weight:500; }
+
+  .embed-code {
+    display:flex; align-items:center; gap:12px;
+    background:var(--deep); border-radius:3px; padding:13px 15px;
+  }
+  .embed-code code {
+    flex:1; color:#e8e0d6; font-size:12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    overflow-x:auto; white-space:nowrap;
+  }
+  .embed-code button {
+    background:transparent; color:var(--gold);
+    border-color:rgba(201,169,110,.45); flex-shrink:0;
+  }
+  .embed-code button:hover { border-color:var(--gold); color:var(--cream); }
+
+  .gal { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:16px; }
+  .gal-case { border:1px solid var(--line); background:var(--cream); }
+  .gal-pair { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); }
+  .gal-pair img { display:block; width:100%; aspect-ratio:4/5; object-fit:cover; background:#fff; }
+  .gal-meta {
+    padding:9px 11px; font-size:11.5px; color:var(--muted);
+    text-transform:capitalize;
+  }
+
   .caution {
     margin-top:16px; padding:11px 14px; border-left:2px solid var(--rose);
     background:#fbf1ee; color:#82443a; font-size:12.5px;
@@ -275,36 +305,13 @@
               <label class="eyebrow" id="libSubLabel" for="libSubtype">Product</label>
               <select id="libSubtype"></select>
             </div>
-            <div class="field">
-              <label class="eyebrow" for="libClass">Subject</label>
-              <select id="libClass">
-                <option value="staff_test">Staff or test</option>
-                <option value="synthetic">Synthetic</option>
-                <option value="paid_model">Paid model</option>
-                <option value="patient">Patient</option>
-              </select>
-            </div>
           </div>
 
           <div class="eyebrow" style="margin:22px 0 10px;">Angles in this grid</div>
           <div id="pairs"></div>
 
-          <div class="grid" style="margin-top:18px;">
-            <div class="field">
-              <label class="eyebrow" for="libConsentVersion">Consent form signed</label>
-              <input type="text" id="libConsentVersion" value="skintrek-v1">
-            </div>
-            <div class="field"></div>
-          </div>
-
           <div class="consent">
-            <div class="eyebrow" style="margin-bottom:10px;">What the patient agreed to</div>
-
-            <label class="perm">
-              <input type="checkbox" id="cStore" checked disabled>
-              <span><b>Store this case</b>
-                <small>Required. Permission to hold the photographs.</small></span>
-            </label>
+            <div class="eyebrow" style="margin-bottom:4px;">What to do with this case</div>
 
             <label class="perm">
               <input type="checkbox" id="cVisualize" checked>
@@ -314,13 +321,17 @@
 
             <label class="perm">
               <input type="checkbox" id="cGallery">
-              <span><b>Show on our website</b>
-                <small>Public. Anyone can see it. Removing it later cannot recall copies already cached elsewhere.</small></span>
+              <span><b>Allow on our website</b>
+                <small>Lets you publish it from Cases. Nothing goes public until you do.</small></span>
             </label>
           </div>
 
-          <div class="caution" id="patientGate" style="display:none;">
-            Patient uploads stay closed until the consent wording has been reviewed. Use staff, synthetic, or paid model for now.
+          <div class="attest">
+            <label class="perm" style="border:0;padding:0;">
+              <input type="checkbox" id="cAttest">
+              <span><b>I have the patient's consent for the uses selected above.</b>
+                <small>Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
+            </label>
           </div>
 
           <div style="margin-top:22px;">
@@ -345,6 +356,25 @@
 
 <!-- CASES -->
 <div class="wrap" id="panel-cases" style="display:none;">
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Your website</span>
+      <h2 class="display">The gallery on your site.</h2>
+      <p>Whatever you publish appears here, and on your own website, automatically. Your developer installs this line once and never touches it again.</p>
+    </div>
+
+    <div class="panel">
+      <div class="embed-code">
+        <code id="embedCode"></code>
+        <button class="quiet" id="copyEmbed">Copy</button>
+      </div>
+      <div class="note" id="copyNote"></div>
+
+      <div class="eyebrow" style="margin:26px 0 12px;">Live preview</div>
+      <div id="galleryPreview"><p class="note">Loading…</p></div>
+    </div>
+  </section>
+
   <section class="sec">
     <div class="sec-head">
       <span class="eyebrow">Library</span>
@@ -408,9 +438,6 @@ function renderSubtypes() {
   });
 }
 $('libType').addEventListener('change', renderSubtypes);
-$('libClass').addEventListener('change', function () {
-  $('patientGate').style.display = this.value === 'patient' ? 'block' : 'none';
-});
 renderSubtypes();
 
 /* ---- sign in ---- */
@@ -460,7 +487,6 @@ async function start() {
   // it in, so a future refactor of Visualize cannot silently break grounding.
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
-  watchStudio();
   loadCases();
 }
 
@@ -468,13 +494,17 @@ sb.auth.getSession().then(({ data }) => { if (data && data.session) start(); });
 
 /* ---- tabs ---- */
 
+let activePanel = 'studio';
+
 document.querySelectorAll('.tab').forEach(t => {
   t.addEventListener('click', () => {
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
+    activePanel = t.dataset.panel;
     ['studio', 'visualize', 'cases'].forEach(p => {
-      $('panel-' + p).style.display = (p === t.dataset.panel) ? 'block' : 'none';
+      $('panel-' + p).style.display = (p === activePanel) ? 'block' : 'none';
     });
+    if (activePanel === 'cases') loadGallery();
   });
 });
 
@@ -545,6 +575,46 @@ async function watchJob(jobId, tries) {
   }
 }
 
+/* Both embedded pages get the same treatment: their own nav and footer hidden,
+   height fitted to content so there is no nested scrollbar. */
+function fitFrame(frameId) {
+  const f = $(frameId);
+  let d;
+  try { d = f.contentDocument; } catch (e) { return; }
+  if (!d || !d.body) return;
+  const h = d.body.scrollHeight;
+  if (h > 200) f.style.height = (h + 40) + 'px';
+}
+
+function dressFrame(frameId) {
+  const f = $(frameId);
+  let d;
+  try { d = f.contentDocument; } catch (e) { return; }
+  if (!d || !d.head) return;
+  const style = d.createElement('style');
+  style.textContent =
+    'nav, footer, .nav-overlay { display:none !important; }' +
+    'body { background:#FAF7F2 !important; }';
+  d.head.appendChild(style);
+  fitFrame(frameId);
+}
+
+$('studioFrame').addEventListener('load', () => dressFrame('studioFrame'));
+$('visFrame').addEventListener('load', () => dressFrame('visFrame'));
+
+// One timer, and it only does work for the panel actually on screen. Polling both
+// frames and re-encoding canvases every 700ms was what made scrolling stutter.
+let tick = 0;
+setInterval(() => {
+  tick++;
+  if (activePanel === 'studio') {
+    fitFrame('studioFrame');
+    watchStudio(tick);
+  } else if (activePanel === 'visualize') {
+    fitFrame('visFrame');
+  }
+}, 900);
+
 /* ---- embedded Studio ----
    studio.html loads as-is and is never edited. The portal hides its nav and
    footer, sizes it to content, and reads the slot canvases (cv-0, cv-1, …) out
@@ -593,45 +663,33 @@ function slotCanvas(i) {
   return (c && c.width > 10) ? c : null;
 }
 
-$('studioFrame').addEventListener('load', () => {
-  const d = studioDoc();
-  if (!d) return;
-  const style = d.createElement('style');
-  style.textContent = 'nav, footer, .nav-overlay { display:none !important; }' +
-                      'body { background:#FAF7F2 !important; }';
-  d.head.appendChild(style);
-  const fit = () => {
-    const h = d.body ? d.body.scrollHeight : 0;
-    if (h > 200) $('studioFrame').style.height = (h + 40) + 'px';
-  };
-  fit();
-  setInterval(fit, 800);
-});
+// Driven by the single timer above, and only while the Studio tab is on screen.
+function watchStudio(tick) {
+  const grid = studioGridId();
+  if (!grid) return;
 
-function watchStudio() {
-  setInterval(() => {
-    const grid = studioGridId();
-    if (!grid) return;
+  const pairs = GRID_PAIRS[grid] || [];
+  const filled = pairs.filter(p => slotCanvas(p[0]) && slotCanvas(p[1]));
 
-    const pairs = GRID_PAIRS[grid] || [];
-    const filled = pairs.filter(p => slotCanvas(p[0]) && slotCanvas(p[1]));
+  const noPairs = pairs.length === 0;
+  const ready = !noPairs && filled.length > 0;
 
-    const noPairs = pairs.length === 0;
-    const ready = !noPairs && filled.length > 0;
+  $('libWaiting').style.display = (!ready && !noPairs) ? 'block' : 'none';
+  $('libNoPairs').style.display = noPairs ? 'block' : 'none';
+  $('libForm').style.display = ready ? 'block' : 'none';
 
-    $('libWaiting').style.display = (!ready && !noPairs) ? 'block' : 'none';
-    $('libNoPairs').style.display = noPairs ? 'block' : 'none';
-    $('libForm').style.display = ready ? 'block' : 'none';
-
-    // Only re-render the angle rows when the shape actually changes, so the
-    // clinic's angle choices are not wiped out on every poll.
-    const shape = grid + ':' + filled.map(p => p.join('-')).join(',');
-    if (ready && shape !== studioGrid) {
-      studioGrid = shape;
-      renderPairs(filled);
-    }
-    if (!ready) studioGrid = null;
-  }, 700);
+  // Rebuild the angle rows only when the shape changes, so angle choices survive.
+  const shape = grid + ':' + filled.map(p => p.join('-')).join(',');
+  if (ready && shape !== studioGrid) {
+    studioGrid = shape;
+    renderPairs(filled);
+  } else if (ready && tick % 3 === 0) {
+    // Crops change as the clinic zooms and pans, but re-encoding canvases is
+    // expensive. Refresh thumbnails every third tick, not every one. Doing this
+    // on every poll is what made scrolling stutter.
+    refreshThumbs();
+  }
+  if (!ready) studioGrid = null;
 }
 
 function renderPairs(pairs) {
@@ -646,9 +704,8 @@ function renderPairs(pairs) {
     const thumbs = document.createElement('div');
     thumbs.className = 'pair-thumbs';
     [p[0], p[1]].forEach(idx => {
-      const c = slotCanvas(idx);
       const img = document.createElement('img');
-      if (c) img.src = c.toDataURL('image/jpeg', 0.6);
+      img.dataset.slot = idx;
       thumbs.appendChild(img);
     });
 
@@ -660,7 +717,7 @@ function renderPairs(pairs) {
       o.textContent = ANGLE_LABEL[a];
       sel.appendChild(o);
     });
-    // A 2x3 grid is three angles in Studio's own column order.
+    // A 2x3 grid is three angles, in Studio's own column order.
     sel.value = ANGLE_ORDER[i] || 'frontal';
 
     const wrap = document.createElement('div');
@@ -673,11 +730,41 @@ function renderPairs(pairs) {
     row.append(thumbs, wrap);
     host.appendChild(row);
   });
+  refreshThumbs();
+}
+
+// Pull the thumbnails from the live canvases rather than snapshotting once. A
+// snapshot taken before Studio has finished drawing produces an empty frame, and
+// the clinic then edits zoom and crop afterwards anyway. Flattened onto white so
+// transparency does not render as black.
+function refreshThumbs() {
+  document.querySelectorAll('.pair-thumbs img').forEach(img => {
+    const c = slotCanvas(Number(img.dataset.slot));
+    if (c) {
+      try { img.src = flatten(c).toDataURL('image/jpeg', 0.6); } catch (e) {}
+    }
+  });
+}
+
+// Studio's slot canvases can carry transparency (its background-removal modes
+// leave an alpha channel). Encoding a transparent canvas straight to JPEG turns
+// every transparent pixel BLACK, which is why the thumbnails came out black and
+// why a saved case could have had a black background. So flatten onto white
+// first, then encode. This applies to what is SAVED, not just what is previewed.
+function flatten(canvas) {
+  const out = document.createElement('canvas');
+  out.width = canvas.width;
+  out.height = canvas.height;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, out.width, out.height);
+  ctx.drawImage(canvas, 0, 0);
+  return out;
 }
 
 function canvasToFile(canvas, name) {
   return new Promise((resolve, reject) => {
-    canvas.toBlob(blob => {
+    flatten(canvas).toBlob(blob => {
       if (!blob) { reject(new Error('That photo could not be processed.')); return; }
       resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
     }, 'image/jpeg', 0.9);
@@ -688,8 +775,10 @@ $('saveBtn').addEventListener('click', async () => {
   const rows = Array.from(document.querySelectorAll('.pair'));
   if (!rows.length) { note('saveNote', 'Build a before and after in Studio first.', 'bad'); return; }
 
-  const version = $('libConsentVersion').value.trim();
-  if (!version) { note('saveNote', 'Record which consent form the patient signed.', 'bad'); return; }
+  if (!$('cAttest').checked) {
+    note('saveNote', 'Confirm you have the patient\u2019s consent for the uses you selected.', 'bad');
+    return;
+  }
 
   const angles = rows.map(r => r.querySelector('.pair-angle').value);
   if (new Set(angles).size !== angles.length) {
@@ -700,9 +789,15 @@ $('saveBtn').addEventListener('click', async () => {
   $('saveBtn').disabled = true;
   note('saveNote', 'Saving…');
 
-  const consents = [{ purpose: 'store', granted: true, version, method: 'clinic_studio' }];
-  if ($('cVisualize').checked) consents.push({ purpose: 'visualize', granted: true, version, method: 'clinic_studio' });
-  if ($('cGallery').checked) consents.push({ purpose: 'gallery_site', granted: true, version, method: 'clinic_studio' });
+  // The clinic obtains and holds the patient's consent. What SkinDay records is
+  // that THIS clinic user asserted it, at this moment, for these uses. The
+  // signed form stays in the clinic's own records; no copy is kept here.
+  const method = 'clinic_attestation';
+  const version = 'attested_in_portal';
+
+  const consents = [{ purpose: 'store', granted: true, version, method }];
+  if ($('cVisualize').checked) consents.push({ purpose: 'visualize', granted: true, version, method });
+  if ($('cGallery').checked) consents.push({ purpose: 'gallery_site', granted: true, version, method });
 
   let saved = 0;
   let failure = null;
@@ -716,8 +811,6 @@ $('saveBtn').addEventListener('click', async () => {
       const a = slotCanvas(Number(row.dataset.after));
       if (!b || !a) continue;
 
-      // Canvas output carries no EXIF: re-encoding strips GPS, camera
-      // identifiers and timestamps, and bakes orientation into the pixels.
       const [before, after] = await Promise.all([
         canvasToFile(b, 'before'),
         canvasToFile(a, 'after')
@@ -725,7 +818,6 @@ $('saveBtn').addEventListener('click', async () => {
 
       const fd = new FormData();
       fd.append('clinic_id', clinicId);
-      fd.append('data_classification', $('libClass').value);
       fd.append('treatment', $('libType').value);
       fd.append('subtype', $('libSubtype').value);
       fd.append('angle', row.querySelector('.pair-angle').value);
@@ -748,8 +840,8 @@ $('saveBtn').addEventListener('click', async () => {
 
   if (saved && !failure) {
     const bits = [saved === 1 ? 'One case saved' : saved + ' cases saved'];
-    if ($('cVisualize').checked) bits.push('approve them in Cases and they will teach your Visualize');
-    if ($('cGallery').checked) bits.push('publish from Cases to put them on your website');
+    if ($('cVisualize').checked) bits.push('approve it in Cases and it will teach your Visualize');
+    if ($('cGallery').checked) bits.push('publish from Cases when you want it on your website');
     note('saveNote', bits.join('. ') + '.', 'ok');
     loadCases();
   } else if (saved && failure) {
@@ -761,6 +853,50 @@ $('saveBtn').addEventListener('click', async () => {
 
   $('saveBtn').disabled = false;
 });
+
+/* ---- website gallery ----
+   The same public endpoint a clinic's own website calls. Showing it here is the
+   proof: what you publish is live, and this is exactly what visitors see. */
+
+function embedSnippet() {
+  return '<script src="https://skinday.com/gallery-embed.js" data-clinic-id="' +
+         clinicId + '"><\/script>';
+}
+
+$('copyEmbed').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(embedSnippet());
+    note('copyNote', 'Copied. Paste it anywhere on your website.', 'ok');
+  } catch (e) {
+    note('copyNote', 'Select the line above and copy it.', 'bad');
+  }
+});
+
+async function loadGallery() {
+  $('embedCode').textContent = embedSnippet();
+  const host = $('galleryPreview');
+  try {
+    const r = await fetch('/api/clinic-gallery?clinic_id=' + encodeURIComponent(clinicId));
+    const d = await r.json();
+    const cases = (d && d.cases) || [];
+    if (!cases.length) {
+      host.innerHTML = '<p class="note">Nothing published yet. In your cases below, ' +
+        'choose <strong>Show on website</strong> and it appears here within a minute.</p>';
+      return;
+    }
+    host.innerHTML = '<div class="gal">' + cases.map(c =>
+      '<div class="gal-case">' +
+        '<div class="gal-pair">' +
+          '<img loading="lazy" src="' + c.before_url + '" alt="Before">' +
+          '<img loading="lazy" src="' + c.after_url + '" alt="After">' +
+        '</div>' +
+        '<div class="gal-meta">' + [c.treatment, c.angle].filter(Boolean).join(' · ') + '</div>' +
+      '</div>'
+    ).join('') + '</div>';
+  } catch (e) {
+    host.innerHTML = '<p class="note bad">The gallery could not be loaded.</p>';
+  }
+}
 
 /* ---- cases ---- */
 
@@ -780,7 +916,7 @@ async function loadImage(caseId, which, el) {
 async function loadCases() {
   const [{ data: rows }, { data: cons }] = await Promise.all([
     sb.from('clinic_reference_cases')
-      .select('id,treatment,subtype,angle,phenotype,data_classification,visualize_approved,published_before_path,created_at')
+      .select('id,treatment,subtype,angle,phenotype,visualize_approved,published_before_path,created_at')
       .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
     sb.from('clinic_case_consents')
       .select('case_id,purpose').eq('clinic_id', clinicId)
@@ -834,9 +970,7 @@ function plate(r, perms) {
 
   body.innerHTML =
     '<div class="display plate-title">' + title + '</div>' +
-    '<div class="plate-meta">' + meta +
-      (r.data_classification !== 'patient' ? ' · ' + r.data_classification.replace('_', ' ') : '') +
-    '</div>' +
+    '<div class="plate-meta">' + meta + '</div>' +
     '<div class="ledger">' +
       mark('Stored', !!perms.store, false) +
       mark('Visualize', !!perms.visualize && r.visualize_approved, false) +
@@ -903,7 +1037,7 @@ async function run(btn, st, path, payload) {
       body: JSON.stringify(payload)
     });
     const body = await res.json().catch(() => ({}));
-    if (res.ok && body.ok) loadCases();
+    if (res.ok && body.ok) { loadCases(); loadGallery(); }
     else {
       st.className = 'note bad';
       st.textContent = body.error || 'That did not go through.';
