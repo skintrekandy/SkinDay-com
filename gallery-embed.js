@@ -31,6 +31,26 @@
  *   data-labels      "off" to hide the BEFORE / AFTER tags
  *   data-caption     "off" to hide the treatment line under each case
  *   data-target      id of an existing element to render into
+ *   data-style       "off" to hand the design over entirely (see below)
+ *
+ * WHO OWNS THE DESIGN.
+ * By default SkinDay does: shadow DOM, our layout, improved centrally, and the
+ * clinic's developer never touches it again.
+ *
+ * With data-style="off" the clinic owns it: no shadow root, no CSS from us, just
+ * semantic markup with stable class names for their own stylesheet to target.
+ * The content still updates itself; only the styling becomes theirs.
+ *
+ *   .skinday-gallery            the container
+ *   .skinday-gallery__grid      wraps all cases
+ *   .skinday-gallery__case      one case
+ *   .skinday-gallery__pair      the before/after pair
+ *   .skinday-gallery__figure    one photo (data-when="before" | "after")
+ *   .skinday-gallery__img       the image
+ *   .skinday-gallery__label     the BEFORE / AFTER caption
+ *   .skinday-gallery__meta      the treatment line
+ *   .skinday-gallery__note      the results-vary line
+ *   .skinday-gallery__empty     shown when nothing is published
  *
  * Only cases the patient consented to publish are ever returned by the API, so
  * this script cannot display an unconsented case even if it tried.
@@ -56,6 +76,9 @@
   var showLabels = script.getAttribute('data-labels') !== 'off';
   var showCaption = script.getAttribute('data-caption') !== 'off';
   var targetId = script.getAttribute('data-target');
+  // data-style="off" hands the design to the clinic: no shadow root, no CSS from
+  // us, just semantic markup their own stylesheet can reach and own.
+  var styled = script.getAttribute('data-style') !== 'off';
 
   var mount = document.createElement('div');
   mount.className = 'skinday-gallery';
@@ -63,8 +86,12 @@
   if (target) target.appendChild(mount);
   else script.parentNode.insertBefore(mount, script);
 
-  // Isolated tree. Nothing the host site does can style what is inside it.
-  var root = mount.attachShadow ? mount.attachShadow({ mode: 'open' }) : mount;
+  // Styled mode: an isolated tree, so nothing the host site does can reach in and
+  // nothing of ours leaks out. Unstyled mode: plain light DOM, because the point
+  // is that their CSS *can* reach it.
+  var root = (styled && mount.attachShadow)
+    ? mount.attachShadow({ mode: 'open' })
+    : mount;
 
   var css =
     ':host { display:block; }' +
@@ -93,34 +120,48 @@
     '.tag {' +
       'position:absolute; left:0; bottom:0;' +
       'background:rgba(20,17,15,.78); color:#fff;' +
-      'font:600 9px/1.5 system-ui,sans-serif;' +
+      'font-size:9px; font-weight:600; line-height:1.5;' +
       'letter-spacing:.14em; text-transform:uppercase;' +
       'padding:3px 7px;' +
     '}' +
     '.meta {' +
       'padding:10px 12px;' +
-      'font:500 12px/1.5 system-ui,sans-serif;' +
+      'font-size:12px; font-weight:500; line-height:1.5;' +
       'color:inherit; opacity:.75; text-transform:capitalize;' +
       'border-top:1px solid rgba(0,0,0,.06);' +
     '}' +
     '.meta em { font-style:normal; color:' + accent + '; }' +
     '.foot {' +
       'margin-top:14px;' +
-      'font:400 11.5px/1.6 system-ui,sans-serif;' +
+      'font-size:11.5px; line-height:1.6;' +
       'opacity:.55;' +
     '}' +
     '.empty {' +
       'padding:26px; text-align:center;' +
-      'font:400 13px/1.6 system-ui,sans-serif; opacity:.6;' +
+      'font-size:13px; line-height:1.6; opacity:.6;' +
       'border:1px dashed rgba(0,0,0,.14); border-radius:' + radius + 'px;' +
     '}';
 
-  var style = document.createElement('style');
-  style.textContent = css;
-  root.appendChild(style);
+  if (styled) {
+    var style = document.createElement('style');
+    style.textContent = css;
+    root.appendChild(style);
+  }
 
   var host = document.createElement('div');
   root.appendChild(host);
+
+  // Class names differ by mode: short and private inside the shadow root, but
+  // long, stable and documented in the light DOM, because in that mode they are
+  // a public contract with the clinic's developer.
+  var C = styled
+    ? { grid:'grid', case:'case', pair:'pair', figure:'frame', img:'', label:'tag',
+        meta:'meta', note:'foot', empty:'empty' }
+    : { grid:'skinday-gallery__grid', case:'skinday-gallery__case',
+        pair:'skinday-gallery__pair', figure:'skinday-gallery__figure',
+        img:'skinday-gallery__img', label:'skinday-gallery__label',
+        meta:'skinday-gallery__meta', note:'skinday-gallery__note',
+        empty:'skinday-gallery__empty' };
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -129,29 +170,34 @@
   }
 
   function figure(url, label) {
-    return '<figure class="frame">' +
-      '<img loading="lazy" src="' + esc(url) + '" alt="' + label + '">' +
-      (showLabels ? '<figcaption class="tag">' + label + '</figcaption>' : '') +
+    var when = label.toLowerCase();
+    return '<figure class="' + C.figure + '" data-when="' + when + '">' +
+      '<img class="' + C.img + '" loading="lazy" src="' + esc(url) + '" alt="' + label + '">' +
+      (showLabels ? '<figcaption class="' + C.label + '">' + label + '</figcaption>' : '') +
       '</figure>';
   }
 
   function render(cases) {
     if (!cases.length) {
-      host.innerHTML = '<div class="empty">No cases published yet.</div>';
+      host.innerHTML = '<div class="' + C.empty + '">No cases published yet.</div>';
       return;
     }
-    var html = '<div class="grid">';
+    var html = '<div class="' + C.grid + '">';
     cases.forEach(function (c) {
-      var line = [c.treatment, c.angle].filter(Boolean).join(' &middot; ');
+      var line = [c.treatment, c.angle].filter(Boolean).join(' \u00b7 ');
       html +=
-        '<div class="case">' +
-          '<div class="pair">' + figure(c.before_url, 'Before') + figure(c.after_url, 'After') + '</div>' +
-          (showCaption && line ? '<div class="meta">' + esc(c.treatment || '') +
-            (c.angle ? ' <em>&middot;</em> ' + esc(c.angle) : '') + '</div>' : '') +
+        '<div class="' + C.case + '" data-treatment="' + esc(c.treatment || '') +
+          '" data-angle="' + esc(c.angle || '') + '">' +
+          '<div class="' + C.pair + '">' +
+            figure(c.before_url, 'Before') + figure(c.after_url, 'After') +
+          '</div>' +
+          (showCaption && line
+            ? '<div class="' + C.meta + '">' + esc(line) + '</div>'
+            : '') +
         '</div>';
     });
     html += '</div>';
-    html += '<p class="foot">Individual results vary. Published with patient consent.</p>';
+    html += '<p class="' + C.note + '">Individual results vary. Published with patient consent.</p>';
     host.innerHTML = html;
   }
 
