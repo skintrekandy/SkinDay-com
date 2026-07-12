@@ -239,6 +239,37 @@
       .catch(function (e) { setAuth('Sign in error: ' + e.message, 'bad'); });
   });
 
+  // Sanitize in the browser: decoding to a canvas and re-encoding drops all
+  // EXIF (including GPS and camera identifiers) and bakes orientation into the
+  // pixels. The server verifies this and refuses anything still carrying EXIF.
+  function sanitize(file, name) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        var maxEdge = 2400;
+        var w = img.naturalWidth;
+        var h = img.naturalHeight;
+        var scale = Math.min(1, maxEdge / Math.max(w, h));
+        var c = document.createElement('canvas');
+        c.width = Math.round(w * scale);
+        c.height = Math.round(h * scale);
+        var ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (blob) {
+          if (!blob) { reject(new Error('could not encode ' + name)); return; }
+          resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.9);
+      };
+      img.onerror = function () {
+        URL.revokeObjectURL(url);
+        reject(new Error('could not read ' + name));
+      };
+      img.src = url;
+    });
+  }
+
   function chosenFiles() {
     var bf = $('beforeFile').files[0] || genBefore;
     var af = $('afterFile').files[0] || genAfter;
@@ -258,24 +289,31 @@
       { purpose: 'visualize', granted: true, version: 'skintrek-test-v1', method: 'harness_test' },
       { purpose: 'gallery_site', granted: true, version: 'skintrek-test-v1', method: 'harness_test' }
     ];
-    var fd = new FormData();
-    fd.append('clinic_id', $('clinicId').value.trim());
-    fd.append('data_classification', $('classification').value);
-    fd.append('treatment', $('treatment').value.trim());
-    fd.append('angle', $('angle').value.trim());
-    fd.append('phenotype', $('phenotype').value.trim());
-    fd.append('consents', JSON.stringify(consents));
-    fd.append('before', files.before);
-    fd.append('after', files.after);
 
     $('uploadBtn').disabled = true;
     $('readback').innerHTML = '';
-    setRun('Uploading...');
-    fetch(c.endpoint, {
-      method: 'POST',
-      headers: { Authorization: 'Bearer ' + session.access_token },
-      body: fd
-    }).then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); })
+    setRun('Sanitizing images (stripping EXIF)...');
+
+    Promise.all([sanitize(files.before, 'before'), sanitize(files.after, 'after')])
+      .then(function (clean) {
+        var fd = new FormData();
+        fd.append('clinic_id', $('clinicId').value.trim());
+        fd.append('data_classification', $('classification').value);
+        fd.append('treatment', $('treatment').value.trim());
+        fd.append('angle', $('angle').value.trim());
+        fd.append('phenotype', $('phenotype').value.trim());
+        fd.append('consents', JSON.stringify(consents));
+        fd.append('before', clean[0]);
+        fd.append('after', clean[1]);
+
+        setRun('Uploading...');
+        return fetch(c.endpoint, {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + session.access_token },
+          body: fd
+        });
+      })
+      .then(function (r) { return r.text().then(function (t) { return { status: r.status, text: t }; }); })
       .then(function (res) {
         var body;
         try { body = JSON.parse(res.text); } catch (e) { body = res.text; }
@@ -283,13 +321,13 @@
         if (res.status === 200 && body && body.ok) {
           setRun('Case stored: ' + body.case_id, 'ok');
           readBack(c, body.case_id);
-        } else if (res.status === 403) {
-          setRun('Rejected (403). If classification was patient, this is the gate working correctly.', 'ok');
+        } else if (res.status === 403 && $('classification').value === 'patient') {
+          setRun('Rejected (403). Classification was patient: this is the gate working correctly.', 'ok');
         } else {
           setRun('Upload did not succeed. See response above.', 'bad');
         }
       })
-      .catch(function (e) { show('Error: ' + e.message); setRun('Network error.', 'bad'); })
+      .catch(function (e) { show('Error: ' + e.message); setRun('Error: ' + e.message, 'bad'); })
       .then(function () { $('uploadBtn').disabled = false; });
   });
 

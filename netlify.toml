@@ -5,12 +5,6 @@
   functions = "netlify/functions"
   publish   = "."
 
-# sharp (used by clinic-case-upload) ships a native binary; esbuild must leave
-# it external so it deploys intact.
-[functions]
-  node_bundler = "esbuild"
-  external_node_modules = ["sharp"]
-
 # ── STAGING / BRANCH DEPLOYS: BLOCK SEARCH INDEXING ──────────────
 # Applies ONLY to branch deploys (staging--skindayglobal.netlify.app
 # and any other non-production branch). Production (skinday.com) is
