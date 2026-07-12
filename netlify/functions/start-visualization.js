@@ -133,8 +133,45 @@ const FIELD_KEYS = [
   'timeline', 'note', 'prompt', 'isStrongPass',
   'angle', 'sex', 'view', 'phenotype', 'sculptraPhenotype', 'patientAge', 'laserType',
   'sourceJobId',
-  'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType'  // M12.2 scenario; M14 baselineType
+  'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType',  // M12.2 scenario; M14 baselineType
+  'clinicId'  // M11: explicit clinic context (clinic portal only; consumer route omits it)
 ];
+
+// M11: verify an explicit clinic context.
+//
+// Clinic grounding is never inferred from who the user is. The clinic portal's
+// Visualize sends clinicId; the consumer Visualize on skinday.com does not, and
+// therefore gets no clinic's private patient imagery, even when the signed-in
+// user happens to own a clinic.
+//
+// A clinicId in a request is a CLAIM. It is verified here so a bad claim fails
+// loudly at the door, rather than silently falling through to a gold reference
+// and leaving a clinic user believing their own cases grounded the result. The
+// background worker verifies it again independently before touching any case.
+async function verifyClinicMembership(userId, clinicId) {
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!SUPABASE_URL || !SERVICE_KEY || !userId || !clinicId) return false;
+  try {
+    const qs = new URLSearchParams({
+      select:     'clinic_id',
+      user_id:    'eq.' + userId,
+      clinic_id:  'eq.' + clinicId,
+      status:     'eq.active',
+      revoked_at: 'is.null',
+      limit:      '1'
+    });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/clinic_memberships?' + qs.toString(), {
+      headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY }
+    });
+    if (!res.ok) return false;
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length > 0;
+  } catch (e) {
+    console.warn('[M11] verifyClinicMembership error:', (e && e.message) || e);
+    return false;
+  }
+}
 
 exports.handler = async (event) => {
   connectLambda(event); // wire Blobs context into the classic handler signature
@@ -166,6 +203,23 @@ exports.handler = async (event) => {
 
     const params = {};
     FIELD_KEYS.forEach(k => { if (fields[k] != null) params[k] = fields[k]; });
+
+    // M11: if this request claims a clinic context, prove it before proceeding.
+    // A beta-key session has no Supabase user, so it cannot claim a clinic.
+    if (params.clinicId) {
+      const ok = user ? await verifyClinicMembership(user.id, String(params.clinicId)) : false;
+      if (!ok) {
+        return {
+          statusCode: 403,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            error: 'You are not an active member of that clinic.',
+            code: 'CLINIC_FORBIDDEN'
+          })
+        };
+      }
+      console.log('[M11] clinic context accepted: clinic ' + params.clinicId);
+    }
 
     const store = getStore('visualize-jobs');
 
