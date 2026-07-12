@@ -24,11 +24,10 @@
 //   SUPABASE_URL
 //   SUPABASE_ANON_KEY
 //   SUPABASE_SERVICE_ROLE_KEY
-//   CLINIC_CASE_REAL_PATIENT_UPLOADS_ENABLED   ("true" to allow patient uploads)
 //
 // Expects multipart/form-data with:
-//   fields: clinic_id, data_classification, consents (JSON string),
-//           treatment?, angle?, phenotype?, source_job_id?
+//   fields: clinic_id, consents (JSON string),
+//           treatment?, subtype?, angle?, phenotype?, source_job_id?
 //   files:  before, after   (browser-sanitized JPEG)
 
 const crypto = require('node:crypto');
@@ -37,7 +36,6 @@ const busboy = require('busboy');
 const PRIVATE_BUCKET = 'clinic-cases-private';
 const MAX_BYTES = 8 * 1024 * 1024;
 const MIN_BYTES = 1024;
-const CLASSIFICATIONS = ['synthetic', 'staff_test', 'paid_model', 'patient'];
 
 function json(statusCode, body) {
   return {
@@ -190,8 +188,6 @@ exports.handler = async (event) => {
     const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
     const ANON_KEY = process.env.SUPABASE_ANON_KEY;
     const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const REAL_PATIENT_ALLOWED =
-      process.env.CLINIC_CASE_REAL_PATIENT_UPLOADS_ENABLED === 'true';
 
     if (!SUPABASE_URL || !ANON_KEY || !SERVICE_KEY) {
       return json(500, { ok: false, error: 'server not configured' });
@@ -217,7 +213,6 @@ exports.handler = async (event) => {
 
     const { fields, files } = parsed;
     const clinicId = (fields.clinic_id || '').trim();
-    const classification = (fields.data_classification || '').trim();
     const treatment = (fields.treatment || '').trim() || null;
     const subtype = (fields.subtype || '').trim() || null;
     const angle = (fields.angle || '').trim() || null;
@@ -226,12 +221,6 @@ exports.handler = async (event) => {
 
     if (!clinicId) {
       return json(400, { ok: false, error: 'clinic_id is required' });
-    }
-    if (!CLASSIFICATIONS.includes(classification)) {
-      return json(400, { ok: false, error: 'invalid data_classification' });
-    }
-    if (classification === 'patient' && !REAL_PATIENT_ALLOWED) {
-      return json(403, { ok: false, error: 'real patient uploads are disabled' });
     }
     if (!files.before || !files.after) {
       return json(400, { ok: false, error: 'both before and after files are required' });
@@ -297,11 +286,9 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         p_case_id: caseId,
         p_clinic_id: clinicId,
-        p_data_classification: classification,
         p_before_path: beforePath,
         p_after_path: afterPath,
         p_consents: consents,
-        p_real_patient_allowed: REAL_PATIENT_ALLOWED,
         p_treatment: treatment,
         p_subtype: subtype,
         p_angle: angle,
@@ -317,7 +304,7 @@ exports.handler = async (event) => {
       return json(502, { ok: false, error: `case not recorded: ${detail}` });
     }
 
-    return json(200, { ok: true, case_id: caseId, data_classification: classification });
+    return json(200, { ok: true, case_id: caseId });
   } catch (err) {
     // Never leak a bare platform 500: return the reason so it is debuggable.
     console.error('clinic-case-upload failed', err);
