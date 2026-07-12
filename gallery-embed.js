@@ -184,7 +184,11 @@
     }
     var html = '<div class="' + C.grid + '">';
     cases.forEach(function (c) {
-      var line = [c.treatment, c.angle].filter(Boolean).join(' \u00b7 ');
+      // A before/after with no dates is a claim. With them it is evidence.
+      var span = (c.before_date && c.after_date)
+        ? c.before_date + ' \u2192 ' + c.after_date
+        : (c.before_date || c.after_date || '');
+      var line = [c.treatment, span].filter(Boolean).join(' \u00b7 ');
       html +=
         '<div class="' + C.case + '" data-treatment="' + esc(c.treatment || '') +
           '" data-angle="' + esc(c.angle || '') + '">' +

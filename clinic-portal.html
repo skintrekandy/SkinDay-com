@@ -354,9 +354,6 @@
      The portal attaches the clinic context to the generation request on its way
      out, and reports back whether the clinic's own case shaped the result. -->
 <div class="stage" id="panel-visualize" style="display:none;">
-  <div class="wrap" style="padding-bottom:0;">
-    <div class="grounded" id="visGrounding" style="display:none;"></div>
-  </div>
   <iframe class="embed" id="visFrame" title="Visualize"></iframe>
 </div>
 
@@ -535,118 +532,21 @@ document.querySelectorAll('.tab').forEach(t => {
 });
 
 /* ---- embedded Visualize ----
-   visualize.html is the real page, opened with ?clinic=. IT attaches the clinic
-   context to the generation itself, so grounding does not depend on anything the
-   portal does. A future refactor of Visualize cannot silently un-ground clinic
-   simulations.
+   visualize.html is the real page, opened with ?clinic=. It attaches the clinic
+   context to the generation itself, so grounding needs nothing from the portal.
 
-   The wrapper below is only for the banner: it reads the jobId as the request
-   goes past so the portal can poll the job and say plainly whether one of the
-   clinic's own cases shaped the result. If this ever stops working, the banner
-   simply does not appear. Grounding still happens. A missing banner is visible;
-   a silently ungrounded simulation would not be. */
+   There is deliberately NO grounding banner here. Visualize is used with the
+   patient in the room, and a line reading "no case of yours matched, so this is
+   ungrounded" is the tool talking to the clinic about its own internals, in front
+   of the person being treated. Wrong audience, wrong moment.
 
-const groundNote = (msg, cls) => {
-  const el = $('visGrounding');
-  el.style.display = 'block';
-  el.className = 'grounded ' + (cls || '');
-  el.textContent = msg;
-};
-
-$('visFrame').addEventListener('load', () => {
-  const w = $('visFrame').contentWindow;
-  if (!w || !clinicId) return;
-
-  const realFetch = w.fetch;
-
-  w.fetch = function (input, init) {
-    try {
-      const url = typeof input === 'string' ? input : (input && input.url) || '';
-      const body = init && init.body;
-      if (url.indexOf('start-visualization') !== -1 && body instanceof w.FormData) {
-        const jobId = body.get('jobId');
-        if (jobId) {
-          groundNote('Generating. Checking which of your cases shapes this result…', 'wait');
-          watchJob(String(jobId));
-        }
-      }
-    } catch (e) { /* never break a generation over a banner */ }
-
-    return realFetch.call(w, input, init);
-  };
-});
-
-async function watchJob(jobId, tries) {
-  tries = tries || 0;
-  if (tries > 120) return;
-  await new Promise(r => setTimeout(r, 2000));
-  try {
-    const t = await token();
-    const r = await fetch('/.netlify/functions/get-visualization?jobId=' + encodeURIComponent(jobId), {
-      headers: { Authorization: 'Bearer ' + t }
-    });
-    const d = await r.json();
-    if (d.state === 'done') {
-      if (d.referenceMode === 'clinic_case') {
-        groundNote('Shaped by one of your approved cases.', '');
-      } else {
-        groundNote('No case of yours matched this treatment, product and angle, so this result is ungrounded. Save a matching case in Studio and approve it in Cases.', 'off');
-      }
-      return;
-    }
-    if (d.state === 'error') { $('visGrounding').style.display = 'none'; return; }
-    return watchJob(jobId, tries + 1);
-  } catch (e) {
-    $('visGrounding').style.display = 'none';
-  }
-}
-
-/* Both embedded pages get the same treatment: their own nav and footer hidden,
-   height fitted to content so there is no nested scrollbar. */
-function fitFrame(frameId) {
-  const f = $(frameId);
-  let d;
-  try { d = f.contentDocument; } catch (e) { return; }
-  if (!d || !d.body) return;
-  const h = d.body.scrollHeight;
-  if (h > 200) f.style.height = (h + 40) + 'px';
-}
-
-function dressFrame(frameId) {
-  const f = $(frameId);
-  let d;
-  try { d = f.contentDocument; } catch (e) { return; }
-  if (!d || !d.head) return;
-  const style = d.createElement('style');
-  style.textContent =
-    // The page's own chrome. The portal already provides a header and tabs.
-    'nav, footer, .nav-overlay { display:none !important; }' +
-    // The signed-in strip (email, credits, sign out) duplicates the portal
-    // header and looked like a second account bar stacked on the first.
-    '.acct-bar { display:none !important; }' +
-    // .page carries 88px of top padding to clear the fixed nav. With the nav
-    // hidden that padding became an empty band under the tabs.
-    '.page { padding-top:0 !important; }' +
-    'body { background:#FAF7F2 !important; }';
-  d.head.appendChild(style);
-  fitFrame(frameId);
-}
-
-$('studioFrame').addEventListener('load', () => dressFrame('studioFrame'));
-$('visFrame').addEventListener('load', () => dressFrame('visFrame'));
-
-// One timer, and it only does work for the panel actually on screen. Polling both
-// frames and re-encoding canvases every 700ms was what made scrolling stutter.
-let tick = 0;
-setInterval(() => {
-  tick++;
-  if (activePanel === 'studio') {
-    fitFrame('studioFrame');
-    watchStudio(tick);
-  } else if (activePanel === 'visualize') {
-    fitFrame('visFrame');
-  }
-}, 900);
+   The failure it guarded against is real: if no case matches the treatment,
+   product and angle, the simulation quietly comes back generic and the clinic
+   would not know they were not getting what they pay for. But that belongs in the
+   portal, between patients, not on a consultation screen. referenceMode is still
+   written to the job status and to generation_logs, so the signal is kept and can
+   surface in Cases later ("your cases shaped 7 of your last 10 simulations").
+*/
 
 /* ---- embedded Studio ----
    studio.html loads as-is and is never edited. The portal hides its nav and
@@ -688,6 +588,15 @@ function studioDoc() {
 // is allowed, and it means Studio needs no modification to expose anything.
 function studioGridId() {
   try { return $('studioFrame').contentWindow.eval('S.grid'); } catch (e) { return null; }
+}
+
+// Studio composes the date from its month/day/year dropdowns and stores it on
+// the slot. Read it the same way the grid is read.
+function slotDate(i) {
+  try {
+    const v = $('studioFrame').contentWindow.eval('S.slots[' + i + '] && S.slots[' + i + '].date');
+    return v || '';
+  } catch (e) { return ''; }
 }
 
 function slotCanvas(i) {
@@ -849,11 +758,16 @@ $('saveBtn').addEventListener('click', async () => {
         canvasToFile(a, 'after')
       ]);
 
+      const beforeDate = slotDate(Number(row.dataset.before));
+      const afterDate = slotDate(Number(row.dataset.after));
+
       const fd = new FormData();
       fd.append('clinic_id', clinicId);
       fd.append('treatment', $('libType').value);
       fd.append('subtype', $('libSubtype').value);
       fd.append('angle', row.querySelector('.pair-angle').value);
+      if (beforeDate) fd.append('before_date', beforeDate);
+      if (afterDate) fd.append('after_date', afterDate);
       fd.append('consents', JSON.stringify(consents));
       fd.append('before', before);
       fd.append('after', after);
@@ -928,7 +842,10 @@ async function loadGallery() {
           '<img loading="lazy" src="' + c.before_url + '" alt="Before">' +
           '<img loading="lazy" src="' + c.after_url + '" alt="After">' +
         '</div>' +
-        '<div class="gal-meta">' + [c.treatment, c.angle].filter(Boolean).join(' · ') + '</div>' +
+        '<div class="gal-meta">' + [
+          c.treatment,
+          (c.before_date && c.after_date) ? c.before_date + ' \u2192 ' + c.after_date : ''
+        ].filter(Boolean).join(' · ') + '</div>' +
       '</div>'
     ).join('') + '</div>';
   } catch (e) {
@@ -954,7 +871,7 @@ async function loadImage(caseId, which, el) {
 async function loadCases() {
   const [{ data: rows }, { data: cons }] = await Promise.all([
     sb.from('clinic_reference_cases')
-      .select('id,treatment,subtype,angle,phenotype,visualize_approved,published_before_path,created_at')
+      .select('id,treatment,subtype,angle,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
       .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
     sb.from('clinic_case_consents')
       .select('case_id,purpose').eq('clinic_id', clinicId)
@@ -1003,8 +920,10 @@ function plate(r, perms) {
   const known = SUBTYPES[r.treatment];
   const subLabel = known && (known.options.find(o => o[0] === r.subtype) || [])[1];
   const title = subLabel || r.treatment || 'Case';
-  const meta = [r.angle, r.phenotype, new Date(r.created_at).toLocaleDateString('en-CA')]
-    .filter(Boolean).join(' · ');
+  const span = (r.before_date && r.after_date)
+    ? r.before_date + ' \u2192 ' + r.after_date
+    : (r.before_date || r.after_date || '');
+  const meta = [r.angle, span, r.phenotype].filter(Boolean).join(' · ');
 
   body.innerHTML =
     '<div class="display plate-title">' + title + '</div>' +
