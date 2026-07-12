@@ -14,18 +14,27 @@
 // the treated region, no matter what the prompt does. No mask = today's exact
 // full-image behavior (backward compatible).
 //
-// M11 UPDATE: the clinic reference branch was rewritten against the M11 schema.
-//   The old code queried clinic_reference_cases directly for columns that no
-//   longer exist (treatment_area, approved, sex, sort_order) in a bucket that no
-//   longer exists (reference-cases), and used billing.userId as the clinic id.
+// M11 UPDATE: the reference system was rewritten.
 //
-//   TWO SEPARATE ENTRY POINTS, never inferred from each other:
-//     Consumer Visualize (skinday.com) sends NO clinic context. Pay-as-you-go,
-//       the user's own credits, gold reference only. This holds even when the
-//       logged-in user owns a clinic.
-//     Clinic Visualize (clinic portal) sends clinicId EXPLICITLY in the job
-//       fields. The worker verifies that claim against clinic_memberships, then
-//       grounds in that clinic's own approved, consented cases.
+//   The old scope rule fired references only for "Enhanced" (isStrongPass)
+//   Sculptra. Enhanced no longer exists, so that gate never opened: the clinic
+//   library, the gold refs, and every reference path were unreachable dead code.
+//   The old lookup also queried columns that no longer exist (treatment_area,
+//   approved, sex, sort_order) in a bucket that no longer exists
+//   (reference-cases), and used billing.userId as the clinic id.
+//
+//   The gate is now CLINIC CONTEXT, which is what actually separates the two
+//   products:
+//     Consumer Visualize (skinday.com) sends NO clinic context. No reference is
+//       used. A pay-as-you-go simulation is never grounded in any clinic's
+//       private patient imagery, even when the signed-in user owns a clinic.
+//     Clinic Visualize (clinic portal) sends clinicId EXPLICITLY. The worker
+//       verifies that claim against clinic_memberships, then grounds in that
+//       clinic's own approved, consented cases.
+//
+//   Gold references are REMOVED. A clinic with no approved cases gets no
+//   reference rather than a stranger's outcome standing in for their house
+//   style. VISUALIZE_GOLD_REF_FRONTAL / _R45 / _L45 are now unused.
 //
 //   References come through get_clinic_visualize_references, which returns a
 //   case ONLY if it is visualize_approved and carries active 'store' and
@@ -35,33 +44,25 @@
 //   patient photo is ever minted.
 //
 //   REQUIRED WIRING: the clinic Visualize entry point must include clinicId in
-//   the job fields. Without it, this branch never fires and every generation is
-//   consumer-mode. The initiating function must pass it through to the job blob.
+//   the job fields. Without it, every generation is consumer-mode.
 //
-// M12 CLINIC LIBRARY: reference-guided generation.
-//   Reference image lookup fires for every biostim (Sculptra) generation.
-//   Fallback chain:
-//     1. Clinic's own approved reference case matching angle (and phenotype if
-//        tagged). Best match = same phenotype first, then match-any.
-//     2. Global gold reference (VISUALIZE_GOLD_REF_FRONTAL / _R45 / _L45 env
-//        vars), each pointing to a public URL of a clean before/after pair.
-//        When a gold ref env var is set, its after-image URL is fetched and
-//        passed as image[1] alongside the patient photo (image[0]).
-//     3. Single-image text-only (current behavior, unchanged).
-//   The reference is passed as the SECOND element of the image array. The model
-//   uses it for visual grammar (volume character, lighting, skin character) only;
-//   it does NOT copy the reference face, because image[0] is the patient photo
-//   and the prompt explicitly locks identity. This is the foundation for Enhanced.
+// CLINIC LIBRARY: reference-guided generation (Sculptra only).
+//   Reference lookup fires only for a verified clinic context. There are exactly
+//   two outcomes:
+//     1. The clinic's own approved, consented case matching treatment and angle
+//        (phenotype match preferred). Passed as image[1] alongside the patient
+//        photo (image[0]).
+//     2. No reference. Used for every consumer generation, and for a clinic that
+//        has no usable case. There is no third-party fallback.
+//   The model uses the reference for visual grammar (volume character, lighting,
+//   skin character) only; it does NOT copy the reference face, because image[0]
+//   is the patient photo and the prompt explicitly locks identity.
 //   referenceMode in the generation log records which branch fired:
-//   'clinic_case', 'gold_ref', or null (single-image fallback).
+//   'clinic_case' or null.
 //
 // Required env: OPENAI_API_KEY, BETA_ACCESS_PASSWORD
-// Optional env for clinic library:
+// Required for the clinic library:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  (already present for billing)
-// Optional env for global gold refs:
-//   VISUALIZE_GOLD_REF_FRONTAL  (public URL of after-image)
-//   VISUALIZE_GOLD_REF_R45      (public URL of after-image)
-//   VISUALIZE_GOLD_REF_L45      (public URL of after-image)
 // Required packages: openai, @netlify/blobs   (npm i openai @netlify/blobs)
 
 const OpenAI = require('openai');
@@ -284,89 +285,76 @@ async function fetchPrivateCaseFile(path, filename) {
   }
 }
 
-// M12: fetch an image from a URL and return an OpenAI.toFile object.
-// Used for both clinic reference cases (signed Storage URLs) and gold ref URLs.
-// Returns null on any failure so the caller can fall through to single-image mode.
-async function fetchReferenceFile(url, filename) {
-  try {
-    const res = await fetch(url);
-    if (!res.ok) { console.warn('[M12] reference image fetch failed: HTTP ' + res.status + ' ' + url.slice(0, 80)); return null; }
-    const buf = Buffer.from(await res.arrayBuffer());
-    const ct  = res.headers.get('content-type') || 'image/jpeg';
-    return await OpenAI.toFile(buf, filename || 'reference.jpg', { type: ct });
-  } catch (e) {
-    console.warn('[M12] fetchReferenceFile error:', (e && e.message) || e);
-    return null;
-  }
-}
 
-// M12: resolve the reference image file for a generation.
+
+// M11: resolve the reference image file for a generation.
 // Returns { refFile, referenceMode } or { refFile: null, referenceMode: null }.
-// referenceMode values: 'clinic_case' | 'gold_ref' | null
+// referenceMode values: 'clinic_case' | null
 //
-// CRITICAL SCOPE RULE: reference lookup fires ONLY for Enhanced (isStrongPass === 'true')
-// Sculptra generations. Standard pass is never reference-guided -- this preserves the
-// Standard pass as a known-good, reproducible baseline and ensures the reference
-// mechanism is introduced only when its output has been validated.
-// Gold refs (env var fallback) are also Enhanced-only for the same reason.
+// SCOPE RULE, rewritten. The old rule fired references only for "Enhanced"
+// (isStrongPass) Sculptra. Enhanced no longer exists, which meant this entire
+// branch was unreachable: no clinic references, no gold references, nothing.
+//
+// The gate is now CLINIC CONTEXT, which is the thing that actually separates the
+// two products:
+//
+//   No clinic context (consumer Visualize on skinday.com)
+//     -> no reference. Identical to current behaviour, since the old gate never
+//        opened anyway. A pay-as-you-go user's simulation is never grounded in
+//        any clinic's private patient imagery.
+//
+//   Verified clinic context (clinic portal Visualize)
+//     -> grounded in THAT clinic's own approved, consented cases.
+//
+// The gold-reference fallback is deliberately gone. If a clinic has no approved
+// cases yet, they get no reference rather than a stranger's face silently
+// standing in for their house style. Substituting someone else's outcome and
+// calling it the clinic's own is exactly the kind of invisible behaviour this
+// architecture exists to prevent. VISUALIZE_GOLD_REF_FRONTAL / _R45 / _L45 are
+// now unused and can be removed from the environment.
+//
+// Still Sculptra-only, because REFERENCE_IDENTITY_LOCK is written for Sculptra.
+// Extending references to other treatments needs prompt work first, not just a
+// wider filter.
 async function resolveReference(f, billing) {
-  const isSculptra  = f.type === 'biostim' && (f.product === 'sculptra' || !f.product);
-  const isEnhanced  = f.isStrongPass === 'true' || f.isStrongPass === true;
-  console.log('[M12] resolveReference: isSculptra=' + isSculptra + ' isEnhanced=' + isEnhanced + ' isStrongPass=' + JSON.stringify(f.isStrongPass));
-  if (!isSculptra || !isEnhanced) return { refFile: null, referenceMode: null };
+  const isSculptra = f.type === 'biostim' && (f.product === 'sculptra' || !f.product);
+  if (!isSculptra) return { refFile: null, referenceMode: null };
 
-  const angle     = canonicalAngle(f.angle || f.view);
-  const phenotype = f.phenotype || f.sculptraPhenotype || null;
-  const treatment = 'sculptra'; // Enhanced Sculptra is always the sculptra treatment
-
-  // --- Branch 1: clinic's own library ---
-  // Fires ONLY when the request carried an explicit clinic context, which the
-  // clinic portal's Visualize sends and the consumer Visualize does not. The
-  // claim is then verified against clinic_memberships before any of that
-  // clinic's private patient imagery is touched.
   const userId            = billing ? billing.userId : null;
   const requestedClinicId = f.clinicId || f.clinic_id || null;
 
+  // Consumer route.
   if (!requestedClinicId) {
-    console.log('[M11] no clinic context on this request: consumer route, gold ref only');
+    console.log('[M11] no clinic context: consumer route, no reference');
+    return { refFile: null, referenceMode: null };
   }
 
-  const clinicId = requestedClinicId
-    ? await verifyClinicContext(userId, String(requestedClinicId))
-    : null;
-
-  if (clinicId) {
-    const caseRow = await fetchClinicReferenceCase(clinicId, treatment, angle, phenotype);
-    if (caseRow) {
-      const refFile = await fetchPrivateCaseFile(caseRow.afterPath, 'clinic_ref_after.jpg');
-      if (refFile) {
-        console.log('[M11] reference mode: clinic_case (clinic=' + clinicId + ' angle=' + angle + ')');
-        return { refFile, referenceMode: 'clinic_case' };
-      }
-    }
+  // A clinic id in a job is a CLAIM. Verify membership before touching any of
+  // that clinic's private patient imagery. start-visualization already checked
+  // this; the check is repeated here because the worker must not depend on an
+  // upstream caller having done it.
+  const clinicId = await verifyClinicContext(userId, String(requestedClinicId));
+  if (!clinicId) {
+    console.warn('[M11] clinic context not verified: falling back to no reference');
+    return { refFile: null, referenceMode: null };
   }
 
-  // --- Branch 2: global gold refs (Enhanced fallback only) ---
-  // Gold refs are useful for testing Enhanced before a clinic has uploaded cases.
-  // They are NOT used for Standard -- keeping Standard clean is the standing rule.
-  const GOLD_REF_URLS = {
-    frontal:       process.env.VISUALIZE_GOLD_REF_FRONTAL || '',
-    oblique_right: process.env.VISUALIZE_GOLD_REF_R45     || '',
-    oblique_left:  process.env.VISUALIZE_GOLD_REF_L45     || ''
-  };
-  const goldUrl = GOLD_REF_URLS[angle] || '';
-  console.log('[M12] gold ref URL for angle=' + angle + ': ' + (goldUrl ? goldUrl.slice(0, 60) + '...' : 'NOT SET'));
-  if (goldUrl) {
-    const refFile = await fetchReferenceFile(goldUrl, 'gold_ref.jpg');
+  const angle     = canonicalAngle(f.angle || f.view);
+  const phenotype = f.phenotype || f.sculptraPhenotype || null;
+  const treatment = 'sculptra';
+
+  const caseRow = await fetchClinicReferenceCase(clinicId, treatment, angle, phenotype);
+  if (caseRow) {
+    const refFile = await fetchPrivateCaseFile(caseRow.afterPath, 'clinic_ref_after.jpg');
     if (refFile) {
-      console.log('[M12] reference mode: gold_ref (angle=' + angle + ')');
-      return { refFile, referenceMode: 'gold_ref' };
+      console.log('[M11] reference mode: clinic_case (clinic=' + clinicId + ' angle=' + angle + ')');
+      return { refFile, referenceMode: 'clinic_case' };
     }
   }
 
-  // --- Branch 3: Enhanced without a reference --- single-image fallback.
-  // Still runs Enhanced prompt (ENHANCED_MAGNITUDE) but without a reference image.
-  console.log('[M12] reference mode: null (Enhanced single-image fallback)');
+  // Clinic has no approved, consented case matching this generation. No
+  // reference is better than someone else's reference.
+  console.log('[M11] clinic ' + clinicId + ' has no usable reference: no reference used');
   return { refFile: null, referenceMode: null };
 }
 
@@ -1021,7 +1009,7 @@ exports.handler = async (event) => {
         imageQuality:   editParams.input_fidelity || 'high',
         openAIUsage:    result.usage || null,
         creditsCharged: billing ? billing.cost : null,
-        referenceMode,  // M12: 'clinic_case' | 'gold_ref' | null
+        referenceMode,  // 'clinic_case' | null
         status:         'success',
       });
     } catch (logErr) { console.error('[logGeneration] success log failed:', logErr.message); }
