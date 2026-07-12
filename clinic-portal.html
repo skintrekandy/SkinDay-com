@@ -548,6 +548,62 @@ document.querySelectorAll('.tab').forEach(t => {
    surface in Cases later ("your cases shaped 7 of your last 10 simulations").
 */
 
+/* ---- embedded pages ----
+   Studio and Visualize are the real pages, loaded as-is. The portal hides their
+   own chrome, sizes them to content, and otherwise leaves them alone.
+
+   There is deliberately NO grounding banner on the Visualize tab. Visualize is
+   used with the patient in the room, and a line reading "no case of yours matched,
+   so this is ungrounded" is the tool talking to the clinic about its own internals
+   in front of the person being treated. referenceMode is still recorded on the job
+   and in generation_logs, so that signal can surface in Cases later, between
+   patients, where it belongs.
+*/
+
+function fitFrame(frameId) {
+  const f = $(frameId);
+  let d;
+  try { d = f.contentDocument; } catch (e) { return; }
+  if (!d || !d.body) return;
+  const h = d.body.scrollHeight;
+  if (h > 200) f.style.height = (h + 40) + 'px';
+}
+
+function dressFrame(frameId) {
+  const f = $(frameId);
+  let d;
+  try { d = f.contentDocument; } catch (e) { return; }
+  if (!d || !d.head) return;
+  const style = d.createElement('style');
+  style.textContent =
+    // The page's own chrome. The portal already supplies a header and tabs.
+    'nav, footer, .nav-overlay { display:none !important; }' +
+    // The signed-in strip (email, credits, sign out) duplicated the portal header.
+    '.acct-bar { display:none !important; }' +
+    // .page carries 88px of top padding to clear the fixed nav. With the nav
+    // hidden that padding becomes an empty band under the tabs.
+    '.page { padding-top:0 !important; }' +
+    'body { background:#FAF7F2 !important; }';
+  d.head.appendChild(style);
+  fitFrame(frameId);
+}
+
+$('studioFrame').addEventListener('load', () => dressFrame('studioFrame'));
+$('visFrame').addEventListener('load', () => dressFrame('visFrame'));
+
+// One timer, and it only does work for the panel actually on screen. Polling both
+// frames and re-encoding canvases constantly is what made scrolling stutter.
+let tick = 0;
+setInterval(() => {
+  tick++;
+  if (activePanel === 'studio') {
+    fitFrame('studioFrame');
+    watchStudio(tick);
+  } else if (activePanel === 'visualize') {
+    fitFrame('visFrame');
+  }
+}, 900);
+
 /* ---- embedded Studio ----
    studio.html loads as-is and is never edited. The portal hides its nav and
    footer, sizes it to content, and reads the slot canvases (cv-0, cv-1, …) out
