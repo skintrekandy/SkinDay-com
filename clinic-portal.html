@@ -293,7 +293,7 @@
         </div>
 
         <div id="libNoPairs" class="waiting" style="display:none;">
-          This grid has no before and after to pair. Choose the 2-photo, 2×2, or 2×3 grid to save a case.
+          This layout cannot be saved as a case. Every other layout can.
         </div>
 
         <div id="libForm" style="display:none;">
@@ -626,9 +626,16 @@ setInterval(() => {
 const GRID_PAIRS = {
   '2h':  [[0, 1]],
   '2v':  [[0, 1]],
+  // 3 timepoints: before, then two follow-ups. This saves BOTH intervals as
+  // separate cases (before vs the first follow-up, before vs the last). They share
+  // a before photo and an angle but differ on interval, and the interval is a
+  // matching axis, so the library can tell them apart. This is the longitudinal
+  // data nobody else has: it is what will let a 3-month simulation look different
+  // from a 12-month one, grounded in this clinic's own outcomes rather than in a
+  // sentence in a prompt.
+  '3h':  [[0, 1], [0, 2]],
   '2x2': [[0, 2], [1, 3]],
-  '2x3': [[0, 3], [1, 4], [2, 5]],
-  '3h':  []
+  '2x3': [[0, 3], [1, 4], [2, 5]]
 };
 const ANGLE_ORDER = ['frontal', 'oblique_right', 'oblique_left'];
 const ANGLE_LABEL = { frontal: 'Frontal', oblique_right: 'Oblique right', oblique_left: 'Oblique left' };
@@ -653,6 +660,26 @@ function slotDate(i) {
     const v = $('studioFrame').contentWindow.eval('S.slots[' + i + '] && S.slots[' + i + '].date');
     return v || '';
   } catch (e) { return ''; }
+}
+
+function slotDateParts(i) {
+  try {
+    const w = $('studioFrame').contentWindow;
+    const m = w.eval('(S.slots[' + i + '] && S.slots[' + i + '].dateParts && S.slots[' + i + '].dateParts.m) || ""');
+    const y = w.eval('(S.slots[' + i + '] && S.slots[' + i + '].dateParts && S.slots[' + i + '].dateParts.y) || ""');
+    return { m: Number(m) || 0, y: Number(y) || 0 };
+  } catch (e) { return { m: 0, y: 0 }; }
+}
+
+// Months between the two photos, from the dates the clinic already entered. No
+// extra input. Months only: a clinic often knows the month but not the day, and
+// "about 6 months" is the honest resolution of the underlying data.
+function intervalMonths(beforeSlot, afterSlot) {
+  const b = slotDateParts(beforeSlot);
+  const a = slotDateParts(afterSlot);
+  if (!b.y || !a.y || !b.m || !a.m) return null;
+  const n = (a.y - b.y) * 12 + (a.m - b.m);
+  return (n > 0 && n <= 240) ? n : null;
 }
 
 function slotCanvas(i) {
@@ -715,8 +742,9 @@ function renderPairs(pairs) {
       o.textContent = ANGLE_LABEL[a];
       sel.appendChild(o);
     });
-    // A 2x3 grid is three angles, in Studio's own column order.
-    sel.value = ANGLE_ORDER[i] || 'frontal';
+    // A 2x3 grid is three angles in Studio's column order. A 3-timepoint grid is
+    // one angle at several times, so every pair carries the same angle.
+    sel.value = (studioGridId() === '3h') ? 'frontal' : (ANGLE_ORDER[i] || 'frontal');
 
     const wrap = document.createElement('div');
     wrap.className = 'pair-field';
@@ -778,8 +806,11 @@ $('saveBtn').addEventListener('click', async () => {
     return;
   }
 
+  // Multi-ANGLE grids need one angle each. A 3-timepoint grid is a single angle at
+  // several points in time, and its pairs are told apart by interval, not angle.
+  const multiAngle = studioGridId() !== '3h';
   const angles = rows.map(r => r.querySelector('.pair-angle').value);
-  if (new Set(angles).size !== angles.length) {
+  if (multiAngle && new Set(angles).size !== angles.length) {
     note('saveNote', 'Each pair needs a different angle.', 'bad');
     return;
   }
@@ -814,8 +845,11 @@ $('saveBtn').addEventListener('click', async () => {
         canvasToFile(a, 'after')
       ]);
 
-      const beforeDate = slotDate(Number(row.dataset.before));
-      const afterDate = slotDate(Number(row.dataset.after));
+      const bSlot = Number(row.dataset.before);
+      const aSlot = Number(row.dataset.after);
+      const beforeDate = slotDate(bSlot);
+      const afterDate = slotDate(aSlot);
+      const months = intervalMonths(bSlot, aSlot);
 
       const fd = new FormData();
       fd.append('clinic_id', clinicId);
@@ -824,6 +858,7 @@ $('saveBtn').addEventListener('click', async () => {
       fd.append('angle', row.querySelector('.pair-angle').value);
       if (beforeDate) fd.append('before_date', beforeDate);
       if (afterDate) fd.append('after_date', afterDate);
+      if (months) fd.append('interval_months', String(months));
       fd.append('consents', JSON.stringify(consents));
       fd.append('before', before);
       fd.append('after', after);
