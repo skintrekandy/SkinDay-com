@@ -1833,7 +1833,11 @@ async function onSignedIn(session){
   sb.__email = session.user.email || '';
   unlock('account');
   refreshCredits(0);
-  loadLibraryCases(); // M12: load clinic library after sign-in
+  // M12 clinic library retired: superseded by the clinic portal, and its backend
+  // queries a schema that no longer exists. The call is removed rather than left
+  // to 500 on every sign-in. The remaining library code is unreachable (its nav
+  // button only appears once cases load, which now never happens) and comes out
+  // with manage-reference-cases in its own cleanup.
 }
 
 async function submitAuth(){
@@ -2239,7 +2243,7 @@ async function runFillerLevelGeneration(fillerIntensity){
   if(accessMode === 'account') refreshCredits(0);
 }
 
-document.getElementById('navLibraryBtn').addEventListener('click', openLibraryModal);
+// Retired with the M12 library. The button is permanently hidden.
 
 // Case list: angle filter tabs.
 document.getElementById('libAngleTabs').addEventListener('click', e => {
