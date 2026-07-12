@@ -130,18 +130,47 @@ function canonicalAngle(raw) {
   return 'frontal'; // default
 }
 
-// M12: injected into the prompt whenever a reference image is passed.
+// Injected into the prompt whenever a reference image is passed.
 // CRITICAL: gpt-image-1 requires explicit indexing when multiple images are
 // provided -- it will ignore image[1] unless the prompt references it directly.
 // The identity lock is equally critical: the reference is for treatment pattern
 // only, never identity, skin, age, or ethnicity.
-const REFERENCE_IDENTITY_LOCK =
-  ' TWO IMAGES ARE PROVIDED. Image 1 is the patient to treat. Image 2 is a clinical reference showing a successful Sculptra biostimulator result.' +
-  ' Use Image 2 ONLY to understand the visual character of the treatment result: the degree of cheek volume, midface support, lateral lift, and soft-tissue re-inflation.' +
-  ' Apply that same degree and character of volume change to Image 1 (the patient).' +
-  ' Do NOT copy, borrow, or be influenced by the reference patient\'s identity, face shape, skin tone, ethnicity, age, skin texture, pigmentation, hair, expression, lighting, or any personal feature.' +
-  ' The output must show Image 1 (the actual patient) with the Sculptra treatment applied at the visual intensity shown in Image 2.' +
-  ' Image 2 is a style and volume guide only -- never an identity donor.';
+//
+// The reference clause is now per treatment category, because "what to look at
+// in the reference" is completely different across treatments. Telling the model
+// to read cheek volume from a neurotoxin reference, or skin texture from a
+// filler reference, points it at the wrong signal and produces a worse result
+// than no reference at all.
+const REFERENCE_WHAT_TO_READ = {
+  biostim:
+    'the degree of cheek volume, midface support, lateral lift, and soft-tissue re-inflation',
+  filler:
+    'the degree of projection, contour definition, and structural support in the treated area, and how restrained or pronounced the shaping is',
+  tox:
+    'the degree of dynamic line softening and muscle relaxation, and how much natural movement and expression is preserved',
+  laser:
+    'the degree of change in skin tone, texture, pigmentation, redness, and pore quality, and how much natural skin character is retained'
+};
+
+const TREATMENT_NAME = {
+  biostim: 'biostimulator',
+  filler:  'hyaluronic acid filler',
+  tox:     'neurotoxin',
+  laser:   'energy-based skin'
+};
+
+function referenceIdentityLock(type) {
+  const what = REFERENCE_WHAT_TO_READ[type] || REFERENCE_WHAT_TO_READ.biostim;
+  const name = TREATMENT_NAME[type] || TREATMENT_NAME.biostim;
+  return (
+    ' TWO IMAGES ARE PROVIDED. Image 1 is the patient to treat. Image 2 is a clinical reference showing a successful ' + name + ' result.' +
+    ' Use Image 2 ONLY to understand the visual character of the treatment result: ' + what + '.' +
+    ' Apply that same degree and character of change to Image 1 (the patient).' +
+    ' Do NOT copy, borrow, or be influenced by the reference patient\'s identity, face shape, skin tone, ethnicity, age, skin texture, pigmentation, hair, expression, lighting, or any personal feature.' +
+    ' The output must show Image 1 (the actual patient) with the ' + name + ' treatment applied at the visual intensity shown in Image 2.' +
+    ' Image 2 is a style and intensity guide only -- never an identity donor.'
+  );
+}
 
 // M11: verify an EXPLICIT clinic context.
 //
@@ -209,7 +238,7 @@ async function verifyClinicContext(userId, clinicId) {
 // (The old sex-based priority is gone: the M11 schema does not store sex, and
 // adding a sex column to patient records is a data-minimization decision, not
 // an incidental one.)
-async function fetchClinicReferenceCase(clinicId, treatment, angle, phenotype) {
+async function fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phenotype) {
   const SUPABASE_URL = process.env.SUPABASE_URL || '';
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!SUPABASE_URL || !SERVICE_KEY || !clinicId) return null;
@@ -225,6 +254,7 @@ async function fetchClinicReferenceCase(clinicId, treatment, angle, phenotype) {
       body: JSON.stringify({
         p_clinic_id: clinicId,
         p_treatment: treatment || null,
+        p_subtype:   subtype || null,
         p_angle:     angle || null,
         p_limit:     10
       })
@@ -287,75 +317,97 @@ async function fetchPrivateCaseFile(path, filename) {
 
 
 
-// M11: resolve the reference image file for a generation.
+// Resolve the reference image for a generation.
 // Returns { refFile, referenceMode } or { refFile: null, referenceMode: null }.
 // referenceMode values: 'clinic_case' | null
 //
-// SCOPE RULE, rewritten. The old rule fired references only for "Enhanced"
-// (isStrongPass) Sculptra. Enhanced no longer exists, which meant this entire
-// branch was unreachable: no clinic references, no gold references, nothing.
+// SCOPE RULE. The old rule fired references only for "Enhanced" (isStrongPass)
+// Sculptra. Enhanced no longer exists, which made this branch unreachable.
 //
-// The gate is now CLINIC CONTEXT, which is the thing that actually separates the
-// two products:
+// The gate is now CLINIC CONTEXT, which is what actually separates the two
+// products:
 //
 //   No clinic context (consumer Visualize on skinday.com)
-//     -> no reference. Identical to current behaviour, since the old gate never
-//        opened anyway. A pay-as-you-go user's simulation is never grounded in
-//        any clinic's private patient imagery.
+//     -> no reference. A pay-as-you-go simulation is never grounded in any
+//        clinic's private patient imagery.
 //
-//   Verified clinic context (clinic portal Visualize)
+//   Verified clinic context (clinic Studio / Visualize)
 //     -> grounded in THAT clinic's own approved, consented cases.
 //
-// The gold-reference fallback is deliberately gone. If a clinic has no approved
-// cases yet, they get no reference rather than a stranger's face silently
-// standing in for their house style. Substituting someone else's outcome and
-// calling it the clinic's own is exactly the kind of invisible behaviour this
-// architecture exists to prevent. VISUALIZE_GOLD_REF_FRONTAL / _R45 / _L45 are
-// now unused and can be removed from the environment.
+// References now work across ALL treatment categories, not just Sculptra. The
+// case's treatment must match the generation's treatment: a filler case never
+// grounds a laser simulation. A mismatched reference is worse than none, since
+// it points the model at the wrong visual signal entirely.
 //
-// Still Sculptra-only, because REFERENCE_IDENTITY_LOCK is written for Sculptra.
-// Extending references to other treatments needs prompt work first, not just a
-// wider filter.
+// There is no third-party fallback. A clinic with no matching approved case gets
+// no reference rather than a stranger's outcome standing in for their own work.
 async function resolveReference(f, billing) {
-  const isSculptra = f.type === 'biostim' && (f.product === 'sculptra' || !f.product);
-  if (!isSculptra) return { refFile: null, referenceMode: null };
+  // Canonical treatment key, shared with what the clinic stores on a case.
+  const treatment = canonicalTreatment(f);
+  if (!treatment) return { refFile: null, referenceMode: null };
 
   const userId            = billing ? billing.userId : null;
   const requestedClinicId = f.clinicId || f.clinic_id || null;
 
-  // Consumer route.
   if (!requestedClinicId) {
     console.log('[M11] no clinic context: consumer route, no reference');
     return { refFile: null, referenceMode: null };
   }
 
-  // A clinic id in a job is a CLAIM. Verify membership before touching any of
-  // that clinic's private patient imagery. start-visualization already checked
-  // this; the check is repeated here because the worker must not depend on an
-  // upstream caller having done it.
+  // A clinic id in a job is a CLAIM. start-visualization already verified it;
+  // it is verified again here because the worker must not depend on an upstream
+  // caller having done so.
   const clinicId = await verifyClinicContext(userId, String(requestedClinicId));
   if (!clinicId) {
-    console.warn('[M11] clinic context not verified: falling back to no reference');
+    console.warn('[M11] clinic context not verified: no reference used');
     return { refFile: null, referenceMode: null };
   }
 
   const angle     = canonicalAngle(f.angle || f.view);
   const phenotype = f.phenotype || f.sculptraPhenotype || null;
-  const treatment = 'sculptra';
+  const subtype   = canonicalSubtype(f, treatment);
 
-  const caseRow = await fetchClinicReferenceCase(clinicId, treatment, angle, phenotype);
+  const caseRow = await fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phenotype);
   if (caseRow) {
     const refFile = await fetchPrivateCaseFile(caseRow.afterPath, 'clinic_ref_after.jpg');
     if (refFile) {
-      console.log('[M11] reference mode: clinic_case (clinic=' + clinicId + ' angle=' + angle + ')');
+      console.log('[M11] reference mode: clinic_case (clinic=' + clinicId
+        + ' treatment=' + treatment + ' subtype=' + subtype + ' angle=' + angle + ')');
       return { refFile, referenceMode: 'clinic_case' };
     }
   }
 
-  // Clinic has no approved, consented case matching this generation. No
-  // reference is better than someone else's reference.
-  console.log('[M11] clinic ' + clinicId + ' has no usable reference: no reference used');
+  console.log('[M11] clinic ' + clinicId + ' has no approved ' + treatment
+    + '/' + subtype + ' case at ' + angle + ': no reference used');
   return { refFile: null, referenceMode: null };
+}
+
+// The canonical treatment key. This is the SAME vocabulary Studio and the clinic
+// portal store on a case, so a generation and a case can be matched.
+//   biostim  biostimulation
+//   filler   HA filler
+//   tox      neurotoxin
+//   laser    energy-based devices (RF / HIFU)
+function canonicalTreatment(f) {
+  const t = (f && f.type) ? String(f.type) : '';
+  if (t === 'biostim' || t === 'filler' || t === 'tox' || t === 'laser') return t;
+  return null;
+}
+
+// The second matching axis. A chin filler case must not ground a lip filler
+// simulation, a PLLA case must not ground a CaHA one, and RF must not ground
+// HIFU. Studio stores exactly these values on a case.
+//
+// KEEP IN LOCKSTEP with Studio's dropdowns. If the two vocabularies drift, no
+// reference ever matches and nothing indicates why: the simulation just comes
+// back ungrounded.
+function canonicalSubtype(f, treatment) {
+  if (!f || !treatment) return null;
+  if (treatment === 'biostim') return f.product ? String(f.product) : null;
+  if (treatment === 'filler')  return f.areas ? String(f.areas) : null;
+  if (treatment === 'tox')     return f.toxMode ? String(f.toxMode) : null;
+  if (treatment === 'laser')   return f.laserType ? String(f.laserType) : null;
+  return null;
 }
 
 // M12.5: SCENARIO PLANNER
@@ -941,10 +993,15 @@ exports.handler = async (event) => {
     const billing = await store.get(jobId + ':billing', { type: 'json' }).catch(() => null);
     const { refFile, referenceMode } = await resolveReference(f, billing);
 
-    // M12: when a reference fires, append the identity-lock clause to the prompt.
+    // When a reference fires, append the identity-lock clause to the prompt.
     // This is the guardrail that prevents the reference patient's identity, age,
-    // skin, and ethnicity from bleeding into the output.
-    const finalPrompt = (refFile && referenceMode) ? (prompt + REFERENCE_IDENTITY_LOCK) : prompt;
+    // skin, and ethnicity from bleeding into the output. The clause is built from
+    // THIS generation's treatment category, so the model is told to read the
+    // right signal out of the reference (volume for a biostimulator, line
+    // softening for a neurotoxin, skin quality for an energy treatment).
+    const finalPrompt = (refFile && referenceMode)
+      ? (prompt + referenceIdentityLock(canonicalTreatment(f)))
+      : prompt;
 
     // M13: both biostim (Sculptra) and HA filler use gpt-image-2 for direct
     // generation. gpt-image-2 rejects input_fidelity -- omit it for that model.
@@ -970,7 +1027,7 @@ exports.handler = async (event) => {
     const editParams = {
       model:              modelName,
       // M13 fix: when a reference image fired, the prompt says "TWO IMAGES" via
-      // REFERENCE_IDENTITY_LOCK, so the second image must actually be passed.
+      // the identity-lock clause, so the second image must actually be passed.
       image:              (refFile && referenceMode) ? [file, refFile] : file,
       prompt:             finalPrompt,
       size:               'auto',
@@ -992,7 +1049,16 @@ exports.handler = async (event) => {
     if (!b64) throw new Error('No image returned by model');
 
     await store.set(jobId + ':result', 'data:image/jpeg;base64,' + b64);
-    await store.setJSON(jobId + ':status', { state: 'done', model: modelName, updatedAt: Date.now() });
+    // referenceMode is surfaced to the client so a clinic can SEE whether their
+    // own case actually grounded this simulation, rather than having to trust
+    // that it did. 'clinic_case' means one of their approved, consented cases
+    // was used; null means none was, and the result is unreferenced.
+    await store.setJSON(jobId + ':status', {
+      state: 'done',
+      model: modelName,
+      referenceMode: referenceMode || null,
+      updatedAt: Date.now()
+    });
     try { await store.delete(jobId + ':job'); } catch (e) { /* free the large input payload */ }
 
     // Log cost for this successful generation (non-blocking).

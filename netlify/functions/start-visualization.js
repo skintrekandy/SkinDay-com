@@ -132,9 +132,12 @@ const FIELD_KEYS = [
   'type', 'areas', 'goal', 'intensity', 'product', 'projection',
   'timeline', 'note', 'prompt', 'isStrongPass',
   'angle', 'sex', 'view', 'phenotype', 'sculptraPhenotype', 'patientAge', 'laserType',
+  'toxMode',  // was appended by visualize.html but missing from this allowlist,
+              // so it never reached the worker. Needed for neurotoxin reference
+              // matching, and it was silently absent from the prompt path too.
   'sourceJobId',
   'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType',  // M12.2 scenario; M14 baselineType
-  'clinicId'  // M11: explicit clinic context (clinic portal only; consumer route omits it)
+  'clinicId'  // M11: explicit clinic context (clinic route only; consumer omits it)
 ];
 
 // M11: verify an explicit clinic context.
