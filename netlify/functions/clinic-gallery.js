@@ -81,8 +81,11 @@ exports.handler = async (event) => {
     const cases = (Array.isArray(rows) ? rows : []).map((r) => ({
       case_id: r.case_id,
       treatment: r.treatment,
+      subtype: r.subtype,
       angle: r.angle,
       phenotype: r.phenotype,
+      before_date: r.before_date,
+      after_date: r.after_date,
       before_url: `${SUPABASE_URL}/storage/v1/object/public/${PUBLIC_BUCKET}/${r.published_before_path}`,
       after_url: `${SUPABASE_URL}/storage/v1/object/public/${PUBLIC_BUCKET}/${r.published_after_path}`,
       created_at: r.created_at
