@@ -218,6 +218,7 @@ exports.handler = async (event) => {
     const angle = (fields.angle || '').trim() || null;
     const beforeDate = (fields.before_date || '').trim() || null;
     const afterDate = (fields.after_date || '').trim() || null;
+    const intervalMonths = parseInt(fields.interval_months, 10);
     const phenotype = (fields.phenotype || '').trim() || null;
     const sourceJobId = (fields.source_job_id || '').trim() || null;
 
@@ -297,6 +298,7 @@ exports.handler = async (event) => {
         p_phenotype: phenotype,
         p_before_date: beforeDate,
         p_after_date: afterDate,
+        p_interval_months: Number.isFinite(intervalMonths) ? intervalMonths : null,
         p_residency: 'ca',
         p_source_job_id: sourceJobId
       })

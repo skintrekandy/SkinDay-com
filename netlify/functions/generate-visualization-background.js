@@ -238,7 +238,7 @@ async function verifyClinicContext(userId, clinicId) {
 // (The old sex-based priority is gone: the M11 schema does not store sex, and
 // adding a sex column to patient records is a data-minimization decision, not
 // an incidental one.)
-async function fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phenotype) {
+async function fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phenotype, timelineMonths) {
   const SUPABASE_URL = process.env.SUPABASE_URL || '';
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!SUPABASE_URL || !SERVICE_KEY || !clinicId) return null;
@@ -252,11 +252,17 @@ async function fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phe
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        p_clinic_id: clinicId,
-        p_treatment: treatment || null,
-        p_subtype:   subtype || null,
-        p_angle:     angle || null,
-        p_limit:     10
+        p_clinic_id:       clinicId,
+        p_treatment:       treatment || null,
+        p_subtype:         subtype || null,
+        p_angle:           angle || null,
+        // The timeline the clinician asked for. The lookup prefers the case whose
+        // interval is closest to it, so a 3-month simulation is grounded in
+        // 3-month outcomes rather than 12-month ones. Grounding a 3-month
+        // projection in a 12-month result would overpromise, which is exactly the
+        // failure this architecture exists to prevent.
+        p_timeline_months: timelineMonths,
+        p_limit:           10
       })
     });
     if (!res.ok) {
@@ -279,9 +285,10 @@ async function fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phe
       + ' phenotype=' + (chosen.phenotype || 'any')
       + ' angle=' + (chosen.angle || 'any'));
     return {
-      caseId:     chosen.case_id,
-      beforePath: chosen.before_path,
-      afterPath:  chosen.after_path
+      caseId:         chosen.case_id,
+      intervalMonths: chosen.interval_months,
+      beforePath:     chosen.before_path,
+      afterPath:      chosen.after_path
     };
   } catch (e) {
     console.warn('[M11] fetchClinicReferenceCase error:', (e && e.message) || e);
@@ -367,12 +374,17 @@ async function resolveReference(f, billing) {
   const phenotype = f.phenotype || f.sculptraPhenotype || null;
   const subtype   = canonicalSubtype(f, treatment);
 
-  const caseRow = await fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phenotype);
+  const timelineMonths = parseInt(f.timeline, 10);
+  const caseRow = await fetchClinicReferenceCase(
+    clinicId, treatment, subtype, angle, phenotype,
+    Number.isFinite(timelineMonths) ? timelineMonths : null
+  );
   if (caseRow) {
     const refFile = await fetchPrivateCaseFile(caseRow.afterPath, 'clinic_ref_after.jpg');
     if (refFile) {
       console.log('[M11] reference mode: clinic_case (clinic=' + clinicId
-        + ' treatment=' + treatment + ' subtype=' + subtype + ' angle=' + angle + ')');
+        + ' treatment=' + treatment + ' subtype=' + subtype + ' angle=' + angle
+        + ' asked=' + timelineMonths + 'mo got=' + caseRow.intervalMonths + 'mo)');
       return { refFile, referenceMode: 'clinic_case' };
     }
   }
