@@ -10,273 +10,196 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --deep:   #1C1714;
-    --cream:  #FAF7F2;
-    --rose:   #C8725A;
-    --gold:   #C9A96E;
-    --ink:    #2b2320;
-    --muted:  #857a70;
-    --line:   #e7ded3;
-    --paper:  #ffffff;
+    --deep:#1C1714; --cream:#FAF7F2; --rose:#C8725A; --gold:#C9A96E;
+    --ink:#2b2320; --muted:#857a70; --line:#e7ded3; --paper:#fff;
   }
   * { box-sizing: border-box; }
   html { -webkit-font-smoothing: antialiased; }
   body {
-    margin: 0;
-    background: var(--cream);
-    color: var(--deep);
-    font-family: 'DM Sans', system-ui, sans-serif;
-    font-size: 15px;
-    line-height: 1.6;
+    margin:0; background:var(--cream); color:var(--deep);
+    font-family:'DM Sans',system-ui,sans-serif; font-size:15px; line-height:1.6;
   }
   ::selection { background: rgba(201,169,110,.28); }
-  :focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: 3px; }
+  :focus-visible { outline:2px solid var(--rose); outline-offset:2px; border-radius:3px; }
 
-  /* ---- type ---- */
-  .display {
-    font-family: 'Cormorant Garamond', Georgia, serif;
-    font-weight: 400;
-    letter-spacing: .005em;
-    line-height: 1.15;
-  }
+  .display { font-family:'Cormorant Garamond',Georgia,serif; font-weight:400; line-height:1.15; }
   .eyebrow {
-    font-size: 10.5px;
-    font-weight: 700;
-    letter-spacing: .16em;
-    text-transform: uppercase;
-    color: var(--muted);
+    font-size:10.5px; font-weight:700; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted);
   }
 
-  /* ---- header ---- */
   header {
-    background: var(--deep);
-    color: var(--cream);
-    border-bottom: 1px solid var(--gold);
-    padding: 20px 32px;
-    display: flex;
-    align-items: center;
-    gap: 18px;
+    background:var(--deep); color:var(--cream);
+    border-bottom:1px solid var(--gold);
+    padding:18px 32px; display:flex; align-items:center; gap:18px;
+    position:sticky; top:0; z-index:20;
   }
-  header .mark { font-size: 25px; color: var(--cream); }
-  header .mark em { font-style: italic; color: var(--gold); }
-  header .rule { width: 1px; height: 22px; background: rgba(250,247,242,.22); }
-  header .who { font-size: 13px; color: rgba(250,247,242,.72); }
-  header .spacer { flex: 1; }
+  header .mark { font-size:24px; }
+  header .mark em { font-style:italic; color:var(--gold); }
+  header .rule { width:1px; height:20px; background:rgba(250,247,242,.22); }
+  header .who { font-size:13px; color:rgba(250,247,242,.72); }
+  header .spacer { flex:1; }
   header button {
-    background: none;
-    border: 0;
-    color: rgba(250,247,242,.6);
-    font: inherit;
-    font-size: 12.5px;
-    cursor: pointer;
-    padding: 4px 2px;
-    border-bottom: 1px solid transparent;
+    background:none; border:0; color:rgba(250,247,242,.6);
+    font:inherit; font-size:12.5px; cursor:pointer;
+    padding:4px 2px; border-bottom:1px solid transparent;
   }
-  header button:hover { color: var(--cream); border-bottom-color: var(--gold); }
+  header button:hover { color:var(--cream); border-bottom-color:var(--gold); }
 
-  main { max-width: 940px; margin: 0 auto; padding: 40px 32px 100px; }
-
-  /* ---- tabs ---- */
   .tabs {
-    display: flex;
-    gap: 28px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 40px;
+    display:flex; gap:28px; padding:0 32px;
+    border-bottom:1px solid var(--line); background:var(--cream);
+    position:sticky; top:57px; z-index:19;
   }
   .tab {
-    background: none; border: 0; cursor: pointer;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 21px;
-    color: var(--muted);
-    padding: 0 0 12px;
-    margin-bottom: -1px;
-    border-bottom: 1px solid transparent;
-    transition: color .18s ease, border-color .18s ease;
+    background:none; border:0; cursor:pointer;
+    font-family:'Cormorant Garamond',serif; font-size:21px;
+    color:var(--muted); padding:14px 0 12px; margin-bottom:-1px;
+    border-bottom:1px solid transparent;
+    transition:color .18s ease, border-color .18s ease;
   }
-  .tab:hover { color: var(--ink); }
-  .tab.active { color: var(--deep); border-bottom-color: var(--rose); }
+  .tab:hover { color:var(--ink); }
+  .tab.active { color:var(--deep); border-bottom-color:var(--rose); }
 
-  /* ---- sections ---- */
-  .sec { margin-bottom: 56px; animation: rise .5s cubic-bezier(.2,.7,.3,1) both; }
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .sec { animation: none; } * { transition: none !important; } }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 32px 90px; }
+  .stage { margin:0 auto; padding:0 0 90px; }
 
-  .sec-head { margin-bottom: 22px; }
-  .sec-head h2 { font-size: 30px; margin: 4px 0 2px; }
-  .sec-head p { color: var(--muted); font-size: 13.5px; margin: 0; max-width: 56ch; }
+  /* the real Studio and Visualize pages, embedded, never copied */
+  .embed { width:100%; border:0; display:block; background:var(--cream); min-height:1500px; }
 
-  .panel {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: 3px;
-    padding: 28px;
-  }
+  .sec { padding-top:40px; animation:rise .45s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes rise { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+  @media (prefers-reduced-motion:reduce){ .sec{animation:none;} *{transition:none!important;} }
 
-  /* ---- form ---- */
-  label { display: block; margin-bottom: 6px; }
-  .field { margin-bottom: 18px; }
+  .sec-head { margin-bottom:20px; }
+  .sec-head h2 { font-size:29px; margin:4px 0 2px; }
+  .sec-head p { color:var(--muted); font-size:13.5px; margin:0; max-width:58ch; }
+
+  .panel { background:var(--paper); border:1px solid var(--line); border-radius:3px; padding:26px; }
+
+  label { display:block; margin-bottom:6px; }
+  .field { margin-bottom:16px; }
   input[type=text], input[type=email], input[type=password], select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    background: var(--cream);
-    color: var(--deep);
-    font: inherit;
-    font-size: 14px;
+    width:100%; padding:10px 12px; border:1px solid var(--line);
+    border-radius:2px; background:var(--cream); color:var(--deep);
+    font:inherit; font-size:14px;
   }
-  input[type=file] { font-size: 13px; width: 100%; color: var(--muted); }
-  input:hover, select:hover { border-color: #d6cabb; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 18px; }
+  input:hover, select:hover { border-color:#d6cabb; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
 
   button.act {
-    font: inherit; font-weight: 700; font-size: 13.5px;
-    letter-spacing: .02em;
-    background: var(--deep); color: var(--cream);
-    border: 1px solid var(--deep);
-    border-radius: 2px;
-    padding: 12px 26px;
-    cursor: pointer;
-    transition: background .18s ease;
+    font:inherit; font-weight:700; font-size:13.5px;
+    background:var(--deep); color:var(--cream);
+    border:1px solid var(--deep); border-radius:2px;
+    padding:12px 26px; cursor:pointer; transition:background .18s ease;
   }
-  button.act:hover { background: #322822; }
-  button.act:disabled { opacity: .4; cursor: default; }
+  button.act:hover { background:#322822; }
+  button.act:disabled { opacity:.35; cursor:default; }
   button.quiet {
-    font: inherit; font-size: 12.5px;
-    background: none; color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 2px;
-    padding: 7px 13px;
-    cursor: pointer;
-    transition: border-color .18s ease, color .18s ease;
+    font:inherit; font-size:12.5px; background:none; color:var(--ink);
+    border:1px solid var(--line); border-radius:2px; padding:7px 13px;
+    cursor:pointer; transition:border-color .18s ease, color .18s ease;
   }
-  button.quiet:hover { border-color: var(--gold); }
-  button.quiet.warn:hover { border-color: var(--rose); color: var(--rose); }
-  button.quiet:disabled { opacity: .4; cursor: default; }
+  button.quiet:hover { border-color:var(--gold); }
+  button.quiet.warn:hover { border-color:var(--rose); color:var(--rose); }
+  button.quiet:disabled { opacity:.4; cursor:default; }
 
-  /* ---- consent block ---- */
-  .consent { border-top: 1px solid var(--line); margin-top: 26px; padding-top: 22px; }
-  .consent .eyebrow { margin-bottom: 12px; }
+  .consent { border-top:1px solid var(--line); margin-top:22px; padding-top:20px; }
   .perm {
-    display: flex; gap: 11px; align-items: flex-start;
-    padding: 11px 0;
-    border-bottom: 1px dotted var(--line);
-    cursor: pointer;
+    display:flex; gap:11px; align-items:flex-start;
+    padding:10px 0; border-bottom:1px dotted var(--line); cursor:pointer;
   }
-  .perm:last-of-type { border-bottom: 0; }
-  .perm input { margin-top: 4px; accent-color: var(--rose); }
-  .perm b { font-weight: 500; font-size: 14px; display: block; }
-  .perm small { color: var(--muted); font-size: 12.5px; }
+  .perm:last-of-type { border-bottom:0; }
+  .perm input { margin-top:4px; accent-color:var(--rose); }
+  .perm b { font-weight:500; font-size:14px; display:block; }
+  .perm small { color:var(--muted); font-size:12.5px; }
 
   .caution {
-    margin-top: 18px;
-    padding: 12px 15px;
-    border-left: 2px solid var(--rose);
-    background: #fbf1ee;
-    color: #82443a;
-    font-size: 12.5px;
+    margin-top:16px; padding:11px 14px; border-left:2px solid var(--rose);
+    background:#fbf1ee; color:#82443a; font-size:12.5px;
+  }
+  .waiting {
+    padding:24px; text-align:center; color:var(--muted); font-size:13.5px;
+    border:1px dashed var(--line); border-radius:3px;
   }
 
-  /* ---- case plate (signature) ---- */
+  .pair {
+    display:flex; align-items:center; gap:18px;
+    padding:12px 0; border-bottom:1px dotted var(--line);
+  }
+  .pair:last-child { border-bottom:0; }
+  .pair-thumbs { display:flex; gap:2px; }
+  .pair-thumbs img {
+    width:52px; height:65px; object-fit:cover;
+    border:1px solid var(--line); background:var(--cream);
+  }
+  .pair-field { flex:1; max-width:230px; }
+  .pair-field label { margin-bottom:4px; }
+
+  .grounded {
+    margin-top:26px; padding:12px 15px; font-size:12.5px;
+    background:#faf4e9; border-left:2px solid var(--gold); color:#6d5628;
+  }
+  .grounded.off { background:var(--paper); border-left-color:var(--line); color:var(--muted); }
+  .grounded.wait { background:var(--paper); border-left-color:var(--line); color:var(--muted); }
+
   .plate {
-    display: grid;
-    grid-template-columns: 232px 1fr;
-    gap: 26px;
-    padding: 26px 0;
-    border-bottom: 1px solid var(--line);
+    display:grid; grid-template-columns:224px 1fr; gap:24px;
+    padding:24px 0; border-bottom:1px solid var(--line);
   }
-  .plate:last-child { border-bottom: 0; }
+  .plate:last-child { border-bottom:0; }
   .diptych {
-    display: grid; grid-template-columns: 1fr 1fr;
-    gap: 1px; background: var(--line);
-    border: 1px solid var(--line);
-    overflow: hidden;
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    background:var(--line); border:1px solid var(--line); overflow:hidden;
   }
-  .frame { position: relative; background: var(--cream); overflow: hidden; }
+  .frame { position:relative; background:var(--cream); overflow:hidden; margin:0; }
   .frame img {
-    display: block; width: 100%; aspect-ratio: 4/5;
-    object-fit: cover;
-    transition: transform .5s cubic-bezier(.2,.7,.3,1);
+    display:block; width:100%; aspect-ratio:4/5; object-fit:cover;
+    transition:transform .5s cubic-bezier(.2,.7,.3,1);
   }
-  .plate:hover .frame img { transform: scale(1.035); }
+  .plate:hover .frame img { transform:scale(1.035); }
   .frame figcaption {
-    position: absolute; left: 0; bottom: 0;
-    background: rgba(28,23,20,.78);
-    color: var(--cream);
-    font-size: 9px; font-weight: 700;
-    letter-spacing: .14em; text-transform: uppercase;
-    padding: 3px 7px;
+    position:absolute; left:0; bottom:0;
+    background:rgba(28,23,20,.78); color:var(--cream);
+    font-size:9px; font-weight:700; letter-spacing:.14em;
+    text-transform:uppercase; padding:3px 7px;
   }
+  .plate-title { font-size:22px; }
+  .plate-meta { color:var(--muted); font-size:12.5px; margin-top:1px; }
 
-  .plate-body { min-width: 0; }
-  .plate-title { font-size: 23px; text-transform: capitalize; }
-  .plate-meta { color: var(--muted); font-size: 12.5px; margin-top: 1px; }
-
-  /* the ledger: this clinic's permissions, legible at a glance */
   .ledger {
-    display: flex; align-items: center; gap: 16px;
-    margin: 16px 0 4px; padding: 9px 0;
-    border-top: 1px solid var(--line);
-    border-bottom: 1px solid var(--line);
-    flex-wrap: wrap;
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    margin:14px 0 4px; padding:9px 0;
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line);
   }
   .perm-mark {
-    display: flex; align-items: center; gap: 6px;
-    font-size: 9.5px; font-weight: 700;
-    letter-spacing: .13em; text-transform: uppercase;
-    color: var(--muted);
+    display:flex; align-items:center; gap:6px;
+    font-size:9.5px; font-weight:700; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--muted);
   }
-  .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    border: 1px solid var(--muted);
-  }
-  .perm-mark.on { color: var(--ink); }
-  .perm-mark.on .dot { background: var(--gold); border-color: var(--gold); }
-  .perm-mark.live .dot { background: var(--rose); border-color: var(--rose); }
+  .dot { width:6px; height:6px; border-radius:50%; border:1px solid var(--muted); }
+  .perm-mark.on { color:var(--ink); }
+  .perm-mark.on .dot { background:var(--gold); border-color:var(--gold); }
+  .perm-mark.live .dot { background:var(--rose); border-color:var(--rose); }
 
-  .plate-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
-  .note { font-size: 12.5px; margin-top: 10px; color: var(--muted); }
-  .note.ok { color: #3d6b4c; }
-  .note.bad { color: #a9503f; }
+  .plate-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:13px; }
+  .note { font-size:12.5px; margin-top:9px; color:var(--muted); }
+  .note.ok { color:#3d6b4c; }
+  .note.bad { color:#a9503f; }
+  .empty { padding:44px 0; text-align:center; }
+  .empty .display { font-size:22px; }
+  .empty p { color:var(--muted); font-size:13.5px; margin:6px 0 0; }
 
-  .empty {
-    padding: 44px 0; text-align: center;
-  }
-  .empty p { color: var(--muted); font-size: 13.5px; margin: 6px 0 0; }
-  .empty .display { font-size: 22px; }
+  .gate { max-width:360px; margin:13vh auto; }
+  .gate .display { font-size:37px; margin:10px 0 6px; }
+  .gate p.lede { color:var(--muted); font-size:13.5px; margin:0 0 26px; }
+  .gate button.act { width:100%; margin-top:8px; }
 
-  /* ---- visualize ---- */
-  .result { margin-top: 26px; }
-  .grounded {
-    display: flex; align-items: center; gap: 10px;
-    font-size: 12.5px;
-    padding: 11px 14px;
-    background: #faf4e9;
-    border-left: 2px solid var(--gold);
-    color: #6d5628;
-  }
-  .grounded.off { background: var(--cream); border-left-color: var(--line); color: var(--muted); }
-  .result img {
-    display: block; width: 100%; max-width: 480px;
-    margin-top: 14px; border: 1px solid var(--line);
-  }
-  .working { display: inline-block; color: var(--muted); font-size: 13px; }
-  .working::after {
-    content: '·'; animation: dots 1.2s steps(4, end) infinite;
-  }
-  @keyframes dots { 0% { content: '·'; } 33% { content: '··'; } 66% { content: '···'; } }
-
-  /* ---- sign in ---- */
-  .gate { max-width: 360px; margin: 14vh auto; text-align: left; }
-  .gate .display { font-size: 38px; margin: 10px 0 6px; }
-  .gate p.lede { color: var(--muted); font-size: 13.5px; margin: 0 0 28px; }
-  .gate button.act { width: 100%; margin-top: 8px; }
-
-  @media (max-width: 700px) {
-    main { padding: 28px 20px 80px; }
-    .plate { grid-template-columns: 1fr; }
-    .diptych { max-width: 260px; }
-    header { padding: 16px 20px; }
+  @media (max-width:700px){
+    .wrap { padding:0 20px 70px; }
+    header, .tabs { padding-left:20px; padding-right:20px; }
+    .plate { grid-template-columns:1fr; }
+    .diptych { max-width:250px; }
   }
 </style>
 </head>
@@ -290,13 +213,17 @@
   <button id="signOut">Sign out</button>
 </header>
 
-<main>
+<nav class="tabs" id="tabs" style="display:none;">
+  <button class="tab active" data-panel="studio">Studio</button>
+  <button class="tab" data-panel="visualize">Visualize</button>
+  <button class="tab" data-panel="cases">Cases</button>
+</nav>
 
-  <!-- sign in -->
+<div class="wrap">
   <section class="gate sec" id="gate">
     <span class="eyebrow">Clinic portal</span>
     <h1 class="display">Your cases,<br>your Visualize.</h1>
-    <p class="lede">Every case you add teaches your own simulation tool and, if the patient agrees, appears on your website.</p>
+    <p class="lede">Studio makes the post. The same case, with the patient's permission, teaches your own simulations.</p>
     <div class="field">
       <label class="eyebrow" for="email">Email</label>
       <input type="email" id="email" autocomplete="username">
@@ -308,73 +235,70 @@
     <button class="act" id="signIn">Sign in</button>
     <div class="note bad" id="gateNote"></div>
   </section>
+</div>
 
-  <div id="app" style="display:none;">
+<!-- STUDIO: the real studio.html, embedded. That file is never modified. The
+     panel below belongs to the portal and reads the aligned before / after
+     canvases straight out of the embedded page. -->
+<div class="stage" id="panel-studio" style="display:none;">
+  <iframe class="embed" id="studioFrame" src="/studio.html" title="Studio"></iframe>
 
-    <nav class="tabs">
-      <button class="tab active" id="tabCases">Cases</button>
-      <button class="tab" id="tabVis">Visualize</button>
-    </nav>
+  <div class="wrap">
+    <section class="sec">
+      <div class="sec-head">
+        <span class="eyebrow">After you export</span>
+        <h2 class="display">Keep this case working.</h2>
+        <p>The export goes to Instagram. The same case, kept here, teaches your Visualize and can appear on your website. Label it the way you would run it in Visualize, or it will not match.</p>
+      </div>
 
-    <!-- CASES -->
-    <div id="panelCases">
-
-      <section class="sec">
-        <div class="sec-head">
-          <span class="eyebrow">Add a case</span>
-          <h2 class="display">One upload, three decisions.</h2>
-          <p>Store it, let it teach your Visualize, show it on your website. Each is the patient's to give, and each is theirs to take back.</p>
+      <div class="panel">
+        <div id="libWaiting" class="waiting">
+          Build a before and after in Studio above. This panel wakes up when the photos are in.
         </div>
 
-        <div class="panel">
+        <div id="libNoPairs" class="waiting" style="display:none;">
+          This grid has no before and after to pair. Choose the 2-photo, 2×2, or 2×3 grid to save a case.
+        </div>
+
+        <div id="libForm" style="display:none;">
           <div class="grid">
             <div class="field">
-              <label class="eyebrow" for="treatment">Treatment</label>
-              <input type="text" id="treatment" value="sculptra">
-            </div>
-            <div class="field">
-              <label class="eyebrow" for="angle">Angle</label>
-              <select id="angle">
-                <option value="frontal">Frontal</option>
-                <option value="oblique_right">Oblique right</option>
-                <option value="oblique_left">Oblique left</option>
+              <label class="eyebrow" for="libType">Treatment</label>
+              <select id="libType">
+                <option value="biostim">Biostimulation</option>
+                <option value="filler">HA Fillers</option>
+                <option value="tox">Neurotoxin</option>
+                <option value="laser">Energy-Based Devices</option>
               </select>
             </div>
             <div class="field">
-              <label class="eyebrow" for="phenotype">Phenotype</label>
-              <input type="text" id="phenotype" placeholder="optional">
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="field">
-              <label class="eyebrow" for="beforeFile">Before</label>
-              <input type="file" id="beforeFile" accept="image/*">
+              <label class="eyebrow" id="libSubLabel" for="libSubtype">Product</label>
+              <select id="libSubtype"></select>
             </div>
             <div class="field">
-              <label class="eyebrow" for="afterFile">After</label>
-              <input type="file" id="afterFile" accept="image/*">
-            </div>
-          </div>
-
-          <div class="grid">
-            <div class="field">
-              <label class="eyebrow" for="classification">Subject</label>
-              <select id="classification">
+              <label class="eyebrow" for="libClass">Subject</label>
+              <select id="libClass">
                 <option value="staff_test">Staff or test</option>
                 <option value="synthetic">Synthetic</option>
                 <option value="paid_model">Paid model</option>
                 <option value="patient">Patient</option>
               </select>
             </div>
+          </div>
+
+          <div class="eyebrow" style="margin:22px 0 10px;">Angles in this grid</div>
+          <div id="pairs"></div>
+
+          <div class="grid" style="margin-top:18px;">
             <div class="field">
-              <label class="eyebrow" for="consentVersion">Consent form</label>
-              <input type="text" id="consentVersion" value="skintrek-v1">
+              <label class="eyebrow" for="libConsentVersion">Consent form signed</label>
+              <input type="text" id="libConsentVersion" value="skintrek-v1">
             </div>
+            <div class="field"></div>
           </div>
 
           <div class="consent">
-            <div class="eyebrow">What the patient agreed to</div>
+            <div class="eyebrow" style="margin-bottom:10px;">What the patient agreed to</div>
 
             <label class="perm">
               <input type="checkbox" id="cStore" checked disabled>
@@ -385,7 +309,7 @@
             <label class="perm">
               <input type="checkbox" id="cVisualize" checked>
               <span><b>Teach our Visualize</b>
-                <small>Private. Guides your simulations. Never shown to anyone.</small></span>
+                <small>Private. Guides your clinic's simulations. Never shown to anyone.</small></span>
             </label>
 
             <label class="perm">
@@ -399,522 +323,609 @@
             Patient uploads stay closed until the consent wording has been reviewed. Use staff, synthetic, or paid model for now.
           </div>
 
-          <div style="margin-top:24px;">
-            <button class="act" id="uploadBtn">Add case</button>
-            <div class="note" id="uploadNote"></div>
+          <div style="margin-top:22px;">
+            <button class="act" id="saveBtn">Save to case library</button>
+            <div class="note" id="saveNote"></div>
           </div>
         </div>
-      </section>
-
-      <section class="sec">
-        <div class="sec-head">
-          <span class="eyebrow">Library</span>
-          <h2 class="display" id="libTitle">Your cases</h2>
-          <p id="libSub">Each case carries its own permissions, and shows them.</p>
-        </div>
-        <div id="cases"><div class="empty"><span class="working">Loading</span></div></div>
-      </section>
-
-    </div>
-
-    <!-- VISUALIZE -->
-    <div id="panelVis" style="display:none;">
-      <section class="sec">
-        <div class="sec-head">
-          <span class="eyebrow">Visualize</span>
-          <h2 class="display">Grounded in your own work.</h2>
-          <p>A Sculptra simulation shaped by the cases you approved, not by a stranger's idea of a good result.</p>
-        </div>
-
-        <div class="panel">
-          <div class="grid">
-            <div class="field">
-              <label class="eyebrow" for="visPhoto">Patient photo</label>
-              <input type="file" id="visPhoto" accept="image/*">
-            </div>
-            <div class="field">
-              <label class="eyebrow" for="visAngle">Angle</label>
-              <select id="visAngle">
-                <option value="frontal">Frontal</option>
-                <option value="r45">Oblique right</option>
-                <option value="l45">Oblique left</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid">
-            <div class="field">
-              <label class="eyebrow" for="visPhenotype">Phenotype</label>
-              <input type="text" id="visPhenotype" placeholder="optional">
-            </div>
-            <div class="field">
-              <label class="eyebrow" for="visTimeline">Timeline</label>
-              <select id="visTimeline">
-                <option value="3">3 months</option>
-                <option value="6" selected>6 months</option>
-                <option value="12">12 months</option>
-              </select>
-            </div>
-          </div>
-
-          <div style="margin-top:12px;">
-            <button class="act" id="visBtn">Generate</button>
-            <div class="note" id="visNote"></div>
-          </div>
-
-          <div class="result" id="visResultWrap" style="display:none;">
-            <div class="grounded" id="visGrounding"></div>
-            <img id="visResult" alt="Simulation">
-          </div>
-        </div>
-      </section>
-    </div>
-
+      </div>
+    </section>
   </div>
-</main>
+</div>
 
-<script>
-(function () {
-  'use strict';
+<!-- VISUALIZE: the real visualize.html, embedded. That file is never modified.
+     The portal attaches the clinic context to the generation request on its way
+     out, and reports back whether the clinic's own case shaped the result. -->
+<div class="stage" id="panel-visualize" style="display:none;">
+  <div class="wrap" style="padding-bottom:0;">
+    <div class="grounded" id="visGrounding" style="display:none;"></div>
+  </div>
+  <iframe class="embed" id="visFrame" title="Visualize"></iframe>
+</div>
 
-  var SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
-  // Public, RLS-protected anon key. The service role key never appears client-side.
-  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+<!-- CASES -->
+<div class="wrap" id="panel-cases" style="display:none;">
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Library</span>
+      <h2 class="display">Your cases</h2>
+      <p id="libSub">Each case carries its own permissions, and shows them.</p>
+    </div>
+    <div id="cases"><div class="empty"><p>Loading…</p></div></div>
+  </section>
+</div>
 
-  var session = null;
-  var clinicId = null;
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-  function $(id) { return document.getElementById(id); }
-  function note(id, msg, cls) {
-    var e = $(id);
-    e.className = 'note ' + (cls || '');
-    e.textContent = msg || '';
-  }
-  function working(id, msg) {
-    $(id).className = 'note';
-    $(id).innerHTML = '<span class="working">' + msg + '</span>';
-  }
+const SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+// Public, RLS-protected anon key. The service role key never appears client-side.
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
 
-  function rest(path, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign({
-      apikey: ANON_KEY,
-      Authorization: 'Bearer ' + session.access_token,
-      'Content-Type': 'application/json'
-    }, opts.headers || {});
-    return fetch(SUPABASE_URL + path, opts).then(function (r) {
-      return r.text().then(function (t) {
-        var b; try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
-        return { status: r.status, body: b };
-      });
-    });
-  }
+// One shared Supabase client with a persisted session, so the embedded Studio
+// and Visualize are already signed in as the same user. No second login.
+const sb = createClient(SUPABASE_URL, ANON_KEY);
 
-  function api(path, opts) {
-    opts = opts || {};
-    opts.headers = Object.assign(
-      { Authorization: 'Bearer ' + session.access_token },
-      opts.headers || {}
-    );
-    return fetch(path, opts).then(function (r) {
-      return r.text().then(function (t) {
-        var b; try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
-        return { status: r.status, body: b };
-      });
-    });
-  }
+let clinicId = null;
 
-  // Sanitize in the browser: the canvas re-encode drops all EXIF (GPS, camera
-  // identifiers, timestamps) and bakes orientation into the pixels before the
-  // photo leaves this device. The server refuses anything still carrying EXIF.
-  function sanitize(file, name) {
-    return new Promise(function (resolve, reject) {
-      var img = new Image();
-      var url = URL.createObjectURL(file);
-      img.onload = function () {
-        var max = 2400;
-        var s = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
-        var c = document.createElement('canvas');
-        c.width = Math.round(img.naturalWidth * s);
-        c.height = Math.round(img.naturalHeight * s);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
-        c.toBlob(function (b) {
-          if (!b) { reject(new Error('That image could not be read.')); return; }
-          resolve(new File([b], name + '.jpg', { type: 'image/jpeg' }));
-        }, 'image/jpeg', 0.9);
-      };
-      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('That image could not be read.')); };
-      img.src = url;
-    });
-  }
+const $ = id => document.getElementById(id);
+const note = (id, msg, cls) => { const e = $(id); e.className = 'note ' + (cls || ''); e.textContent = msg || ''; };
+const token = async () => {
+  const { data } = await sb.auth.getSession();
+  return data && data.session ? data.session.access_token : null;
+};
 
-  // ---- sign in ----------------------------------------------------------
+/* The taxonomy, mirroring visualize.html exactly. The left value is the literal
+   string a generation posts. If these drift from Visualize's options, a case
+   will never match a simulation and nothing will say why: it simply comes back
+   ungrounded. Keep the two in lockstep. */
+const SUBTYPES = {
+  biostim: { label: 'Product', options: [
+    ['sculptra', 'PLLA (Sculptra)'],
+    ['hdr', 'CaHA (Hyperdilute Radiesse)']
+  ]},
+  filler: { label: 'Area', options: [
+    ['chin,jawline', 'Chin + Jawline'], ['chin', 'Chin only'], ['jawline', 'Jawline only'],
+    ['cheeks', 'Cheeks'], ['temple', 'Temple'], ['nose', 'Nose'],
+    ['tear_trough', 'Tear trough'], ['lips', 'Lips'], ['nasolabial_folds', 'Nasolabial folds']
+  ]},
+  tox: { label: 'Pattern', options: [
+    ['combined', 'Masseter + Nefertiti'], ['masseter', 'Masseter slimming'], ['nefertiti', 'Nefertiti lift']
+  ]},
+  laser: { label: 'Device', options: [
+    ['rf', 'RF (radiofrequency tightening)'], ['hifu', 'HIFU (focused ultrasound)']
+  ]}
+};
 
-  $('signIn').addEventListener('click', signIn);
-  $('password').addEventListener('keydown', function (e) { if (e.key === 'Enter') signIn(); });
-
-  function signIn() {
-    note('gateNote', '');
-    working('gateNote', 'Signing in');
-    fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
-      method: 'POST',
-      headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: $('email').value.trim(), password: $('password').value })
-    }).then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (!j.access_token) {
-          note('gateNote', 'That email and password did not match an account.', 'bad');
-          return;
-        }
-        session = j;
-        loadClinic();
-      })
-      .catch(function () { note('gateNote', 'Could not reach the server. Try again.', 'bad'); });
-  }
-
-  // Session lives in memory only. Closing the tab signs you out, which is the
-  // right default for a screen showing patient photographs on a shared computer.
-  $('signOut').addEventListener('click', function () { location.reload(); });
-
-  function loadClinic() {
-    rest('/rest/v1/clinic_memberships?status=eq.active&revoked_at=is.null&select=clinic_id')
-      .then(function (res) {
-        var rows = Array.isArray(res.body) ? res.body : [];
-        if (!rows.length) {
-          note('gateNote', 'This account is not attached to a clinic case library.', 'bad');
-          return null;
-        }
-        clinicId = rows[0].clinic_id;
-        return rest('/rest/v1/clinics?id=eq.' + encodeURIComponent(clinicId) + '&select=name');
-      })
-      .then(function (res) {
-        if (!res) return;
-        var rows = Array.isArray(res.body) ? res.body : [];
-        $('clinicName').textContent = (rows[0] && rows[0].name) || ('Clinic ' + clinicId);
-        $('gate').style.display = 'none';
-        $('hdr').style.display = 'flex';
-        $('app').style.display = 'block';
-        loadCases();
-      });
-  }
-
-  // ---- tabs -------------------------------------------------------------
-
-  function tab(on, off, showId, hideId) {
-    $(on).classList.add('active');
-    $(off).classList.remove('active');
-    $(showId).style.display = 'block';
-    $(hideId).style.display = 'none';
-  }
-  $('tabCases').addEventListener('click', function () { tab('tabCases', 'tabVis', 'panelCases', 'panelVis'); });
-  $('tabVis').addEventListener('click', function () { tab('tabVis', 'tabCases', 'panelVis', 'panelCases'); });
-
-  // ---- add a case -------------------------------------------------------
-
-  $('classification').addEventListener('change', function () {
-    $('patientGate').style.display = this.value === 'patient' ? 'block' : 'none';
+function renderSubtypes() {
+  const cfg = SUBTYPES[$('libType').value];
+  $('libSubLabel').textContent = cfg.label;
+  $('libSubtype').innerHTML = '';
+  cfg.options.forEach(([value, label]) => {
+    const o = document.createElement('option');
+    o.value = value; o.textContent = label;
+    $('libSubtype').appendChild(o);
   });
+}
+$('libType').addEventListener('change', renderSubtypes);
+$('libClass').addEventListener('change', function () {
+  $('patientGate').style.display = this.value === 'patient' ? 'block' : 'none';
+});
+renderSubtypes();
 
-  $('uploadBtn').addEventListener('click', function () {
-    var bf = $('beforeFile').files[0];
-    var af = $('afterFile').files[0];
-    if (!bf || !af) { note('uploadNote', 'Add both a before and an after photograph.', 'bad'); return; }
-    var version = $('consentVersion').value.trim();
-    if (!version) { note('uploadNote', 'Record which consent form the patient signed.', 'bad'); return; }
+/* ---- sign in ---- */
 
-    var c = [{ purpose: 'store', granted: true, version: version, method: 'clinic_portal' }];
-    if ($('cVisualize').checked) c.push({ purpose: 'visualize', granted: true, version: version, method: 'clinic_portal' });
-    if ($('cGallery').checked) c.push({ purpose: 'gallery_site', granted: true, version: version, method: 'clinic_portal' });
+$('signIn').addEventListener('click', signIn);
+$('password').addEventListener('keydown', e => { if (e.key === 'Enter') signIn(); });
 
-    $('uploadBtn').disabled = true;
-    working('uploadNote', 'Removing photo metadata');
-
-    Promise.all([sanitize(bf, 'before'), sanitize(af, 'after')])
-      .then(function (clean) {
-        var fd = new FormData();
-        fd.append('clinic_id', clinicId);
-        fd.append('data_classification', $('classification').value);
-        fd.append('treatment', $('treatment').value.trim());
-        fd.append('angle', $('angle').value);
-        fd.append('phenotype', $('phenotype').value.trim());
-        fd.append('consents', JSON.stringify(c));
-        fd.append('before', clean[0]);
-        fd.append('after', clean[1]);
-        working('uploadNote', 'Storing the case');
-        return api('/api/clinic-case-upload', { method: 'POST', body: fd });
-      })
-      .then(function (res) {
-        if (res.status === 200 && res.body.ok) {
-          note('uploadNote', 'Case added.', 'ok');
-          $('beforeFile').value = '';
-          $('afterFile').value = '';
-          loadCases();
-        } else {
-          note('uploadNote', (res.body && res.body.error) || 'The case was not stored.', 'bad');
-        }
-      })
-      .catch(function (e) { note('uploadNote', e.message, 'bad'); })
-      .then(function () { $('uploadBtn').disabled = false; });
+async function signIn() {
+  note('gateNote', 'Signing in…');
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: $('email').value.trim(),
+    password: $('password').value
   });
-
-  // ---- library ----------------------------------------------------------
-
-  // Private images are proxied, not signed: <img src> cannot carry an auth
-  // header, so fetch the bytes with the token and render from a blob URL that
-  // exists only in this tab. No shareable link to a patient photo is created.
-  function loadImage(caseId, which, el) {
-    fetch('/api/clinic-case-image?case_id=' + encodeURIComponent(caseId) + '&which=' + which, {
-      headers: { Authorization: 'Bearer ' + session.access_token }
-    })
-      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
-      .then(function (b) {
-        el.src = URL.createObjectURL(b);
-        el.onload = function () { URL.revokeObjectURL(el.src); };
-      })
-      .catch(function () { el.alt = 'Image unavailable'; });
+  if (error || !data.session) {
+    note('gateNote', 'That email and password did not match an account.', 'bad');
+    return;
   }
+  start();
+}
 
-  function loadCases() {
-    Promise.all([
-      rest('/rest/v1/clinic_reference_cases?clinic_id=eq.' + encodeURIComponent(clinicId) +
-           '&select=id,treatment,angle,phenotype,data_classification,visualize_approved,published_before_path,created_at' +
-           '&order=created_at.desc'),
-      rest('/rest/v1/clinic_case_consents?clinic_id=eq.' + encodeURIComponent(clinicId) +
-           '&granted=eq.true&revoked_at=is.null&select=case_id,purpose')
-    ]).then(function (r) {
-      var rows = Array.isArray(r[0].body) ? r[0].body : [];
-      var consents = Array.isArray(r[1].body) ? r[1].body : [];
-      var byCase = {};
-      consents.forEach(function (c) {
-        (byCase[c.case_id] = byCase[c.case_id] || {})[c.purpose] = true;
-      });
+$('signOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
-      var host = $('cases');
-      if (!rows.length) {
-        host.innerHTML =
-          '<div class="empty"><div class="display">Nothing here yet.</div>' +
-          '<p>Add your first case above. One case is enough to start grounding your Visualize.</p></div>';
-        return;
+async function start() {
+  const { data: rows, error } = await sb
+    .from('clinic_memberships')
+    .select('clinic_id')
+    .eq('status', 'active')
+    .is('revoked_at', null)
+    .limit(1);
+
+  if (error || !rows || !rows.length) {
+    note('gateNote', 'This account is not attached to a clinic case library.', 'bad');
+    return;
+  }
+  clinicId = rows[0].clinic_id;
+
+  const { data: c } = await sb.from('clinics').select('name').eq('id', clinicId).limit(1);
+  $('clinicName').textContent = (c && c[0] && c[0].name) || ('Clinic ' + clinicId);
+
+  $('gate').style.display = 'none';
+  $('hdr').style.display = 'flex';
+  $('tabs').style.display = 'flex';
+  $('panel-studio').style.display = 'block';
+
+  // The real Visualize, loaded exactly as a consumer would get it. The clinic
+  // context is attached by the portal when the generation request goes out, so
+  // visualize.html itself knows nothing about clinics and is never modified.
+  $('visFrame').src = '/visualize.html';
+
+  watchStudio();
+  loadCases();
+}
+
+sb.auth.getSession().then(({ data }) => { if (data && data.session) start(); });
+
+/* ---- tabs ---- */
+
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    ['studio', 'visualize', 'cases'].forEach(p => {
+      $('panel-' + p).style.display = (p === t.dataset.panel) ? 'block' : 'none';
+    });
+  });
+});
+
+/* ---- embedded Visualize ----
+   visualize.html loads exactly as a consumer gets it and is never modified. The
+   portal wraps that page's fetch and attaches clinicId to the generation request
+   on its way out. Consumer Visualize, opened directly, has no portal around it
+   and so sends no clinic context: its behaviour is untouched.
+
+   The same wrapper reads the jobId out of the request, so the portal can poll
+   the job itself and say plainly whether the clinic's own case shaped the
+   result. A clinic paying for a personalized Visualize should never have to
+   guess whether the personalization happened.
+
+   This depends on one thing: that Visualize posts a FormData to
+   start-visualization via the page's own fetch. If that ever changes, the
+   attachment silently stops and generations quietly come back ungrounded. The
+   banner below is the tell: it will start reporting "no case of yours matched"
+   for cases that should have matched. */
+
+const groundNote = (msg, cls) => {
+  const el = $('visGrounding');
+  el.style.display = 'block';
+  el.className = 'grounded ' + (cls || '');
+  el.textContent = msg;
+};
+
+$('visFrame').addEventListener('load', () => {
+  const w = $('visFrame').contentWindow;
+  if (!w || !clinicId) return;
+
+  const realFetch = w.fetch;
+
+  w.fetch = function (input, init) {
+    try {
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      const body = init && init.body;
+
+      if (url.indexOf('start-visualization') !== -1 && body instanceof w.FormData) {
+        // Attach the clinic context. start-visualization verifies the claim
+        // against clinic_memberships before honouring it, and the background
+        // worker verifies it again.
+        body.set('clinicId', clinicId);
+
+        const jobId = body.get('jobId');
+        if (jobId) {
+          groundNote('Generating. Checking which of your cases shapes this result…', 'wait');
+          watchJob(String(jobId));
+        }
       }
-      $('libSub').textContent = rows.length === 1
-        ? 'One case. Each carries its own permissions, and shows them.'
-        : rows.length + ' cases. Each carries its own permissions, and shows them.';
-      host.innerHTML = '';
-      rows.forEach(function (row) { host.appendChild(plate(row, byCase[row.id] || {})); });
+    } catch (e) { /* never break a generation over the banner */ }
+
+    return realFetch.call(w, input, init);
+  };
+});
+
+async function watchJob(jobId, tries) {
+  tries = tries || 0;
+  if (tries > 120) return;
+  await new Promise(r => setTimeout(r, 2000));
+  try {
+    const t = await token();
+    const r = await fetch('/.netlify/functions/get-visualization?jobId=' + encodeURIComponent(jobId), {
+      headers: { Authorization: 'Bearer ' + t }
     });
-  }
-
-  function mark(label, on, live) {
-    return '<span class="perm-mark' + (on ? ' on' : '') + (live ? ' live' : '') + '">' +
-           '<span class="dot"></span>' + label + '</span>';
-  }
-
-  function plate(r, perms) {
-    var el = document.createElement('article');
-    el.className = 'plate';
-
-    var dip = document.createElement('div');
-    dip.className = 'diptych';
-    ['before', 'after'].forEach(function (which) {
-      var fig = document.createElement('figure');
-      fig.className = 'frame';
-      fig.style.margin = '0';
-      var img = document.createElement('img');
-      var cap = document.createElement('figcaption');
-      cap.textContent = which;
-      fig.appendChild(img);
-      fig.appendChild(cap);
-      dip.appendChild(fig);
-      loadImage(r.id, which, img);
-    });
-
-    var published = !!r.published_before_path;
-    var body = document.createElement('div');
-    body.className = 'plate-body';
-
-    var meta = [r.angle, r.phenotype, new Date(r.created_at).toLocaleDateString('en-CA')]
-      .filter(Boolean).join(' · ');
-
-    body.innerHTML =
-      '<div class="display plate-title">' + (r.treatment || 'Case') + '</div>' +
-      '<div class="plate-meta">' + meta +
-        (r.data_classification !== 'patient' ? ' · ' + r.data_classification.replace('_', ' ') : '') +
-      '</div>' +
-      '<div class="ledger">' +
-        mark('Stored', !!perms.store, false) +
-        mark('Visualize', !!perms.visualize && r.visualize_approved, false) +
-        mark('Website', published, published) +
-      '</div>';
-
-    var acts = document.createElement('div');
-    acts.className = 'plate-actions';
-    var st = document.createElement('div');
-    st.className = 'note';
-
-    var pub = document.createElement('button');
-    pub.className = 'quiet';
-    pub.textContent = published ? 'Remove from website' : 'Show on website';
-    pub.disabled = !perms.gallery_site && !published;
-    if (pub.disabled) pub.title = 'The patient did not agree to public display.';
-    pub.onclick = function () {
-      run(pub, st, '/api/clinic-case-publish', {
-        action: published ? 'unpublish' : 'publish',
-        case_id: r.id, clinic_id: clinicId
-      });
-    };
-
-    var ref = document.createElement('button');
-    ref.className = 'quiet';
-    ref.textContent = r.visualize_approved ? 'Stop using as reference' : 'Use as reference';
-    ref.disabled = !perms.visualize && !r.visualize_approved;
-    if (ref.disabled) ref.title = 'The patient did not agree to this use.';
-    ref.onclick = function () {
-      ref.disabled = true;
-      rest('/rest/v1/rpc/set_visualize_approval', {
-        method: 'POST',
-        body: JSON.stringify({
-          p_case_id: r.id, p_clinic_id: clinicId, p_approved: !r.visualize_approved
-        })
-      }).then(function (res) {
-        if (res.status >= 200 && res.status < 300) loadCases();
-        else {
-          st.className = 'note bad';
-          st.textContent = (res.body && res.body.message) || 'That change was refused.';
-          ref.disabled = false;
-        }
-      });
-    };
-
-    var wd = document.createElement('button');
-    wd.className = 'quiet warn';
-    wd.textContent = 'Patient withdrew consent';
-    wd.onclick = function () {
-      if (!confirm('This removes the case from your website and your Visualize, and deletes it. It cannot be undone.')) return;
-      run(wd, st, '/api/clinic-case-consent', {
-        action: 'revoke', case_id: r.id, clinic_id: clinicId,
-        purpose: 'store', reason: 'patient withdrew consent'
-      });
-    };
-
-    acts.appendChild(pub);
-    acts.appendChild(ref);
-    acts.appendChild(wd);
-    body.appendChild(acts);
-    body.appendChild(st);
-    el.appendChild(dip);
-    el.appendChild(body);
-    return el;
-  }
-
-  function run(btn, st, path, payload) {
-    btn.disabled = true;
-    st.className = 'note';
-    st.innerHTML = '<span class="working">Working</span>';
-    api(path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(function (res) {
-      if (res.status === 200 && res.body.ok) loadCases();
-      else {
-        st.className = 'note bad';
-        st.textContent = (res.body && res.body.error) || 'That did not go through.';
-        btn.disabled = false;
+    const d = await r.json();
+    if (d.state === 'done') {
+      if (d.referenceMode === 'clinic_case') {
+        groundNote('Shaped by one of your approved cases.', '');
+      } else {
+        groundNote('No case of yours matched this treatment, product and angle, so this result is ungrounded. Save a matching case in Studio and approve it in Cases.', 'off');
       }
-    }).catch(function (e) {
-      st.className = 'note bad';
-      st.textContent = e.message;
-      btn.disabled = false;
-    });
-  }
-
-  // ---- visualize --------------------------------------------------------
-  //
-  // The CLINIC route. It sends clinicId explicitly, which is what grounds the
-  // generation in this clinic's own approved, consented cases. The consumer
-  // Visualize on skinday.com sends no clinic context and is untouched by this.
-
-  var VIEW = { frontal: 'frontal', r45: 'oblique_right', l45: 'oblique_left' };
-
-  $('visBtn').addEventListener('click', function () {
-    var photo = $('visPhoto').files[0];
-    if (!photo) { note('visNote', 'Choose a patient photograph.', 'bad'); return; }
-    var angle = $('visAngle').value;
-
-    $('visBtn').disabled = true;
-    $('visResultWrap').style.display = 'none';
-    working('visNote', 'Removing photo metadata');
-
-    sanitize(photo, 'patient')
-      .then(function (clean) {
-        var jobId = (window.crypto && crypto.randomUUID)
-          ? crypto.randomUUID()
-          : (Date.now() + '-' + Math.random().toString(36).slice(2));
-        var fd = new FormData();
-        fd.append('image', clean, 'patient-' + angle + '.jpg');
-        fd.append('type', 'biostim');
-        fd.append('product', 'sculptra');
-        fd.append('timeline', $('visTimeline').value);
-        fd.append('projection', 'expected');
-        fd.append('jobId', jobId);
-        fd.append('angle', angle);
-        fd.append('view', VIEW[angle]);
-        var ph = $('visPhenotype').value.trim();
-        if (ph) fd.append('sculptraPhenotype', ph);
-        fd.append('clinicId', clinicId);  // the one field that separates the routes
-
-        working('visNote', 'Starting');
-        return fetch('/.netlify/functions/start-visualization', {
-          method: 'POST',
-          headers: { Authorization: 'Bearer ' + session.access_token },
-          body: fd
-        }).then(function (r) {
-          return r.json().then(function (j) { return { status: r.status, body: j, jobId: jobId }; });
-        });
-      })
-      .then(function (res) {
-        if (res.status !== 200 && res.status !== 202) {
-          throw new Error((res.body && res.body.error) || 'The simulation could not be started.');
-        }
-        working('visNote', 'Generating, usually under a minute');
-        return poll(res.jobId, 0);
-      })
-      .catch(function (e) { note('visNote', e.message, 'bad'); })
-      .then(function () { $('visBtn').disabled = false; });
-  });
-
-  function poll(jobId, n) {
-    if (n > 90) { note('visNote', 'The simulation timed out. Try again.', 'bad'); return; }
-    return new Promise(function (r) { setTimeout(r, 2000); })
-      .then(function () {
-        return fetch('/.netlify/functions/get-visualization?jobId=' + encodeURIComponent(jobId), {
-          headers: { Authorization: 'Bearer ' + session.access_token }
-        });
-      })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (d.state === 'done' && d.image) { show(d); return; }
-        if (d.state === 'error') { note('visNote', d.error || 'The simulation failed.', 'bad'); return; }
-        return poll(jobId, n + 1);
-      });
-  }
-
-  // Say plainly whether the clinic's own case shaped this result. A clinic paying
-  // for a personalized Visualize should never have to guess.
-  function show(d) {
-    note('visNote', '');
-    var g = $('visGrounding');
-    if (d.referenceMode === 'clinic_case') {
-      g.className = 'grounded';
-      g.textContent = 'Shaped by one of your approved cases.';
-    } else {
-      g.className = 'grounded off';
-      g.textContent = 'No case of yours matched this treatment and angle, so the simulation is ungrounded. Approve a matching case to change that.';
+      return;
     }
-    $('visResult').src = d.image;
-    $('visResultWrap').style.display = 'block';
+    if (d.state === 'error') { $('visGrounding').style.display = 'none'; return; }
+    return watchJob(jobId, tries + 1);
+  } catch (e) {
+    $('visGrounding').style.display = 'none';
   }
-})();
+}
+
+/* ---- embedded Studio ----
+   studio.html loads as-is and is never edited. The portal hides its nav and
+   footer, sizes it to content, and reads the slot canvases (cv-0, cv-1, …) out
+   of the embedded page.
+
+   The grid IS the structure. Studio's columns are before over after, so a grid
+   already encodes which photos pair up, and a 2x3 grid is exactly the three
+   angles Visualize works in. One export can therefore deposit three properly
+   angled cases in a single action.
+
+     2h / 2v  (0,1)                 1 case
+     2x2      (0,2) (1,3)           2 cases
+     2x3      (0,3) (1,4) (2,5)     3 cases
+     3h       no before/after       not saveable
+
+   What is kept is the aligned crop from Studio, not the branded export. The
+   export is an Instagram artifact; a clinical reference and a website gallery
+   both want the clean image. */
+
+const GRID_PAIRS = {
+  '2h':  [[0, 1]],
+  '2v':  [[0, 1]],
+  '2x2': [[0, 2], [1, 3]],
+  '2x3': [[0, 3], [1, 4], [2, 5]],
+  '3h':  []
+};
+const ANGLE_ORDER = ['frontal', 'oblique_right', 'oblique_left'];
+const ANGLE_LABEL = { frontal: 'Frontal', oblique_right: 'Oblique right', oblique_left: 'Oblique left' };
+
+let studioGrid = null;
+
+function studioDoc() {
+  try { return $('studioFrame').contentDocument; } catch (e) { return null; }
+}
+
+// S is a top-level const inside Studio, so it is not a property of its window.
+// eval runs in that window's own scope, which can see it. Same origin, so this
+// is allowed, and it means Studio needs no modification to expose anything.
+function studioGridId() {
+  try { return $('studioFrame').contentWindow.eval('S.grid'); } catch (e) { return null; }
+}
+
+function slotCanvas(i) {
+  const d = studioDoc();
+  const c = d && d.getElementById('cv-' + i);
+  return (c && c.width > 10) ? c : null;
+}
+
+$('studioFrame').addEventListener('load', () => {
+  const d = studioDoc();
+  if (!d) return;
+  const style = d.createElement('style');
+  style.textContent = 'nav, footer, .nav-overlay { display:none !important; }' +
+                      'body { background:#FAF7F2 !important; }';
+  d.head.appendChild(style);
+  const fit = () => {
+    const h = d.body ? d.body.scrollHeight : 0;
+    if (h > 200) $('studioFrame').style.height = (h + 40) + 'px';
+  };
+  fit();
+  setInterval(fit, 800);
+});
+
+function watchStudio() {
+  setInterval(() => {
+    const grid = studioGridId();
+    if (!grid) return;
+
+    const pairs = GRID_PAIRS[grid] || [];
+    const filled = pairs.filter(p => slotCanvas(p[0]) && slotCanvas(p[1]));
+
+    const noPairs = pairs.length === 0;
+    const ready = !noPairs && filled.length > 0;
+
+    $('libWaiting').style.display = (!ready && !noPairs) ? 'block' : 'none';
+    $('libNoPairs').style.display = noPairs ? 'block' : 'none';
+    $('libForm').style.display = ready ? 'block' : 'none';
+
+    // Only re-render the angle rows when the shape actually changes, so the
+    // clinic's angle choices are not wiped out on every poll.
+    const shape = grid + ':' + filled.map(p => p.join('-')).join(',');
+    if (ready && shape !== studioGrid) {
+      studioGrid = shape;
+      renderPairs(filled);
+    }
+    if (!ready) studioGrid = null;
+  }, 700);
+}
+
+function renderPairs(pairs) {
+  const host = $('pairs');
+  host.innerHTML = '';
+  pairs.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'pair';
+    row.dataset.before = p[0];
+    row.dataset.after = p[1];
+
+    const thumbs = document.createElement('div');
+    thumbs.className = 'pair-thumbs';
+    [p[0], p[1]].forEach(idx => {
+      const c = slotCanvas(idx);
+      const img = document.createElement('img');
+      if (c) img.src = c.toDataURL('image/jpeg', 0.6);
+      thumbs.appendChild(img);
+    });
+
+    const sel = document.createElement('select');
+    sel.className = 'pair-angle';
+    ANGLE_ORDER.forEach(a => {
+      const o = document.createElement('option');
+      o.value = a;
+      o.textContent = ANGLE_LABEL[a];
+      sel.appendChild(o);
+    });
+    // A 2x3 grid is three angles in Studio's own column order.
+    sel.value = ANGLE_ORDER[i] || 'frontal';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'pair-field';
+    const lab = document.createElement('label');
+    lab.className = 'eyebrow';
+    lab.textContent = 'Angle';
+    wrap.append(lab, sel);
+
+    row.append(thumbs, wrap);
+    host.appendChild(row);
+  });
+}
+
+function canvasToFile(canvas, name) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (!blob) { reject(new Error('That photo could not be processed.')); return; }
+      resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
+    }, 'image/jpeg', 0.9);
+  });
+}
+
+$('saveBtn').addEventListener('click', async () => {
+  const rows = Array.from(document.querySelectorAll('.pair'));
+  if (!rows.length) { note('saveNote', 'Build a before and after in Studio first.', 'bad'); return; }
+
+  const version = $('libConsentVersion').value.trim();
+  if (!version) { note('saveNote', 'Record which consent form the patient signed.', 'bad'); return; }
+
+  const angles = rows.map(r => r.querySelector('.pair-angle').value);
+  if (new Set(angles).size !== angles.length) {
+    note('saveNote', 'Each pair needs a different angle.', 'bad');
+    return;
+  }
+
+  $('saveBtn').disabled = true;
+  note('saveNote', 'Saving…');
+
+  const consents = [{ purpose: 'store', granted: true, version, method: 'clinic_studio' }];
+  if ($('cVisualize').checked) consents.push({ purpose: 'visualize', granted: true, version, method: 'clinic_studio' });
+  if ($('cGallery').checked) consents.push({ purpose: 'gallery_site', granted: true, version, method: 'clinic_studio' });
+
+  let saved = 0;
+  let failure = null;
+
+  try {
+    const t = await token();
+    if (!t) throw new Error('Your session expired. Sign in again.');
+
+    for (const row of rows) {
+      const b = slotCanvas(Number(row.dataset.before));
+      const a = slotCanvas(Number(row.dataset.after));
+      if (!b || !a) continue;
+
+      // Canvas output carries no EXIF: re-encoding strips GPS, camera
+      // identifiers and timestamps, and bakes orientation into the pixels.
+      const [before, after] = await Promise.all([
+        canvasToFile(b, 'before'),
+        canvasToFile(a, 'after')
+      ]);
+
+      const fd = new FormData();
+      fd.append('clinic_id', clinicId);
+      fd.append('data_classification', $('libClass').value);
+      fd.append('treatment', $('libType').value);
+      fd.append('subtype', $('libSubtype').value);
+      fd.append('angle', row.querySelector('.pair-angle').value);
+      fd.append('consents', JSON.stringify(consents));
+      fd.append('before', before);
+      fd.append('after', after);
+
+      const res = await fetch('/api/clinic-case-upload', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + t },
+        body: fd
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.ok) saved++;
+      else { failure = body.error || 'The case was not saved.'; break; }
+    }
+  } catch (e) {
+    failure = e.message;
+  }
+
+  if (saved && !failure) {
+    const bits = [saved === 1 ? 'One case saved' : saved + ' cases saved'];
+    if ($('cVisualize').checked) bits.push('approve them in Cases and they will teach your Visualize');
+    if ($('cGallery').checked) bits.push('publish from Cases to put them on your website');
+    note('saveNote', bits.join('. ') + '.', 'ok');
+    loadCases();
+  } else if (saved && failure) {
+    note('saveNote', saved + ' saved, then stopped: ' + failure, 'bad');
+    loadCases();
+  } else {
+    note('saveNote', failure || 'Nothing was saved.', 'bad');
+  }
+
+  $('saveBtn').disabled = false;
+});
+
+/* ---- cases ---- */
+
+async function loadImage(caseId, which, el) {
+  try {
+    const t = await token();
+    const r = await fetch('/api/clinic-case-image?case_id=' + encodeURIComponent(caseId) + '&which=' + which, {
+      headers: { Authorization: 'Bearer ' + t }
+    });
+    if (!r.ok) throw new Error(r.status);
+    const blob = await r.blob();
+    el.src = URL.createObjectURL(blob);
+    el.onload = () => URL.revokeObjectURL(el.src);
+  } catch (e) { el.alt = 'Image unavailable'; }
+}
+
+async function loadCases() {
+  const [{ data: rows }, { data: cons }] = await Promise.all([
+    sb.from('clinic_reference_cases')
+      .select('id,treatment,subtype,angle,phenotype,data_classification,visualize_approved,published_before_path,created_at')
+      .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
+    sb.from('clinic_case_consents')
+      .select('case_id,purpose').eq('clinic_id', clinicId)
+      .eq('granted', true).is('revoked_at', null)
+  ]);
+
+  const perms = {};
+  (cons || []).forEach(c => { (perms[c.case_id] = perms[c.case_id] || {})[c.purpose] = true; });
+
+  const host = $('cases');
+  if (!rows || !rows.length) {
+    host.innerHTML = '<div class="empty"><div class="display">Nothing here yet.</div>' +
+      '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>';
+    return;
+  }
+  $('libSub').textContent = rows.length + (rows.length === 1 ? ' case.' : ' cases.') +
+    ' Each carries its own permissions, and shows them.';
+  host.innerHTML = '';
+  rows.forEach(r => host.appendChild(plate(r, perms[r.id] || {})));
+}
+
+const mark = (label, on, live) =>
+  '<span class="perm-mark' + (on ? ' on' : '') + (live ? ' live' : '') + '">' +
+  '<span class="dot"></span>' + label + '</span>';
+
+function plate(r, perms) {
+  const el = document.createElement('article');
+  el.className = 'plate';
+
+  const dip = document.createElement('div');
+  dip.className = 'diptych';
+  ['before', 'after'].forEach(which => {
+    const fig = document.createElement('figure');
+    fig.className = 'frame';
+    const img = document.createElement('img');
+    const cap = document.createElement('figcaption');
+    cap.textContent = which;
+    fig.append(img, cap);
+    dip.appendChild(fig);
+    loadImage(r.id, which, img);
+  });
+
+  const published = !!r.published_before_path;
+  const body = document.createElement('div');
+
+  const known = SUBTYPES[r.treatment];
+  const subLabel = known && (known.options.find(o => o[0] === r.subtype) || [])[1];
+  const title = subLabel || r.treatment || 'Case';
+  const meta = [r.angle, r.phenotype, new Date(r.created_at).toLocaleDateString('en-CA')]
+    .filter(Boolean).join(' · ');
+
+  body.innerHTML =
+    '<div class="display plate-title">' + title + '</div>' +
+    '<div class="plate-meta">' + meta +
+      (r.data_classification !== 'patient' ? ' · ' + r.data_classification.replace('_', ' ') : '') +
+    '</div>' +
+    '<div class="ledger">' +
+      mark('Stored', !!perms.store, false) +
+      mark('Visualize', !!perms.visualize && r.visualize_approved, false) +
+      mark('Website', published, published) +
+    '</div>';
+
+  const acts = document.createElement('div');
+  acts.className = 'plate-actions';
+  const st = document.createElement('div');
+  st.className = 'note';
+
+  const pub = document.createElement('button');
+  pub.className = 'quiet';
+  pub.textContent = published ? 'Remove from website' : 'Show on website';
+  pub.disabled = !perms.gallery_site && !published;
+  if (pub.disabled) pub.title = 'The patient did not agree to public display.';
+  pub.onclick = () => run(pub, st, '/api/clinic-case-publish', {
+    action: published ? 'unpublish' : 'publish', case_id: r.id, clinic_id: clinicId
+  });
+
+  const ref = document.createElement('button');
+  ref.className = 'quiet';
+  ref.textContent = r.visualize_approved ? 'Stop using as reference' : 'Use as reference';
+  ref.disabled = !perms.visualize && !r.visualize_approved;
+  if (ref.disabled) ref.title = 'The patient did not agree to this use.';
+  ref.onclick = async () => {
+    ref.disabled = true;
+    const { error } = await sb.rpc('set_visualize_approval', {
+      p_case_id: r.id, p_clinic_id: clinicId, p_approved: !r.visualize_approved
+    });
+    if (error) {
+      st.className = 'note bad';
+      st.textContent = error.message || 'That change was refused.';
+      ref.disabled = false;
+    } else loadCases();
+  };
+
+  const wd = document.createElement('button');
+  wd.className = 'quiet warn';
+  wd.textContent = 'Patient withdrew consent';
+  wd.onclick = () => {
+    if (!confirm('This removes the case from your website and your Visualize, and deletes it. It cannot be undone.')) return;
+    run(wd, st, '/api/clinic-case-consent', {
+      action: 'revoke', case_id: r.id, clinic_id: clinicId,
+      purpose: 'store', reason: 'patient withdrew consent'
+    });
+  };
+
+  acts.append(pub, ref, wd);
+  body.append(acts, st);
+  el.append(dip, body);
+  return el;
+}
+
+async function run(btn, st, path, payload) {
+  btn.disabled = true;
+  st.className = 'note';
+  st.textContent = 'Working…';
+  try {
+    const t = await token();
+    const res = await fetch(path, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body.ok) loadCases();
+    else {
+      st.className = 'note bad';
+      st.textContent = body.error || 'That did not go through.';
+      btn.disabled = false;
+    }
+  } catch (e) {
+    st.className = 'note bad';
+    st.textContent = e.message;
+    btn.disabled = false;
+  }
+}
 </script>
 </body>
 </html>
