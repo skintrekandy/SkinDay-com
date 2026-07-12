@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Clinic Portal | SkinDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep: #1C1714;
+    --cream: #FAF7F2;
+    --rose: #C8725A;
+    --rose-deep: #a85a52;
+    --gold: #C9A96E;
+    --line: #e6ddd3;
+    --muted: #6b615a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--deep);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.55;
+  }
+  header {
+    background: var(--deep);
+    color: var(--cream);
+    padding: 18px 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: 26px;
+    margin: 0;
+    letter-spacing: .01em;
+  }
+  header .clinic { color: var(--gold); font-size: 14px; }
+  header .spacer { flex: 1; }
+  header button {
+    background: transparent;
+    border: 1px solid rgba(250,247,242,.35);
+    color: var(--cream);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  main { max-width: 1000px; margin: 0 auto; padding: 28px 24px 80px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 22px;
+  }
+  h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 600;
+    font-size: 22px;
+    margin: 0 0 4px;
+  }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+  label { display: block; font-size: 12px; font-weight: 700; margin: 12px 0 5px; letter-spacing: .02em; }
+  input[type=text], input[type=email], input[type=password], select, input[type=file] {
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid #d9d0c6;
+    border-radius: 9px;
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--cream);
+    color: var(--deep);
+  }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 150px; }
+  button.primary, button.ghost {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 9px;
+    padding: 10px 18px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    margin-top: 16px;
+  }
+  button.primary { background: var(--deep); color: var(--cream); }
+  button.primary:hover { background: #2c241f; }
+  button.ghost { background: transparent; color: var(--deep); border-color: #d9d0c6; }
+  button:disabled { opacity: .45; cursor: default; }
+  .consent {
+    background: var(--cream);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+  .consent h3 { font-size: 13px; margin: 0 0 4px; letter-spacing: .02em; }
+  .consent p { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+  .check { display: flex; gap: 9px; align-items: flex-start; margin: 8px 0; font-size: 13px; }
+  .check input { margin-top: 3px; }
+  .check span small { display: block; color: var(--muted); font-size: 11.5px; }
+  .gate {
+    border-left: 3px solid var(--rose);
+    background: #fdf3f0;
+    padding: 10px 13px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #7a4034;
+    margin-top: 14px;
+  }
+  .case {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+  .case:last-child { border-bottom: 0; }
+  .thumbs { display: flex; gap: 6px; }
+  .thumbs img {
+    width: 74px; height: 92px; object-fit: cover;
+    border-radius: 7px; border: 1px solid var(--line); background: var(--cream);
+  }
+  .case-body { flex: 1; min-width: 240px; }
+  .case-title { font-weight: 700; text-transform: capitalize; font-size: 15px; }
+  .case-meta { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .badges { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 20px; font-weight: 700;
+  }
+  .b-pub { background: #e7f0e9; color: #2f6b45; }
+  .b-ref { background: #f3ecdd; color: #856224; }
+  .b-test { background: #efe9e4; color: var(--muted); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .actions button {
+    margin-top: 0; font-size: 12.5px; padding: 7px 12px; font-weight: 500;
+  }
+  .danger { color: var(--rose-deep); border-color: #e5c3bc !important; }
+  .status { font-size: 12.5px; margin-top: 10px; }
+  .ok { color: #2f6b45; }
+  .bad { color: var(--rose-deep); }
+  .empty { color: var(--muted); font-size: 14px; padding: 20px 0; }
+  .login { max-width: 380px; margin: 90px auto; }
+</style>
+</head>
+<body>
+
+<header id="hdr" style="display:none;">
+  <h1>SkinDay Clinic</h1>
+  <span class="clinic" id="clinicName"></span>
+  <span class="spacer"></span>
+  <button id="signOut">Sign out</button>
+</header>
+
+<main>
+
+  <div class="card login" id="loginCard">
+    <h2>Clinic portal</h2>
+    <p class="sub">Case library, gallery, and your clinic's Visualize.</p>
+    <label>Email</label>
+    <input type="email" id="email" autocomplete="username">
+    <label>Password</label>
+    <input type="password" id="password" autocomplete="current-password">
+    <button class="primary" id="signIn">Sign in</button>
+    <div class="status bad" id="loginStatus"></div>
+  </div>
+
+  <div id="app" style="display:none;">
+
+    <div class="card">
+      <h2>Add a case</h2>
+      <p class="sub">Upload once. The case feeds your Visualize, and you choose separately whether it appears on your website gallery.</p>
+
+      <div class="row">
+        <div>
+          <label>Treatment</label>
+          <input type="text" id="treatment" placeholder="sculptra" value="sculptra">
+        </div>
+        <div>
+          <label>Angle</label>
+          <select id="angle">
+            <option value="frontal">frontal</option>
+            <option value="oblique_right">oblique right</option>
+            <option value="oblique_left">oblique left</option>
+          </select>
+        </div>
+        <div>
+          <label>Phenotype (optional)</label>
+          <input type="text" id="phenotype" placeholder="e.g. deflation">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Before photo</label>
+          <input type="file" id="beforeFile" accept="image/*">
+        </div>
+        <div>
+          <label>After photo</label>
+          <input type="file" id="afterFile" accept="image/*">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Subject</label>
+          <select id="classification">
+            <option value="staff_test">staff / test</option>
+            <option value="synthetic">synthetic</option>
+            <option value="paid_model">paid model</option>
+            <option value="patient">patient</option>
+          </select>
+        </div>
+        <div>
+          <label>Consent form version</label>
+          <input type="text" id="consentVersion" value="skintrek-v1">
+        </div>
+      </div>
+
+      <div class="consent">
+        <h3>What the patient agreed to</h3>
+        <p>Record only what they actually consented to. Each permission is separate, and each can be withdrawn later.</p>
+
+        <label class="check">
+          <input type="checkbox" id="cStore" checked disabled>
+          <span><strong>Store this case</strong>
+            <small>Required. Permission for SkinDay to hold the photos.</small></span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="cVisualize" checked>
+          <span><strong>Use to ground our Visualize</strong>
+            <small>Private. The case guides simulations, never shown publicly.</small></span>
+        </label>
+
+        <label class="check">
+          <input type="checkbox" id="cGallery">
+          <span><strong>Show on our website gallery</strong>
+            <small>Public. Anyone can see it. Removal cannot recall cached copies.</small></span>
+        </label>
+      </div>
+
+      <div class="gate" id="patientGate" style="display:none;">
+        Real patient uploads are disabled until the consent wording has been reviewed. Choose staff, synthetic, or paid model for now. The server enforces this regardless of what is selected here.
+      </div>
+
+      <button class="primary" id="uploadBtn">Add case</button>
+      <div class="status" id="uploadStatus"></div>
+    </div>
+
+    <div class="card">
+      <h2>Case library</h2>
+      <p class="sub" id="libSub">Your stored cases.</p>
+      <div id="cases"><div class="empty">Loading...</div></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  var SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+  // Public, RLS-protected anon key. Same one already embedded in Studio and the
+  // directory portal. It is safe in client code by design; the service role key
+  // is the one that must never appear here.
+  var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+
+  var session = null;
+  var clinicId = null;
+  var clinicName = '';
+
+  function $(id) { return document.getElementById(id); }
+  function setStatus(el, msg, cls) {
+    var e = $(el);
+    e.className = 'status ' + (cls || '');
+    e.textContent = msg || '';
+  }
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign(
+      { Authorization: 'Bearer ' + session.access_token },
+      opts.headers || {}
+    );
+    return fetch(path, opts).then(function (r) {
+      return r.text().then(function (t) {
+        var b;
+        try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
+        return { status: r.status, body: b };
+      });
+    });
+  }
+
+  function rest(path, opts) {
+    opts = opts || {};
+    opts.headers = Object.assign(
+      {
+        apikey: ANON_KEY,
+        Authorization: 'Bearer ' + session.access_token,
+        'Content-Type': 'application/json'
+      },
+      opts.headers || {}
+    );
+    return fetch(SUPABASE_URL + path, opts).then(function (r) {
+      return r.text().then(function (t) {
+        var b;
+        try { b = JSON.parse(t); } catch (e) { b = { raw: t }; }
+        return { status: r.status, body: b };
+      });
+    });
+  }
+
+  // ---- auth -----------------------------------------------------------
+
+  $('signIn').addEventListener('click', function () {
+    setStatus('loginStatus', 'Signing in...', '');
+    fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: $('email').value.trim(),
+        password: $('password').value
+      })
+    }).then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (!j.access_token) {
+          setStatus('loginStatus', j.error_description || j.msg || 'Sign in failed.', 'bad');
+          return;
+        }
+        session = j;
+        try { sessionStorageSet(j); } catch (e) {}
+        loadClinic();
+      })
+      .catch(function (e) { setStatus('loginStatus', e.message, 'bad'); });
+  });
+
+  // Session is held in memory only. Closing the tab signs you out, which is the
+  // right default for a screen that shows patient photographs.
+  function sessionStorageSet() { /* intentionally not persisted */ }
+
+  $('signOut').addEventListener('click', function () {
+    session = null;
+    clinicId = null;
+    location.reload();
+  });
+
+  // ---- clinic resolution ----------------------------------------------
+
+  function loadClinic() {
+    rest('/rest/v1/clinic_memberships?status=eq.active&revoked_at=is.null&select=clinic_id,role')
+      .then(function (res) {
+        var rows = Array.isArray(res.body) ? res.body : [];
+        if (!rows.length) {
+          setStatus('loginStatus',
+            'This account is signed in, but it is not a member of any clinic in the case library.', 'bad');
+          return;
+        }
+        clinicId = rows[0].clinic_id;
+        return rest('/rest/v1/clinics?id=eq.' + encodeURIComponent(clinicId) + '&select=name');
+      })
+      .then(function (res) {
+        if (!res) return;
+        var rows = Array.isArray(res.body) ? res.body : [];
+        clinicName = (rows[0] && rows[0].name) || ('Clinic ' + clinicId);
+        $('clinicName').textContent = clinicName;
+        $('loginCard').style.display = 'none';
+        $('hdr').style.display = 'flex';
+        $('app').style.display = 'block';
+        loadCases();
+      });
+  }
+
+  // ---- upload ----------------------------------------------------------
+
+  $('classification').addEventListener('change', function () {
+    $('patientGate').style.display = this.value === 'patient' ? 'block' : 'none';
+  });
+
+  // Browser-side sanitization: the canvas re-encode drops all EXIF (GPS, camera
+  // identifiers, timestamps) and bakes orientation into the pixels before the
+  // image ever leaves this device. The server verifies and refuses anything
+  // that still carries EXIF.
+  function sanitize(file, name) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        var maxEdge = 2400;
+        var scale = Math.min(1, maxEdge / Math.max(img.naturalWidth, img.naturalHeight));
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.naturalWidth * scale);
+        c.height = Math.round(img.naturalHeight * scale);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        c.toBlob(function (blob) {
+          if (!blob) { reject(new Error('could not encode ' + name)); return; }
+          resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
+        }, 'image/jpeg', 0.9);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('could not read ' + name)); };
+      img.src = url;
+    });
+  }
+
+  $('uploadBtn').addEventListener('click', function () {
+    var bf = $('beforeFile').files[0];
+    var af = $('afterFile').files[0];
+    if (!bf || !af) { setStatus('uploadStatus', 'Both a before and an after photo are needed.', 'bad'); return; }
+
+    var version = $('consentVersion').value.trim();
+    if (!version) { setStatus('uploadStatus', 'Record which consent form version the patient signed.', 'bad'); return; }
+
+    var consents = [{ purpose: 'store', granted: true, version: version, method: 'clinic_portal' }];
+    if ($('cVisualize').checked) consents.push({ purpose: 'visualize', granted: true, version: version, method: 'clinic_portal' });
+    if ($('cGallery').checked) consents.push({ purpose: 'gallery_site', granted: true, version: version, method: 'clinic_portal' });
+
+    $('uploadBtn').disabled = true;
+    setStatus('uploadStatus', 'Removing photo metadata...', '');
+
+    Promise.all([sanitize(bf, 'before'), sanitize(af, 'after')])
+      .then(function (clean) {
+        var fd = new FormData();
+        fd.append('clinic_id', clinicId);
+        fd.append('data_classification', $('classification').value);
+        fd.append('treatment', $('treatment').value.trim());
+        fd.append('angle', $('angle').value);
+        fd.append('phenotype', $('phenotype').value.trim());
+        fd.append('consents', JSON.stringify(consents));
+        fd.append('before', clean[0]);
+        fd.append('after', clean[1]);
+        setStatus('uploadStatus', 'Storing case...', '');
+        return api('/api/clinic-case-upload', { method: 'POST', body: fd });
+      })
+      .then(function (res) {
+        if (res.status === 200 && res.body.ok) {
+          setStatus('uploadStatus', 'Case stored.', 'ok');
+          $('beforeFile').value = '';
+          $('afterFile').value = '';
+          loadCases();
+        } else {
+          setStatus('uploadStatus', (res.body && res.body.error) || 'Upload failed.', 'bad');
+        }
+      })
+      .catch(function (e) { setStatus('uploadStatus', e.message, 'bad'); })
+      .then(function () { $('uploadBtn').disabled = false; });
+  });
+
+  // ---- case library ----------------------------------------------------
+
+  function thumb(caseId, which, imgEl) {
+    api('/api/clinic-case-image?case_id=' + encodeURIComponent(caseId) + '&which=' + which)
+      .then(function (res) {
+        if (res.status === 200 && res.body.ok) imgEl.src = res.body.url;
+      })
+      .catch(function () {});
+  }
+
+  function loadCases() {
+    rest('/rest/v1/clinic_reference_cases?clinic_id=eq.' + encodeURIComponent(clinicId) +
+         '&select=id,treatment,angle,phenotype,data_classification,visualize_approved,published_before_path,created_at' +
+         '&order=created_at.desc')
+      .then(function (res) {
+        var rows = Array.isArray(res.body) ? res.body : [];
+        var host = $('cases');
+        if (!rows.length) {
+          host.innerHTML = '<div class="empty">No cases yet. Add one above.</div>';
+          return;
+        }
+        host.innerHTML = '';
+        rows.forEach(function (r) { host.appendChild(caseRow(r)); });
+      });
+  }
+
+  function caseRow(r) {
+    var el = document.createElement('div');
+    el.className = 'case';
+
+    var thumbs = document.createElement('div');
+    thumbs.className = 'thumbs';
+    var b = document.createElement('img');
+    var a = document.createElement('img');
+    thumbs.appendChild(b);
+    thumbs.appendChild(a);
+    thumb(r.id, 'before', b);
+    thumb(r.id, 'after', a);
+
+    var body = document.createElement('div');
+    body.className = 'case-body';
+
+    var published = !!r.published_before_path;
+    var badges = '';
+    if (published) badges += '<span class="badge b-pub">On website</span>';
+    if (r.visualize_approved) badges += '<span class="badge b-ref">Visualize reference</span>';
+    if (r.data_classification !== 'patient') {
+      badges += '<span class="badge b-test">' + r.data_classification + '</span>';
+    }
+
+    body.innerHTML =
+      '<div class="case-title">' + (r.treatment || 'case') + '</div>' +
+      '<div class="case-meta">' + (r.angle || '') +
+        (r.phenotype ? ' &middot; ' + r.phenotype : '') +
+        ' &middot; ' + new Date(r.created_at).toLocaleDateString() + '</div>' +
+      '<div class="badges">' + badges + '</div>';
+
+    var actions = document.createElement('div');
+    actions.className = 'actions';
+
+    var pubBtn = document.createElement('button');
+    pubBtn.className = 'ghost';
+    pubBtn.textContent = published ? 'Remove from website' : 'Show on website';
+    pubBtn.onclick = function () {
+      act(pubBtn, '/api/clinic-case-publish', {
+        action: published ? 'unpublish' : 'publish',
+        case_id: r.id,
+        clinic_id: clinicId
+      }, st);
+    };
+
+    var refBtn = document.createElement('button');
+    refBtn.className = 'ghost';
+    refBtn.textContent = r.visualize_approved ? 'Remove as reference' : 'Use as Visualize reference';
+    refBtn.onclick = function () {
+      refBtn.disabled = true;
+      rest('/rest/v1/rpc/set_visualize_approval', {
+        method: 'POST',
+        body: JSON.stringify({
+          p_case_id: r.id,
+          p_clinic_id: clinicId,
+          p_approved: !r.visualize_approved
+        })
+      }).then(function (res) {
+        if (res.status >= 200 && res.status < 300) { loadCases(); }
+        else {
+          st.className = 'status bad';
+          st.textContent = (res.body && res.body.message) || 'Refused.';
+          refBtn.disabled = false;
+        }
+      });
+    };
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'ghost danger';
+    delBtn.textContent = 'Patient withdrew consent';
+    delBtn.onclick = function () {
+      if (!confirm('This withdraws the patient\'s consent to store this case. It will be removed from your website and your Visualize, and the case will be deleted. This cannot be undone.')) return;
+      act(delBtn, '/api/clinic-case-consent', {
+        action: 'revoke',
+        case_id: r.id,
+        clinic_id: clinicId,
+        purpose: 'store',
+        reason: 'patient withdrew consent'
+      }, st);
+    };
+
+    actions.appendChild(pubBtn);
+    actions.appendChild(refBtn);
+    actions.appendChild(delBtn);
+
+    var st = document.createElement('div');
+    st.className = 'status';
+
+    body.appendChild(actions);
+    body.appendChild(st);
+    el.appendChild(thumbs);
+    el.appendChild(body);
+    return el;
+  }
+
+  function act(btn, path, payload, st) {
+    btn.disabled = true;
+    st.className = 'status';
+    st.textContent = 'Working...';
+    api(path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      if (res.status === 200 && res.body.ok) {
+        loadCases();
+      } else {
+        st.className = 'status bad';
+        st.textContent = (res.body && res.body.error) || 'Did not succeed.';
+        btn.disabled = false;
+      }
+    }).catch(function (e) {
+      st.className = 'status bad';
+      st.textContent = e.message;
+      btn.disabled = false;
+    });
+  }
+})();
+</script>
+</body>
+</html>
