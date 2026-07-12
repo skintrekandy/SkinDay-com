@@ -14,6 +14,30 @@
 // the treated region, no matter what the prompt does. No mask = today's exact
 // full-image behavior (backward compatible).
 //
+// M11 UPDATE: the clinic reference branch was rewritten against the M11 schema.
+//   The old code queried clinic_reference_cases directly for columns that no
+//   longer exist (treatment_area, approved, sex, sort_order) in a bucket that no
+//   longer exists (reference-cases), and used billing.userId as the clinic id.
+//
+//   TWO SEPARATE ENTRY POINTS, never inferred from each other:
+//     Consumer Visualize (skinday.com) sends NO clinic context. Pay-as-you-go,
+//       the user's own credits, gold reference only. This holds even when the
+//       logged-in user owns a clinic.
+//     Clinic Visualize (clinic portal) sends clinicId EXPLICITLY in the job
+//       fields. The worker verifies that claim against clinic_memberships, then
+//       grounds in that clinic's own approved, consented cases.
+//
+//   References come through get_clinic_visualize_references, which returns a
+//   case ONLY if it is visualize_approved and carries active 'store' and
+//   'visualize' consent. A patient who withdraws visualize consent drops out of
+//   the reference set immediately. Images are downloaded server-side from
+//   clinic-cases-private with the service role; no signed URL to a private
+//   patient photo is ever minted.
+//
+//   REQUIRED WIRING: the clinic Visualize entry point must include clinicId in
+//   the job fields. Without it, this branch never fires and every generation is
+//   consumer-mode. The initiating function must pass it through to the job blob.
+//
 // M12 CLINIC LIBRARY: reference-guided generation.
 //   Reference image lookup fires for every biostim (Sculptra) generation.
 //   Fallback chain:
@@ -118,73 +142,144 @@ const REFERENCE_IDENTITY_LOCK =
   ' The output must show Image 1 (the actual patient) with the Sculptra treatment applied at the visual intensity shown in Image 2.' +
   ' Image 2 is a style and volume guide only -- never an identity donor.';
 
-// M12: look up the best approved clinic reference case for this generation.
-// Returns { beforePath, afterPath } or null.
-// Match priority: (sex + phenotype) > (sex only) > (phenotype only) > untagged > any.
-async function fetchClinicReferenceCase(clinicId, treatmentArea, angle, phenotype, sex) {
+// M11: verify an EXPLICIT clinic context.
+//
+// Clinic grounding is never inferred from who the user happens to be. The two
+// products are separate entry points and must stay that way:
+//
+//   Consumer Visualize (skinday.com)  sends no clinic context. Pay-as-you-go,
+//     the user's own credits, gold reference only. Even if that user owns a
+//     clinic, no clinic's private patient imagery grounds their simulation.
+//
+//   Clinic Visualize (via the clinic portal) sends clinicId explicitly. Only
+//     then is the clinic's own case library used.
+//
+// Inferring the clinic from membership would mean one account silently behaving
+// two different ways with nothing on screen to explain it. Explicit wins.
+//
+// A clinic id arriving in a request is a CLAIM, not a fact, so it is verified
+// against clinic_memberships here before anything is grounded in that clinic's
+// patient photos. An unverified claim returns null and falls through to gold.
+async function verifyClinicContext(userId, clinicId) {
+  const SUPABASE_URL = process.env.SUPABASE_URL || '';
+  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  if (!SUPABASE_URL || !SERVICE_KEY || !userId || !clinicId) return null;
+  try {
+    const qs = new URLSearchParams({
+      select:     'clinic_id',
+      user_id:    'eq.' + userId,
+      clinic_id:  'eq.' + clinicId,
+      status:     'eq.active',
+      revoked_at: 'is.null',
+      limit:      '1'
+    });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/clinic_memberships?' + qs.toString(), {
+      headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY }
+    });
+    if (!res.ok) {
+      console.warn('[M11] membership verification failed: HTTP ' + res.status);
+      return null;
+    }
+    const rows = await res.json();
+    if (!rows || !rows.length) {
+      console.warn('[M11] clinic context REFUSED: user ' + userId
+        + ' is not an active member of clinic ' + clinicId);
+      return null;
+    }
+    console.log('[M11] clinic context verified: clinic ' + clinicId);
+    return rows[0].clinic_id;
+  } catch (e) {
+    console.warn('[M11] verifyClinicContext error:', (e && e.message) || e);
+    return null;
+  }
+}
+
+// M11: look up the best approved clinic reference case for this generation.
+// Returns { caseId, beforePath, afterPath } or null.
+//
+// This calls get_clinic_visualize_references rather than querying the table
+// directly. That RPC is the ONLY place the consent rules live: it returns a
+// case only when it is visualize_approved AND carries an active 'store' consent
+// AND an active 'visualize' consent AND is not soft-deleted. A revoked consent
+// therefore drops the case out of the model's reference set immediately, with
+// no code here needing to know about it.
+//
+// Match priority within the returned set: phenotype match > untagged > any.
+// (The old sex-based priority is gone: the M11 schema does not store sex, and
+// adding a sex column to patient records is a data-minimization decision, not
+// an incidental one.)
+async function fetchClinicReferenceCase(clinicId, treatment, angle, phenotype) {
   const SUPABASE_URL = process.env.SUPABASE_URL || '';
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!SUPABASE_URL || !SERVICE_KEY || !clinicId) return null;
 
   try {
-    const qs = new URLSearchParams({
-      select:         'id,before_path,after_path,phenotype,sex,sort_order',
-      clinic_id:      'eq.' + clinicId,
-      treatment_area: 'eq.' + treatmentArea,
-      angle:          'eq.' + angle,
-      approved:       'eq.true',
-      order:          'sort_order.asc,created_at.asc',
-      limit:          '10'
-    });
-    const res = await fetch(SUPABASE_URL + '/rest/v1/clinic_reference_cases?' + qs.toString(), {
-      headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY }
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_clinic_visualize_references', {
+      method: 'POST',
+      headers: {
+        apikey: SERVICE_KEY,
+        Authorization: 'Bearer ' + SERVICE_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        p_clinic_id: clinicId,
+        p_treatment: treatment || null,
+        p_angle:     angle || null,
+        p_limit:     10
+      })
     });
     if (!res.ok) {
-      console.warn('[M12] clinic case lookup failed: HTTP ' + res.status);
+      console.warn('[M11] clinic reference lookup failed: HTTP ' + res.status + ' ' + (await res.text()).slice(0, 160));
       return null;
     }
     const rows = await res.json();
-    if (!rows || !rows.length) return null;
+    if (!rows || !rows.length) {
+      console.log('[M11] no approved+consented references for clinic ' + clinicId
+        + ' (treatment=' + treatment + ', angle=' + angle + ')');
+      return null;
+    }
 
-    // Match priority: sex+phenotype > sex-only > phenotype-only > untagged > any.
     const chosen =
-      rows.find(r => r.sex === sex && r.phenotype === phenotype)   ||
-      rows.find(r => r.sex === sex && !r.phenotype)                ||
-      rows.find(r => !r.sex        && r.phenotype === phenotype)   ||
-      rows.find(r => !r.sex        && !r.phenotype)                ||
+      rows.find(r => phenotype && r.phenotype === phenotype) ||
+      rows.find(r => !r.phenotype) ||
       rows[0];
 
-    console.log('[M12] clinic reference chosen: id=' + chosen.id
+    console.log('[M11] clinic reference chosen: case=' + chosen.case_id
       + ' phenotype=' + (chosen.phenotype || 'any')
-      + ' sex=' + (chosen.sex || 'any'));
-    return { beforePath: chosen.before_path, afterPath: chosen.after_path };
+      + ' angle=' + (chosen.angle || 'any'));
+    return {
+      caseId:     chosen.case_id,
+      beforePath: chosen.before_path,
+      afterPath:  chosen.after_path
+    };
   } catch (e) {
-    console.warn('[M12] fetchClinicReferenceCase error:', (e && e.message) || e);
+    console.warn('[M11] fetchClinicReferenceCase error:', (e && e.message) || e);
     return null;
   }
 }
 
-// M12: generate a signed URL for a Storage object (service role, 300-second TTL).
-// The signed URL is fetched at generation time, not stored, so the path is durable
-// and the URL is ephemeral. 300 s is more than enough for a single generation.
-async function signedStorageUrl(path) {
+// M11: download a private clinic case object with the service role and hand it
+// to OpenAI as a file. No signed URL is minted, so no URL to a patient's
+// private photo exists even briefly. The bytes go straight from Storage into
+// the generation request, server-side, and are never persisted here.
+async function fetchPrivateCaseFile(path, filename) {
   const SUPABASE_URL = process.env.SUPABASE_URL || '';
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!SUPABASE_URL || !SERVICE_KEY || !path) return null;
   try {
     const res = await fetch(
-      SUPABASE_URL + '/storage/v1/object/sign/reference-cases/' + encodeURIComponent(path),
-      {
-        method: 'POST',
-        headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expiresIn: 300 })
-      }
+      SUPABASE_URL + '/storage/v1/object/clinic-cases-private/' + path,
+      { headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY } }
     );
-    if (!res.ok) { console.warn('[M12] sign URL failed: HTTP ' + res.status); return null; }
-    const j = await res.json();
-    return (j && j.signedURL) ? (SUPABASE_URL + j.signedURL) : null;
+    if (!res.ok) {
+      console.warn('[M11] private case fetch failed: HTTP ' + res.status);
+      return null;
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ct  = res.headers.get('content-type') || 'image/jpeg';
+    return await OpenAI.toFile(buf, filename || 'clinic_reference.jpg', { type: ct });
   } catch (e) {
-    console.warn('[M12] signedStorageUrl error:', (e && e.message) || e);
+    console.warn('[M11] fetchPrivateCaseFile error:', (e && e.message) || e);
     return null;
   }
 }
@@ -220,23 +315,33 @@ async function resolveReference(f, billing) {
   console.log('[M12] resolveReference: isSculptra=' + isSculptra + ' isEnhanced=' + isEnhanced + ' isStrongPass=' + JSON.stringify(f.isStrongPass));
   if (!isSculptra || !isEnhanced) return { refFile: null, referenceMode: null };
 
-  const angle         = canonicalAngle(f.angle || f.view);
-  const phenotype     = f.phenotype || f.sculptraPhenotype || null;
-  const sex           = f.sex || null;
-  const treatmentArea = 'sculptra'; // Enhanced Sculptra is always sculptra area
-  const clinicId      = billing ? billing.userId : null;
+  const angle     = canonicalAngle(f.angle || f.view);
+  const phenotype = f.phenotype || f.sculptraPhenotype || null;
+  const treatment = 'sculptra'; // Enhanced Sculptra is always the sculptra treatment
 
   // --- Branch 1: clinic's own library ---
+  // Fires ONLY when the request carried an explicit clinic context, which the
+  // clinic portal's Visualize sends and the consumer Visualize does not. The
+  // claim is then verified against clinic_memberships before any of that
+  // clinic's private patient imagery is touched.
+  const userId            = billing ? billing.userId : null;
+  const requestedClinicId = f.clinicId || f.clinic_id || null;
+
+  if (!requestedClinicId) {
+    console.log('[M11] no clinic context on this request: consumer route, gold ref only');
+  }
+
+  const clinicId = requestedClinicId
+    ? await verifyClinicContext(userId, String(requestedClinicId))
+    : null;
+
   if (clinicId) {
-    const caseRow = await fetchClinicReferenceCase(clinicId, treatmentArea, angle, phenotype, sex);
+    const caseRow = await fetchClinicReferenceCase(clinicId, treatment, angle, phenotype);
     if (caseRow) {
-      const afterUrl = await signedStorageUrl(caseRow.afterPath);
-      if (afterUrl) {
-        const refFile = await fetchReferenceFile(afterUrl, 'clinic_ref_after.jpg');
-        if (refFile) {
-          console.log('[M12] reference mode: clinic_case (angle=' + angle + ')');
-          return { refFile, referenceMode: 'clinic_case' };
-        }
+      const refFile = await fetchPrivateCaseFile(caseRow.afterPath, 'clinic_ref_after.jpg');
+      if (refFile) {
+        console.log('[M11] reference mode: clinic_case (clinic=' + clinicId + ' angle=' + angle + ')');
+        return { refFile, referenceMode: 'clinic_case' };
       }
     }
   }
