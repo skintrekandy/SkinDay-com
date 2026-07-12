@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Install your gallery · SkinDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep:#1C1714; --cream:#FAF7F2; --rose:#C8725A; --gold:#C9A96E;
+    --muted:#857a70; --line:#e7ded3;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--cream); color:var(--deep);
+    font-family:'DM Sans',system-ui,sans-serif; font-size:15px; line-height:1.65;
+  }
+  .display { font-family:'Cormorant Garamond',Georgia,serif; font-weight:400; line-height:1.15; }
+  .eyebrow {
+    font-size:10.5px; font-weight:700; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  header {
+    background:var(--deep); color:var(--cream);
+    border-bottom:1px solid var(--gold); padding:20px 32px;
+  }
+  header .mark { font-size:24px; }
+  header .mark em { font-style:italic; color:var(--gold); }
+  main { max-width:760px; margin:0 auto; padding:48px 32px 100px; }
+  h1 { font-size:40px; margin:8px 0 10px; }
+  .lede { color:var(--muted); font-size:15px; margin:0 0 44px; max-width:56ch; }
+  h2 { font-size:26px; margin:0 0 6px; }
+  section { margin-bottom:52px; }
+  section > p { color:var(--muted); font-size:13.5px; margin:0 0 18px; max-width:60ch; }
+  pre {
+    background:var(--deep); color:#e8e0d6;
+    padding:16px 18px; border-radius:3px; overflow-x:auto;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:12.5px; line-height:1.7; margin:0;
+  }
+  .copy {
+    display:flex; align-items:center; gap:12px; margin-top:10px;
+  }
+  button {
+    font:inherit; font-size:12.5px; background:none; color:var(--deep);
+    border:1px solid var(--line); border-radius:2px; padding:7px 14px;
+    cursor:pointer;
+  }
+  button:hover { border-color:var(--gold); }
+  .ok { color:#3d6b4c; font-size:12.5px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; margin-top:14px; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); font-weight:700; }
+  td code {
+    font-family:ui-monospace,Menlo,monospace; font-size:12.5px;
+    background:#efe8df; padding:1px 5px; border-radius:2px;
+  }
+  .note {
+    border-left:2px solid var(--gold); background:#faf4e9;
+    padding:13px 16px; font-size:13px; color:#6d5628;
+  }
+  .preview { border:1px solid var(--line); background:#fff; padding:22px; margin-top:14px; }
+  a { color:var(--rose); }
+</style>
+</head>
+<body>
+
+<header><span class="display mark">Skin<em>Day</em></span></header>
+
+<main>
+  <span class="eyebrow">For the clinic's web developer</span>
+  <h1 class="display">Install the gallery.</h1>
+  <p class="lede">One line, once. From then on, every before-and-after the clinic publishes in SkinDay appears on their website automatically. Nobody has to touch the site again.</p>
+
+  <section>
+    <h2 class="display">1. Paste this where the gallery should appear</h2>
+    <p>Anywhere in the page body. That is the whole installation.</p>
+    <pre id="snippet"></pre>
+    <div class="copy">
+      <button id="copyBtn">Copy</button>
+      <span class="ok" id="copied"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="display">2. That is it</h2>
+    <div class="note">
+      When the clinic publishes a new case, it appears here on the next page load. No deploy, no CMS entry, no ticket to you. When a patient withdraws consent, it disappears the same way.
+    </div>
+  </section>
+
+  <section>
+    <h2 class="display">Options</h2>
+    <p>Add any of these to the same tag.</p>
+    <table>
+      <thead><tr><th>Attribute</th><th>Does</th></tr></thead>
+      <tbody>
+        <tr><td><code>data-columns</code></td><td>Columns on desktop. Default 3. Collapses to 2, then 1, on smaller screens.</td></tr>
+        <tr><td><code>data-limit</code></td><td>Show only the newest N cases.</td></tr>
+        <tr><td><code>data-accent</code></td><td>Accent colour. Any CSS colour.</td></tr>
+        <tr><td><code>data-radius</code></td><td>Corner radius in pixels. Default 2.</td></tr>
+        <tr><td><code>data-labels</code></td><td><code>off</code> hides the BEFORE / AFTER tags.</td></tr>
+        <tr><td><code>data-caption</code></td><td><code>off</code> hides the treatment line under each case.</td></tr>
+        <tr><td><code>data-target</code></td><td>The id of an element to render into, instead of in place.</td></tr>
+        <tr><td><code>data-style</code></td><td><code>off</code> hands the styling to you. See below.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 class="display">If you want to style it yourself</h2>
+    <p>By default the gallery is rendered in a shadow root, so your site's CSS cannot reach it and ours cannot leak into your site. That is deliberate: it means one design survives any theme, and we can improve it without ever touching your code.</p>
+    <p>If you would rather own the design, add <code>data-style="off"</code>. We then output plain semantic markup with no styling at all, and you style it however you like. The content still updates itself; only the CSS becomes yours.</p>
+    <pre>&lt;script src="https://skinday.com/gallery-embed.js"
+        data-clinic-id="<span class="cid"></span>"
+        data-style="off"&gt;&lt;/script&gt;
+
+.skinday-gallery          the container
+.skinday-gallery__grid    wraps all cases
+.skinday-gallery__case    one case (data-treatment, data-angle)
+.skinday-gallery__pair    the before / after pair
+.skinday-gallery__figure  one photo (data-when="before" | "after")
+.skinday-gallery__img     the image
+.skinday-gallery__label   the BEFORE / AFTER caption
+.skinday-gallery__meta    the treatment line
+.skinday-gallery__note    the results-vary line
+.skinday-gallery__empty   shown when nothing is published</pre>
+  </section>
+
+  <section>
+    <h2 class="display">If you want to build it from scratch</h2>
+    <p>Skip the script and read the JSON directly. Public, no key, CORS open.</p>
+    <pre>GET https://skinday.com/api/clinic-gallery?clinic_id=<span class="cid"></span>
+
+{
+  "ok": true,
+  "clinic_id": "<span class="cid"></span>",
+  "count": 2,
+  "cases": [
+    {
+      "case_id":   "case_4890cb94f1f4c8de",
+      "treatment": "filler",
+      "angle":     "frontal",
+      "before_url": "https://.../before.jpg",
+      "after_url":  "https://.../after.jpg",
+      "created_at": "2026-07-12T01:25:34Z"
+    }
+  ]
+}</pre>
+    <p style="margin-top:16px;">Only cases the patient consented to publish are ever returned. There is no way to request an unpublished one.</p>
+  </section>
+
+  <section>
+    <h2 class="display">Live preview</h2>
+    <p>This is the clinic's real gallery, right now, exactly as it will look on their site.</p>
+    <div class="preview" id="preview"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var clinicId = new URLSearchParams(location.search).get('clinic') || '';
+  if (!clinicId) {
+    document.querySelector('main').innerHTML =
+      '<h1 class="display">Missing clinic</h1>' +
+      '<p class="lede">This link needs a clinic id, for example ' +
+      '<code>/embed.html?clinic=386</code>. The clinic can copy the correct link ' +
+      'from the Cases tab of their SkinDay portal.</p>';
+    return;
+  }
+
+  var snippet =
+    '<script src="https://skinday.com/gallery-embed.js"\n' +
+    '        data-clinic-id="' + clinicId + '"><\/script>';
+
+  document.getElementById('snippet').textContent = snippet;
+  Array.prototype.forEach.call(document.querySelectorAll('.cid'), function (el) {
+    el.textContent = clinicId;
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', function () {
+    navigator.clipboard.writeText(snippet).then(function () {
+      document.getElementById('copied').textContent = 'Copied.';
+    });
+  });
+
+  // The real embed, running live, so the developer sees exactly what installs.
+  var s = document.createElement('script');
+  s.src = '/gallery-embed.js';
+  s.setAttribute('data-clinic-id', clinicId);
+  s.setAttribute('data-columns', '2');
+  document.getElementById('preview').appendChild(s);
+})();
+</script>
+</body>
+</html>

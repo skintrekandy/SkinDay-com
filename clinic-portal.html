@@ -376,6 +376,12 @@
       </div>
       <div class="note" id="copyNote"></div>
 
+      <p class="note" style="margin-top:14px;">
+        Not the one who edits the website? Send your developer this link and they
+        will have everything they need:
+        <a id="devLink" href="#" target="_blank" rel="noopener"></a>
+      </p>
+
       <div class="eyebrow" style="margin:26px 0 12px;">Live preview</div>
       <div id="galleryPreview"><p class="note">Loading…</p></div>
     </div>
@@ -901,6 +907,11 @@ $('copyEmbed').addEventListener('click', async () => {
 
 async function loadGallery() {
   $('embedCode').textContent = embedSnippet();
+
+  const dev = 'https://skinday.com/embed.html?clinic=' + encodeURIComponent(clinicId);
+  $('devLink').href = dev;
+  $('devLink').textContent = dev;
+
   const host = $('galleryPreview');
   try {
     const r = await fetch('/api/clinic-gallery?clinic_id=' + encodeURIComponent(clinicId));
