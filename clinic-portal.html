@@ -704,9 +704,46 @@ function newSeriesId() {
 
 // Studio composes the date from its month/day/year dropdowns and stores it on
 // the slot. Read it the same way the grid is read.
+//
+// M12 FIX, and this was silently costing you the interval axis on every 2x2 and
+// 2x3 case since M11.
+//
+// Studio does NOT store one date per photo. For grids that have row labels, and
+// that is 2x2 and 2x3 only, renderDateFields renders ONE date per ROW and stores
+// it on the FIRST slot of that row:
+//
+//   const items = rowLabels.length
+//     ? rowLabels.map((lab, r) => ({ slot: r * cfg.cols, label: lab }))
+//
+// So a 2x3 carries its dates on slots 0 and 3, and slots 1, 2, 4 and 5 are
+// empty. The pairs are [0,3] [1,4] [2,5]. Reading the date off the pair's own
+// slot therefore found it for the first pair and nothing for the other two, and
+// a null interval is a legal value, so nothing ever errored. Two thirds of every
+// multi-angle case lost the axis that makes timeline-aware grounding possible.
+//
+// The shape is read out of Studio's own GRID_CONFIG rather than hardcoded here,
+// so if Studio ever changes which grids use row labels, this follows it instead
+// of drifting away from it in silence, which is how it broke the first time.
+function studioGridShape() {
+  try {
+    const w = $('studioFrame').contentWindow;
+    const cols = Number(w.eval('GRID_CONFIG[S.grid].cols')) || 1;
+    const rowDates = Number(w.eval('GRID_CONFIG[S.grid].rowLabels.length')) > 0;
+    return { cols, rowDates };
+  } catch (e) { return null; }
+}
+
+// Which slot actually holds the date for a given photo.
+function dateSlot(i) {
+  const shape = studioGridShape();
+  if (!shape || !shape.rowDates) return i;
+  return Math.floor(i / shape.cols) * shape.cols;
+}
+
 function slotDate(i) {
   try {
-    const v = $('studioFrame').contentWindow.eval('S.slots[' + i + '] && S.slots[' + i + '].date');
+    const s = dateSlot(i);
+    const v = $('studioFrame').contentWindow.eval('S.slots[' + s + '] && S.slots[' + s + '].date');
     return v || '';
   } catch (e) { return ''; }
 }
@@ -714,8 +751,9 @@ function slotDate(i) {
 function slotDateParts(i) {
   try {
     const w = $('studioFrame').contentWindow;
-    const m = w.eval('(S.slots[' + i + '] && S.slots[' + i + '].dateParts && S.slots[' + i + '].dateParts.m) || ""');
-    const y = w.eval('(S.slots[' + i + '] && S.slots[' + i + '].dateParts && S.slots[' + i + '].dateParts.y) || ""');
+    const s = dateSlot(i);
+    const m = w.eval('(S.slots[' + s + '] && S.slots[' + s + '].dateParts && S.slots[' + s + '].dateParts.m) || ""');
+    const y = w.eval('(S.slots[' + s + '] && S.slots[' + s + '].dateParts && S.slots[' + s + '].dateParts.y) || ""');
     return { m: Number(m) || 0, y: Number(y) || 0 };
   } catch (e) { return { m: 0, y: 0 }; }
 }
