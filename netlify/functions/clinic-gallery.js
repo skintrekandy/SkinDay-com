@@ -212,15 +212,17 @@ exports.handler = async (event) => {
         cases,
         series
       },
-      // Short cache: an unpublish should disappear quickly, not linger for hours.
-      // Sixty seconds is a deliberate choice, not an oversight. Zero cache would
-      // put a database read on every visitor to every clinic's homepage to close
-      // a one-minute window, and the window is already closed on the surface that
-      // matters: when a patient withdraws consent the public object is deleted
-      // immediately, so a stale card resolves to a dead image, and the embed
-      // removes any case whose image fails to load. The card cannot outlive the
-      // consent even while the JSON is briefly stale.
-      { 'Cache-Control': 'public, max-age=60, s-maxage=60' }
+      // Ten seconds, not sixty.
+      //
+      // The cache exists to absorb a burst of visitors, and ten seconds does that
+      // as well as sixty does. What sixty seconds ALSO did was outlast a clinic's
+      // patience: publish a case, switch tabs, reload, and see the old gallery.
+      // The clinic does not conclude "the cache has not expired". They conclude
+      // the product is broken, and they are not wrong to, because a product that
+      // does not do what you just told it to is broken from where they sit.
+      //
+      // The database read this costs is trivial. The confusion it cost was not.
+      { 'Cache-Control': 'public, max-age=10, s-maxage=10' }
     );
   } catch (err) {
     console.error('clinic-gallery failed', err);
