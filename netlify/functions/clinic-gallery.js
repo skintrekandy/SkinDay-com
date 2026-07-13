@@ -133,6 +133,7 @@ function buildSeries(cases) {
       treatment: first.treatment,
       subtype: first.subtype,
       treatment_label: first.treatment_label || null,
+      injector_name: first.injector_name || null,
       crop: first.crop || null,
       angle: mode === 'angles' ? null : first.angle,
       interval_months: mode === 'timeline' ? null : first.interval_months,
@@ -190,6 +191,9 @@ exports.handler = async (event) => {
       // The clinic's own caption, from Studio step 5. Display only. Null falls
       // back to the treatment category name.
       treatment_label: r.treatment_label || null,
+      // Present only when the clinic chose to publish it. Null is not "unknown",
+      // it is "not published", and the two should never be conflated.
+      injector_name: r.injector_name || null,
       angle: r.angle,
       crop: r.crop || null,
       phenotype: r.phenotype,
