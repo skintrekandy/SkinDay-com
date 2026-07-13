@@ -326,6 +326,7 @@
           <div id="pairs"></div>
 
           <div class="crop-note" id="cropNote"></div>
+          <div class="crop-note" id="labelNote" style="display:none;"></div>
 
           <div class="consent">
             <div class="eyebrow" style="margin-bottom:4px;">What to do with this case</div>
@@ -696,6 +697,21 @@ function studioCrop() {
    always will. But the gallery would show those two as two cards sharing a
    before photo, reading as two patients. The series id is what lets the same
    data be read both ways: pairs for the model, one person for the visitor. */
+/* M12b: the treatment label.
+   Studio step 5 already asks for it ("e.g. Sculptra · 3 sessions") and prints it
+   on the exported image. It was never carried into the case, so the website
+   caption fell back to the taxonomy: "Biostimulator". That is SkinDay's word for
+   a category, and it is the right word for matching a generation to a reference.
+   It is the wrong word under a photograph, where the reader wants to know what
+   was done to this face, and only the clinic can say. */
+function studioTreatmentLabel() {
+  try {
+    const d = studioDoc();
+    const el = d && d.getElementById('treatmentLabel');
+    return el ? el.value.trim().slice(0, 60) : '';
+  } catch (e) { return ''; }
+}
+
 function newSeriesId() {
   const b = new Uint8Array(8);
   crypto.getRandomValues(b);
@@ -775,6 +791,73 @@ function slotCanvas(i) {
   return (c && c.width > 10) ? c : null;
 }
 
+/* M12 FIX: the case is no longer built from Studio's preview canvas.
+
+   renderPreviews hardcodes `const pH = 300`, so cv-0, cv-1 and friends are 300
+   pixels tall no matter how good the original photograph is. They are screen
+   previews, and Studio's own export never touches them: generate() re-renders
+   every slot from the source image at panelH = 1080.
+
+   The portal was reading the preview. Every case stored so far is therefore a
+   300px thumbnail, which is why the gallery looks soft when enlarged. It is also
+   what has been going to the model as a reference image, where the cost is not
+   cosmetic: a blurred reference teaches the model blur.
+
+   So re-render from the source, using Studio's own box math, at the resolution
+   the photograph actually has.
+
+   Never upscale. box.h is the crop height in the ORIGINAL photograph's pixels,
+   so it is the true ceiling. A 4000px phone photo lands at 1440. A small one
+   stays small rather than being stretched into false detail. */
+const CASE_MAX_HEIGHT = 1440;
+
+function studioPreload() {
+  try {
+    return $('studioFrame').contentWindow.eval('preloadProcessedImages()');
+  } catch (e) { return Promise.resolve(); }
+}
+
+// The crop box for a slot, in source-image pixels, exactly as Studio computes it
+// for the export. When every slot is filled, getPannedBoxes gives them a common
+// eye distance, which is the thing that keeps a before and an after aligned. When
+// the grid is only partly filled, getAllBoxes would throw on the empty slots, so
+// fall back to the per-slot path renderPreviews already uses.
+function slotBox(i) {
+  try {
+    return $('studioFrame').contentWindow.eval(
+      '(function(i){' +
+      '  if (S.slots.every(function(sl){ return sl.img; })) return getPannedBoxes()[i];' +
+      '  var sl = S.slots[i];' +
+      '  if (!sl || !sl.img) return null;' +
+      '  var t = sl.lm ? (eyeDistPx(sl.lm, sl.img.naturalWidth) || 100) : 100;' +
+      '  var b = getBoxForSlot(i, t);' +
+      '  return clampBox({ x: b.x + sl.pan.x, y: b.y + sl.pan.y, w: b.w, h: b.h }, sl.img);' +
+      '})(' + i + ')'
+    );
+  } catch (e) { return null; }
+}
+
+function slotHiRes(i) {
+  try {
+    const w = $('studioFrame').contentWindow;
+    const box = slotBox(i);
+    const img = w.eval('getImgForSlot(' + i + ')');
+    if (!box || !box.w || !box.h || !img || !img.naturalWidth) return null;
+
+    const h = Math.max(1, Math.min(CASE_MAX_HEIGHT, Math.round(box.h)));
+    const wpx = Math.max(1, Math.round(h * (box.w / box.h)));
+
+    const c = document.createElement('canvas');
+    c.width = wpx;
+    c.height = h;
+    const ctx = c.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, wpx, h);
+    return c;
+  } catch (e) { return null; }
+}
+
 // Driven by the single timer above, and only while the Studio tab is on screen.
 function watchStudio(tick) {
   const grid = studioGridId();
@@ -811,6 +894,7 @@ function watchStudio(tick) {
    record and part of what the patient's face discloses on a public website. They
    should not have to infer that from a preset button two sections up. */
 function renderCropNote() {
+  renderLabelNote();
   const crop = studioCrop();
   const el = $('cropNote');
   if (!crop) {
@@ -825,6 +909,34 @@ function renderCropNote() {
     : '<b>' + CROP_LABEL[crop] + '.</b> Stored and published at this crop, so ' +
       'nothing outside it is ever disclosed. Change the crop in Studio above if ' +
       'that is not what the patient agreed to.';
+}
+
+const TREATMENT_FALLBACK = {
+  biostim: 'Biostimulator', filler: 'HA filler',
+  tox: 'Neurotoxin', laser: 'Energy-based'
+};
+
+/* Say out loud what the website is going to print. The clinic filled in a
+   treatment label in Studio to caption an Instagram export; the same words now
+   caption the case on their own site, and they should know that before they
+   save rather than discover it afterwards. */
+function renderLabelNote() {
+  const el = $('labelNote');
+  const label = studioTreatmentLabel();
+  const fallback = TREATMENT_FALLBACK[$('libType').value] || $('libType').value;
+  el.style.display = 'block';
+  el.innerHTML = label
+    ? 'Your website will caption this <b>' + escapeHtml(label) + '</b>, from the ' +
+      'treatment label in Studio.'
+    : 'No treatment label set in Studio, so your website will caption this ' +
+      '<b>' + escapeHtml(fallback) + '</b>. Add one in Studio step 5 to say what ' +
+      'you actually did.';
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 function renderPairs(pairs) {
@@ -903,7 +1015,7 @@ function canvasToFile(canvas, name) {
     flatten(canvas).toBlob(blob => {
       if (!blob) { reject(new Error('That photo could not be processed.')); return; }
       resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', 0.92);
   });
 }
 
@@ -942,6 +1054,7 @@ $('saveBtn').addEventListener('click', async () => {
   // pair that comes out of it.
   const crop = studioCrop();
   const seriesId = newSeriesId();
+  const treatmentLabel = studioTreatmentLabel();
 
   let saved = 0;
   let failure = null;
@@ -950,9 +1063,18 @@ $('saveBtn').addEventListener('click', async () => {
     const t = await token();
     if (!t) throw new Error('Your session expired. Sign in again.');
 
+    // Background-removed slots decode lazily. The export awaits this before it
+    // reads any pixels, and so must a save, or a processed slot silently falls
+    // back to the original photograph.
+    await studioPreload();
+
     for (const row of rows) {
-      const b = slotCanvas(Number(row.dataset.before));
-      const a = slotCanvas(Number(row.dataset.after));
+      const bSlot = Number(row.dataset.before);
+      const aSlot = Number(row.dataset.after);
+
+      // Re-rendered from the source image, not lifted off the 300px preview.
+      const b = slotHiRes(bSlot);
+      const a = slotHiRes(aSlot);
       if (!b || !a) continue;
 
       const [before, after] = await Promise.all([
@@ -960,8 +1082,6 @@ $('saveBtn').addEventListener('click', async () => {
         canvasToFile(a, 'after')
       ]);
 
-      const bSlot = Number(row.dataset.before);
-      const aSlot = Number(row.dataset.after);
       const beforeDate = slotDate(bSlot);
       const afterDate = slotDate(aSlot);
       const months = intervalMonths(bSlot, aSlot);
@@ -975,6 +1095,7 @@ $('saveBtn').addEventListener('click', async () => {
       if (afterDate) fd.append('after_date', afterDate);
       if (months) fd.append('interval_months', String(months));
       if (crop) fd.append('crop', crop);
+      if (treatmentLabel) fd.append('treatment_label', treatmentLabel);
       fd.append('series_id', seriesId);
       fd.append('consents', JSON.stringify(consents));
       fd.append('before', before);
@@ -1072,7 +1193,7 @@ async function loadImage(caseId, which, el) {
 async function loadCases() {
   const [{ data: rows }, { data: cons }] = await Promise.all([
     sb.from('clinic_reference_cases')
-      .select('id,treatment,subtype,angle,crop,series_id,interval_months,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
+      .select('id,treatment,subtype,treatment_label,angle,crop,series_id,interval_months,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
       .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
     sb.from('clinic_case_consents')
       .select('case_id,purpose').eq('clinic_id', clinicId)
@@ -1151,6 +1272,7 @@ function plate(r, perms, seriesSize) {
     ? r.before_date + ' \u2192 ' + r.after_date
     : (r.before_date || r.after_date || '');
   const meta = [
+    r.treatment_label,
     r.angle,
     intervalLabel(r.interval_months),
     span,
