@@ -837,25 +837,61 @@ function slotBox(i) {
   } catch (e) { return null; }
 }
 
-function slotHiRes(i) {
+function slotHiRes(i, frame) {
   try {
     const w = $('studioFrame').contentWindow;
     const box = slotBox(i);
     const img = w.eval('getImgForSlot(' + i + ')');
-    if (!box || !box.w || !box.h || !img || !img.naturalWidth) return null;
-
-    const h = Math.max(1, Math.min(CASE_MAX_HEIGHT, Math.round(box.h)));
-    const wpx = Math.max(1, Math.round(h * (box.w / box.h)));
+    if (!box || !box.w || !box.h || !img || !img.naturalWidth || !frame) return null;
 
     const c = document.createElement('canvas');
-    c.width = wpx;
-    c.height = h;
+    c.width = frame.w;
+    c.height = frame.h;
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, wpx, h);
+    ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, frame.w, frame.h);
     return c;
   } catch (e) { return null; }
+}
+
+/* ONE FRAME FOR THE WHOLE GRID, and this is not a detail.
+
+   getBoxForSlot derives its crop from landmarks: width from jaw width, height
+   from brow to chin. The before photograph and the after photograph are the same
+   person and not the same pixels, so the two boxes come out slightly different
+   SHAPES, not just different sizes.
+
+   Studio never shows you this, because renderPreviews draws every slot into one
+   common pW x pH canvas:
+
+     const pH = 300;
+     const aspect = boxes.reduce((sum, b) => sum + b.w / b.h, 0) / boxes.length;
+     pW = Math.round(pH * aspect);
+
+   That common frame is what the clinic looks at and approves, and it is why a
+   Studio grid lines up.
+
+   The first version of this save rendered each slot at its own aspect. In the
+   gallery card that was invisible, because object-fit:cover hides it. In the
+   lightbox, which shows the real shape, it came out as a before taller than its
+   after. Same rule as Studio, then: one aspect for the grid, one height, every
+   slot drawn into the same frame. */
+function gridFrame(slots) {
+  const boxes = slots.map(i => slotBox(i)).filter(b => b && b.w && b.h);
+  if (!boxes.length) return null;
+
+  const aspect = boxes.reduce((sum, b) => sum + b.w / b.h, 0) / boxes.length;
+
+  // Height is capped by the SMALLEST crop in the grid, not the largest. A common
+  // frame means one height for every slot, and a height above a slot's own crop
+  // would upscale that photograph into detail it does not have. Better that the
+  // whole grid sits at the resolution of its weakest photograph than that one of
+  // them is quietly invented.
+  const native = Math.min.apply(null, boxes.map(b => b.h));
+  const h = Math.max(1, Math.round(Math.min(CASE_MAX_HEIGHT, native)));
+
+  return { w: Math.max(1, Math.round(h * aspect)), h: h };
 }
 
 // Driven by the single timer above, and only while the Studio tab is on screen.
@@ -1068,13 +1104,26 @@ $('saveBtn').addEventListener('click', async () => {
     // back to the original photograph.
     await studioPreload();
 
+    // One frame for every slot in this grid, so a before and its after are the
+    // same shape and the same size. Computed once, from every slot being saved,
+    // not per pair: a 2x3 is one patient and should line up across all three
+    // angles, not only within each column.
+    const usedSlots = [];
+    rows.forEach(row => {
+      [Number(row.dataset.before), Number(row.dataset.after)].forEach(s => {
+        if (usedSlots.indexOf(s) === -1) usedSlots.push(s);
+      });
+    });
+    const frame = gridFrame(usedSlots);
+    if (!frame) throw new Error('Those photos could not be read from Studio.');
+
     for (const row of rows) {
       const bSlot = Number(row.dataset.before);
       const aSlot = Number(row.dataset.after);
 
       // Re-rendered from the source image, not lifted off the 300px preview.
-      const b = slotHiRes(bSlot);
-      const a = slotHiRes(aSlot);
+      const b = slotHiRes(bSlot, frame);
+      const a = slotHiRes(aSlot, frame);
       if (!b || !a) continue;
 
       const [before, after] = await Promise.all([
