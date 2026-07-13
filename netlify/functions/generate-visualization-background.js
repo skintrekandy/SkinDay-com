@@ -14,55 +14,30 @@
 // the treated region, no matter what the prompt does. No mask = today's exact
 // full-image behavior (backward compatible).
 //
-// M11 UPDATE: the reference system was rewritten.
-//
-//   The old scope rule fired references only for "Enhanced" (isStrongPass)
-//   Sculptra. Enhanced no longer exists, so that gate never opened: the clinic
-//   library, the gold refs, and every reference path were unreachable dead code.
-//   The old lookup also queried columns that no longer exist (treatment_area,
-//   approved, sex, sort_order) in a bucket that no longer exists
-//   (reference-cases), and used billing.userId as the clinic id.
-//
-//   The gate is now CLINIC CONTEXT, which is what actually separates the two
-//   products:
-//     Consumer Visualize (skinday.com) sends NO clinic context. No reference is
-//       used. A pay-as-you-go simulation is never grounded in any clinic's
-//       private patient imagery, even when the signed-in user owns a clinic.
-//     Clinic Visualize (clinic portal) sends clinicId EXPLICITLY. The worker
-//       verifies that claim against clinic_memberships, then grounds in that
-//       clinic's own approved, consented cases.
-//
-//   Gold references are REMOVED. A clinic with no approved cases gets no
-//   reference rather than a stranger's outcome standing in for their house
-//   style. VISUALIZE_GOLD_REF_FRONTAL / _R45 / _L45 are now unused.
-//
-//   References come through get_clinic_visualize_references, which returns a
-//   case ONLY if it is visualize_approved and carries active 'store' and
-//   'visualize' consent. A patient who withdraws visualize consent drops out of
-//   the reference set immediately. Images are downloaded server-side from
-//   clinic-cases-private with the service role; no signed URL to a private
-//   patient photo is ever minted.
-//
-//   REQUIRED WIRING: the clinic Visualize entry point must include clinicId in
-//   the job fields. Without it, every generation is consumer-mode.
-//
-// CLINIC LIBRARY: reference-guided generation (Sculptra only).
-//   Reference lookup fires only for a verified clinic context. There are exactly
-//   two outcomes:
-//     1. The clinic's own approved, consented case matching treatment and angle
-//        (phenotype match preferred). Passed as image[1] alongside the patient
-//        photo (image[0]).
-//     2. No reference. Used for every consumer generation, and for a clinic that
-//        has no usable case. There is no third-party fallback.
-//   The model uses the reference for visual grammar (volume character, lighting,
-//   skin character) only; it does NOT copy the reference face, because image[0]
-//   is the patient photo and the prompt explicitly locks identity.
+// M12 CLINIC LIBRARY: reference-guided generation.
+//   Reference image lookup fires for every biostim (Sculptra) generation.
+//   Fallback chain:
+//     1. Clinic's own approved reference case matching angle (and phenotype if
+//        tagged). Best match = same phenotype first, then match-any.
+//     2. Global gold reference (VISUALIZE_GOLD_REF_FRONTAL / _R45 / _L45 env
+//        vars), each pointing to a public URL of a clean before/after pair.
+//        When a gold ref env var is set, its after-image URL is fetched and
+//        passed as image[1] alongside the patient photo (image[0]).
+//     3. Single-image text-only (current behavior, unchanged).
+//   The reference is passed as the SECOND element of the image array. The model
+//   uses it for visual grammar (volume character, lighting, skin character) only;
+//   it does NOT copy the reference face, because image[0] is the patient photo
+//   and the prompt explicitly locks identity. This is the foundation for Enhanced.
 //   referenceMode in the generation log records which branch fired:
-//   'clinic_case' or null.
+//   'clinic_case', 'gold_ref', or null (single-image fallback).
 //
 // Required env: OPENAI_API_KEY, BETA_ACCESS_PASSWORD
-// Required for the clinic library:
+// Optional env for clinic library:
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY  (already present for billing)
+// Optional env for global gold refs:
+//   VISUALIZE_GOLD_REF_FRONTAL  (public URL of after-image)
+//   VISUALIZE_GOLD_REF_R45      (public URL of after-image)
+//   VISUALIZE_GOLD_REF_L45      (public URL of after-image)
 // Required packages: openai, @netlify/blobs   (npm i openai @netlify/blobs)
 
 const OpenAI = require('openai');
@@ -130,296 +105,164 @@ function canonicalAngle(raw) {
   return 'frontal'; // default
 }
 
-// Injected into the prompt whenever a reference image is passed.
+// M12: injected into the prompt whenever a reference image is passed.
 // CRITICAL: gpt-image-1 requires explicit indexing when multiple images are
 // provided -- it will ignore image[1] unless the prompt references it directly.
 // The identity lock is equally critical: the reference is for treatment pattern
 // only, never identity, skin, age, or ethnicity.
-//
-// The reference clause is now per treatment category, because "what to look at
-// in the reference" is completely different across treatments. Telling the model
-// to read cheek volume from a neurotoxin reference, or skin texture from a
-// filler reference, points it at the wrong signal and produces a worse result
-// than no reference at all.
-const REFERENCE_WHAT_TO_READ = {
-  biostim:
-    'the degree of cheek volume, midface support, lateral lift, and soft-tissue re-inflation',
-  filler:
-    'the degree of projection, contour definition, and structural support in the treated area, and how restrained or pronounced the shaping is',
-  tox:
-    'the degree of dynamic line softening and muscle relaxation, and how much natural movement and expression is preserved',
-  laser:
-    'the degree of change in skin tone, texture, pigmentation, redness, and pore quality, and how much natural skin character is retained'
-};
+const REFERENCE_IDENTITY_LOCK =
+  ' TWO IMAGES ARE PROVIDED. Image 1 is the patient to treat. Image 2 is a clinical reference showing a successful Sculptra biostimulator result.' +
+  ' Use Image 2 ONLY to understand the visual character of the treatment result: the degree of cheek volume, midface support, lateral lift, and soft-tissue re-inflation.' +
+  ' Apply that same degree and character of volume change to Image 1 (the patient).' +
+  ' Do NOT copy, borrow, or be influenced by the reference patient\'s identity, face shape, skin tone, ethnicity, age, skin texture, pigmentation, hair, expression, lighting, or any personal feature.' +
+  ' The output must show Image 1 (the actual patient) with the Sculptra treatment applied at the visual intensity shown in Image 2.' +
+  ' Image 2 is a style and volume guide only -- never an identity donor.';
 
-const TREATMENT_NAME = {
-  biostim: 'biostimulator',
-  filler:  'hyaluronic acid filler',
-  tox:     'neurotoxin',
-  laser:   'energy-based skin'
-};
-
-function referenceIdentityLock(type) {
-  const what = REFERENCE_WHAT_TO_READ[type] || REFERENCE_WHAT_TO_READ.biostim;
-  const name = TREATMENT_NAME[type] || TREATMENT_NAME.biostim;
-  return (
-    ' TWO IMAGES ARE PROVIDED. Image 1 is the patient to treat. Image 2 is a clinical reference showing a successful ' + name + ' result.' +
-    ' Use Image 2 ONLY to understand the visual character of the treatment result: ' + what + '.' +
-    ' Apply that same degree and character of change to Image 1 (the patient).' +
-    ' Do NOT copy, borrow, or be influenced by the reference patient\'s identity, face shape, skin tone, ethnicity, age, skin texture, pigmentation, hair, expression, lighting, or any personal feature.' +
-    ' The output must show Image 1 (the actual patient) with the ' + name + ' treatment applied at the visual intensity shown in Image 2.' +
-    ' Image 2 is a style and intensity guide only -- never an identity donor.'
-  );
-}
-
-// M11: verify an EXPLICIT clinic context.
-//
-// Clinic grounding is never inferred from who the user happens to be. The two
-// products are separate entry points and must stay that way:
-//
-//   Consumer Visualize (skinday.com)  sends no clinic context. Pay-as-you-go,
-//     the user's own credits, gold reference only. Even if that user owns a
-//     clinic, no clinic's private patient imagery grounds their simulation.
-//
-//   Clinic Visualize (via the clinic portal) sends clinicId explicitly. Only
-//     then is the clinic's own case library used.
-//
-// Inferring the clinic from membership would mean one account silently behaving
-// two different ways with nothing on screen to explain it. Explicit wins.
-//
-// A clinic id arriving in a request is a CLAIM, not a fact, so it is verified
-// against clinic_memberships here before anything is grounded in that clinic's
-// patient photos. An unverified claim returns null and falls through to gold.
-async function verifyClinicContext(userId, clinicId) {
-  const SUPABASE_URL = process.env.SUPABASE_URL || '';
-  const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  if (!SUPABASE_URL || !SERVICE_KEY || !userId || !clinicId) return null;
-  try {
-    const qs = new URLSearchParams({
-      select:     'clinic_id',
-      user_id:    'eq.' + userId,
-      clinic_id:  'eq.' + clinicId,
-      status:     'eq.active',
-      revoked_at: 'is.null',
-      limit:      '1'
-    });
-    const res = await fetch(SUPABASE_URL + '/rest/v1/clinic_memberships?' + qs.toString(), {
-      headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY }
-    });
-    if (!res.ok) {
-      console.warn('[M11] membership verification failed: HTTP ' + res.status);
-      return null;
-    }
-    const rows = await res.json();
-    if (!rows || !rows.length) {
-      console.warn('[M11] clinic context REFUSED: user ' + userId
-        + ' is not an active member of clinic ' + clinicId);
-      return null;
-    }
-    console.log('[M11] clinic context verified: clinic ' + clinicId);
-    return rows[0].clinic_id;
-  } catch (e) {
-    console.warn('[M11] verifyClinicContext error:', (e && e.message) || e);
-    return null;
-  }
-}
-
-// M11: look up the best approved clinic reference case for this generation.
-// Returns { caseId, beforePath, afterPath } or null.
-//
-// This calls get_clinic_visualize_references rather than querying the table
-// directly. That RPC is the ONLY place the consent rules live: it returns a
-// case only when it is visualize_approved AND carries an active 'store' consent
-// AND an active 'visualize' consent AND is not soft-deleted. A revoked consent
-// therefore drops the case out of the model's reference set immediately, with
-// no code here needing to know about it.
-//
-// Match priority within the returned set: phenotype match > untagged > any.
-// (The old sex-based priority is gone: the M11 schema does not store sex, and
-// adding a sex column to patient records is a data-minimization decision, not
-// an incidental one.)
-async function fetchClinicReferenceCase(clinicId, treatment, subtype, angle, phenotype, timelineMonths) {
+// M12: look up the best approved clinic reference case for this generation.
+// Returns { beforePath, afterPath } or null.
+// Match priority: (sex + phenotype) > (sex only) > (phenotype only) > untagged > any.
+async function fetchClinicReferenceCase(clinicId, treatmentArea, angle, phenotype, sex) {
   const SUPABASE_URL = process.env.SUPABASE_URL || '';
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!SUPABASE_URL || !SERVICE_KEY || !clinicId) return null;
 
   try {
-    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_clinic_visualize_references', {
-      method: 'POST',
-      headers: {
-        apikey: SERVICE_KEY,
-        Authorization: 'Bearer ' + SERVICE_KEY,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        p_clinic_id:       clinicId,
-        p_treatment:       treatment || null,
-        p_subtype:         subtype || null,
-        p_angle:           angle || null,
-        // The timeline the clinician asked for. The lookup prefers the case whose
-        // interval is closest to it, so a 3-month simulation is grounded in
-        // 3-month outcomes rather than 12-month ones. Grounding a 3-month
-        // projection in a 12-month result would overpromise, which is exactly the
-        // failure this architecture exists to prevent.
-        p_timeline_months: timelineMonths,
-        p_limit:           10
-      })
+    const qs = new URLSearchParams({
+      select:         'id,before_path,after_path,phenotype,sex,sort_order',
+      clinic_id:      'eq.' + clinicId,
+      treatment_area: 'eq.' + treatmentArea,
+      angle:          'eq.' + angle,
+      approved:       'eq.true',
+      order:          'sort_order.asc,created_at.asc',
+      limit:          '10'
+    });
+    const res = await fetch(SUPABASE_URL + '/rest/v1/clinic_reference_cases?' + qs.toString(), {
+      headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY }
     });
     if (!res.ok) {
-      console.warn('[M11] clinic reference lookup failed: HTTP ' + res.status + ' ' + (await res.text()).slice(0, 160));
+      console.warn('[M12] clinic case lookup failed: HTTP ' + res.status);
       return null;
     }
     const rows = await res.json();
-    if (!rows || !rows.length) {
-      console.log('[M11] no approved+consented references for clinic ' + clinicId
-        + ' (treatment=' + treatment + ', angle=' + angle + ')');
-      return null;
-    }
+    if (!rows || !rows.length) return null;
 
+    // Match priority: sex+phenotype > sex-only > phenotype-only > untagged > any.
     const chosen =
-      rows.find(r => phenotype && r.phenotype === phenotype) ||
-      rows.find(r => !r.phenotype) ||
+      rows.find(r => r.sex === sex && r.phenotype === phenotype)   ||
+      rows.find(r => r.sex === sex && !r.phenotype)                ||
+      rows.find(r => !r.sex        && r.phenotype === phenotype)   ||
+      rows.find(r => !r.sex        && !r.phenotype)                ||
       rows[0];
 
-    console.log('[M11] clinic reference chosen: case=' + chosen.case_id
+    console.log('[M12] clinic reference chosen: id=' + chosen.id
       + ' phenotype=' + (chosen.phenotype || 'any')
-      + ' angle=' + (chosen.angle || 'any'));
-    return {
-      caseId:         chosen.case_id,
-      intervalMonths: chosen.interval_months,
-      beforePath:     chosen.before_path,
-      afterPath:      chosen.after_path
-    };
+      + ' sex=' + (chosen.sex || 'any'));
+    return { beforePath: chosen.before_path, afterPath: chosen.after_path };
   } catch (e) {
-    console.warn('[M11] fetchClinicReferenceCase error:', (e && e.message) || e);
+    console.warn('[M12] fetchClinicReferenceCase error:', (e && e.message) || e);
     return null;
   }
 }
 
-// M11: download a private clinic case object with the service role and hand it
-// to OpenAI as a file. No signed URL is minted, so no URL to a patient's
-// private photo exists even briefly. The bytes go straight from Storage into
-// the generation request, server-side, and are never persisted here.
-async function fetchPrivateCaseFile(path, filename) {
+// M12: generate a signed URL for a Storage object (service role, 300-second TTL).
+// The signed URL is fetched at generation time, not stored, so the path is durable
+// and the URL is ephemeral. 300 s is more than enough for a single generation.
+async function signedStorageUrl(path) {
   const SUPABASE_URL = process.env.SUPABASE_URL || '';
   const SERVICE_KEY  = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   if (!SUPABASE_URL || !SERVICE_KEY || !path) return null;
   try {
     const res = await fetch(
-      SUPABASE_URL + '/storage/v1/object/clinic-cases-private/' + path,
-      { headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY } }
+      SUPABASE_URL + '/storage/v1/object/sign/reference-cases/' + encodeURIComponent(path),
+      {
+        method: 'POST',
+        headers: { apikey: SERVICE_KEY, Authorization: 'Bearer ' + SERVICE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ expiresIn: 300 })
+      }
     );
-    if (!res.ok) {
-      console.warn('[M11] private case fetch failed: HTTP ' + res.status);
-      return null;
-    }
-    const buf = Buffer.from(await res.arrayBuffer());
-    const ct  = res.headers.get('content-type') || 'image/jpeg';
-    return await OpenAI.toFile(buf, filename || 'clinic_reference.jpg', { type: ct });
+    if (!res.ok) { console.warn('[M12] sign URL failed: HTTP ' + res.status); return null; }
+    const j = await res.json();
+    return (j && j.signedURL) ? (SUPABASE_URL + j.signedURL) : null;
   } catch (e) {
-    console.warn('[M11] fetchPrivateCaseFile error:', (e && e.message) || e);
+    console.warn('[M12] signedStorageUrl error:', (e && e.message) || e);
     return null;
   }
 }
 
+// M12: fetch an image from a URL and return an OpenAI.toFile object.
+// Used for both clinic reference cases (signed Storage URLs) and gold ref URLs.
+// Returns null on any failure so the caller can fall through to single-image mode.
+async function fetchReferenceFile(url, filename) {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) { console.warn('[M12] reference image fetch failed: HTTP ' + res.status + ' ' + url.slice(0, 80)); return null; }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const ct  = res.headers.get('content-type') || 'image/jpeg';
+    return await OpenAI.toFile(buf, filename || 'reference.jpg', { type: ct });
+  } catch (e) {
+    console.warn('[M12] fetchReferenceFile error:', (e && e.message) || e);
+    return null;
+  }
+}
 
-
-// Resolve the reference image for a generation.
+// M12: resolve the reference image file for a generation.
 // Returns { refFile, referenceMode } or { refFile: null, referenceMode: null }.
-// referenceMode values: 'clinic_case' | null
+// referenceMode values: 'clinic_case' | 'gold_ref' | null
 //
-// SCOPE RULE. The old rule fired references only for "Enhanced" (isStrongPass)
-// Sculptra. Enhanced no longer exists, which made this branch unreachable.
-//
-// The gate is now CLINIC CONTEXT, which is what actually separates the two
-// products:
-//
-//   No clinic context (consumer Visualize on skinday.com)
-//     -> no reference. A pay-as-you-go simulation is never grounded in any
-//        clinic's private patient imagery.
-//
-//   Verified clinic context (clinic Studio / Visualize)
-//     -> grounded in THAT clinic's own approved, consented cases.
-//
-// References now work across ALL treatment categories, not just Sculptra. The
-// case's treatment must match the generation's treatment: a filler case never
-// grounds a laser simulation. A mismatched reference is worse than none, since
-// it points the model at the wrong visual signal entirely.
-//
-// There is no third-party fallback. A clinic with no matching approved case gets
-// no reference rather than a stranger's outcome standing in for their own work.
+// CRITICAL SCOPE RULE: reference lookup fires ONLY for Enhanced (isStrongPass === 'true')
+// Sculptra generations. Standard pass is never reference-guided -- this preserves the
+// Standard pass as a known-good, reproducible baseline and ensures the reference
+// mechanism is introduced only when its output has been validated.
+// Gold refs (env var fallback) are also Enhanced-only for the same reason.
 async function resolveReference(f, billing) {
-  // Canonical treatment key, shared with what the clinic stores on a case.
-  const treatment = canonicalTreatment(f);
-  if (!treatment) return { refFile: null, referenceMode: null };
+  const isSculptra  = f.type === 'biostim' && (f.product === 'sculptra' || !f.product);
+  const isEnhanced  = f.isStrongPass === 'true' || f.isStrongPass === true;
+  console.log('[M12] resolveReference: isSculptra=' + isSculptra + ' isEnhanced=' + isEnhanced + ' isStrongPass=' + JSON.stringify(f.isStrongPass));
+  if (!isSculptra || !isEnhanced) return { refFile: null, referenceMode: null };
 
-  const userId            = billing ? billing.userId : null;
-  const requestedClinicId = f.clinicId || f.clinic_id || null;
+  const angle         = canonicalAngle(f.angle || f.view);
+  const phenotype     = f.phenotype || f.sculptraPhenotype || null;
+  const sex           = f.sex || null;
+  const treatmentArea = 'sculptra'; // Enhanced Sculptra is always sculptra area
+  const clinicId      = billing ? billing.userId : null;
 
-  if (!requestedClinicId) {
-    console.log('[M11] no clinic context: consumer route, no reference');
-    return { refFile: null, referenceMode: null };
-  }
-
-  // A clinic id in a job is a CLAIM. start-visualization already verified it;
-  // it is verified again here because the worker must not depend on an upstream
-  // caller having done so.
-  const clinicId = await verifyClinicContext(userId, String(requestedClinicId));
-  if (!clinicId) {
-    console.warn('[M11] clinic context not verified: no reference used');
-    return { refFile: null, referenceMode: null };
-  }
-
-  const angle     = canonicalAngle(f.angle || f.view);
-  const phenotype = f.phenotype || f.sculptraPhenotype || null;
-  const subtype   = canonicalSubtype(f, treatment);
-
-  const timelineMonths = parseInt(f.timeline, 10);
-  const caseRow = await fetchClinicReferenceCase(
-    clinicId, treatment, subtype, angle, phenotype,
-    Number.isFinite(timelineMonths) ? timelineMonths : null
-  );
-  if (caseRow) {
-    const refFile = await fetchPrivateCaseFile(caseRow.afterPath, 'clinic_ref_after.jpg');
-    if (refFile) {
-      console.log('[M11] reference mode: clinic_case (clinic=' + clinicId
-        + ' treatment=' + treatment + ' subtype=' + subtype + ' angle=' + angle
-        + ' asked=' + timelineMonths + 'mo got=' + caseRow.intervalMonths + 'mo)');
-      return { refFile, referenceMode: 'clinic_case' };
+  // --- Branch 1: clinic's own library ---
+  if (clinicId) {
+    const caseRow = await fetchClinicReferenceCase(clinicId, treatmentArea, angle, phenotype, sex);
+    if (caseRow) {
+      const afterUrl = await signedStorageUrl(caseRow.afterPath);
+      if (afterUrl) {
+        const refFile = await fetchReferenceFile(afterUrl, 'clinic_ref_after.jpg');
+        if (refFile) {
+          console.log('[M12] reference mode: clinic_case (angle=' + angle + ')');
+          return { refFile, referenceMode: 'clinic_case' };
+        }
+      }
     }
   }
 
-  console.log('[M11] clinic ' + clinicId + ' has no approved ' + treatment
-    + '/' + subtype + ' case at ' + angle + ': no reference used');
+  // --- Branch 2: global gold refs (Enhanced fallback only) ---
+  // Gold refs are useful for testing Enhanced before a clinic has uploaded cases.
+  // They are NOT used for Standard -- keeping Standard clean is the standing rule.
+  const GOLD_REF_URLS = {
+    frontal:       process.env.VISUALIZE_GOLD_REF_FRONTAL || '',
+    oblique_right: process.env.VISUALIZE_GOLD_REF_R45     || '',
+    oblique_left:  process.env.VISUALIZE_GOLD_REF_L45     || ''
+  };
+  const goldUrl = GOLD_REF_URLS[angle] || '';
+  console.log('[M12] gold ref URL for angle=' + angle + ': ' + (goldUrl ? goldUrl.slice(0, 60) + '...' : 'NOT SET'));
+  if (goldUrl) {
+    const refFile = await fetchReferenceFile(goldUrl, 'gold_ref.jpg');
+    if (refFile) {
+      console.log('[M12] reference mode: gold_ref (angle=' + angle + ')');
+      return { refFile, referenceMode: 'gold_ref' };
+    }
+  }
+
+  // --- Branch 3: Enhanced without a reference --- single-image fallback.
+  // Still runs Enhanced prompt (ENHANCED_MAGNITUDE) but without a reference image.
+  console.log('[M12] reference mode: null (Enhanced single-image fallback)');
   return { refFile: null, referenceMode: null };
-}
-
-// The canonical treatment key. This is the SAME vocabulary Studio and the clinic
-// portal store on a case, so a generation and a case can be matched.
-//   biostim  biostimulation
-//   filler   HA filler
-//   tox      neurotoxin
-//   laser    energy-based devices (RF / HIFU)
-function canonicalTreatment(f) {
-  const t = (f && f.type) ? String(f.type) : '';
-  if (t === 'biostim' || t === 'filler' || t === 'tox' || t === 'laser') return t;
-  return null;
-}
-
-// The second matching axis. A chin filler case must not ground a lip filler
-// simulation, a PLLA case must not ground a CaHA one, and RF must not ground
-// HIFU. Studio stores exactly these values on a case.
-//
-// KEEP IN LOCKSTEP with Studio's dropdowns. If the two vocabularies drift, no
-// reference ever matches and nothing indicates why: the simulation just comes
-// back ungrounded.
-function canonicalSubtype(f, treatment) {
-  if (!f || !treatment) return null;
-  if (treatment === 'biostim') return f.product ? String(f.product) : null;
-  if (treatment === 'filler')  return f.areas ? String(f.areas) : null;
-  if (treatment === 'tox')     return f.toxMode ? String(f.toxMode) : null;
-  if (treatment === 'laser')   return f.laserType ? String(f.laserType) : null;
-  return null;
 }
 
 // M12.5: SCENARIO PLANNER
@@ -764,14 +607,6 @@ exports.handler = async (event) => {
       // stronger_sculptra the edit target is the ORIGINAL photo. Every other
       // scenario stays an add-on that edits the baseline. The real baseline still
       // rides along as planner context below.
-      // M16: stronger_sculptra is the SAME treatment at a higher dose, generated
-      // FRESH from the original photo -- NOT an add-on stacked on the baseline. Its
-      // prompt (SCULPTRA_SCENARIO_BASE) already instructs the model to edit the
-      // original photo; editing the baseline instead compounds the baseline's own
-      // beautification and leaves no clean delta vs the baseline. So for
-      // stronger_sculptra the edit target is the ORIGINAL photo. Every other
-      // scenario stays an add-on that edits the baseline. The real baseline still
-      // rides along as planner context below.
       const editFromOriginal = (scenarioKey === 'stronger_sculptra') && !!originalRefB64;
       const sourceImageB64   = editFromOriginal ? originalRefB64  : baselineB64;
       const sourceImageMime  = editFromOriginal ? originalRefMime : baselineMime;
@@ -873,7 +708,7 @@ exports.handler = async (event) => {
         prompt: scenarioPrompt,
         size: 'auto',
         output_format: 'jpeg',
-        output_compression: 92
+        output_compression: 85
       };
       // input_fidelity only applies to gpt-image-1. gpt-image-2 always runs high-fidelity
       // and will error if the param is passed.
@@ -1005,15 +840,10 @@ exports.handler = async (event) => {
     const billing = await store.get(jobId + ':billing', { type: 'json' }).catch(() => null);
     const { refFile, referenceMode } = await resolveReference(f, billing);
 
-    // When a reference fires, append the identity-lock clause to the prompt.
+    // M12: when a reference fires, append the identity-lock clause to the prompt.
     // This is the guardrail that prevents the reference patient's identity, age,
-    // skin, and ethnicity from bleeding into the output. The clause is built from
-    // THIS generation's treatment category, so the model is told to read the
-    // right signal out of the reference (volume for a biostimulator, line
-    // softening for a neurotoxin, skin quality for an energy treatment).
-    const finalPrompt = (refFile && referenceMode)
-      ? (prompt + referenceIdentityLock(canonicalTreatment(f)))
-      : prompt;
+    // skin, and ethnicity from bleeding into the output.
+    const finalPrompt = (refFile && referenceMode) ? (prompt + REFERENCE_IDENTITY_LOCK) : prompt;
 
     // M13: both biostim (Sculptra) and HA filler use gpt-image-2 for direct
     // generation. gpt-image-2 rejects input_fidelity -- omit it for that model.
@@ -1039,12 +869,12 @@ exports.handler = async (event) => {
     const editParams = {
       model:              modelName,
       // M13 fix: when a reference image fired, the prompt says "TWO IMAGES" via
-      // the identity-lock clause, so the second image must actually be passed.
+      // REFERENCE_IDENTITY_LOCK, so the second image must actually be passed.
       image:              (refFile && referenceMode) ? [file, refFile] : file,
       prompt:             finalPrompt,
       size:               'auto',
       output_format:      'jpeg',
-      output_compression: 92
+      output_compression: 85
     };
     // input_fidelity only applies to gpt-image-1
     if (modelName === 'gpt-image-1') {
@@ -1061,16 +891,7 @@ exports.handler = async (event) => {
     if (!b64) throw new Error('No image returned by model');
 
     await store.set(jobId + ':result', 'data:image/jpeg;base64,' + b64);
-    // referenceMode is surfaced to the client so a clinic can SEE whether their
-    // own case actually grounded this simulation, rather than having to trust
-    // that it did. 'clinic_case' means one of their approved, consented cases
-    // was used; null means none was, and the result is unreferenced.
-    await store.setJSON(jobId + ':status', {
-      state: 'done',
-      model: modelName,
-      referenceMode: referenceMode || null,
-      updatedAt: Date.now()
-    });
+    await store.setJSON(jobId + ':status', { state: 'done', model: modelName, updatedAt: Date.now() });
     try { await store.delete(jobId + ':job'); } catch (e) { /* free the large input payload */ }
 
     // Log cost for this successful generation (non-blocking).
@@ -1087,7 +908,7 @@ exports.handler = async (event) => {
         imageQuality:   editParams.input_fidelity || 'high',
         openAIUsage:    result.usage || null,
         creditsCharged: billing ? billing.cost : null,
-        referenceMode,  // 'clinic_case' | null
+        referenceMode,  // M12: 'clinic_case' | 'gold_ref' | null
         status:         'success',
       });
     } catch (logErr) { console.error('[logGeneration] success log failed:', logErr.message); }
