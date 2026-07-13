@@ -44,7 +44,7 @@
 //   fields: clinic_id, consents (JSON string),
 //           treatment?, subtype?, angle?, phenotype?, source_job_id?,
 //           before_date?, after_date?, interval_months?, crop?, series_id?,
-//           treatment_label?
+//           treatment_label?, injector_name?
 //   files:  before, after   (browser-sanitized JPEG)
 
 const crypto = require('node:crypto');
@@ -250,6 +250,11 @@ exports.handler = async (event) => {
     // Truncated, not rejected: a save that already carries a patient's consented
     // photographs should not fail over a caption being too long.
     const treatmentLabel = (fields.treatment_label || '').trim().slice(0, 60) || null;
+    // Sent only when the clinic explicitly chose to publish it. A name typed into
+    // Studio to watermark an export is not consent to attach that person to a
+    // clinical outcome, in public, permanently, on someone else's website. The
+    // portal asks. Absence here means the clinic said no, or was never asked.
+    const injectorName = (fields.injector_name || '').trim().slice(0, 60) || null;
 
     if (!clinicId) {
       return json(400, { ok: false, error: 'clinic_id is required' });
@@ -337,6 +342,7 @@ exports.handler = async (event) => {
         p_crop: crop,
         p_series_id: seriesId,
         p_treatment_label: treatmentLabel,
+        p_injector_name: injectorName,
         p_residency: 'ca',
         p_source_job_id: sourceJobId
       })
