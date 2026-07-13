@@ -393,7 +393,7 @@
       var cfg = CROPS[key];
       var cols = Math.min(columns, cfg.cols);
       html +=
-        '<div class="' + C.section + '" data-crop="' + key + '"' +
+        '<div class="' + C.section + '" data-skinday-section data-crop="' + key + '"' +
         ' style="--ar:' + cfg.ratio + ';">' +
           '<div class="' + C.grid + '" style="--cols:' + cols + ';">' +
             groups[key].map(card).join('') +
@@ -428,12 +428,17 @@
   // is already deleted, so the image 404s. Remove the whole card rather than leave
   // a broken frame on a clinic's website: a card that cannot load its photographs
   // is not evidence of anything.
+  //
+  // Prune by [data-skinday-section], NOT by [data-crop]. Both the section and the
+  // card carry data-crop, and querySelector does not match the element it is
+  // called on, so a card, which IS the [data-series] element, reads as empty and
+  // deletes itself. One dead image would have taken the entire gallery with it.
   function wireImageFailure() {
     host.querySelectorAll('img').forEach(function (img) {
       img.addEventListener('error', function () {
         var cardEl = img.closest('[data-series]');
         if (cardEl) cardEl.remove();
-        host.querySelectorAll('[data-crop]').forEach(function (sec) {
+        host.querySelectorAll('[data-skinday-section]').forEach(function (sec) {
           if (!sec.querySelector('[data-series]')) sec.remove();
         });
         if (!host.querySelector('[data-series]')) empty();
