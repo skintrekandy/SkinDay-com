@@ -98,16 +98,32 @@
     <table>
       <thead><tr><th>Attribute</th><th>Does</th></tr></thead>
       <tbody>
-        <tr><td><code>data-columns</code></td><td>Columns on desktop. Default 3. Collapses to 2, then 1, on smaller screens.</td></tr>
-        <tr><td><code>data-limit</code></td><td>Show only the newest N cases.</td></tr>
+        <tr><td><code>data-columns</code></td><td>Columns on desktop. Default 3. Reduced automatically for wide crops, and ignored for a timeline, which always spans the row. Collapses to 2, then 1, on smaller screens.</td></tr>
+        <tr><td><code>data-limit</code></td><td>Show only the newest N cases. One patient counts as one, however many photos they have.</td></tr>
         <tr><td><code>data-accent</code></td><td>Accent colour. Any CSS colour.</td></tr>
         <tr><td><code>data-radius</code></td><td>Corner radius in pixels. Default 2.</td></tr>
-        <tr><td><code>data-labels</code></td><td><code>off</code> hides the BEFORE / AFTER tags.</td></tr>
+        <tr><td><code>data-labels</code></td><td><code>off</code> hides the BEFORE / AFTER and interval tags.</td></tr>
         <tr><td><code>data-caption</code></td><td><code>off</code> hides the treatment line under each case.</td></tr>
         <tr><td><code>data-target</code></td><td>The id of an element to render into, instead of in place.</td></tr>
         <tr><td><code>data-style</code></td><td><code>off</code> hands the styling to you. See below.</td></tr>
       </tbody>
     </table>
+  </section>
+
+  <section>
+    <h2 class="display">What a case looks like</h2>
+    <p>Not every case is one before and one after. The gallery reads the clinic's photographs the way the clinic took them, and lays each kind out on its own terms. There is nothing to configure.</p>
+    <table>
+      <thead><tr><th>Kind</th><th>Shows as</th></tr></thead>
+      <tbody>
+        <tr><td>One patient, tracked over time</td><td>A single wide card: the before photo, then each follow-up, labelled 3 months, 12 months, and so on.</td></tr>
+        <tr><td>One result, three views</td><td>One before/after pair with small tabs to turn the head between frontal and both obliques.</td></tr>
+        <tr><td>One before, one after</td><td>Exactly that.</td></tr>
+      </tbody>
+    </table>
+    <div class="note" style="margin-top:16px;">
+      Photographs are also grouped by how tightly they are cropped, because most patients agree to publish only the lower face and a lower-face photo is not the same shape as a full-face one. Each group gets a frame that suits it, so rows stay even instead of ragged. Most clinics settle into one crop and never see this happen.
+    </div>
   </section>
 
   <section>
@@ -118,16 +134,23 @@
         data-clinic-id="<span class="cid"></span>"
         data-style="off"&gt;&lt;/script&gt;
 
-.skinday-gallery          the container
-.skinday-gallery__grid    wraps all cases
-.skinday-gallery__case    one case (data-treatment, data-angle)
-.skinday-gallery__pair    the before / after pair
-.skinday-gallery__figure  one photo (data-when="before" | "after")
-.skinday-gallery__img     the image
-.skinday-gallery__label   the BEFORE / AFTER caption
-.skinday-gallery__meta    the treatment line
-.skinday-gallery__note    the results-vary line
-.skinday-gallery__empty   shown when nothing is published</pre>
+.skinday-gallery           the container
+.skinday-gallery__section  one crop group (data-crop)
+.skinday-gallery__grid     wraps the cases in a section
+.skinday-gallery__case     one card. Also carries __series, so a stylesheet
+.skinday-gallery__series   written before still finds its target.
+                           (data-mode, data-crop, data-treatment, data-angle)
+.skinday-gallery__pair     the before / after pair
+.skinday-gallery__strip    a timeline row: before, then each follow-up
+.skinday-gallery__figure   one photo (data-when="before" | "after")
+.skinday-gallery__img      the image
+.skinday-gallery__label    the BEFORE / AFTER or interval caption
+.skinday-gallery__tabs     the angle switcher
+.skinday-gallery__tab      one angle button (data-angle, aria-selected)
+.skinday-gallery__meta     the treatment line
+.skinday-gallery__note     the results-vary line
+.skinday-gallery__empty    shown when nothing is published</pre>
+    <p style="margin-top:16px;"><code>data-mode</code> on a card is <code>timeline</code>, <code>angles</code> or <code>pair</code>. The angle tabs keep working in this mode: they are behaviour, not styling, so they stay ours. Everything else is yours.</p>
   </section>
 
   <section>
@@ -139,18 +162,35 @@
   "ok": true,
   "clinic_id": "<span class="cid"></span>",
   "count": 2,
+  "series_count": 1,
   "cases": [
     {
       "case_id":   "case_4890cb94f1f4c8de",
-      "treatment": "filler",
+      "series_id": "ser_2f81a0c47b3ee915",
+      "treatment": "biostim",
+      "subtype":   "sculptra",
       "angle":     "frontal",
+      "crop":      "lower",
+      "interval_months": 3,
+      "before_date": "Jan 2026",
+      "after_date":  "Apr 2026",
       "before_url": "https://.../before.jpg",
       "after_url":  "https://.../after.jpg",
       "created_at": "2026-07-12T01:25:34Z"
     }
+  ],
+  "series": [
+    {
+      "series_id": "ser_2f81a0c47b3ee915",
+      "mode":      "timeline",
+      "treatment": "biostim",
+      "crop":      "lower",
+      "cases":     [ ... the same two case objects, in order ... ]
+    }
   ]
 }</pre>
-    <p style="margin-top:16px;">Only cases the patient consented to publish are ever returned. There is no way to request an unpublished one.</p>
+    <p style="margin-top:16px;">Two readings of the same data, and nothing is duplicated. <code>cases</code> is the flat list: one entry per stored before-and-after, which is what the clinic's Visualize matches on. <code>series</code> groups the ones that came from the same patient at the same sitting, which is what a visitor is actually looking at. Use whichever fits what you are building. <code>mode</code> is <code>timeline</code>, <code>angles</code> or <code>pair</code>.</p>
+    <p>Only cases the patient consented to publish are ever returned. There is no way to request an unpublished one.</p>
   </section>
 
   <section>
