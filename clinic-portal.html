@@ -919,7 +919,14 @@ async function loadGallery() {
 
   const host = $('galleryPreview');
   try {
-    const r = await fetch('/api/clinic-gallery?clinic_id=' + encodeURIComponent(clinicId));
+    // The gallery endpoint is cached for 60s, which is right for a clinic's
+    // website and wrong here. This is the admin view: publishing or withdrawing a
+    // case must be reflected at once, not a minute later, or the clinic sees
+    // broken thumbnails for images they already removed. Bypass the cache.
+    const r = await fetch(
+      '/api/clinic-gallery?clinic_id=' + encodeURIComponent(clinicId) + '&_=' + Date.now(),
+      { cache: 'no-store' }
+    );
     const d = await r.json();
     const cases = (d && d.cases) || [];
     if (!cases.length) {
@@ -928,7 +935,7 @@ async function loadGallery() {
       return;
     }
     host.innerHTML = '<div class="gal">' + cases.map(c =>
-      '<div class="gal-case">' +
+      '<div class="gal-case" data-case="' + c.case_id + '">' +
         '<div class="gal-pair">' +
           '<img loading="lazy" src="' + c.before_url + '" alt="Before">' +
           '<img loading="lazy" src="' + c.after_url + '" alt="After">' +
@@ -939,6 +946,19 @@ async function loadGallery() {
         ].filter(Boolean).join(' · ') + '</div>' +
       '</div>'
     ).join('') + '</div>';
+
+    // If an image is genuinely gone (withdrawn while a stale response was in
+    // flight), drop the card rather than leave a broken frame on screen.
+    host.querySelectorAll('.gal-case img').forEach(img => {
+      img.addEventListener('error', () => {
+        const card = img.closest('.gal-case');
+        if (card) card.remove();
+        if (!host.querySelector('.gal-case')) {
+          host.innerHTML = '<p class="note">Nothing published yet. In your cases below, ' +
+            'choose <strong>Show on website</strong> and it appears here.</p>';
+        }
+      });
+    });
   } catch (e) {
     host.innerHTML = '<p class="note bad">The gallery could not be loaded.</p>';
   }
