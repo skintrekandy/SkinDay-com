@@ -25,9 +25,25 @@
 //   SUPABASE_ANON_KEY
 //   SUPABASE_SERVICE_ROLE_KEY
 //
+// M12 adds two fields, crop and series_id.
+//
+// crop is Studio's preset for every photo in the case. It is validated against a
+// closed vocabulary here and again in the database, because an unknown crop is
+// not a cosmetic problem: the gallery lays out by it and the reference worker
+// decides what a case can ground by it. A silently accepted junk value would
+// degrade both without erroring.
+//
+// series_id groups the cases that came out of one Studio grid: one patient, one
+// sitting, several angles or several timepoints. It is a grouping key, not an
+// authorization key. It names nothing, grants nothing, and is never trusted for
+// access: clinic scope still comes from verified membership, as it always has.
+// So it is accepted from the client without ceremony, bounded only in length and
+// character set so it cannot be used to smuggle anything into a log.
+//
 // Expects multipart/form-data with:
 //   fields: clinic_id, consents (JSON string),
-//           treatment?, subtype?, angle?, phenotype?, source_job_id?
+//           treatment?, subtype?, angle?, phenotype?, source_job_id?,
+//           before_date?, after_date?, interval_months?, crop?, series_id?
 //   files:  before, after   (browser-sanitized JPEG)
 
 const crypto = require('node:crypto');
@@ -36,6 +52,11 @@ const busboy = require('busboy');
 const PRIVATE_BUCKET = 'clinic-cases-private';
 const MAX_BYTES = 8 * 1024 * 1024;
 const MIN_BYTES = 1024;
+
+// Studio's crop presets. 'body' is Studio's Body subject, which does not crop at
+// all. Keep this in lockstep with FACE_PRESETS in studio.html and with the crop
+// check constraint on clinic_reference_cases.
+const CROPS = ['full', 'lower', 'upper', 'eyes', 'body'];
 
 function json(statusCode, body) {
   return {
@@ -221,9 +242,17 @@ exports.handler = async (event) => {
     const intervalMonths = parseInt(fields.interval_months, 10);
     const phenotype = (fields.phenotype || '').trim() || null;
     const sourceJobId = (fields.source_job_id || '').trim() || null;
+    const crop = (fields.crop || '').trim() || null;
+    const seriesId = (fields.series_id || '').trim() || null;
 
     if (!clinicId) {
       return json(400, { ok: false, error: 'clinic_id is required' });
+    }
+    if (crop && !CROPS.includes(crop)) {
+      return json(400, { ok: false, error: `unknown crop: ${crop}` });
+    }
+    if (seriesId && !/^[A-Za-z0-9_-]{1,64}$/.test(seriesId)) {
+      return json(400, { ok: false, error: 'series_id is malformed' });
     }
     if (!files.before || !files.after) {
       return json(400, { ok: false, error: 'both before and after files are required' });
@@ -299,6 +328,8 @@ exports.handler = async (event) => {
         p_before_date: beforeDate,
         p_after_date: afterDate,
         p_interval_months: Number.isFinite(intervalMonths) ? intervalMonths : null,
+        p_crop: crop,
+        p_series_id: seriesId,
         p_residency: 'ca',
         p_source_job_id: sourceJobId
       })
