@@ -328,6 +328,16 @@
           <div class="crop-note" id="cropNote"></div>
           <div class="crop-note" id="labelNote" style="display:none;"></div>
 
+          <label class="perm" id="injectorRow" style="display:none;">
+            <input type="checkbox" id="cInjector"/>
+            <span>
+              <b id="injectorWho"></b>
+              <em>Publishes this name under the photographs on your website. The
+              name in Studio is used for the watermark; showing it on your site is
+              a separate choice, and it is the injector's name to give.</em>
+            </span>
+          </label>
+
           <div class="consent">
             <div class="eyebrow" style="margin-bottom:4px;">What to do with this case</div>
 
@@ -712,6 +722,21 @@ function studioTreatmentLabel() {
   } catch (e) { return ''; }
 }
 
+/* M12c: the injector name.
+   Studio step 5 already collects it, and already watermarks the export with it.
+   That is not the same act as publishing it. A watermark travels with an image the
+   clinic chose to post; a gallery attaches a named person to a clinical outcome,
+   in public, permanently, on a site the patient did not choose. And the person
+   clicking save is often not the person whose name it is. So the field being
+   filled in is not consent to publish it, and the portal asks. */
+function studioInjectorName() {
+  try {
+    const d = studioDoc();
+    const el = d && d.getElementById('injectorName');
+    return el ? el.value.trim().slice(0, 60) : '';
+  } catch (e) { return ''; }
+}
+
 function newSeriesId() {
   const b = new Uint8Array(8);
   crypto.getRandomValues(b);
@@ -930,6 +955,7 @@ function watchStudio(tick) {
    should not have to infer that from a preset button two sections up. */
 function renderCropNote() {
   renderLabelNote();
+  renderInjectorRow();
   const crop = studioCrop();
   const el = $('cropNote');
   if (!crop) {
@@ -966,6 +992,20 @@ function renderLabelNote() {
     : 'No treatment label set in Studio, so your website will caption this ' +
       '<b>' + escapeHtml(fallback) + '</b>. Add one in Studio step 5 to say what ' +
       'you actually did.';
+}
+
+// Only offer the choice when there is a name to offer. An empty checkbox asking
+// whether to publish nobody is noise.
+function renderInjectorRow() {
+  const name = studioInjectorName();
+  const row = $('injectorRow');
+  if (!name) {
+    row.style.display = 'none';
+    $('cInjector').checked = false;
+    return;
+  }
+  row.style.display = 'flex';
+  $('injectorWho').textContent = 'Show "' + name + '" on your website';
 }
 
 function escapeHtml(s) {
@@ -1090,6 +1130,7 @@ $('saveBtn').addEventListener('click', async () => {
   const crop = studioCrop();
   const seriesId = newSeriesId();
   const treatmentLabel = studioTreatmentLabel();
+  const injectorName = $('cInjector').checked ? studioInjectorName() : '';
 
   let saved = 0;
   let failure = null;
@@ -1144,6 +1185,7 @@ $('saveBtn').addEventListener('click', async () => {
       if (months) fd.append('interval_months', String(months));
       if (crop) fd.append('crop', crop);
       if (treatmentLabel) fd.append('treatment_label', treatmentLabel);
+      if (injectorName) fd.append('injector_name', injectorName);
       fd.append('series_id', seriesId);
       fd.append('consents', JSON.stringify(consents));
       fd.append('before', before);
@@ -1241,7 +1283,7 @@ async function loadImage(caseId, which, el) {
 async function loadCases() {
   const [{ data: rows }, { data: cons }] = await Promise.all([
     sb.from('clinic_reference_cases')
-      .select('id,treatment,subtype,treatment_label,angle,crop,series_id,interval_months,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
+      .select('id,treatment,subtype,treatment_label,injector_name,angle,crop,series_id,interval_months,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
       .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
     sb.from('clinic_case_consents')
       .select('case_id,purpose').eq('clinic_id', clinicId)
@@ -1321,6 +1363,7 @@ function plate(r, perms, seriesSize) {
     : (r.before_date || r.after_date || '');
   const meta = [
     r.treatment_label,
+    r.injector_name ? 'by ' + r.injector_name : '',
     r.angle,
     intervalLabel(r.interval_months),
     span,
@@ -1382,6 +1425,27 @@ function plate(r, perms, seriesSize) {
     } else loadCases();
   };
 
+  // A named person can change their mind, or leave, or never have been asked. That
+  // is a correction to a display field, not a consent event, and it must not
+  // require destroying a patient's record to fix. Only offered when a name is
+  // actually published, because there is nothing to take down otherwise.
+  const inj = document.createElement('button');
+  if (r.injector_name) {
+    inj.className = 'quiet';
+    inj.textContent = 'Remove injector name';
+    inj.onclick = async () => {
+      inj.disabled = true;
+      const { error } = await sb.rpc('set_case_injector', {
+        p_case_id: r.id, p_clinic_id: clinicId, p_injector_name: null
+      });
+      if (error) {
+        st.className = 'note bad';
+        st.textContent = error.message || 'That change was refused.';
+        inj.disabled = false;
+      } else loadCases();
+    };
+  }
+
   const wd = document.createElement('button');
   wd.className = 'quiet warn';
   wd.textContent = 'Patient withdrew consent';
@@ -1393,7 +1457,9 @@ function plate(r, perms, seriesSize) {
     });
   };
 
-  acts.append(pub, ref, wd);
+  acts.append(pub, ref);
+  if (r.injector_name) acts.append(inj);
+  acts.append(wd);
   body.append(acts, st);
   el.append(dip, body);
   return el;
