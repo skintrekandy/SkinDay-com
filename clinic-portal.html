@@ -140,13 +140,22 @@
   }
   .embed-code button:hover { border-color:var(--gold); color:var(--cream); }
 
-  .gal { display:grid; grid-template-columns:repeat(auto-fill,minmax(190px,1fr)); gap:16px; }
-  .gal-case { border:1px solid var(--line); background:var(--cream); }
-  .gal-pair { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); }
-  .gal-pair img { display:block; width:100%; aspect-ratio:4/5; object-fit:cover; background:#fff; }
-  .gal-meta {
-    padding:9px 11px; font-size:11.5px; color:var(--muted);
-    text-transform:capitalize;
+  /* The clinic's own site runs the real embed, so the preview runs it too rather
+     than a lookalike. A preview that is merely similar is a preview that lies. */
+  #galleryPreview { min-height:40px; }
+
+  .crop-note {
+    margin-top:18px; padding:11px 14px;
+    border-left:2px solid var(--gold); background:#faf4e9;
+    color:#6d5628; font-size:12.5px; line-height:1.6;
+  }
+  .crop-note b { font-weight:500; }
+
+  .plate-crop {
+    display:inline-block; margin-left:7px;
+    font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--muted); border:1px solid var(--line); border-radius:2px;
+    padding:1px 5px; vertical-align:2px;
   }
 
   .caution {
@@ -315,6 +324,8 @@
 
           <div class="eyebrow" style="margin:22px 0 10px;">Angles in this grid</div>
           <div id="pairs"></div>
+
+          <div class="crop-note" id="cropNote"></div>
 
           <div class="consent">
             <div class="eyebrow" style="margin-bottom:4px;">What to do with this case</div>
@@ -640,6 +651,22 @@ const GRID_PAIRS = {
 const ANGLE_ORDER = ['frontal', 'oblique_right', 'oblique_left'];
 const ANGLE_LABEL = { frontal: 'Frontal', oblique_right: 'Oblique right', oblique_left: 'Oblique left' };
 
+/* M12: the crop.
+   Studio's crop preset is a single global (S.preset) read by getBoxForSlot for
+   every slot in the grid, and Body mode (S.subject) does not crop at all. So one
+   grid is one crop, always. A full-face before paired with a lower-face after is
+   not rare, it is unconstructible, which is why there is no per-photo crop and
+   no mismatch check anywhere in M12: there is no mismatch to catch.
+
+   The crop is not a display detail. A patient who agreed to lower face only
+   consented to a different disclosure than full face, so it belongs on the case
+   next to the consent. It also decides how the gallery lays the case out, and
+   whether Visualize is allowed to ground a temple simulation on it. */
+const CROP_LABEL = {
+  full: 'Full face', lower: 'Lower face', upper: 'Upper face',
+  eyes: 'Eye area', body: 'Body'
+};
+
 let studioGrid = null;
 
 function studioDoc() {
@@ -651,6 +678,28 @@ function studioDoc() {
 // is allowed, and it means Studio needs no modification to expose anything.
 function studioGridId() {
   try { return $('studioFrame').contentWindow.eval('S.grid'); } catch (e) { return null; }
+}
+
+function studioCrop() {
+  try {
+    const w = $('studioFrame').contentWindow;
+    const subject = w.eval('S.subject');
+    if (subject === 'body') return 'body';
+    const preset = w.eval('S.preset');
+    return CROP_LABEL[preset] ? preset : null;
+  } catch (e) { return null; }
+}
+
+/* M12: the series.
+   One save action is one Studio grid is one patient at one sitting. A
+   3-timepoint grid still saves two cases, because Visualize matches on pairs and
+   always will. But the gallery would show those two as two cards sharing a
+   before photo, reading as two patients. The series id is what lets the same
+   data be read both ways: pairs for the model, one person for the visitor. */
+function newSeriesId() {
+  const b = new Uint8Array(8);
+  crypto.getRandomValues(b);
+  return 'ser_' + Array.from(b).map(x => x.toString(16).padStart(2, '0')).join('');
 }
 
 // Studio composes the date from its month/day/year dropdowns and stores it on
@@ -703,6 +752,8 @@ function watchStudio(tick) {
   $('libNoPairs').style.display = noPairs ? 'block' : 'none';
   $('libForm').style.display = ready ? 'block' : 'none';
 
+  if (ready) renderCropNote();
+
   // Rebuild the angle rows only when the shape changes, so angle choices survive.
   const shape = grid + ':' + filled.map(p => p.join('-')).join(',');
   if (ready && shape !== studioGrid) {
@@ -715,6 +766,27 @@ function watchStudio(tick) {
     refreshThumbs();
   }
   if (!ready) studioGrid = null;
+}
+
+/* Say out loud what is about to be recorded. The clinic chose a crop in Studio to
+   make the export look right; here that same choice becomes part of the consent
+   record and part of what the patient's face discloses on a public website. They
+   should not have to infer that from a preset button two sections up. */
+function renderCropNote() {
+  const crop = studioCrop();
+  const el = $('cropNote');
+  if (!crop) {
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  el.innerHTML = crop === 'full'
+    ? '<b>Full face.</b> This case will be stored, and can be published, showing ' +
+      'the whole face. Make sure that is what the patient agreed to. A lower-face ' +
+      'crop discloses far less and is usually the treated area anyway.'
+    : '<b>' + CROP_LABEL[crop] + '.</b> Stored and published at this crop, so ' +
+      'nothing outside it is ever disclosed. Change the crop in Studio above if ' +
+      'that is not what the patient agreed to.';
 }
 
 function renderPairs(pairs) {
@@ -828,6 +900,11 @@ $('saveBtn').addEventListener('click', async () => {
   if ($('cVisualize').checked) consents.push({ purpose: 'visualize', granted: true, version, method });
   if ($('cGallery').checked) consents.push({ purpose: 'gallery_site', granted: true, version, method });
 
+  // One save action, one grid, one patient: one crop and one series for every
+  // pair that comes out of it.
+  const crop = studioCrop();
+  const seriesId = newSeriesId();
+
   let saved = 0;
   let failure = null;
 
@@ -859,6 +936,8 @@ $('saveBtn').addEventListener('click', async () => {
       if (beforeDate) fd.append('before_date', beforeDate);
       if (afterDate) fd.append('after_date', afterDate);
       if (months) fd.append('interval_months', String(months));
+      if (crop) fd.append('crop', crop);
+      fd.append('series_id', seriesId);
       fd.append('consents', JSON.stringify(consents));
       fd.append('before', before);
       fd.append('after', after);
@@ -917,51 +996,24 @@ async function loadGallery() {
   $('devLink').href = dev;
   $('devLink').textContent = dev;
 
+  // M12: run the real gallery-embed.js, the same file the clinic's website
+  // loads, rather than a hand-rolled lookalike. The preview claims to be exactly
+  // what visitors see, and it was drifting from that the moment the embed learned
+  // to group by series and lay out by crop. A preview that is merely similar is a
+  // preview that lies, and the layout is precisely the thing being judged here.
+  //
+  // data-cache="off" is the one difference, and it is a correct one: the public
+  // endpoint caches for 60 seconds, which is right for a clinic's website and
+  // wrong for an admin view where publishing or withdrawing must be visible at
+  // once, not a minute later.
   const host = $('galleryPreview');
-  try {
-    // The gallery endpoint is cached for 60s, which is right for a clinic's
-    // website and wrong here. This is the admin view: publishing or withdrawing a
-    // case must be reflected at once, not a minute later, or the clinic sees
-    // broken thumbnails for images they already removed. Bypass the cache.
-    const r = await fetch(
-      '/api/clinic-gallery?clinic_id=' + encodeURIComponent(clinicId) + '&_=' + Date.now(),
-      { cache: 'no-store' }
-    );
-    const d = await r.json();
-    const cases = (d && d.cases) || [];
-    if (!cases.length) {
-      host.innerHTML = '<p class="note">Nothing published yet. In your cases below, ' +
-        'choose <strong>Show on website</strong> and it appears here within a minute.</p>';
-      return;
-    }
-    host.innerHTML = '<div class="gal">' + cases.map(c =>
-      '<div class="gal-case" data-case="' + c.case_id + '">' +
-        '<div class="gal-pair">' +
-          '<img loading="lazy" src="' + c.before_url + '" alt="Before">' +
-          '<img loading="lazy" src="' + c.after_url + '" alt="After">' +
-        '</div>' +
-        '<div class="gal-meta">' + [
-          c.treatment,
-          (c.before_date && c.after_date) ? c.before_date + ' \u2192 ' + c.after_date : ''
-        ].filter(Boolean).join(' · ') + '</div>' +
-      '</div>'
-    ).join('') + '</div>';
-
-    // If an image is genuinely gone (withdrawn while a stale response was in
-    // flight), drop the card rather than leave a broken frame on screen.
-    host.querySelectorAll('.gal-case img').forEach(img => {
-      img.addEventListener('error', () => {
-        const card = img.closest('.gal-case');
-        if (card) card.remove();
-        if (!host.querySelector('.gal-case')) {
-          host.innerHTML = '<p class="note">Nothing published yet. In your cases below, ' +
-            'choose <strong>Show on website</strong> and it appears here.</p>';
-        }
-      });
-    });
-  } catch (e) {
-    host.innerHTML = '<p class="note bad">The gallery could not be loaded.</p>';
-  }
+  host.innerHTML = '';
+  const s = document.createElement('script');
+  s.src = '/gallery-embed.js';
+  s.setAttribute('data-clinic-id', clinicId);
+  s.setAttribute('data-columns', '2');
+  s.setAttribute('data-cache', 'off');
+  host.appendChild(s);
 }
 
 /* ---- cases ---- */
@@ -982,7 +1034,7 @@ async function loadImage(caseId, which, el) {
 async function loadCases() {
   const [{ data: rows }, { data: cons }] = await Promise.all([
     sb.from('clinic_reference_cases')
-      .select('id,treatment,subtype,angle,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
+      .select('id,treatment,subtype,angle,crop,series_id,interval_months,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
       .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
     sb.from('clinic_case_consents')
       .select('case_id,purpose').eq('clinic_id', clinicId)
@@ -998,17 +1050,43 @@ async function loadCases() {
       '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>';
     return;
   }
+  // A 3-timepoint grid saves two cases sharing a before photo, and a 2x3 grid
+  // saves three at different angles. Here they are separate rows, because here
+  // they are separately approvable, publishable and revocable, and that is the
+  // truth of the record. But a clinic looking at two cards with the same before
+  // photo deserves to be told why, rather than wondering if they double-saved.
+  const seriesSize = {};
+  rows.forEach(r => {
+    if (r.series_id) seriesSize[r.series_id] = (seriesSize[r.series_id] || 0) + 1;
+  });
+
   $('libSub').textContent = rows.length + (rows.length === 1 ? ' case.' : ' cases.') +
     ' Each carries its own permissions, and shows them.';
   host.innerHTML = '';
-  rows.forEach(r => host.appendChild(plate(r, perms[r.id] || {})));
+  rows.forEach(r => host.appendChild(
+    plate(r, perms[r.id] || {}, r.series_id ? (seriesSize[r.series_id] || 1) : 1)
+  ));
+}
+
+const CROP_BADGE = {
+  full: 'Full face', lower: 'Lower face', upper: 'Upper face',
+  eyes: 'Eye area', body: 'Body'
+};
+
+function intervalLabel(n) {
+  if (!n || !isFinite(n) || n <= 0) return '';
+  if (n === 1) return '1 month';
+  if (n < 12) return n + ' months';
+  if (n === 12) return '1 year';
+  if (n % 12 === 0) return (n / 12) + ' years';
+  return n + ' months';
 }
 
 const mark = (label, on, live) =>
   '<span class="perm-mark' + (on ? ' on' : '') + (live ? ' live' : '') + '">' +
   '<span class="dot"></span>' + label + '</span>';
 
-function plate(r, perms) {
+function plate(r, perms, seriesSize) {
   const el = document.createElement('article');
   el.className = 'plate';
 
@@ -1034,11 +1112,31 @@ function plate(r, perms) {
   const span = (r.before_date && r.after_date)
     ? r.before_date + ' \u2192 ' + r.after_date
     : (r.before_date || r.after_date || '');
-  const meta = [r.angle, span, r.phenotype].filter(Boolean).join(' · ');
+  const meta = [
+    r.angle,
+    intervalLabel(r.interval_months),
+    span,
+    r.phenotype
+  ].filter(Boolean).join(' · ');
+
+  // The crop sits on the title, not buried in the meta line, because it is the
+  // shortest honest answer to "how much of this patient is on the internet".
+  // A missing badge means a case saved before the crop was recorded, which is a
+  // real state and should look like one rather than being guessed at.
+  const crop = CROP_BADGE[r.crop];
+  const badge = crop
+    ? '<span class="plate-crop">' + crop + '</span>'
+    : '<span class="plate-crop" title="Saved before the crop was recorded.">Crop not recorded</span>';
+
+  const kin = (seriesSize > 1)
+    ? '<div class="plate-meta">One of ' + seriesSize + ' from the same grid. ' +
+      'They share a before photo and appear as a single item on your website.</div>'
+    : '';
 
   body.innerHTML =
-    '<div class="display plate-title">' + title + '</div>' +
+    '<div class="display plate-title">' + title + badge + '</div>' +
     '<div class="plate-meta">' + meta + '</div>' +
+    kin +
     '<div class="ledger">' +
       mark('Stored', !!perms.store, false) +
       mark('Visualize', !!perms.visualize && r.visualize_approved, false) +

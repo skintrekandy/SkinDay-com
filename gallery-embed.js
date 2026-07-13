@@ -22,16 +22,51 @@
  * would otherwise wreck the layout, and there would be nothing we could do from
  * our end. Isolation is what makes one design survive a hundred unknown themes.
  *
+ * ---------------------------------------------------------------------------
+ * M12: WHY THIS FILE GOT MORE COMPLICATED
+ *
+ * Two things were wrong, and they were the same thing.
+ *
+ * CROP. Studio crops to a preset, and only Full Face has a fixed aspect ratio
+ * (4:5). Lower Face, Upper Face and Eye Area are derived from facial landmarks,
+ * so their shape varies with the patient's jaw width and face height, and Body
+ * is the raw photo at whatever the camera gave. Rendering all of that into one
+ * 4:5 grid produced a ragged contact sheet, and it was ragged WITHIN a crop, not
+ * only across crops. So the gallery now lays out one section per crop, each with
+ * an aspect ratio that suits it, and centre-crops to fill. Studio centres the
+ * face box, so a centre crop cannot clip the treated area.
+ *
+ * Most clinics will settle into one or two crops, and a lower-face crop is
+ * usually both the treated area and the disclosure the patient actually agreed
+ * to, so in practice most galleries are one clean section.
+ *
+ * SERIES. A 3-timepoint Studio grid saves two cases: before to first follow-up,
+ * and before to last. That is correct for Visualize, which grounds on pairs. It
+ * was wrong here, where it rendered as two cards sharing a before photo, reading
+ * as two patients. The API now also returns a `series` array grouping the cases
+ * that came out of one grid, and this file renders a series as one item:
+ *
+ *   timeline   one patient, tracked. Before, 3 months, 12 months, in a row.
+ *   angles     one result, three views. One pair visible, tabs to turn the head.
+ *   pair       one before, one after. What it always was.
+ *
+ * A case saved before M12 has no series id and becomes a series of one, so
+ * nothing that already exists stops rendering.
+ * ---------------------------------------------------------------------------
+ *
  * THEMING (all optional):
  *   data-clinic-id   required
- *   data-columns     desktop columns (default 3)
- *   data-limit       maximum cases shown (default all)
+ *   data-columns     desktop columns (default 3, reduced automatically for wide
+ *                    crops, ignored for a timeline, which always spans the row)
+ *   data-limit       maximum SERIES shown, newest first (default all)
  *   data-accent      accent colour, any CSS colour (default #C9A96E)
  *   data-radius      corner radius in px (default 2)
- *   data-labels      "off" to hide the BEFORE / AFTER tags
+ *   data-labels      "off" to hide the BEFORE / AFTER / interval tags
  *   data-caption     "off" to hide the treatment line under each case
  *   data-target      id of an existing element to render into
  *   data-style       "off" to hand the design over entirely (see below)
+ *   data-cache       "off" to bypass the 60s API cache (for admin previews only;
+ *                    a public site should leave the cache alone)
  *
  * WHO OWNS THE DESIGN.
  * By default SkinDay does: shadow DOM, our layout, improved centrally, and the
@@ -42,18 +77,26 @@
  * The content still updates itself; only the styling becomes theirs.
  *
  *   .skinday-gallery            the container
- *   .skinday-gallery__grid      wraps all cases
- *   .skinday-gallery__case      one case
+ *   .skinday-gallery__section   one crop group (data-crop)
+ *   .skinday-gallery__grid      wraps the cases in a section
+ *   .skinday-gallery__case      one card. Also carries __series, so a stylesheet
+ *   .skinday-gallery__series    written before M12 still finds its target.
+ *                               (data-mode, data-crop, data-treatment, data-angle)
  *   .skinday-gallery__pair      the before/after pair
+ *   .skinday-gallery__strip     a timeline row: before, then each follow-up
  *   .skinday-gallery__figure    one photo (data-when="before" | "after")
  *   .skinday-gallery__img       the image
- *   .skinday-gallery__label     the BEFORE / AFTER caption
+ *   .skinday-gallery__label     the BEFORE / AFTER / interval caption
+ *   .skinday-gallery__tabs      the angle switcher
+ *   .skinday-gallery__tab       one angle button (data-angle, aria-selected)
  *   .skinday-gallery__meta      the treatment line
  *   .skinday-gallery__note      the results-vary line
  *   .skinday-gallery__empty     shown when nothing is published
  *
  * Only cases the patient consented to publish are ever returned by the API, so
- * this script cannot display an unconsented case even if it tried.
+ * this script cannot display an unconsented case even if it tried. And if a
+ * patient withdraws consent while a cached response is still in flight, the
+ * published image is already gone from storage, so the card removes itself.
  */
 (function () {
   'use strict';
@@ -76,9 +119,43 @@
   var showLabels = script.getAttribute('data-labels') !== 'off';
   var showCaption = script.getAttribute('data-caption') !== 'off';
   var targetId = script.getAttribute('data-target');
+  var noCache = script.getAttribute('data-cache') === 'off';
   // data-style="off" hands the design to the clinic: no shadow root, no CSS from
   // us, just semantic markup their own stylesheet can reach and own.
   var styled = script.getAttribute('data-style') !== 'off';
+
+  // ---- crop geometry -------------------------------------------------------
+  //
+  // ratio is the frame each photo is fitted into. cols caps the columns, because
+  // a card holds a PAIR side by side, so a card of Eye Area photos at 2:1 each is
+  // 4:1 overall and three of those across a page are unreadable stamps.
+  //
+  // order is the reading order of the sections. Full face first when a clinic has
+  // it, because it is the most complete disclosure and the most legible evidence.
+  var CROPS = {
+    full:  { ratio: '4 / 5', cols: 3, order: 0 },
+    lower: { ratio: '4 / 3', cols: 3, order: 1 },
+    upper: { ratio: '3 / 2', cols: 2, order: 2 },
+    eyes:  { ratio: '2 / 1', cols: 2, order: 3 },
+    body:  { ratio: '3 / 4', cols: 3, order: 4 },
+    // Cases saved before M12 carry no crop. They were almost all shot full face,
+    // and 4:5 is the ratio Studio forces there, so this is the right guess and
+    // the only one available.
+    unknown: { ratio: '4 / 5', cols: 3, order: 5 }
+  };
+
+  var TREATMENT = {
+    biostim: 'Biostimulator',
+    filler: 'HA filler',
+    tox: 'Neurotoxin',
+    laser: 'Energy-based'
+  };
+
+  var ANGLE = {
+    frontal: 'Frontal',
+    oblique_right: 'Oblique right',
+    oblique_left: 'Oblique left'
+  };
 
   var mount = document.createElement('div');
   mount.className = 'skinday-gallery';
@@ -96,10 +173,12 @@
   var css =
     ':host { display:block; }' +
     '* { box-sizing:border-box; margin:0; padding:0; }' +
+    '.section + .section { margin-top:18px; }' +
     '.grid {' +
       'display:grid;' +
-      'grid-template-columns:repeat(' + columns + ',1fr);' +
+      'grid-template-columns:repeat(var(--cols),1fr);' +
       'gap:18px;' +
+      'align-items:start;' +
     '}' +
     '@media (max-width:900px){ .grid { grid-template-columns:repeat(2,1fr); } }' +
     '@media (max-width:560px){ .grid { grid-template-columns:1fr; } }' +
@@ -109,11 +188,19 @@
       'overflow:hidden;' +
       'background:transparent;' +
     '}' +
-    '.pair { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:rgba(0,0,0,.10); }' +
+    // A timeline is one patient across time. Cutting it into a column would make
+    // it read as separate people, which is the whole thing this is here to stop.
+    '.case[data-mode="timeline"] { grid-column:1 / -1; }' +
+    '.pair, .strip {' +
+      'display:grid; gap:1px; background:rgba(0,0,0,.10);' +
+    '}' +
+    '.pair { grid-template-columns:1fr 1fr; }' +
+    '.strip { grid-template-columns:repeat(var(--steps),1fr); }' +
+    '@media (max-width:560px){ .strip { grid-template-columns:1fr 1fr; } }' +
     '.frame { position:relative; overflow:hidden; background:rgba(0,0,0,.03); }' +
     '.frame img {' +
-      'display:block; width:100%; height:100%;' +
-      'aspect-ratio:4/5; object-fit:cover;' +
+      'display:block; width:100%; height:auto;' +
+      'aspect-ratio:var(--ar); object-fit:cover; object-position:center;' +
       'border-radius:0;' +           // defeat any inherited image rounding
       'filter:none; box-shadow:none;' +
     '}' +
@@ -124,10 +211,24 @@
       'letter-spacing:.14em; text-transform:uppercase;' +
       'padding:3px 7px;' +
     '}' +
+    '.tabs {' +
+      'display:flex; gap:0;' +
+      'border-top:1px solid rgba(0,0,0,.06);' +
+    '}' +
+    '.tab {' +
+      'flex:1; appearance:none; background:none; border:0;' +
+      'border-right:1px solid rgba(0,0,0,.06);' +
+      'padding:8px 4px; cursor:pointer;' +
+      'font:inherit; font-size:10px; font-weight:600;' +
+      'letter-spacing:.12em; text-transform:uppercase;' +
+      'color:inherit; opacity:.45;' +
+    '}' +
+    '.tab:last-child { border-right:0; }' +
+    '.tab[aria-selected="true"] { opacity:1; color:' + accent + '; }' +
     '.meta {' +
       'padding:10px 12px;' +
       'font-size:12px; font-weight:500; line-height:1.5;' +
-      'color:inherit; opacity:.75; text-transform:capitalize;' +
+      'color:inherit; opacity:.75;' +
       'border-top:1px solid rgba(0,0,0,.06);' +
     '}' +
     '.meta em { font-style:normal; color:' + accent + '; }' +
@@ -155,13 +256,16 @@
   // long, stable and documented in the light DOM, because in that mode they are
   // a public contract with the clinic's developer.
   var C = styled
-    ? { grid:'grid', case:'case', pair:'pair', figure:'frame', img:'', label:'tag',
-        meta:'meta', note:'foot', empty:'empty' }
-    : { grid:'skinday-gallery__grid', case:'skinday-gallery__case',
-        pair:'skinday-gallery__pair', figure:'skinday-gallery__figure',
-        img:'skinday-gallery__img', label:'skinday-gallery__label',
-        meta:'skinday-gallery__meta', note:'skinday-gallery__note',
-        empty:'skinday-gallery__empty' };
+    ? { section:'section', grid:'grid', case:'case', series:'case',
+        pair:'pair', strip:'strip', figure:'frame', img:'', label:'tag',
+        tabs:'tabs', tab:'tab', meta:'meta', note:'foot', empty:'empty' }
+    : { section:'skinday-gallery__section', grid:'skinday-gallery__grid',
+        case:'skinday-gallery__case', series:'skinday-gallery__series',
+        pair:'skinday-gallery__pair', strip:'skinday-gallery__strip',
+        figure:'skinday-gallery__figure', img:'skinday-gallery__img',
+        label:'skinday-gallery__label', tabs:'skinday-gallery__tabs',
+        tab:'skinday-gallery__tab', meta:'skinday-gallery__meta',
+        note:'skinday-gallery__note', empty:'skinday-gallery__empty' };
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -169,56 +273,210 @@
       .replace(/"/g, '&quot;');
   }
 
-  function figure(url, label) {
-    var when = label.toLowerCase();
+  // "6 months" is the honest resolution of the underlying data: a clinic often
+  // knows the month a treatment happened but not the day, so Studio never asked
+  // for one and this never pretends to have one.
+  function intervalLabel(n) {
+    if (n === null || n === undefined || !isFinite(n) || n <= 0) return 'After';
+    if (n === 1) return '1 month';
+    if (n < 12) return n + ' months';
+    if (n === 12) return '1 year';
+    if (n % 12 === 0) return (n / 12) + ' years';
+    return n + ' months';
+  }
+
+  function figure(url, label, when) {
     return '<figure class="' + C.figure + '" data-when="' + when + '">' +
-      '<img class="' + C.img + '" loading="lazy" src="' + esc(url) + '" alt="' + label + '">' +
-      (showLabels ? '<figcaption class="' + C.label + '">' + label + '</figcaption>' : '') +
+      '<img class="' + C.img + '" loading="lazy" src="' + esc(url) + '" alt="' + esc(label) + '">' +
+      (showLabels
+        ? '<figcaption class="' + C.label + '">' + esc(label) + '</figcaption>'
+        : '') +
       '</figure>';
   }
 
-  function render(cases) {
-    if (!cases.length) {
-      host.innerHTML = '<div class="' + C.empty + '">No cases published yet.</div>';
-      return;
-    }
-    var html = '<div class="' + C.grid + '">';
-    cases.forEach(function (c) {
-      // A before/after with no dates is a claim. With them it is evidence.
-      var span = (c.before_date && c.after_date)
-        ? c.before_date + ' \u2192 ' + c.after_date
-        : (c.before_date || c.after_date || '');
-      var line = [c.treatment, span].filter(Boolean).join(' \u00b7 ');
-      html +=
-        '<div class="' + C.case + '" data-treatment="' + esc(c.treatment || '') +
-          '" data-angle="' + esc(c.angle || '') + '">' +
-          '<div class="' + C.pair + '">' +
-            figure(c.before_url, 'Before') + figure(c.after_url, 'After') +
-          '</div>' +
-          (showCaption && line
-            ? '<div class="' + C.meta + '">' + esc(line) + '</div>'
-            : '') +
-        '</div>';
-    });
-    html += '</div>';
-    html += '<p class="' + C.note + '">Individual results vary. Published with patient consent.</p>';
-    host.innerHTML = html;
+  // A before/after with no dates is a claim. With them it is evidence.
+  function metaLine(s) {
+    var first = s.cases[0] || {};
+    var name = TREATMENT[s.treatment] || s.treatment || '';
+    var span = (first.before_date && first.after_date)
+      ? first.before_date + ' \u2192 ' + (s.cases[s.cases.length - 1].after_date || first.after_date)
+      : (first.before_date || first.after_date || '');
+    return [name, span].filter(Boolean).join(' \u00b7 ');
   }
 
-  fetch(API + '?clinic_id=' + encodeURIComponent(clinicId))
+  // Timeline: one before, then every follow-up that was published, in order.
+  // The before is shared by every case in the series (they came from one grid and
+  // one photograph), so it is drawn once and the row reads as a progression
+  // rather than as a set of unrelated pairs.
+  function timelineBody(s) {
+    var first = s.cases[0];
+    var html = '<div class="' + C.strip + '" style="--steps:' + (s.cases.length + 1) + ';">';
+    html += figure(first.before_url, 'Before', 'before');
+    s.cases.forEach(function (c) {
+      html += figure(c.after_url, intervalLabel(c.interval_months), 'after');
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // Angles: six photos in a card is a wall. Show one pair and let the visitor
+  // turn the head, which is also how the clinician looked at the result.
+  function anglesBody(s) {
+    var first = s.cases[0];
+    var html =
+      '<div class="' + C.pair + '">' +
+        figure(first.before_url, 'Before', 'before') +
+        figure(first.after_url, 'After', 'after') +
+      '</div>' +
+      '<div class="' + C.tabs + '" role="tablist">';
+    s.cases.forEach(function (c, i) {
+      html +=
+        '<button class="' + C.tab + '" type="button" role="tab"' +
+        ' data-angle="' + esc(c.angle || '') + '"' +
+        ' data-before="' + esc(c.before_url) + '"' +
+        ' data-after="' + esc(c.after_url) + '"' +
+        ' aria-selected="' + (i === 0 ? 'true' : 'false') + '">' +
+        esc(ANGLE[c.angle] || c.angle || 'View') +
+        '</button>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function pairBody(s) {
+    var c = s.cases[0];
+    return '<div class="' + C.pair + '">' +
+      figure(c.before_url, 'Before', 'before') +
+      figure(c.after_url, intervalLabel(c.interval_months), 'after') +
+      '</div>';
+  }
+
+  function card(s) {
+    var body =
+      s.mode === 'timeline' ? timelineBody(s) :
+      s.mode === 'angles'   ? anglesBody(s) :
+                              pairBody(s);
+    var line = metaLine(s);
+    return '<div class="' + C.case + ' ' + C.series + '"' +
+      ' data-mode="' + esc(s.mode) + '"' +
+      ' data-crop="' + esc(s.crop || 'unknown') + '"' +
+      ' data-treatment="' + esc(s.treatment || '') + '"' +
+      ' data-angle="' + esc(s.angle || '') + '"' +
+      ' data-series="' + esc(s.series_id) + '">' +
+      body +
+      (showCaption && line ? '<div class="' + C.meta + '">' + esc(line) + '</div>' : '') +
+      '</div>';
+  }
+
+  function empty() {
+    host.innerHTML = '<div class="' + C.empty + '">No cases published yet.</div>';
+  }
+
+  function render(series) {
+    if (!series.length) { empty(); return; }
+
+    // Group by crop, in a fixed reading order, so like sits with like and every
+    // row in a section is the same shape. A clinic that only ever shoots lower
+    // face sees one clean section and never knows this code exists.
+    var groups = {};
+    series.forEach(function (s) {
+      var key = (s.crop && CROPS[s.crop]) ? s.crop : 'unknown';
+      (groups[key] = groups[key] || []).push(s);
+    });
+
+    var keys = Object.keys(groups).sort(function (a, b) {
+      return CROPS[a].order - CROPS[b].order;
+    });
+
+    var html = '';
+    keys.forEach(function (key) {
+      var cfg = CROPS[key];
+      var cols = Math.min(columns, cfg.cols);
+      html +=
+        '<div class="' + C.section + '" data-crop="' + key + '"' +
+        ' style="--ar:' + cfg.ratio + ';">' +
+          '<div class="' + C.grid + '" style="--cols:' + cols + ';">' +
+            groups[key].map(card).join('') +
+          '</div>' +
+        '</div>';
+    });
+    html += '<p class="' + C.note + '">Individual results vary. Published with patient consent.</p>';
+    host.innerHTML = html;
+
+    wireTabs();
+    wireImageFailure();
+  }
+
+  function wireTabs() {
+    host.querySelectorAll('[role="tab"]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var cardEl = btn.parentNode.parentNode;
+        var imgs = cardEl.querySelectorAll('img');
+        if (imgs.length < 2) return;
+        imgs[0].src = btn.getAttribute('data-before');
+        imgs[1].src = btn.getAttribute('data-after');
+        cardEl.setAttribute('data-angle', btn.getAttribute('data-angle'));
+        btn.parentNode.querySelectorAll('[role="tab"]').forEach(function (b) {
+          b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+        });
+      });
+    });
+  }
+
+  // The API response is cached for sixty seconds. If a patient withdraws consent
+  // inside that window the JSON can still name a case, but its published object
+  // is already deleted, so the image 404s. Remove the whole card rather than leave
+  // a broken frame on a clinic's website: a card that cannot load its photographs
+  // is not evidence of anything.
+  function wireImageFailure() {
+    host.querySelectorAll('img').forEach(function (img) {
+      img.addEventListener('error', function () {
+        var cardEl = img.closest('[data-series]');
+        if (cardEl) cardEl.remove();
+        host.querySelectorAll('[data-crop]').forEach(function (sec) {
+          if (!sec.querySelector('[data-series]')) sec.remove();
+        });
+        if (!host.querySelector('[data-series]')) empty();
+      });
+    });
+  }
+
+  // Older responses, and any consumer that built against the flat contract, still
+  // work: a case with no series is a series of one.
+  function seriesFrom(data) {
+    if (Array.isArray(data.series) && data.series.length) return data.series;
+    return (data.cases || []).map(function (c) {
+      return {
+        series_id: c.case_id,
+        mode: 'pair',
+        treatment: c.treatment,
+        subtype: c.subtype,
+        crop: c.crop || null,
+        angle: c.angle,
+        interval_months: c.interval_months === undefined ? null : c.interval_months,
+        created_at: c.created_at,
+        cases: [c]
+      };
+    });
+  }
+
+  var url = API + '?clinic_id=' + encodeURIComponent(clinicId);
+  if (noCache) url += '&_=' + Date.now();
+
+  fetch(url, noCache ? { cache: 'no-store' } : undefined)
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data || !data.ok) {
         console.error('[skinday] gallery error', data);
-        host.innerHTML = '<div class="empty">Gallery unavailable.</div>';
+        host.innerHTML = '<div class="' + C.empty + '">Gallery unavailable.</div>';
         return;
       }
-      var cases = data.cases || [];
-      if (limit > 0) cases = cases.slice(0, limit);
-      render(cases);
+      var series = seriesFrom(data);
+      if (limit > 0) series = series.slice(0, limit);
+      render(series);
     })
     .catch(function (err) {
       console.error('[skinday] gallery fetch failed', err);
-      host.innerHTML = '<div class="empty">Gallery unavailable.</div>';
+      host.innerHTML = '<div class="' + C.empty + '">Gallery unavailable.</div>';
     });
 })();
