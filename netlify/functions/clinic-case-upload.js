@@ -43,7 +43,8 @@
 // Expects multipart/form-data with:
 //   fields: clinic_id, consents (JSON string),
 //           treatment?, subtype?, angle?, phenotype?, source_job_id?,
-//           before_date?, after_date?, interval_months?, crop?, series_id?
+//           before_date?, after_date?, interval_months?, crop?, series_id?,
+//           treatment_label?
 //   files:  before, after   (browser-sanitized JPEG)
 
 const crypto = require('node:crypto');
@@ -244,6 +245,11 @@ exports.handler = async (event) => {
     const sourceJobId = (fields.source_job_id || '').trim() || null;
     const crop = (fields.crop || '').trim() || null;
     const seriesId = (fields.series_id || '').trim() || null;
+    // The clinic's own words for what was done, from Studio step 5. Display only:
+    // it is printed under the photograph and never used to match a reference.
+    // Truncated, not rejected: a save that already carries a patient's consented
+    // photographs should not fail over a caption being too long.
+    const treatmentLabel = (fields.treatment_label || '').trim().slice(0, 60) || null;
 
     if (!clinicId) {
       return json(400, { ok: false, error: 'clinic_id is required' });
@@ -330,6 +336,7 @@ exports.handler = async (event) => {
         p_interval_months: Number.isFinite(intervalMonths) ? intervalMonths : null,
         p_crop: crop,
         p_series_id: seriesId,
+        p_treatment_label: treatmentLabel,
         p_residency: 'ca',
         p_source_job_id: sourceJobId
       })
