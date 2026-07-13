@@ -65,6 +65,10 @@
  *   data-caption     "off" to hide the treatment line under each case
  *   data-target      id of an existing element to render into
  *   data-style       "off" to hand the design over entirely (see below)
+ *   data-lightbox    "off" to disable click-to-enlarge (on by default in styled
+ *                    mode, always off with data-style="off", because that mode
+ *                    ships no CSS from us and an unstyled overlay is worse than
+ *                    none)
  *   data-cache       "off" to bypass the 60s API cache (for admin previews only;
  *                    a public site should leave the cache alone)
  *
@@ -123,6 +127,10 @@
   // data-style="off" hands the design to the clinic: no shadow root, no CSS from
   // us, just semantic markup their own stylesheet can reach and own.
   var styled = script.getAttribute('data-style') !== 'off';
+  // A gallery you cannot look closely at is a gallery that fails at the one thing
+  // it is for. On by default. Off in unstyled mode, where we ship no CSS and an
+  // unstyled full-screen overlay would be worse than no overlay at all.
+  var useLightbox = styled && script.getAttribute('data-lightbox') !== 'off';
 
   // ---- crop geometry -------------------------------------------------------
   //
@@ -241,7 +249,37 @@
       'padding:26px; text-align:center;' +
       'font-size:13px; line-height:1.6; opacity:.6;' +
       'border:1px dashed rgba(0,0,0,.14); border-radius:' + radius + 'px;' +
-    '}';
+    '}' +
+    // Click to enlarge. The card crops to a common frame so the grid stays even;
+    // the lightbox does the opposite, showing the whole photograph uncropped,
+    // because at that point the visitor is studying a face and not scanning a page.
+    (useLightbox ? '.frame img { cursor:zoom-in; }' : '') +
+    '.lb {' +
+      'position:fixed; inset:0; z-index:2147483000;' +
+      'background:rgba(20,17,15,.94);' +
+      'display:none; align-items:center; justify-content:center;' +
+      'padding:32px 24px;' +
+    '}' +
+    '.lb.open { display:flex; }' +
+    '.lb-inner { width:100%; max-width:1180px; max-height:100%; overflow:auto; }' +
+    '.lb .pair, .lb .strip { background:transparent; gap:10px; }' +
+    '.lb .frame { background:transparent; overflow:visible; }' +
+    '.lb .frame img {' +
+      'aspect-ratio:auto; object-fit:contain;' +
+      'width:100%; height:auto; max-height:76vh;' +
+    '}' +
+    '@media (max-width:560px){ .lb .pair, .lb .strip { grid-template-columns:1fr; } }' +
+    '.lb .meta {' +
+      'border-top:0; padding:14px 0 0; text-align:center;' +
+      'color:#e8e0d6; opacity:.8; font-size:13px;' +
+    '}' +
+    '.lb-close {' +
+      'position:absolute; top:14px; right:18px;' +
+      'appearance:none; background:none; border:0;' +
+      'color:#e8e0d6; font-size:30px; line-height:1;' +
+      'cursor:pointer; padding:6px 10px; opacity:.7;' +
+    '}' +
+    '.lb-close:hover { opacity:1; }';
 
   if (styled) {
     var style = document.createElement('style');
@@ -251,6 +289,79 @@
 
   var host = document.createElement('div');
   root.appendChild(host);
+
+  // ---- lightbox ------------------------------------------------------------
+  //
+  // Clicking a photograph opens the whole GROUP it belongs to, not the single
+  // image: the before/after pair, or the full timeline strip. A before photo on
+  // its own is not evidence of anything, and a visitor who clicks an after photo
+  // wants to compare it to something, not admire it alone.
+  //
+  // The group is cloned out of the live card, so whichever angle tab is currently
+  // selected is the one that enlarges. Uncropped: the card frames to a common
+  // aspect ratio to keep the grid even, and the lightbox undoes exactly that.
+  var lb = null;
+  var lbInner = null;
+
+  if (useLightbox) {
+    lb = document.createElement('div');
+    lb.className = 'lb';
+    lb.setAttribute('role', 'dialog');
+    lb.setAttribute('aria-modal', 'true');
+
+    var lbClose = document.createElement('button');
+    lbClose.className = 'lb-close';
+    lbClose.type = 'button';
+    lbClose.setAttribute('aria-label', 'Close');
+    lbClose.innerHTML = '&times;';
+
+    lbInner = document.createElement('div');
+    lbInner.className = 'lb-inner';
+
+    lb.appendChild(lbClose);
+    lb.appendChild(lbInner);
+    root.appendChild(lb);
+
+    lbClose.addEventListener('click', closeLightbox);
+    lb.addEventListener('click', function (e) {
+      // Backdrop only. A click on a photograph should not close the thing the
+      // visitor opened in order to look at the photograph.
+      if (e.target === lb) closeLightbox();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' || e.key === 'Esc') closeLightbox();
+    });
+  }
+
+  function openLightbox(cardEl) {
+    if (!lb || !cardEl) return;
+    var group = cardEl.querySelector('.pair, .strip');
+    if (!group) return;
+    lbInner.innerHTML = '';
+    lbInner.appendChild(group.cloneNode(true));
+    var meta = cardEl.querySelector('.meta');
+    if (meta) lbInner.appendChild(meta.cloneNode(true));
+    lb.classList.add('open');
+    // The host page keeps scrolling behind a fixed overlay otherwise, which reads
+    // as the page being broken rather than as an overlay being open.
+    document.documentElement.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    if (!lb) return;
+    lb.classList.remove('open');
+    lbInner.innerHTML = '';
+    document.documentElement.style.overflow = '';
+  }
+
+  function wireLightbox() {
+    if (!useLightbox) return;
+    host.querySelectorAll('img').forEach(function (img) {
+      img.addEventListener('click', function () {
+        openLightbox(img.closest('[data-series]'));
+      });
+    });
+  }
 
   // Class names differ by mode: short and private inside the shadow root, but
   // long, stable and documented in the light DOM, because in that mode they are
@@ -405,6 +516,7 @@
 
     wireTabs();
     wireImageFailure();
+    wireLightbox();
   }
 
   function wireTabs() {
