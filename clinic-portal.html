@@ -1041,7 +1041,7 @@ async function loadGallery() {
   // preview that lies, and the layout is precisely the thing being judged here.
   //
   // data-cache="off" is the one difference, and it is a correct one: the public
-  // endpoint caches for 60 seconds, which is right for a clinic's website and
+  // endpoint caches for a few seconds, which is right for a clinic website and
   // wrong for an admin view where publishing or withdrawing must be visible at
   // once, not a minute later.
   const host = $('galleryPreview');
