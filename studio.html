@@ -1210,6 +1210,55 @@ function faceFallbackBox(iw, ih, preset) {
   return {x: l*iw, y: t*ih, w: (r-l)*iw, h: (b-t)*ih, cx: (l+r)/2*iw, cy: (t+b)/2*ih};
 }
 
+// Shrink a box to fit inside the photograph WITHOUT changing its shape.
+//
+// The old code clamped width and height independently:
+//
+//   w: Math.min(nw, iw), h: Math.min(nh, ih)
+//
+// which did two bad things at once. It changed the box's ASPECT the moment it
+// overflowed, so an overflowing slot snapped to the photograph's own ratio and
+// stopped matching the slots beside it. And it made the zoom slider go dead: once
+// a box hit the edge, dragging further moved the number and not the image. On a
+// 2x3 that always bit the oblique slots first, because their boxes are the
+// largest, so the frontal slider kept working while the oblique ones did not.
+//
+// A uniform shrink keeps the shape and keeps the slider live to the end of its
+// travel: the box simply stops growing once the photograph runs out.
+function fitBoxToImage(nw, nh, cx, cy, iw, ih) {
+  const k = Math.min(1, iw / nw, ih / nh);
+  const w = nw * k;
+  const h = nh * k;
+  return {
+    x: Math.max(0, Math.min(cx - w / 2, iw - w)),
+    y: Math.max(0, Math.min(cy - h / 2, ih - h)),
+    w: w,
+    h: h,
+    cx: cx,
+    cy: cy
+  };
+}
+
+// targetEyePx is accepted and deliberately ignored. It used to scale the box by
+// (targetEyePx / thisEyePx), normalizing every slot in a grid onto a common EYE
+// DISTANCE, and that was the wrong invariant.
+//
+// Eye distance foreshortens when the head turns. It is the one facial measurement
+// guaranteed to change with exactly the thing we are trying to be invariant to. An
+// oblique always has the smallest eye distance in a grid, so it always got the
+// largest scale factor, so its crop box came out around 35% wider than the
+// frontal's and its face rendered around 35% smaller. Same slider position, three
+// angles, and the frontal tight while the obliques sat loose in their frames.
+//
+// The correct invariant is head size, and lmToBaseBox already uses it: every
+// vertical in that box is an offset from the brow or the chin, so base.h is
+// already proportional to brow-to-chin height, which barely moves under yaw. The
+// base box was already normalized. The eye-distance factor was not correcting an
+// error, it was introducing one. So it is gone, and scale is now zoom alone.
+//
+// The argument stays in the signature so a mismatched deploy of studio.html and
+// the clinic portal cannot break: an extra argument is harmless, a missing one is
+// not.
 function getBoxForSlot(idx, targetEyePx) {
   const sl = S.slots[idx];
   const img = sl.img;
@@ -1219,35 +1268,50 @@ function getBoxForSlot(idx, targetEyePx) {
 
   // Body mode: no cropping. Use the whole photo as uploaded.
   if (S.subject === 'body') {
-    return {x: 0, y: 0, w: iw, h: ih};
+    return {x: 0, y: 0, w: iw, h: ih, cx: iw / 2, cy: ih / 2};
   }
 
   if (!sl.lm) {
     const fb = faceFallbackBox(iw, ih, preset);
-    const nw = fb.w / zoom, nh = fb.h / zoom;
-    return {x: Math.max(0, fb.cx - nw/2), y: Math.max(0, fb.cy - nh/2), w: Math.min(nw, iw), h: Math.min(nh, ih)};
+    return fitBoxToImage(fb.w / zoom, fb.h / zoom, fb.cx, fb.cy, iw, ih);
   }
+
   const base = lmToBaseBox(sl.lm, iw, ih, preset);
-  const thisEyePx = eyeDistPx(sl.lm, iw);
-  if (!thisEyePx || thisEyePx < 1) return faceFallbackBox(iw, ih, preset);
-  const scale = (targetEyePx / thisEyePx) / zoom;
-  const nw = base.w * scale, nh = base.h * scale;
-  const nx = base.cx - nw/2, ny = base.cy - nh/2;
-  return {
-    x: Math.max(0, Math.min(nx, iw - nw)),
-    y: Math.max(0, Math.min(ny, ih - nh)),
-    w: Math.min(nw, iw), h: Math.min(nh, ih)
-  };
+  const scale = 1 / zoom;
+  return fitBoxToImage(base.w * scale, base.h * scale, base.cx, base.cy, iw, ih);
 }
 
 function getAllBoxes() {
-  // Find common target eye distance from slots that have landmarks
-  const withLm = S.slots.filter(sl => sl.lm);
-  let target = 100;
-  if (withLm.length > 0) {
-    target = Math.max(...withLm.map(sl => eyeDistPx(sl.lm, sl.img.naturalWidth)));
-  }
-  return S.slots.map((_, i) => getBoxForSlot(i, target));
+  const boxes = S.slots.map((_, i) => getBoxForSlot(i));
+
+  // ONE SHAPE FOR THE WHOLE GRID.
+  //
+  // getBoxForSlot now normalizes head SIZE, so every box has the same height
+  // relative to the face. It does not normalize head WIDTH, and it cannot: a face
+  // turned 45 degrees is genuinely narrower in the photograph, and lmToBaseBox
+  // widens the oblique crop deliberately so the ear stays in frame.
+  //
+  // So the boxes come out the same height and slightly different widths, which is
+  // slightly different aspects, which renderPreviews then squashes into one common
+  // frame: some panels stretched, some compressed, and a before that does not line
+  // up with its after.
+  //
+  // Unify to the WIDEST aspect in the grid. Widening a narrow box only ever adds
+  // context and can never clip a face; narrowing to the average would cut ears off
+  // obliques. Every panel in the grid is now exactly the same shape, so the common
+  // frame no longer distorts anything, and a saved case is pixel-identical across
+  // its before and its after.
+  const widest = boxes.reduce((m, b) => Math.max(m, b.w / b.h), 0);
+  if (!isFinite(widest) || widest <= 0) return boxes;
+
+  return boxes.map((b, i) => {
+    const sl = S.slots[i];
+    if (!sl || !sl.img) return b;
+    return fitBoxToImage(
+      b.h * widest, b.h, b.cx, b.cy,
+      sl.img.naturalWidth, sl.img.naturalHeight
+    );
+  });
 }
 
 function clampBox(box, img) {
@@ -1334,8 +1398,11 @@ function renderPreviews() {
     const cv = document.getElementById(`cv-${i}`);
     if (!cv || !sl.img) return;
     const box = boxes ? boxes[i] : (() => {
-      const target = eyeDistPx(sl.lm, sl.img.naturalWidth) || 100;
-      return clampBox({...getBoxForSlot(i, target), x: getBoxForSlot(i, target).x + sl.pan.x, y: getBoxForSlot(i, target).y + sl.pan.y}, sl.img);
+      // Partly filled grid. getAllBoxes would throw on the empty slots, so fall
+      // back to this slot alone. No eye-distance target any more: the base box is
+      // already head-size normalized, so zoom is the whole of the scale.
+      const b = getBoxForSlot(i);
+      return clampBox({ ...b, x: b.x + sl.pan.x, y: b.y + sl.pan.y }, sl.img);
     })();
     if (sl.processedDataUrl) {
       if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) {

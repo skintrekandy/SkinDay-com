@@ -829,8 +829,7 @@ function slotBox(i) {
       '  if (S.slots.every(function(sl){ return sl.img; })) return getPannedBoxes()[i];' +
       '  var sl = S.slots[i];' +
       '  if (!sl || !sl.img) return null;' +
-      '  var t = sl.lm ? (eyeDistPx(sl.lm, sl.img.naturalWidth) || 100) : 100;' +
-      '  var b = getBoxForSlot(i, t);' +
+      '  var b = getBoxForSlot(i);' +
       '  return clampBox({ x: b.x + sl.pan.x, y: b.y + sl.pan.y, w: b.w, h: b.h }, sl.img);' +
       '})(' + i + ')'
     );
