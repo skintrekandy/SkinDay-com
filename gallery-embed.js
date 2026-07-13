@@ -69,7 +69,7 @@
  *                    mode, always off with data-style="off", because that mode
  *                    ships no CSS from us and an unstyled overlay is worse than
  *                    none)
- *   data-cache       "off" to bypass the 60s API cache (for admin previews only;
+ *   data-cache       "off" to bypass the 10s API cache (for admin previews only;
  *                    a public site should leave the cache alone)
  *
  * WHO OWNS THE DESIGN.
@@ -535,7 +535,7 @@
     });
   }
 
-  // The API response is cached for sixty seconds. If a patient withdraws consent
+  // The API response is cached briefly. If a patient withdraws consent
   // inside that window the JSON can still name a case, but its published object
   // is already deleted, so the image 404s. Remove the whole card rather than leave
   // a broken frame on a clinic's website: a card that cannot load its photographs
