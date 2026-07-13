@@ -103,7 +103,7 @@
         <tr><td><code>data-accent</code></td><td>Accent colour. Any CSS colour.</td></tr>
         <tr><td><code>data-radius</code></td><td>Corner radius in pixels. Default 2.</td></tr>
         <tr><td><code>data-labels</code></td><td><code>off</code> hides the BEFORE / AFTER and interval tags.</td></tr>
-        <tr><td><code>data-caption</code></td><td><code>off</code> hides the treatment line under each case.</td></tr>
+        <tr><td><code>data-caption</code></td><td><code>off</code> hides the treatment and injector lines under each case.</td></tr>
         <tr><td><code>data-target</code></td><td>The id of an element to render into, instead of in place.</td></tr>
         <tr><td><code>data-style</code></td><td><code>off</code> hands the styling to you. See below.</td></tr>
       </tbody>
@@ -148,6 +148,7 @@
 .skinday-gallery__tabs     the angle switcher
 .skinday-gallery__tab      one angle button (data-angle, aria-selected)
 .skinday-gallery__meta     the treatment line
+.skinday-gallery__by       the injector line, when the clinic publishes one
 .skinday-gallery__note     the results-vary line
 .skinday-gallery__empty    shown when nothing is published</pre>
     <p style="margin-top:16px;"><code>data-mode</code> on a card is <code>timeline</code>, <code>angles</code> or <code>pair</code>. The angle tabs keep working in this mode: they are behaviour, not styling, so they stay ours. Everything else is yours.</p>
@@ -170,6 +171,7 @@
       "treatment": "biostim",
       "subtype":   "sculptra",
       "treatment_label": "Sculptra · 3 sessions",
+      "injector_name":   "Dr Andy Huang",
       "angle":     "frontal",
       "crop":      "lower",
       "interval_months": 3,
@@ -191,7 +193,8 @@
     }
   ]
 }</pre>
-    <p style="margin-top:16px;"><code>treatment_label</code> is the clinic's own words for what they did, and it is what the gallery prints. <code>treatment</code> is SkinDay's category, which is what a simulation matches against. Caption with the first; the second is only there if you need to group or filter. When a clinic has left the label blank, it is null and the gallery falls back to the category.</p>
+    <p style="margin-top:16px;"><code>injector_name</code> is present only when the clinic explicitly chose to publish it. Null means they did not, which is not the same as there being no injector. Do not fall back to anything.</p>
+    <p><code>treatment_label</code> is the clinic's own words for what they did, and it is what the gallery prints. <code>treatment</code> is SkinDay's category, which is what a simulation matches against. Caption with the first; the second is only there if you need to group or filter. When a clinic has left the label blank, it is null and the gallery falls back to the category.</p>
     <p>Two readings of the same data, and nothing is duplicated. <code>cases</code> is the flat list: one entry per stored before-and-after, which is what the clinic's Visualize matches on. <code>series</code> groups the ones that came from the same patient at the same sitting, which is what a visitor is actually looking at. Use whichever fits what you are building. <code>mode</code> is <code>timeline</code>, <code>angles</code> or <code>pair</code>.</p>
     <p>Only cases the patient consented to publish are ever returned. There is no way to request an unpublished one.</p>
   </section>

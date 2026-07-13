@@ -62,7 +62,7 @@
  *   data-accent      accent colour, any CSS colour (default #C9A96E)
  *   data-radius      corner radius in px (default 2)
  *   data-labels      "off" to hide the BEFORE / AFTER / interval tags
- *   data-caption     "off" to hide the treatment line under each case
+ *   data-caption     "off" to hide the treatment and injector lines under each case
  *   data-target      id of an existing element to render into
  *   data-style       "off" to hand the design over entirely (see below)
  *   data-lightbox    "off" to disable click-to-enlarge (on by default in styled
@@ -94,6 +94,7 @@
  *   .skinday-gallery__tabs      the angle switcher
  *   .skinday-gallery__tab       one angle button (data-angle, aria-selected)
  *   .skinday-gallery__meta      the treatment line
+ *   .skinday-gallery__by        the injector line, when the clinic publishes one
  *   .skinday-gallery__note      the results-vary line
  *   .skinday-gallery__empty     shown when nothing is published
  *
@@ -240,6 +241,11 @@
       'border-top:1px solid rgba(0,0,0,.06);' +
     '}' +
     '.meta em { font-style:normal; color:' + accent + '; }' +
+    '.by {' +
+      'padding:0 12px 10px;' +
+      'font-size:11px; line-height:1.5;' +
+      'color:inherit; opacity:.5;' +
+    '}' +
     '.foot {' +
       'margin-top:14px;' +
       'font-size:11.5px; line-height:1.6;' +
@@ -272,6 +278,10 @@
     '.lb .meta {' +
       'border-top:0; padding:14px 0 0; text-align:center;' +
       'color:#e8e0d6; opacity:.8; font-size:13px;' +
+    '}' +
+    '.lb .by {' +
+      'padding:4px 0 0; text-align:center;' +
+      'color:#e8e0d6; opacity:.5; font-size:12px;' +
     '}' +
     '.lb-close {' +
       'position:absolute; top:14px; right:18px;' +
@@ -341,6 +351,8 @@
     lbInner.appendChild(group.cloneNode(true));
     var meta = cardEl.querySelector('.meta');
     if (meta) lbInner.appendChild(meta.cloneNode(true));
+    var by = cardEl.querySelector('.by');
+    if (by) lbInner.appendChild(by.cloneNode(true));
     lb.classList.add('open');
     // The host page keeps scrolling behind a fixed overlay otherwise, which reads
     // as the page being broken rather than as an overlay being open.
@@ -369,13 +381,14 @@
   var C = styled
     ? { section:'section', grid:'grid', case:'case', series:'case',
         pair:'pair', strip:'strip', figure:'frame', img:'', label:'tag',
-        tabs:'tabs', tab:'tab', meta:'meta', note:'foot', empty:'empty' }
+        tabs:'tabs', tab:'tab', meta:'meta', by:'by', note:'foot', empty:'empty' }
     : { section:'skinday-gallery__section', grid:'skinday-gallery__grid',
         case:'skinday-gallery__case', series:'skinday-gallery__series',
         pair:'skinday-gallery__pair', strip:'skinday-gallery__strip',
         figure:'skinday-gallery__figure', img:'skinday-gallery__img',
         label:'skinday-gallery__label', tabs:'skinday-gallery__tabs',
         tab:'skinday-gallery__tab', meta:'skinday-gallery__meta',
+        by:'skinday-gallery__by',
         note:'skinday-gallery__note', empty:'skinday-gallery__empty' };
 
   function esc(s) {
@@ -422,6 +435,21 @@
       ? first.before_date + ' \u2192 ' + (s.cases[s.cases.length - 1].after_date || first.after_date)
       : (first.before_date || first.after_date || '');
     return [name, span].filter(Boolean).join(' \u00b7 ');
+  }
+
+  // Who did it, when the clinic chose to say so.
+  //
+  // Its own line, not appended to the treatment. "Sculptra 6 vials, Dr Andy Huang,
+  // Nov 2024 to Feb 2025" reads as one run-on fact. The injector is attribution,
+  // which is a different kind of statement from what was done and when, and it is
+  // the one a named person has a stake in. It gets its own line and a quieter one.
+  //
+  // Null means the clinic did not choose to publish a name. That is not the same
+  // as there not being one, and nothing here should imply otherwise.
+  function byLine(s) {
+    var name = (s.cases[0] && s.cases[0].injector_name) || s.injector_name;
+    if (!name) return '';
+    return '<div class="' + C.by + '">' + esc(name) + '</div>';
   }
 
   // Timeline: one before, then every follow-up that was published, in order.
@@ -485,6 +513,7 @@
       ' data-series="' + esc(s.series_id) + '">' +
       body +
       (showCaption && line ? '<div class="' + C.meta + '">' + esc(line) + '</div>' : '') +
+      (showCaption ? byLine(s) : '') +
       '</div>';
   }
 
