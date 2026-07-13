@@ -406,9 +406,18 @@
   }
 
   // A before/after with no dates is a claim. With them it is evidence.
+  //
+  // The caption is the CLINIC's words, not ours. TREATMENT is SkinDay's taxonomy,
+  // which is the right vocabulary for matching a generation to a reference and the
+  // wrong one to print under a face: a visitor wants to know what was done to this
+  // patient, and only the clinic can say that. So the treatment label from Studio
+  // wins, and the category name is only a fallback for cases saved before the label
+  // was carried, or where the clinic left the field blank.
   function metaLine(s) {
     var first = s.cases[0] || {};
-    var name = TREATMENT[s.treatment] || s.treatment || '';
+    var name = first.treatment_label ||
+               s.treatment_label ||
+               TREATMENT[s.treatment] || s.treatment || '';
     var span = (first.before_date && first.after_date)
       ? first.before_date + ' \u2192 ' + (s.cases[s.cases.length - 1].after_date || first.after_date)
       : (first.before_date || first.after_date || '');

@@ -169,6 +169,7 @@
       "series_id": "ser_2f81a0c47b3ee915",
       "treatment": "biostim",
       "subtype":   "sculptra",
+      "treatment_label": "Sculptra · 3 sessions",
       "angle":     "frontal",
       "crop":      "lower",
       "interval_months": 3,
@@ -184,12 +185,14 @@
       "series_id": "ser_2f81a0c47b3ee915",
       "mode":      "timeline",
       "treatment": "biostim",
+      "treatment_label": "Sculptra · 3 sessions",
       "crop":      "lower",
       "cases":     [ ... the same two case objects, in order ... ]
     }
   ]
 }</pre>
-    <p style="margin-top:16px;">Two readings of the same data, and nothing is duplicated. <code>cases</code> is the flat list: one entry per stored before-and-after, which is what the clinic's Visualize matches on. <code>series</code> groups the ones that came from the same patient at the same sitting, which is what a visitor is actually looking at. Use whichever fits what you are building. <code>mode</code> is <code>timeline</code>, <code>angles</code> or <code>pair</code>.</p>
+    <p style="margin-top:16px;"><code>treatment_label</code> is the clinic's own words for what they did, and it is what the gallery prints. <code>treatment</code> is SkinDay's category, which is what a simulation matches against. Caption with the first; the second is only there if you need to group or filter. When a clinic has left the label blank, it is null and the gallery falls back to the category.</p>
+    <p>Two readings of the same data, and nothing is duplicated. <code>cases</code> is the flat list: one entry per stored before-and-after, which is what the clinic's Visualize matches on. <code>series</code> groups the ones that came from the same patient at the same sitting, which is what a visitor is actually looking at. Use whichever fits what you are building. <code>mode</code> is <code>timeline</code>, <code>angles</code> or <code>pair</code>.</p>
     <p>Only cases the patient consented to publish are ever returned. There is no way to request an unpublished one.</p>
   </section>
 
