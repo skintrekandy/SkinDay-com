@@ -132,6 +132,7 @@ function buildSeries(cases) {
       mode,
       treatment: first.treatment,
       subtype: first.subtype,
+      treatment_label: first.treatment_label || null,
       crop: first.crop || null,
       angle: mode === 'angles' ? null : first.angle,
       interval_months: mode === 'timeline' ? null : first.interval_months,
@@ -186,6 +187,9 @@ exports.handler = async (event) => {
       series_id: r.series_id || null,
       treatment: r.treatment,
       subtype: r.subtype,
+      // The clinic's own caption, from Studio step 5. Display only. Null falls
+      // back to the treatment category name.
+      treatment_label: r.treatment_label || null,
       angle: r.angle,
       crop: r.crop || null,
       phenotype: r.phenotype,
