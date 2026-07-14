@@ -55,6 +55,17 @@ const BLOB_STORE = 'visualize-jobs';
 const DEFAULT_TTL_HOURS = 24;
 const ADMIN_KEY = process.env.PURGE_ADMIN_KEY;
 
+// A synchronous Netlify function has roughly ten seconds. Reading a status blob
+// and deleting a key are each a network round trip, so a backlog of several
+// hundred jobs cannot be drained in one invocation no matter how it is written.
+//
+// So every run is bounded: it takes at most DEFAULT_LIMIT jobs, works them in
+// parallel batches, and reports how many are left. Run it again until zero. The
+// daily scheduled pass never has more than a day of traffic to clear, so the
+// limit only ever matters while draining a backlog.
+const DEFAULT_LIMIT = 120;
+const CONCURRENCY = 24;
+
 // The suffixes a job can leave behind. :seen is this sweep's own marker.
 const SUFFIXES = ['job', 'result', 'status', 'billing', 'seen'];
 
@@ -94,7 +105,19 @@ async function readJson(store, key) {
   }
 }
 
-async function sweep(store, ttlHours, dryRun) {
+// Bounded parallelism. Unbounded Promise.all over a thousand keys will exhaust
+// sockets and fail in a way that looks like a timeout but is not one.
+async function inBatches(items, size, fn) {
+  const out = [];
+  for (let i = 0; i < items.length; i += size) {
+    const batch = items.slice(i, i + size);
+    const settled = await Promise.all(batch.map(fn));
+    for (const r of settled) out.push(r);
+  }
+  return out;
+}
+
+async function sweep(store, ttlHours, dryRun, limit) {
   const ttlMs = ttlHours * 60 * 60 * 1000;
   const now = Date.now();
   const cutoff = now - ttlMs;
@@ -111,25 +134,29 @@ async function sweep(store, ttlHours, dryRun) {
     jobs.get(parsed.jobId)[parsed.suffix] = key;
   }
 
+  const allJobIds = Array.from(jobs.keys());
+  const batch = allJobIds.slice(0, limit);
+
   const expired = [];      // aged out, datable, delete now
   const live = [];         // datable, still inside the TTL
   const marked = [];       // undatable, marker written this run
   const secondPass = [];   // undatable, marker aged out, delete now
   const waiting = [];      // undatable, marker still fresh
+  const toMark = [];
 
-  for (const [jobId, parts] of jobs) {
-    // A stray :seen with nothing else left is our own litter. Clean it up.
+  await inBatches(batch, CONCURRENCY, async (jobId) => {
+    const parts = jobs.get(jobId);
+
+    // A stray :seen with nothing else left is this sweep's own litter.
     if (parts.seen && !parts.job && !parts.result && !parts.status && !parts.billing) {
-      expired.push({ jobId, at: null, keys: [parts.seen], reason: 'orphan marker' });
-      continue;
+      expired.push({ jobId, at: null, keys: [parts.seen], holds_image: false, reason: 'orphan marker' });
+      return;
     }
 
     const status = parts.status ? await readJson(store, parts.status) : null;
     const at = status && typeof status.updatedAt === 'number' ? status.updatedAt : null;
 
-    const payload = SUFFIXES
-      .filter(sfx => parts[sfx])
-      .map(sfx => parts[sfx]);
+    const payload = SUFFIXES.filter(sfx => parts[sfx]).map(sfx => parts[sfx]);
 
     if (at !== null) {
       // Datable. Everything holding a face falls here, because the worker writes
@@ -143,9 +170,9 @@ async function sweep(store, ttlHours, dryRun) {
           reason: status.state === 'done' ? 'completed job aged out' : 'failed job aged out'
         });
       } else {
-        live.push({ jobId, at: new Date(at).toISOString() });
+        live.push(jobId);
       }
-      continue;
+      return;
     }
 
     // Undatable. Could be in flight this second. Two-pass aging.
@@ -153,13 +180,9 @@ async function sweep(store, ttlHours, dryRun) {
     const seenAt = seen && typeof seen.at === 'number' ? seen.at : null;
 
     if (seenAt === null) {
-      marked.push({ jobId, keys: payload, holds_image: !!parts.job });
-      if (!dryRun) {
-        try {
-          await store.setJSON(jobId + ':seen', { at: now });
-        } catch (err) { /* next sweep will retry */ }
-      }
-      continue;
+      marked.push({ jobId, holds_image: !!parts.job });
+      toMark.push(jobId);
+      return;
     }
 
     if (seenAt < cutoff) {
@@ -171,23 +194,26 @@ async function sweep(store, ttlHours, dryRun) {
         reason: 'no status was ever written, and it has not moved in a full TTL window'
       });
     } else {
-      waiting.push({ jobId, first_seen: new Date(seenAt).toISOString() });
+      waiting.push(jobId);
     }
-  }
+  });
 
   const toDelete = expired.concat(secondPass);
   const keysToDelete = [];
   for (const j of toDelete) for (const k of j.keys) keysToDelete.push(k);
 
+  const remaining = Math.max(0, allJobIds.length - batch.length);
+
   const report = {
     dry_run: dryRun,
     ttl_hours: ttlHours,
+    limit,
     cutoff: new Date(cutoff).toISOString(),
     jobs_in_store: jobs.size,
     keys_in_store: keys.length,
-    images_recoverable_today: expired
-      .concat(secondPass)
-      .filter(j => j.holds_image).length,
+    jobs_examined_this_run: batch.length,
+    jobs_not_examined_this_run: remaining,
+    images_recoverable_today: toDelete.filter(j => j.holds_image).length,
     expired: expired.length,
     second_pass: secondPass.length,
     marked_this_run: marked.length,
@@ -198,23 +224,37 @@ async function sweep(store, ttlHours, dryRun) {
   };
 
   if (dryRun) {
-    report.sample = toDelete.slice(0, 10);
+    report.sample = toDelete.slice(0, 5);
+    report.note = remaining > 0
+      ? 'A backlog is present. Each live run clears up to ' + limit +
+        ' jobs. Run it again until jobs_in_store stops falling.'
+      : 'Everything in the store was examined in this run.';
     return report;
   }
 
-  let deleted = 0;
   const errors = [];
-  for (const key of keysToDelete) {
+  let deleted = 0;
+
+  await inBatches(keysToDelete, CONCURRENCY, async (key) => {
     try {
       await store.delete(key);
       deleted += 1;
     } catch (err) {
       errors.push({ key, message: err.message });
     }
-  }
+  });
+
+  await inBatches(toMark, CONCURRENCY, async (jobId) => {
+    try {
+      await store.setJSON(jobId + ':seen', { at: now });
+    } catch (err) { /* the next sweep will retry */ }
+  });
 
   report.deleted = deleted;
   report.errors = errors;
+  report.note = remaining > 0
+    ? remaining + ' jobs were not examined. Run this again until jobs_in_store stops falling.'
+    : 'Everything in the store was examined in this run.';
   return report;
 }
 
@@ -229,7 +269,7 @@ exports.handler = async function (event) {
 
   if (isScheduled) {
     try {
-      const report = await sweep(store, DEFAULT_TTL_HOURS, false);
+      const report = await sweep(store, DEFAULT_TTL_HOURS, false, DEFAULT_LIMIT);
       console.log('[blob-sweep] ' + JSON.stringify(report));
       return json(200, report);
     } catch (err) {
@@ -262,9 +302,12 @@ exports.handler = async function (event) {
   const ttlHours = Number.isFinite(body.ttlHours) && body.ttlHours > 0
     ? body.ttlHours
     : DEFAULT_TTL_HOURS;
+  const limit = Number.isFinite(body.limit) && body.limit > 0
+    ? Math.min(body.limit, 400)
+    : DEFAULT_LIMIT;
 
   try {
-    return json(200, await sweep(store, ttlHours, dryRun));
+    return json(200, await sweep(store, ttlHours, dryRun, limit));
   } catch (err) {
     return json(500, { error: err.message });
   }
