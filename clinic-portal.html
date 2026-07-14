@@ -231,8 +231,17 @@
   .note.ok { color:#3d6b4c; }
   .note.bad { color:#a9503f; }
   .empty { padding:44px 0; text-align:center; }
-  .subtabs { margin:0 0 20px; padding:0; border-bottom:1px solid rgba(28,23,20,.10); }
-  .subtabs .tab { font-size:.8rem; padding:10px 0; margin-right:26px; }
+  .subtabs {
+    display:flex; gap:26px; margin:0 0 20px; padding:0;
+    border-bottom:1px solid rgba(28,23,20,.10);
+  }
+  .subtab {
+    background:none; border:0; border-bottom:2px solid transparent;
+    font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:400;
+    letter-spacing:.02em; color:var(--muted); padding:10px 0; cursor:pointer;
+  }
+  .subtab:hover { color:var(--ink); }
+  .subtab.active { color:var(--deep); border-bottom-color:var(--rose); }
   .lib-group { border-top:1px solid rgba(28,23,20,.10); }
   .lib-group:last-child { border-bottom:1px solid rgba(28,23,20,.10); }
   .lib-head {
@@ -464,13 +473,13 @@
   <section class="sec">
     <div class="sec-head">
       <span class="eyebrow">Library</span>
-      <h2 class="display" id="libTitle">Your photographs</h2>
+      <h2 class="display">Your Library</h2>
       <p id="libSub">Loading…</p>
     </div>
 
-    <nav class="tabs subtabs" id="libTabs">
-      <button class="tab active" data-kind="photograph">Photographs</button>
-      <button class="tab" data-kind="simulation">Simulations</button>
+    <nav class="subtabs" id="libTabs">
+      <button class="subtab active" data-kind="photograph">Before &amp; After</button>
+      <button class="subtab" data-kind="simulation">Simulations</button>
     </nav>
 
     <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
@@ -602,9 +611,12 @@ sb.auth.getSession().then(({ data }) => { if (data && data.session) start(); });
 
 let activePanel = 'studio';
 
-document.querySelectorAll('.tab').forEach(t => {
+// Scoped to #tabs. A bare '.tab' selector matched the Library's own sub-tabs,
+// so clicking one also ran the panel switcher, which read dataset.panel off it,
+// got undefined, and hid every panel on the page.
+document.querySelectorAll('#tabs .tab').forEach(t => {
   t.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
     activePanel = t.dataset.panel;
     ['studio', 'visualize', 'library'].forEach(p => {
@@ -1371,9 +1383,6 @@ async function loadLibrary() {
   const host = $('libGroups');
   if (!host) return;
 
-  $('libTitle').textContent =
-    libKind === 'photograph' ? 'Your photographs' : 'Your simulations';
-
   host.innerHTML = '<div class="empty"><p>Loading…</p></div>';
   Object.keys(libOpen).forEach(k => delete libOpen[k]);
 
@@ -1393,14 +1402,17 @@ async function loadLibrary() {
       ? '<div class="empty"><div class="display">Nothing here yet.</div>' +
         '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>'
       : '<div class="empty"><div class="display">No simulations kept.</div>' +
-        '<p>Run a simulation in Visualize and save it here. Nothing is stored unless you choose to store it.</p></div>';
+        '<p>Run a simulation in Visualize and save it here. Nothing is kept unless you choose to keep it.</p></div>';
     $('libSub').textContent = '';
     return;
   }
 
   const items = data.reduce((n, g) => n + (g.case_count || 0), 0);
+  const noun = (libKind === 'photograph')
+    ? (items === 1 ? 'before and after' : 'before and afters')
+    : (items === 1 ? 'simulation' : 'simulations');
   $('libSub').textContent =
-    items + (items === 1 ? ' item' : ' items') + ' across ' +
+    items + ' ' + noun + ' across ' +
     data.length + (data.length === 1 ? ' treatment' : ' treatments') +
     '. Open one to see the images.';
 
@@ -1499,13 +1511,13 @@ function groupRow(g) {
   return wrap;
 }
 
-document.querySelectorAll('#libTabs .tab').forEach(t => {
-  t.onclick = () => {
-    document.querySelectorAll('#libTabs .tab').forEach(x => x.classList.remove('active'));
+document.querySelectorAll('#libTabs .subtab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('#libTabs .subtab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
     libKind = t.dataset.kind;
     loadLibrary();
-  };
+  });
 });
 
 /* A simulation is not a case with a different badge. It cannot be published, it
