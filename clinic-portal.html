@@ -484,6 +484,23 @@
 
     <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
   </section>
+
+  <!-- Everything held on this clinic's behalf, and the account of it. Including
+       the tombstones: an export that quietly omitted the withdrawn patients would
+       be an export that rewrites history into one where they never existed. -->
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Export</span>
+      <h2 class="display">Take it with you.</h2>
+      <p>Every photograph, every simulation, the consent history, and the record of
+         what was deleted and when. One archive, yours, at any time and for any reason.</p>
+    </div>
+    <div class="panel">
+      <button class="act" id="exportBtn">Export everything</button>
+      <div class="note" id="exportNote"></div>
+      <div class="note" id="exportProgress" style="margin-top:6px;"></div>
+    </div>
+  </section>
 </div>
 
 <script type="module">
@@ -1908,6 +1925,203 @@ function plate(r, perms, seriesSize) {
   el.append(dip, body);
   return el;
 }
+
+/* ---- export -------------------------------------------------------------
+
+   The same machinery as the purge, pointed the other way. begin_case_purge
+   enumerates a clinic's objects and destroys them. This enumerates the same
+   objects and hands them over.
+
+   No image byte passes through a function. The manifest carries paths, a small
+   function signs them in batches, and the browser streams the bytes from storage
+   straight into a ZIP on disk. An export must not have a size at which it stops
+   working: pushing images through a Lambda gives you something that works
+   beautifully on nineteen cases and dies on the first clinic with two thousand,
+   which is the one you least want to fail in front of.
+
+   client-zip yields a ReadableStream rather than assembling a Blob, and the File
+   System Access API pipes that to a file the person picked. Memory stays flat no
+   matter how large the library grows. Where that API is missing (Firefox, Safari)
+   it falls back to a Blob, which is held in memory, so the fallback warns rather
+   than silently crashing a browser tab on a large library.
+
+   Simulations land in their own folder AND carry SIMULATED in the filename. An
+   archive leaves your custody permanently and gets unzipped by someone else, on
+   another machine, possibly years later. Folder plus filename is the only marking
+   that survives that. */
+
+const EXPORT_BATCH = 60;
+
+function safeSeg(v) {
+  return String(v || 'unknown').replace(/[^a-zA-Z0-9._-]+/g, '-').slice(0, 60);
+}
+
+async function signPaths(paths) {
+  const t = await token();
+  const res = await fetch('/api/clinic-export-urls', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ clinicId, paths })
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || !body.ok) throw new Error(body.error || 'Could not prepare the download.');
+  return body.urls || {};
+}
+
+// Build the file list first, so the archive's shape is decided before a single
+// byte moves and the count in the progress line is a real number rather than a
+// running guess.
+function exportPlan(manifest) {
+  const files = [];
+  for (const c of manifest.cases || []) {
+    const sim = c.kind === 'simulation';
+    const dir =
+      (sim ? 'simulations/' : 'photographs/') +
+      safeSeg(c.treatment) + '/' + safeSeg(c.case_id);
+
+    if (c.before_path) {
+      files.push({
+        path: c.before_path,
+        name: dir + '/' + (sim ? 'before-photograph' : 'before') + '.jpg'
+      });
+    }
+    if (c.after_path) {
+      files.push({
+        path: c.after_path,
+        name: dir + '/' + (sim ? 'after-SIMULATED' : 'after') + '.jpg'
+      });
+    }
+  }
+  return files;
+}
+
+function exportReadme(manifest) {
+  const c = manifest.counts || {};
+  return [
+    'SkinDay export',
+    'Clinic: ' + (manifest.clinic_name || manifest.clinic_id),
+    'Exported: ' + manifest.exported_at,
+    '',
+    'photographs/   Real before and after photographs, as captured.',
+    'simulations/   AI-generated previews. The "after" image in each of these is',
+    '               NOT a photograph and NOT a result. It is a prediction, produced',
+    '               before treatment, and it is named after-SIMULATED so it cannot be',
+    '               mistaken for one. The "before" image IS a real photograph of the',
+    '               patient.',
+    'manifest.json  Every record, its consent history, and the full event trail.',
+    '',
+    'Counts',
+    '  Photographs: ' + (c.photographs || 0),
+    '  Simulations: ' + (c.simulations || 0),
+    '  Deleted:     ' + (c.deleted || 0),
+    '  Events:      ' + (c.events || 0),
+    '',
+    'The deleted entries are in manifest.json under "tombstones". Their images are',
+    'gone, permanently, which is what a withdrawal means. What remains is the record',
+    'that the case existed, that consent was given, that it was withdrawn, and a hash',
+    'of the consent record itself. The account of a deletion has to outlive the thing',
+    'deleted, or a deletion cannot be proved.',
+    ''
+  ].join('\n');
+}
+
+async function runExport() {
+  const btn = $('exportBtn');
+  const prog = $('exportProgress');
+  btn.disabled = true;
+  note('exportNote', 'Gathering your records…');
+  prog.textContent = '';
+
+  let zipMod;
+  try {
+    const { data, error } = await sb.rpc('get_clinic_export_manifest', { p_clinic_id: clinicId });
+    if (error) throw new Error(error.message);
+    const manifest = data;
+
+    const files = exportPlan(manifest);
+    const c = manifest.counts || {};
+    note('exportNote',
+      (c.photographs || 0) + ' photographs, ' + (c.simulations || 0) + ' simulations, ' +
+      (c.deleted || 0) + ' deleted records, ' + files.length + ' images.');
+
+    zipMod = await import('https://cdn.jsdelivr.net/npm/client-zip@2.4.5/index.js');
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = 'skinday-export-' + safeSeg(clinicId) + '-' + stamp + '.zip';
+
+    // Stream to disk where the browser allows it. Otherwise a Blob, which is held
+    // in memory, so say so rather than let a large library take the tab down.
+    let writable = null;
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: 'ZIP archive', accept: { 'application/zip': ['.zip'] } }]
+        });
+        writable = await handle.createWritable();
+      } catch (e) {
+        if (e && e.name === 'AbortError') {
+          note('exportNote', 'Export cancelled.');
+          btn.disabled = false;
+          return;
+        }
+        writable = null;
+      }
+    }
+
+    let done = 0;
+    const total = files.length;
+
+    // A generator, so client-zip pulls one file at a time and nothing is held
+    // that is not currently being written.
+    async function* entries() {
+      yield { name: 'README.txt', input: exportReadme(manifest) };
+      yield { name: 'manifest.json', input: JSON.stringify(manifest, null, 2) };
+
+      for (let i = 0; i < files.length; i += EXPORT_BATCH) {
+        const batch = files.slice(i, i + EXPORT_BATCH);
+        const urls = await signPaths(batch.map(f => f.path));
+
+        for (const f of batch) {
+          const url = urls[f.path];
+          if (!url) { done += 1; continue; }
+          const r = await fetch(url);
+          if (!r.ok) { done += 1; continue; }
+          yield { name: f.name, input: await r.blob() };
+          done += 1;
+          prog.textContent = done + ' of ' + total + ' images…';
+        }
+      }
+    }
+
+    if (writable) {
+      const res = zipMod.makeZip(entries(), filename);
+      await res.pipeTo(writable);
+      note('exportNote', 'Saved. ' + total + ' images and the full record.', 'ok');
+    } else {
+      prog.textContent = 'Your browser cannot stream to disk, so this is assembled ' +
+        'in memory. A very large library may be slow.';
+      const blob = await zipMod.downloadZip(entries()).blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 8000);
+      note('exportNote', 'Downloaded. ' + total + ' images and the full record.', 'ok');
+    }
+
+    prog.textContent = '';
+  } catch (e) {
+    note('exportNote', e.message, 'bad');
+    prog.textContent = '';
+  }
+  btn.disabled = false;
+}
+
+$('exportBtn').addEventListener('click', runExport);
 
 /* ---- simulations: the Visualize bridge ----------------------------------
 
