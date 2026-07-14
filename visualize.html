@@ -3763,9 +3763,83 @@ async function finishSlot(angleId, auth, fillerIntensity){
     const modelLabel = sl.modelUsed || 'unknown (old backend - model not reported)';
     const labelColor = (sl.modelUsed === 'gpt-image-2') ? '#1b5e20' : '#b26a00';
     console.log('%c[Visualize] ' + angleId + ': ' + state.type + ' M13 -- model=' + modelLabel + ', no compositor.', 'color:' + labelColor + ';font-weight:bold');
+    sdEmitGenerationDone(angleId);
     return;
   }
   sl.status = 'done';
+  sdEmitGenerationDone(angleId);
+}
+
+/* ── M13: clinic embed bridge ────────────────────────────────────────────────
+   The ONLY clinic-aware code in this file, and it does nothing whatsoever unless
+   the page is embedded in the clinic portal. An ordinary end user on
+   skinday.com has window.parent === window and no ?clinic, so every function
+   below returns immediately. Consumer Visualize keeps no storage and gains none
+   here.
+
+   This is an event emitter, not a storage function. It announces that a
+   generation finished, and hands over the two images on request. Consent, the
+   Library, the save, and every clinic concept live in clinic-portal.html.
+
+   Deliberately NOT an eval bridge. The portal reads Studio with
+   contentWindow.eval('S.grid'), and reading a renderer's internals without
+   knowing what the renderer does to them before a human sees them is what stored
+   300px thumbnails for weeks. This is a published contract instead: rename
+   anything below and this one function changes on purpose, loudly, rather than
+   the portal quietly reading a variable that no longer means what it did.
+
+   WHICH IMAGES. beforeDataUrl, not originalDataUrl: blackBg defaults on, the
+   model's output carries the black background, and saving the raw upload would
+   pair a room-background before with a black-background after. resultDataUrl,
+   not rawAiDataUrl: for nose and lip filler the displayed result is composited
+   over the original skin client-side, so the raw model image in the blob store
+   is not the image the clinician reviewed. The record holds what the human saw
+   and consented to. */
+
+const SD_EMBEDDED = (function(){
+  try { return window.parent && window.parent !== window; } catch(e){ return false; }
+})();
+
+function sdEmbedActive(){ return SD_EMBEDDED && !!CLINIC_ID; }
+
+function sdPost(msg){
+  if(!sdEmbedActive()) return;
+  try { window.parent.postMessage(msg, location.origin); } catch(e){}
+}
+
+function sdEmitGenerationDone(angleId){
+  if(!sdEmbedActive()) return;
+  const sl = state.slots[angleId];
+  if(!sl || sl.status !== 'done' || !sl.jobId) return;
+  sdPost({ type:'sd:generation-done', angle: angleId, jobId: sl.jobId });
+}
+
+// Every finished angle, with the two images the clinician actually looked at.
+// The portal asks for this only when someone presses Save, so an exploratory
+// generation never moves a single byte across the boundary.
+function sdCollectFinished(){
+  const out = [];
+  for(const angleId of state.selectedAngles){
+    const sl = state.slots[angleId];
+    if(!sl || sl.status !== 'done' || !sl.jobId) continue;
+    if(!sl.beforeDataUrl || !sl.resultDataUrl) continue;
+    out.push({
+      angle: angleId,
+      jobId: sl.jobId,
+      before: sl.beforeDataUrl,
+      after: sl.resultDataUrl
+    });
+  }
+  return out;
+}
+
+if(SD_EMBEDDED){
+  window.addEventListener('message', (ev) => {
+    if(ev.origin !== location.origin) return;
+    const d = ev.data;
+    if(!d || d.type !== 'sd:collect') return;
+    sdPost({ type:'sd:collected', requestId: d.requestId || null, items: sdCollectFinished() });
+  });
 }
 
 let creditShortfall = false; // M8: set on any 402 during a run
