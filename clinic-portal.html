@@ -231,6 +231,20 @@
   .note.ok { color:#3d6b4c; }
   .note.bad { color:#a9503f; }
   .empty { padding:44px 0; text-align:center; }
+  .subtabs { margin:0 0 20px; padding:0; border-bottom:1px solid rgba(28,23,20,.10); }
+  .subtabs .tab { font-size:.8rem; padding:10px 0; margin-right:26px; }
+  .lib-group { border-top:1px solid rgba(28,23,20,.10); }
+  .lib-group:last-child { border-bottom:1px solid rgba(28,23,20,.10); }
+  .lib-head {
+    width:100%; display:flex; align-items:baseline; gap:14px; text-align:left;
+    background:none; border:0; padding:20px 2px; cursor:pointer; color:var(--deep);
+  }
+  .lib-head:hover { background:rgba(28,23,20,.02); }
+  .lib-head .caret { font-size:.7rem; color:var(--muted); width:12px; }
+  .lib-head .name { font-family:'Cormorant Garamond',serif; font-size:1.25rem; font-weight:500; }
+  .lib-head .count { font-size:.78rem; color:var(--muted); margin-left:auto; }
+  .lib-body { padding:0 0 24px; }
+  .prov { font-size:.76rem; color:var(--muted); margin-top:8px; line-height:1.5; }
   .empty .display { font-size:22px; }
   .empty p { color:var(--muted); font-size:13.5px; margin:6px 0 0; }
 
@@ -261,7 +275,7 @@
 <nav class="tabs" id="tabs" style="display:none;">
   <button class="tab active" data-panel="studio">Studio</button>
   <button class="tab" data-panel="visualize">Visualize</button>
-  <button class="tab" data-panel="cases">Cases</button>
+  <button class="tab" data-panel="library">Library</button>
 </nav>
 
 <div class="wrap">
@@ -350,7 +364,7 @@
             <label class="perm">
               <input type="checkbox" id="cGallery">
               <span><b>Allow on our website</b>
-                <small>Lets you publish it from Cases. Nothing goes public until you do.</small></span>
+                <small>Lets you publish it from your Library. Nothing goes public until you do.</small></span>
             </label>
           </div>
 
@@ -377,10 +391,46 @@
      out, and reports back whether the clinic's own case shaped the result. -->
 <div class="stage" id="panel-visualize" style="display:none;">
   <iframe class="embed" id="visFrame" title="Visualize"></iframe>
+
+  <!-- Nothing is stored unless someone decides to store it. An exploratory
+       generation costs credits and leaves no record of the patient. The consent
+       attested here is the CONSULT patient's, not the reference patient's: this
+       simulation is a picture of the person in the chair. -->
+  <div class="wrap">
+    <section class="sec" id="simSave" style="display:none;">
+      <div class="sec-head">
+        <span class="eyebrow">After you generate</span>
+        <h2 class="display">Keep this simulation.</h2>
+        <p id="simSaveSub">Consumer Visualize keeps nothing. Your Library does, if you choose.</p>
+      </div>
+
+      <div class="panel">
+        <div class="field">
+          <label class="eyebrow" for="simLabel">Label (optional)</label>
+          <input type="text" id="simLabel" maxlength="60" placeholder="How you would describe it to the patient">
+        </div>
+
+        <div class="attest">
+          <label class="perm" style="border:0;padding:0;">
+            <input type="checkbox" id="simAttest">
+            <span><b>I have this patient's consent to keep their photograph and this simulation.</b>
+              <small>This is the patient in the chair, not the patient whose case guided the result.
+              Obtaining and holding that consent remains the clinic's responsibility. SkinDay records
+              that you stated it, and when.</small></span>
+          </label>
+        </div>
+
+        <div style="margin-top:22px;">
+          <button class="act" id="simSaveBtn" disabled>Save to Library</button>
+          <div class="note" id="simSaveNote"></div>
+        </div>
+      </div>
+    </section>
+  </div>
 </div>
 
-<!-- CASES -->
-<div class="wrap" id="panel-cases" style="display:none;">
+<!-- LIBRARY -->
+<div class="wrap" id="panel-library" style="display:none;">
   <section class="sec">
     <div class="sec-head">
       <span class="eyebrow">Your website</span>
@@ -406,13 +456,24 @@
     </div>
   </section>
 
+  <!-- Photographs and Simulations are separated because real and simulated is
+       the one boundary in this product that must never blur. Naming the tabs
+       after what they contain, rather than after the tool that made them, puts
+       that distinction in front of whoever opens the tab instead of burying it
+       behind a product name a front desk will not know. -->
   <section class="sec">
     <div class="sec-head">
       <span class="eyebrow">Library</span>
-      <h2 class="display">Your cases</h2>
-      <p id="libSub">Each case carries its own permissions, and shows them.</p>
+      <h2 class="display" id="libTitle">Your photographs</h2>
+      <p id="libSub">Loading…</p>
     </div>
-    <div id="cases"><div class="empty"><p>Loading…</p></div></div>
+
+    <nav class="tabs subtabs" id="libTabs">
+      <button class="tab active" data-kind="photograph">Photographs</button>
+      <button class="tab" data-kind="simulation">Simulations</button>
+    </nav>
+
+    <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
   </section>
 </div>
 
@@ -519,7 +580,7 @@ async function start() {
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
   loadCredits();
-  loadCases();
+  loadLibrary();
 }
 
 // The embedded pages' own account strip is hidden, so the balance lives here.
@@ -546,10 +607,10 @@ document.querySelectorAll('.tab').forEach(t => {
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     t.classList.add('active');
     activePanel = t.dataset.panel;
-    ['studio', 'visualize', 'cases'].forEach(p => {
+    ['studio', 'visualize', 'library'].forEach(p => {
       $('panel-' + p).style.display = (p === activePanel) ? 'block' : 'none';
     });
-    if (activePanel === 'cases') loadGallery();
+    if (activePanel === 'library') { loadGallery(); loadLibrary(); }
   });
 });
 
@@ -1206,13 +1267,13 @@ $('saveBtn').addEventListener('click', async () => {
 
   if (saved && !failure) {
     const bits = [saved === 1 ? 'One case saved' : saved + ' cases saved'];
-    if ($('cVisualize').checked) bits.push('approve it in Cases and it will teach your Visualize');
-    if ($('cGallery').checked) bits.push('publish from Cases when you want it on your website');
+    if ($('cVisualize').checked) bits.push('approve it in your Library and it will teach your Visualize');
+    if ($('cGallery').checked) bits.push('publish from your Library when you want it on your website');
     note('saveNote', bits.join('. ') + '.', 'ok');
-    loadCases();
+    loadLibrary();
   } else if (saved && failure) {
     note('saveNote', saved + ' saved, then stopped: ' + failure, 'bad');
-    loadCases();
+    loadLibrary();
   } else {
     note('saveNote', failure || 'Nothing was saved.', 'bad');
   }
@@ -1280,41 +1341,247 @@ async function loadImage(caseId, which, el) {
   } catch (e) { el.alt = 'Image unavailable'; }
 }
 
-async function loadCases() {
-  const [{ data: rows }, { data: cons }] = await Promise.all([
-    sb.from('clinic_reference_cases')
-      .select('id,treatment,subtype,treatment_label,injector_name,angle,crop,series_id,interval_months,phenotype,before_date,after_date,visualize_approved,published_before_path,created_at')
-      .eq('clinic_id', clinicId).order('created_at', { ascending: false }),
-    sb.from('clinic_case_consents')
-      .select('case_id,purpose').eq('clinic_id', clinicId)
-      .eq('granted', true).is('revoked_at', null)
-  ]);
+/* ---- library ----
 
-  const perms = {};
-  (cons || []).forEach(c => { (perms[c.case_id] = perms[c.case_id] || {})[c.purpose] = true; });
+   Two kinds, never one list. Grouped by treatment, then by series. The summary
+   carries no image paths at all, so opening the tab loads an index rather than a
+   wall of faces; the photographs arrive only when a group is opened, which is
+   also the only moment a clinic has actually asked to look at a patient.
 
-  const host = $('cases');
-  if (!rows || !rows.length) {
-    host.innerHTML = '<div class="empty"><div class="display">Nothing here yet.</div>' +
-      '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>';
-    return;
-  }
-  // A 3-timepoint grid saves two cases sharing a before photo, and a 2x3 grid
-  // saves three at different angles. Here they are separate rows, because here
-  // they are separately approvable, publishable and revocable, and that is the
-  // truth of the record. But a clinic looking at two cards with the same before
-  // photo deserves to be told why, rather than wondering if they double-saved.
-  const seriesSize = {};
-  rows.forEach(r => {
-    if (r.series_id) seriesSize[r.series_id] = (seriesSize[r.series_id] || 0) + 1;
+   Both reads go through SECURITY DEFINER functions rather than a client-side
+   select. The column list therefore lives in the database, which is what will
+   keep a patient name out of any path it does not belong in by construction
+   instead of by memory. */
+
+let libKind = 'photograph';
+const libOpen = {};   // treatment -> true once expanded
+
+const TREATMENT_NAME = {
+  biostim: 'Biostimulator',
+  filler:  'Filler',
+  tox:     'Neurotoxin',
+  laser:   'Energy-based'
+};
+
+function treatmentName(t) {
+  return TREATMENT_NAME[t] || t || 'Other';
+}
+
+async function loadLibrary() {
+  const host = $('libGroups');
+  if (!host) return;
+
+  $('libTitle').textContent =
+    libKind === 'photograph' ? 'Your photographs' : 'Your simulations';
+
+  host.innerHTML = '<div class="empty"><p>Loading…</p></div>';
+  Object.keys(libOpen).forEach(k => delete libOpen[k]);
+
+  const { data, error } = await sb.rpc('get_clinic_library_summary', {
+    p_clinic_id: clinicId,
+    p_kind: libKind
   });
 
-  $('libSub').textContent = rows.length + (rows.length === 1 ? ' case.' : ' cases.') +
-    ' Each carries its own permissions, and shows them.';
+  if (error) {
+    host.innerHTML = '<div class="empty"><p class="note bad">' + error.message + '</p></div>';
+    $('libSub').textContent = '';
+    return;
+  }
+
+  if (!data || !data.length) {
+    host.innerHTML = (libKind === 'photograph')
+      ? '<div class="empty"><div class="display">Nothing here yet.</div>' +
+        '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>'
+      : '<div class="empty"><div class="display">No simulations kept.</div>' +
+        '<p>Run a simulation in Visualize and save it here. Nothing is stored unless you choose to store it.</p></div>';
+    $('libSub').textContent = '';
+    return;
+  }
+
+  const items = data.reduce((n, g) => n + (g.case_count || 0), 0);
+  $('libSub').textContent =
+    items + (items === 1 ? ' item' : ' items') + ' across ' +
+    data.length + (data.length === 1 ? ' treatment' : ' treatments') +
+    '. Open one to see the images.';
+
   host.innerHTML = '';
-  rows.forEach(r => host.appendChild(
-    plate(r, perms[r.id] || {}, r.series_id ? (seriesSize[r.series_id] || 1) : 1)
-  ));
+  data.forEach(g => host.appendChild(groupRow(g)));
+}
+
+function groupRow(g) {
+  const wrap = document.createElement('div');
+  wrap.className = 'lib-group';
+
+  const head = document.createElement('button');
+  head.className = 'lib-head';
+  head.type = 'button';
+
+  const caret = document.createElement('span');
+  caret.className = 'caret';
+  caret.textContent = '\u25b8';
+
+  const name = document.createElement('span');
+  name.className = 'name';
+  name.textContent = treatmentName(g.treatment);
+
+  const count = document.createElement('span');
+  count.className = 'count';
+  const series = g.series_count || 0;
+  const cases = g.case_count || 0;
+  count.textContent =
+    cases + (cases === 1 ? ' item' : ' items') +
+    (series && series !== cases ? ' \u00b7 ' + series + (series === 1 ? ' series' : ' series') : '');
+
+  head.append(caret, name, count);
+
+  const body = document.createElement('div');
+  body.className = 'lib-body';
+  body.style.display = 'none';
+
+  head.onclick = async () => {
+    const open = body.style.display !== 'none';
+    if (open) {
+      body.style.display = 'none';
+      caret.textContent = '\u25b8';
+      return;
+    }
+    body.style.display = 'block';
+    caret.textContent = '\u25be';
+    if (libOpen[g.treatment]) return;
+
+    body.innerHTML = '<p class="note">Loading…</p>';
+    const { data, error } = await sb.rpc('get_clinic_library_cases', {
+      p_clinic_id: clinicId,
+      p_kind: libKind,
+      p_treatment: g.treatment,
+      p_limit: 200
+    });
+
+    if (error) {
+      body.innerHTML = '<p class="note bad">' + error.message + '</p>';
+      return;
+    }
+
+    const { data: cons } = await sb.from('clinic_case_consents')
+      .select('case_id,purpose').eq('clinic_id', clinicId)
+      .eq('granted', true).is('revoked_at', null);
+    const perms = {};
+    (cons || []).forEach(c => { (perms[c.case_id] = perms[c.case_id] || {})[c.purpose] = true; });
+
+    const seriesSize = {};
+    (data || []).forEach(r => {
+      if (r.series_id) seriesSize[r.series_id] = (seriesSize[r.series_id] || 0) + 1;
+    });
+
+    body.innerHTML = '';
+    (data || []).forEach(r => {
+      const size = r.series_id ? (seriesSize[r.series_id] || 1) : 1;
+      body.appendChild(
+        r.kind === 'simulation'
+          ? simPlate(r, perms[r.case_id] || {}, size)
+          : plate({
+              id: r.case_id, treatment: r.treatment, subtype: r.subtype,
+              treatment_label: r.treatment_label, injector_name: r.injector_name,
+              angle: r.angle, crop: r.crop, series_id: r.series_id,
+              interval_months: r.interval_months, phenotype: r.phenotype,
+              before_date: r.before_date, after_date: r.after_date,
+              visualize_approved: r.visualize_approved,
+              published_before_path: r.published_before_path,
+              created_at: r.created_at
+            }, perms[r.case_id] || {}, size)
+      );
+    });
+
+    libOpen[g.treatment] = true;
+  };
+
+  wrap.append(head, body);
+  return wrap;
+}
+
+document.querySelectorAll('#libTabs .tab').forEach(t => {
+  t.onclick = () => {
+    document.querySelectorAll('#libTabs .tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    libKind = t.dataset.kind;
+    loadLibrary();
+  };
+});
+
+/* A simulation is not a case with a different badge. It cannot be published, it
+   cannot ground another generation, and the database refuses both at the storage
+   layer rather than trusting this file to remember. So it gets no publish button
+   and no reference button, because offering an action that the schema will reject
+   is a lie told in a user interface.
+
+   What it does get is provenance: which of the clinic's own cases guided it. That
+   link is what makes the result defensible to the patient looking at it. */
+function simPlate(r, perms, seriesSize) {
+  const el = document.createElement('article');
+  el.className = 'plate';
+
+  const dip = document.createElement('div');
+  dip.className = 'diptych';
+  [['before', 'photograph'], ['after', 'simulated']].forEach(([which, label]) => {
+    const fig = document.createElement('figure');
+    fig.className = 'frame';
+    const img = document.createElement('img');
+    const cap = document.createElement('figcaption');
+    cap.textContent = label;
+    fig.append(img, cap);
+    dip.appendChild(fig);
+    loadImage(r.case_id, which, img);
+  });
+
+  const body = document.createElement('div');
+
+  const known = SUBTYPES[r.treatment];
+  const subLabel = known && (known.options.find(o => o[0] === r.subtype) || [])[1];
+  const title = subLabel || treatmentName(r.treatment);
+
+  const meta = [
+    r.treatment_label,
+    r.angle,
+    r.model,
+    r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : ''
+  ].filter(Boolean).join(' \u00b7 ');
+
+  const refs = Array.isArray(r.reference_case_ids) ? r.reference_case_ids : [];
+  const prov = refs.length
+    ? 'Guided by ' + refs.length + (refs.length === 1 ? ' of your cases.' : ' of your cases.')
+    : 'No reference case matched this treatment, so nothing of yours guided it.';
+
+  const kin = (seriesSize > 1)
+    ? '<div class="plate-meta">One of ' + seriesSize + ' angles from the same simulation.</div>'
+    : '';
+
+  body.innerHTML =
+    '<div class="display plate-title">' + title +
+      '<span class="plate-crop">Simulated</span></div>' +
+    '<div class="plate-meta">' + meta + '</div>' +
+    kin +
+    '<div class="prov">' + prov + '</div>' +
+    '<div class="ledger">' + mark('Stored', !!perms.store, false) + '</div>';
+
+  const acts = document.createElement('div');
+  acts.className = 'plate-actions';
+  const st = document.createElement('div');
+  st.className = 'note';
+
+  const wd = document.createElement('button');
+  wd.className = 'quiet';
+  wd.textContent = 'Patient withdrew consent';
+  wd.onclick = () => {
+    if (!confirm('Withdraw consent for this simulation? The record and the images are removed.')) return;
+    run(wd, st, '/api/clinic-case-consent', {
+      action: 'revoke', case_id: r.case_id, clinic_id: clinicId, purpose: 'store'
+    });
+  };
+
+  acts.append(wd);
+  body.append(acts, st);
+  el.append(dip, body);
+  return el;
 }
 
 const CROP_BADGE = {
@@ -1422,7 +1689,7 @@ function plate(r, perms, seriesSize) {
       st.className = 'note bad';
       st.textContent = error.message || 'That change was refused.';
       ref.disabled = false;
-    } else loadCases();
+    } else loadLibrary();
   };
 
   // A named person can change their mind, or leave, or never have been asked. That
@@ -1442,7 +1709,7 @@ function plate(r, perms, seriesSize) {
         st.className = 'note bad';
         st.textContent = error.message || 'That change was refused.';
         inj.disabled = false;
-      } else loadCases();
+      } else loadLibrary();
     };
   }
 
@@ -1465,6 +1732,133 @@ function plate(r, perms, seriesSize) {
   return el;
 }
 
+/* ---- simulations: the Visualize bridge ----------------------------------
+
+   visualize.html is embedded, not copied, and it gains no storage. It emits when
+   a generation finishes, and hands over the two images on request. Everything
+   below this line, and nothing above it, is the clinic's.
+
+   Deliberately not an eval bridge. The portal reaches into Studio with
+   contentWindow.eval('S.grid'), and reading a renderer's internals without
+   knowing what the renderer does to them before a human sees them is what stored
+   300px thumbnails for weeks. This is a message contract instead.
+
+   The images are the ones the clinician looked at, taken from the page. The
+   provenance, which case guided the result, is read server-side from the job by
+   clinic-simulation-save and is never asserted by this browser. */
+
+const simReady = {};   // angle -> jobId, for finished generations in the frame
+
+window.addEventListener('message', (ev) => {
+  if (ev.origin !== location.origin) return;
+  const d = ev.data;
+  if (!d || !d.type) return;
+
+  if (d.type === 'sd:generation-done' && d.angle && d.jobId) {
+    simReady[d.angle] = d.jobId;
+    const n = Object.keys(simReady).length;
+    $('simSave').style.display = '';
+    $('simSaveSub').textContent =
+      n === 1
+        ? 'One angle ready. Consumer Visualize keeps nothing. Your Library does, if you choose.'
+        : n + ' angles ready. They will be kept as one simulation.';
+    refreshSimSaveBtn();
+  }
+});
+
+function refreshSimSaveBtn() {
+  const btn = $('simSaveBtn');
+  if (!btn) return;
+  btn.disabled = !($('simAttest').checked && Object.keys(simReady).length > 0);
+}
+
+// Ask the frame for what it is holding. Nothing crosses the boundary until
+// someone presses Save, so an exploratory generation moves no patient imagery.
+function collectFromFrame(timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const requestId = 'req_' + Math.random().toString(16).slice(2);
+    const frame = $('visFrame');
+    if (!frame || !frame.contentWindow) return reject(new Error('Visualize is not loaded.'));
+
+    const timer = setTimeout(() => {
+      window.removeEventListener('message', onMsg);
+      reject(new Error('Visualize did not answer. Reload the tab and try again.'));
+    }, timeoutMs || 15000);
+
+    function onMsg(ev) {
+      if (ev.origin !== location.origin) return;
+      const d = ev.data;
+      if (!d || d.type !== 'sd:collected' || d.requestId !== requestId) return;
+      clearTimeout(timer);
+      window.removeEventListener('message', onMsg);
+      resolve(Array.isArray(d.items) ? d.items : []);
+    }
+
+    window.addEventListener('message', onMsg);
+    frame.contentWindow.postMessage({ type: 'sd:collect', requestId }, location.origin);
+  });
+}
+
+async function saveSimulations() {
+  const btn = $('simSaveBtn');
+  btn.disabled = true;
+  note('simSaveNote', 'Saving…');
+
+  try {
+    const items = await collectFromFrame();
+    if (!items.length) {
+      note('simSaveNote', 'Nothing finished to save yet.', 'bad');
+      btn.disabled = false;
+      return;
+    }
+
+    // The clinic obtains and holds the consent. What SkinDay records is that THIS
+    // clinic user asserted it, at this moment. Store, and only store: a simulation
+    // can never be published and can never ground another generation, and the
+    // database rejects both outright rather than trusting this file.
+    const method = 'clinic_attestation';
+    const version = 'attested_in_portal';
+    const consents = [{ purpose: 'store', granted: true, version, method }];
+
+    const t = await token();
+    const res = await fetch('/api/clinic-simulation-save', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clinicId,
+        items,
+        consents,
+        treatmentLabel: ($('simLabel').value || '').trim() || null
+      })
+    });
+
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || !body.ok) throw new Error(body.error || 'That did not go through.');
+
+    const n = (body.saved || []).length;
+    const grounded = (body.saved || []).filter(x => x.grounded).length;
+    const bits = [n === 1 ? 'Simulation saved to your Library' : n + ' angles saved to your Library'];
+    if (grounded) {
+      bits.push(grounded === n
+        ? 'guided by your own cases'
+        : grounded + ' of them guided by your own cases');
+    }
+    note('simSaveNote', bits.join(', ') + '.', 'ok');
+
+    Object.keys(simReady).forEach(k => delete simReady[k]);
+    $('simAttest').checked = false;
+    $('simLabel').value = '';
+    $('simSave').style.display = 'none';
+    loadLibrary();
+  } catch (e) {
+    note('simSaveNote', e.message, 'bad');
+    btn.disabled = false;
+  }
+}
+
+$('simAttest').addEventListener('change', refreshSimSaveBtn);
+$('simSaveBtn').addEventListener('click', saveSimulations);
+
 async function run(btn, st, path, payload) {
   btn.disabled = true;
   st.className = 'note';
@@ -1477,7 +1871,7 @@ async function run(btn, st, path, payload) {
       body: JSON.stringify(payload)
     });
     const body = await res.json().catch(() => ({}));
-    if (res.ok && body.ok) { loadCases(); loadGallery(); }
+    if (res.ok && body.ok) { loadLibrary(); loadGallery(); }
     else {
       st.className = 'note bad';
       st.textContent = body.error || 'That did not go through.';
