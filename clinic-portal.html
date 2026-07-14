@@ -498,6 +498,21 @@
             </span>
           </label>
 
+          <!-- Private to this clinic. Never returned by the gallery, never sent to
+               the model, included in your export, destroyed on withdrawal. It is
+               the clinic's own record of who this is, and nothing else can see it. -->
+          <div class="row2" style="margin-top:22px;">
+            <div class="field">
+              <label class="eyebrow" for="pName">Patient name (optional)</label>
+              <input type="text" id="pName" maxlength="120" autocomplete="off">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="pRef">Your reference (optional)</label>
+              <input type="text" id="pRef" maxlength="60" autocomplete="off" placeholder="Chart or file number">
+            </div>
+          </div>
+          <div class="crop-note">Private to your clinic. Never appears on your website, never sent to the model, and destroyed with the case if the patient withdraws.</div>
+
           <div class="consent">
             <div class="eyebrow" style="margin-bottom:4px;">What to do with this case</div>
 
@@ -518,7 +533,7 @@
             <label class="perm" style="border:0;padding:0;">
               <input type="checkbox" id="cAttest">
               <span><b>I have the patient's consent for the uses selected above.</b>
-                <small>Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
+                <small>Including holding their photographs, and their name or reference if you entered one. Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
             </label>
           </div>
 
@@ -659,6 +674,16 @@
       </div>
 
       <div class="panel">
+        <div class="row2">
+          <div class="field">
+            <label class="eyebrow" for="simPName">Patient name (optional)</label>
+            <input type="text" id="simPName" maxlength="120" autocomplete="off">
+          </div>
+          <div class="field">
+            <label class="eyebrow" for="simPRef">Your reference (optional)</label>
+            <input type="text" id="simPRef" maxlength="60" autocomplete="off" placeholder="Chart or file number">
+          </div>
+        </div>
         <div class="field">
           <label class="eyebrow" for="simLabel">Label (optional)</label>
           <input type="text" id="simLabel" maxlength="60" placeholder="How you would describe it to the patient">
@@ -669,8 +694,8 @@
             <input type="checkbox" id="simAttest">
             <span><b>I have this patient's consent to keep their photograph and this simulation.</b>
               <small>This is the patient in the chair, not the patient whose case guided the result.
-              Obtaining and holding that consent remains the clinic's responsibility. SkinDay records
-              that you stated it, and when.</small></span>
+              Includes their name or reference if you entered one. Obtaining and holding that consent
+              remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
           </label>
         </div>
 
@@ -726,6 +751,15 @@
       <button class="subtab active" data-kind="photograph">Before &amp; After</button>
       <button class="subtab" data-kind="simulation">Simulations</button>
     </nav>
+
+    <!-- Searches across both kinds. A clinic looking for a patient does not know
+         or care whether the thing they are picturing was a photograph or a
+         simulation, and making them pick first is making them do the computer's
+         job. -->
+    <div class="field" style="margin-bottom:20px;">
+      <input type="search" id="libSearch" placeholder="Find a patient by name or reference" autocomplete="off">
+    </div>
+    <div id="libResults" style="display:none;"></div>
 
     <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
   </section>
@@ -1053,7 +1087,7 @@ function agreementCard(d, isOwner) {
   if (isOwner) {
     const btn = document.createElement('button');
     btn.className = 'act';
-    btn.textContent = 'Accept ' + d.title;
+    btn.textContent = 'Accept';
     btn.onclick = async () => {
       const signer = $('agName').value.trim();
       if (signer.length < 2) {
@@ -1100,17 +1134,7 @@ function agreementCard(d, isOwner) {
     foot.appendChild(btn);
   }
 
-  // A wall of hex under an Accept button does not read as rigour. It reads as
-  // something broken. So it is a sentence, and the fingerprint itself is there
-  // for anyone who wants it.
-  const fp = document.createElement('div');
-  fp.className = 'ag-fingerprint';
-  fp.textContent =
-    'Recorded against a fingerprint of this exact text, so what you agreed to ' +
-    'can always be shown, and these words can never be changed afterwards.';
-  fp.title = 'sha256 ' + d.content_hash;
-
-  foot.append(st, fp);
+  foot.append(st);
   el.append(head, body, foot);
   return el;
 }
@@ -1782,8 +1806,15 @@ $('saveBtn').addEventListener('click', async () => {
   const treatmentLabel = studioTreatmentLabel();
   const injectorName = $('cInjector').checked ? studioInjectorName() : '';
 
+  // The patient's name never travels through the multipart upload. The case is
+  // created first, and named in a second call, so a name does not pass through a
+  // form parser on its way to being stored.
+  const patientName = $('pName').value.trim();
+  const patientRef = $('pRef').value.trim();
+
   let saved = 0;
   let failure = null;
+  let unnamed = 0;
 
   try {
     const t = await token();
@@ -1847,8 +1878,30 @@ $('saveBtn').addEventListener('click', async () => {
         body: fd
       });
       const body = await res.json().catch(() => ({}));
-      if (res.ok && body.ok) saved++;
-      else { failure = body.error || 'The case was not saved.'; break; }
+      if (res.ok && body.ok) {
+        saved++;
+
+        if (patientName || patientRef) {
+          const caseId = body.case_id || body.caseId || body.id;
+          if (caseId) {
+            const { error: nameErr } = await sb.rpc('set_case_patient', {
+              p_case_id: caseId,
+              p_clinic_id: clinicId,
+              p_patient_name: patientName || null,
+              p_patient_ref: patientRef || null
+            });
+            if (nameErr) unnamed++;
+          } else {
+            // The upload succeeded and did not tell us which case it made, so
+            // there is nothing to attach the name to. Say so, rather than let the
+            // clinic believe a name was stored that was not.
+            unnamed++;
+          }
+        }
+      } else {
+        failure = body.error || 'The case was not saved.';
+        break;
+      }
     }
   } catch (e) {
     failure = e.message;
@@ -1859,6 +1912,13 @@ $('saveBtn').addEventListener('click', async () => {
     if ($('cVisualize').checked) bits.push('approve it in your Library and it will teach your Visualize');
     if ($('cGallery').checked) bits.push('publish from your Library when you want it on your website');
     note('saveNote', bits.join('. ') + '.', 'ok');
+    if (unnamed) {
+      note('saveNote',
+        bits.join('. ') + '. But the patient name did not attach to ' + unnamed +
+        (unnamed === 1 ? ' case' : ' cases') + '. Add it from the Library.', 'bad');
+    }
+    $('pName').value = '';
+    $('pRef').value = '';
     loadLibrary();
   } else if (saved && failure) {
     note('saveNote', saved + ' saved, then stopped: ' + failure, 'bad');
@@ -1944,6 +2004,70 @@ async function loadImage(caseId, which, el) {
 
 let libKind = 'photograph';
 const libOpen = {};   // treatment -> true once expanded
+
+// Private to this clinic. It is rendered here, in the portal, and nowhere else:
+// get_clinic_gallery and the embed endpoint do not return these columns at all,
+// so a patient's name cannot reach a website by anyone forgetting to filter it.
+function patientLabel(r) {
+  if (r.patient_name && r.patient_ref) return r.patient_name + ' (' + r.patient_ref + ')';
+  return r.patient_name || r.patient_ref || '';
+}
+
+let searchTimer = null;
+
+$('libSearch').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(runPatientSearch, 220);
+});
+
+async function runPatientSearch() {
+  const q = $('libSearch').value.trim();
+  const res = $('libResults');
+  const groups = $('libGroups');
+
+  if (q.length < 2) {
+    res.style.display = 'none';
+    groups.style.display = '';
+    return;
+  }
+
+  res.style.display = 'block';
+  groups.style.display = 'none';
+  res.innerHTML = '<p class="note">Searching…</p>';
+
+  const { data, error } = await sb.rpc('search_clinic_patients', {
+    p_clinic_id: clinicId, p_query: q, p_limit: 60
+  });
+
+  if (error) { res.innerHTML = '<p class="note bad">' + error.message + '</p>'; return; }
+  if (!data || !data.length) {
+    res.innerHTML = '<div class="empty"><p>Nothing matches that.</p></div>';
+    return;
+  }
+
+  res.innerHTML = '';
+  const head = document.createElement('p');
+  head.className = 'note';
+  head.textContent = data.length + (data.length === 1 ? ' match.' : ' matches.');
+  res.appendChild(head);
+
+  data.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'member';
+    const g = document.createElement('div');
+    g.className = 'grow';
+    g.innerHTML =
+      '<div class="em">' + (patientLabel(r) || 'Unnamed') + '</div>' +
+      '<div class="sub">' + treatmentName(r.treatment) +
+      (r.angle ? ' \u00b7 ' + r.angle : '') + ' \u00b7 ' +
+      new Date(r.created_at).toISOString().slice(0, 10) + '</div>';
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = r.kind === 'simulation' ? 'simulated' : 'photograph';
+    row.append(g, pill);
+    res.appendChild(row);
+  });
+}
 
 const TREATMENT_NAME = {
   biostim: 'Biostimulator',
@@ -2129,6 +2253,7 @@ function simPlate(r, perms, seriesSize) {
   const title = subLabel || treatmentName(r.treatment);
 
   const meta = [
+    patientLabel(r),
     r.treatment_label,
     r.angle,
     r.model,
@@ -2378,6 +2503,7 @@ function plate(r, perms, seriesSize) {
     ? r.before_date + ' \u2192 ' + r.after_date
     : (r.before_date || r.after_date || '');
   const meta = [
+    patientLabel(r),
     r.treatment_label,
     r.injector_name ? 'by ' + r.injector_name : '',
     r.angle,
@@ -3122,7 +3248,9 @@ async function saveSimulations() {
         clinicId,
         items,
         consents,
-        treatmentLabel: ($('simLabel').value || '').trim() || null
+        treatmentLabel: ($('simLabel').value || '').trim() || null,
+        patientName: ($('simPName').value || '').trim() || null,
+        patientRef: ($('simPRef').value || '').trim() || null
       })
     });
 
@@ -3148,6 +3276,8 @@ async function saveSimulations() {
     Object.keys(simReady).forEach(k => delete simReady[k]);
     $('simAttest').checked = false;
     $('simLabel').value = '';
+    $('simPName').value = '';
+    $('simPRef').value = '';
     $('simSaveSub').textContent =
       'Kept. It will not appear on your website and it will not guide another simulation. Withdraw it any time from the Library.';
     btn.textContent = 'View in Library';
