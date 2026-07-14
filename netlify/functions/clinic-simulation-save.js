@@ -107,6 +107,8 @@ exports.handler = async function (event) {
   const consents = Array.isArray(body.consents) ? body.consents : [];
   const treatmentLabel = body.treatmentLabel ? String(body.treatmentLabel) : null;
   const injectorName = body.injectorName ? String(body.injectorName) : null;
+  const patientName = body.patientName ? String(body.patientName).trim() : null;
+  const patientRef = body.patientRef ? String(body.patientRef).trim() : null;
 
   if (!clinicId) return json(400, { error: 'clinicId is required' });
   if (items.length === 0) return json(400, { error: 'no finished generations to save' });
@@ -217,6 +219,23 @@ exports.handler = async function (event) {
       });
 
       if (rpcError) throw new Error('create_clinic_simulation failed: ' + rpcError.message);
+
+      // A second call rather than an argument, so the patient's name is not part
+      // of the payload that carries their photograph. If it fails, the simulation
+      // is still saved and correctly consented; it simply has no label, and the
+      // clinic can add one from the Library. A name is not worth losing a record
+      // over.
+      if (patientName || patientRef) {
+        const { error: nameErr } = await asUser.rpc('set_case_patient', {
+          p_case_id: caseId,
+          p_clinic_id: clinicId,
+          p_patient_name: patientName || null,
+          p_patient_ref: patientRef || null
+        });
+        if (nameErr) {
+          console.warn('[clinic-simulation-save] naming failed for ' + caseId + ': ' + nameErr.message);
+        }
+      }
 
       saved.push({
         case_id: caseId,
