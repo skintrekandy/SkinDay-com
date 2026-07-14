@@ -295,6 +295,20 @@
     display:flex; gap:26px; margin:0 0 20px; padding:0;
     border-bottom:1px solid rgba(28,23,20,.10);
   }
+  #clinicLogo { height:26px; max-width:150px; object-fit:contain; }
+  .searchbar { margin:0 0 24px; }
+  .searchbar input {
+    width:100%; box-sizing:border-box;
+    padding:14px 16px;
+    font-family:'DM Sans',sans-serif; font-size:.92rem; color:var(--deep);
+    background:rgba(28,23,20,.02);
+    border:1px solid rgba(28,23,20,.14); border-radius:0;
+    outline:none; transition:border-color .18s, background .18s;
+  }
+  .searchbar input:focus {
+    border-color:var(--rose); background:var(--cream);
+  }
+  .searchbar input::placeholder { color:var(--dim); }
   .subtab {
     background:none; border:0; border-bottom:2px solid transparent;
     font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:400;
@@ -335,9 +349,9 @@
 <header id="hdr" style="display:none;">
   <span class="display mark">Skin<em>Day</em></span>
   <span class="rule"></span>
+  <img id="clinicLogo" alt="" style="display:none;">
   <span class="who" id="clinicName"></span>
   <span class="spacer"></span>
-  <span class="credits" id="credits"></span>
   <button id="settingsBtn" title="Settings">Settings</button>
   <button id="signOut">Sign out</button>
 </header>
@@ -752,12 +766,9 @@
       <button class="subtab" data-kind="simulation">Simulations</button>
     </nav>
 
-    <!-- Searches across both kinds. A clinic looking for a patient does not know
-         or care whether the thing they are picturing was a photograph or a
-         simulation, and making them pick first is making them do the computer's
-         job. -->
-    <div class="field" style="margin-bottom:20px;">
-      <input type="search" id="libSearch" placeholder="Find a patient by name or reference" autocomplete="off">
+    <div class="searchbar">
+      <input type="search" id="libSearch" autocomplete="off"
+             placeholder="Search name, reference, treatment, injector, date">
     </div>
     <div id="libResults" style="display:none;"></div>
 
@@ -983,8 +994,9 @@ async function start() {
   }
   clinicId = rows[0].clinic_id;
 
-  const { data: c } = await sb.from('clinics').select('name').eq('id', clinicId).limit(1);
-  $('clinicName').textContent = (c && c[0] && c[0].name) || ('Clinic ' + clinicId);
+  const { data: c } = await sb.from('clinics')
+    .select('name,logo_url').eq('id', clinicId).limit(1);
+  setClinicHeader(c && c[0]);
 
   // Nothing opens until the clinic has accepted. A patient photograph must not be
   // uploadable into a relationship that has never been described to anyone.
@@ -1151,21 +1163,31 @@ function openPortal() {
   // it in, so a future refactor of Visualize cannot silently break grounding.
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
-  loadCredits();
   loadLibrary();
 }
 
-// The embedded pages' own account strip is hidden, so the balance lives here.
-async function loadCredits() {
-  try {
-    const t = await token();
-    const r = await fetch('/.netlify/functions/get-credits', {
-      headers: { Authorization: 'Bearer ' + t }
-    });
-    const d = await r.json();
-    const n = (d && (d.credits != null ? d.credits : d.balance));
-    if (n != null) $('credits').innerHTML = 'Credits <b>' + n + '</b>';
-  } catch (e) { /* a missing balance is not worth an error */ }
+// The logo, where the clinic's name would otherwise be. A clinic looking at their
+// own logo is looking at their platform, not at ours.
+function setClinicHeader(c) {
+  const name = (c && c.name) || ('Clinic ' + clinicId);
+  const logo = $('clinicLogo');
+  const label = $('clinicName');
+
+  if (c && c.logo_url) {
+    logo.src = c.logo_url;
+    logo.alt = name;
+    logo.style.display = '';
+    label.style.display = 'none';
+    // A broken logo URL must not leave an empty header. Fall back to the name.
+    logo.onerror = () => {
+      logo.style.display = 'none';
+      label.style.display = '';
+    };
+  } else {
+    logo.style.display = 'none';
+    label.style.display = '';
+  }
+  label.textContent = name;
 }
 
 /* ---- invitations --------------------------------------------------------
@@ -2035,7 +2057,7 @@ async function runPatientSearch() {
   groups.style.display = 'none';
   res.innerHTML = '<p class="note">Searching…</p>';
 
-  const { data, error } = await sb.rpc('search_clinic_patients', {
+  const { data, error } = await sb.rpc('search_clinic_library', {
     p_clinic_id: clinicId, p_query: q, p_limit: 60
   });
 
@@ -2056,11 +2078,20 @@ async function runPatientSearch() {
     row.className = 'member';
     const g = document.createElement('div');
     g.className = 'grow';
+
+    const title = patientLabel(r) || r.treatment_label || treatmentName(r.treatment);
+    const sub = [
+      patientLabel(r) ? r.treatment_label : null,
+      treatmentName(r.treatment),
+      r.angle,
+      r.injector_name ? 'by ' + r.injector_name : null,
+      new Date(r.created_at).toISOString().slice(0, 10)
+    ].filter(Boolean).join(' \u00b7 ');
+
     g.innerHTML =
-      '<div class="em">' + (patientLabel(r) || 'Unnamed') + '</div>' +
-      '<div class="sub">' + treatmentName(r.treatment) +
-      (r.angle ? ' \u00b7 ' + r.angle : '') + ' \u00b7 ' +
-      new Date(r.created_at).toISOString().slice(0, 10) + '</div>';
+      '<div class="em">' + title + '</div>' +
+      '<div class="sub">' + sub + '</div>';
+
     const pill = document.createElement('span');
     pill.className = 'pill';
     pill.textContent = r.kind === 'simulation' ? 'simulated' : 'photograph';
@@ -2664,6 +2695,8 @@ async function loadSettings() {
   $('setCountry').value = c.country || '';
   $('setSite').value = c.website || '';
 
+  setClinicHeader(c);
+
   const box = $('setLogoBox');
   box.innerHTML = '';
   if (c.logo_url) {
@@ -2753,7 +2786,6 @@ $('setSave').addEventListener('click', async () => {
       p_website: $('setSite').value.trim() || null
     });
     if (error) throw new Error(error.message);
-    $('clinicName').textContent = $('setName').value.trim();
     note('setNote', 'Saved.', 'ok');
     loadSettings();
   } catch (e) {
