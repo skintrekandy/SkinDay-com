@@ -119,6 +119,13 @@
   .card.is-visualize .card-cta:hover{color:var(--rose);}
 
   /* ── TRUST STRIP ─────────────────────────────────── */
+  .pro-strip{border-top:1px solid var(--border);}
+  .pro-strip .wrap{padding-top:26px;padding-bottom:26px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
+  .pro-strip .pro-tag{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--rose);}
+  .pro-strip .pro-text{font-size:.9rem;font-weight:300;color:var(--muted);}
+  .pro-strip .pro-link{margin-left:auto;text-decoration:none;font-size:.82rem;letter-spacing:.05em;color:var(--deep);border-bottom:1px solid var(--gold);padding-bottom:3px;transition:color .25s;}
+  .pro-strip .pro-link:hover{color:var(--rose);}
+  @media(max-width:640px){.pro-strip .pro-link{margin-left:0;}}
   .trust{border-top:1px solid var(--line);padding:64px 0;}
   .trust-inner{max-width:640px;margin:0 auto;text-align:center;}
   .trust-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;margin-bottom:20px;}
@@ -263,6 +270,15 @@
   </div>
 </section>
 
+<!-- VISUALIZE PRO -->
+<section class="pro-strip">
+  <div class="wrap">
+    <span class="pro-tag">Visualize Pro</span>
+    <span class="pro-text" data-en="In private pilot with a small number of clinics." data-zh="目前僅開放少數診所參與內測。">In private pilot with a small number of clinics.</span>
+    <a href="/pro" class="pro-link" data-en="Request an invitation" data-zh="申請邀請">Request an invitation</a>
+  </div>
+</section>
+
 <!-- TRUST STRIP -->
 <section class="trust">
   <div class="wrap">
@@ -286,6 +302,7 @@
           <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
           <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
           <a href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
+          <a href="/pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
         </div>
         <div class="foot-col">
           <h4 data-en="Directory" data-zh="診所目錄">Directory</h4>

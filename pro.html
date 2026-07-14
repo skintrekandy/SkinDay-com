@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visualize Pro · SkinDay</title>
+<meta name="description" content="Turn clinical photos into clinical intelligence. Visualize, guided by your clinic's own results. Private pilot for aesthetic clinics.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  /* Tokens copied from the homepage, not approximated. */
+  :root{color-scheme:light;
+    --deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;
+    --rose:#C8725A;--gold:#C9A96E;
+    --rose-bg:#F5E8E3;
+    --border:#EAE2D8;
+    --muted:#8A7F76;
+    --line:rgba(28,23,20,.12);
+    --line-light:rgba(250,247,242,.16);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto;} *{animation:none !important;transition:none !important;}}
+  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  .serif{font-family:'Cormorant Garamond',Georgia,serif;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px;}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
+
+  /* nav, matching the homepage bar */
+  nav{border-bottom:1px solid var(--border);}
+  .nav-inner{max-width:1080px;margin:0 auto;padding:22px 32px;display:flex;align-items:baseline;gap:14px;}
+  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:400;letter-spacing:.01em;color:var(--deep);text-decoration:none;}
+  .brand span{font-style:italic;color:var(--gold);}
+  .tier{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--rose);border-left:1px solid var(--border);padding-left:14px;}
+  .spacer{flex:1;}
+  .nav-cta{text-decoration:none;font-size:.82rem;letter-spacing:.05em;color:var(--deep);border-bottom:1px solid var(--gold);padding-bottom:3px;transition:color .25s;}
+  .nav-cta:hover{color:var(--rose);}
+
+  .eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
+  .eyebrow.rose{color:var(--rose);}
+
+  /* hero */
+  .hero{padding:104px 0 96px;}
+  .hero h1{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(2.9rem,6vw,4.6rem);line-height:1.06;letter-spacing:.005em;max-width:15ch;margin-bottom:26px;}
+  .hero h1 em{font-style:italic;color:var(--rose);}
+  .hero p{font-size:1.08rem;font-weight:300;line-height:1.75;color:var(--muted);max-width:46ch;margin-bottom:40px;}
+
+  .btn{display:inline-block;text-decoration:none;font-size:.82rem;letter-spacing:.05em;color:var(--cream);background:var(--deep);border:1px solid var(--deep);border-radius:4px;padding:14px 26px;transition:background .25s,border-color .25s;}
+  .btn:hover{background:var(--deep-soft);}
+
+  /* the point */
+  .point{background:var(--warm);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:96px 0;}
+  .point h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2rem,3.9vw,3.05rem);line-height:1.14;max-width:18ch;margin-bottom:22px;}
+  .point p{font-size:1rem;font-weight:300;line-height:1.8;color:var(--muted);max-width:52ch;}
+  .stamp{margin-top:44px;padding-top:28px;border-top:1px solid var(--border);font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:400;font-size:clamp(1.5rem,2.6vw,2.1rem);line-height:1.35;color:var(--deep);}
+  .stamp b{font-weight:400;color:var(--rose);}
+
+  /* three outcomes */
+  .three{padding:96px 0;}
+  .three h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(1.9rem,3.5vw,2.8rem);margin-bottom:48px;}
+  .cols{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .col{border:1px solid var(--border);border-radius:4px;background:#fff;padding:34px 30px;}
+  .col .n{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold);display:block;margin-bottom:14px;}
+  .col h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.6rem;line-height:1.15;margin-bottom:10px;}
+  .col p{font-size:.94rem;font-weight:300;line-height:1.7;color:var(--muted);}
+
+  .live{margin-top:52px;border:1px solid var(--border);border-radius:4px;background:#fff;padding:30px;}
+  .livehead{display:flex;align-items:center;gap:9px;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--rose);animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:.35}50%{opacity:1}}
+  .livehead span{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);}
+
+  /* the loop */
+  .loop{background:var(--deep);color:var(--cream);padding:96px 0;}
+  .loop .eyebrow{color:var(--gold);}
+  .loop h2{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(1.95rem,3.8vw,3rem);line-height:1.15;max-width:20ch;margin-bottom:48px;}
+  .loop h2 em{font-style:italic;color:var(--gold);}
+  .loop svg{width:100%;max-width:760px;height:auto;}
+
+  /* trust */
+  .trust{border-top:1px solid var(--border);padding:88px 0;}
+  .trust h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(1.9rem,3.5vw,2.8rem);margin-bottom:40px;}
+  .facts{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+  .f{border:1px solid var(--border);border-radius:4px;background:#fff;padding:26px 28px;}
+  .f b{display:block;font-size:.72rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--deep);margin-bottom:8px;}
+  .f span{font-size:.94rem;font-weight:300;line-height:1.7;color:var(--muted);}
+
+  /* apply */
+  .apply{background:var(--warm);border-top:1px solid var(--border);padding:96px 0 110px;}
+  .apply h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2rem,3.9vw,3.05rem);line-height:1.14;max-width:16ch;margin-bottom:20px;}
+  .apply h2 em{font-style:italic;color:var(--rose);}
+  .apply .say{font-size:1rem;font-weight:300;line-height:1.8;color:var(--muted);max-width:50ch;margin-bottom:44px;}
+  form{max-width:540px;}
+  .field{margin-bottom:24px;}
+  label{display:block;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+  input,textarea{width:100%;font:inherit;font-size:.98rem;font-weight:300;color:var(--deep);background:transparent;border:0;border-bottom:1px solid var(--border);padding:9px 0;}
+  input:focus,textarea:focus{border-bottom-color:var(--gold);outline:none;}
+  textarea{resize:vertical;min-height:72px;}
+  button{font:inherit;font-size:.82rem;letter-spacing:.05em;color:var(--cream);background:var(--deep);border:1px solid var(--deep);border-radius:4px;padding:14px 26px;cursor:pointer;margin-top:10px;transition:background .25s;}
+  button:hover{background:var(--deep-soft);}
+  .honey{position:absolute;left:-9999px;}
+
+  footer{background:var(--deep);color:rgba(250,247,242,.7);padding:56px 0 44px;}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:.82rem;font-weight:300;}
+  footer a{color:rgba(250,247,242,.7);text-decoration:none;}
+  footer a:hover{color:var(--gold);}
+
+  @media (max-width:820px){
+    .cols,.facts{grid-template-columns:1fr;}
+  }
+  @media (max-width:640px){
+    .wrap,.nav-inner{padding-left:22px;padding-right:22px;}
+    .hero{padding:72px 0 64px;}
+    .point,.three,.loop,.trust,.apply{padding:68px 0;}
+    .live{padding:18px;}
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="brand">Skin<span>Day</span></a>
+    <span class="tier">Visualize Pro</span>
+    <span class="spacer"></span>
+    <a href="#apply" class="nav-cta">Request an invitation</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow rose">Private pilot</p>
+    <h1 class="serif">Turn clinical photos into clinical <em>intelligence.</em></h1>
+    <p>Upload a case once. It builds your private library, publishes to your website, and guides the next simulation a patient sees.</p>
+    <a href="#apply" class="btn">Request an invitation</a>
+  </div>
+</section>
+
+<section class="point">
+  <div class="wrap">
+    <p class="eyebrow">Why it is different</p>
+    <h2 class="serif">Your clinic should not simulate results like every other clinic.</h2>
+    <p>Every practice has its own patients, its own hand, its own idea of a good result. Visualize Pro uses the cases you approve as references, so patients see outcomes that reflect your clinic rather than a generic aesthetic ideal.</p>
+    <p class="stamp serif">Your cases. Your results. <b>Your Visualize.</b></p>
+  </div>
+</section>
+
+<section class="three">
+  <div class="wrap">
+    <p class="eyebrow">One case</p>
+    <h2 class="serif">Three outcomes.</h2>
+
+    <div class="cols">
+      <div class="col">
+        <span class="n serif">01</span>
+        <h3 class="serif">Private library</h3>
+        <p>Every case and every follow-up, organized and searchable. Yours, exportable, and unlimited on every plan.</p>
+      </div>
+      <div class="col">
+        <span class="n serif">02</span>
+        <h3 class="serif">Website gallery</h3>
+        <p>Approved cases appear on your own site automatically. One line of code, once.</p>
+      </div>
+      <div class="col">
+        <span class="n serif">03</span>
+        <h3 class="serif">Clinic-guided Visualize</h3>
+        <p>Your approved outcomes guide what the next patient sees.</p>
+      </div>
+    </div>
+
+    <div class="live">
+      <div class="livehead">
+        <span class="dot"></span>
+        <span>A clinic's live gallery. Not a mockup.</span>
+      </div>
+      <script src="/gallery-embed.js"
+              data-clinic-id="386"
+              data-columns="2"
+              data-radius="4"></script>
+    </div>
+  </div>
+</section>
+
+<section class="loop">
+  <div class="wrap">
+    <p class="eyebrow">The loop</p>
+    <h2 class="serif">Every completed treatment improves the <em>next consultation.</em></h2>
+
+    <svg viewBox="0 0 760 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A treatment becomes a case, which becomes a private library, which feeds both a website gallery and a clinic-guided simulation, which improves the next consultation, which leads to the next treatment.">
+      <defs>
+        <marker id="a" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0 0 L8 4 L0 8 z" fill="#8A7F76"/>
+        </marker>
+        <style>
+          .bx{fill:none;stroke:rgba(250,247,242,.22);}
+          .bg{fill:none;stroke:#C9A96E;}
+          .tx{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;fill:#FAF7F2;letter-spacing:.05em;}
+          .tg{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;fill:#C9A96E;letter-spacing:.05em;}
+          .ln{fill:none;stroke:#8A7F76;stroke-width:1;marker-end:url(#a);}
+          .lg{fill:none;stroke:#C9A96E;stroke-width:1;marker-end:url(#a);}
+        </style>
+      </defs>
+
+      <rect class="bx" rx="4" x="1" y="14" width="132" height="40"/>
+      <text class="tx" x="67" y="39" text-anchor="middle">Treatment</text>
+      <line class="ln" x1="133" y1="34" x2="176" y2="34"/>
+
+      <rect class="bx" rx="4" x="182" y="14" width="132" height="40"/>
+      <text class="tx" x="248" y="39" text-anchor="middle">Case in Studio</text>
+      <line class="ln" x1="314" y1="34" x2="357" y2="34"/>
+
+      <rect class="bg" rx="4" x="363" y="14" width="132" height="40"/>
+      <text class="tg" x="429" y="39" text-anchor="middle">Private library</text>
+
+      <path class="ln" d="M429 54 L429 84 L232 84 L232 108"/>
+      <path class="lg" d="M429 54 L429 84 L626 84 L626 108"/>
+
+      <rect class="bx" rx="4" x="166" y="114" width="132" height="40"/>
+      <text class="tx" x="232" y="139" text-anchor="middle">Website gallery</text>
+
+      <rect class="bg" rx="4" x="546" y="114" width="160" height="40"/>
+      <text class="tg" x="626" y="139" text-anchor="middle">Clinic-guided Visualize</text>
+
+      <line class="lg" x1="626" y1="154" x2="626" y2="176"/>
+      <rect class="bg" rx="4" x="530" y="180" width="192" height="38"/>
+      <text class="tg" x="626" y="204" text-anchor="middle">The next consultation</text>
+
+      <path class="ln" d="M530 199 L67 199 L67 56"/>
+    </svg>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap">
+    <p class="eyebrow">Patient data</p>
+    <h2 class="serif">Four things we hold to.</h2>
+    <div class="facts">
+      <div class="f"><b>Consent, per purpose</b><span>Storing an image, using it as a reference, and publishing it to a website are three separate permissions.</span></div>
+      <div class="f"><b>Withdrawal is real</b><span>A withdrawn case leaves your site, your simulations, and our storage. Not hidden. Gone.</span></div>
+      <div class="f"><b>No cross-clinic training</b><span>Your cases guide your simulations. Not another clinic's, and not ours.</span></div>
+      <div class="f"><b>The library is yours</b><span>Export it whenever you want, including on the way out.</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="apply" id="apply">
+  <div class="wrap">
+    <p class="eyebrow rose">Founding pilot</p>
+    <h2 class="serif">Help shape <em>Visualize Pro.</em></h2>
+    <p class="say">Three months, free, for a small number of clinics anywhere in the world. Complimentary access, direct support, and founding pricing after. We ask for consistent use and honest feedback.</p>
+
+    <form name="visualize-pro" method="POST" data-netlify="true" netlify-honeypot="company-website">
+      <input type="hidden" name="form-name" value="visualize-pro">
+      <p class="honey"><label>Leave this empty <input name="company-website"></label></p>
+
+      <div class="field">
+        <label for="f-clinic">Clinic</label>
+        <input id="f-clinic" name="clinic" type="text" required>
+      </div>
+      <div class="field">
+        <label for="f-name">Your name</label>
+        <input id="f-name" name="name" type="text" required>
+      </div>
+      <div class="field">
+        <label for="f-email">Email</label>
+        <input id="f-email" name="email" type="email" required>
+      </div>
+      <div class="field">
+        <label for="f-country">Country</label>
+        <input id="f-country" name="country" type="text" required>
+      </div>
+      <div class="field">
+        <label for="f-city">City</label>
+        <input id="f-city" name="city" type="text" required>
+      </div>
+      <div class="field">
+        <label for="f-treat">What do you treat most?</label>
+        <input id="f-treat" name="treatments" type="text" placeholder="Sculptra, filler, tox, energy-based" required>
+      </div>
+      <div class="field">
+        <label for="f-why">Anything we should know?</label>
+        <textarea id="f-why" name="why"></textarea>
+      </div>
+
+      <button type="submit">Send application</button>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>SkinDay · Visualize Pro</span>
+    <span><a href="/">skinday.com</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
