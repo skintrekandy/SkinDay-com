@@ -245,11 +245,52 @@
     font-size:.88rem; line-height:1.75; color:#3a3330;
     white-space:pre-wrap; background:rgba(28,23,20,.015);
   }
-  .ag-foot { padding:18px 24px; border-top:1px solid rgba(28,23,20,.10); }
-  .ag-hash {
-    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-    font-size:.68rem; color:var(--dim); word-break:break-all; margin-top:10px;
+  /* The button and the fingerprint were overlapping, and the fingerprint was
+     shouting raw hex at a clinician who had not asked for it. A wall of hex under
+     an Accept button does not read as rigour. It reads as something broken. So it
+     is a sentence now, and the hex is a title attribute for anyone who wants it. */
+  .ag-foot {
+    padding:20px 24px; border-top:1px solid rgba(28,23,20,.10);
+    display:flex; flex-direction:column; align-items:flex-start; gap:12px;
   }
+  .ag-fingerprint {
+    font-size:.74rem; color:var(--muted); line-height:1.55; cursor:help;
+    border-bottom:1px dotted rgba(28,23,20,.22);
+  }
+  .swap { margin-top:20px; font-size:.84rem; color:var(--muted); }
+  .logo-row { display:flex; gap:20px; align-items:flex-start; }
+  .logo-box {
+    width:120px; height:120px; flex:none;
+    border:1px solid rgba(28,23,20,.14); background:rgba(28,23,20,.02);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--dim); font-size:.74rem; overflow:hidden;
+  }
+  .logo-box img { max-width:100%; max-height:100%; object-fit:contain; }
+  .member {
+    display:flex; align-items:center; gap:14px;
+    padding:16px 2px; border-top:1px solid rgba(28,23,20,.10);
+  }
+  .member:last-child { border-bottom:1px solid rgba(28,23,20,.10); }
+  .member .em { font-size:.9rem; }
+  .member .sub { font-size:.76rem; color:var(--muted); margin-top:2px; }
+  .member .grow { flex:1; }
+  .pill {
+    font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
+    padding:3px 8px; border:1px solid rgba(28,23,20,.18); color:var(--muted);
+  }
+  .pill.warn { border-color:rgba(200,114,90,.5); color:var(--rose); }
+  .invite-link {
+    margin-top:14px; padding:14px; background:rgba(28,23,20,.03);
+    font-size:.78rem; word-break:break-all; line-height:1.6;
+  }
+  .linkish {
+    background:none; border:0; padding:0; cursor:pointer;
+    font-family:'DM Sans',sans-serif; font-size:.84rem;
+    color:var(--rose); border-bottom:1px solid rgba(200,114,90,.4);
+  }
+  .linkish:hover { border-bottom-color:var(--rose); }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:560px) { .row2 { grid-template-columns:1fr; } }
   .subtabs {
     display:flex; gap:26px; margin:0 0 20px; padding:0;
     border-bottom:1px solid rgba(28,23,20,.10);
@@ -297,6 +338,7 @@
   <span class="who" id="clinicName"></span>
   <span class="spacer"></span>
   <span class="credits" id="credits"></span>
+  <button id="settingsBtn" title="Settings">Settings</button>
   <button id="signOut">Sign out</button>
 </header>
 
@@ -321,6 +363,50 @@
     </div>
     <button class="act" id="signIn">Sign in</button>
     <div class="note bad" id="gateNote"></div>
+    <div class="swap">
+      No account? <button class="linkish" id="toSignUp">Create one for your clinic</button>
+    </div>
+  </section>
+
+  <section class="gate sec" id="signup" style="display:none;">
+    <span class="eyebrow">Clinic portal</span>
+    <h1 class="display">Set up your clinic.</h1>
+    <p class="lede">A few details, then two short agreements. Your patients' photographs stay yours, and you can take them with you at any time.</p>
+
+    <div class="field">
+      <label class="eyebrow" for="suClinic">Clinic name</label>
+      <input type="text" id="suClinic" maxlength="120" autocomplete="organization">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label class="eyebrow" for="suCity">City</label>
+        <input type="text" id="suCity" maxlength="80" autocomplete="address-level2">
+      </div>
+      <div class="field">
+        <label class="eyebrow" for="suCountry">Country</label>
+        <input type="text" id="suCountry" maxlength="80" autocomplete="country-name">
+      </div>
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="suSite">Website (optional)</label>
+      <input type="text" id="suSite" maxlength="200" placeholder="yourclinic.com">
+      <small>Used to flag when you invite someone from outside your own domain. Nothing else.</small>
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="suEmail">Your email</label>
+      <input type="email" id="suEmail" autocomplete="username">
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="suPass">Password</label>
+      <input type="password" id="suPass" autocomplete="new-password">
+      <small>At least eight characters.</small>
+    </div>
+
+    <button class="act" id="doSignUp">Create clinic</button>
+    <div class="note" id="suNote"></div>
+    <div class="swap">
+      Already have an account? <button class="linkish" id="toSignIn">Sign in</button>
+    </div>
   </section>
 
   <!-- Nothing in this portal is reachable until the clinic has accepted. Not the
@@ -329,10 +415,28 @@
        be a banner someone dismisses. -->
   <section class="sec" id="agreements" style="display:none;">
     <div class="sec-head">
-      <span class="eyebrow">Before you begin</span>
+      <span class="eyebrow" id="agFor">Before you begin</span>
       <h1 class="display" id="agHead">Two things to read.</h1>
       <p class="lede" id="agLede">Short, and written to be read. They say what we do with your patients' photographs, and what we will never do.</p>
     </div>
+
+    <!-- Who is signing. "hello@clinic.ca accepted" is a materially weaker record
+         than "Shawn Seit, Medical Director, accepted", and the difference is one
+         that only matters on the day it matters. -->
+    <div class="panel" id="agSigner">
+      <div class="row2">
+        <div class="field">
+          <label class="eyebrow" for="agName">Your name</label>
+          <input type="text" id="agName" maxlength="120" autocomplete="name">
+        </div>
+        <div class="field">
+          <label class="eyebrow" for="agTitle">Your role at the clinic</label>
+          <input type="text" id="agTitle" maxlength="120" placeholder="Medical Director">
+        </div>
+      </div>
+      <small>Recorded with your acceptance, so it is clear who agreed on the clinic's behalf.</small>
+    </div>
+
     <div id="agDocs"></div>
     <div class="note" id="agNote"></div>
   </section>
@@ -431,6 +535,114 @@
 <!-- VISUALIZE: the real visualize.html, embedded. That file is never modified.
      The portal attaches the clinic context to the generation request on its way
      out, and reports back whether the clinic's own case shaped the result. -->
+<!-- SETTINGS. Reached from the header, not the tab bar: the tabs are the three
+     things a clinic does, and settings is not one of them. -->
+<div class="wrap" id="panel-settings" style="display:none;">
+
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Settings</span>
+      <h2 class="display" id="setTitle">Your clinic.</h2>
+      <p id="setSub">Loading…</p>
+    </div>
+  </section>
+
+  <section class="sec" id="setProfile" style="display:none;">
+    <div class="sec-head">
+      <span class="eyebrow">Clinic</span>
+      <h2 class="display">Details.</h2>
+      <p>Your name and logo appear on the gallery you embed on your own website.</p>
+    </div>
+    <div class="panel">
+      <div class="field">
+        <label class="eyebrow" for="setName">Clinic name</label>
+        <input type="text" id="setName" maxlength="120">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="eyebrow" for="setCity">City</label>
+          <input type="text" id="setCity" maxlength="80">
+        </div>
+        <div class="field">
+          <label class="eyebrow" for="setCountry">Country</label>
+          <input type="text" id="setCountry" maxlength="80">
+        </div>
+      </div>
+      <div class="field">
+        <label class="eyebrow" for="setSite">Website</label>
+        <input type="text" id="setSite" maxlength="200" placeholder="yourclinic.com">
+        <small>Also used to flag an invitation sent outside your own domain.</small>
+      </div>
+
+      <div class="field">
+        <label class="eyebrow">Logo</label>
+        <div class="logo-row">
+          <div class="logo-box" id="setLogoBox"><span>No logo</span></div>
+          <div>
+            <input type="file" id="setLogoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+            <div class="note" id="setLogoNote"></div>
+            <button class="quiet" id="setLogoRemove" style="margin-top:8px;">Remove logo</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="act" id="setSave">Save</button>
+        <div class="note" id="setNote"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Team</span>
+      <h2 class="display">Who can get in.</h2>
+      <p id="teamSub">Every action in this portal is recorded against the person who took it. That only means something if nobody shares a login.</p>
+    </div>
+
+    <div class="panel" id="inviteBox" style="display:none;">
+      <div class="row2">
+        <div class="field">
+          <label class="eyebrow" for="invEmail">Invite by email</label>
+          <input type="email" id="invEmail" placeholder="name@yourclinic.com">
+        </div>
+        <div class="field">
+          <label class="eyebrow" for="invRole">Role</label>
+          <select id="invRole">
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+          <small>An admin can purge cases and export the library. Staff cannot.</small>
+        </div>
+      </div>
+      <button class="act" id="invSend">Create invitation</button>
+      <div class="note" id="invNote"></div>
+      <div id="invLink" style="display:none;"></div>
+    </div>
+
+    <div id="teamList"><div class="empty"><p>Loading…</p></div></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Billing</span>
+      <h2 class="display" id="billTitle">Plan.</h2>
+      <p id="billSub"></p>
+    </div>
+    <div class="panel" id="billBox"></div>
+  </section>
+
+  <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Agreements</span>
+      <h2 class="display">What you accepted.</h2>
+      <p>The exact version, and who accepted it on the clinic's behalf.</p>
+    </div>
+    <div id="ackList"></div>
+  </section>
+
+</div>
+
 <div class="stage" id="panel-visualize" style="display:none;">
   <iframe class="embed" id="visFrame" title="Visualize"></iframe>
 
@@ -606,8 +818,103 @@ async function signIn() {
     note('gateNote', 'That email and password did not match an account.', 'bad');
     return;
   }
+  await redeemInvite();
   start();
 }
+
+$('toSignUp').addEventListener('click', () => {
+  $('gate').style.display = 'none';
+  $('signup').style.display = 'block';
+});
+$('toSignIn').addEventListener('click', () => {
+  $('signup').style.display = 'none';
+  $('gate').style.display = 'block';
+});
+
+/* Create the account and the clinic. Two steps that must both succeed, and the
+   order is not arbitrary: the auth user has to exist before create_clinic_account
+   can attach a membership to it.
+
+   If the second step fails, the person has an account and no clinic, and signing
+   in again lands them right back here with the clinic form. That is a recoverable
+   state and it is why start() tells them so rather than saying "not attached to a
+   clinic case library", which is a sentence written for a world where I created
+   every clinic by hand. */
+async function doSignUp() {
+  const btn = $('doSignUp');
+  const name = $('suClinic').value.trim();
+  const city = $('suCity').value.trim();
+  const country = $('suCountry').value.trim();
+  const site = $('suSite').value.trim();
+  const email = $('suEmail').value.trim();
+  const pass = $('suPass').value;
+
+  if (name.length < 2) return note('suNote', 'Your clinic needs a name.', 'bad');
+
+  // Already signed in: they confirmed an email, or their clinic creation failed
+  // halfway last time. Only the clinic half is left, and asking for a password
+  // they have already used would be a wall for no reason.
+  const { data: cur } = await sb.auth.getSession();
+  const alreadyIn = !!(cur && cur.session);
+
+  if (!alreadyIn) {
+    if (!email) return note('suNote', 'We need an email to sign you in.', 'bad');
+    if (!pass || pass.length < 8) return note('suNote', 'Pick a password of at least eight characters.', 'bad');
+  }
+
+  btn.disabled = true;
+  note('suNote', 'Setting things up…');
+
+  try {
+    if (alreadyIn) {
+      const { error: cErr0 } = await sb.rpc('create_clinic_account', {
+        p_name: name, p_city: city || null,
+        p_country: country || null, p_website: site || null
+      });
+      if (cErr0) throw new Error(cErr0.message);
+      $('signup').style.display = 'none';
+      await start();
+      return;
+    }
+
+    let session = null;
+
+    const { data: up, error: upErr } = await sb.auth.signUp({ email, password: pass });
+    if (upErr) {
+      // An existing account is not a failure. Sign them in and attach the clinic,
+      // so somebody who half-finished this yesterday can finish it today.
+      const { data: si, error: siErr } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (siErr) throw new Error(upErr.message);
+      session = si.session;
+    } else {
+      session = up.session;
+    }
+
+    // Email confirmation is on: no session, so nothing can be created yet.
+    if (!session) {
+      note('suNote',
+        'Check your email and confirm the address, then come back and sign in. ' +
+        'Your clinic will be set up on your first sign in.', 'ok');
+      try { sessionStorage.setItem('sd-pending-clinic', JSON.stringify({ name, city, country, site })); } catch (e) {}
+      btn.disabled = false;
+      return;
+    }
+
+    const { error: cErr } = await sb.rpc('create_clinic_account', {
+      p_name: name, p_city: city || null,
+      p_country: country || null, p_website: site || null
+    });
+    if (cErr) throw new Error(cErr.message);
+
+    $('signup').style.display = 'none';
+    await start();
+  } catch (e) {
+    note('suNote', e.message, 'bad');
+    btn.disabled = false;
+  }
+}
+
+$('doSignUp').addEventListener('click', doSignUp);
 
 $('signOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
@@ -620,7 +927,24 @@ async function start() {
     .limit(1);
 
   if (error || !rows || !rows.length) {
-    note('gateNote', 'This account is not attached to a clinic case library.', 'bad');
+    // Somebody who confirmed their email after signing up, or whose clinic
+    // creation failed halfway. Their details are still in this tab if they never
+    // left it; otherwise the form is empty and they fill it in again. Either way
+    // this is a form, not a dead end.
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem('sd-pending-clinic') || 'null'); } catch (e) {}
+    if (pending) {
+      $('suClinic').value = pending.name || '';
+      $('suCity').value = pending.city || '';
+      $('suCountry').value = pending.country || '';
+      $('suSite').value = pending.site || '';
+      $('suEmail').value = (await sb.auth.getUser()).data.user.email || '';
+      $('suPass').closest('.field').style.display = 'none';
+      try { sessionStorage.removeItem('sd-pending-clinic'); } catch (e) {}
+    }
+    $('gate').style.display = 'none';
+    $('signup').style.display = 'block';
+    note('suNote', 'Nearly there. Tell us about your clinic and you are in.');
     return;
   }
   clinicId = rows[0].clinic_id;
@@ -675,14 +999,26 @@ async function loadAgreements() {
   myRole = (mem && mem[0] && mem[0].role) || null;
   const isOwner = myRole === 'owner';
 
+  // Say which clinic. An owner with two locations, or a director across a chain,
+  // must not be able to bind the wrong one because the only mention of it was in
+  // small text sixty pixels away in the header.
+  const clinicName = $('clinicName').textContent || ('Clinic ' + clinicId);
+  $('agFor').textContent = 'On behalf of ' + clinicName;
+
   $('agHead').textContent =
     data.length === 1 ? 'One thing to read.' : 'Two things to read.';
+
+  $('agSigner').style.display = isOwner ? 'block' : 'none';
 
   if (!isOwner) {
     $('agLede').textContent =
       'Your clinic has not accepted these yet, and only an owner can. Read them here, ' +
       'and ask whoever runs the practice to sign in and accept. Nothing in the portal ' +
       'opens until they do.';
+  } else if (!$('agName').value) {
+    const { data: u } = await sb.auth.getUser();
+    const meta = (u && u.user && u.user.user_metadata) || {};
+    $('agName').value = meta.full_name || meta.name || '';
   }
 
   host.innerHTML = '';
@@ -705,7 +1041,8 @@ function agreementCard(d, isOwner) {
 
   const body = document.createElement('div');
   body.className = 'ag-body';
-  body.textContent = d.body;   // textContent, not innerHTML. This is a document.
+  body.textContent = d.body.trim();   // textContent, not innerHTML. This is a document.
+  body.scrollTop = 0;                 // it was opening part-way down its own text
 
   const foot = document.createElement('div');
   foot.className = 'ag-foot';
@@ -718,6 +1055,14 @@ function agreementCard(d, isOwner) {
     btn.className = 'act';
     btn.textContent = 'Accept ' + d.title;
     btn.onclick = async () => {
+      const signer = $('agName').value.trim();
+      if (signer.length < 2) {
+        st.className = 'note bad';
+        st.textContent = 'Please put your name at the top before you accept.';
+        $('agName').focus();
+        return;
+      }
+
       btn.disabled = true;
       st.className = 'note';
       st.textContent = 'Recording…';
@@ -726,7 +1071,12 @@ function agreementCard(d, isOwner) {
         const res = await fetch('/api/clinic-agreement-accept', {
           method: 'POST',
           headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ clinicId, documentId: d.document_id })
+          body: JSON.stringify({
+            clinicId,
+            documentId: d.document_id,
+            signerName: signer,
+            signerTitle: $('agTitle').value.trim() || null
+          })
         });
         const b = await res.json().catch(() => ({}));
         if (!res.ok || !b.ok) throw new Error(b.error || 'That did not go through.');
@@ -750,15 +1100,17 @@ function agreementCard(d, isOwner) {
     foot.appendChild(btn);
   }
 
-  const hash = document.createElement('div');
-  hash.className = 'ag-hash';
-  hash.textContent = 'sha256 ' + d.content_hash;
-  hash.title =
-    'The fingerprint of the exact text above. Your acceptance is recorded against ' +
-    'this, so what you agreed to can always be proved, and the text of an accepted ' +
-    'document can never be changed.';
+  // A wall of hex under an Accept button does not read as rigour. It reads as
+  // something broken. So it is a sentence, and the fingerprint itself is there
+  // for anyone who wants it.
+  const fp = document.createElement('div');
+  fp.className = 'ag-fingerprint';
+  fp.textContent =
+    'Recorded against a fingerprint of this exact text, so what you agreed to ' +
+    'can always be shown, and these words can never be changed afterwards.';
+  fp.title = 'sha256 ' + d.content_hash;
 
-  foot.append(st, hash);
+  foot.append(st, fp);
   el.append(head, body, foot);
   return el;
 }
@@ -792,7 +1144,45 @@ async function loadCredits() {
   } catch (e) { /* a missing balance is not worth an error */ }
 }
 
-sb.auth.getSession().then(({ data }) => { if (data && data.session) start(); });
+/* ---- invitations --------------------------------------------------------
+
+   An invite link almost always arrives at a signed-out browser. So the token is
+   stashed before the sign-in and redeemed after it, or every invitation would be
+   a dead link that looks exactly like a bug.
+
+   The invitation is to a person, not to whoever holds the URL: accept_clinic_invitation
+   refuses unless the signed-in email matches the one invited. A forwarded link is
+   worth nothing. */
+
+const INVITE_KEY = 'sd-clinic-invite';
+
+(function stashInvite() {
+  const t = new URLSearchParams(location.search).get('invite');
+  if (!t) return;
+  try { sessionStorage.setItem(INVITE_KEY, t); } catch (e) {}
+  history.replaceState({}, '', location.pathname);
+})();
+
+async function redeemInvite() {
+  let t = null;
+  try { t = sessionStorage.getItem(INVITE_KEY); } catch (e) {}
+  if (!t) return false;
+
+  const { error } = await sb.rpc('accept_clinic_invitation', { p_token: t });
+  try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
+
+  if (error) {
+    note('gateNote', error.message, 'bad');
+    return false;
+  }
+  return true;
+}
+
+sb.auth.getSession().then(async ({ data }) => {
+  if (!data || !data.session) return;
+  await redeemInvite();
+  start();
+});
 
 /* ---- tabs ---- */
 
@@ -2095,6 +2485,348 @@ function plate(r, perms, seriesSize) {
   el.append(dip, body);
   return el;
 }
+
+/* ---- settings ------------------------------------------------------------
+
+   Reached from the header rather than the tab bar. The tabs are the three things
+   a clinic does; settings is not one of them, and putting it there would make it
+   look like a fourth kind of work. */
+
+let settingsOpen = false;
+let mySettings = null;
+
+$('settingsBtn').addEventListener('click', () => {
+  settingsOpen = !settingsOpen;
+  if (settingsOpen) {
+    document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
+    ['studio', 'visualize', 'library'].forEach(p => { $('panel-' + p).style.display = 'none'; });
+    $('panel-settings').style.display = 'block';
+    loadSettings();
+    loadTeam();
+  } else {
+    $('panel-settings').style.display = 'none';
+    const t = document.querySelector('#tabs .tab[data-panel="studio"]');
+    if (t) t.click();
+  }
+});
+
+// Coming back to the work closes settings, so the two cannot both be showing.
+document.querySelectorAll('#tabs .tab').forEach(t => {
+  t.addEventListener('click', () => {
+    settingsOpen = false;
+    $('panel-settings').style.display = 'none';
+  });
+});
+
+async function loadSettings() {
+  const { data, error } = await sb.rpc('get_clinic_settings', { p_clinic_id: clinicId });
+  if (error) { note('setNote', error.message, 'bad'); return; }
+  mySettings = data;
+
+  const c = data.clinic;
+  const canEdit = data.my_role === 'owner' || data.my_role === 'admin';
+
+  $('setTitle').textContent = c.name;
+  $('setSub').textContent =
+    [c.city, c.country].filter(Boolean).join(', ') +
+    (c.city || c.country ? '. ' : '') +
+    'You are ' + (data.my_role === 'owner' ? 'the owner' : 'an ' + data.my_role) + '.';
+
+  $('setProfile').style.display = canEdit ? 'block' : 'none';
+  $('setName').value = c.name || '';
+  $('setCity').value = c.city || '';
+  $('setCountry').value = c.country || '';
+  $('setSite').value = c.website || '';
+
+  const box = $('setLogoBox');
+  box.innerHTML = '';
+  if (c.logo_url) {
+    const img = document.createElement('img');
+    img.src = c.logo_url;
+    img.alt = c.name;
+    box.appendChild(img);
+    $('setLogoRemove').style.display = '';
+  } else {
+    box.innerHTML = '<span>No logo</span>';
+    $('setLogoRemove').style.display = 'none';
+  }
+
+  renderBilling(data.subscription, c);
+  renderAgreements(data.agreements);
+}
+
+function renderBilling(sub, c) {
+  const box = $('billBox');
+  const t = $('billTitle');
+  const sb2 = $('billSub');
+
+  if (sub.status === 'trialing') {
+    const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
+    const days = ends ? Math.max(0, Math.ceil((ends - Date.now()) / 86400000)) : null;
+    t.textContent = 'Visualize Pro, free.';
+    sb2.textContent = days != null
+      ? days + ' days left. Everything works, nothing is limited, no card on file.'
+      : 'Everything works, nothing is limited, no card on file.';
+  } else if (sub.status === 'active') {
+    t.textContent = 'Visualize Pro.';
+    sb2.textContent = sub.current_period_end
+      ? 'Renews ' + new Date(sub.current_period_end).toISOString().slice(0, 10) + '.'
+      : 'Active.';
+  } else if (sub.status === 'past_due') {
+    t.textContent = 'A payment did not go through.';
+    sb2.textContent =
+      'Your gallery is still serving and your library is still readable and exportable. ' +
+      'New saves and new simulations are paused until the card is fixed.';
+  } else {
+    t.textContent = 'Plan.';
+    sb2.textContent = 'Visualize Pro is not subscribed on this clinic.';
+  }
+
+  // Nothing here pretends to manage a card, because there is no card to manage.
+  // Stripe subscriptions are not wired yet. A "change your card" button over
+  // machinery that does not exist is a lie made of HTML, and the first clinic to
+  // click it finds out.
+  box.innerHTML =
+    '<p class="note">Card management arrives with subscriptions. Nothing is charged ' +
+    'until then, and we will tell you before anything is.</p>';
+}
+
+function renderAgreements(acks) {
+  const host = $('ackList');
+  if (!acks || !acks.length) {
+    host.innerHTML = '<div class="empty"><p>Nothing accepted yet.</p></div>';
+    return;
+  }
+  host.innerHTML = '';
+  acks.forEach(a => {
+    const row = document.createElement('div');
+    row.className = 'member';
+    const g = document.createElement('div');
+    g.className = 'grow';
+    const when = new Date(a.accepted_at).toISOString().slice(0, 10);
+    g.innerHTML =
+      '<div class="em">' + a.title + ' <span class="pill">' + a.version + '</span></div>' +
+      '<div class="sub">Accepted ' + when + ' by ' + (a.signer_name || 'an owner') +
+      (a.signer_title ? ', ' + a.signer_title : '') + '.' +
+      (a.is_current ? '' : ' A newer version has since been published.') + '</div>';
+    row.appendChild(g);
+    host.appendChild(row);
+  });
+}
+
+$('setSave').addEventListener('click', async () => {
+  const btn = $('setSave');
+  btn.disabled = true;
+  note('setNote', 'Saving…');
+  try {
+    const { error } = await sb.rpc('update_clinic_profile', {
+      p_clinic_id: clinicId,
+      p_name: $('setName').value.trim() || null,
+      p_city: $('setCity').value.trim() || null,
+      p_country: $('setCountry').value.trim() || null,
+      p_website: $('setSite').value.trim() || null
+    });
+    if (error) throw new Error(error.message);
+    $('clinicName').textContent = $('setName').value.trim();
+    note('setNote', 'Saved.', 'ok');
+    loadSettings();
+  } catch (e) {
+    note('setNote', e.message, 'bad');
+  }
+  btn.disabled = false;
+});
+
+$('setLogoFile').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  note('setLogoNote', 'Uploading…');
+  try {
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = () => rej(new Error('Could not read that file.'));
+      r.readAsDataURL(f);
+    });
+    const t = await token();
+    const r = await fetch('/api/clinic-logo-upload', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicId, image: dataUrl })
+    });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok || !b.ok) throw new Error(b.error || 'That did not upload.');
+    note('setLogoNote', 'Uploaded.', 'ok');
+    loadSettings();
+  } catch (err) {
+    note('setLogoNote', err.message, 'bad');
+  }
+  e.target.value = '';
+});
+
+$('setLogoRemove').addEventListener('click', async () => {
+  if (!confirm('Remove your logo?')) return;
+  try {
+    const t = await token();
+    const r = await fetch('/api/clinic-logo-upload', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicId, remove: true })
+    });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok || !b.ok) throw new Error(b.error || 'That did not work.');
+    loadSettings();
+  } catch (e) {
+    note('setLogoNote', e.message, 'bad');
+  }
+});
+
+/* ---- team --------------------------------------------------------------- */
+
+async function loadTeam() {
+  const host = $('teamList');
+  const { data, error } = await sb.rpc('get_clinic_team', { p_clinic_id: clinicId });
+  if (error) { host.innerHTML = '<div class="empty"><p class="note bad">' + error.message + '</p></div>'; return; }
+
+  const isOwner = mySettings && mySettings.my_role === 'owner';
+  const c = (mySettings && mySettings.clinic) || {};
+  $('inviteBox').style.display = isOwner ? 'block' : 'none';
+
+  $('teamSub').textContent =
+    (c.seats_used || 0) + ' of ' + (c.seat_limit || 8) + ' seats used, counting invitations that have not been accepted. ' +
+    'Every action here is recorded against the person who took it, which only means something if nobody shares a login.';
+
+  host.innerHTML = '';
+  (data || []).forEach(m => host.appendChild(memberRow(m, isOwner)));
+}
+
+function memberRow(m, isOwner) {
+  const row = document.createElement('div');
+  row.className = 'member';
+
+  const g = document.createElement('div');
+  g.className = 'grow';
+
+  const pending = m.kind === 'invitation';
+  const last = m.last_active_at
+    ? 'Last active ' + new Date(m.last_active_at).toISOString().slice(0, 10)
+    : (pending ? 'Invited, not accepted yet' : 'Has not done anything yet');
+
+  g.innerHTML =
+    '<div class="em">' + m.email + '</div>' +
+    '<div class="sub">' + last + (pending && m.expires_at
+      ? '. Expires ' + new Date(m.expires_at).toISOString().slice(0, 10) : '') + '</div>';
+
+  const role = document.createElement('span');
+  role.className = 'pill';
+  role.textContent = pending ? 'invited ' + m.role : m.role;
+
+  row.append(g, role);
+
+  // The signal you actually asked for. Not a block, and never a block: a clinic
+  // that legitimately runs on gmail is not a clinic doing something wrong.
+  if (m.domain_mismatch) {
+    const w = document.createElement('span');
+    w.className = 'pill warn';
+    w.textContent = 'outside your domain';
+    w.title = 'This address is not on your clinic\'s own web domain.';
+    row.appendChild(w);
+  }
+
+  if (isOwner && m.role !== 'owner') {
+    if (!pending) {
+      const sel = document.createElement('select');
+      ['staff', 'admin', 'owner'].forEach(r => {
+        const o = document.createElement('option');
+        o.value = r;
+        o.textContent = r === 'owner' ? 'Make owner' : r;
+        o.selected = (r === m.role);
+        sel.appendChild(o);
+      });
+      sel.onchange = async () => {
+        const to = sel.value;
+        if (to === 'owner' && !confirm(
+          'Make ' + m.email + ' the owner of this clinic? You become an admin, and ' +
+          'only they will be able to accept agreements and invite people.')) {
+          sel.value = m.role;
+          return;
+        }
+        const { error } = await sb.rpc('set_member_role', {
+          p_clinic_id: clinicId, p_user_id: m.user_id, p_role: to
+        });
+        if (error) { alert(error.message); sel.value = m.role; return; }
+        await loadSettings();
+        await loadTeam();
+      };
+      row.appendChild(sel);
+    }
+
+    const rm = document.createElement('button');
+    rm.className = 'quiet';
+    rm.textContent = pending ? 'Cancel' : 'Remove';
+    rm.onclick = async () => {
+      if (!confirm(pending
+        ? 'Cancel the invitation to ' + m.email + '?'
+        : 'Remove ' + m.email + '? They lose access immediately.')) return;
+      const { error } = await sb.rpc('revoke_clinic_member', {
+        p_clinic_id: clinicId,
+        p_user_id: pending ? null : m.user_id,
+        p_invitation_id: pending ? m.invitation_id : null
+      });
+      if (error) { alert(error.message); return; }
+      await loadSettings();
+      await loadTeam();
+    };
+    row.appendChild(rm);
+  }
+
+  return row;
+}
+
+$('invSend').addEventListener('click', async () => {
+  const btn = $('invSend');
+  const email = $('invEmail').value.trim();
+  const role = $('invRole').value;
+  if (!email) return note('invNote', 'Who are you inviting?', 'bad');
+
+  btn.disabled = true;
+  note('invNote', 'Creating…');
+  $('invLink').style.display = 'none';
+
+  try {
+    const { data, error } = await sb.rpc('invite_clinic_member', {
+      p_clinic_id: clinicId, p_email: email, p_role: role
+    });
+    if (error) throw new Error(error.message);
+
+    // The warning, before they send it rather than after.
+    if (data.domain_mismatch) {
+      note('invNote',
+        email + ' is not on ' + (data.clinic_domain || 'your domain') +
+        '. That may be exactly right, and it may not be. The invitation is ready ' +
+        'either way, and it will be flagged in your team list.', 'bad');
+    } else {
+      note('invNote', 'Invitation ready.', 'ok');
+    }
+
+    // Nothing emails it. An invite link the owner sends themselves arrives from
+    // someone the recipient knows, rather than from a domain they have never
+    // heard of and will not trust.
+    const link = location.origin + '/clinic-portal.html?invite=' + encodeURIComponent(data.token);
+    const box = $('invLink');
+    box.className = 'invite-link';
+    box.style.display = 'block';
+    box.innerHTML =
+      '<b>Send this to ' + email + '.</b> It expires in 14 days, and only works for ' +
+      'someone signed in with that exact address.<br><br>' + link;
+
+    $('invEmail').value = '';
+    await loadSettings();
+    await loadTeam();
+  } catch (e) {
+    note('invNote', e.message, 'bad');
+  }
+  btn.disabled = false;
+});
 
 /* ---- export -------------------------------------------------------------
 
