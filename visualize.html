@@ -1828,11 +1828,63 @@ function showAuthUnavailable(){
   if(unavail) unavail.style.display = '';
 }
 
+/* ---- funnel ---------------------------------------------------------------
+
+   24 of 37 signups never generated an image. They wrote no rows, so
+   generation_logs, which only ever hears from the people who succeeded, cannot
+   see them. Four events make the missing 24 visible: they got in, they put a
+   face in the box, the photo was graded, they pressed the button. Each gap
+   between two of those is a door someone left through, and right now every one
+   of those doors is a guess.
+
+   Keyed by session, not by user. Somebody who signs in, stalls at the upload
+   box, closes the tab and returns next week has attempted this twice. Keyed by
+   user, the two collapse into one and the abandonment vanishes.
+
+   Fire and forget, and it must never be able to break the thing the person is
+   actually trying to do. Every call is caught and swallowed. No image data, no
+   prompt text, nothing beyond what is already collected. */
+
+// Declared here rather than beside the clinic bridge below, because the funnel
+// reads it at sign-in and a const accessed before its declaration executes throws
+// rather than reading as undefined.
+const SD_EMBEDDED = (function(){
+  try { return window.parent && window.parent !== window; } catch(e){ return false; }
+})();
+
+const SD_FUNNEL_KEY = 'sd-visualize-session';
+
+function funnelSession(){
+  try {
+    let id = sessionStorage.getItem(SD_FUNNEL_KEY);
+    if(!id){
+      id = 'vs_' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+      sessionStorage.setItem(SD_FUNNEL_KEY, id);
+    }
+    return id;
+  } catch(e){
+    return null;
+  }
+}
+
+function track(event, detail){
+  try {
+    const sid = funnelSession();
+    if(!sid || !sb) return;
+    sb.rpc('log_funnel_event', {
+      p_session_id: sid,
+      p_event: event,
+      p_detail: detail || {}
+    }).then(() => {}, () => {});
+  } catch(e){ /* analytics must never break a generation */ }
+}
+
 async function onSignedIn(session){
   if(!session || !session.user) return;
   sb.__email = session.user.email || '';
   unlock('account');
   refreshCredits(0);
+  track('signed_in', { embedded: SD_EMBEDDED });
   // M12 clinic library retired: superseded by the clinic portal, and its backend
   // queries a schema that no longer exists. The call is removed rather than left
   // to 500 on every sign-in. The remaining library code is unreachable (its nav
@@ -2844,6 +2896,7 @@ function renderSlots(){
 async function onSlotFile(angleId, file){
   const sl = state.slots[angleId];
   if(!file.type.startsWith('image/')){ setStatus('Please upload an image file.', 'warn'); return; }
+  track('photo_uploaded', { angle: angleId });
   sl.file = file;
   sl.originalDataUrl = await boundWorkingImage(await fileToDataUrl(file), 1600); // M20: cap working resolution to prevent mobile OOM during generation
   sl.blackBgCache = null; sl.beforeDataUrl = null; sl.resultDataUrl = null; sl.apply = null; sl.error = null; sl.hiRes = null; sl.rawAiDataUrl = null; sl.cropCache = null;
@@ -2871,6 +2924,11 @@ async function onSlotFile(angleId, file){
       ? ('✓ ' + gate.msg + extraNote)
       : ('Note: ' + gate.msg + extraNote);
     sl.photoGrade = gradePhoto(a, img);
+    track('confidence_gate', {
+      angle: angleId,
+      level: (sl.photoGrade && sl.photoGrade.level) || null,
+      pose_ok: !!(gate && gate.ok)
+    });
   } catch(err){
     console.warn('[Visualize] Photo QC failed; accepting the photo (mask fail-safes still apply).', err);
     sl.status = 'ready'; sl.qcMsg = 'Pose check unavailable; photo accepted.';
@@ -3796,10 +3854,6 @@ async function finishSlot(angleId, auth, fillerIntensity){
    is not the image the clinician reviewed. The record holds what the human saw
    and consented to. */
 
-const SD_EMBEDDED = (function(){
-  try { return window.parent && window.parent !== window; } catch(e){ return false; }
-})();
-
 function sdEmbedActive(){ return SD_EMBEDDED && !!CLINIC_ID; }
 
 function sdPost(msg){
@@ -3996,6 +4050,13 @@ async function runGeneration(isRegen){
   creditShortfall = false;
   let angles = state.selectedAngles.filter(id => state.slots[id].originalDataUrl);
   if(!angles.length) return;
+  if(!isRegen){
+    track('generation_started', {
+      angles: angles.length,
+      treatment: state.type || null,
+      embedded: SD_EMBEDDED
+    });
+  }
   // M10.5 v65: when re-generating, only retry failed/idle angles. Already-done
   // angles keep their result and are never re-charged. Re-generate on a fully-done
   // case (no failures) still runs all angles (the user wants a fresh result).
