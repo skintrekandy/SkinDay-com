@@ -813,8 +813,20 @@ exports.handler = async (event) => {
   if (!jobId) return { statusCode: 400 };
 
   const store = getStore('visualize-jobs');
+
+  // M13. The two store.delete calls in this file used to live only in the two
+  // success paths, and they were written to free a large payload, not to protect
+  // a patient. Where cost and privacy happened to agree, the photograph went.
+  // Where they did not, it stayed: a failed or moderation-blocked generation left
+  // the patient's uploaded photograph in the blob store permanently, at full
+  // upload resolution, and the code's own comment notes that moderation blocks
+  // are a frequent trigger for lip edits. So this is not a rare corner.
+  //
+  // fail() is the single funnel for every non-success exit. Dropping the payload
+  // here means no path out of this handler can leave the photograph behind.
   const fail = async (error, code) => {
     try { await store.setJSON(jobId + ':status', { state: 'error', error, code: code || 'error', updatedAt: Date.now() }); } catch (e) { /* ignore */ }
+    try { await store.delete(jobId + ':job'); } catch (e) { /* ignore */ }
   };
 
   // Background endpoints are public URLs, so re-check the key.
