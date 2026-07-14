@@ -432,8 +432,18 @@ async function fetchPrivateCaseFile(path, filename) {
 
 
 // Resolve the reference image for a generation.
-// Returns { refFile, referenceMode } or { refFile: null, referenceMode: null }.
+// Returns { refFile, referenceMode, referenceCaseIds }.
 // referenceMode values: 'clinic_case' | null
+//
+// M13: referenceCaseIds is the provenance link. It says WHICH of the clinic's
+// cases grounded this generation, not merely that one did. It is an array from
+// the outset, because passing a matched set of references is coming and changing
+// the shape later is worse than over-shaping it now. It is always present, empty
+// when nothing grounded the generation, so no caller has to branch on its
+// absence.
+//
+// This is server-side and authoritative. It is never client-supplied, which is
+// what a field that records whose photograph shaped whose simulation has to be.
 //
 // SCOPE RULE. The old rule fired references only for "Enhanced" (isStrongPass)
 // Sculptra. Enhanced no longer exists, which made this branch unreachable.
@@ -458,14 +468,14 @@ async function fetchPrivateCaseFile(path, filename) {
 async function resolveReference(f, billing) {
   // Canonical treatment key, shared with what the clinic stores on a case.
   const treatment = canonicalTreatment(f);
-  if (!treatment) return { refFile: null, referenceMode: null };
+  if (!treatment) return { refFile: null, referenceMode: null, referenceCaseIds: [] };
 
   const userId            = billing ? billing.userId : null;
   const requestedClinicId = f.clinicId || f.clinic_id || null;
 
   if (!requestedClinicId) {
     console.log('[M11] no clinic context: consumer route, no reference');
-    return { refFile: null, referenceMode: null };
+    return { refFile: null, referenceMode: null, referenceCaseIds: [] };
   }
 
   // A clinic id in a job is a CLAIM. start-visualization already verified it;
@@ -474,7 +484,7 @@ async function resolveReference(f, billing) {
   const clinicId = await verifyClinicContext(userId, String(requestedClinicId));
   if (!clinicId) {
     console.warn('[M11] clinic context not verified: no reference used');
-    return { refFile: null, referenceMode: null };
+    return { refFile: null, referenceMode: null, referenceCaseIds: [] };
   }
 
   const angle     = canonicalAngle(f.angle || f.view);
@@ -493,13 +503,13 @@ async function resolveReference(f, billing) {
         + ' treatment=' + treatment + ' subtype=' + subtype + ' angle=' + angle
         + ' crop=' + (caseRow.crop || 'none')
         + ' asked=' + timelineMonths + 'mo got=' + caseRow.intervalMonths + 'mo)');
-      return { refFile, referenceMode: 'clinic_case' };
+      return { refFile, referenceMode: 'clinic_case', referenceCaseIds: [caseRow.caseId] };
     }
   }
 
   console.log('[M11] clinic ' + clinicId + ' has no approved ' + treatment
     + '/' + subtype + ' case at ' + angle + ': no reference used');
-  return { refFile: null, referenceMode: null };
+  return { refFile: null, referenceMode: null, referenceCaseIds: [] };
 }
 
 // The canonical treatment key. This is the SAME vocabulary Studio and the clinic
@@ -1111,7 +1121,7 @@ exports.handler = async (event) => {
     // Read billing now so resolveReference can use userId as clinic_id without
     // a second blob fetch in the log block below.
     const billing = await store.get(jobId + ':billing', { type: 'json' }).catch(() => null);
-    const { refFile, referenceMode } = await resolveReference(f, billing);
+    const { refFile, referenceMode, referenceCaseIds } = await resolveReference(f, billing);
 
     // When a reference fires, append the identity-lock clause to the prompt.
     // This is the guardrail that prevents the reference patient's identity, age,
@@ -1177,6 +1187,7 @@ exports.handler = async (event) => {
       state: 'done',
       model: modelName,
       referenceMode: referenceMode || null,
+      referenceCaseIds: referenceCaseIds || [],
       updatedAt: Date.now()
     });
     try { await store.delete(jobId + ':job'); } catch (e) { /* free the large input payload */ }
