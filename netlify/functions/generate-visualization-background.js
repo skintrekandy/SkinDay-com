@@ -1183,11 +1183,22 @@ exports.handler = async (event) => {
     // own case actually grounded this simulation, rather than having to trust
     // that it did. 'clinic_case' means one of their approved, consented cases
     // was used; null means none was, and the result is unreferenced.
+    // M13: the canonical treatment vocabulary goes in the status blob, computed
+    // here by the SAME functions the reference matcher uses. clinic-simulation-save
+    // reads it from here rather than trusting a client-supplied value, so a saved
+    // simulation is filed under exactly the treatment key that a photograph of the
+    // same treatment is filed under. Two vocabularies would mean a Library that
+    // groups the real Sculptra cases in one bucket and the Sculptra simulations in
+    // another, and nobody would notice until a clinic asked why.
+    const savedTreatment = canonicalTreatment(f);
     await store.setJSON(jobId + ':status', {
       state: 'done',
       model: modelName,
       referenceMode: referenceMode || null,
       referenceCaseIds: referenceCaseIds || [],
+      treatment: savedTreatment || null,
+      subtype: savedTreatment ? canonicalSubtype(f, savedTreatment) : null,
+      angle: canonicalAngle(f.angle || f.view) || null,
       updatedAt: Date.now()
     });
     try { await store.delete(jobId + ':job'); } catch (e) { /* free the large input payload */ }
