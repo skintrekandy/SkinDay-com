@@ -231,6 +231,25 @@
   .note.ok { color:#3d6b4c; }
   .note.bad { color:#a9503f; }
   .empty { padding:44px 0; text-align:center; }
+  .ag-doc { border:1px solid rgba(28,23,20,.12); margin-bottom:24px; }
+  .ag-doc-head {
+    display:flex; align-items:baseline; gap:12px;
+    padding:20px 24px; border-bottom:1px solid rgba(28,23,20,.10);
+  }
+  .ag-doc-head h3 {
+    font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; margin:0;
+  }
+  .ag-doc-head .ver { font-size:.72rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+  .ag-body {
+    max-height:340px; overflow-y:auto; padding:24px;
+    font-size:.88rem; line-height:1.75; color:#3a3330;
+    white-space:pre-wrap; background:rgba(28,23,20,.015);
+  }
+  .ag-foot { padding:18px 24px; border-top:1px solid rgba(28,23,20,.10); }
+  .ag-hash {
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.68rem; color:var(--dim); word-break:break-all; margin-top:10px;
+  }
   .subtabs {
     display:flex; gap:26px; margin:0 0 20px; padding:0;
     border-bottom:1px solid rgba(28,23,20,.10);
@@ -302,6 +321,20 @@
     </div>
     <button class="act" id="signIn">Sign in</button>
     <div class="note bad" id="gateNote"></div>
+  </section>
+
+  <!-- Nothing in this portal is reachable until the clinic has accepted. Not the
+       Library, not Studio, not Visualize. The agreement is what makes it
+       legitimate for SkinDay to hold this clinic's patients at all, so it cannot
+       be a banner someone dismisses. -->
+  <section class="sec" id="agreements" style="display:none;">
+    <div class="sec-head">
+      <span class="eyebrow">Before you begin</span>
+      <h1 class="display" id="agHead">Two things to read.</h1>
+      <p class="lede" id="agLede">Short, and written to be read. They say what we do with your patients' photographs, and what we will never do.</p>
+    </div>
+    <div id="agDocs"></div>
+    <div class="note" id="agNote"></div>
   </section>
 </div>
 
@@ -595,7 +628,144 @@ async function start() {
   const { data: c } = await sb.from('clinics').select('name').eq('id', clinicId).limit(1);
   $('clinicName').textContent = (c && c[0] && c[0].name) || ('Clinic ' + clinicId);
 
+  // Nothing opens until the clinic has accepted. A patient photograph must not be
+  // uploadable into a relationship that has never been described to anyone.
+  const pending = await loadAgreements();
+  if (pending > 0) {
+    $('gate').style.display = 'none';
+    $('hdr').style.display = 'flex';
+    $('agreements').style.display = 'block';
+    return;
+  }
+
   $('gate').style.display = 'none';
+  openPortal();
+}
+
+/* ---- agreements ---------------------------------------------------------
+
+   The text is rendered from the database, not from a file in this repo, and the
+   hash shown under each document is the hash of the bytes on screen. That is the
+   whole design: a clinic's acceptance points at an exact text, the text of an
+   accepted document can no longer be edited, and changing the words means
+   publishing a new version and asking again.
+
+   If this page rendered its own copy of the agreement, the acceptance would prove
+   only that some text existed somewhere. It would not prove which. */
+
+let myRole = null;
+
+async function loadAgreements() {
+  const host = $('agDocs');
+  const { data, error } = await sb.rpc('get_pending_agreements', { p_clinic_id: clinicId });
+
+  if (error) {
+    note('agNote', error.message, 'bad');
+    return 0;
+  }
+  if (!data || !data.length) return 0;
+
+  // Only an owner can bind the clinic. Everyone else can read, and is told who
+  // they need. A receptionist staring at a blocked portal with no explanation is
+  // a support ticket; a receptionist reading the agreement and knowing to go and
+  // find the owner is not.
+  const { data: mem } = await sb.from('clinic_memberships')
+    .select('role').eq('clinic_id', clinicId).eq('status', 'active')
+    .is('revoked_at', null).limit(1);
+  myRole = (mem && mem[0] && mem[0].role) || null;
+  const isOwner = myRole === 'owner';
+
+  $('agHead').textContent =
+    data.length === 1 ? 'One thing to read.' : 'Two things to read.';
+
+  if (!isOwner) {
+    $('agLede').textContent =
+      'Your clinic has not accepted these yet, and only an owner can. Read them here, ' +
+      'and ask whoever runs the practice to sign in and accept. Nothing in the portal ' +
+      'opens until they do.';
+  }
+
+  host.innerHTML = '';
+  data.forEach(d => host.appendChild(agreementCard(d, isOwner)));
+  return data.length;
+}
+
+function agreementCard(d, isOwner) {
+  const el = document.createElement('article');
+  el.className = 'ag-doc';
+
+  const head = document.createElement('div');
+  head.className = 'ag-doc-head';
+  const h = document.createElement('h3');
+  h.textContent = d.title;
+  const v = document.createElement('span');
+  v.className = 'ver';
+  v.textContent = d.version;
+  head.append(h, v);
+
+  const body = document.createElement('div');
+  body.className = 'ag-body';
+  body.textContent = d.body;   // textContent, not innerHTML. This is a document.
+
+  const foot = document.createElement('div');
+  foot.className = 'ag-foot';
+
+  const st = document.createElement('div');
+  st.className = 'note';
+
+  if (isOwner) {
+    const btn = document.createElement('button');
+    btn.className = 'act';
+    btn.textContent = 'Accept ' + d.title;
+    btn.onclick = async () => {
+      btn.disabled = true;
+      st.className = 'note';
+      st.textContent = 'Recording…';
+      try {
+        const t = await token();
+        const res = await fetch('/api/clinic-agreement-accept', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clinicId, documentId: d.document_id })
+        });
+        const b = await res.json().catch(() => ({}));
+        if (!res.ok || !b.ok) throw new Error(b.error || 'That did not go through.');
+
+        st.className = 'note ok';
+        st.textContent = 'Accepted.';
+        btn.remove();
+
+        // Re-check rather than assume. If this was the last one, the portal opens.
+        const left = await loadAgreements();
+        if (left === 0) {
+          $('agreements').style.display = 'none';
+          openPortal();
+        }
+      } catch (e) {
+        st.className = 'note bad';
+        st.textContent = e.message;
+        btn.disabled = false;
+      }
+    };
+    foot.appendChild(btn);
+  }
+
+  const hash = document.createElement('div');
+  hash.className = 'ag-hash';
+  hash.textContent = 'sha256 ' + d.content_hash;
+  hash.title =
+    'The fingerprint of the exact text above. Your acceptance is recorded against ' +
+    'this, so what you agreed to can always be proved, and the text of an accepted ' +
+    'document can never be changed.';
+
+  foot.append(st, hash);
+  el.append(head, body, foot);
+  return el;
+}
+
+// Everything start() did after the gate, so it can also be reached from the
+// moment the last agreement is accepted rather than only from a fresh sign-in.
+function openPortal() {
   $('hdr').style.display = 'flex';
   $('tabs').style.display = 'flex';
   $('panel-studio').style.display = 'block';
