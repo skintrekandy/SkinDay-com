@@ -5,6 +5,26 @@
   functions = "netlify/functions"
   publish   = "."
 
+# -- SCHEDULED: VISUALIZE BLOB RETENTION -------------------------
+# The background worker writes two blobs per job: <jobId>:job, the
+# patient's uploaded photograph, and <jobId>:result, the generated
+# image of their face. It deleted the first on success to free a
+# large payload, which was a cost decision rather than a privacy one.
+# The result was never deleted at all, and on a failed or moderation-
+# blocked generation neither was the source. Every generation left a
+# face in the store permanently.
+#
+# Nothing there needs to outlive the session: the client gives up
+# polling after six minutes, and a clinic saving a simulation does it
+# in the same sitting. The sweep runs daily against a 24 hour TTL, so
+# a blob lives at most 48 hours.
+#
+# Tighten the schedule before tightening the TTL. The TTL is what
+# protects a clinician who steps away from a finished simulation and
+# comes back to save it.
+[functions."visualize-blob-sweep"]
+  schedule = "0 4 * * *"
+
 # ── STAGING / BRANCH DEPLOYS: BLOCK SEARCH INDEXING ──────────────
 # Applies ONLY to branch deploys (staging--skindayglobal.netlify.app
 # and any other non-production branch). Production (skinday.com) is
