@@ -131,13 +131,20 @@ function ts(n) {
 }
 
 async function writeSubscription(clinicId, sub) {
-  const price = sub.items && sub.items.data && sub.items.data[0] && sub.items.data[0].price;
+  const item = sub.items && sub.items.data && sub.items.data[0];
+  const price = item && item.price;
+
+  // Stripe moved current_period_end onto the subscription ITEM in recent API
+  // versions. Read the item first, fall back to the subscription for older ones,
+  // so this works whichever API version the account is pinned to.
+  const periodEnd = (item && item.current_period_end) || sub.current_period_end;
+
   await upsertRow('clinic_subscriptions', {
     clinic_id: clinicId,
     status: mapStatus(sub.status),
     plan: 'visualize_pro',
     trial_ends_at: ts(sub.trial_end),
-    current_period_end: ts(sub.current_period_end),
+    current_period_end: ts(periodEnd),
     cancel_at_period_end: !!sub.cancel_at_period_end,
     stripe_customer_id: typeof sub.customer === 'string' ? sub.customer : (sub.customer && sub.customer.id),
     stripe_subscription_id: sub.id,
