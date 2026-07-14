@@ -70,9 +70,14 @@ exports.handler = async function (event) {
 
   const clinicId = body.clinicId ? String(body.clinicId) : '';
   const documentId = body.documentId ? String(body.documentId) : '';
+  const signerName = body.signerName ? String(body.signerName) : '';
+  const signerTitle = body.signerTitle ? String(body.signerTitle) : null;
 
   if (!clinicId || !documentId) {
     return json(400, { error: 'clinicId and documentId are required' });
+  }
+  if (signerName.trim().length < 2) {
+    return json(400, { error: 'we need the name of the person accepting' });
   }
 
   // The caller's own token. accept_agreement checks that they are an owner of
@@ -86,7 +91,13 @@ exports.handler = async function (event) {
     p_clinic_id: clinicId,
     p_document_id: documentId,
     p_ip: clientIp(event),
-    p_user_agent: headers['user-agent'] || headers['User-Agent'] || null
+    p_user_agent: headers['user-agent'] || headers['User-Agent'] || null,
+    // The signer states who they are and what standing they have. The IP and the
+    // hash are established here and by the database respectively; this is the one
+    // part of the record the person actually asserts, which is why it is recorded
+    // as their assertion rather than as a fact SkinDay is vouching for.
+    p_signer_name: signerName.trim(),
+    p_signer_title: signerTitle ? signerTitle.trim() : null
   });
 
   if (error) {
