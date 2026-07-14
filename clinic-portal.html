@@ -1009,7 +1009,7 @@ async function start() {
   }
 
   $('gate').style.display = 'none';
-  openPortal();
+  await openPortal();
 }
 
 /* ---- agreements ---------------------------------------------------------
@@ -1135,7 +1135,7 @@ function agreementCard(d, isOwner) {
         const left = await loadAgreements();
         if (left === 0) {
           $('agreements').style.display = 'none';
-          openPortal();
+          await openPortal();
         }
       } catch (e) {
         st.className = 'note bad';
@@ -1153,7 +1153,7 @@ function agreementCard(d, isOwner) {
 
 // Everything start() did after the gate, so it can also be reached from the
 // moment the last agreement is accepted rather than only from a fresh sign-in.
-function openPortal() {
+async function openPortal() {
   $('hdr').style.display = 'flex';
   $('tabs').style.display = 'flex';
   $('panel-studio').style.display = 'block';
@@ -1164,6 +1164,23 @@ function openPortal() {
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
   loadLibrary();
+
+  if (BILLING_RESULT === 'ok') {
+    settingsOpen = true;
+    ['studio', 'visualize', 'library'].forEach(p => { $('panel-' + p).style.display = 'none'; });
+    document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
+    $('panel-settings').style.display = 'block';
+    await loadSettings();
+    await loadTeam();
+
+    // Stripe redirects faster than its own webhook arrives. Poll briefly rather
+    // than show a clinic that just paid a page telling them they have not.
+    for (let i = 0; i < 10; i++) {
+      if (mySettings && mySettings.subscription && mySettings.subscription.has_card) break;
+      await new Promise(r => setTimeout(r, 1200));
+      await loadSettings();
+    }
+  }
 }
 
 // The logo, where the clinic's name would otherwise be. A clinic looking at their
@@ -1199,6 +1216,12 @@ function setClinicHeader(c) {
    The invitation is to a person, not to whoever holds the URL: accept_clinic_invitation
    refuses unless the signed-in email matches the one invited. A forwarded link is
    worth nothing. */
+
+// A success_url redirect proves someone reached a URL. It does not prove a
+// payment: anyone can type ?billing=ok. The webhook writes the state, and this
+// just waits for it to arrive.
+const BILLING_RESULT = new URLSearchParams(location.search).get('billing');
+if (BILLING_RESULT) history.replaceState({}, '', location.pathname);
 
 const INVITE_KEY = 'sd-clinic-invite';
 
@@ -2741,13 +2764,70 @@ function renderBilling(sub, c) {
     sb2.textContent = 'Visualize Pro is not subscribed on this clinic.';
   }
 
-  // Nothing here pretends to manage a card, because there is no card to manage.
-  // Stripe subscriptions are not wired yet. A "change your card" button over
-  // machinery that does not exist is a lie made of HTML, and the first clinic to
-  // click it finds out.
-  box.innerHTML =
-    '<p class="note">Card management arrives with subscriptions. Nothing is charged ' +
-    'until then, and we will tell you before anything is.</p>';
+  const isOwner = mySettings && mySettings.my_role === 'owner';
+  box.innerHTML = '';
+
+  if (!isOwner) {
+    box.innerHTML = '<p class="note">Only an owner can change the plan.</p>';
+    return;
+  }
+
+  const st = document.createElement('div');
+  st.className = 'note';
+
+  if (sub.has_card) {
+    // Everything a clinic wants to do with a card, Stripe does better than we
+    // would. Cards, invoices, cancellation: all of it lives there.
+    const b = document.createElement('button');
+    b.className = 'act';
+    b.textContent = 'Manage billing';
+    b.onclick = () => goStripe(b, st, '/api/clinic-billing-portal');
+    box.appendChild(b);
+
+    if (sub.cancel_at_period_end) {
+      const n = document.createElement('p');
+      n.className = 'note';
+      n.textContent =
+        'Set to end on ' + new Date(sub.current_period_end).toISOString().slice(0, 10) +
+        '. Your gallery keeps serving after that, and you can still read and export ' +
+        'your library. What stops is saving new work.';
+      box.appendChild(n);
+    }
+  } else {
+    const b = document.createElement('button');
+    b.className = 'act';
+    b.textContent = sub.status === 'trialing' ? 'Subscribe' : 'Subscribe to Visualize Pro';
+    b.onclick = () => goStripe(b, st, '/api/clinic-subscribe');
+    box.appendChild(b);
+
+    const n = document.createElement('p');
+    n.className = 'note';
+    n.textContent = 'CAD 249 per month, per location. Cancel any time.';
+    box.appendChild(n);
+  }
+
+  box.appendChild(st);
+}
+
+async function goStripe(btn, st, path) {
+  btn.disabled = true;
+  st.className = 'note';
+  st.textContent = 'Opening Stripe…';
+  try {
+    const t = await token();
+    const r = await fetch(path, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicId })
+    });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok || !b.ok || !b.url) throw new Error(b.error || 'That did not open.');
+    location.href = b.url;
+  } catch (e) {
+    st.className = 'note bad';
+    st.textContent = e.message;
+    btn.disabled = false;
+  }
 }
 
 function renderAgreements(acks) {
