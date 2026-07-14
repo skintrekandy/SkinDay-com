@@ -1580,6 +1580,14 @@ function simPlate(r, perms, seriesSize) {
   const st = document.createElement('div');
   st.className = 'note';
 
+  // The download carries a gold SIMULATED label burned into the right panel. A
+  // clinic cannot accidentally send a patient a prediction that looks like a
+  // result, because the file itself says what it is.
+  const dl = document.createElement('button');
+  dl.className = 'quiet';
+  dl.textContent = 'Download';
+  dl.onclick = () => downloadPair(dl, st, r, true, subLabel || treatmentName(r.treatment));
+
   const wd = document.createElement('button');
   wd.className = 'quiet';
   wd.textContent = 'Patient withdrew consent';
@@ -1590,10 +1598,162 @@ function simPlate(r, perms, seriesSize) {
     });
   };
 
-  acts.append(wd);
+  acts.append(dl, wd);
   body.append(acts, st);
   el.append(dip, body);
   return el;
+}
+
+/* ---- export ------------------------------------------------------------
+
+   Visualize already has an export, drawPair, and its label language is the
+   product's answer to a real problem: a deep scrim up the bottom of each panel,
+   a letterspaced kicker, a headline. The left panel reads AS PHOTOGRAPHED in a
+   warm grey. The right reads its simulated label in GOLD. The gold is the tell,
+   and it is burned into the pixels rather than sitting in a filename or in EXIF,
+   both of which every messaging app on earth strips.
+
+   The Library cannot call drawPair. That function reads state.slots out of
+   Visualize's memory, and the Library has stored images, not slots. So this is
+   the same visual language rebuilt over stored images. It has to stay in step
+   with drawPair by hand, which is a real cost, and it is still cheaper than a
+   second eval bridge into a 6,000 line file.
+
+   Why it matters more here than there: a JPEG downloaded from this Library
+   leaves the clinic. It lands in a camera roll, then a chat, then possibly a
+   feed. Your own rule says a public badge never reads Visualize, because a
+   Visualize badge under real photographs invites the inference that they are
+   AI-generated. The inverse is worse. An unmarked simulation invites the
+   inference that a prediction is a result. */
+
+const EXPORT_MAX_EDGE = 1536;
+
+async function caseImageUrl(caseId, which) {
+  const t = await token();
+  const r = await fetch('/api/clinic-case-image?case_id=' + encodeURIComponent(caseId) + '&which=' + which, {
+    headers: { Authorization: 'Bearer ' + t }
+  });
+  if (!r.ok) throw new Error('Could not load the ' + which + ' image.');
+  const blob = await r.blob();
+  return URL.createObjectURL(blob);
+}
+
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Image failed to decode.'));
+    img.src = src;
+  });
+}
+
+// The scrim, the kicker, the headline. Mirrors drawPair.
+function drawLabel(ctx, x, yBottom, panelW, kicker, title, gold) {
+  const h = Math.round(panelW * 0.34);
+  const grad = ctx.createLinearGradient(x, yBottom - h, x, yBottom);
+  grad.addColorStop(0, 'rgba(28,23,20,0)');
+  grad.addColorStop(0.55, 'rgba(28,23,20,.42)');
+  grad.addColorStop(1, 'rgba(28,23,20,.88)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, yBottom - h, panelW, h);
+
+  const pad = Math.round(panelW * 0.055);
+  const kick = Math.max(12, Math.round(panelW * 0.026));
+  const head = Math.max(26, Math.round(panelW * 0.068));
+
+  ctx.textAlign = 'left';
+  ctx.font = '500 ' + kick + 'px "DM Sans", sans-serif';
+  ctx.letterSpacing = Math.round(kick * 0.16) + 'px';
+  ctx.fillStyle = gold ? 'rgba(201,169,110,.96)' : 'rgba(181,168,159,.82)';
+  ctx.fillText(kicker.toUpperCase(), x + pad, yBottom - Math.round(head * 1.55));
+  ctx.letterSpacing = '0px';
+
+  ctx.font = '500 ' + head + 'px "DM Sans", sans-serif';
+  ctx.fillStyle = 'rgba(250,247,242,.97)';
+  ctx.fillText(title, x + pad, yBottom - Math.round(head * 0.62));
+}
+
+async function composePair(caseId, simulated, rightTitle) {
+  let beforeUrl, afterUrl;
+  try {
+    beforeUrl = await caseImageUrl(caseId, 'before');
+    afterUrl = await caseImageUrl(caseId, 'after');
+
+    const [before, after] = await Promise.all([loadImg(beforeUrl), loadImg(afterUrl)]);
+
+    // Both panels take the shape of the after image, which is the one framed by
+    // the model. Cover-crop the before into it so the pair reads as one photo
+    // taken twice, rather than two photos stuck together.
+    let panelW = after.naturalWidth;
+    let panelH = after.naturalHeight;
+    const long = Math.max(panelW, panelH);
+    if (long > EXPORT_MAX_EDGE) {
+      const k = EXPORT_MAX_EDGE / long;
+      panelW = Math.round(panelW * k);
+      panelH = Math.round(panelH * k);
+    }
+    const gap = Math.max(2, Math.round(panelW * 0.008));
+
+    const canvas = document.createElement('canvas');
+    canvas.width = panelW * 2 + gap;
+    canvas.height = panelH;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#1C1714';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const cover = (img, x) => {
+      const scale = Math.max(panelW / img.naturalWidth, panelH / img.naturalHeight);
+      const sw = panelW / scale;
+      const sh = panelH / scale;
+      const sx = (img.naturalWidth - sw) / 2;
+      const sy = (img.naturalHeight - sh) / 2;
+      ctx.drawImage(img, sx, sy, sw, sh, x, 0, panelW, panelH);
+    };
+    cover(before, 0);
+    cover(after, panelW + gap);
+
+    // The canvas will silently fall back to a system font if the webfont has not
+    // finished loading, which is how an export ends up looking nothing like the
+    // product that made it.
+    try { await document.fonts.ready; } catch (e) { /* older browsers */ }
+
+    if (simulated) {
+      drawLabel(ctx, 0, panelH, panelW, 'As photographed', 'Original', false);
+      drawLabel(ctx, panelW + gap, panelH, panelW, 'Simulated', rightTitle || 'Simulated', true);
+    } else {
+      drawLabel(ctx, 0, panelH, panelW, 'As photographed', 'Before', false);
+      drawLabel(ctx, panelW + gap, panelH, panelW, 'As photographed', 'After', false);
+    }
+
+    return await new Promise(res => canvas.toBlob(b => res(b), 'image/jpeg', 0.94));
+  } finally {
+    if (beforeUrl) URL.revokeObjectURL(beforeUrl);
+    if (afterUrl) URL.revokeObjectURL(afterUrl);
+  }
+}
+
+async function downloadPair(btn, st, r, simulated, rightTitle) {
+  btn.disabled = true;
+  st.className = 'note';
+  st.textContent = 'Preparing…';
+  try {
+    const blob = await composePair(r.case_id || r.id, simulated, rightTitle);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download =
+      (simulated ? 'simulation' : 'before-after') + '-' +
+      (r.treatment || 'case') + '-' + (r.angle || 'frontal') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    st.textContent = '';
+  } catch (e) {
+    st.className = 'note bad';
+    st.textContent = e.message;
+  }
+  btn.disabled = false;
 }
 
 const CROP_BADGE = {
@@ -1736,7 +1896,12 @@ function plate(r, perms, seriesSize) {
     });
   };
 
-  acts.append(pub, ref);
+  const dl = document.createElement('button');
+  dl.className = 'quiet';
+  dl.textContent = 'Download';
+  dl.onclick = () => downloadPair(dl, st, r, false, null);
+
+  acts.append(pub, ref, dl);
   if (r.injector_name) acts.append(inj);
   acts.append(wd);
   body.append(acts, st);
@@ -1767,6 +1932,7 @@ window.addEventListener('message', (ev) => {
   if (!d || !d.type) return;
 
   if (d.type === 'sd:generation-done' && d.angle && d.jobId) {
+    if (!Object.keys(simReady).length) resetSimSavePanel();
     simReady[d.angle] = d.jobId;
     const n = Object.keys(simReady).length;
     $('simSave').style.display = '';
@@ -1857,10 +2023,20 @@ async function saveSimulations() {
     }
     note('simSaveNote', bits.join(', ') + '.', 'ok');
 
+    // The panel used to vanish here, which told the clinic nothing about where
+    // the thing had gone. It stays, says what happened, and offers the way
+    // through. The button becomes the exit, not a second save.
+    const first = (body.saved || [])[0];
+    simSavedTreatment = first ? first.treatment : null;
+
     Object.keys(simReady).forEach(k => delete simReady[k]);
     $('simAttest').checked = false;
     $('simLabel').value = '';
-    $('simSave').style.display = 'none';
+    $('simSaveSub').textContent =
+      'Kept. It will not appear on your website and it will not guide another simulation. Withdraw it any time from the Library.';
+    btn.textContent = 'View in Library';
+    btn.disabled = false;
+    btn.onclick = goToSavedSimulation;
     loadLibrary();
   } catch (e) {
     note('simSaveNote', e.message, 'bad');
@@ -1868,8 +2044,49 @@ async function saveSimulations() {
   }
 }
 
+let simSavedTreatment = null;
+
+// Switch to the Library, to the Simulations side, and open the group the save
+// just landed in. Anything less makes the clinic go looking for their own work.
+async function goToSavedSimulation() {
+  const libTab = document.querySelector('#tabs .tab[data-panel="library"]');
+  if (libTab) libTab.click();
+
+  const simTab = document.querySelector('#libTabs .subtab[data-kind="simulation"]');
+  if (simTab && libKind !== 'simulation') simTab.click();
+  else await loadLibrary();
+
+  if (!simSavedTreatment) return;
+
+  // loadLibrary is async and rebuilds the group list, so wait for the row to
+  // exist rather than assuming it already does.
+  for (let i = 0; i < 40; i++) {
+    const heads = document.querySelectorAll('#libGroups .lib-head');
+    for (const h of heads) {
+      const name = h.querySelector('.name');
+      if (name && name.textContent === treatmentName(simSavedTreatment)) {
+        h.click();
+        h.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+}
+
+// A new generation after a save turns the button back into a save button.
+function resetSimSavePanel() {
+  const btn = $('simSaveBtn');
+  btn.textContent = 'Save to Library';
+  btn.onclick = null;
+  note('simSaveNote', '');
+}
+
 $('simAttest').addEventListener('change', refreshSimSaveBtn);
-$('simSaveBtn').addEventListener('click', saveSimulations);
+$('simSaveBtn').addEventListener('click', (ev) => {
+  if ($('simSaveBtn').textContent === 'View in Library') return;
+  saveSimulations();
+});
 
 async function run(btn, st, path, payload) {
   btn.disabled = true;
