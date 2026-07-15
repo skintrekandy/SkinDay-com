@@ -1302,33 +1302,56 @@ if (BILLING_RESULT) history.replaceState({}, '', location.pathname);
 
 const INVITE_KEY = 'sd-clinic-invite';
 
-(function stashInvite() {
-  const t = new URLSearchParams(location.search).get('invite');
-  if (!t) return;
-  try { sessionStorage.setItem(INVITE_KEY, t); } catch (e) {}
-  history.replaceState({}, '', location.pathname);
-})();
+// The token can live in the URL, in sessionStorage, or both. Keep it in BOTH and
+// never strip the URL until a join succeeds, so no reload, sign-up round trip, or
+// tab quirk can lose it. Losing it was what dumped invited people into Create
+// Clinic: they got a session but the token was gone, so no membership was made.
+function inviteToken() {
+  const fromUrl = new URLSearchParams(location.search).get('invite');
+  if (fromUrl) {
+    try { sessionStorage.setItem(INVITE_KEY, fromUrl); } catch (e) {}
+    return fromUrl;
+  }
+  try { return sessionStorage.getItem(INVITE_KEY); } catch (e) { return null; }
+}
+
+function clearInviteToken() {
+  try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
+  // Strip ?invite= from the URL only now that we are truly done with it.
+  if (new URLSearchParams(location.search).get('invite')) {
+    history.replaceState({}, '', location.pathname);
+  }
+}
 
 async function redeemInvite() {
-  let t = null;
-  try { t = sessionStorage.getItem(INVITE_KEY); } catch (e) {}
+  const t = inviteToken();
   if (!t) return false;
 
-  const { error } = await sb.rpc('accept_clinic_invitation', { p_token: t });
-  try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
+  const { data, error } = await sb.rpc('accept_clinic_invitation', { p_token: t });
 
   if (error) {
+    console.error('[invite] redeem error:', error.message);
     note('gateNote', error.message, 'bad');
     return false;
   }
+
+  const accepted = !!(data && data.accepted);
+
+  if (!accepted) {
+    console.warn('[invite] token not accepted:', data && data.reason);
+    clearInviteToken();   // it is dead; stop carrying it
+    return false;
+  }
+
+  clearInviteToken();
+  console.log('[invite] joined clinic', data && data.clinic_id, 'as', data && data.role);
   return true;
 }
 
 sb.auth.getSession().then(async ({ data }) => {
   const signedIn = !!(data && data.session);
 
-  let pendingToken = null;
-  try { pendingToken = sessionStorage.getItem(INVITE_KEY); } catch (e) {}
+  const pendingToken = inviteToken();
 
   // No invitation: normal boot.
   if (!pendingToken) {
@@ -1340,8 +1363,8 @@ sb.auth.getSession().then(async ({ data }) => {
   // whoever is signed in and holds a valid token joins. No email comparison, no
   // "this is for someone else", no dead ends.
   if (signedIn) {
-    const ok = await redeemInvite();       // joins via accept_clinic_invitation
-    start();                                // then straight into the portal
+    await redeemInvite();   // joins via accept_clinic_invitation (token is authority)
+    start();                // then into the portal; start() re-reads membership
     return;
   }
 
@@ -1351,7 +1374,7 @@ sb.auth.getSession().then(async ({ data }) => {
   const inv = rows && rows[0];
 
   if (!inv || !inv.valid) {
-    try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
+    clearInviteToken();
     note('gateNote', 'That invitation has expired or has already been used. Ask for a new one, or sign in.', 'bad');
     return;
   }
