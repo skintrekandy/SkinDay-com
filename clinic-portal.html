@@ -396,6 +396,32 @@
     </div>
   </section>
 
+  <!-- The third door. Someone arriving from an invitation email is not signing in
+       and is not creating a clinic; they are joining one. This screen resolves the
+       token to the clinic name, confirms the email the invite was sent to, and
+       takes a password. On submit it creates the account and redeems the token,
+       which is the only thing that adds them to the clinic. -->
+  <section class="gate sec" id="inviteScreen" style="display:none;">
+    <span class="eyebrow">Invitation</span>
+    <h1 class="display" id="invHead">Join your team.</h1>
+    <p class="lede" id="invLede">You have been invited. Set a password to join.</p>
+    <div class="field">
+      <label class="eyebrow" for="invEmailField">Your email</label>
+      <input type="email" id="invEmailField" autocomplete="username" readonly>
+      <small>The invitation was sent to this address.</small>
+    </div>
+    <div class="field">
+      <label class="eyebrow" for="invPass">Choose a password</label>
+      <input type="password" id="invPass" autocomplete="new-password">
+      <small>At least eight characters.</small>
+    </div>
+    <button class="act" id="invAccept">Accept and join</button>
+    <div class="note" id="invScreenNote"></div>
+    <div class="swap">
+      Already have an account? <button class="linkish" id="invToSignIn">Sign in instead</button>
+    </div>
+  </section>
+
   <section class="gate sec" id="signup" style="display:none;">
     <span class="eyebrow">Clinic portal</span>
     <h1 class="display">Set up your clinic.</h1>
@@ -1274,9 +1300,94 @@ async function redeemInvite() {
 }
 
 sb.auth.getSession().then(async ({ data }) => {
-  if (!data || !data.session) return;
-  await redeemInvite();
-  start();
+  const signedIn = !!(data && data.session);
+
+  // Already signed in: redeem any pending token and go straight in. This covers
+  // an existing SkinDay user who was invited to a second clinic.
+  if (signedIn) {
+    await redeemInvite();
+    start();
+    return;
+  }
+
+  // Not signed in, but holding an invitation: show the join screen rather than
+  // the sign-in / create-a-clinic gate, which would send them nowhere useful.
+  let pendingToken = null;
+  try { pendingToken = sessionStorage.getItem(INVITE_KEY); } catch (e) {}
+
+  if (pendingToken) {
+    const { data: rows } = await sb.rpc('lookup_invitation', { p_token: pendingToken });
+    const inv = rows && rows[0];
+    if (inv && inv.valid) {
+      $('gate').style.display = 'none';
+      $('inviteScreen').style.display = 'block';
+      $('invHead').textContent = 'Join ' + inv.clinic_name + '.';
+      $('invLede').textContent =
+        'You have been invited to ' + inv.clinic_name + ' as ' +
+        (inv.role === 'admin' ? 'an admin' : 'a staff member') +
+        '. Set a password to join.';
+      $('invEmailField').value = inv.email;
+      return;
+    }
+    // Token no longer valid. Clear it and fall through to the normal gate with a
+    // note, rather than showing a join screen for an invitation that has expired.
+    try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
+    note('gateNote', 'That invitation has expired or already been used. Ask for a new one, or sign in.', 'bad');
+  }
+});
+
+// Accept an invitation: create the account for the invited email, then redeem the
+// token. accept_clinic_invitation checks the token AND that the signed-in email
+// matches the invited one, so a password set here can only join the clinic the
+// token was issued for.
+async function acceptInvite() {
+  const btn = $('invAccept');
+  const email = $('invEmailField').value.trim();
+  const pass = $('invPass').value;
+
+  if (!pass || pass.length < 8) {
+    return note('invScreenNote', 'Pick a password of at least eight characters.', 'bad');
+  }
+
+  btn.disabled = true;
+  note('invScreenNote', 'Joining…');
+
+  try {
+    // Create the account. If it already exists, sign in instead: an invited person
+    // who had signed up separately still just needs to be joined.
+    let session = null;
+    const { data: up, error: upErr } = await sb.auth.signUp({ email, password: pass });
+    if (upErr) {
+      const { data: si, error: siErr } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (siErr) throw new Error('An account for ' + email + ' already exists. Use the password you set before, or sign in.');
+      session = si.session;
+    } else {
+      session = up.session;
+    }
+
+    // Email confirmation on: no session yet. The token survives in sessionStorage,
+    // so when they confirm and return, the boot path redeems it.
+    if (!session) {
+      note('invScreenNote',
+        'Almost there. Check your email to confirm your address, then come back and it will finish joining you.', 'ok');
+      btn.disabled = false;
+      return;
+    }
+
+    const ok = await redeemInvite();
+    if (!ok) throw new Error('Could not join the clinic. The invitation may have expired.');
+    start();
+  } catch (e) {
+    note('invScreenNote', e.message, 'bad');
+    btn.disabled = false;
+  }
+}
+
+$('invAccept').addEventListener('click', acceptInvite);
+$('invPass').addEventListener('keydown', e => { if (e.key === 'Enter') acceptInvite(); });
+$('invToSignIn').addEventListener('click', () => {
+  $('inviteScreen').style.display = 'none';
+  $('gate').style.display = 'block';
 });
 
 /* ---- tabs ---- */
@@ -3144,6 +3255,38 @@ function memberRow(m, isOwner) {
         await loadTeam();
       };
       row.appendChild(sel);
+    }
+
+    if (pending) {
+      const rs = document.createElement('button');
+      rs.className = 'quiet';
+      rs.textContent = 'Resend';
+      rs.onclick = async () => {
+        rs.disabled = true;
+        const prev = rs.textContent;
+        rs.textContent = 'Sending…';
+        try {
+          const tk = await token();
+          const r = await fetch('/api/clinic-invite-send', {
+            method: 'POST',
+            headers: { Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ clinicId, invitationId: m.invitation_id })
+          });
+          const b = await r.json().catch(() => ({}));
+          if (!r.ok || !b.ok) throw new Error(b.error || 'That did not resend.');
+          rs.textContent = b.emailed ? 'Sent' : 'Link ready';
+          if (!b.emailed && b.link) {
+            // Email not configured or failed: surface the link so it is not a dead end.
+            prompt('Email is not sending yet. Copy this invitation link for ' + m.email + ':', b.link);
+          }
+          setTimeout(() => { rs.textContent = prev; rs.disabled = false; }, 2500);
+        } catch (e) {
+          alert(e.message);
+          rs.textContent = prev;
+          rs.disabled = false;
+        }
+      };
+      row.appendChild(rs);
     }
 
     const rm = document.createElement('button');
