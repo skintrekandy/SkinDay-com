@@ -92,21 +92,40 @@ exports.handler = async function (event) {
   catch (e) { return json(400, { error: 'invalid json body' }); }
 
   const clinicId = body.clinicId ? String(body.clinicId) : '';
-  const email = body.email ? String(body.email).trim() : '';
+  const invitationId = body.invitationId ? String(body.invitationId) : '';
+  let email = body.email ? String(body.email).trim() : '';
   const role = body.role ? String(body.role) : 'staff';
-  if (!clinicId || !email) return json(400, { error: 'clinicId and email are required' });
+  if (!clinicId) return json(400, { error: 'clinicId is required' });
 
   const asUser = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: 'Bearer ' + jwt } },
     auth: { persistSession: false, autoRefreshToken: false }
   });
 
-  // Create the invitation. This RPC is the gate: owner-only, seat limit, one
-  // admin, domain flag. Its errors are the ones the owner should see.
-  const { data: inv, error: invErr } = await asUser.rpc('invite_clinic_member', {
-    p_clinic_id: clinicId, p_email: email, p_role: role
-  });
-  if (invErr) return json(403, { error: invErr.message });
+  let inv;
+
+  if (invitationId) {
+    // Resend: fetch the existing invitation rather than creating a new one, which
+    // the unique pending index would reject anyway. The token stays the same, so
+    // any earlier email the person still has also keeps working.
+    const { data: rows, error: rErr } = await asUser.rpc('get_invitation_for_resend', {
+      p_clinic_id: clinicId, p_invitation_id: invitationId
+    });
+    if (rErr) return json(403, { error: rErr.message });
+    const row = rows && rows[0];
+    if (!row) return json(404, { error: 'that invitation is no longer pending' });
+    inv = { token: row.token, role: row.role, email: row.email };
+    email = row.email;
+  } else {
+    if (!email) return json(400, { error: 'email is required' });
+    // Create the invitation. This RPC is the gate: owner-only, seat limit, one
+    // admin, domain flag. Its errors are the ones the owner should see.
+    const { data: created, error: invErr } = await asUser.rpc('invite_clinic_member', {
+      p_clinic_id: clinicId, p_email: email, p_role: role
+    });
+    if (invErr) return json(403, { error: invErr.message });
+    inv = created;
+  }
 
   const origin =
     headers.origin || headers.Origin ||
