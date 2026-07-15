@@ -280,6 +280,7 @@
   }
   .pill.warn { border-color:rgba(200,114,90,.5); color:var(--rose); }
   select.role-select {
+    flex:none; width:auto; min-width:0; align-self:center;
     font-family:'DM Sans',sans-serif; font-size:.8rem; color:var(--deep);
     padding:5px 26px 5px 10px; border:1px solid rgba(28,23,20,.18);
     background:var(--cream); border-radius:0; cursor:pointer;
@@ -785,7 +786,33 @@
 
 <!-- LIBRARY -->
 <div class="wrap" id="panel-library" style="display:none;">
+    <!-- Photographs and Simulations are separated because real and simulated is
+       the one boundary in this product that must never blur. Naming the tabs
+       after what they contain, rather than after the tool that made them, puts
+       that distinction in front of whoever opens the tab instead of burying it
+       behind a product name a front desk will not know. -->
   <section class="sec">
+    <div class="sec-head">
+      <span class="eyebrow">Library</span>
+      <h2 class="display" id="libHead">Library</h2>
+      <p id="libSub">Loading…</p>
+    </div>
+
+    <nav class="subtabs" id="libTabs">
+      <button class="subtab active" data-kind="photograph">Before &amp; After</button>
+      <button class="subtab" data-kind="simulation">Simulations</button>
+    </nav>
+
+    <div class="searchbar">
+      <input type="search" id="libSearch" autocomplete="off"
+             placeholder="Search name, reference, treatment, injector, date">
+    </div>
+    <div id="libResults" style="display:none;"></div>
+
+    <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
+  </section>
+
+<section class="sec">
     <div class="sec-head">
       <span class="eyebrow">Your website</span>
       <h2 class="display">The gallery on your site.</h2>
@@ -808,32 +835,6 @@
       <div class="eyebrow" style="margin:26px 0 12px;">Live preview</div>
       <div id="galleryPreview"><p class="note">Loading…</p></div>
     </div>
-  </section>
-
-  <!-- Photographs and Simulations are separated because real and simulated is
-       the one boundary in this product that must never blur. Naming the tabs
-       after what they contain, rather than after the tool that made them, puts
-       that distinction in front of whoever opens the tab instead of burying it
-       behind a product name a front desk will not know. -->
-  <section class="sec">
-    <div class="sec-head">
-      <span class="eyebrow">Library</span>
-      <h2 class="display">Your Library</h2>
-      <p id="libSub">Loading…</p>
-    </div>
-
-    <nav class="subtabs" id="libTabs">
-      <button class="subtab active" data-kind="photograph">Before &amp; After</button>
-      <button class="subtab" data-kind="simulation">Simulations</button>
-    </nav>
-
-    <div class="searchbar">
-      <input type="search" id="libSearch" autocomplete="off"
-             placeholder="Search name, reference, treatment, injector, date">
-    </div>
-    <div id="libResults" style="display:none;"></div>
-
-    <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
   </section>
 
   <!-- Everything held on this clinic's behalf, and the account of it. Including
@@ -1273,6 +1274,10 @@ function setClinicHeader(c) {
     label.style.display = '';
   }
   label.textContent = name;
+
+  // The Library reads as the clinic's own, not a generic "Your Library".
+  const libHead = document.getElementById('libHead');
+  if (libHead) libHead.textContent = name + ' Library';
 }
 
 /* ---- invitations --------------------------------------------------------
@@ -1317,39 +1322,69 @@ async function redeemInvite() {
 
 sb.auth.getSession().then(async ({ data }) => {
   const signedIn = !!(data && data.session);
+  const signedInEmail = signedIn ? ((data.session.user && data.session.user.email) || '').toLowerCase() : '';
 
-  // Already signed in: redeem any pending token and go straight in. This covers
-  // an existing SkinDay user who was invited to a second clinic.
-  if (signedIn) {
-    await redeemInvite();
-    start();
-    return;
-  }
-
-  // Not signed in, but holding an invitation: show the join screen rather than
-  // the sign-in / create-a-clinic gate, which would send them nowhere useful.
   let pendingToken = null;
   try { pendingToken = sessionStorage.getItem(INVITE_KEY); } catch (e) {}
 
-  if (pendingToken) {
-    const { data: rows } = await sb.rpc('lookup_invitation', { p_token: pendingToken });
-    const inv = rows && rows[0];
-    if (inv && inv.valid) {
-      $('gate').style.display = 'none';
-      $('inviteScreen').style.display = 'block';
-      $('invHead').textContent = 'Join ' + inv.clinic_name + '.';
-      $('invLede').textContent =
-        'You have been invited to ' + inv.clinic_name + ' as ' +
-        (inv.role === 'admin' ? 'an admin' : 'a staff member') +
-        '. Set a password to join.';
-      $('invEmailField').value = inv.email;
+  // No invitation in play: normal boot.
+  if (!pendingToken) {
+    if (signedIn) start();
+    return;
+  }
+
+  // There is an invitation. Resolve who it is for before doing anything, so the
+  // wrong signed-in person cannot silently fail into Create Clinic.
+  const { data: rows } = await sb.rpc('lookup_invitation', { p_token: pendingToken });
+  const inv = rows && rows[0];
+
+  // The token is dead (expired, revoked, or already accepted). Do not show a join
+  // screen for it. If they are signed in, take them to their own portal instead.
+  if (!inv || !inv.valid) {
+    try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
+    if (signedIn) { start(); return; }
+    note('gateNote', 'That invitation has expired or has already been used. Ask for a new one, or sign in.', 'bad');
+    return;
+  }
+
+  const invitedEmail = (inv.email || '').toLowerCase();
+
+  if (signedIn) {
+    // Signed in as the invited person: redeem and go in.
+    if (signedInEmail === invitedEmail) {
+      const ok = await redeemInvite();
+      if (ok) { start(); return; }
+      // Redeem failed for some other reason; fall through to their own portal.
+      start();
       return;
     }
-    // Token no longer valid. Clear it and fall through to the normal gate with a
-    // note, rather than showing a join screen for an invitation that has expired.
-    try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
-    note('gateNote', 'That invitation has expired or already been used. Ask for a new one, or sign in.', 'bad');
+
+    // Signed in as SOMEONE ELSE. This is the case that was dumping the wrong
+    // person into Create Clinic. Say so plainly rather than fail silently, and
+    // do not touch their session for them.
+    $('gate').style.display = 'none';
+    $('inviteScreen').style.display = 'block';
+    $('invHead').textContent = 'This invitation is for someone else.';
+    $('invLede').textContent =
+      'It was sent to ' + inv.email + ', but you are signed in as ' +
+      (data.session.user.email || 'another account') +
+      '. Sign out, then open the invitation link again.';
+    $('invEmailField').value = inv.email;
+    $('invEmailField').style.display = 'none';
+    $('invPass').closest('.field').style.display = 'none';
+    $('invAccept').style.display = 'none';
+    return;
   }
+
+  // Not signed in, valid invite: show the join screen.
+  $('gate').style.display = 'none';
+  $('inviteScreen').style.display = 'block';
+  $('invHead').textContent = 'Join ' + inv.clinic_name + '.';
+  $('invLede').textContent =
+    'You have been invited to ' + inv.clinic_name + ' as ' +
+    (inv.role === 'admin' ? 'an admin' : 'a staff member') +
+    '. Set a password to join.';
+  $('invEmailField').value = inv.email;
 });
 
 // Accept an invitation: create the account for the invited email, then redeem the
