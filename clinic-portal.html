@@ -366,6 +366,20 @@
     .plate { grid-template-columns:1fr; }
     .diptych { max-width:250px; }
   }
+  .billing-lede { color:var(--muted); font-size:13.5px; margin:0 0 18px; max-width:60ch; }
+  .tier-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
+  .tier-card { border:1px solid var(--line); border-radius:3px; padding:18px 16px; background:var(--cream); display:flex; flex-direction:column; gap:4px; }
+  .tier-card.featured { border-color:var(--gold); background:#faf4e9; }
+  .tier-card .tier-name { font-family:'Cormorant Garamond',Georgia,serif; font-size:20px; }
+  .tier-card .tier-price { font-size:22px; font-weight:500; }
+  .tier-card .tier-price span { font-size:12px; color:var(--muted); font-weight:400; }
+  .tier-card .tier-seats { font-size:12.5px; color:var(--muted); margin-bottom:10px; }
+  .tier-card button.act { margin-top:auto; padding:9px 12px; }
+  .tier-enterprise { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+    border-top:1px solid var(--line); padding-top:16px; font-size:13px; color:var(--muted); }
+  .tier-enterprise div { max-width:44ch; }
+  button.act.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); white-space:nowrap; }
+  button.act.ghost:hover { border-color:var(--gold); background:transparent; }
 </style>
 </head>
 <body>
@@ -3008,26 +3022,42 @@ async function loadSettings() {
   renderAgreements(data.agreements);
 }
 
+const TIER_LABEL = { solo: 'Solo', boutique: 'Boutique', premium: 'Premium', enterprise: 'Enterprise' };
+const TIER_CARDS = [
+  { tier: 'solo',     name: 'Solo',     price: '$99',  seats: '1 seat' },
+  { tier: 'boutique', name: 'Boutique', price: '$139', seats: 'up to 4 seats' },
+  { tier: 'premium',  name: 'Premium',  price: '$199', seats: 'up to 12 seats' }
+];
+// The value is the gallery, not the AI. Lead every plan pitch with it.
+const GALLERY_LEDE =
+  'One automated website gallery: consented before and afters, cropped, labelled, ' +
+  'branded, embedded once, and kept current without the staff hours a clinic ' +
+  'usually spends. The AI simulation is the magic; the gallery is the reason to pay.';
+
 function renderBilling(sub, c) {
   const box = $('billBox');
   const t = $('billTitle');
   const sb2 = $('billSub');
+  const tier = (c && c.tier) || null;
+  const founding = !!(c && c.founding);
+  const seatsLine = (c && c.seat_limit)
+    ? ((c.seats_used || 0) + ' of ' + c.seat_limit + ' seats used.')
+    : '';
 
   if (sub.status === 'trialing') {
     const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
     const days = ends ? Math.max(0, Math.ceil((ends - Date.now()) / 86400000)) : null;
-    // "Pilot", not "free". Free primes a clinic to expect free forever, which is
-    // the opposite of what you want in the room before a paid conversation. Pilot
-    // frames it as a privileged arrangement with an endpoint.
+    // "Pilot", not "free". Pilot frames a privileged arrangement with an endpoint.
     t.textContent = 'Pilot clinic.';
-    sb2.textContent = days != null
+    sb2.textContent = (days != null
       ? days + ' days left in your pilot. Full access, no card on file.'
-      : 'Full access, no card on file.';
+      : 'Full access, no card on file.') + (founding ? ' Your founding rate is locked.' : '');
   } else if (sub.status === 'active') {
-    t.textContent = 'Visualize Pro.';
-    sb2.textContent = sub.current_period_end
-      ? 'Renews ' + new Date(sub.current_period_end).toISOString().slice(0, 10) + '.'
-      : 'Active.';
+    t.textContent = (tier ? TIER_LABEL[tier] : 'Visualize Pro') + '.';
+    sb2.textContent =
+      (founding ? 'Founding rate. ' : '') +
+      (sub.current_period_end ? ('Renews ' + new Date(sub.current_period_end).toISOString().slice(0, 10) + '. ') : '') +
+      seatsLine;
   } else if (sub.status === 'past_due') {
     t.textContent = 'A payment did not go through.';
     sb2.textContent =
@@ -3040,7 +3070,6 @@ function renderBilling(sub, c) {
 
   const isOwner = mySettings && mySettings.my_role === 'owner';
   box.innerHTML = '';
-
   if (!isOwner) {
     box.innerHTML = '<p class="note">Only an owner can change the plan.</p>';
     return;
@@ -3050,13 +3079,19 @@ function renderBilling(sub, c) {
   st.className = 'note';
 
   if (sub.has_card) {
-    // Everything a clinic wants to do with a card, Stripe does better than we
-    // would. Cards, invoices, cancellation: all of it lives there.
+    // Subscribed: Stripe owns the card, invoices, cancellation, and plan changes.
     const b = document.createElement('button');
     b.className = 'act';
     b.textContent = 'Manage billing';
     b.onclick = () => goStripe(b, st, '/api/clinic-billing-portal');
     box.appendChild(b);
+
+    const cur = document.createElement('p');
+    cur.className = 'note';
+    cur.textContent =
+      (tier ? ('You are on ' + TIER_LABEL[tier] + (founding ? ' at the founding rate' : '') + '. ') : '') +
+      'To change your plan, open Manage billing.';
+    box.appendChild(cur);
 
     if (sub.cancel_at_period_end) {
       const n = document.createElement('p');
@@ -3067,23 +3102,117 @@ function renderBilling(sub, c) {
         'your library. What stops is saving new work.';
       box.appendChild(n);
     }
-  } else {
+  } else if (founding) {
+    // Founding pilot: one button. The founding price is decided server-side from
+    // the database flag, so the tier sent here does not matter.
+    const lede = document.createElement('p');
+    lede.className = 'billing-lede';
+    lede.textContent = GALLERY_LEDE + ' Your founding rate is locked.';
+    box.appendChild(lede);
     const b = document.createElement('button');
     b.className = 'act';
-    b.textContent = sub.status === 'trialing' ? 'Subscribe' : 'Subscribe to Visualize Pro';
-    b.onclick = () => goStripe(b, st, '/api/clinic-subscribe');
+    b.textContent = 'Subscribe at your founding rate';
+    b.onclick = () => goStripe(b, st, '/api/clinic-subscribe', 'premium');
     box.appendChild(b);
+  } else {
+    // Not subscribed: the tier picker, led by the gallery ROI.
+    const lede = document.createElement('p');
+    lede.className = 'billing-lede';
+    lede.textContent = GALLERY_LEDE;
+    box.appendChild(lede);
 
-    const n = document.createElement('p');
-    n.className = 'note';
-    n.textContent = 'USD 199 per month, per location. Cancel any time.';
-    box.appendChild(n);
+    const grid = document.createElement('div');
+    grid.className = 'tier-grid';
+    TIER_CARDS.forEach(card => {
+      const el = document.createElement('div');
+      el.className = 'tier-card' + (card.tier === 'premium' ? ' featured' : '');
+      el.innerHTML =
+        '<div class="tier-name">' + card.name + '</div>' +
+        '<div class="tier-price">' + card.price + '<span>/mo</span></div>' +
+        '<div class="tier-seats">' + card.seats + '</div>';
+      const b = document.createElement('button');
+      b.className = 'act';
+      b.textContent = 'Choose ' + card.name;
+      b.onclick = () => goStripe(b, st, '/api/clinic-subscribe', card.tier);
+      el.appendChild(b);
+      grid.appendChild(el);
+    });
+    box.appendChild(grid);
+
+    const ent = document.createElement('div');
+    ent.className = 'tier-enterprise';
+    const d = document.createElement('div');
+    d.textContent = 'Enterprise, for multi-location groups and custom seat counts. Arranged directly, not through checkout.';
+    ent.appendChild(d);
+    const eb = document.createElement('button');
+    eb.className = 'act ghost';
+    eb.textContent = 'Contact us';
+    eb.onclick = openEnterprise;
+    ent.appendChild(eb);
+    box.appendChild(ent);
   }
 
   box.appendChild(st);
 }
 
-async function goStripe(btn, st, path) {
+// Enterprise is a conversation, not a checkout. A short form, emailed to us.
+function openEnterprise() {
+  const box = $('billBox');
+  box.innerHTML = '';
+  const h = document.createElement('p');
+  h.className = 'billing-lede';
+  h.textContent = 'Enterprise is for multi-location groups and custom arrangements. Tell us a little and we will reply by email.';
+  box.appendChild(h);
+
+  const mk = (label, id, type) => {
+    const f = document.createElement('div'); f.className = 'field';
+    const l = document.createElement('label'); l.className = 'eyebrow'; l.textContent = label; l.setAttribute('for', id);
+    const i = document.createElement(type === 'textarea' ? 'textarea' : 'input');
+    i.id = id; if (type && type !== 'textarea') i.type = type;
+    if (type === 'textarea') { i.rows = 3; i.style.width = '100%'; }
+    f.appendChild(l); f.appendChild(i); box.appendChild(f); return i;
+  };
+  const nameI = mk('Your name', 'entName', 'text');
+  const emailI = mk('Email', 'entEmail', 'email');
+  const locI = mk('Number of locations', 'entLoc', 'text');
+  const msgI = mk('Anything else', 'entMsg', 'textarea');
+  emailI.value = (mySettings && mySettings.my_email) || '';
+
+  const st = document.createElement('div'); st.className = 'note';
+  const b = document.createElement('button'); b.className = 'act'; b.textContent = 'Send';
+  b.onclick = async () => {
+    if (!emailI.value.trim()) { st.className = 'note bad'; st.textContent = 'An email address, so we can reply.'; return; }
+    b.disabled = true; st.className = 'note'; st.textContent = 'Sending...';
+    try {
+      const tk = await token();
+      const r = await fetch('/api/clinic-enterprise-contact', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clinicId,
+          name: nameI.value.trim(),
+          email: emailI.value.trim(),
+          locations: locI.value.trim(),
+          message: msgI.value.trim()
+        })
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) throw new Error(j.error || 'Could not send.');
+      box.innerHTML = '';
+      const done = document.createElement('p'); done.className = 'note ok';
+      done.textContent = 'Thank you. We will be in touch by email.';
+      box.appendChild(done);
+    } catch (e) { st.className = 'note bad'; st.textContent = e.message; b.disabled = false; }
+  };
+  box.appendChild(b); box.appendChild(st);
+
+  const bp = document.createElement('p'); bp.className = 'swap';
+  const back = document.createElement('button'); back.className = 'linkish'; back.textContent = 'Back to plans';
+  back.onclick = () => renderBilling(mySettings.subscription, mySettings.clinic);
+  bp.appendChild(back); box.appendChild(bp);
+}
+
+async function goStripe(btn, st, path, tier) {
   btn.disabled = true;
   st.className = 'note';
   st.textContent = 'Opening Stripe…';
@@ -3092,7 +3221,7 @@ async function goStripe(btn, st, path) {
     const r = await fetch(path, {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clinicId })
+      body: JSON.stringify(tier ? { clinicId, tier } : { clinicId })
     });
     const b = await r.json().catch(() => ({}));
     if (!r.ok || !b.ok || !b.url) throw new Error(b.error || 'That did not open.');
@@ -3214,7 +3343,10 @@ async function loadTeam() {
 
   $('teamSub').textContent =
     (c.seats_used || 0) + ' of ' + (c.seat_limit || 8) + ' seats used, counting invitations that have not been accepted. ' +
-    'Every action here is recorded against the person who took it, which only means something if nobody shares a login.';
+    'Every action here is recorded against the person who took it, which only means something if nobody shares a login.' +
+    (((c.seats_used || 0) >= (c.seat_limit || 8))
+      ? ' You are at your plan\'s seat limit. Upgrade in the Billing section below to invite more people.'
+      : '');
 
   host.innerHTML = '';
   (data || []).forEach(m => host.appendChild(memberRow(m, isOwner)));
