@@ -404,6 +404,42 @@
     <div class="swap">
       No account? <button class="linkish" id="toSignUp">Create one for your clinic</button>
     </div>
+    <div class="swap">
+      <button class="linkish" id="toForgot">Forgot your password?</button>
+    </div>
+  </section>
+
+  <!-- Ask for a reset. Sends a recovery email through Supabase; the link brings
+       them back to this same page with a recovery token, handled on load. -->
+  <section class="gate sec" id="forgot" style="display:none;">
+    <span class="eyebrow">Reset password</span>
+    <h1 class="display">Forgot your password.</h1>
+    <p class="lede">Enter your email and we will send you a link to set a new one.</p>
+    <div class="field">
+      <label class="eyebrow" for="forgotEmail">Email</label>
+      <input type="email" id="forgotEmail" autocomplete="username">
+    </div>
+    <button class="act" id="forgotSend">Send reset link</button>
+    <div class="note" id="forgotNote"></div>
+    <div class="swap">
+      <button class="linkish" id="forgotBack">Back to sign in</button>
+    </div>
+  </section>
+
+  <!-- Set a new password. Shown when the page loads from a recovery link, i.e.
+       the URL carries a recovery token and Supabase has put us in a recovery
+       session. -->
+  <section class="gate sec" id="resetPw" style="display:none;">
+    <span class="eyebrow">Reset password</span>
+    <h1 class="display">Set a new password.</h1>
+    <p class="lede">Choose a new password for your account.</p>
+    <div class="field">
+      <label class="eyebrow" for="newPw">New password</label>
+      <input type="password" id="newPw" autocomplete="new-password">
+      <small>At least eight characters.</small>
+    </div>
+    <button class="act" id="resetSave">Save new password</button>
+    <div class="note" id="resetNote"></div>
   </section>
 
   <!-- The third door. Someone arriving from an invitation email is not signing in
@@ -938,6 +974,60 @@ $('toSignIn').addEventListener('click', () => {
   $('gate').style.display = 'block';
 });
 
+// ---- password reset ----
+$('toForgot').addEventListener('click', () => {
+  $('gate').style.display = 'none';
+  $('forgot').style.display = 'block';
+  $('forgotEmail').value = $('email').value.trim();
+});
+$('forgotBack').addEventListener('click', () => {
+  $('forgot').style.display = 'none';
+  $('gate').style.display = 'block';
+});
+
+async function sendReset() {
+  const email = $('forgotEmail').value.trim();
+  if (!email) return note('forgotNote', 'Enter your email.', 'bad');
+  const btn = $('forgotSend');
+  btn.disabled = true;
+  note('forgotNote', 'Sending…');
+  // The link returns them here; the load handler detects the recovery session and
+  // shows the "set a new password" screen.
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + '/clinic-portal.html'
+  });
+  if (error) {
+    note('forgotNote', error.message, 'bad');
+    btn.disabled = false;
+    return;
+  }
+  note('forgotNote',
+    'If an account exists for ' + email + ', a reset link is on its way. Check your email.', 'ok');
+  btn.disabled = false;
+}
+$('forgotSend').addEventListener('click', sendReset);
+$('forgotEmail').addEventListener('keydown', e => { if (e.key === 'Enter') sendReset(); });
+
+async function saveNewPassword() {
+  const pw = $('newPw').value;
+  if (!pw || pw.length < 8) return note('resetNote', 'At least eight characters.', 'bad');
+  const btn = $('resetSave');
+  btn.disabled = true;
+  note('resetNote', 'Saving…');
+  const { error } = await sb.auth.updateUser({ password: pw });
+  if (error) {
+    note('resetNote', error.message, 'bad');
+    btn.disabled = false;
+    return;
+  }
+  note('resetNote', 'Password updated. Signing you in…', 'ok');
+  // They now have a valid session from the recovery flow. Straight into the portal.
+  history.replaceState({}, '', location.pathname);
+  await start();
+}
+$('resetSave').addEventListener('click', saveNewPassword);
+$('newPw').addEventListener('keydown', e => { if (e.key === 'Enter') saveNewPassword(); });
+
 /* Create the account and the clinic. Two steps that must both succeed, and the
    order is not arbitrary: the auth user has to exist before create_clinic_account
    can attach a membership to it.
@@ -1033,12 +1123,31 @@ async function start() {
     if (el) el.style.display = 'none';
   });
 
-  const { data: rows, error } = await sb
+  let { data: rows, error } = await sb
     .from('clinic_memberships')
     .select('clinic_id')
     .eq('status', 'active')
     .is('revoked_at', null)
     .limit(1);
+
+  // Safety net: no membership yet, but a live invite token is still around means
+  // the join has not completed. Redeem it now and re-check, rather than dropping
+  // the person on Create Clinic. This is the last line of defence against every
+  // timing race in the sign-up / redeem sequence.
+  if ((!rows || !rows.length) && inviteToken()) {
+    console.log('[invite] start() found no membership but a token exists; redeeming');
+    const joined = await redeemInvite();
+    if (joined) {
+      const re = await sb
+        .from('clinic_memberships')
+        .select('clinic_id')
+        .eq('status', 'active')
+        .is('revoked_at', null)
+        .limit(1);
+      rows = re.data;
+      error = re.error;
+    }
+  }
 
   if (error || !rows || !rows.length) {
     // Somebody who confirmed their email after signing up, or whose clinic
@@ -1348,7 +1457,35 @@ async function redeemInvite() {
   return true;
 }
 
+// A recovery link brings the user back with type=recovery in the URL hash and a
+// temporary recovery session. Show the set-new-password screen and do not run the
+// normal boot, or they would be swept into the portal or Create Clinic before
+// setting a password.
+let inRecovery = false;
+try {
+  const h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+  if (h.get('type') === 'recovery') inRecovery = true;
+} catch (e) {}
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    inRecovery = true;
+    ['gate', 'signup', 'forgot', 'inviteScreen', 'panel-settings'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    $('resetPw').style.display = 'block';
+  }
+});
+
 sb.auth.getSession().then(async ({ data }) => {
+  if (inRecovery) {
+    ['gate', 'signup', 'forgot', 'inviteScreen'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    $('resetPw').style.display = 'block';
+    return;
+  }
+
   const signedIn = !!(data && data.session);
 
   const pendingToken = inviteToken();
@@ -1451,8 +1588,20 @@ async function acceptInvite() {
       return;
     }
 
+    // Critical: after signUp/signIn the client needs the session to be in place
+    // before the RPC runs, or accept_clinic_invitation sees no auth.uid() and
+    // raises 'unauthenticated', the redeem fails, and start() finds no membership
+    // and shows Create Clinic. Wait for the session to be readable first.
+    let ready = null;
+    for (let i = 0; i < 20; i++) {
+      const { data: sd } = await sb.auth.getSession();
+      if (sd && sd.session) { ready = sd.session; break; }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    if (!ready) throw new Error('Sign-in did not complete. Please try again.');
+
     const ok = await redeemInvite();
-    if (!ok) throw new Error('Could not join the clinic. The invitation may have expired.');
+    if (!ok) throw new Error('Could not join the clinic. The invitation may have expired, or already been used.');
     $('inviteScreen').style.display = 'none';
     await start();
   } catch (e) {
