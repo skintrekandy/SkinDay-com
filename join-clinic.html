@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Join your clinic on SkinDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --deep:#1C1714; --cream:#FAF7F2; --rose:#C8725A; --gold:#C9A96E;
+    --ink:#2b2320; --muted:#857a70; --line:#e7ded3; --paper:#fff;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; }
+  body {
+    margin:0; background:var(--cream); color:var(--deep);
+    font-family:'DM Sans',system-ui,sans-serif; font-size:15px; line-height:1.6;
+    min-height:100vh; display:flex; flex-direction:column;
+  }
+  ::selection { background:rgba(201,169,110,.28); }
+  :focus-visible { outline:2px solid var(--rose); outline-offset:2px; border-radius:3px; }
+
+  header {
+    padding:20px 26px; background:var(--deep); color:var(--cream);
+    border-bottom:1px solid var(--gold);
+  }
+  .mark { font-family:'Cormorant Garamond',Georgia,serif; font-size:24px; font-weight:600; }
+  .mark em { font-style:italic; color:var(--gold); }
+
+  main { flex:1; display:flex; align-items:center; justify-content:center; padding:32px 20px; }
+  .card {
+    width:100%; max-width:432px; background:var(--paper);
+    border:1px solid var(--line); border-radius:3px; padding:34px 34px 30px;
+    animation:rise .45s cubic-bezier(.2,.7,.3,1) both;
+  }
+  @keyframes rise { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+  @media (prefers-reduced-motion:reduce){ .card{animation:none;} *{transition:none!important;} }
+
+  .eyebrow {
+    font-size:10.5px; font-weight:700; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  h1.display {
+    font-family:'Cormorant Garamond',Georgia,serif; font-weight:400; line-height:1.15;
+    font-size:31px; margin:8px 0 6px;
+  }
+  .lede { color:var(--muted); font-size:14px; margin:0 0 22px; }
+  .lede strong { color:var(--ink); font-weight:500; }
+
+  label { display:block; margin-bottom:6px; }
+  .field { margin-bottom:16px; }
+  input[type=email], input[type=password] {
+    width:100%; padding:10px 12px; border:1px solid var(--line);
+    border-radius:2px; background:var(--cream); color:var(--deep);
+    font:inherit; font-size:14px;
+  }
+  input:hover { border-color:#d6cabb; }
+  input[readonly] { background:#f3ece2; color:var(--ink); cursor:default; }
+  .field small { display:block; margin-top:6px; font-size:12px; color:var(--muted); }
+
+  button.act {
+    width:100%; margin-top:4px; padding:13px 18px;
+    background:var(--deep); color:var(--cream);
+    border:1px solid var(--deep); border-radius:2px;
+    font:inherit; font-size:13px; font-weight:500; letter-spacing:.02em;
+    cursor:pointer;
+  }
+  button.act:hover { background:#322822; }
+  button.act:disabled { opacity:.35; cursor:default; }
+
+  .swap { margin-top:18px; font-size:13px; color:var(--muted); }
+  .linkish {
+    background:none; border:0; padding:0; margin:0; cursor:pointer;
+    color:var(--rose); font:inherit; font-size:13px; text-decoration:underline;
+    text-underline-offset:2px;
+  }
+  .note { min-height:1.4em; font-size:12.5px; margin-top:12px; color:var(--muted); }
+  .note.bad { color:var(--rose); }
+  .note.ok { color:#2f7d54; }
+
+  .spin {
+    width:22px; height:22px; border-radius:50%;
+    border:2px solid var(--line); border-top-color:var(--rose);
+    animation:sp .8s linear infinite; margin:6px auto 0;
+  }
+  @keyframes sp { to { transform:rotate(360deg); } }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<header><div class="mark">Skin<em>Day</em></div></header>
+<main>
+  <div class="card">
+
+    <!-- Resolving -->
+    <section id="s-loading">
+      <span class="eyebrow">Invitation</span>
+      <h1 class="display">One moment.</h1>
+      <p class="lede">Checking your invitation.</p>
+      <div class="spin"></div>
+    </section>
+
+    <!-- S1 / S2: valid invitation, signed out. Create account (email locked) or sign in. -->
+    <section id="s-join" hidden>
+      <span class="eyebrow">Invitation</span>
+      <h1 class="display" id="joinHead">Join your team.</h1>
+      <p class="lede" id="joinLede"></p>
+
+      <!-- Create account: the email is fixed to the invited address. -->
+      <div id="createBlock">
+        <div class="field">
+          <label class="eyebrow" for="createEmail">Your email</label>
+          <input type="email" id="createEmail" autocomplete="username" readonly>
+          <small>This invitation can only be accepted using this email.</small>
+        </div>
+        <div class="field">
+          <label class="eyebrow" for="createPass">Choose a password</label>
+          <input type="password" id="createPass" autocomplete="new-password" placeholder="At least 8 characters">
+        </div>
+        <button class="act" id="createBtn">Create account and join</button>
+        <div class="swap">Already have an account? <button class="linkish" id="toSignin">Sign in instead</button></div>
+      </div>
+
+      <!-- Sign in: an existing account signs in with its own credentials. Not locked. -->
+      <div id="signinBlock" hidden>
+        <div class="field">
+          <label class="eyebrow" for="signinEmail">Email</label>
+          <input type="email" id="signinEmail" autocomplete="username">
+        </div>
+        <div class="field">
+          <label class="eyebrow" for="signinPass">Password</label>
+          <input type="password" id="signinPass" autocomplete="current-password">
+        </div>
+        <button class="act" id="signinBtn">Sign in and join</button>
+        <div class="swap">Need an account? <button class="linkish" id="toCreate">Create one instead</button></div>
+      </div>
+
+      <div class="note" id="joinNote"></div>
+    </section>
+
+    <!-- S3: signed in as the wrong account -->
+    <section id="s-wrong" hidden>
+      <span class="eyebrow">Wrong account</span>
+      <h1 class="display">This invitation is for someone else.</h1>
+      <p class="lede" id="wrongLede"></p>
+      <button class="act" id="switchBtn">Sign in with the invited account</button>
+      <div class="note" id="wrongNote"></div>
+    </section>
+
+    <!-- S5: confirming (only reachable if Confirm email is turned on later) -->
+    <section id="s-confirm" hidden>
+      <span class="eyebrow">Almost there</span>
+      <h1 class="display">Check your email.</h1>
+      <p class="lede" id="confirmLede"></p>
+    </section>
+
+    <!-- S6: dead invitation -->
+    <section id="s-dead" hidden>
+      <span class="eyebrow">Invitation</span>
+      <h1 class="display" id="deadHead">This invitation is no longer valid.</h1>
+      <p class="lede" id="deadLede">Ask the clinic owner for a new one.</p>
+    </section>
+
+    <!-- S7: success -->
+    <section id="s-done" hidden>
+      <span class="eyebrow">Welcome</span>
+      <h1 class="display" id="doneHead">You have joined.</h1>
+      <p class="lede">Taking you to the portal.</p>
+      <div class="spin"></div>
+    </section>
+
+  </div>
+</main>
+
+<script type="module">
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+// Same client as clinic-portal.html, so the session is shared: a person who
+// joins here is already signed in when the portal loads.
+const SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+const sb = createClient(SUPABASE_URL, ANON_KEY);
+
+const $ = id => document.getElementById(id);
+const note = (id, msg, cls) => { const e = $(id); e.className = 'note ' + (cls || ''); e.textContent = msg || ''; };
+
+/* The token is the single carrier. It lives only in the URL, never in storage,
+   so there is no second copy to fall out of sync with (the race that broke the
+   old flow). Both parameter names are read so links sent during M13 still work.
+   Every authentication action below returns to this exact URL, token included,
+   which is what lets a sign-out-and-switch or a confirmation round trip survive. */
+const RETURN_URL = location.origin + location.pathname + location.search;
+const params = new URLSearchParams(location.search);
+const TOKEN = params.get('token') || params.get('invite');
+
+if (!TOKEN) {
+  // This page has no meaning without a token.
+  location.replace('/clinic-portal.html');
+}
+
+// Display data from lookup_invitation, held so the sign-in and switch paths can
+// reuse the clinic name without another round trip.
+let INV = null;
+// When returning from a wrong-account sign-out, open the sign-in block directly.
+let preferSignin = false;
+
+const SCREENS = ['s-loading', 's-join', 's-wrong', 's-confirm', 's-dead', 's-done'];
+function show(id) { SCREENS.forEach(s => { $(s).hidden = (s !== id); }); }
+
+const roleWord = r => (r === 'admin' ? 'an admin' : 'a staff member');
+
+/* The coordinator is the ONLY caller of accept_clinic_invitation. It runs once,
+   after authentication has resolved, and never inside a sign-in, sign-up, or
+   auth-state callback. Authentication finishes first; then this runs once.
+
+   Authorization note: with Supabase "Confirm email" currently OFF, the server's
+   email match verifies that the signed-in account's address equals the invited
+   address. It does not by itself prove the person controls that mailbox. That is
+   acceptable because a membership is created only on a match, and the invitation
+   was sent by an owner to a real address. If Confirm email is turned on later,
+   address ownership is also proven and nothing here changes. */
+async function coordinate() {
+  show('s-loading');
+  const { data, error } = await sb.rpc('accept_clinic_invitation', { p_token: TOKEN });
+
+  if (error) { showDead('unexpected'); return; }
+
+  switch (data && data.code) {
+    case 'joined':
+    case 'already_member':
+      showDone(data);
+      return;
+    case 'email_mismatch':
+      showWrong(data);
+      return;
+    case 'invalid_token':
+    case 'expired':
+    case 'revoked':
+    case 'already_accepted':
+      showDead(data.code);
+      return;
+    case 'blocked':
+      showDead('blocked:' + (data.reason || ''));
+      return;
+    case 'unauthenticated':
+      // Session was not in place. Fall back to the signed-out screens.
+      await boot();
+      return;
+    default:
+      showDead('unexpected');
+  }
+}
+
+async function boot() {
+  const { data: sess } = await sb.auth.getSession();
+  if (sess && sess.session) { await coordinate(); return; }
+
+  // Signed out: resolve the token for display (five-way status).
+  const { data: rows, error } = await sb.rpc('lookup_invitation', { p_token: TOKEN });
+  const inv = rows && rows[0];
+  if (error || !inv) { showDead('invalid'); return; }
+  INV = inv;
+
+  switch (inv.code) {
+    case 'valid':
+      showJoin(inv);
+      return;
+    case 'used':
+      // The invited person can still sign in and reach the idempotent result.
+      showJoin(inv, {
+        signinOnly: true,
+        notice: 'This invitation has already been used. Sign in with the invited account to reach the clinic.'
+      });
+      return;
+    case 'expired':
+    case 'revoked':
+    case 'invalid':
+    default:
+      showDead(inv.code);
+  }
+}
+
+function showJoin(inv, opts) {
+  opts = opts || {};
+  $('joinHead').textContent = inv.clinic_name ? ('Join ' + inv.clinic_name + '.') : 'Join your team.';
+  $('joinLede').innerHTML = inv.clinic_name
+    ? ('You have been invited to <strong>' + escapeHtml(inv.clinic_name) + '</strong> as ' + roleWord(inv.role) + '.')
+    : ('You have been invited as ' + roleWord(inv.role) + '.');
+
+  if (inv.email) $('createEmail').value = inv.email;
+
+  const signin = opts.signinOnly || preferSignin;
+  preferSignin = false;
+  $('createBlock').hidden = signin;
+  $('signinBlock').hidden = !signin;
+  // If the invitation is used, there is no create path; hide the swap to it.
+  $('toCreate').closest('.swap').style.display = opts.signinOnly ? 'none' : '';
+  if (opts.signinOnly && inv.email) $('signinEmail').value = inv.email;
+
+  note('joinNote', opts.notice || '', opts.notice ? 'ok' : '');
+  show('s-join');
+}
+
+function showWrong(data) {
+  sb.auth.getUser().then(({ data: u }) => {
+    const cur = u && u.user ? u.user.email : 'another account';
+    $('wrongLede').innerHTML =
+      'This invitation was sent to <strong>' + escapeHtml(data.invited_masked || 'the invited address') +
+      '</strong>, but you are signed in as <strong>' + escapeHtml(cur) + '</strong>.';
+    note('wrongNote', '');
+    show('s-wrong');
+  });
+}
+
+function showConfirm(email) {
+  $('confirmLede').innerHTML =
+    'We sent a confirmation link to <strong>' + escapeHtml(email) +
+    '</strong>. Open it on this device to finish joining.';
+  show('s-confirm');
+}
+
+const DEAD_COPY = {
+  invalid:          ['This invitation is not valid.', 'Ask the clinic owner for a new one.'],
+  invalid_token:    ['This invitation is not valid.', 'Ask the clinic owner for a new one.'],
+  expired:          ['This invitation has expired.', 'Ask the clinic owner to send a new one.'],
+  revoked:          ['This invitation has been withdrawn.', 'Ask the clinic owner if this was a mistake.'],
+  already_accepted: ['This invitation has already been used.', 'If it was you, sign in from the portal. Otherwise ask the owner for a new one.'],
+  used:             ['This invitation has already been used.', 'If it was you, sign in from the portal. Otherwise ask the owner for a new one.'],
+  unexpected:       ['Something went wrong.', 'Please try again in a moment, or ask the clinic owner for a new invitation.'],
+  'blocked:seat_limit':   ['This clinic has no seats left.', 'Ask the clinic owner to free a seat, then use a fresh invitation.'],
+  'blocked:admin_exists': ['This clinic already has an admin.', 'Ask the clinic owner, who can adjust roles.'],
+  'blocked:owner_rule':   ['This invitation could not be completed.', 'Ask the clinic owner for a new one.'],
+  'blocked:clinic_inactive': ['This clinic is not active right now.', 'Ask the clinic owner.'],
+  'blocked:role_invalid': ['This invitation could not be completed.', 'Ask the clinic owner for a new one.']
+};
+
+function showDead(code) {
+  const copy = DEAD_COPY[code] || DEAD_COPY.unexpected;
+  $('deadHead').textContent = copy[0];
+  $('deadLede').textContent = copy[1];
+  show('s-dead');
+}
+
+function showDone(data) {
+  $('doneHead').textContent = data && data.clinic_id
+    ? 'You are in.'
+    : 'You have joined.';
+  show('s-done');
+  setTimeout(() => { location.replace('/clinic-portal.html'); }, 1200);
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+// ---- create account (email fixed to the invited address) ----
+async function doCreate() {
+  const email = $('createEmail').value.trim();
+  const pass = $('createPass').value;
+  if (!pass || pass.length < 8) { note('joinNote', 'Pick a password of at least eight characters.', 'bad'); return; }
+
+  const btn = $('createBtn');
+  btn.disabled = true;
+  note('joinNote', 'Creating your account...');
+
+  const { data, error } = await sb.auth.signUp({
+    email,
+    password: pass,
+    options: { emailRedirectTo: RETURN_URL }
+  });
+
+  if (error) {
+    const msg = (error.message || '').toLowerCase();
+    if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+      // They have an account. Move them to sign in rather than guessing a password.
+      note('joinNote', 'You already have an account for this email. Sign in to join.', 'ok');
+      openSignin(email);
+    } else {
+      note('joinNote', error.message, 'bad');
+    }
+    btn.disabled = false;
+    return;
+  }
+
+  // Confirm email OFF: a session is returned immediately, so join in one step.
+  if (data && data.session) { await coordinate(); return; }
+
+  // Confirm email ON (defensive): no session yet. The token is in RETURN_URL, so
+  // the confirmation link brings them back here and boot() runs the coordinator.
+  showConfirm(email);
+}
+
+// ---- sign in (existing account; email adjudicated by the server) ----
+async function doSignin() {
+  const email = $('signinEmail').value.trim();
+  const pass = $('signinPass').value;
+  if (!email || !pass) { note('joinNote', 'Enter your email and password.', 'bad'); return; }
+
+  const btn = $('signinBtn');
+  btn.disabled = true;
+  note('joinNote', 'Signing in...');
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error || !data.session) {
+    note('joinNote', 'That email and password did not match an account.', 'bad');
+    btn.disabled = false;
+    return;
+  }
+  // The coordinator adjudicates: a matching email joins; a different one lands on
+  // the wrong-account screen.
+  await coordinate();
+}
+
+function openSignin(prefillEmail) {
+  $('createBlock').hidden = true;
+  $('signinBlock').hidden = false;
+  if (prefillEmail) $('signinEmail').value = prefillEmail;
+  $('signinPass').focus();
+}
+function openCreate() {
+  $('signinBlock').hidden = true;
+  $('createBlock').hidden = false;
+  note('joinNote', '');
+}
+
+// ---- wrong account: sign out, keep the token in the URL, return to sign in ----
+async function doSwitch() {
+  const btn = $('switchBtn');
+  btn.disabled = true;
+  note('wrongNote', 'Signing out...');
+  await sb.auth.signOut();
+  // Still on the same URL (token intact). Reboot into the signed-out sign-in view.
+  preferSignin = true;
+  btn.disabled = false;
+  await boot();
+}
+
+$('createBtn').addEventListener('click', doCreate);
+$('createPass').addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+$('signinBtn').addEventListener('click', doSignin);
+$('signinPass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignin(); });
+$('toSignin').addEventListener('click', () => openSignin($('createEmail').value.trim()));
+$('toCreate').addEventListener('click', openCreate);
+$('switchBtn').addEventListener('click', doSwitch);
+
+if (TOKEN) boot();
+</script>
+</body>
+</html>
