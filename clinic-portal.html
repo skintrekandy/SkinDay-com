@@ -279,6 +279,15 @@
     padding:3px 8px; border:1px solid rgba(28,23,20,.18); color:var(--muted);
   }
   .pill.warn { border-color:rgba(200,114,90,.5); color:var(--rose); }
+  select.role-select {
+    font-family:'DM Sans',sans-serif; font-size:.8rem; color:var(--deep);
+    padding:5px 26px 5px 10px; border:1px solid rgba(28,23,20,.18);
+    background:var(--cream); border-radius:0; cursor:pointer;
+    -webkit-appearance:none; appearance:none;
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A7B72' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat:no-repeat; background-position:right 7px center; background-size:12px;
+  }
+  select.role-select:focus { outline:none; border-color:var(--rose); }
   .invite-link {
     margin-top:14px; padding:14px; background:rgba(28,23,20,.03);
     font-size:.78rem; word-break:break-all; line-height:1.6;
@@ -1016,6 +1025,13 @@ $('doSignUp').addEventListener('click', doSignUp);
 $('signOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
 async function start() {
+  // Any of the three entry screens could be the one that got here. Hide them all,
+  // so none can be left covering the portal.
+  ['gate', 'signup', 'inviteScreen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
   const { data: rows, error } = await sb
     .from('clinic_memberships')
     .select('clinic_id')
@@ -1376,7 +1392,8 @@ async function acceptInvite() {
 
     const ok = await redeemInvite();
     if (!ok) throw new Error('Could not join the clinic. The invitation may have expired.');
-    start();
+    $('inviteScreen').style.display = 'none';
+    await start();
   } catch (e) {
     note('invScreenNote', e.message, 'bad');
     btn.disabled = false;
@@ -2995,10 +3012,13 @@ function renderBilling(sub, c) {
   if (sub.status === 'trialing') {
     const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
     const days = ends ? Math.max(0, Math.ceil((ends - Date.now()) / 86400000)) : null;
-    t.textContent = 'Visualize Pro, free.';
+    // "Pilot", not "free". Free primes a clinic to expect free forever, which is
+    // the opposite of what you want in the room before a paid conversation. Pilot
+    // frames it as a privileged arrangement with an endpoint.
+    t.textContent = 'Pilot clinic.';
     sb2.textContent = days != null
-      ? days + ' days left. Everything works, nothing is limited, no card on file.'
-      : 'Everything works, nothing is limited, no card on file.';
+      ? days + ' days left in your pilot. Full access, no card on file.'
+      : 'Full access, no card on file.';
   } else if (sub.status === 'active') {
     t.textContent = 'Visualize Pro.';
     sb2.textContent = sub.current_period_end
@@ -3052,7 +3072,7 @@ function renderBilling(sub, c) {
 
     const n = document.createElement('p');
     n.className = 'note';
-    n.textContent = 'CAD 249 per month, per location. Cancel any time.';
+    n.textContent = 'USD 199 per month, per location. Cancel any time.';
     box.appendChild(n);
   }
 
@@ -3213,11 +3233,16 @@ function memberRow(m, isOwner) {
     '<div class="sub">' + last + (pending && m.expires_at
       ? '. Expires ' + new Date(m.expires_at).toISOString().slice(0, 10) : '') + '</div>';
 
-  const role = document.createElement('span');
-  role.className = 'pill';
-  role.textContent = pending ? 'invited ' + m.role : m.role;
-
-  row.append(g, role);
+  // The role pill is redundant once an editable dropdown is shown for the same
+  // member, so it is added later only when there is no dropdown.
+  const showRoleDropdown = isOwner && m.role !== 'owner' && m.kind !== 'invitation';
+  row.append(g);
+  if (!showRoleDropdown) {
+    const role = document.createElement('span');
+    role.className = 'pill';
+    role.textContent = pending ? 'invited ' + m.role : m.role;
+    row.appendChild(role);
+  }
 
   // The signal you actually asked for. Not a block, and never a block: a clinic
   // that legitimately runs on gmail is not a clinic doing something wrong.
@@ -3232,6 +3257,7 @@ function memberRow(m, isOwner) {
   if (isOwner && m.role !== 'owner') {
     if (!pending) {
       const sel = document.createElement('select');
+      sel.className = 'role-select';
       ['staff', 'admin', 'owner'].forEach(r => {
         const o = document.createElement('option');
         o.value = r;
