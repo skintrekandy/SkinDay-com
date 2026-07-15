@@ -510,7 +510,7 @@
      panel below belongs to the portal and reads the aligned before / after
      canvases straight out of the embedded page. -->
 <div class="stage" id="panel-studio" style="display:none;">
-  <iframe class="embed" id="studioFrame" src="/studio.html" title="Studio"></iframe>
+  <iframe class="embed" id="studioFrame" title="Studio"></iframe>
 
   <div class="wrap">
     <section class="sec">
@@ -1227,9 +1227,13 @@ async function openPortal() {
   $('tabs').style.display = 'flex';
   $('panel-studio').style.display = 'block';
 
-  // The real Visualize, carrying explicit clinic context. Visualize itself reads
-  // ?clinic= and attaches it to the generation; the portal does not have to slip
-  // it in, so a future refactor of Visualize cannot silently break grounding.
+  // Both embedded pages get the same clinic context. Studio was loading a bare
+  // /studio.html with no param, so it rendered its own consumer header on top of
+  // the portal's. Giving it ?clinic= matches how Visualize is embedded, and lets
+  // studio.html detect that it is inside the portal and hide that header.
+  if (!$('studioFrame').src) {
+    $('studioFrame').src = '/studio.html?clinic=' + encodeURIComponent(clinicId);
+  }
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
   loadLibrary();
@@ -1322,68 +1326,43 @@ async function redeemInvite() {
 
 sb.auth.getSession().then(async ({ data }) => {
   const signedIn = !!(data && data.session);
-  const signedInEmail = signedIn ? ((data.session.user && data.session.user.email) || '').toLowerCase() : '';
 
   let pendingToken = null;
   try { pendingToken = sessionStorage.getItem(INVITE_KEY); } catch (e) {}
 
-  // No invitation in play: normal boot.
+  // No invitation: normal boot.
   if (!pendingToken) {
     if (signedIn) start();
     return;
   }
 
-  // There is an invitation. Resolve who it is for before doing anything, so the
-  // wrong signed-in person cannot silently fail into Create Clinic.
+  // There is an invitation. The token is the authority (Google Workspace model):
+  // whoever is signed in and holds a valid token joins. No email comparison, no
+  // "this is for someone else", no dead ends.
+  if (signedIn) {
+    const ok = await redeemInvite();       // joins via accept_clinic_invitation
+    start();                                // then straight into the portal
+    return;
+  }
+
+  // Not signed in. Show the Join screen, prefilled with the invited email as a
+  // convenience. Setting a password (or signing in) then redeems the token.
   const { data: rows } = await sb.rpc('lookup_invitation', { p_token: pendingToken });
   const inv = rows && rows[0];
 
-  // The token is dead (expired, revoked, or already accepted). Do not show a join
-  // screen for it. If they are signed in, take them to their own portal instead.
   if (!inv || !inv.valid) {
     try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
-    if (signedIn) { start(); return; }
     note('gateNote', 'That invitation has expired or has already been used. Ask for a new one, or sign in.', 'bad');
     return;
   }
 
-  const invitedEmail = (inv.email || '').toLowerCase();
-
-  if (signedIn) {
-    // Signed in as the invited person: redeem and go in.
-    if (signedInEmail === invitedEmail) {
-      const ok = await redeemInvite();
-      if (ok) { start(); return; }
-      // Redeem failed for some other reason; fall through to their own portal.
-      start();
-      return;
-    }
-
-    // Signed in as SOMEONE ELSE. This is the case that was dumping the wrong
-    // person into Create Clinic. Say so plainly rather than fail silently, and
-    // do not touch their session for them.
-    $('gate').style.display = 'none';
-    $('inviteScreen').style.display = 'block';
-    $('invHead').textContent = 'This invitation is for someone else.';
-    $('invLede').textContent =
-      'It was sent to ' + inv.email + ', but you are signed in as ' +
-      (data.session.user.email || 'another account') +
-      '. Sign out, then open the invitation link again.';
-    $('invEmailField').value = inv.email;
-    $('invEmailField').style.display = 'none';
-    $('invPass').closest('.field').style.display = 'none';
-    $('invAccept').style.display = 'none';
-    return;
-  }
-
-  // Not signed in, valid invite: show the join screen.
   $('gate').style.display = 'none';
   $('inviteScreen').style.display = 'block';
   $('invHead').textContent = 'Join ' + inv.clinic_name + '.';
   $('invLede').textContent =
     'You have been invited to ' + inv.clinic_name + ' as ' +
     (inv.role === 'admin' ? 'an admin' : 'a staff member') +
-    '. Set a password to join.';
+    '. Set a password to join, or sign in if you already have an account.';
   $('invEmailField').value = inv.email;
 });
 
