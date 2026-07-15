@@ -297,6 +297,20 @@
   }
   #clinicLogo { height:26px; max-width:150px; object-fit:contain; }
   .searchbar { margin:0 0 24px; }
+  .editor {
+    margin-top:16px; padding:18px;
+    background:rgba(28,23,20,.02); border:1px solid rgba(28,23,20,.10);
+  }
+  .editor-grid {
+    display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;
+  }
+  @media (max-width:560px) { .editor-grid { grid-template-columns:1fr; } }
+  .editor input {
+    width:100%; box-sizing:border-box; padding:9px 11px;
+    font-family:'DM Sans',sans-serif; font-size:.86rem;
+    border:1px solid rgba(28,23,20,.16); background:var(--cream); outline:none;
+  }
+  .editor input:focus { border-color:var(--rose); }
   .searchbar input {
     width:100%; box-sizing:border-box;
     padding:14px 16px;
@@ -525,6 +539,12 @@
               <input type="text" id="pRef" maxlength="60" autocomplete="off" placeholder="Chart or file number">
             </div>
           </div>
+          <div class="field" style="margin-top:16px;">
+            <label class="eyebrow" for="cConsult">Consultant (optional)</label>
+            <input type="text" id="cConsult" maxlength="60" autocomplete="off" placeholder="Who did the consultation, if not the injector">
+            <small>Private to your clinic. For your own records; not shown on your website.</small>
+            </div>
+          </div>
           <div class="crop-note">Private to your clinic. Never appears on your website, never sent to the model, and destroyed with the case if the patient withdraws.</div>
 
           <div class="consent">
@@ -644,7 +664,7 @@
           <small>An admin can purge cases and export the library. Staff cannot.</small>
         </div>
       </div>
-      <button class="act" id="invSend">Create invitation</button>
+      <button class="act" id="invSend">Send invitation</button>
       <div class="note" id="invNote"></div>
       <div id="invLink" style="display:none;"></div>
     </div>
@@ -698,9 +718,15 @@
             <input type="text" id="simPRef" maxlength="60" autocomplete="off" placeholder="Chart or file number">
           </div>
         </div>
-        <div class="field">
-          <label class="eyebrow" for="simLabel">Label (optional)</label>
-          <input type="text" id="simLabel" maxlength="60" placeholder="How you would describe it to the patient">
+        <div class="row2">
+          <div class="field">
+            <label class="eyebrow" for="simLabel">Label (optional)</label>
+            <input type="text" id="simLabel" maxlength="60" placeholder="How you would describe it to the patient">
+          </div>
+          <div class="field">
+            <label class="eyebrow" for="simConsult">Consultant (optional)</label>
+            <input type="text" id="simConsult" maxlength="60" placeholder="Who did the consultation">
+          </div>
         </div>
 
         <div class="attest">
@@ -1856,6 +1882,7 @@ $('saveBtn').addEventListener('click', async () => {
   // form parser on its way to being stored.
   const patientName = $('pName').value.trim();
   const patientRef = $('pRef').value.trim();
+  const consultant = $('cConsult').value.trim();
 
   let saved = 0;
   let failure = null;
@@ -1936,6 +1963,12 @@ $('saveBtn').addEventListener('click', async () => {
               p_patient_ref: patientRef || null
             });
             if (nameErr) unnamed++;
+            if (consultant) {
+              await sb.rpc('edit_clinic_case', {
+                p_case_id: caseId, p_clinic_id: clinicId,
+                p_set_consultant: true, p_consultant: consultant
+              });
+            }
           } else {
             // The upload succeeded and did not tell us which case it made, so
             // there is nothing to attach the name to. Say so, rather than let the
@@ -1964,6 +1997,7 @@ $('saveBtn').addEventListener('click', async () => {
     }
     $('pName').value = '';
     $('pRef').value = '';
+    $('cConsult').value = '';
     loadLibrary();
   } else if (saved && failure) {
     note('saveNote', saved + ' saved, then stopped: ' + failure, 'bad');
@@ -2560,6 +2594,7 @@ function plate(r, perms, seriesSize) {
     patientLabel(r),
     r.treatment_label,
     r.injector_name ? 'by ' + r.injector_name : '',
+    r.consultant_name ? 'consult ' + r.consultant_name : '',
     r.angle,
     intervalLabel(r.interval_months),
     span,
@@ -2658,12 +2693,117 @@ function plate(r, perms, seriesSize) {
   dl.textContent = 'Download';
   dl.onclick = () => downloadPair(dl, st, r, false, null);
 
-  acts.append(pub, ref, dl);
+  const ed = document.createElement('button');
+  ed.className = 'quiet';
+  ed.textContent = 'Edit details';
+  const editor = buildEditor(r, st);
+  ed.onclick = () => {
+    editor.style.display = editor.style.display === 'none' ? 'block' : 'none';
+  };
+
+  acts.append(pub, ref, dl, ed);
   if (r.injector_name) acts.append(inj);
   acts.append(wd);
-  body.append(acts, st);
+  body.append(acts, editor, st);
   el.append(dip, body);
   return el;
+}
+
+// The edit form. Descriptive fields only. Consent stays on its own buttons above,
+// because "fix a typo" and "change what a patient agreed to" must not be the same
+// control. Each field sends its p_set_ flag only when its value changed, so an
+// untouched field is left exactly as it was rather than being cleared.
+function buildEditor(r, st) {
+  const wrap = document.createElement('div');
+  wrap.className = 'editor';
+  wrap.style.display = 'none';
+
+  const fields = [
+    ['injector',    'Injector',    r.injector_name || '',   'text'],
+    ['consultant',  'Consultant',  r.consultant_name || '', 'text'],
+    ['label',       'Label',       r.treatment_label || '', 'text'],
+    ['before_date', 'Before date', r.before_date || '',     'text'],
+    ['after_date',  'After date',  r.after_date || '',      'text'],
+    ['interval',    'Months between', r.interval_months != null ? String(r.interval_months) : '', 'number'],
+    ['treatment',   'Treatment',   r.treatment || '',       'text'],
+    ['subtype',     'Subtype',     r.subtype || '',         'text'],
+    ['patient_name','Patient name',r.patient_name || '',    'text'],
+    ['patient_ref', 'Reference',   r.patient_ref || '',     'text']
+  ];
+
+  const inputs = {};
+  const grid = document.createElement('div');
+  grid.className = 'editor-grid';
+  fields.forEach(([key, label, val, type]) => {
+    const f = document.createElement('div');
+    f.className = 'field';
+    const l = document.createElement('label');
+    l.className = 'eyebrow';
+    l.textContent = label;
+    const i = document.createElement('input');
+    i.type = type;
+    i.value = val;
+    if (type === 'text') i.maxLength = 120;
+    inputs[key] = { el: i, was: val };
+    f.append(l, i);
+    grid.appendChild(f);
+  });
+
+  const save = document.createElement('button');
+  save.className = 'act';
+  save.textContent = 'Save changes';
+  save.onclick = async () => {
+    const args = { p_case_id: r.id, p_clinic_id: clinicId };
+    let touched = false;
+
+    // Only changed fields travel. An untouched field sends no p_set_ flag, so the
+    // RPC leaves it alone rather than rewriting it to its own current value.
+    const map = {
+      injector: 'injector', consultant: 'consultant', label: 'label',
+      before_date: 'before_date', after_date: 'after_date',
+      treatment: 'treatment', subtype: 'subtype',
+      patient_name: 'patient_name', patient_ref: 'ref'
+    };
+    Object.keys(map).forEach(k => {
+      const cur = inputs[k].el.value.trim();
+      if (cur !== (inputs[k].was || '').trim()) {
+        args['p_set_' + map[k]] = true;
+        args['p_' + (k === 'patient_ref' ? 'patient_ref' : k)] = cur || null;
+        touched = true;
+      }
+    });
+
+    const iv = inputs.interval.el.value.trim();
+    if (iv !== (inputs.interval.was || '').trim()) {
+      args.p_set_interval = true;
+      args.p_interval = iv === '' ? null : parseInt(iv, 10);
+      touched = true;
+    }
+
+    if (!touched) {
+      st.className = 'note';
+      st.textContent = 'Nothing changed.';
+      wrap.style.display = 'none';
+      return;
+    }
+
+    save.disabled = true;
+    st.className = 'note';
+    st.textContent = 'Saving…';
+    const { error } = await sb.rpc('edit_clinic_case', args);
+    if (error) {
+      st.className = 'note bad';
+      st.textContent = error.message;
+      save.disabled = false;
+      return;
+    }
+    st.className = 'note ok';
+    st.textContent = 'Saved.';
+    loadLibrary();
+  };
+
+  wrap.append(grid, save);
+  return wrap;
 }
 
 /* ---- settings ------------------------------------------------------------
@@ -3020,42 +3160,60 @@ function memberRow(m, isOwner) {
   return row;
 }
 
-$('invSend').addEventListener('click', async () => {
+$('invSend').addEventListener('click', sendInvite);
+$('invEmail').addEventListener('keydown', e => { if (e.key === 'Enter') sendInvite(); });
+
+// Email first, through Resend, with the copyable link as a visible fallback. The
+// email is a convenience; the token in the link is the authority, and the accept
+// step matches it against the signed-in email. Nothing here grants access on its
+// own, so a failed email is a smaller problem than it looks: the invitation still
+// exists and the owner can send the link by hand.
+async function sendInvite() {
   const btn = $('invSend');
   const email = $('invEmail').value.trim();
   const role = $('invRole').value;
   if (!email) return note('invNote', 'Who are you inviting?', 'bad');
 
   btn.disabled = true;
-  note('invNote', 'Creating…');
+  note('invNote', 'Sending…');
   $('invLink').style.display = 'none';
 
   try {
-    const { data, error } = await sb.rpc('invite_clinic_member', {
-      p_clinic_id: clinicId, p_email: email, p_role: role
+    const t = await token();
+    const r = await fetch('/api/clinic-invite-send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicId, email, role })
     });
-    if (error) throw new Error(error.message);
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok || !b.ok) throw new Error(b.error || 'That did not go through.');
 
-    // The warning, before they send it rather than after.
-    if (data.domain_mismatch) {
+    const inv = b.invitation || {};
+    const clinicName = (mySettings && mySettings.clinic && mySettings.clinic.name) || 'your clinic';
+
+    if (b.emailed) {
       note('invNote',
-        email + ' is not on ' + (data.clinic_domain || 'your domain') +
-        '. That may be exactly right, and it may not be. The invitation is ready ' +
-        'either way, and it will be flagged in your team list.', 'bad');
+        'Invitation sent to ' + email + '. They will get an email to join ' + clinicName + '.', 'ok');
     } else {
-      note('invNote', 'Invitation ready.', 'ok');
+      // Domain not verified yet, or the send failed. The link is the path.
+      note('invNote',
+        'Invitation ready for ' + email + '. Email is not sending yet, so copy the link below and send it to them.', 'bad');
     }
 
-    // Nothing emails it. An invite link the owner sends themselves arrives from
-    // someone the recipient knows, rather than from a domain they have never
-    // heard of and will not trust.
-    const link = location.origin + '/clinic-portal.html?invite=' + encodeURIComponent(data.token);
+    if (inv.domain_mismatch) {
+      note('invNote',
+        (b.emailed ? 'Sent to ' : 'Ready for ') + email + ', but that address is not on ' +
+        (inv.clinic_domain || 'your domain') + '. It is flagged in your team list.', 'bad');
+    }
+
+    // The fallback link, always available, secondary when email worked.
     const box = $('invLink');
     box.className = 'invite-link';
     box.style.display = 'block';
     box.innerHTML =
-      '<b>Send this to ' + email + '.</b> It expires in 14 days, and only works for ' +
-      'someone signed in with that exact address.<br><br>' + link;
+      '<b>' + (b.emailed ? 'Backup link' : 'Send this to ' + email) + '.</b> ' +
+      'Expires in 14 days, and only works for someone signed in as ' + email + '.<br><br>' +
+      '<span style="user-select:all;">' + (b.link || '') + '</span>';
 
     $('invEmail').value = '';
     await loadSettings();
@@ -3064,7 +3222,7 @@ $('invSend').addEventListener('click', async () => {
     note('invNote', e.message, 'bad');
   }
   btn.disabled = false;
-});
+}
 
 /* ---- export -------------------------------------------------------------
 
@@ -3362,7 +3520,8 @@ async function saveSimulations() {
         consents,
         treatmentLabel: ($('simLabel').value || '').trim() || null,
         patientName: ($('simPName').value || '').trim() || null,
-        patientRef: ($('simPRef').value || '').trim() || null
+        patientRef: ($('simPRef').value || '').trim() || null,
+        consultantName: ($('simConsult').value || '').trim() || null
       })
     });
 
@@ -3390,6 +3549,7 @@ async function saveSimulations() {
     $('simLabel').value = '';
     $('simPName').value = '';
     $('simPRef').value = '';
+    $('simConsult').value = '';
     $('simSaveSub').textContent =
       'Kept. It will not appear on your website and it will not guide another simulation. Withdraw it any time from the Library.';
     btn.textContent = 'View in Library';
