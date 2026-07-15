@@ -7,7 +7,7 @@
 // one-admin rule, and the domain flag) and then emails the resulting link. If the
 // email fails, the invitation still exists and the owner can copy the link. The
 // email never carries any grant of access on its own; clicking it lands on the
-// portal, which redeems the token, which is the only thing that adds a member.
+// join page, which redeems the token, which is the only thing that adds a member.
 //
 // Metadata is decoration. A recipient who somehow altered their own account
 // metadata still cannot join a clinic they were not invited to, because
@@ -105,17 +105,18 @@ exports.handler = async function (event) {
   let inv;
 
   if (invitationId) {
-    // Resend: fetch the existing invitation rather than creating a new one, which
-    // the unique pending index would reject anyway. The token stays the same, so
-    // any earlier email the person still has also keeps working.
-    const { data: rows, error: rErr } = await asUser.rpc('get_invitation_for_resend', {
+    // Resend rotates: rotate_invitation issues a new token on the same invitation
+    // row and returns it. Any earlier link stops resolving, because its hash no
+    // longer matches, which is the safer behavior; the new link is the one that
+    // works, and an old link degrades to the join page's "ask for a new one".
+    // Owner only, so an admin who tries to resend gets a clear refusal.
+    const { data: rotated, error: rErr } = await asUser.rpc('rotate_invitation', {
       p_clinic_id: clinicId, p_invitation_id: invitationId
     });
     if (rErr) return json(403, { error: rErr.message });
-    const row = rows && rows[0];
-    if (!row) return json(404, { error: 'that invitation is no longer pending' });
-    inv = { token: row.token, role: row.role, email: row.email };
-    email = row.email;
+    if (!rotated) return json(404, { error: 'that invitation is no longer pending' });
+    inv = { token: rotated.token, role: rotated.role, email: rotated.email };
+    email = rotated.email;
   } else {
     if (!email) return json(400, { error: 'email is required' });
     // Create the invitation. This RPC is the gate: owner-only, seat limit, one
@@ -130,7 +131,7 @@ exports.handler = async function (event) {
   const origin =
     headers.origin || headers.Origin ||
     ('https://' + (headers.host || 'skinday.com'));
-  const link = origin + '/clinic-portal.html?invite=' + encodeURIComponent(inv.token);
+  const link = origin + '/join-clinic?token=' + encodeURIComponent(inv.token);
 
   // The clinic's own name, for the email subject and body.
   let clinicName = 'a clinic on SkinDay';
