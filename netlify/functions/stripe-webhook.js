@@ -33,6 +33,7 @@
 // Env: STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 
 const crypto = require('crypto');
+const { tierForPrice } = require('./clinic-tier-map');
 
 const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -153,6 +154,32 @@ async function writeSubscription(clinicId, sub) {
   }, 'clinic_id');
 
   console.log('stripe-webhook: clinic ' + clinicId + ' -> ' + mapStatus(sub.status));
+
+  // Operational seat entitlement follows the price the clinic actually pays, and
+  // is written to the clinic record (not duplicated here). It changes ONLY on a
+  // paying status. On past_due, canceled, or none we leave the seat limit exactly
+  // where it was: a lapse blocks new paid writes elsewhere but never shrinks a
+  // team, changes roles, or manufactures a confusing over-limit state. A
+  // cancel_at_period_end subscription is still 'active' until the period ends, so
+  // it keeps its tier until Stripe reports it actually canceled.
+  const mapped = mapStatus(sub.status);
+  if (mapped === 'active' || mapped === 'trialing') {
+    const priceId = price ? price.id : null;
+    const ent = tierForPrice(priceId);
+    if (!ent) {
+      // Unknown price: do not guess a tier. Log loudly and leave seats unchanged.
+      // (Add the price to the STRIPE_PRICE_* env and clinic-tier-map.js.)
+      console.error('stripe-webhook: UNKNOWN Stripe price ' + priceId + ' for clinic ' +
+        clinicId + '; seat entitlement left unchanged.');
+    } else {
+      // Rethrows on failure so Stripe retries; apply_clinic_tier is idempotent.
+      await rpc('apply_clinic_tier', {
+        p_clinic_id: clinicId, p_tier: ent.tier, p_founding: ent.founding
+      });
+      console.log('stripe-webhook: clinic ' + clinicId + ' entitlement -> ' +
+        ent.tier + (ent.founding ? ' (founding)' : ''));
+    }
+  }
 }
 
 exports.handler = async (event) => {

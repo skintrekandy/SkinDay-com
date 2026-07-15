@@ -8,16 +8,17 @@
 //
 // Env
 //   STRIPE_SECRET_KEY
-//   STRIPE_PRICE_VISUALIZE_PRO   the price_... id
+//   STRIPE_PRICE_SOLO / STRIPE_PRICE_BOUTIQUE / STRIPE_PRICE_PREMIUM   the price_... ids
+//   STRIPE_PRICE_FOUNDING   the grandfathered founding rate (premium seats)
 //   SUPABASE_URL
 //   SUPABASE_ANON_KEY
 //   SUPABASE_SERVICE_ROLE_KEY
 
 const Stripe = require('stripe');
 const { createClient } = require('@supabase/supabase-js');
+const { priceForTier, SELF_SERVE_TIERS } = require('./clinic-tier-map');
 
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
-const PRICE_ID = process.env.STRIPE_PRICE_VISUALIZE_PRO;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -32,8 +33,8 @@ function json(statusCode, body) {
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
-  if (!STRIPE_KEY || !PRICE_ID) {
-    return json(500, { error: 'missing env: STRIPE_SECRET_KEY, STRIPE_PRICE_VISUALIZE_PRO' });
+  if (!STRIPE_KEY) {
+    return json(500, { error: 'missing env: STRIPE_SECRET_KEY' });
   }
 
   const headers = event.headers || {};
@@ -47,6 +48,23 @@ exports.handler = async function (event) {
 
   const clinicId = body.clinicId ? String(body.clinicId) : '';
   if (!clinicId) return json(400, { error: 'clinicId is required' });
+
+  // Which plan is being purchased. Default to premium for backward compatibility
+  // with the pre-tier single button (premium is the old $199 price); the billing
+  // panel sends an explicit tier. Enterprise is contact-us, never a checkout.
+  const tier = (body.tier ? String(body.tier) : 'premium').toLowerCase();
+  if (tier === 'enterprise') {
+    return json(400, { error: 'Enterprise is arranged directly, not through self-serve checkout.' });
+  }
+  if (SELF_SERVE_TIERS.indexOf(tier) === -1) {
+    return json(400, { error: 'unknown plan: ' + tier });
+  }
+  const priceId = priceForTier(tier);
+  if (!priceId) {
+    // The tier is valid but its price env var is not set. Fail loudly rather than
+    // charging the wrong amount.
+    return json(500, { error: 'no Stripe price configured for the ' + tier + ' plan' });
+  }
 
   const asUser = createClient(SUPABASE_URL, ANON_KEY, {
     global: { headers: { Authorization: 'Bearer ' + jwt } },
@@ -86,6 +104,24 @@ exports.handler = async function (event) {
 
   const customerId = (sub && sub.stripe_customer_id) || undefined;
 
+  // Founding is a database fact, not a browser claim. A clinic flagged founding
+  // always checks out at the locked founding price (premium seats), whatever tier
+  // the browser sent, so the special rate cannot be claimed by anyone else.
+  const { data: clinicRow } = await admin
+    .from('clinics')
+    .select('founding')
+    .eq('id', clinicId)
+    .maybeSingle();
+
+  let checkoutPrice = priceId;
+  if (clinicRow && clinicRow.founding) {
+    const foundingPrice = process.env.STRIPE_PRICE_FOUNDING || '';
+    if (!foundingPrice) {
+      return json(500, { error: 'no Stripe price configured for the founding rate' });
+    }
+    checkoutPrice = foundingPrice;
+  }
+
   const origin =
     headers.origin || headers.Origin ||
     ('https://' + (headers.host || 'skinday.com'));
@@ -93,7 +129,7 @@ exports.handler = async function (event) {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: PRICE_ID, quantity: 1 }],
+      line_items: [{ price: checkoutPrice, quantity: 1 }],
       client_reference_id: clinicId,
       customer: customerId,
       customer_email: customerId ? undefined : email,
