@@ -151,6 +151,17 @@
   status = 301
   force  = true
 
+# Clinic portal: serve at the clean /clinic-portal and 301 the .html address to
+# it. Netlify's built-in pretty-URL behaviour already serves clinic-portal.html
+# at /clinic-portal, so no reverse rule is needed. The join page and the portal
+# password-reset link still point at /clinic-portal.html; both keep working, they
+# just take one harmless hop through this redirect to the clean URL.
+[[redirects]]
+  from   = "/clinic-portal.html"
+  to     = "/clinic-portal"
+  status = 301
+  force  = true
+
 [[redirects]]
   from   = "/hk.html"
   to     = "/hongkong"
