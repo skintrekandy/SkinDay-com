@@ -2821,8 +2821,7 @@ $('settingsBtn').addEventListener('click', () => {
     document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
     ['studio', 'visualize', 'library'].forEach(p => { $('panel-' + p).style.display = 'none'; });
     $('panel-settings').style.display = 'block';
-    loadSettings();
-    loadTeam();
+    (async () => { await loadSettings(); await loadTeam(); })();
   } else {
     $('panel-settings').style.display = 'none';
     const t = document.querySelector('#tabs .tab[data-panel="studio"]');
@@ -3065,7 +3064,16 @@ async function loadTeam() {
   const { data, error } = await sb.rpc('get_clinic_team', { p_clinic_id: clinicId });
   if (error) { host.innerHTML = '<div class="empty"><p class="note bad">' + error.message + '</p></div>'; return; }
 
-  const isOwner = mySettings && mySettings.my_role === 'owner';
+  // Prefer the loaded settings, but do not hide the invite box just because they
+  // have not arrived yet. Fall back to a direct role read.
+  let myRole = mySettings && mySettings.my_role;
+  if (!myRole) {
+    const { data: mem } = await sb.from('clinic_memberships')
+      .select('role').eq('clinic_id', clinicId).eq('status', 'active')
+      .is('revoked_at', null).limit(1);
+    myRole = (mem && mem[0] && mem[0].role) || null;
+  }
+  const isOwner = myRole === 'owner';
   const c = (mySettings && mySettings.clinic) || {};
   $('inviteBox').style.display = isOwner ? 'block' : 'none';
 
