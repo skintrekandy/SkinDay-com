@@ -366,20 +366,52 @@
     .plate { grid-template-columns:1fr; }
     .diptych { max-width:250px; }
   }
-  .billing-lede { color:var(--muted); font-size:13.5px; margin:0 0 18px; max-width:60ch; }
-  .tier-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:16px; }
-  .tier-card { border:1px solid var(--line); border-radius:3px; padding:18px 16px; background:var(--cream); display:flex; flex-direction:column; gap:4px; }
-  .tier-card.featured { border-color:var(--gold); background:#faf4e9; }
-  .tier-card .tier-name { font-family:'Cormorant Garamond',Georgia,serif; font-size:20px; }
-  .tier-card .tier-price { font-size:22px; font-weight:500; }
-  .tier-card .tier-price span { font-size:12px; color:var(--muted); font-weight:400; }
-  .tier-card .tier-seats { font-size:12.5px; color:var(--muted); margin-bottom:10px; }
-  .tier-card button.act { margin-top:auto; padding:9px 12px; }
-  .tier-enterprise { display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
-    border-top:1px solid var(--line); padding-top:16px; font-size:13px; color:var(--muted); }
-  .tier-enterprise div { max-width:44ch; }
-  button.act.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); white-space:nowrap; }
+  /* ---- billing / plan picker ---- */
+  .billing-value { margin:0 0 26px; }
+  .billing-value-lead { font-family:'Cormorant Garamond',Georgia,serif; font-size:23px; line-height:1.2; margin:0 0 6px; color:var(--deep); }
+  .billing-value-body { color:var(--muted); font-size:13.5px; line-height:1.7; margin:0; max-width:62ch; }
+
+  .tier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+  @media (max-width:640px){ .tier-grid { grid-template-columns:1fr; } }
+
+  .tier-card {
+    position:relative; border:1px solid var(--line); border-radius:5px;
+    padding:22px 20px 20px; background:var(--paper);
+    display:flex; flex-direction:column;
+  }
+  .tier-card.featured {
+    border-color:var(--gold); background:#fbf6ec;
+    box-shadow:0 1px 0 rgba(201,169,110,.35), 0 6px 22px -14px rgba(28,23,20,.25);
+  }
+  .tier-tag {
+    position:absolute; top:-9px; left:20px;
+    background:var(--gold); color:var(--deep);
+    font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    padding:3px 8px; border-radius:2px;
+  }
+  .tier-name { font-family:'Cormorant Garamond',Georgia,serif; font-size:22px; line-height:1; margin-bottom:10px; }
+  .tier-price { font-family:'Cormorant Garamond',Georgia,serif; font-size:34px; line-height:1; color:var(--deep); }
+  .tier-price span { font-family:'DM Sans',sans-serif; font-size:12.5px; color:var(--muted); font-weight:400; margin-left:3px; }
+  .tier-price .cur { margin-left:0; margin-right:4px; }
+  .tier-blurb { font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
+  .tier-seats { font-size:12px; color:var(--muted); padding-top:12px; margin-top:12px; border-top:1px solid var(--line); }
+  .tier-card.featured .tier-seats { border-top-color:#ecd9b3; }
+  .tier-card button.act { margin-top:16px; width:100%; padding:11px 14px; justify-content:center; font-size:12.5px; }
+
+  /* Only the recommended plan is a filled button; the rest are quiet outlines,
+     so the eye is guided rather than shouted at. */
+  button.act.outline { background:transparent; color:var(--deep); border:1px solid var(--deep); }
+  button.act.outline:hover { background:var(--deep); color:var(--cream); }
+
+  .tier-enterprise { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    border-top:1px solid var(--line); padding-top:18px; margin-top:2px; font-size:13px; color:var(--muted); }
+  .tier-enterprise div { max-width:46ch; line-height:1.6; }
+  button.act.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); white-space:nowrap; padding:10px 18px; }
   button.act.ghost:hover { border-color:var(--gold); background:transparent; }
+
+  .billing-lede { color:var(--muted); font-size:13.5px; line-height:1.7; margin:0 0 18px; max-width:62ch; }
+  .plan-current { font-size:13px; color:var(--muted); margin:12px 0 0; }
+  .plan-current strong { color:var(--ink); font-weight:500; }
 </style>
 </head>
 <body>
@@ -3024,15 +3056,15 @@ async function loadSettings() {
 
 const TIER_LABEL = { solo: 'Solo', boutique: 'Boutique', premium: 'Premium', enterprise: 'Enterprise' };
 const TIER_CARDS = [
-  { tier: 'solo',     name: 'Solo',     price: '$99',  seats: '1 seat' },
-  { tier: 'boutique', name: 'Boutique', price: '$139', seats: 'up to 4 seats' },
-  { tier: 'premium',  name: 'Premium',  price: '$199', seats: 'up to 12 seats' }
+  { tier: 'solo',     name: 'Solo',     price: '$99',  seats: '1 seat',        blurb: 'For a solo practitioner.' },
+  { tier: 'boutique', name: 'Boutique', price: '$139', seats: 'Up to 4 seats', blurb: 'For a small team.' },
+  { tier: 'premium',  name: 'Premium',  price: '$199', seats: 'Up to 12 seats', blurb: 'For a full clinic.', featured: true }
 ];
-// The value is the gallery, not the AI. Lead every plan pitch with it.
-const GALLERY_LEDE =
-  'One automated website gallery: consented before and afters, cropped, labelled, ' +
-  'branded, embedded once, and kept current without the staff hours a clinic ' +
-  'usually spends. The AI simulation is the magic; the gallery is the reason to pay.';
+// The value is the gallery, not the AI. A short lead, then the detail.
+const VALUE_LEAD = 'Your results should do more than sit in a folder.';
+const VALUE_BODY =
+  'SkinDay turns your clinical cases into an organized library, an automated ' +
+  'website gallery, and a more effective consultation tool.';
 
 function renderBilling(sub, c) {
   const box = $('billBox');
@@ -3080,18 +3112,19 @@ function renderBilling(sub, c) {
 
   if (sub.has_card) {
     // Subscribed: Stripe owns the card, invoices, cancellation, and plan changes.
+    if (tier) {
+      const cur = document.createElement('p');
+      cur.className = 'plan-current';
+      cur.innerHTML = 'You are on <strong>' + TIER_LABEL[tier] + '</strong>' +
+        (founding ? ' at the founding rate' : '') + '. To change your plan, open Manage billing.';
+      box.appendChild(cur);
+    }
+
     const b = document.createElement('button');
     b.className = 'act';
     b.textContent = 'Manage billing';
     b.onclick = () => goStripe(b, st, '/api/clinic-billing-portal');
     box.appendChild(b);
-
-    const cur = document.createElement('p');
-    cur.className = 'note';
-    cur.textContent =
-      (tier ? ('You are on ' + TIER_LABEL[tier] + (founding ? ' at the founding rate' : '') + '. ') : '') +
-      'To change your plan, open Manage billing.';
-    box.appendChild(cur);
 
     if (sub.cancel_at_period_end) {
       const n = document.createElement('p');
@@ -3103,38 +3136,45 @@ function renderBilling(sub, c) {
       box.appendChild(n);
     }
   } else if (founding) {
-    // Founding pilot: one button. The founding price is decided server-side from
-    // the database flag, so the tier sent here does not matter.
-    const lede = document.createElement('p');
-    lede.className = 'billing-lede';
-    lede.textContent = GALLERY_LEDE + ' Your founding rate is locked.';
-    box.appendChild(lede);
+    // Founding pilot: one button. The founding price is decided server-side.
+    box.appendChild(valueBlock(' Your founding rate is locked.'));
     const b = document.createElement('button');
     b.className = 'act';
     b.textContent = 'Subscribe at your founding rate';
     b.onclick = () => goStripe(b, st, '/api/clinic-subscribe', 'premium');
     box.appendChild(b);
   } else {
-    // Not subscribed: the tier picker, led by the gallery ROI.
-    const lede = document.createElement('p');
-    lede.className = 'billing-lede';
-    lede.textContent = GALLERY_LEDE;
-    box.appendChild(lede);
+    // Not subscribed: the plan picker, led by the gallery value.
+    box.appendChild(valueBlock());
 
     const grid = document.createElement('div');
     grid.className = 'tier-grid';
     TIER_CARDS.forEach(card => {
       const el = document.createElement('div');
-      el.className = 'tier-card' + (card.tier === 'premium' ? ' featured' : '');
-      el.innerHTML =
+      el.className = 'tier-card' + (card.featured ? ' featured' : '');
+
+      if (card.featured) {
+        const tag = document.createElement('div');
+        tag.className = 'tier-tag';
+        tag.textContent = 'Recommended';
+        el.appendChild(tag);
+      }
+
+      const inner = document.createElement('div');
+      inner.innerHTML =
         '<div class="tier-name">' + card.name + '</div>' +
-        '<div class="tier-price">' + card.price + '<span>/mo</span></div>' +
+        '<div class="tier-price"><span class="cur">USD</span>' + card.price + '<span>/mo</span></div>' +
+        '<div class="tier-blurb">' + card.blurb + '</div>' +
         '<div class="tier-seats">' + card.seats + '</div>';
+      el.appendChild(inner);
+
       const b = document.createElement('button');
-      b.className = 'act';
+      // Only the recommended plan is filled; the others are quiet outlines.
+      b.className = 'act' + (card.featured ? '' : ' outline');
       b.textContent = 'Choose ' + card.name;
       b.onclick = () => goStripe(b, st, '/api/clinic-subscribe', card.tier);
       el.appendChild(b);
+
       grid.appendChild(el);
     });
     box.appendChild(grid);
@@ -3153,6 +3193,22 @@ function renderBilling(sub, c) {
   }
 
   box.appendChild(st);
+}
+
+// The gallery value, as a lead line and a body, so it reads with hierarchy
+// instead of as one flat block.
+function valueBlock(extra) {
+  const wrap = document.createElement('div');
+  wrap.className = 'billing-value';
+  const lead = document.createElement('p');
+  lead.className = 'billing-value-lead';
+  lead.textContent = VALUE_LEAD;
+  const body = document.createElement('p');
+  body.className = 'billing-value-body';
+  body.textContent = VALUE_BODY + (extra || '');
+  wrap.appendChild(lead);
+  wrap.appendChild(body);
+  return wrap;
 }
 
 // Enterprise is a conversation, not a checkout. A short form, emailed to us.
