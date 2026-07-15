@@ -442,31 +442,6 @@
     <div class="note" id="resetNote"></div>
   </section>
 
-  <!-- The third door. Someone arriving from an invitation email is not signing in
-       and is not creating a clinic; they are joining one. This screen resolves the
-       token to the clinic name, confirms the email the invite was sent to, and
-       takes a password. On submit it creates the account and redeems the token,
-       which is the only thing that adds them to the clinic. -->
-  <section class="gate sec" id="inviteScreen" style="display:none;">
-    <span class="eyebrow">Invitation</span>
-    <h1 class="display" id="invHead">Join your team.</h1>
-    <p class="lede" id="invLede">You have been invited. Set a password to join.</p>
-    <div class="field">
-      <label class="eyebrow" for="invEmailField">Your email</label>
-      <input type="email" id="invEmailField" autocomplete="username" readonly>
-      <small>The invitation was sent to this address.</small>
-    </div>
-    <div class="field">
-      <label class="eyebrow" for="invPass">Choose a password</label>
-      <input type="password" id="invPass" autocomplete="new-password">
-      <small>At least eight characters.</small>
-    </div>
-    <button class="act" id="invAccept">Accept and join</button>
-    <div class="note" id="invScreenNote"></div>
-    <div class="swap">
-      Already have an account? <button class="linkish" id="invToSignIn">Sign in instead</button>
-    </div>
-  </section>
 
   <section class="gate sec" id="signup" style="display:none;">
     <span class="eyebrow">Clinic portal</span>
@@ -902,6 +877,21 @@ const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 // and Visualize are already signed in as the same user. No second login.
 const sb = createClient(SUPABASE_URL, ANON_KEY);
 
+// Team invitations are owned entirely by /join-clinic. If an invite token is in
+// the URL, hand off before any portal boot runs, so an invited person can never
+// fall through to the Create Clinic form. This is the only invitation-aware code
+// left in the portal; redemption, lookup, and the join screens all live on
+// /join-clinic now. Recovery and billing returns use the URL hash or ?billing=,
+// not ?token= or ?invite=, so they are unaffected. Both parameter names are
+// accepted so links already sent during M13 route correctly after cutover.
+{
+  const _iq = new URLSearchParams(location.search);
+  if (_iq.get('token') || _iq.get('invite')) {
+    location.replace('/join-clinic' + location.search);
+    throw new Error('[invite] redirecting to /join-clinic');
+  }
+}
+
 let clinicId = null;
 
 const $ = id => document.getElementById(id);
@@ -961,7 +951,6 @@ async function signIn() {
     note('gateNote', 'That email and password did not match an account.', 'bad');
     return;
   }
-  await redeemInvite();
   start();
 }
 
@@ -1118,7 +1107,7 @@ $('signOut').addEventListener('click', async () => { await sb.auth.signOut(); lo
 async function start() {
   // Any of the three entry screens could be the one that got here. Hide them all,
   // so none can be left covering the portal.
-  ['gate', 'signup', 'inviteScreen'].forEach(id => {
+  ['gate', 'signup'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1129,25 +1118,6 @@ async function start() {
     .eq('status', 'active')
     .is('revoked_at', null)
     .limit(1);
-
-  // Safety net: no membership yet, but a live invite token is still around means
-  // the join has not completed. Redeem it now and re-check, rather than dropping
-  // the person on Create Clinic. This is the last line of defence against every
-  // timing race in the sign-up / redeem sequence.
-  if ((!rows || !rows.length) && inviteToken()) {
-    console.log('[invite] start() found no membership but a token exists; redeeming');
-    const joined = await redeemInvite();
-    if (joined) {
-      const re = await sb
-        .from('clinic_memberships')
-        .select('clinic_id')
-        .eq('status', 'active')
-        .is('revoked_at', null)
-        .limit(1);
-      rows = re.data;
-      error = re.error;
-    }
-  }
 
   if (error || !rows || !rows.length) {
     // Somebody who confirmed their email after signing up, or whose clinic
@@ -1395,67 +1365,15 @@ function setClinicHeader(c) {
 
 /* ---- invitations --------------------------------------------------------
 
-   An invite link almost always arrives at a signed-out browser. So the token is
-   stashed before the sign-in and redeemed after it, or every invitation would be
-   a dead link that looks exactly like a bug.
-
-   The invitation is to a person, not to whoever holds the URL: accept_clinic_invitation
-   refuses unless the signed-in email matches the one invited. A forwarded link is
-   worth nothing. */
+   Invitations are owned entirely by /join-clinic. The guard at the top of this
+   script redirects any invite link there before boot, so nothing in the portal
+   redeems tokens, looks them up, or renders a join screen. */
 
 // A success_url redirect proves someone reached a URL. It does not prove a
 // payment: anyone can type ?billing=ok. The webhook writes the state, and this
 // just waits for it to arrive.
 const BILLING_RESULT = new URLSearchParams(location.search).get('billing');
 if (BILLING_RESULT) history.replaceState({}, '', location.pathname);
-
-const INVITE_KEY = 'sd-clinic-invite';
-
-// The token can live in the URL, in sessionStorage, or both. Keep it in BOTH and
-// never strip the URL until a join succeeds, so no reload, sign-up round trip, or
-// tab quirk can lose it. Losing it was what dumped invited people into Create
-// Clinic: they got a session but the token was gone, so no membership was made.
-function inviteToken() {
-  const fromUrl = new URLSearchParams(location.search).get('invite');
-  if (fromUrl) {
-    try { sessionStorage.setItem(INVITE_KEY, fromUrl); } catch (e) {}
-    return fromUrl;
-  }
-  try { return sessionStorage.getItem(INVITE_KEY); } catch (e) { return null; }
-}
-
-function clearInviteToken() {
-  try { sessionStorage.removeItem(INVITE_KEY); } catch (e) {}
-  // Strip ?invite= from the URL only now that we are truly done with it.
-  if (new URLSearchParams(location.search).get('invite')) {
-    history.replaceState({}, '', location.pathname);
-  }
-}
-
-async function redeemInvite() {
-  const t = inviteToken();
-  if (!t) return false;
-
-  const { data, error } = await sb.rpc('accept_clinic_invitation', { p_token: t });
-
-  if (error) {
-    console.error('[invite] redeem error:', error.message);
-    note('gateNote', error.message, 'bad');
-    return false;
-  }
-
-  const accepted = !!(data && data.accepted);
-
-  if (!accepted) {
-    console.warn('[invite] token not accepted:', data && data.reason);
-    clearInviteToken();   // it is dead; stop carrying it
-    return false;
-  }
-
-  clearInviteToken();
-  console.log('[invite] joined clinic', data && data.clinic_id, 'as', data && data.role);
-  return true;
-}
 
 // A recovery link brings the user back with type=recovery in the URL hash and a
 // temporary recovery session. Show the set-new-password screen and do not run the
@@ -1470,7 +1388,7 @@ try {
 sb.auth.onAuthStateChange((event) => {
   if (event === 'PASSWORD_RECOVERY') {
     inRecovery = true;
-    ['gate', 'signup', 'forgot', 'inviteScreen', 'panel-settings'].forEach(id => {
+    ['gate', 'signup', 'forgot', 'panel-settings'].forEach(id => {
       const el = document.getElementById(id); if (el) el.style.display = 'none';
     });
     $('resetPw').style.display = 'block';
@@ -1479,146 +1397,19 @@ sb.auth.onAuthStateChange((event) => {
 
 sb.auth.getSession().then(async ({ data }) => {
   if (inRecovery) {
-    ['gate', 'signup', 'forgot', 'inviteScreen'].forEach(id => {
+    ['gate', 'signup', 'forgot'].forEach(id => {
       const el = document.getElementById(id); if (el) el.style.display = 'none';
     });
     $('resetPw').style.display = 'block';
     return;
   }
 
+  // Invitations are handled entirely on /join-clinic; the guard at the top of
+  // this script sends any invite link there before boot. Here we only boot.
   const signedIn = !!(data && data.session);
-
-  const pendingToken = inviteToken();
-
-  // No invitation: normal boot.
-  if (!pendingToken) {
-    if (signedIn) start();
-    return;
-  }
-
-  // There is an invitation. The token is the authority (Google Workspace model):
-  // whoever is signed in and holds a valid token joins. No email comparison, no
-  // "this is for someone else", no dead ends.
-  if (signedIn) {
-    await redeemInvite();   // joins via accept_clinic_invitation (token is authority)
-    start();                // then into the portal; start() re-reads membership
-    return;
-  }
-
-  // Not signed in. Show the Join screen, prefilled with the invited email as a
-  // convenience. Setting a password (or signing in) then redeems the token.
-  const { data: rows } = await sb.rpc('lookup_invitation', { p_token: pendingToken });
-  const inv = rows && rows[0];
-
-  if (!inv || !inv.valid) {
-    clearInviteToken();
-    note('gateNote', 'That invitation has expired or has already been used. Ask for a new one, or sign in.', 'bad');
-    return;
-  }
-
-  $('gate').style.display = 'none';
-  $('inviteScreen').style.display = 'block';
-  $('invHead').textContent = 'Join ' + inv.clinic_name + '.';
-  $('invLede').textContent =
-    'You have been invited to ' + inv.clinic_name + ' as ' +
-    (inv.role === 'admin' ? 'an admin' : 'a staff member') +
-    '. Set a password to join, or sign in if you already have an account.';
-  $('invEmailField').value = inv.email;
+  if (signedIn) start();
 });
 
-// Accept an invitation: create the account for the invited email, then redeem the
-// token. accept_clinic_invitation checks the token AND that the signed-in email
-// matches the invited one, so a password set here can only join the clinic the
-// token was issued for.
-async function acceptInvite() {
-  const btn = $('invAccept');
-  const email = $('invEmailField').value.trim();
-  const pass = $('invPass').value;
-
-  if (!pass || pass.length < 8) {
-    return note('invScreenNote', 'Pick a password of at least eight characters.', 'bad');
-  }
-
-  btn.disabled = true;
-  note('invScreenNote', 'Joining…');
-
-  try {
-    // Try to create the account. Two outcomes need different handling:
-    //   - brand new email: account created, the typed password is their password
-    //   - email already registered: they set a password before, and the one they
-    //     just typed here is NOT it. Signing in with the typed password would fail
-    //     and collapse the flow, which is the bug that sent people to Create Clinic.
-    //     So we recognise "already registered" and ask them to sign in with their
-    //     existing password to join, rather than pretending this is a new account.
-    let session = null;
-    const { data: up, error: upErr } = await sb.auth.signUp({ email, password: pass });
-
-    if (upErr) {
-      const msg = (upErr.message || '').toLowerCase();
-      const alreadyRegistered =
-        msg.includes('already registered') ||
-        msg.includes('already exists') ||
-        msg.includes('user already');
-
-      if (alreadyRegistered) {
-        // Attempt sign-in with what they typed, in case it happens to be their
-        // real password. If not, tell them plainly to use "Sign in instead".
-        const { data: si, error: siErr } = await sb.auth.signInWithPassword({ email, password: pass });
-        if (siErr) {
-          note('invScreenNote',
-            'You already have a SkinDay account for ' + email + '. Use "Sign in instead" below ' +
-            'with your existing password, and it will join you to the clinic.', 'bad');
-          btn.disabled = false;
-          return;
-        }
-        session = si.session;
-      } else {
-        throw new Error(upErr.message);
-      }
-    } else {
-      session = up.session;
-    }
-
-    // Email confirmation on: no session yet. The token survives in sessionStorage,
-    // so when they confirm and return, the boot path redeems it.
-    if (!session) {
-      note('invScreenNote',
-        'Almost there. Check your email to confirm your address, then come back and it will finish joining you.', 'ok');
-      btn.disabled = false;
-      return;
-    }
-
-    // Critical: after signUp/signIn the client needs the session to be in place
-    // before the RPC runs, or accept_clinic_invitation sees no auth.uid() and
-    // raises 'unauthenticated', the redeem fails, and start() finds no membership
-    // and shows Create Clinic. Wait for the session to be readable first.
-    let ready = null;
-    for (let i = 0; i < 20; i++) {
-      const { data: sd } = await sb.auth.getSession();
-      if (sd && sd.session) { ready = sd.session; break; }
-      await new Promise(r => setTimeout(r, 150));
-    }
-    if (!ready) throw new Error('Sign-in did not complete. Please try again.');
-
-    const ok = await redeemInvite();
-    if (!ok) throw new Error('Could not join the clinic. The invitation may have expired, or already been used.');
-    $('inviteScreen').style.display = 'none';
-    await start();
-  } catch (e) {
-    note('invScreenNote', e.message, 'bad');
-    btn.disabled = false;
-  }
-}
-
-$('invAccept').addEventListener('click', acceptInvite);
-$('invPass').addEventListener('keydown', e => { if (e.key === 'Enter') acceptInvite(); });
-$('invToSignIn').addEventListener('click', () => {
-  // Keep the invite token stashed so signing in on the gate redeems it and joins
-  // them. The gate's own sign-in handler calls redeemInvite before start().
-  $('inviteScreen').style.display = 'none';
-  $('gate').style.display = 'block';
-  note('gateNote', 'Sign in with your existing password to join the clinic.', 'ok');
-});
 
 /* ---- tabs ---- */
 
