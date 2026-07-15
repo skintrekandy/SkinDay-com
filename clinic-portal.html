@@ -1404,14 +1404,38 @@ async function acceptInvite() {
   note('invScreenNote', 'Joining…');
 
   try {
-    // Create the account. If it already exists, sign in instead: an invited person
-    // who had signed up separately still just needs to be joined.
+    // Try to create the account. Two outcomes need different handling:
+    //   - brand new email: account created, the typed password is their password
+    //   - email already registered: they set a password before, and the one they
+    //     just typed here is NOT it. Signing in with the typed password would fail
+    //     and collapse the flow, which is the bug that sent people to Create Clinic.
+    //     So we recognise "already registered" and ask them to sign in with their
+    //     existing password to join, rather than pretending this is a new account.
     let session = null;
     const { data: up, error: upErr } = await sb.auth.signUp({ email, password: pass });
+
     if (upErr) {
-      const { data: si, error: siErr } = await sb.auth.signInWithPassword({ email, password: pass });
-      if (siErr) throw new Error('An account for ' + email + ' already exists. Use the password you set before, or sign in.');
-      session = si.session;
+      const msg = (upErr.message || '').toLowerCase();
+      const alreadyRegistered =
+        msg.includes('already registered') ||
+        msg.includes('already exists') ||
+        msg.includes('user already');
+
+      if (alreadyRegistered) {
+        // Attempt sign-in with what they typed, in case it happens to be their
+        // real password. If not, tell them plainly to use "Sign in instead".
+        const { data: si, error: siErr } = await sb.auth.signInWithPassword({ email, password: pass });
+        if (siErr) {
+          note('invScreenNote',
+            'You already have a SkinDay account for ' + email + '. Use "Sign in instead" below ' +
+            'with your existing password, and it will join you to the clinic.', 'bad');
+          btn.disabled = false;
+          return;
+        }
+        session = si.session;
+      } else {
+        throw new Error(upErr.message);
+      }
     } else {
       session = up.session;
     }
@@ -1438,8 +1462,11 @@ async function acceptInvite() {
 $('invAccept').addEventListener('click', acceptInvite);
 $('invPass').addEventListener('keydown', e => { if (e.key === 'Enter') acceptInvite(); });
 $('invToSignIn').addEventListener('click', () => {
+  // Keep the invite token stashed so signing in on the gate redeems it and joins
+  // them. The gate's own sign-in handler calls redeemInvite before start().
   $('inviteScreen').style.display = 'none';
   $('gate').style.display = 'block';
+  note('gateNote', 'Sign in with your existing password to join the clinic.', 'ok');
 });
 
 /* ---- tabs ---- */
