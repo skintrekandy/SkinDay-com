@@ -47,11 +47,13 @@
     font-family:'Cormorant Garamond',Georgia,serif; font-weight:400; line-height:1.15;
     font-size:31px; margin:8px 0 6px;
   }
-  .lede { color:var(--muted); font-size:14px; margin:0 0 22px; }
+  .lede { color:var(--muted); font-size:14px; margin:0 0 8px; }
   .lede strong { color:var(--ink); font-weight:500; }
+  .for-email { font-size:13px; color:var(--muted); margin:0 0 20px; }
+  .for-email strong { color:var(--ink); font-weight:500; }
 
   label { display:block; margin-bottom:6px; }
-  .field { margin-bottom:16px; }
+  .field { margin-bottom:14px; }
   input[type=email], input[type=password] {
     width:100%; padding:10px 12px; border:1px solid var(--line);
     border-radius:2px; background:var(--cream); color:var(--deep);
@@ -65,18 +67,34 @@
     width:100%; margin-top:4px; padding:13px 18px;
     background:var(--deep); color:var(--cream);
     border:1px solid var(--deep); border-radius:2px;
-    font:inherit; font-size:13px; font-weight:500; letter-spacing:.02em;
-    cursor:pointer;
+    font:inherit; font-size:13px; font-weight:500; letter-spacing:.02em; cursor:pointer;
   }
   button.act:hover { background:#322822; }
   button.act:disabled { opacity:.35; cursor:default; }
 
-  .swap { margin-top:18px; font-size:13px; color:var(--muted); }
+  button.google {
+    width:100%; padding:12px 18px; display:flex; align-items:center; justify-content:center; gap:10px;
+    background:var(--paper); color:var(--ink);
+    border:1px solid var(--line); border-radius:2px;
+    font:inherit; font-size:13.5px; font-weight:500; cursor:pointer;
+  }
+  button.google:hover { border-color:#d6cabb; background:#fbf8f3; }
+  button.google .g {
+    width:16px; height:16px; display:inline-block; border-radius:50%;
+    background:conic-gradient(from -45deg, #ea4335 0 25%, #fbbc05 0 50%, #34a853 0 75%, #4285f4 0 100%);
+    -webkit-mask:radial-gradient(circle 4px at center, transparent 98%, #000 100%);
+            mask:radial-gradient(circle 4px at center, transparent 98%, #000 100%);
+  }
+
+  .divider { display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--muted); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; }
+  .divider::before, .divider::after { content:''; height:1px; flex:1; background:var(--line); }
+
   .linkish {
     background:none; border:0; padding:0; margin:0; cursor:pointer;
-    color:var(--rose); font:inherit; font-size:13px; text-decoration:underline;
-    text-underline-offset:2px;
+    color:var(--rose); font:inherit; font-size:13px; text-decoration:underline; text-underline-offset:2px;
   }
+  .linkrow { margin-top:14px; display:flex; flex-wrap:wrap; gap:10px 18px; font-size:13px; }
+  .swap { margin-top:16px; font-size:13px; color:var(--muted); }
   .note { min-height:1.4em; font-size:12.5px; margin-top:12px; color:var(--muted); }
   .note.bad { color:var(--rose); }
   .note.ok { color:#2f7d54; }
@@ -103,14 +121,37 @@
       <div class="spin"></div>
     </section>
 
-    <!-- S1 / S2: valid invitation, signed out. Create account (email locked) or sign in. -->
+    <!-- Valid invitation, signed out. All authentication methods shown together. -->
     <section id="s-join" hidden>
       <span class="eyebrow">Invitation</span>
       <h1 class="display" id="joinHead">Join your team.</h1>
       <p class="lede" id="joinLede"></p>
+      <p class="for-email" id="joinForEmail"></p>
 
-      <!-- Create account: the email is fixed to the invited address. -->
-      <div id="createBlock">
+      <!-- Continue with Google (most pilot clinics already have an account) -->
+      <button class="google" id="googleBtn"><span class="g"></span>Continue with Google</button>
+
+      <div class="divider" id="joinDivider">or</div>
+
+      <!-- Existing account: email and password. Adjudicated server-side. -->
+      <div id="signinBlock">
+        <div class="field">
+          <label class="eyebrow" for="signinEmail">Email</label>
+          <input type="email" id="signinEmail" autocomplete="username">
+        </div>
+        <div class="field">
+          <label class="eyebrow" for="signinPass">Password</label>
+          <input type="password" id="signinPass" autocomplete="current-password">
+        </div>
+        <button class="act" id="signinBtn">Sign in and join</button>
+        <div class="linkrow">
+          <button class="linkish" id="toForgot">Forgot or never set a password?</button>
+          <button class="linkish" id="toCreate">Create a new SkinDay account</button>
+        </div>
+      </div>
+
+      <!-- Genuinely new user: create a password. Email fixed to the invited address. -->
+      <div id="createBlock" hidden>
         <div class="field">
           <label class="eyebrow" for="createEmail">Your email</label>
           <input type="email" id="createEmail" autocomplete="username" readonly>
@@ -121,50 +162,50 @@
           <input type="password" id="createPass" autocomplete="new-password" placeholder="At least 8 characters">
         </div>
         <button class="act" id="createBtn">Create account and join</button>
-        <div class="swap">Already have an account? <button class="linkish" id="toSignin">Sign in instead</button></div>
-      </div>
-
-      <!-- Sign in: an existing account signs in with its own credentials. Not locked. -->
-      <div id="signinBlock" hidden>
-        <div class="field">
-          <label class="eyebrow" for="signinEmail">Email</label>
-          <input type="email" id="signinEmail" autocomplete="username">
-        </div>
-        <div class="field">
-          <label class="eyebrow" for="signinPass">Password</label>
-          <input type="password" id="signinPass" autocomplete="current-password">
-        </div>
-        <button class="act" id="signinBtn">Sign in and join</button>
-        <div class="swap">Need an account? <button class="linkish" id="toCreate">Create one instead</button></div>
+        <div class="swap">Already have an account? <button class="linkish" id="backToSignin">Sign in instead</button></div>
       </div>
 
       <div class="note" id="joinNote"></div>
     </section>
 
-    <!-- S3: signed in as the wrong account -->
+    <!-- Set or reset a password (from a recovery link). Works for a Google-only
+         user too: it adds a password to the existing account without deleting it. -->
+    <section id="s-reset" hidden>
+      <span class="eyebrow">Set your password</span>
+      <h1 class="display">Choose a password.</h1>
+      <p class="lede">Set a password for your account, then you will join automatically.</p>
+      <div class="field">
+        <label class="eyebrow" for="resetPass">New password</label>
+        <input type="password" id="resetPass" autocomplete="new-password" placeholder="At least 8 characters">
+      </div>
+      <button class="act" id="resetBtn">Save and join</button>
+      <div class="note" id="resetNote"></div>
+    </section>
+
+    <!-- Signed in as the wrong account -->
     <section id="s-wrong" hidden>
       <span class="eyebrow">Wrong account</span>
       <h1 class="display">This invitation is for someone else.</h1>
       <p class="lede" id="wrongLede"></p>
-      <button class="act" id="switchBtn">Sign in with the invited account</button>
+      <button class="act" id="switchBtn">Use the invited account instead</button>
       <div class="note" id="wrongNote"></div>
     </section>
 
-    <!-- S5: confirming (only reachable if Confirm email is turned on later) -->
+    <!-- Confirming (only if Confirm email is turned on later) -->
     <section id="s-confirm" hidden>
       <span class="eyebrow">Almost there</span>
       <h1 class="display">Check your email.</h1>
       <p class="lede" id="confirmLede"></p>
     </section>
 
-    <!-- S6: dead invitation -->
+    <!-- Dead invitation -->
     <section id="s-dead" hidden>
       <span class="eyebrow">Invitation</span>
       <h1 class="display" id="deadHead">This invitation is no longer valid.</h1>
       <p class="lede" id="deadLede">Ask the clinic owner for a new one.</p>
     </section>
 
-    <!-- S7: success -->
+    <!-- Success -->
     <section id="s-done" hidden>
       <span class="eyebrow">Welcome</span>
       <h1 class="display" id="doneHead">You have joined.</h1>
@@ -186,77 +227,104 @@ const sb = createClient(SUPABASE_URL, ANON_KEY);
 
 const $ = id => document.getElementById(id);
 const note = (id, msg, cls) => { const e = $(id); e.className = 'note ' + (cls || ''); e.textContent = msg || ''; };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
 
-/* The token is the single carrier. It lives only in the URL, never in storage,
-   so there is no second copy to fall out of sync with (the race that broke the
-   old flow). Both parameter names are read so links sent during M13 still work.
-   Every authentication action below returns to this exact URL, token included,
-   which is what lets a sign-out-and-switch or a confirmation round trip survive. */
+/* The token is the single carrier. It lives only in the URL, never in storage.
+   RETURN_URL is this exact address, token included, and every authentication
+   action (Google, sign-in, password recovery, sign-out-and-switch) returns to it,
+   so the invitation always survives the round trip. Both parameter names are read
+   so links sent during M13 still work. */
 const RETURN_URL = location.origin + location.pathname + location.search;
 const params = new URLSearchParams(location.search);
 const TOKEN = params.get('token') || params.get('invite');
 
-if (!TOKEN) {
-  // This page has no meaning without a token.
-  location.replace('/clinic-portal.html');
-}
+if (!TOKEN) location.replace('/clinic-portal.html');
 
-// Display data from lookup_invitation, held so the sign-in and switch paths can
-// reuse the clinic name without another round trip.
-let INV = null;
-// When returning from a wrong-account sign-out, open the sign-in block directly.
-let preferSignin = false;
+let INV = null;            // display data from lookup_invitation
+let preferSignin = false;  // after a wrong-account sign-out, land on sign-in
 
-const SCREENS = ['s-loading', 's-join', 's-wrong', 's-confirm', 's-dead', 's-done'];
+const SCREENS = ['s-loading', 's-join', 's-reset', 's-wrong', 's-confirm', 's-dead', 's-done'];
 function show(id) { SCREENS.forEach(s => { $(s).hidden = (s !== id); }); }
-
 const roleWord = r => (r === 'admin' ? 'an admin' : 'a staff member');
 
-/* The coordinator is the ONLY caller of accept_clinic_invitation. It runs once,
-   after authentication has resolved, and never inside a sign-in, sign-up, or
-   auth-state callback. Authentication finishes first; then this runs once.
+/* A recovery link returns here with type=recovery in the URL hash. Read it
+   synchronously now, before the Supabase client can process and clear the hash,
+   and also catch the PASSWORD_RECOVERY event, exactly as the portal does. This
+   only decides which screen to show; it never accepts the invitation. */
+let inRecovery = false;
+try {
+  const h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+  if (h.get('type') === 'recovery') inRecovery = true;
+} catch (e) {}
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') { inRecovery = true; showReset(); }
+});
 
-   Authorization note: with Supabase "Confirm email" currently OFF, the server's
-   email match verifies that the signed-in account's address equals the invited
-   address. It does not by itself prove the person controls that mailbox. That is
-   acceptable because a membership is created only on a match, and the invitation
-   was sent by an owner to a real address. If Confirm email is turned on later,
-   address ownership is also proven and nothing here changes. */
-async function coordinate() {
+/* The coordinator is the only caller of accept_clinic_invitation. It is invoked
+   from explicit post-authentication points (a completed sign-in, create, Google
+   return, or password set), never from a reactive auth callback.
+
+   Authorization note: with Supabase "Confirm email" OFF, the server's email match
+   verifies that the signed-in account's address equals the invited address. It
+   does not by itself prove mailbox control. Google sign-in does prove it, because
+   Google verifies the address. Either way, a membership is created only on a
+   match, and the accept RPC and email-match logic are unchanged. */
+/* In-flight guard. Whatever reaches the coordinator (a completed sign-in, a
+   Google return caught by boot, a password set), only one acceptance call is ever
+   started per page. A second caller awaits the same promise instead of firing a
+   parallel RPC. The database FOR UPDATE is the backstop for anything that still
+   races; this stops it happening in the browser at all. */
+let acceptancePromise = null;
+function coordinate() {
+  if (!acceptancePromise) acceptancePromise = runAcceptance();
+  return acceptancePromise;
+}
+
+async function runAcceptance() {
   show('s-loading');
   const { data, error } = await sb.rpc('accept_clinic_invitation', { p_token: TOKEN });
-
-  if (error) { showDead('unexpected'); return; }
+  if (error) { acceptancePromise = null; showDead('unexpected'); return; }
 
   switch (data && data.code) {
     case 'joined':
-    case 'already_member':
-      showDone(data);
-      return;
-    case 'email_mismatch':
-      showWrong(data);
-      return;
+    case 'already_member': showDone(data); return;
+    case 'email_mismatch': acceptancePromise = null; showWrong(data); return;
     case 'invalid_token':
     case 'expired':
     case 'revoked':
-    case 'already_accepted':
-      showDead(data.code);
-      return;
-    case 'blocked':
-      showDead('blocked:' + (data.reason || ''));
-      return;
-    case 'unauthenticated':
-      // Session was not in place. Fall back to the signed-out screens.
-      await boot();
-      return;
-    default:
-      showDead('unexpected');
+    case 'already_accepted': showDead(data.code); return;
+    case 'blocked': showDead('blocked:' + (data.reason || '')); return;
+    case 'unauthenticated': acceptancePromise = null; await boot(); return;
+    default: showDead('unexpected');
   }
 }
 
+async function waitForSession(maxMs) {
+  const start = Date.now();
+  while (Date.now() - start < maxMs) {
+    const { data } = await sb.auth.getSession();
+    if (data && data.session) return data.session;
+    await sleep(150);
+  }
+  return null;
+}
+
 async function boot() {
-  const { data: sess } = await sb.auth.getSession();
-  if (sess && sess.session) { await coordinate(); return; }
+  if (inRecovery) { showReset(); return; }
+
+  const hash = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+  const oauthReturn = hash.has('access_token');
+
+  let session = null;
+  if (oauthReturn) session = await waitForSession(6000);
+  else { const { data } = await sb.auth.getSession(); session = data && data.session; }
+
+  if (session) { await coordinate(); return; }
 
   // Signed out: resolve the token for display (five-way status).
   const { data: rows, error } = await sb.rpc('lookup_invitation', { p_token: TOKEN });
@@ -265,21 +333,14 @@ async function boot() {
   INV = inv;
 
   switch (inv.code) {
-    case 'valid':
-      showJoin(inv);
-      return;
+    case 'valid': showJoin(inv); return;
     case 'used':
-      // The invited person can still sign in and reach the idempotent result.
-      showJoin(inv, {
-        signinOnly: true,
-        notice: 'This invitation has already been used. Sign in with the invited account to reach the clinic.'
-      });
+      showJoin(inv, { signinOnly: true, notice: 'This invitation has already been used. Sign in with the invited account to reach the clinic.' });
       return;
     case 'expired':
     case 'revoked':
     case 'invalid':
-    default:
-      showDead(inv.code);
+    default: showDead(inv.code);
   }
 }
 
@@ -289,19 +350,30 @@ function showJoin(inv, opts) {
   $('joinLede').innerHTML = inv.clinic_name
     ? ('You have been invited to <strong>' + escapeHtml(inv.clinic_name) + '</strong> as ' + roleWord(inv.role) + '.')
     : ('You have been invited as ' + roleWord(inv.role) + '.');
+  $('joinForEmail').innerHTML = inv.email
+    ? ('The invitation is for <strong>' + escapeHtml(inv.email) + '</strong>.')
+    : '';
 
-  if (inv.email) $('createEmail').value = inv.email;
+  if (inv.email) {
+    $('signinEmail').value = inv.email;   // prefilled, editable; the server adjudicates
+    $('createEmail').value = inv.email;   // locked to the invited address
+  }
 
   const signin = opts.signinOnly || preferSignin;
   preferSignin = false;
-  $('createBlock').hidden = signin;
-  $('signinBlock').hidden = !signin;
-  // If the invitation is used, there is no create path; hide the swap to it.
-  $('toCreate').closest('.swap').style.display = opts.signinOnly ? 'none' : '';
-  if (opts.signinOnly && inv.email) $('signinEmail').value = inv.email;
+  $('signinBlock').hidden = false;
+  $('createBlock').hidden = true;
+  // A used invitation has no create path.
+  $('toCreate').style.display = opts.signinOnly ? 'none' : '';
 
   note('joinNote', opts.notice || '', opts.notice ? 'ok' : '');
+  if (signin) $('signinPass').focus();
   show('s-join');
+}
+
+function showReset() {
+  show('s-reset');
+  $('resetPass').focus();
 }
 
 function showWrong(data) {
@@ -330,13 +402,12 @@ const DEAD_COPY = {
   already_accepted: ['This invitation has already been used.', 'If it was you, sign in from the portal. Otherwise ask the owner for a new one.'],
   used:             ['This invitation has already been used.', 'If it was you, sign in from the portal. Otherwise ask the owner for a new one.'],
   unexpected:       ['Something went wrong.', 'Please try again in a moment, or ask the clinic owner for a new invitation.'],
-  'blocked:seat_limit':   ['This clinic has no seats left.', 'Ask the clinic owner to free a seat, then use a fresh invitation.'],
-  'blocked:admin_exists': ['This clinic already has an admin.', 'Ask the clinic owner, who can adjust roles.'],
-  'blocked:owner_rule':   ['This invitation could not be completed.', 'Ask the clinic owner for a new one.'],
+  'blocked:seat_limit':      ['This clinic has no seats left.', 'Ask the clinic owner to free a seat, then use a fresh invitation.'],
+  'blocked:admin_exists':    ['This clinic already has an admin.', 'Ask the clinic owner, who can adjust roles.'],
+  'blocked:owner_rule':      ['This invitation could not be completed.', 'Ask the clinic owner for a new one.'],
   'blocked:clinic_inactive': ['This clinic is not active right now.', 'Ask the clinic owner.'],
-  'blocked:role_invalid': ['This invitation could not be completed.', 'Ask the clinic owner for a new one.']
+  'blocked:role_invalid':    ['This invitation could not be completed.', 'Ask the clinic owner for a new one.']
 };
-
 function showDead(code) {
   const copy = DEAD_COPY[code] || DEAD_COPY.unexpected;
   $('deadHead').textContent = copy[0];
@@ -345,57 +416,25 @@ function showDead(code) {
 }
 
 function showDone(data) {
-  $('doneHead').textContent = data && data.clinic_id
-    ? 'You are in.'
-    : 'You have joined.';
+  $('doneHead').textContent = (data && data.clinic_id) ? 'You are in.' : 'You have joined.';
   show('s-done');
   setTimeout(() => { location.replace('/clinic-portal.html'); }, 1200);
 }
 
-function escapeHtml(s) {
-  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[c]));
-}
-
-// ---- create account (email fixed to the invited address) ----
-async function doCreate() {
-  const email = $('createEmail').value.trim();
-  const pass = $('createPass').value;
-  if (!pass || pass.length < 8) { note('joinNote', 'Pick a password of at least eight characters.', 'bad'); return; }
-
-  const btn = $('createBtn');
-  btn.disabled = true;
-  note('joinNote', 'Creating your account...');
-
-  const { data, error } = await sb.auth.signUp({
-    email,
-    password: pass,
-    options: { emailRedirectTo: RETURN_URL }
+// ---- Continue with Google (same options SkinDay uses elsewhere) ----
+async function doGoogle() {
+  note('joinNote', 'Opening Google...');
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: RETURN_URL, queryParams: { prompt: 'select_account' } }
   });
-
-  if (error) {
-    const msg = (error.message || '').toLowerCase();
-    if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
-      // They have an account. Move them to sign in rather than guessing a password.
-      note('joinNote', 'You already have an account for this email. Sign in to join.', 'ok');
-      openSignin(email);
-    } else {
-      note('joinNote', error.message, 'bad');
-    }
-    btn.disabled = false;
-    return;
-  }
-
-  // Confirm email OFF: a session is returned immediately, so join in one step.
-  if (data && data.session) { await coordinate(); return; }
-
-  // Confirm email ON (defensive): no session yet. The token is in RETURN_URL, so
-  // the confirmation link brings them back here and boot() runs the coordinator.
-  showConfirm(email);
+  // On success the browser navigates to Google, then back to RETURN_URL, where
+  // boot() finds the session and runs the coordinator. A wrong Google account is
+  // caught by the coordinator and lands on the wrong-account screen.
+  if (error) note('joinNote', error.message, 'bad');
 }
 
-// ---- sign in (existing account; email adjudicated by the server) ----
+// ---- Sign in with email and password (existing account) ----
 async function doSignin() {
   const email = $('signinEmail').value.trim();
   const pass = $('signinPass').value;
@@ -404,48 +443,93 @@ async function doSignin() {
   const btn = $('signinBtn');
   btn.disabled = true;
   note('joinNote', 'Signing in...');
-
   const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error || !data.session) {
-    note('joinNote', 'That email and password did not match an account.', 'bad');
+    note('joinNote', 'That email and password did not match an account. If you signed up with Google, use Continue with Google. If you never set a password, use the link below.', 'bad');
     btn.disabled = false;
     return;
   }
-  // The coordinator adjudicates: a matching email joins; a different one lands on
-  // the wrong-account screen.
   await coordinate();
 }
 
-function openSignin(prefillEmail) {
-  $('createBlock').hidden = true;
-  $('signinBlock').hidden = false;
-  if (prefillEmail) $('signinEmail').value = prefillEmail;
-  $('signinPass').focus();
-}
-function openCreate() {
-  $('signinBlock').hidden = true;
-  $('createBlock').hidden = false;
-  note('joinNote', '');
+// ---- Forgot or never set a password (Supabase recovery; returns to this URL) ----
+// The recovery email is always sent to the invited address, never to the editable
+// sign-in field, so the invitation page cannot be used to send reset links to
+// arbitrary accounts.
+async function doForgot() {
+  const email = INV && INV.email ? INV.email : '';
+  if (!email) { note('joinNote', 'This invitation could not be read. Ask the clinic owner for a new one.', 'bad'); return; }
+  note('joinNote', 'Sending a link to ' + email + '...');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: RETURN_URL });
+  if (error) { note('joinNote', error.message, 'bad'); return; }
+  note('joinNote', 'Check ' + email + ' for a link to set your password. Open it on this device and you will come back here to join.', 'ok');
 }
 
-// ---- wrong account: sign out, keep the token in the URL, return to sign in ----
+// ---- Set the password from a recovery return, then join ----
+async function doReset() {
+  const pw = $('resetPass').value;
+  if (!pw || pw.length < 8) { note('resetNote', 'At least eight characters.', 'bad'); return; }
+  const btn = $('resetBtn');
+  btn.disabled = true;
+  note('resetNote', 'Saving...');
+  const { error } = await sb.auth.updateUser({ password: pw });
+  if (error) { note('resetNote', error.message, 'bad'); btn.disabled = false; return; }
+  // Fully signed in now. Clear the recovery hash and run the coordinator.
+  inRecovery = false;
+  history.replaceState({}, '', RETURN_URL);
+  await coordinate();
+}
+
+// ---- Create account (genuinely new user; email fixed to the invited address) ----
+async function doCreate() {
+  const email = $('createEmail').value.trim();
+  const pass = $('createPass').value;
+  if (!pass || pass.length < 8) { note('joinNote', 'Pick a password of at least eight characters.', 'bad'); return; }
+
+  const btn = $('createBtn');
+  btn.disabled = true;
+  note('joinNote', 'Creating your account...');
+  const { data, error } = await sb.auth.signUp({ email, password: pass, options: { emailRedirectTo: RETURN_URL } });
+
+  if (error) {
+    const msg = (error.message || '').toLowerCase();
+    if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already')) {
+      note('joinNote', 'You already have an account for this email. Sign in above, or use Continue with Google.', 'ok');
+      openSignin();
+    } else {
+      note('joinNote', error.message, 'bad');
+    }
+    btn.disabled = false;
+    return;
+  }
+  if (data && data.session) { await coordinate(); return; }  // Confirm email OFF: one step
+  showConfirm(email);                                        // Confirm email ON: defensive
+}
+
+// ---- wrong account: sign out, keep the token, return to sign in ----
 async function doSwitch() {
   const btn = $('switchBtn');
   btn.disabled = true;
   note('wrongNote', 'Signing out...');
   await sb.auth.signOut();
-  // Still on the same URL (token intact). Reboot into the signed-out sign-in view.
   preferSignin = true;
   btn.disabled = false;
   await boot();
 }
 
-$('createBtn').addEventListener('click', doCreate);
-$('createPass').addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+function openSignin() { $('createBlock').hidden = true; $('signinBlock').hidden = false; $('signinPass').focus(); }
+function openCreate() { $('signinBlock').hidden = true; $('createBlock').hidden = false; note('joinNote', ''); $('createPass').focus(); }
+
+$('googleBtn').addEventListener('click', doGoogle);
 $('signinBtn').addEventListener('click', doSignin);
 $('signinPass').addEventListener('keydown', e => { if (e.key === 'Enter') doSignin(); });
-$('toSignin').addEventListener('click', () => openSignin($('createEmail').value.trim()));
+$('toForgot').addEventListener('click', doForgot);
 $('toCreate').addEventListener('click', openCreate);
+$('backToSignin').addEventListener('click', openSignin);
+$('createPass').addEventListener('keydown', e => { if (e.key === 'Enter') doCreate(); });
+$('createBtn').addEventListener('click', doCreate);
+$('resetBtn').addEventListener('click', doReset);
+$('resetPass').addEventListener('keydown', e => { if (e.key === 'Enter') doReset(); });
 $('switchBtn').addEventListener('click', doSwitch);
 
 if (TOKEN) boot();
