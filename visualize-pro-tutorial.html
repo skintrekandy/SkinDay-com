@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting started with Visualize Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#F3F5F7; --surface:#FFFFFF; --surface-2:#F7F9FB;
+    --ink:#171A1F; --ink-2:#2B313A; --muted:#5A626E; --faint:#8A929E;
+    --line:#E3E7EC; --line-2:#EDF0F3;
+    --accent:#147D74;
+    --accent-strong:color-mix(in srgb, var(--accent), #000 15%);
+    --accent-ink:#FFFFFF;
+    --accent-soft:color-mix(in srgb, var(--accent) 9%, var(--surface));
+    --accent-line:color-mix(in srgb, var(--accent) 34%, var(--line));
+    --accent-deep:color-mix(in srgb, var(--accent), #000 42%);
+    --radius:14px; --radius-sm:9px;
+    --shadow:0 1px 2px rgba(20,26,33,.04), 0 10px 30px -20px rgba(20,26,33,.4);
+    --font-ui:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; scroll-behavior:smooth; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-ui); font-size:17px; line-height:1.6;
+  }
+  a { color:var(--accent-strong); }
+  .eyebrow {
+    display:inline-flex; align-items:center; gap:9px;
+    font-family:var(--font-mono); font-size:12px; font-weight:500;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--faint);
+  }
+  .eyebrow::before { content:""; width:16px; height:2px; border-radius:2px; background:var(--accent); }
+
+  .page { max-width:760px; margin:0 auto; padding:0 24px 100px; }
+
+  /* header */
+  .top {
+    display:flex; align-items:center; gap:12px;
+    padding:22px 0 20px; margin-bottom:8px;
+  }
+  .top .mono { width:34px; height:34px; border-radius:9px; background:var(--accent);
+    color:var(--accent-ink); display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:16px; }
+  .top b { font-size:19px; font-weight:600; letter-spacing:-.01em; }
+  .top .tag { font-family:var(--font-mono); font-size:10.5px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--accent-strong);
+    background:var(--accent-soft); border:1px solid var(--accent-line);
+    border-radius:100px; padding:4px 10px; }
+
+  /* hero */
+  .hero { padding:40px 0 20px; }
+  .hero h1 { font-size:clamp(30px,5vw,46px); font-weight:600; letter-spacing:-.02em; line-height:1.1; margin:14px 0 12px; }
+  .hero p { font-size:18px; color:var(--muted); margin:0; max-width:52ch; }
+
+  /* animated demo strip */
+  .demo {
+    margin:34px 0 10px; border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--surface); box-shadow:var(--shadow); overflow:hidden;
+  }
+  .demo-bar { display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line); background:var(--surface-2); }
+  .demo-bar i { width:11px; height:11px; border-radius:50%; background:var(--line); display:block; }
+  .demo-bar .lbl { margin-left:8px; font-family:var(--font-mono); font-size:12px; color:var(--faint); letter-spacing:.06em; }
+  .stage { position:relative; height:230px; background:
+      linear-gradient(var(--line-2) 1px, transparent 1px) 0 0/100% 46px; }
+
+  /* the flowing "one case" chip animation */
+  .flow { position:absolute; inset:0; }
+  .node {
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:150px; padding:16px; border-radius:12px; background:var(--surface);
+    border:1px solid var(--line); box-shadow:var(--shadow); text-align:center;
+  }
+  .node .k { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--faint); }
+  .node .v { font-weight:600; font-size:15px; margin-top:4px; }
+  .node.s1 { left:24px; }
+  .node.s2 { left:50%; margin-left:-75px; }
+  .node.s3 { right:24px; }
+  .node .ico { width:34px; height:34px; margin:0 auto 8px; border-radius:9px;
+    background:var(--accent-soft); border:1px solid var(--accent-line);
+    display:flex; align-items:center; justify-content:center; color:var(--accent-strong); }
+  .node .ico svg { width:18px; height:18px; }
+
+  .chip {
+    position:absolute; top:50%; left:24px; width:44px; height:56px;
+    margin-top:-28px; border-radius:8px; border:1px solid var(--accent-line);
+    background:linear-gradient(160deg, var(--accent-soft), #fff);
+    box-shadow:0 6px 16px -8px var(--accent);
+    animation:travel 6s cubic-bezier(.7,0,.3,1) infinite;
+  }
+  .chip::after { content:""; position:absolute; left:7px; right:7px; bottom:8px; height:3px; border-radius:2px; background:var(--accent); opacity:.5; }
+  @keyframes travel {
+    0%,8%   { left:24px; opacity:0; transform:translateY(0) scale(.9); }
+    14%     { opacity:1; }
+    33%     { left:calc(50% - 22px); transform:translateY(0) scale(1); }
+    41%,49% { left:calc(50% - 22px); }
+    66%     { left:calc(100% - 68px); }
+    92%     { left:calc(100% - 68px); opacity:1; }
+    100%    { left:calc(100% - 68px); opacity:0; }
+  }
+  .pulse { animation:pulse 6s ease-in-out infinite; }
+  .node.s1 { animation:pulse1 6s ease-in-out infinite; }
+  .node.s2 { animation:pulse2 6s ease-in-out infinite; }
+  .node.s3 { animation:pulse3 6s ease-in-out infinite; }
+  @keyframes pulse1 { 0%,20%,100%{border-color:var(--accent);} 30%,100%{border-color:var(--line);} }
+  @keyframes pulse2 { 0%,33%{border-color:var(--line);} 40%,55%{border-color:var(--accent);} 65%,100%{border-color:var(--line);} }
+  @keyframes pulse3 { 0%,60%{border-color:var(--line);} 70%,90%{border-color:var(--accent);} 100%{border-color:var(--line);} }
+  @media (prefers-reduced-motion:reduce){ .chip,.node{animation:none!important;} .chip{opacity:1;left:calc(50% - 22px);} }
+
+  /* steps */
+  .steps { margin-top:52px; display:grid; gap:16px; }
+  .step {
+    display:grid; grid-template-columns:56px 1fr; gap:18px; align-items:start;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 24px; box-shadow:var(--shadow);
+  }
+  .step .num {
+    width:44px; height:44px; border-radius:12px; background:var(--accent);
+    color:var(--accent-ink); font-family:var(--font-mono); font-weight:500;
+    font-size:18px; display:flex; align-items:center; justify-content:center;
+  }
+  .step h3 { margin:2px 0 6px; font-size:20px; font-weight:600; letter-spacing:-.01em; }
+  .step p { margin:0; color:var(--muted); font-size:15.5px; }
+  .step .tab-ref { font-family:var(--font-mono); font-size:12px; color:var(--accent-strong);
+    background:var(--accent-soft); border:1px solid var(--accent-line);
+    border-radius:6px; padding:1px 7px; }
+
+  /* callout */
+  .callout {
+    margin-top:34px; border-left:3px solid var(--accent); background:var(--accent-soft);
+    color:var(--accent-deep); border-radius:var(--radius-sm);
+    padding:18px 20px; font-size:15px; line-height:1.65;
+  }
+  .callout b { font-weight:600; }
+
+  /* roles table */
+  .roles { margin-top:20px; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--surface); }
+  .role { display:grid; grid-template-columns:170px 1fr; gap:14px; padding:15px 20px; border-top:1px solid var(--line-2); }
+  .role:first-child { border-top:0; }
+  .role .r { font-weight:600; font-size:15px; }
+  .role .d { color:var(--muted); font-size:14.5px; }
+
+  .cta { margin-top:44px; text-align:center; }
+  .cta a {
+    display:inline-block; background:var(--accent); color:var(--accent-ink);
+    text-decoration:none; font-weight:600; font-size:16px;
+    padding:15px 34px; border-radius:var(--radius-sm); box-shadow:var(--shadow);
+  }
+  .cta .fine { margin-top:14px; font-size:13.5px; color:var(--faint); }
+
+  .foot { margin-top:60px; padding-top:22px; border-top:1px solid var(--line); text-align:center;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); }
+  .foot b { color:var(--muted); }
+
+  h2.sec { font-size:24px; font-weight:600; letter-spacing:-.01em; margin:56px 0 4px; }
+  .sub { color:var(--muted); font-size:15.5px; margin:0 0 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="top">
+    <span class="mono">S</span>
+    <b>Skin Trek</b>
+    <span class="tag">Visualize Pro</span>
+  </div>
+
+  <section class="hero">
+    <span class="eyebrow">Getting started</span>
+    <h1>One case. More value.</h1>
+    <p>Prepare a case once, publish it to your gallery, and, with patient permission, use it to guide your simulations. Here is the whole loop in about two minutes.</p>
+  </section>
+
+  <!-- animated demo: a single case flowing Studio -> Gallery -> Visualize -->
+  <div class="demo" aria-hidden="true">
+    <div class="demo-bar">
+      <i></i><i></i><i></i>
+      <span class="lbl">one case, three places</span>
+    </div>
+    <div class="stage">
+      <div class="flow">
+        <div class="node s1">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 14l5-4 4 3 3-2 6 4"/></svg></div>
+          <div class="k">Prepare</div>
+          <div class="v">Studio</div>
+        </div>
+        <div class="node s2">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H4z"/><path d="M4 20h16"/></svg></div>
+          <div class="k">Publish</div>
+          <div class="v">Gallery</div>
+        </div>
+        <div class="node s3">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+          <div class="k">Guide</div>
+          <div class="v">Visualize</div>
+        </div>
+        <div class="chip"></div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="sec">The three tabs</h2>
+  <p class="sub">Everything lives behind three tabs at the top of your portal.</p>
+
+  <div class="steps">
+    <div class="step">
+      <span class="num">1</span>
+      <div>
+        <h3><span class="tab-ref">Studio</span> &nbsp;Build the before and after</h3>
+        <p>Drop in your photos, pick a layout, and Studio aligns and crops them into a clean multi-angle grid. Everything is processed in your browser, so the photos never leave the room until you choose to save.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num">2</span>
+      <div>
+        <h3><span class="tab-ref">Visualize</span> &nbsp;Show where a treatment may lead</h3>
+        <p>Pick a treatment and a few details to preview a likely direction during the consultation. It is a conversation tool, not a promise of results, and it draws on your own saved cases to stay grounded in what your clinic actually produces.</p>
+      </div>
+    </div>
+    <div class="step">
+      <span class="num">3</span>
+      <div>
+        <h3><span class="tab-ref">Case Library</span> &nbsp;Keep it, publish it, reuse it</h3>
+        <p>Saved cases collect here. Publish the ones you like and they appear on your own website automatically through one line your developer installs once. With patient permission, the same case teaches your Visualize.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>Make it yours first.</b> Open <b>Settings</b> and add your clinic logo. The portal, your gallery, and every before and after you export take on your logo and brand colour on their own. Nothing says SkinDay to your patients.
+  </div>
+
+  <h2 class="sec">Your team</h2>
+  <p class="sub">Invite people from Settings. Everyone on your team uses all three tabs, Studio, Visualize, and Case Library. Roles are about who runs the account, not what each person can open, and every action is recorded against the person who took it, so nobody should share a login.</p>
+
+  <div class="roles">
+    <div class="role"><span class="r">Owner</span><span class="d">Signs the agreements and holds billing. Usually set up once, then hands the day to day to an admin.</span></div>
+    <div class="role"><span class="r">Admin</span><span class="d">Runs the team: invites people, sets roles, and removes access. The person actually in the portal each day.</span></div>
+    <div class="role"><span class="r">Injector / Technician</span><span class="d">A working seat for the people performing treatments. Full access to every tab.</span></div>
+    <div class="role"><span class="r">Consultant</span><span class="d">A working seat for the people running consultations. Full access to every tab.</span></div>
+    <div class="role"><span class="r">Marketing</span><span class="d">A working seat for whoever curates the gallery and website. Full access to every tab.</span></div>
+    <div class="role"><span class="r">Staff</span><span class="d">A general working seat for front-desk and support. Full access to every tab.</span></div>
+  </div>
+
+  <div class="cta">
+    <a href="https://skinday.com/clinic-portal">Open Visualize Pro</a>
+    <div class="fine">Sign in with the email your invitation was sent to.</div>
+  </div>
+
+  <div class="foot">Powered by <b>SkinDay</b></div>
+</div>
+</body>
+</html>

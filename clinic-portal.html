@@ -829,6 +829,7 @@
       <span class="eyebrow">Settings</span>
       <h2 class="display" id="setTitle">Your clinic.</h2>
       <p id="setSub">Loading…</p>
+      <p class="note" style="margin-top:10px;">New to the portal? <a href="/visualize-pro-tutorial" target="_blank" rel="noopener">Take the two-minute tour</a>.</p>
     </div>
   </section>
 
@@ -1849,8 +1850,27 @@ document.querySelectorAll('#tabs .tab').forEach(t => {
       $('panel-' + p).style.display = (p === activePanel) ? 'block' : 'none';
     });
     if (activePanel === 'library') { loadGallery(); loadLibrary(); }
+    // A logo change updates the tools the next time they are opened, so an
+    // in-progress composition is never wiped mid-work.
+    if ((activePanel === 'studio' || activePanel === 'visualize') && toolsStale[activePanel]) {
+      reloadTool(activePanel);
+    }
   });
 });
+
+// The embedded tools read the clinic's logo when they load. After a logo change
+// they are marked stale and reloaded on next open, so the new logo flows into
+// Studio and Visualize with no separate upload.
+const toolsStale = { studio: false, visualize: false };
+function markToolsStale() { toolsStale.studio = true; toolsStale.visualize = true; }
+function reloadTool(panel) {
+  const map = { studio: ['studioFrame', '/studio.html'], visualize: ['visFrame', '/visualize.html'] };
+  const [id, path] = map[panel] || [];
+  const f = id && $(id);
+  if (!f) return;
+  f.src = path + '?clinic=' + encodeURIComponent(clinicId) + '&r=' + Date.now();
+  toolsStale[panel] = false;
+}
 
 /* ---- embedded Visualize ----
    visualize.html is the real page, opened with ?clinic=. It attaches the clinic
@@ -3070,12 +3090,23 @@ function loadImg(src) {
 }
 
 // The scrim, the kicker, the headline. Mirrors drawPair.
-function drawLabel(ctx, x, yBottom, panelW, kicker, title, gold) {
+// The exported plate wears the clinic's own colour, not SkinDay's. The kicker
+// takes the clinic accent on the simulated side; the scrim and title move to
+// the portal's slate-and-white so the plate matches everything else the clinic
+// publishes. accentRGB is read live from the portal so a brand change carries
+// straight through to the next export.
+function exportAccentRGB() {
+  const hex = (getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent').trim() || DEFAULT_ACCENT).replace('#', '');
+  return [parseInt(hex.slice(0, 2), 16), parseInt(hex.slice(2, 4), 16), parseInt(hex.slice(4, 6), 16)];
+}
+
+function drawLabel(ctx, x, yBottom, panelW, kicker, title, accent) {
   const h = Math.round(panelW * 0.34);
   const grad = ctx.createLinearGradient(x, yBottom - h, x, yBottom);
-  grad.addColorStop(0, 'rgba(28,23,20,0)');
-  grad.addColorStop(0.55, 'rgba(28,23,20,.42)');
-  grad.addColorStop(1, 'rgba(28,23,20,.88)');
+  grad.addColorStop(0, 'rgba(15,18,23,0)');
+  grad.addColorStop(0.55, 'rgba(15,18,23,.44)');
+  grad.addColorStop(1, 'rgba(15,18,23,.9)');
   ctx.fillStyle = grad;
   ctx.fillRect(x, yBottom - h, panelW, h);
 
@@ -3084,15 +3115,54 @@ function drawLabel(ctx, x, yBottom, panelW, kicker, title, gold) {
   const head = Math.max(26, Math.round(panelW * 0.068));
 
   ctx.textAlign = 'left';
-  ctx.font = '500 ' + kick + 'px "DM Sans", sans-serif';
+  ctx.font = '600 ' + kick + 'px "Hanken Grotesk", system-ui, sans-serif';
   ctx.letterSpacing = Math.round(kick * 0.16) + 'px';
-  ctx.fillStyle = gold ? 'rgba(201,169,110,.96)' : 'rgba(181,168,159,.82)';
+  if (accent) {
+    const [r, g, b] = exportAccentRGB();
+    // Lift the accent toward white if it is dark, so it reads on the scrim.
+    const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    ctx.fillStyle = lum < 0.5
+      ? 'rgba(' + Math.min(255, r + 90) + ',' + Math.min(255, g + 90) + ',' + Math.min(255, b + 90) + ',.98)'
+      : 'rgba(' + r + ',' + g + ',' + b + ',.98)';
+  } else {
+    ctx.fillStyle = 'rgba(214,220,228,.85)';
+  }
   ctx.fillText(kicker.toUpperCase(), x + pad, yBottom - Math.round(head * 1.55));
   ctx.letterSpacing = '0px';
 
-  ctx.font = '500 ' + head + 'px "DM Sans", sans-serif';
-  ctx.fillStyle = 'rgba(250,247,242,.97)';
+  ctx.font = '600 ' + head + 'px "Hanken Grotesk", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,.98)';
   ctx.fillText(title, x + pad, yBottom - Math.round(head * 0.62));
+}
+
+// The clinic's logo, bottom-right of the exported pair. Cached so a gallery of
+// downloads does not refetch it each time. Silent on any failure: a plate with
+// no logo is fine, a broken export is not.
+let _exportLogo = null;
+function exportLogo() {
+  if (_exportLogo !== null) return _exportLogo;
+  const url = (mySettings && mySettings.clinic && mySettings.clinic.logo_url) || null;
+  if (!url) { _exportLogo = Promise.resolve(null); return _exportLogo; }
+  _exportLogo = new Promise(res => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => res(img);
+    img.onerror = () => res(null);
+    img.src = url;
+  });
+  return _exportLogo;
+}
+
+function stampLogo(ctx, canvasW, canvasH, logo) {
+  if (!logo || !logo.naturalWidth) return;
+  const targetH = Math.round(canvasH * 0.05);
+  const scale = targetH / logo.naturalHeight;
+  const w = Math.round(logo.naturalWidth * scale);
+  const pad = Math.round(canvasH * 0.03);
+  ctx.save();
+  ctx.globalAlpha = 0.92;
+  ctx.drawImage(logo, canvasW - w - pad, canvasH - targetH - pad, w, targetH);
+  ctx.restore();
 }
 
 async function composePair(caseId, simulated, rightTitle) {
@@ -3120,7 +3190,7 @@ async function composePair(caseId, simulated, rightTitle) {
     canvas.width = panelW * 2 + gap;
     canvas.height = panelH;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#1C1714';
+    ctx.fillStyle = '#0F1217';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const cover = (img, x) => {
@@ -3146,6 +3216,9 @@ async function composePair(caseId, simulated, rightTitle) {
       drawLabel(ctx, 0, panelH, panelW, 'As photographed', 'Before', false);
       drawLabel(ctx, panelW + gap, panelH, panelW, 'As photographed', 'After', false);
     }
+
+    // The clinic's own mark, so a downloaded pair is unmistakably theirs.
+    try { stampLogo(ctx, canvas.width, canvas.height, await exportLogo()); } catch (e) {}
 
     return await new Promise(res => canvas.toBlob(b => res(b), 'image/jpeg', 0.94));
   } finally {
@@ -3874,6 +3947,8 @@ $('setLogoFile').addEventListener('change', async (e) => {
     const b = await r.json().catch(() => ({}));
     if (!r.ok || !b.ok) throw new Error(b.error || 'That did not upload.');
     note('setLogoNote', 'Uploaded.', 'ok');
+    _exportLogo = null;   // next export refetches the new logo
+    markToolsStale();     // Studio and Visualize pick up the logo on next open
     loadSettings();
   } catch (err) {
     note('setLogoNote', err.message, 'bad');
@@ -3892,6 +3967,8 @@ $('setLogoRemove').addEventListener('click', async () => {
     });
     const b = await r.json().catch(() => ({}));
     if (!r.ok || !b.ok) throw new Error(b.error || 'That did not work.');
+    _exportLogo = null;   // drop the cached logo from future exports
+    markToolsStale();     // Studio and Visualize drop the logo on next open
     loadSettings();
   } catch (e) {
     note('setLogoNote', e.message, 'bad');
