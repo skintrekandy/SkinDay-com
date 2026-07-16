@@ -578,8 +578,8 @@
 <div class="wrap">
   <section class="gate sec" id="gate">
     <span class="eyebrow">Clinic portal</span>
-    <h1 class="display">Your cases,<br>your Visualize.</h1>
-    <p class="lede">Studio makes the post. The same case, with the patient's permission, teaches your own simulations.</p>
+    <h1 class="display">One case.<br>More value.</h1>
+    <p class="lede">Prepare it in Studio, publish it to your gallery, and, with patient permission, use it to guide your clinic's simulations.</p>
     <div class="field">
       <label class="eyebrow" for="email">Email</label>
       <input type="email" id="email" autocomplete="username">
@@ -913,9 +913,12 @@
           <label class="eyebrow" for="invRole">Role</label>
           <select id="invRole">
             <option value="staff">Staff</option>
+            <option value="injector">Injector / Technician</option>
+            <option value="consultant">Consultant</option>
+            <option value="marketing">Marketing</option>
             <option value="admin">Admin</option>
           </select>
-          <small>An admin can purge cases and export the library. Staff cannot.</small>
+          <small>Admins can manage the team, purge cases, and export the library.</small>
         </div>
       </div>
       <button class="act" id="invSend">Send invitation</button>
@@ -1011,7 +1014,7 @@
        behind a product name a front desk will not know. -->
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Your cases</span>
+      <span class="eyebrow" id="casesEyebrow">Cases</span>
       <h2 class="display" id="libHead">Case Library</h2>
       <p id="libSub">Loading…</p>
     </div>
@@ -1032,8 +1035,8 @@
 
 <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Your website</span>
-      <h2 class="display">The gallery on your site.</h2>
+      <span class="eyebrow" id="siteEyebrow">Website</span>
+      <h2 class="display">Gallery</h2>
       <p>Whatever you publish appears here, and on your own website, automatically. Your developer installs this line once and never touches it again.</p>
     </div>
 
@@ -1100,6 +1103,7 @@ const sb = createClient(SUPABASE_URL, ANON_KEY);
 }
 
 let clinicId = null;
+let clinicDisplayName = '';
 
 const $ = id => document.getElementById(id);
 const note = (id, msg, cls) => { const e = $(id); e.className = 'note ' + (cls || ''); e.textContent = msg || ''; };
@@ -1574,6 +1578,13 @@ function setClinicHeader(c) {
   const libHead = document.getElementById('libHead');
   if (libHead) libHead.textContent = 'Case Library';
 
+  // The clinic's name carries the section labels: their cases, their website.
+  clinicDisplayName = name;
+  const ce = document.getElementById('casesEyebrow');
+  if (ce) ce.textContent = name + ' Cases';
+  const se = document.getElementById('siteEyebrow');
+  if (se) se.textContent = name + ' Website';
+
   // The portal wears the clinic's colour, not ours.
   resolveBrand(c);
 }
@@ -1646,6 +1657,15 @@ function applyAccent(hex) {
   const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
   const L = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
   document.documentElement.style.setProperty('--accent-ink', L > 0.62 ? '#12151B' : '#FFFFFF');
+  // Already-loaded Studio and Visualize follow the new colour immediately.
+  ['studioFrame', 'visFrame'].forEach(id => {
+    const f = document.getElementById(id);
+    let d; try { d = f && f.contentDocument; } catch (e) { return; }
+    if (d && d.documentElement) {
+      d.documentElement.style.setProperty('--rose', hex);
+      d.documentElement.style.setProperty('--gold', hex);
+    }
+  });
 }
 
 // Resolve the accent for a clinic and reflect it in the settings preview.
@@ -1875,8 +1895,36 @@ function dressFrame(frameId) {
   let d;
   try { d = f.contentDocument; } catch (e) { return; }
   if (!d || !d.head) return;
-  // The embedded page should sit on the portal's own surface, not its old cream.
-  const portalBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#F3F5F7';
+
+  // Inside the portal, Studio and Visualize wear the portal's own instrument
+  // skin: same type, same palette, same clinic accent. The standalone consumer
+  // pages are untouched; this dressing exists only in the embedded copies.
+  const cs = getComputedStyle(document.documentElement);
+  const v = n => cs.getPropertyValue(n).trim();
+  const portalBg = v('--bg') || '#F3F5F7';
+  const accent = v('--accent') || DEFAULT_ACCENT;
+
+  if (!d.getElementById('sd-pro-fonts')) {
+    const l = d.createElement('link');
+    l.id = 'sd-pro-fonts';
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap';
+    d.head.appendChild(l);
+  }
+
+  // The embedded pages are built on the same token names. Repointing the
+  // variables re-skins every rule that uses them, with no knowledge of markup.
+  const r = d.documentElement.style;
+  r.setProperty('--cream', portalBg);
+  r.setProperty('--paper', '#FFFFFF');
+  r.setProperty('--deep', v('--ink') || '#171A1F');
+  r.setProperty('--ink', v('--ink-2') || '#2B313A');
+  r.setProperty('--muted', v('--muted') || '#5A626E');
+  r.setProperty('--line', v('--line') || '#E3E7EC');
+  r.setProperty('--dim', v('--faint') || '#8A929E');
+  r.setProperty('--rose', accent);
+  r.setProperty('--gold', accent);
+
   const style = d.createElement('style');
   style.textContent =
     // The page's own chrome. The portal already supplies a header and tabs.
@@ -1886,9 +1934,38 @@ function dressFrame(frameId) {
     // .page carries 88px of top padding to clear the fixed nav. With the nav
     // hidden that padding becomes an empty band under the tabs.
     '.page { padding-top:0 !important; }' +
-    'body { background:' + portalBg + ' !important; }';
+    // The hero was sized to be a landing; embedded, it is a work screen. Pull
+    // it up under the tabs and quieten it.
+    '.page > *:first-child, .page > section:first-of-type { padding-top:30px !important; margin-top:0 !important; }' +
+    'body { background:var(--cream) !important; }' +
+    // The instrument type. Serif display and italics belong to the consumer
+    // pages; in the portal everything speaks the same working voice.
+    "body, button, input, select, textarea { font-family:'Hanken Grotesk', system-ui, sans-serif !important; }" +
+    "h1, h2, h3, .display { font-family:'Hanken Grotesk', system-ui, sans-serif !important; font-weight:600 !important; font-style:normal !important; letter-spacing:-.015em !important; }" +
+    'h1 { font-size:clamp(28px, 3.4vw, 38px) !important; line-height:1.15 !important; }' +
+    'h1 em, h2 em, .display em { font-style:normal !important; color:var(--rose) !important; }' +
+    'code, pre { font-family:"IBM Plex Mono", ui-monospace, monospace !important; }';
   d.head.appendChild(style);
+
+  proBrandFrame(d);
   fitFrame(frameId);
+}
+
+// "SkinDay Studio" and "SkinDay Visualize" become the clinic's own inside the
+// portal. Only text nodes carrying that exact pairing are touched; consent and
+// legal text that names SkinDay stays exactly as written.
+function proBrandFrame(d) {
+  if (!clinicDisplayName || !d || !d.body) return;
+  const pair = /skinday\s+(studio|visualize)/i;
+  const walker = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT);
+  const hits = [];
+  while (walker.nextNode()) {
+    if (pair.test(walker.currentNode.nodeValue)) hits.push(walker.currentNode);
+  }
+  hits.forEach(n => {
+    n.nodeValue = n.nodeValue.replace(/skinday(\s+)(studio|visualize)/ig,
+      (m, sp, word) => clinicDisplayName + sp + word);
+  });
 }
 
 $('studioFrame').addEventListener('load', () => dressFrame('studioFrame'));
@@ -1902,8 +1979,10 @@ setInterval(() => {
   if (activePanel === 'studio') {
     fitFrame('studioFrame');
     watchStudio(tick);
+    try { proBrandFrame($('studioFrame').contentDocument); } catch (e) {}
   } else if (activePanel === 'visualize') {
     fitFrame('visFrame');
+    try { proBrandFrame($('visFrame').contentDocument); } catch (e) {}
   }
 }, 900);
 
@@ -3385,7 +3464,7 @@ async function loadSettings() {
   $('setSub').textContent =
     [c.city, c.country].filter(Boolean).join(', ') +
     (c.city || c.country ? '. ' : '') +
-    'You are ' + (data.my_role === 'owner' ? 'the owner' : 'an ' + data.my_role) + '.';
+    'Your role: ' + roleLabel(data.my_role) + '.';
 
   $('setProfile').style.display = canEdit ? 'block' : 'none';
   $('setName').value = c.name || '';
@@ -3804,6 +3883,32 @@ $('setLogoRemove').addEventListener('click', async () => {
 
 /* ---- team --------------------------------------------------------------- */
 
+// Owners exist to sign the agreements and hold the account. The day-to-day
+// running of the team belongs to admins, because most owners will not be the
+// person in the portal every day.
+const ROLE_LABEL_MAP = {
+  owner: 'Owner', admin: 'Admin', staff: 'Staff',
+  injector: 'Injector / Technician', consultant: 'Consultant', marketing: 'Marketing'
+};
+const roleLabel = r => ROLE_LABEL_MAP[r] || r;
+
+// What roles an actor may assign. Owners can grant anything including admin;
+// admins can grant the working roles but can never mint another admin or owner.
+function assignableRoles(actorRole) {
+  if (actorRole === 'owner') return ['staff', 'injector', 'consultant', 'marketing', 'admin', 'owner'];
+  if (actorRole === 'admin') return ['staff', 'injector', 'consultant', 'marketing'];
+  return [];
+}
+
+// Whether an actor may manage (re-role, remove, cancel) a given member. Nobody
+// manages the owner here; admins also cannot manage other admins.
+function canManageMember(actorRole, m) {
+  if (m.role === 'owner') return false;
+  if (actorRole === 'owner') return true;
+  if (actorRole === 'admin') return m.role !== 'admin';
+  return false;
+}
+
 async function loadTeam() {
   const host = $('teamList');
   const { data, error } = await sb.rpc('get_clinic_team', { p_clinic_id: clinicId });
@@ -3818,9 +3923,18 @@ async function loadTeam() {
       .is('revoked_at', null).limit(1);
     myRole = (mem && mem[0] && mem[0].role) || null;
   }
-  const isOwner = myRole === 'owner';
+  const canManage = myRole === 'owner' || myRole === 'admin';
   const c = (mySettings && mySettings.clinic) || {};
-  $('inviteBox').style.display = isOwner ? 'block' : 'none';
+  $('inviteBox').style.display = canManage ? 'block' : 'none';
+
+  // Admins invite working roles; only the owner can mint another admin.
+  const invSel = $('invRole');
+  if (invSel) {
+    Array.from(invSel.options).forEach(o => {
+      if (o.value === 'admin') o.hidden = (myRole !== 'owner');
+    });
+    if (invSel.value === 'admin' && myRole !== 'owner') invSel.value = 'staff';
+  }
 
   $('teamSub').textContent =
     (c.seats_used || 0) + ' of ' + (c.seat_limit || 8) + ' seats used, counting invitations that have not been accepted. ' +
@@ -3830,10 +3944,10 @@ async function loadTeam() {
       : '');
 
   host.innerHTML = '';
-  (data || []).forEach(m => host.appendChild(memberRow(m, isOwner)));
+  (data || []).forEach(m => host.appendChild(memberRow(m, myRole)));
 }
 
-function memberRow(m, isOwner) {
+function memberRow(m, myRole) {
   const row = document.createElement('div');
   row.className = 'member';
 
@@ -3850,14 +3964,16 @@ function memberRow(m, isOwner) {
     '<div class="sub">' + last + (pending && m.expires_at
       ? '. Expires ' + new Date(m.expires_at).toISOString().slice(0, 10) : '') + '</div>';
 
+  const manageable = canManageMember(myRole, m);
+
   // The role pill is redundant once an editable dropdown is shown for the same
   // member, so it is added later only when there is no dropdown.
-  const showRoleDropdown = isOwner && m.role !== 'owner' && m.kind !== 'invitation';
+  const showRoleDropdown = manageable && !pending;
   row.append(g);
   if (!showRoleDropdown) {
     const role = document.createElement('span');
     role.className = 'pill';
-    role.textContent = pending ? 'invited ' + m.role : m.role;
+    role.textContent = pending ? 'invited ' + roleLabel(m.role) : roleLabel(m.role);
     row.appendChild(role);
   }
 
@@ -3871,22 +3987,31 @@ function memberRow(m, isOwner) {
     row.appendChild(w);
   }
 
-  if (isOwner && m.role !== 'owner') {
+  if (manageable) {
     if (!pending) {
       const sel = document.createElement('select');
       sel.className = 'role-select';
-      ['staff', 'admin', 'owner'].forEach(r => {
+      assignableRoles(myRole).forEach(r => {
         const o = document.createElement('option');
         o.value = r;
-        o.textContent = r === 'owner' ? 'Make owner' : r;
+        o.textContent = r === 'owner' ? 'Make owner' : roleLabel(r);
         o.selected = (r === m.role);
         sel.appendChild(o);
       });
+      // A member holding a role the actor cannot grant still shows their real
+      // role rather than a silently wrong one.
+      if (!assignableRoles(myRole).includes(m.role)) {
+        const o = document.createElement('option');
+        o.value = m.role;
+        o.textContent = roleLabel(m.role);
+        o.selected = true;
+        sel.insertBefore(o, sel.firstChild);
+      }
       sel.onchange = async () => {
         const to = sel.value;
         if (to === 'owner' && !confirm(
           'Make ' + m.email + ' the owner of this clinic? You become an admin, and ' +
-          'only they will be able to accept agreements and invite people.')) {
+          'only they will be able to accept agreements.')) {
           sel.value = m.role;
           return;
         }
