@@ -1953,18 +1953,35 @@ function dressFrame(frameId) {
 
 // "SkinDay Studio" and "SkinDay Visualize" become the clinic's own inside the
 // portal. Only text nodes carrying that exact pairing are touched; consent and
-// legal text that names SkinDay stays exactly as written.
+// legal text that names SkinDay stays exactly as written. The early-access
+// banner is also hidden here: a Pro subscriber does not need the consumer
+// disclaimer, and the standalone consumer page keeps it.
 function proBrandFrame(d) {
-  if (!clinicDisplayName || !d || !d.body) return;
+  if (!d || !d.body) return;
   const pair = /skinday\s+(studio|visualize)/i;
+  const early = /early access/i;
   const walker = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT);
-  const hits = [];
+  const renames = [];
+  const hides = [];
   while (walker.nextNode()) {
-    if (pair.test(walker.currentNode.nodeValue)) hits.push(walker.currentNode);
+    const n = walker.currentNode;
+    if (clinicDisplayName && pair.test(n.nodeValue)) renames.push(n);
+    if (early.test(n.nodeValue)) hides.push(n);
   }
-  hits.forEach(n => {
+  renames.forEach(n => {
     n.nodeValue = n.nodeValue.replace(/skinday(\s+)(studio|visualize)/ig,
       (m, sp, word) => clinicDisplayName + sp + word);
+  });
+  hides.forEach(n => {
+    let el = n.parentElement;
+    if (!el) return;
+    // Grow to cover the whole banner, but never swallow surrounding content:
+    // stop climbing the moment a parent carries more text than the banner.
+    while (el.parentElement && el.parentElement !== d.body &&
+           el.parentElement.textContent.trim().length < 220) {
+      el = el.parentElement;
+    }
+    el.style.display = 'none';
   });
 }
 
@@ -3892,10 +3909,11 @@ const ROLE_LABEL_MAP = {
 };
 const roleLabel = r => ROLE_LABEL_MAP[r] || r;
 
-// What roles an actor may assign. Owners can grant anything including admin;
-// admins can grant the working roles but can never mint another admin or owner.
+// What roles an actor may assign. Owners can grant the working roles and
+// admin; admins can grant the working roles but can never mint another admin.
+// Ownership is not assigned from this menu at all.
 function assignableRoles(actorRole) {
-  if (actorRole === 'owner') return ['staff', 'injector', 'consultant', 'marketing', 'admin', 'owner'];
+  if (actorRole === 'owner') return ['staff', 'injector', 'consultant', 'marketing', 'admin'];
   if (actorRole === 'admin') return ['staff', 'injector', 'consultant', 'marketing'];
   return [];
 }
@@ -3994,7 +4012,7 @@ function memberRow(m, myRole) {
       assignableRoles(myRole).forEach(r => {
         const o = document.createElement('option');
         o.value = r;
-        o.textContent = r === 'owner' ? 'Make owner' : roleLabel(r);
+        o.textContent = roleLabel(r);
         o.selected = (r === m.role);
         sel.appendChild(o);
       });
@@ -4009,12 +4027,6 @@ function memberRow(m, myRole) {
       }
       sel.onchange = async () => {
         const to = sel.value;
-        if (to === 'owner' && !confirm(
-          'Make ' + m.email + ' the owner of this clinic? You become an admin, and ' +
-          'only they will be able to accept agreements.')) {
-          sel.value = m.role;
-          return;
-        }
         const { error } = await sb.rpc('set_member_role', {
           p_clinic_id: clinicId, p_user_id: m.user_id, p_role: to
         });
