@@ -4,199 +4,283 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Clinic Portal · SkinDay</title>
+<title>Visualize Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+  /* ------------------------------------------------------------------ *
+     Visualize Pro: the clinic's own daily instrument.
+
+     One brand variable drives everything. Set --accent (from the clinic's
+     logo, a saved override, or the neutral default) and the whole surface
+     repaints in the clinic's colour through color-mix. The chrome stays
+     quiet on purpose: the clinic's brand and the patient's images are the
+     only things meant to carry colour.
+   * ------------------------------------------------------------------ */
   :root {
-    --deep:#1C1714; --cream:#FAF7F2; --rose:#C8725A; --gold:#C9A96E;
-    --ink:#2b2320; --muted:#857a70; --line:#e7ded3; --paper:#fff;
+    /* surface + ink (cool porcelain, slate) */
+    --bg:#F3F5F7;
+    --surface:#FFFFFF;
+    --surface-2:#F7F9FB;
+    --ink:#171A1F;
+    --ink-2:#2B313A;
+    --muted:#5A626E;
+    --faint:#8A929E;
+    --line:#E3E7EC;
+    --line-2:#EDF0F3;
+
+    /* brand accent, overridden per clinic at runtime */
+    --accent:#147D74;
+    --accent-strong:color-mix(in srgb, var(--accent), #000 15%);
+    --accent-ink:#FFFFFF;
+    --accent-soft:color-mix(in srgb, var(--accent) 9%, var(--surface));
+    --accent-tint:color-mix(in srgb, var(--accent) 14%, var(--surface));
+    --accent-line:color-mix(in srgb, var(--accent) 34%, var(--line));
+    --accent-deep:color-mix(in srgb, var(--accent), #000 42%);
+    --accent-ring:color-mix(in srgb, var(--accent) 55%, transparent);
+
+    /* status */
+    --ok:#2F7D5B;
+    --bad:#C0473A;
+
+    --radius:12px;
+    --radius-sm:8px;
+    --shadow:0 1px 2px rgba(20,26,33,.04), 0 8px 24px -18px rgba(20,26,33,.35);
+
+    --font-ui:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+
+    /* legacy aliases: safety net for any rule/inline that still names them */
+    --deep:var(--ink); --cream:var(--bg); --paper:var(--surface);
+    --rose:var(--accent); --gold:var(--accent); --dim:var(--faint);
   }
   * { box-sizing: border-box; }
-  html { -webkit-font-smoothing: antialiased; }
+  html { -webkit-font-smoothing: antialiased; text-rendering:optimizeLegibility; }
   body {
-    margin:0; background:var(--cream); color:var(--deep);
-    font-family:'DM Sans',system-ui,sans-serif; font-size:15px; line-height:1.6;
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-ui); font-size:16px; line-height:1.6;
+    display:flex; flex-direction:column; min-height:100vh;
   }
-  ::selection { background: rgba(201,169,110,.28); }
-  :focus-visible { outline:2px solid var(--rose); outline-offset:2px; border-radius:3px; }
+  ::selection { background: var(--accent-tint); }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; border-radius:4px; }
+  a { color:var(--accent-strong); }
 
-  .display { font-family:'Cormorant Garamond',Georgia,serif; font-weight:400; line-height:1.15; }
+  .display { font-family:var(--font-ui); font-weight:600; letter-spacing:-.01em; line-height:1.15; }
+  /* Section labels double as the calibration signature: a short accent tick,
+     then a quiet mono cap. */
   .eyebrow {
-    font-size:10.5px; font-weight:700; letter-spacing:.16em;
-    text-transform:uppercase; color:var(--muted);
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:var(--font-mono); font-size:11.5px; font-weight:500;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--faint);
+  }
+  .eyebrow::before {
+    content:""; width:14px; height:2px; border-radius:2px;
+    background:var(--accent); flex:none;
   }
 
+  /* ---------- header (white-label, light) ---------- */
   header {
-    background:var(--deep); color:var(--cream);
-    border-bottom:1px solid var(--gold);
-    padding:18px 32px; display:flex; align-items:center; gap:18px;
+    background:var(--surface); color:var(--ink);
+    border-bottom:1px solid var(--line);
+    box-shadow:0 1px 0 var(--accent-line);
+    padding:14px 30px; display:flex; align-items:center; gap:16px;
     position:sticky; top:0; z-index:20;
   }
-  header .mark { font-size:24px; }
-  header .mark em { font-style:italic; color:var(--gold); }
-  header .rule { width:1px; height:20px; background:rgba(250,247,242,.22); }
-  header .who { font-size:13px; color:rgba(250,247,242,.72); }
+  header::before {
+    content:""; position:absolute; left:0; right:0; top:0; height:2px;
+    background:var(--accent);
+  }
+  .brandlock { display:flex; align-items:center; gap:12px; min-width:0; }
+  .brand-mono {
+    width:34px; height:34px; border-radius:9px; flex:none;
+    background:var(--accent); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:16px; line-height:1;
+  }
+  #clinicLogo { height:32px; max-width:150px; object-fit:contain; display:block; }
+  header .who {
+    font-family:var(--font-ui); font-size:19px; font-weight:600;
+    letter-spacing:-.01em; color:var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:46vw;
+  }
+  .pro-tag {
+    font-family:var(--font-mono); font-size:10.5px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase;
+    color:var(--accent-strong); background:var(--accent-soft);
+    border:1px solid var(--accent-line); border-radius:100px;
+    padding:4px 10px; white-space:nowrap; flex:none;
+  }
   header .spacer { flex:1; }
-  header .credits {
-    font-size:12px; color:var(--gold);
-    letter-spacing:.04em; margin-right:20px;
-  }
-  header .credits b { color:var(--cream); font-weight:500; }
   header button {
-    background:none; border:0; color:rgba(250,247,242,.6);
-    font:inherit; font-size:12.5px; cursor:pointer;
-    padding:4px 2px; border-bottom:1px solid transparent;
+    background:none; border:0; color:var(--muted);
+    font:inherit; font-size:14px; font-weight:500; cursor:pointer;
+    padding:8px 4px; border-bottom:2px solid transparent; border-radius:2px;
   }
-  header button:hover { color:var(--cream); border-bottom-color:var(--gold); }
+  header button:hover { color:var(--ink); border-bottom-color:var(--accent); }
 
+  /* ---------- primary tabs ---------- */
   .tabs {
-    display:flex; gap:28px; padding:0 32px;
-    border-bottom:1px solid var(--line); background:var(--cream);
-    position:sticky; top:57px; z-index:19;
+    display:flex; gap:6px; padding:0 24px;
+    border-bottom:1px solid var(--line); background:var(--surface);
+    position:sticky; top:59px; z-index:19;
+    overflow-x:auto; scrollbar-width:none;
   }
+  .tabs::-webkit-scrollbar { display:none; }
   .tab {
     background:none; border:0; cursor:pointer;
-    font-family:'Cormorant Garamond',serif; font-size:21px;
-    color:var(--muted); padding:14px 0 12px; margin-bottom:-1px;
-    border-bottom:1px solid transparent;
+    font-family:var(--font-ui); font-size:16px; font-weight:500;
+    color:var(--muted); padding:16px 12px 14px; margin-bottom:-1px;
+    border-bottom:2px solid transparent; white-space:nowrap;
     transition:color .18s ease, border-color .18s ease;
   }
   .tab:hover { color:var(--ink); }
-  .tab.active { color:var(--deep); border-bottom-color:var(--rose); }
+  .tab.active { color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
 
-  .wrap { max-width:1000px; margin:0 auto; padding:0 32px 90px; }
-  .stage { margin:0 auto; padding:0 0 90px; }
+  .wrap { width:100%; max-width:1040px; margin:0 auto; padding:0 30px 90px; }
+  .stage { width:100%; margin:0 auto; padding:0 0 90px; }
 
   /* the real Studio and Visualize pages, embedded, never copied */
-  .embed { width:100%; border:0; display:block; background:var(--cream); min-height:1500px; }
+  .embed { width:100%; border:0; display:block; background:var(--bg); min-height:1500px; }
 
-  .sec { padding-top:40px; animation:rise .45s cubic-bezier(.2,.7,.3,1) both; }
+  .sec { padding-top:44px; animation:rise .45s cubic-bezier(.2,.7,.3,1) both; }
   @keyframes rise { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
   @media (prefers-reduced-motion:reduce){ .sec{animation:none;} *{transition:none!important;} }
 
-  .sec-head { margin-bottom:20px; }
-  .sec-head h2 { font-size:29px; margin:4px 0 2px; }
-  .sec-head p { color:var(--muted); font-size:13.5px; margin:0; max-width:58ch; }
+  .sec-head { margin-bottom:22px; }
+  .sec-head h2 { font-size:30px; font-weight:600; letter-spacing:-.015em; margin:10px 0 4px; }
+  .sec-head p { color:var(--muted); font-size:15px; line-height:1.6; margin:0; max-width:62ch; }
 
-  .panel { background:var(--paper); border:1px solid var(--line); border-radius:3px; padding:26px; }
-
-  label { display:block; margin-bottom:6px; }
-  .field { margin-bottom:16px; }
-  input[type=text], input[type=email], input[type=password], select {
-    width:100%; padding:10px 12px; border:1px solid var(--line);
-    border-radius:2px; background:var(--cream); color:var(--deep);
-    font:inherit; font-size:14px;
+  .panel {
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:var(--radius); padding:28px; box-shadow:var(--shadow);
   }
-  input:hover, select:hover { border-color:#d6cabb; }
+
+  label { display:block; margin-bottom:7px; }
+  .field { margin-bottom:18px; }
+  input[type=text], input[type=email], input[type=password], input[type=search], select {
+    width:100%; padding:12px 13px; border:1px solid var(--line);
+    border-radius:var(--radius-sm); background:var(--surface); color:var(--ink);
+    font:inherit; font-size:15.5px; transition:border-color .16s ease, box-shadow .16s ease;
+  }
+  input:hover, select:hover { border-color:#cfd6dd; }
+  input:focus, select:focus, input:focus-visible {
+    outline:none; border-color:var(--accent);
+    box-shadow:0 0 0 3px var(--accent-ring);
+  }
+  small { font-size:13px; color:var(--muted); }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; }
 
   button.act {
-    font:inherit; font-weight:700; font-size:13.5px;
-    background:var(--deep); color:var(--cream);
-    border:1px solid var(--deep); border-radius:2px;
-    padding:12px 26px; cursor:pointer; transition:background .18s ease;
+    font:inherit; font-weight:600; font-size:15px;
+    background:var(--accent); color:var(--accent-ink);
+    border:1px solid var(--accent); border-radius:var(--radius-sm);
+    padding:13px 26px; cursor:pointer; min-height:46px;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    transition:background .16s ease, border-color .16s ease, transform .06s ease;
   }
-  button.act:hover { background:#322822; }
-  button.act:disabled { opacity:.35; cursor:default; }
+  button.act:hover { background:var(--accent-strong); border-color:var(--accent-strong); }
+  button.act:active { transform:translateY(1px); }
+  button.act:disabled { opacity:.4; cursor:default; }
   button.quiet {
-    font:inherit; font-size:12.5px; background:none; color:var(--ink);
-    border:1px solid var(--line); border-radius:2px; padding:7px 13px;
-    cursor:pointer; transition:border-color .18s ease, color .18s ease;
+    font:inherit; font-size:14px; font-weight:500; background:var(--surface); color:var(--ink-2);
+    border:1px solid var(--line); border-radius:var(--radius-sm); padding:9px 15px;
+    cursor:pointer; min-height:40px; transition:border-color .16s ease, color .16s ease, background .16s ease;
   }
-  button.quiet:hover { border-color:var(--gold); }
-  button.quiet.warn:hover { border-color:var(--rose); color:var(--rose); }
-  button.quiet:disabled { opacity:.4; cursor:default; }
+  button.quiet:hover { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+  button.quiet.warn:hover { border-color:var(--bad); color:var(--bad); background:color-mix(in srgb, var(--bad) 7%, var(--surface)); }
+  button.quiet:disabled { opacity:.45; cursor:default; }
 
-  .consent { border-top:1px solid var(--line); margin-top:22px; padding-top:20px; }
+  .consent { border-top:1px solid var(--line); margin-top:24px; padding-top:22px; }
   .perm {
-    display:flex; gap:11px; align-items:flex-start;
-    padding:10px 0; border-bottom:1px dotted var(--line); cursor:pointer;
+    display:flex; gap:12px; align-items:flex-start;
+    padding:12px 0; border-bottom:1px solid var(--line-2); cursor:pointer;
   }
   .perm:last-of-type { border-bottom:0; }
-  .perm input { margin-top:4px; accent-color:var(--rose); }
-  .perm b { font-weight:500; font-size:14px; display:block; }
-  .perm small { color:var(--muted); font-size:12.5px; }
+  .perm input { margin-top:3px; accent-color:var(--accent); width:17px; height:17px; flex:none; }
+  .perm b { font-weight:600; font-size:15px; display:block; }
+  .perm small { color:var(--muted); font-size:13.5px; }
 
   .attest {
-    margin-top:18px; padding:14px 16px;
-    background:var(--cream); border:1px solid var(--line); border-radius:3px;
+    margin-top:20px; padding:15px 17px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm);
   }
-  .attest b { font-weight:500; }
+  .attest b { font-weight:600; }
 
   .embed-code {
     display:flex; align-items:center; gap:12px;
-    background:var(--deep); border-radius:3px; padding:13px 15px;
+    background:#161A21; border-radius:var(--radius-sm); padding:14px 16px;
   }
   .embed-code code {
-    flex:1; color:#e8e0d6; font-size:12px;
-    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    flex:1; color:#D7E3E0; font-size:13px;
+    font-family:var(--font-mono);
     overflow-x:auto; white-space:nowrap;
   }
   .embed-code button {
-    background:transparent; color:var(--gold);
-    border-color:rgba(201,169,110,.45); flex-shrink:0;
+    background:transparent; color:color-mix(in srgb, var(--accent) 60%, #fff);
+    border:1px solid rgba(255,255,255,.22); flex-shrink:0; min-height:36px;
   }
-  .embed-code button:hover { border-color:var(--gold); color:var(--cream); }
+  .embed-code button:hover { border-color:rgba(255,255,255,.5); color:#fff; background:transparent; }
 
-  /* The clinic's own site runs the real embed, so the preview runs it too rather
-     than a lookalike. A preview that is merely similar is a preview that lies. */
+  /* The clinic's own site runs the real embed, so the preview runs it too. */
   #galleryPreview { min-height:40px; }
 
   .crop-note {
-    margin-top:18px; padding:11px 14px;
-    border-left:2px solid var(--gold); background:#faf4e9;
-    color:#6d5628; font-size:12.5px; line-height:1.6;
+    margin-top:20px; padding:12px 15px; border-radius:var(--radius-sm);
+    border-left:3px solid var(--accent); background:var(--accent-soft);
+    color:var(--accent-deep); font-size:13.5px; line-height:1.6;
   }
-  .crop-note b { font-weight:500; }
+  .crop-note b { font-weight:600; }
 
   .plate-crop {
-    display:inline-block; margin-left:7px;
-    font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
-    color:var(--muted); border:1px solid var(--line); border-radius:2px;
-    padding:1px 5px; vertical-align:2px;
+    display:inline-block; margin-left:8px;
+    font-family:var(--font-mono);
+    font-size:10.5px; font-weight:500; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--muted); border:1px solid var(--line); border-radius:100px;
+    padding:2px 8px; vertical-align:2px;
   }
 
   .caution {
-    margin-top:16px; padding:11px 14px; border-left:2px solid var(--rose);
-    background:#fbf1ee; color:#82443a; font-size:12.5px;
+    margin-top:16px; padding:12px 15px; border-radius:var(--radius-sm);
+    border-left:3px solid var(--bad);
+    background:color-mix(in srgb, var(--bad) 6%, var(--surface));
+    color:color-mix(in srgb, var(--bad), #000 20%); font-size:13.5px;
   }
   .waiting {
-    padding:24px; text-align:center; color:var(--muted); font-size:13.5px;
-    border:1px dashed var(--line); border-radius:3px;
+    padding:26px; text-align:center; color:var(--muted); font-size:14.5px;
+    border:1px dashed var(--line); border-radius:var(--radius-sm);
   }
 
   .pair {
     display:flex; align-items:center; gap:18px;
-    padding:12px 0; border-bottom:1px dotted var(--line);
+    padding:14px 0; border-bottom:1px solid var(--line-2);
   }
   .pair:last-child { border-bottom:0; }
-  .pair-thumbs { display:flex; gap:2px; }
+  .pair-thumbs { display:flex; gap:3px; }
   .pair-thumbs img {
-    width:52px; height:65px; object-fit:cover;
-    border:1px solid var(--line); background:var(--cream);
+    width:52px; height:65px; object-fit:cover; border-radius:4px;
+    border:1px solid var(--line); background:var(--bg);
   }
   .pair-field { flex:1; max-width:230px; }
-  .pair-field label { margin-bottom:4px; }
+  .pair-field label { margin-bottom:5px; }
 
   .grounded {
-    margin-top:26px; padding:12px 15px; font-size:12.5px;
-    background:#faf4e9; border-left:2px solid var(--gold); color:#6d5628;
+    margin-top:26px; padding:13px 16px; font-size:13.5px; border-radius:var(--radius-sm);
+    background:var(--accent-soft); border-left:3px solid var(--accent); color:var(--accent-deep);
   }
-  .grounded.off { background:var(--paper); border-left-color:var(--line); color:var(--muted); }
-  .grounded.wait { background:var(--paper); border-left-color:var(--line); color:var(--muted); }
+  .grounded.off { background:var(--surface-2); border-left-color:var(--line); color:var(--muted); }
+  .grounded.wait { background:var(--surface-2); border-left-color:var(--line); color:var(--muted); }
 
   .plate {
-    display:grid; grid-template-columns:224px 1fr; gap:24px;
-    padding:24px 0; border-bottom:1px solid var(--line);
+    display:grid; grid-template-columns:224px 1fr; gap:26px;
+    padding:26px 0; border-bottom:1px solid var(--line);
   }
   .plate:last-child { border-bottom:0; }
   .diptych {
-    display:grid; grid-template-columns:1fr 1fr; gap:1px;
-    background:var(--line); border:1px solid var(--line); overflow:hidden;
+    display:grid; grid-template-columns:1fr 1fr; gap:2px;
+    background:var(--line); border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden;
   }
-  .frame { position:relative; background:var(--cream); overflow:hidden; margin:0; }
+  .frame { position:relative; background:var(--bg); overflow:hidden; margin:0; }
   .frame img {
     display:block; width:100%; aspect-ratio:4/5; object-fit:cover;
     transition:transform .5s cubic-bezier(.2,.7,.3,1);
@@ -204,223 +288,282 @@
   .plate:hover .frame img { transform:scale(1.035); }
   .frame figcaption {
     position:absolute; left:0; bottom:0;
-    background:rgba(28,23,20,.78); color:var(--cream);
-    font-size:9px; font-weight:700; letter-spacing:.14em;
-    text-transform:uppercase; padding:3px 7px;
+    background:rgba(20,26,33,.8); color:#fff;
+    font-family:var(--font-mono);
+    font-size:9.5px; font-weight:500; letter-spacing:.12em;
+    text-transform:uppercase; padding:4px 8px;
   }
-  .plate-title { font-size:22px; }
-  .plate-meta { color:var(--muted); font-size:12.5px; margin-top:1px; }
+  .plate-title { font-size:23px; font-weight:600; letter-spacing:-.01em; }
+  .plate-meta { color:var(--muted); font-size:13.5px; margin-top:2px; }
 
   .ledger {
-    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
-    margin:14px 0 4px; padding:9px 0;
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    margin:16px 0 4px; padding:11px 0;
     border-top:1px solid var(--line); border-bottom:1px solid var(--line);
   }
   .perm-mark {
-    display:flex; align-items:center; gap:6px;
-    font-size:9.5px; font-weight:700; letter-spacing:.13em;
+    display:flex; align-items:center; gap:7px;
+    font-family:var(--font-mono);
+    font-size:10px; font-weight:500; letter-spacing:.1em;
     text-transform:uppercase; color:var(--muted);
   }
-  .dot { width:6px; height:6px; border-radius:50%; border:1px solid var(--muted); }
-  .perm-mark.on { color:var(--ink); }
-  .perm-mark.on .dot { background:var(--gold); border-color:var(--gold); }
-  .perm-mark.live .dot { background:var(--rose); border-color:var(--rose); }
+  .dot { width:7px; height:7px; border-radius:50%; border:1px solid var(--faint); }
+  .perm-mark.on { color:var(--ink-2); }
+  .perm-mark.on .dot { background:var(--accent); border-color:var(--accent); }
+  .perm-mark.live .dot { background:var(--accent-strong); border-color:var(--accent-strong); }
 
-  .plate-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:13px; }
-  .note { font-size:12.5px; margin-top:9px; color:var(--muted); }
-  .note.ok { color:#3d6b4c; }
-  .note.bad { color:#a9503f; }
-  .empty { padding:44px 0; text-align:center; }
-  .ag-doc { border:1px solid rgba(28,23,20,.12); margin-bottom:24px; }
+  .plate-actions { display:flex; gap:9px; flex-wrap:wrap; margin-top:14px; }
+  .note { font-size:13.5px; margin-top:10px; color:var(--muted); line-height:1.55; }
+  .note.ok { color:var(--ok); }
+  .note.bad { color:var(--bad); }
+  .empty { padding:48px 0; text-align:center; }
+  .ag-doc { border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-bottom:24px; }
   .ag-doc-head {
     display:flex; align-items:baseline; gap:12px;
-    padding:20px 24px; border-bottom:1px solid rgba(28,23,20,.10);
+    padding:20px 24px; border-bottom:1px solid var(--line);
   }
   .ag-doc-head h3 {
-    font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; margin:0;
+    font-family:var(--font-ui); font-size:1.3rem; font-weight:600; letter-spacing:-.01em; margin:0;
   }
-  .ag-doc-head .ver { font-size:.72rem; color:var(--muted); letter-spacing:.08em; text-transform:uppercase; }
+  .ag-doc-head .ver { font-family:var(--font-mono); font-size:.72rem; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; }
   .ag-body {
     max-height:340px; overflow-y:auto; padding:24px;
-    font-size:.88rem; line-height:1.75; color:#3a3330;
-    white-space:pre-wrap; background:rgba(28,23,20,.015);
+    font-size:.95rem; line-height:1.75; color:var(--ink-2);
+    white-space:pre-wrap; background:var(--surface-2);
   }
-  /* The button and the fingerprint were overlapping, and the fingerprint was
-     shouting raw hex at a clinician who had not asked for it. A wall of hex under
-     an Accept button does not read as rigour. It reads as something broken. So it
-     is a sentence now, and the hex is a title attribute for anyone who wants it. */
   .ag-foot {
-    padding:20px 24px; border-top:1px solid rgba(28,23,20,.10);
+    padding:20px 24px; border-top:1px solid var(--line);
     display:flex; flex-direction:column; align-items:flex-start; gap:12px;
   }
   .ag-fingerprint {
+    font-family:var(--font-mono);
     font-size:.74rem; color:var(--muted); line-height:1.55; cursor:help;
-    border-bottom:1px dotted rgba(28,23,20,.22);
+    border-bottom:1px dotted var(--line); word-break:break-all;
   }
-  .swap { margin-top:20px; font-size:.84rem; color:var(--muted); }
-  .logo-row { display:flex; gap:20px; align-items:flex-start; }
+  .swap { margin-top:20px; font-size:.9rem; color:var(--muted); }
+  .logo-row { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; }
   .logo-box {
-    width:120px; height:120px; flex:none;
-    border:1px solid rgba(28,23,20,.14); background:rgba(28,23,20,.02);
+    width:120px; height:120px; flex:none; border-radius:var(--radius-sm);
+    border:1px solid var(--line); background:var(--surface-2);
     display:flex; align-items:center; justify-content:center;
-    color:var(--dim); font-size:.74rem; overflow:hidden;
+    color:var(--faint); font-size:.8rem; overflow:hidden;
   }
   .logo-box img { max-width:100%; max-height:100%; object-fit:contain; }
+
+  /* ---------- brand / theme control ---------- */
+  .brand-block { margin-top:26px; padding-top:22px; border-top:1px solid var(--line); }
+  .brand-preview {
+    display:flex; align-items:center; gap:14px; margin:14px 0 18px;
+    padding:14px 16px; border:1px solid var(--line); border-radius:var(--radius-sm);
+    background:var(--surface-2);
+  }
+  .brand-chip {
+    width:44px; height:44px; border-radius:10px; flex:none;
+    background:var(--accent); border:1px solid rgba(0,0,0,.06);
+    box-shadow:inset 0 0 0 3px rgba(255,255,255,.35);
+  }
+  .brand-preview .bp-text b { font-weight:600; font-size:15px; display:block; }
+  .brand-preview .bp-text span { font-family:var(--font-mono); font-size:12.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .swatches { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .swatch {
+    width:30px; height:30px; border-radius:8px; cursor:pointer; padding:0;
+    border:2px solid transparent; box-shadow:0 0 0 1px var(--line);
+    transition:transform .1s ease;
+  }
+  .swatch:hover { transform:scale(1.08); }
+  .swatch.sel { border-color:var(--surface); box-shadow:0 0 0 2px var(--ink); }
+  .swatch-custom {
+    display:inline-flex; align-items:center; gap:8px; cursor:pointer;
+    font-size:13.5px; color:var(--muted); position:relative;
+  }
+  .swatch-custom input[type=color] {
+    width:30px; height:30px; padding:0; border:none; border-radius:8px;
+    background:none; cursor:pointer; box-shadow:0 0 0 1px var(--line);
+  }
+  .brand-actions { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+
   .member {
     display:flex; align-items:center; gap:14px;
-    padding:16px 2px; border-top:1px solid rgba(28,23,20,.10);
+    padding:16px 2px; border-top:1px solid var(--line);
   }
-  .member:last-child { border-bottom:1px solid rgba(28,23,20,.10); }
-  .member .em { font-size:.9rem; }
-  .member .sub { font-size:.76rem; color:var(--muted); margin-top:2px; }
+  .member:last-child { border-bottom:1px solid var(--line); }
+  .member .em { font-size:.98rem; font-weight:500; }
+  .member .sub { font-size:.82rem; color:var(--muted); margin-top:2px; }
   .member .grow { flex:1; }
   .pill {
-    font-size:.68rem; letter-spacing:.08em; text-transform:uppercase;
-    padding:3px 8px; border:1px solid rgba(28,23,20,.18); color:var(--muted);
+    font-family:var(--font-mono);
+    font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; border-radius:100px;
+    padding:4px 9px; border:1px solid var(--line); color:var(--muted);
   }
-  .pill.warn { border-color:rgba(200,114,90,.5); color:var(--rose); }
+  .pill.warn { border-color:var(--accent-line); color:var(--accent-strong); }
   select.role-select {
     flex:none; width:auto; min-width:0; align-self:center;
-    font-family:'DM Sans',sans-serif; font-size:.8rem; color:var(--deep);
-    padding:5px 26px 5px 10px; border:1px solid rgba(28,23,20,.18);
-    background:var(--cream); border-radius:0; cursor:pointer;
+    font-family:var(--font-ui); font-size:.86rem; color:var(--ink);
+    padding:8px 30px 8px 12px; border:1px solid var(--line);
+    background:var(--surface); border-radius:var(--radius-sm); cursor:pointer;
     -webkit-appearance:none; appearance:none;
-    background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A7B72' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
-    background-repeat:no-repeat; background-position:right 7px center; background-size:12px;
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235A626E' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat:no-repeat; background-position:right 9px center; background-size:14px;
   }
-  select.role-select:focus { outline:none; border-color:var(--rose); }
+  select.role-select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
   .invite-link {
-    margin-top:14px; padding:14px; background:rgba(28,23,20,.03);
-    font-size:.78rem; word-break:break-all; line-height:1.6;
+    margin-top:14px; padding:14px; border-radius:var(--radius-sm); background:var(--surface-2);
+    font-family:var(--font-mono);
+    font-size:.8rem; word-break:break-all; line-height:1.6; border:1px solid var(--line);
   }
   .linkish {
     background:none; border:0; padding:0; cursor:pointer;
-    font-family:'DM Sans',sans-serif; font-size:.84rem;
-    color:var(--rose); border-bottom:1px solid rgba(200,114,90,.4);
+    font-family:var(--font-ui); font-size:.92rem; font-weight:500;
+    color:var(--accent-strong); border-bottom:1px solid var(--accent-line);
   }
-  .linkish:hover { border-bottom-color:var(--rose); }
+  .linkish:hover { border-bottom-color:var(--accent-strong); }
   .row2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   @media (max-width:560px) { .row2 { grid-template-columns:1fr; } }
   .subtabs {
-    display:flex; gap:26px; margin:0 0 20px; padding:0;
-    border-bottom:1px solid rgba(28,23,20,.10);
+    display:flex; gap:28px; margin:0 0 22px; padding:0;
+    border-bottom:1px solid var(--line); overflow-x:auto; scrollbar-width:none;
   }
-  #clinicLogo { height:26px; max-width:150px; object-fit:contain; }
+  .subtabs::-webkit-scrollbar { display:none; }
   .searchbar { margin:0 0 24px; }
   .editor {
-    margin-top:16px; padding:18px;
-    background:rgba(28,23,20,.02); border:1px solid rgba(28,23,20,.10);
+    margin-top:16px; padding:18px; border-radius:var(--radius-sm);
+    background:var(--surface-2); border:1px solid var(--line);
   }
   .editor-grid {
     display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;
   }
   @media (max-width:560px) { .editor-grid { grid-template-columns:1fr; } }
   .editor input {
-    width:100%; box-sizing:border-box; padding:9px 11px;
-    font-family:'DM Sans',sans-serif; font-size:.86rem;
-    border:1px solid rgba(28,23,20,.16); background:var(--cream); outline:none;
+    width:100%; box-sizing:border-box; padding:11px 12px; border-radius:var(--radius-sm);
+    font-family:var(--font-ui); font-size:.94rem;
+    border:1px solid var(--line); background:var(--surface); outline:none;
   }
-  .editor input:focus { border-color:var(--rose); }
+  .editor input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
   .searchbar input {
-    width:100%; box-sizing:border-box;
-    padding:14px 16px;
-    font-family:'DM Sans',sans-serif; font-size:.92rem; color:var(--deep);
-    background:rgba(28,23,20,.02);
-    border:1px solid rgba(28,23,20,.14); border-radius:0;
-    outline:none; transition:border-color .18s, background .18s;
+    width:100%; box-sizing:border-box; padding:14px 16px; border-radius:var(--radius-sm);
+    font-family:var(--font-ui); font-size:1rem; color:var(--ink);
+    background:var(--surface);
+    border:1px solid var(--line);
+    outline:none; transition:border-color .18s, box-shadow .18s;
   }
-  .searchbar input:focus {
-    border-color:var(--rose); background:var(--cream);
-  }
-  .searchbar input::placeholder { color:var(--dim); }
+  .searchbar input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
+  .searchbar input::placeholder { color:var(--faint); }
   .subtab {
     background:none; border:0; border-bottom:2px solid transparent;
-    font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:400;
-    letter-spacing:.02em; color:var(--muted); padding:10px 0; cursor:pointer;
+    font-family:var(--font-ui); font-size:.95rem; font-weight:500;
+    letter-spacing:0; color:var(--muted); padding:11px 0; cursor:pointer; white-space:nowrap;
   }
   .subtab:hover { color:var(--ink); }
-  .subtab.active { color:var(--deep); border-bottom-color:var(--rose); }
-  .lib-group { border-top:1px solid rgba(28,23,20,.10); }
-  .lib-group:last-child { border-bottom:1px solid rgba(28,23,20,.10); }
+  .subtab.active { color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
+  .lib-group { border-top:1px solid var(--line); }
+  .lib-group:last-child { border-bottom:1px solid var(--line); }
   .lib-head {
     width:100%; display:flex; align-items:baseline; gap:14px; text-align:left;
-    background:none; border:0; padding:20px 2px; cursor:pointer; color:var(--deep);
+    background:none; border:0; padding:20px 2px; cursor:pointer; color:var(--ink);
   }
-  .lib-head:hover { background:rgba(28,23,20,.02); }
-  .lib-head .caret { font-size:.7rem; color:var(--muted); width:12px; }
-  .lib-head .name { font-family:'Cormorant Garamond',serif; font-size:1.25rem; font-weight:500; }
-  .lib-head .count { font-size:.78rem; color:var(--muted); margin-left:auto; }
+  .lib-head:hover { background:var(--surface-2); }
+  .lib-head .caret { font-size:.74rem; color:var(--muted); width:12px; }
+  .lib-head .name { font-family:var(--font-ui); font-size:1.22rem; font-weight:600; letter-spacing:-.01em; }
+  .lib-head .count { font-family:var(--font-mono); font-size:.8rem; color:var(--muted); margin-left:auto; }
   .lib-body { padding:0 0 24px; }
-  .prov { font-size:.76rem; color:var(--muted); margin-top:8px; line-height:1.5; }
-  .empty .display { font-size:22px; }
-  .empty p { color:var(--muted); font-size:13.5px; margin:6px 0 0; }
+  .prov { font-size:.82rem; color:var(--muted); margin-top:8px; line-height:1.5; }
+  .empty .display { font-size:23px; }
+  .empty p { color:var(--muted); font-size:14.5px; margin:7px 0 0; }
 
-  .gate { max-width:360px; margin:13vh auto; }
-  .gate .display { font-size:37px; margin:10px 0 6px; }
-  .gate p.lede { color:var(--muted); font-size:13.5px; margin:0 0 26px; }
+  .gate { max-width:384px; margin:12vh auto; }
+  .gate .display { font-size:38px; font-weight:600; letter-spacing:-.02em; margin:12px 0 8px; }
+  .gate p.lede { color:var(--muted); font-size:15px; line-height:1.6; margin:0 0 28px; }
   .gate button.act { width:100%; margin-top:8px; }
 
-  @media (max-width:700px){
-    .wrap { padding:0 20px 70px; }
-    header, .tabs { padding-left:20px; padding-right:20px; }
-    .plate { grid-template-columns:1fr; }
-    .diptych { max-width:250px; }
+  /* ---------- footer (white-label credit) ---------- */
+  .site-foot {
+    margin-top:auto; border-top:1px solid var(--line); background:var(--surface);
+    padding:20px 30px; display:flex; align-items:center; justify-content:center; gap:8px;
   }
+  .site-foot .pw {
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--faint);
+  }
+  .site-foot .sd {
+    font-family:var(--font-ui); font-size:13px; font-weight:600; letter-spacing:.01em;
+    color:var(--muted); text-decoration:none;
+  }
+  .site-foot .sd:hover { color:var(--ink); }
+
+  @media (max-width:700px){
+    header { padding:12px 16px; gap:10px; }
+    header .who { font-size:17px; max-width:36vw; }
+    header button { font-size:13px; padding:8px 2px; }
+    .pro-tag { font-size:9.5px; letter-spacing:.12em; padding:3px 8px; }
+    .brandlock { gap:9px; }
+    .wrap { padding:0 18px 70px; }
+    .tabs { padding-left:12px; padding-right:12px; top:57px; }
+    .site-foot { padding:18px; }
+    .plate { grid-template-columns:1fr; gap:16px; }
+    .diptych { max-width:280px; }
+    .sec-head h2 { font-size:26px; }
+    .panel { padding:22px 18px; }
+  }
+  @media (max-width:400px){
+    .pro-tag { display:none; }
+  }
+
   /* ---- billing / plan picker ---- */
   .billing-value { margin:0 0 26px; }
-  .billing-value-lead { font-family:'Cormorant Garamond',Georgia,serif; font-size:23px; line-height:1.2; margin:0 0 6px; color:var(--deep); }
-  .billing-value-body { color:var(--muted); font-size:13.5px; line-height:1.7; margin:0; max-width:62ch; }
+  .billing-value-lead { font-family:var(--font-ui); font-size:22px; font-weight:600; letter-spacing:-.01em; line-height:1.25; margin:0 0 7px; color:var(--ink); }
+  .billing-value-body { color:var(--muted); font-size:15px; line-height:1.7; margin:0; max-width:64ch; }
 
   .tier-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
   @media (max-width:640px){ .tier-grid { grid-template-columns:1fr; } }
 
   .tier-card {
-    position:relative; border:1px solid var(--line); border-radius:5px;
-    padding:22px 20px 20px; background:var(--paper);
+    position:relative; border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px 22px 22px; background:var(--surface);
     display:flex; flex-direction:column;
   }
   .tier-card.featured {
-    border-color:var(--gold); background:#fbf6ec;
-    box-shadow:0 1px 0 rgba(201,169,110,.35), 0 6px 22px -14px rgba(28,23,20,.25);
+    border-color:var(--accent-line); background:var(--accent-soft);
+    box-shadow:0 8px 26px -18px var(--accent);
   }
   .tier-tag {
-    position:absolute; top:-9px; left:20px;
-    background:var(--gold); color:var(--deep);
-    font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-    padding:3px 8px; border-radius:2px;
+    position:absolute; top:-10px; left:22px;
+    font-family:var(--font-mono);
+    background:var(--accent); color:var(--accent-ink);
+    font-size:9.5px; font-weight:500; letter-spacing:.12em; text-transform:uppercase;
+    padding:4px 9px; border-radius:100px;
   }
-  .tier-name { font-family:'Cormorant Garamond',Georgia,serif; font-size:22px; line-height:1; margin-bottom:10px; }
-  .tier-price { font-family:'Cormorant Garamond',Georgia,serif; font-size:34px; line-height:1; color:var(--deep); }
-  .tier-price span { font-family:'DM Sans',sans-serif; font-size:12.5px; color:var(--muted); font-weight:400; margin-left:3px; }
+  .tier-name { font-family:var(--font-ui); font-size:20px; font-weight:600; line-height:1; margin-bottom:12px; }
+  .tier-price { font-family:var(--font-ui); font-size:36px; font-weight:600; line-height:1; letter-spacing:-.02em; color:var(--ink); }
+  .tier-price span { font-family:var(--font-ui); font-size:13px; color:var(--muted); font-weight:500; margin-left:4px; letter-spacing:0; }
   .tier-price .cur { margin-left:0; margin-right:4px; }
-  .tier-blurb { font-size:12.5px; color:var(--muted); margin:8px 0 2px; }
-  .tier-seats { font-size:12px; color:var(--muted); padding-top:12px; margin-top:12px; border-top:1px solid var(--line); }
-  .tier-card.featured .tier-seats { border-top-color:#ecd9b3; }
-  .tier-card button.act { margin-top:16px; width:100%; padding:11px 14px; justify-content:center; font-size:12.5px; }
+  .tier-blurb { font-size:13.5px; color:var(--muted); margin:9px 0 2px; }
+  .tier-seats { font-family:var(--font-mono); font-size:12px; color:var(--muted); padding-top:12px; margin-top:12px; border-top:1px solid var(--line); }
+  .tier-card.featured .tier-seats { border-top-color:var(--accent-line); }
+  .tier-card button.act { margin-top:18px; width:100%; padding:12px 14px; font-size:14px; }
 
-  /* Only the recommended plan is a filled button; the rest are quiet outlines,
-     so the eye is guided rather than shouted at. */
-  button.act.outline { background:transparent; color:var(--deep); border:1px solid var(--deep); }
-  button.act.outline:hover { background:var(--deep); color:var(--cream); }
+  button.act.outline { background:transparent; color:var(--ink); border:1px solid var(--ink); }
+  button.act.outline:hover { background:var(--ink); color:var(--surface); border-color:var(--ink); }
 
   .tier-enterprise { display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
-    border-top:1px solid var(--line); padding-top:18px; margin-top:2px; font-size:13px; color:var(--muted); }
-  .tier-enterprise div { max-width:46ch; line-height:1.6; }
-  button.act.ghost { background:transparent; color:var(--ink); border:1px solid var(--line); white-space:nowrap; padding:10px 18px; }
-  button.act.ghost:hover { border-color:var(--gold); background:transparent; }
+    border-top:1px solid var(--line); padding-top:20px; margin-top:2px; font-size:14px; color:var(--muted); }
+  .tier-enterprise div { max-width:48ch; line-height:1.6; }
+  button.act.ghost { background:transparent; color:var(--ink-2); border:1px solid var(--line); white-space:nowrap; padding:11px 18px; }
+  button.act.ghost:hover { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
 
-  .billing-lede { color:var(--muted); font-size:13.5px; line-height:1.7; margin:0 0 18px; max-width:62ch; }
-  .plan-current { font-size:13px; color:var(--muted); margin:12px 0 0; }
-  .plan-current strong { color:var(--ink); font-weight:500; }
+  .billing-lede { color:var(--muted); font-size:15px; line-height:1.7; margin:0 0 18px; max-width:64ch; }
+  .plan-current { font-size:14px; color:var(--muted); margin:12px 0 0; }
+  .plan-current strong { color:var(--ink); font-weight:600; }
 </style>
 </head>
 <body>
 
 <header id="hdr" style="display:none;">
-  <span class="display mark">Skin<em>Day</em></span>
-  <span class="rule"></span>
-  <img id="clinicLogo" alt="" style="display:none;">
-  <span class="who" id="clinicName"></span>
+  <span class="brandlock">
+    <span class="brand-mono" id="clinicMono" style="display:none;"></span>
+    <img id="clinicLogo" alt="" style="display:none;">
+    <span class="who" id="clinicName"></span>
+    <span class="pro-tag">Visualize Pro</span>
+  </span>
   <span class="spacer"></span>
   <button id="settingsBtn" title="Settings">Settings</button>
   <button id="signOut">Sign out</button>
@@ -429,7 +572,7 @@
 <nav class="tabs" id="tabs" style="display:none;">
   <button class="tab active" data-panel="studio">Studio</button>
   <button class="tab" data-panel="visualize">Visualize</button>
-  <button class="tab" data-panel="library">Library</button>
+  <button class="tab" data-panel="library">Case Library</button>
 </nav>
 
 <div class="wrap">
@@ -728,7 +871,25 @@
         </div>
       </div>
 
-      <div style="margin-top:20px;">
+      <div class="brand-block">
+        <label class="eyebrow">Brand appearance</label>
+        <div class="brand-preview">
+          <span class="brand-chip"></span>
+          <span class="bp-text"><b id="brandName">Your clinic</b><span id="brandSource">Matched from your logo</span></span>
+          <span style="flex:1"></span>
+          <button class="quiet" id="brandToggle" type="button">Change colour</button>
+        </div>
+        <div id="brandPanel" style="display:none;">
+          <div class="swatches" id="brandSwatches"></div>
+          <div class="brand-actions">
+            <button class="quiet" id="brandFromLogo">Match my logo</button>
+            <button class="quiet" id="brandReset">Reset to default</button>
+          </div>
+          <div class="note" id="brandNote"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;">
         <button class="act" id="setSave">Save</button>
         <div class="note" id="setNote"></div>
       </div>
@@ -850,8 +1011,8 @@
        behind a product name a front desk will not know. -->
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Library</span>
-      <h2 class="display" id="libHead">Library</h2>
+      <span class="eyebrow">Your cases</span>
+      <h2 class="display" id="libHead">Case Library</h2>
       <p id="libSub">Loading…</p>
     </div>
 
@@ -1386,27 +1547,222 @@ async function openPortal() {
 function setClinicHeader(c) {
   const name = (c && c.name) || ('Clinic ' + clinicId);
   const logo = $('clinicLogo');
+  const mono = $('clinicMono');
   const label = $('clinicName');
+
+  // The clinic name stays visible; the mark beside it is the logo when there is
+  // one, and the clinic's initial otherwise. No decorative marks are invented.
+  label.textContent = name;
+  label.style.display = '';
 
   if (c && c.logo_url) {
     logo.src = c.logo_url;
     logo.alt = name;
     logo.style.display = '';
-    label.style.display = 'none';
-    // A broken logo URL must not leave an empty header. Fall back to the name.
+    if (mono) mono.style.display = 'none';
+    // A broken logo URL falls back to the initial, never an empty header.
     logo.onerror = () => {
       logo.style.display = 'none';
-      label.style.display = '';
+      if (mono) { mono.textContent = initialOf(name); mono.style.display = ''; }
     };
   } else {
     logo.style.display = 'none';
-    label.style.display = '';
+    if (mono) { mono.textContent = initialOf(name); mono.style.display = ''; }
   }
-  label.textContent = name;
 
-  // The Library reads as the clinic's own, not a generic "Your Library".
+  // The page title is task-first; the clinic name already sits in the header.
   const libHead = document.getElementById('libHead');
-  if (libHead) libHead.textContent = name + ' Library';
+  if (libHead) libHead.textContent = 'Case Library';
+
+  // The portal wears the clinic's colour, not ours.
+  resolveBrand(c);
+}
+
+function initialOf(name) {
+  const m = (name || '').trim().match(/[A-Za-z0-9]/);
+  return m ? m[0].toUpperCase() : '·';
+}
+
+/* ---- brand / theme -------------------------------------------------------
+
+   White-label is one variable. --accent drives every interactive colour in the
+   stylesheet through color-mix, so setting it once repaints the whole portal in
+   the clinic's colour. It is resolved in order of intent:
+
+     1. an owner's saved override (this device),
+     2. a brand_color the clinic record carries, once that column exists,
+     3. the dominant colour of the clinic's own logo, read client-side,
+     4. the neutral default baked into the stylesheet.
+
+   Nothing here needs the backend. When a brand_color column lands on clinics
+   and get_clinic_settings returns it, step 2 lights up on its own.
+*/
+
+const DEFAULT_ACCENT = '#147D74';
+const BRAND_PRESETS = [
+  '#147D74', // viridian (default)
+  '#1F6FEB', // clinical blue
+  '#4C4FD1', // indigo
+  '#7A4CC4', // violet
+  '#B23A6E', // plum rose
+  '#C05A3E', // clay
+  '#B4813A', // bronze
+  '#2E7D46', // forest
+  '#0E7C86', // teal
+  '#3A4250'  // graphite
+];
+
+const brandKey = () => 'sd-brand-' + clinicId;
+
+function getBrandOverride() {
+  try { return localStorage.getItem(brandKey()); } catch (e) { return null; }
+}
+function setBrandOverride(hex) {
+  try { hex ? localStorage.setItem(brandKey(), hex) : localStorage.removeItem(brandKey()); } catch (e) {}
+}
+function isHex(v) { return typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v.trim()); }
+
+// A brand colour has to work as a UI accent: readable as a button fill and
+// visible against white. Very pale logos (near-white, pale yellow, ice blue)
+// are pulled down to a usable luminance, hue preserved, before anything uses them.
+function clampAccent(hex) {
+  if (!isHex(hex)) return hex;
+  hex = hex.trim();
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  if (lum <= 0.6) return hex;
+  const f = 0.5 / lum;
+  const to = v => Math.max(0, Math.min(255, Math.round(v * f)));
+  const hx = v => v.toString(16).padStart(2, '0');
+  return '#' + hx(to(r)) + hx(to(g)) + hx(to(b));
+}
+
+function applyAccent(hex) {
+  if (!isHex(hex)) return;
+  hex = clampAccent(hex);
+  document.documentElement.style.setProperty('--accent', hex);
+  // Keep text on the accent legible whatever colour the clinic picks: white on
+  // dark brands, near-black on light ones.
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  const L = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+  document.documentElement.style.setProperty('--accent-ink', L > 0.62 ? '#12151B' : '#FFFFFF');
+}
+
+// Resolve the accent for a clinic and reflect it in the settings preview.
+function resolveBrand(c) {
+  const override = getBrandOverride();
+  if (isHex(override)) { applyAccent(override); reflectBrand(override, 'saved'); return; }
+
+  if (c && isHex(c.brand_color)) { applyAccent(c.brand_color); reflectBrand(c.brand_color, 'clinic'); return; }
+
+  if (c && c.logo_url) {
+    accentFromLogo(c.logo_url).then(hex => {
+      if (hex) { applyAccent(hex); reflectBrand(hex, 'logo'); }
+      else { applyAccent(DEFAULT_ACCENT); reflectBrand(DEFAULT_ACCENT, 'default'); }
+    });
+    return;
+  }
+  applyAccent(DEFAULT_ACCENT);
+  reflectBrand(DEFAULT_ACCENT, 'default');
+}
+
+/* Read the logo's own colour. Draw it small, drop the near-white and near-black
+   (paper and ink of most marks), keep only pixels with real chroma, and pick the
+   dominant hue. A logo that is pure black on white returns nothing, and we fall
+   back rather than tint the portal a muddy grey. */
+function accentFromLogo(url) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const N = 48;
+        const cv = document.createElement('canvas');
+        cv.width = N; cv.height = N;
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, N, N);
+        const d = ctx.getImageData(0, 0, N, N).data;
+        const buckets = {}; // hue bucket -> { w, r, g, b }
+        for (let i = 0; i < d.length; i += 4) {
+          const a = d[i + 3]; if (a < 200) continue;
+          const r = d[i], g = d[i + 1], b = d[i + 2];
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          if (mx > 236 && mn > 220) continue;      // paper
+          if (mx < 28) continue;                    // ink
+          const l = (mx + mn) / 510;
+          const s = mx === mn ? 0 : (mx - mn) / (255 - Math.abs(mx + mn - 255));
+          if (s < 0.16 || l < 0.16 || l > 0.86) continue;
+          const [h] = rgbToHsl(r, g, b);
+          const key = Math.round(h / 15);           // 24 hue buckets
+          const w = s;                              // saturated pixels vote harder
+          const bk = buckets[key] || (buckets[key] = { w: 0, r: 0, g: 0, b: 0 });
+          bk.w += w; bk.r += r * w; bk.g += g * w; bk.b += b * w;
+        }
+        let best = null;
+        for (const k in buckets) if (!best || buckets[k].w > best.w) best = buckets[k];
+        if (!best || best.w < 1.2) return resolve(null);
+        let r = best.r / best.w, g = best.g / best.w, b = best.b / best.w;
+        // Normalise to a usable UI accent: enough chroma, mid lightness.
+        let [h, s, l] = rgbToHsl(r, g, b);
+        s = Math.min(1, Math.max(0.42, s));
+        l = Math.min(0.54, Math.max(0.30, l));
+        resolve(hslToHex(h, s, l));
+      } catch (e) { resolve(null); }   // cross-origin taint etc. -> fall back
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+function rgbToHsl(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+  let h = 0, s = 0; const l = (mx + mn) / 2;
+  const dd = mx - mn;
+  if (dd) {
+    s = l > 0.5 ? dd / (2 - mx - mn) : dd / (mx + mn);
+    if (mx === r) h = ((g - b) / dd + (g < b ? 6 : 0));
+    else if (mx === g) h = (b - r) / dd + 2;
+    else h = (r - g) / dd + 4;
+    h *= 60;
+  }
+  return [h, s, l];
+}
+function hslToHex(h, s, l) {
+  h /= 360;
+  const f = n => {
+    const k = (n + h * 12) % 12;
+    const a = s * Math.min(l, 1 - l);
+    const c = l - a * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+    return Math.round(255 * c);
+  };
+  const to = v => v.toString(16).padStart(2, '0');
+  return '#' + to(f(0)) + to(f(8)) + to(f(4));
+}
+
+// Reflect the current brand into the Settings controls.
+function reflectBrand(hex, sourceLabel) {
+  const swatches = $('brandSwatches');
+  if (swatches) {
+    swatches.querySelectorAll('.swatch').forEach(el => {
+      el.classList.toggle('sel', el.dataset.hex && el.dataset.hex.toLowerCase() === hex.toLowerCase());
+    });
+    const custom = $('brandCustom');
+    if (custom && isHex(hex)) custom.value = hex;
+  }
+  const src = $('brandSource');
+  if (src) {
+    src.textContent =
+      sourceLabel === 'saved'  ? 'Your own colour' :
+      sourceLabel === 'clinic' ? 'Set for your clinic' :
+      sourceLabel === 'logo'   ? 'Matched from your logo' :
+                                 'Default colour';
+  }
+  const bnote = $('brandNote');
+  if (bnote) {
+    bnote.textContent = (sourceLabel === 'saved') ? 'Saved on this device.' : '';
+    bnote.className = 'note';
+  }
 }
 
 /* ---- invitations --------------------------------------------------------
@@ -1519,6 +1875,8 @@ function dressFrame(frameId) {
   let d;
   try { d = f.contentDocument; } catch (e) { return; }
   if (!d || !d.head) return;
+  // The embedded page should sit on the portal's own surface, not its old cream.
+  const portalBg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#F3F5F7';
   const style = d.createElement('style');
   style.textContent =
     // The page's own chrome. The portal already supplies a header and tabs.
@@ -1528,7 +1886,7 @@ function dressFrame(frameId) {
     // .page carries 88px of top padding to clear the fixed nav. With the nav
     // hidden that padding becomes an empty band under the tabs.
     '.page { padding-top:0 !important; }' +
-    'body { background:#FAF7F2 !important; }';
+    'body { background:' + portalBg + ' !important; }';
   d.head.appendChild(style);
   fitFrame(frameId);
 }
@@ -3050,9 +3408,76 @@ async function loadSettings() {
     $('setLogoRemove').style.display = 'none';
   }
 
+  // Brand controls: name on the preview, logo button only when there is a logo.
+  const bn = $('brandName'); if (bn) bn.textContent = c.name || 'Your clinic';
+  const bl = $('brandFromLogo'); if (bl) bl.style.display = c.logo_url ? '' : 'none';
+  buildBrandSwatches();
+  reflectBrand(getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || DEFAULT_ACCENT,
+               getBrandOverride() ? 'saved' : (c.logo_url ? 'logo' : 'default'));
+  brandLogoUrl = c.logo_url || null;
+
   renderBilling(data.subscription, c);
   renderAgreements(data.agreements);
 }
+
+/* ---- brand controls (settings) ---- */
+let brandLogoUrl = null;
+
+function buildBrandSwatches() {
+  const host = $('brandSwatches');
+  if (!host || host.dataset.built) return;
+  BRAND_PRESETS.forEach(hex => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'swatch';
+    b.dataset.hex = hex;
+    b.style.background = hex;
+    b.title = hex;
+    b.setAttribute('aria-label', 'Set brand colour ' + hex);
+    b.addEventListener('click', () => chooseBrand(hex));
+    host.appendChild(b);
+  });
+  const wrap = document.createElement('label');
+  wrap.className = 'swatch-custom';
+  wrap.innerHTML = '<input type="color" id="brandCustom" value="' + DEFAULT_ACCENT + '"> Custom';
+  host.appendChild(wrap);
+  wrap.querySelector('#brandCustom').addEventListener('input', e => chooseBrand(e.target.value));
+  host.dataset.built = '1';
+}
+
+// A chosen colour is this clinic's, saved on this device and applied at once.
+function chooseBrand(hex) {
+  if (!isHex(hex)) return;
+  hex = clampAccent(hex);
+  applyAccent(hex);
+  setBrandOverride(hex);
+  reflectBrand(hex, 'saved');
+}
+
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'brandToggle') {
+    const p = $('brandPanel');
+    const open = p.style.display !== 'none';
+    p.style.display = open ? 'none' : 'block';
+    e.target.textContent = open ? 'Change colour' : 'Done';
+  }
+  if (e.target && e.target.id === 'brandFromLogo') {
+    setBrandOverride(null);
+    if (brandLogoUrl) {
+      note('brandNote', 'Reading your logo…');
+      accentFromLogo(brandLogoUrl).then(hex => {
+        if (hex) { applyAccent(hex); reflectBrand(hex, 'logo'); }
+        else { applyAccent(DEFAULT_ACCENT); reflectBrand(DEFAULT_ACCENT, 'default');
+               note('brandNote', 'That logo has no clear colour to borrow. Using the default.'); }
+      });
+    } else { applyAccent(DEFAULT_ACCENT); reflectBrand(DEFAULT_ACCENT, 'default'); }
+  }
+  if (e.target && e.target.id === 'brandReset') {
+    setBrandOverride(null);
+    applyAccent(DEFAULT_ACCENT);
+    reflectBrand(DEFAULT_ACCENT, 'default');
+  }
+});
 
 const TIER_LABEL = { solo: 'Solo', boutique: 'Boutique', premium: 'Premium', enterprise: 'Enterprise' };
 const TIER_CARDS = [
@@ -3163,7 +3588,7 @@ function renderBilling(sub, c) {
       const inner = document.createElement('div');
       inner.innerHTML =
         '<div class="tier-name">' + card.name + '</div>' +
-        '<div class="tier-price"><span class="cur">USD</span>' + card.price + '<span>/mo</span></div>' +
+        '<div class="tier-price">' + card.price + '<span>USD / mo</span></div>' +
         '<div class="tier-blurb">' + card.blurb + '</div>' +
         '<div class="tier-seats">' + card.seats + '</div>';
       el.appendChild(inner);
@@ -4000,5 +4425,10 @@ async function run(btn, st, path, payload) {
   }
 }
 </script>
+
+<footer class="site-foot">
+  <span class="pw">Powered by</span>
+  <a class="sd" href="https://skinday.com" target="_blank" rel="noopener">SkinDay</a>
+</footer>
 </body>
 </html>
