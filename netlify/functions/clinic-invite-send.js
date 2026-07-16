@@ -3,9 +3,9 @@
 // Sends a branded invitation email through Resend.
 //
 // The email is a convenience. The token is the authority. This function creates
-// the invitation via invite_clinic_member (which enforces owner-only, seats, the
-// one-admin rule, and the domain flag) and then emails the resulting link. If the
-// email fails, the invitation still exists and the owner can copy the link. The
+// the invitation via invite_clinic_member (which enforces who may invite, seats,
+// role rules, and the domain flag) and then emails the resulting link. If the
+// email fails, the invitation still exists and the inviter can copy the link. The
 // email never carries any grant of access on its own; clicking it lands on the
 // join page, which redeems the token, which is the only thing that adds a member.
 //
@@ -95,6 +95,10 @@ exports.handler = async function (event) {
   const invitationId = body.invitationId ? String(body.invitationId) : '';
   let email = body.email ? String(body.email).trim() : '';
   const role = body.role ? String(body.role) : 'staff';
+  // The RPC is the gate, but garbage never needs to reach it. Owner is a role
+  // that is transferred, never invited.
+  const ALLOWED_ROLES = ['staff', 'injector', 'consultant', 'marketing', 'admin'];
+  if (!ALLOWED_ROLES.includes(role)) return json(400, { error: 'unknown role' });
   if (!clinicId) return json(400, { error: 'clinicId is required' });
 
   const asUser = createClient(SUPABASE_URL, ANON_KEY, {
@@ -109,7 +113,7 @@ exports.handler = async function (event) {
     // row and returns it. Any earlier link stops resolving, because its hash no
     // longer matches, which is the safer behavior; the new link is the one that
     // works, and an old link degrades to the join page's "ask for a new one".
-    // Owner only, so an admin who tries to resend gets a clear refusal.
+    // The RPC decides who may resend; anyone it refuses gets a clear refusal.
     const { data: rotated, error: rErr } = await asUser.rpc('rotate_invitation', {
       p_clinic_id: clinicId, p_invitation_id: invitationId
     });
@@ -141,7 +145,11 @@ exports.handler = async function (event) {
     if (c && c.name) clinicName = c.name;
   } catch (e) { /* the generic name is a fine fallback */ }
 
-  const roleLabel = role === 'admin' ? 'an admin' : 'a staff member';
+  const ROLE_LABELS = {
+    admin: 'Admin', staff: 'Staff', injector: 'Injector / Technician',
+    consultant: 'Consultant', marketing: 'Marketing'
+  };
+  const roleLabel = ROLE_LABELS[inv && inv.role ? inv.role : role] || 'Staff';
 
   // No key, or domain not verified yet: the invitation exists, the link works,
   // the email simply has not been sent. The portal shows the link.
