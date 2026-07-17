@@ -6,7 +6,7 @@
 <title>Getting started with Visualize Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#F3F5F7; --surface:#FFFFFF; --surface-2:#F7F9FB;
@@ -20,7 +20,7 @@
     --accent-deep:color-mix(in srgb, var(--accent), #000 42%);
     --radius:14px; --radius-sm:9px;
     --shadow:0 1px 2px rgba(20,26,33,.04), 0 10px 30px -20px rgba(20,26,33,.4);
-    --font-ui:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --font-ui:'Hanken Grotesk','Noto Sans TC','PingFang TC','Microsoft JhengHei',system-ui,-apple-system,sans-serif;
     --font-mono:'IBM Plex Mono',ui-monospace,monospace;
   }
   * { box-sizing:border-box; }
@@ -159,7 +159,13 @@
 
   h2.sec { font-size:24px; font-weight:600; letter-spacing:-.01em; margin:56px 0 4px; }
   .sub { color:var(--muted); font-size:15.5px; margin:0 0 4px; }
+  .lang-toggle{margin-left:auto;display:inline-flex;align-items:center;gap:8px;}
+  .lang-sep{width:1px;height:11px;background:var(--line);}
+  .lang-btn{background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:12px;letter-spacing:.06em;color:var(--faint);padding:0;transition:color .2s;}
+  .lang-btn.active{color:var(--ink);}
+  .lang-btn:hover:not(.active){color:var(--accent-strong);}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="page">
@@ -168,35 +174,38 @@
     <span class="mono">S</span>
     <b>Skin Trek</b>
     <span class="tag">Visualize Pro</span>
+    <div class="lang-toggle" role="group" aria-label="Language"><button class="lang-btn active" onclick="setLang('en')">EN</button><span class="lang-sep"></span><button class="lang-btn" onclick="setLang('zh')">繁中</button></div>
   </div>
 
   <section class="hero">
-    <span class="eyebrow">Getting started</span>
-    <h1>One case. More value.</h1>
-    <p>Prepare a case once, publish it to your gallery, and, with patient permission, use it to guide your simulations. Here is the whole loop in about two minutes.</p>
+    <span class="eyebrow" data-en="Getting started" data-zh="快速入門">Getting started</span>
+    <h1 data-en="One case. More value." data-zh="一個案例，創造更多價值。">One case. More value.</h1>
+    <p data-en="Prepare a case once, publish it to your gallery, and, with patient permission, use it to guide your simulations. Here is the whole loop in about two minutes." data-zh="只需整理一次案例，就能發布到您的案例作品集；在取得顧客同意後，也能用來引導模擬結果。以下約兩分鐘帶您了解完整流程。">Prepare a case once, publish it to your gallery, and, with patient permission, use it to guide your simulations. Here is the whole loop in about two minutes.</p>
   </section>
 
   <!-- animated demo: a single case flowing Studio -> Gallery -> Visualize -->
   <div class="demo" aria-hidden="true">
-    <div class="demo-bar">
+    <div class="demo-bar" data-en='&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;
+      &lt;span class="lbl"&gt;one case, three places&lt;/span&gt;' data-zh='&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;
+      &lt;span class="lbl"&gt;一個案例，三種用途&lt;/span&gt;'>
       <i></i><i></i><i></i>
       <span class="lbl">one case, three places</span>
     </div>
     <div class="stage">
       <div class="flow">
         <div class="node s1">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 14l5-4 4 3 3-2 6 4"/></svg></div>
-          <div class="k">Prepare</div>
+          <div class="ico"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M3 14l5-4 4 3 3-2 6 4"></path></svg></div>
+          <div class="k" data-en="Prepare" data-zh="整理">Prepare</div>
           <div class="v">Studio</div>
         </div>
         <div class="node s2">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H4z"/><path d="M4 20h16"/></svg></div>
-          <div class="k">Publish</div>
-          <div class="v">Gallery</div>
+          <div class="ico"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H4z"></path><path d="M4 20h16"></path></svg></div>
+          <div class="k" data-en="Publish" data-zh="發布">Publish</div>
+          <div class="v" data-en="Gallery" data-zh="案例作品集">Gallery</div>
         </div>
         <div class="node s3">
-          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
-          <div class="k">Guide</div>
+          <div class="ico"><svg viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path><circle cx="12" cy="12" r="3"></circle></svg></div>
+          <div class="k" data-en="Guide" data-zh="引導">Guide</div>
           <div class="v">Visualize</div>
         </div>
         <div class="chip"></div>
@@ -204,55 +213,69 @@
     </div>
   </div>
 
-  <h2 class="sec">The three tabs</h2>
-  <p class="sub">Everything lives behind three tabs at the top of your portal.</p>
+  <h2 class="sec" data-en="The three tabs" data-zh="三個主要功能分頁">The three tabs</h2>
+  <p class="sub" data-en="Everything lives behind three tabs at the top of your portal." data-zh="所有功能都集中在診所後台上方的三個分頁中。">Everything lives behind three tabs at the top of your portal.</p>
 
   <div class="steps">
     <div class="step">
       <span class="num">1</span>
       <div>
-        <h3><span class="tab-ref">Studio</span> &nbsp;Build the before and after</h3>
-        <p>Drop in your photos, pick a layout, and Studio aligns and crops them into a clean multi-angle grid. Everything is processed in your browser, so the photos never leave the room until you choose to save.</p>
+        <h3 data-en='&lt;span class="tab-ref"&gt;Studio&lt;/span&gt;  Build the before and after' data-zh='&lt;span class="tab-ref"&gt;Studio&lt;/span&gt;  製作療程前後對比照'><span class="tab-ref">Studio</span>  Build the before and after</h3>
+        <p data-en="Drop in your photos, pick a layout, and Studio aligns and crops them into a clean multi-angle grid. Everything is processed in your browser, so the photos never leave the room until you choose to save." data-zh="上傳照片並選擇版型後，Studio 會自動對齊與裁切，製作成整齊的多角度對比圖。所有處理都在您的瀏覽器中完成；在您選擇儲存前，照片不會被上傳或離開您的裝置。">Drop in your photos, pick a layout, and Studio aligns and crops them into a clean multi-angle grid. Everything is processed in your browser, so the photos never leave the room until you choose to save.</p>
       </div>
     </div>
     <div class="step">
       <span class="num">2</span>
       <div>
-        <h3><span class="tab-ref">Visualize</span> &nbsp;Show where a treatment may lead</h3>
-        <p>Pick a treatment and a few details to preview a likely direction during the consultation. It is a conversation tool, not a promise of results, and it draws on your own saved cases to stay grounded in what your clinic actually produces.</p>
+        <h3 data-en='&lt;span class="tab-ref"&gt;Visualize&lt;/span&gt;  Show where a treatment may lead' data-zh='&lt;span class="tab-ref"&gt;Visualize&lt;/span&gt;  呈現療程可能帶來的變化方向'><span class="tab-ref">Visualize</span>  Show where a treatment may lead</h3>
+        <p data-en="Pick a treatment and a few details to preview a likely direction during the consultation. It is a conversation tool, not a promise of results, and it draws on your own saved cases to stay grounded in what your clinic actually produces." data-zh="在諮詢時選擇療程並輸入幾項資訊，即可預覽可能的改善方向。這是一項協助溝通的工具，而不是療效保證；它也會參考您診所儲存的真實案例，讓模擬結果更貼近您實際能做到的治療成果。">Pick a treatment and a few details to preview a likely direction during the consultation. It is a conversation tool, not a promise of results, and it draws on your own saved cases to stay grounded in what your clinic actually produces.</p>
       </div>
     </div>
     <div class="step">
       <span class="num">3</span>
       <div>
-        <h3><span class="tab-ref">Case Library</span> &nbsp;Keep it, publish it, reuse it</h3>
-        <p>Saved cases collect here. Publish the ones you like and they appear on your own website automatically through one line your developer installs once. With patient permission, the same case teaches your Visualize.</p>
+        <h3 data-en='&lt;span class="tab-ref"&gt;Case Library&lt;/span&gt;  Keep it, publish it, reuse it' data-zh='&lt;span class="tab-ref"&gt;案例庫&lt;/span&gt;  保存、發布並持續運用'><span class="tab-ref">Case Library</span>  Keep it, publish it, reuse it</h3>
+        <p data-en="Saved cases collect here. Publish the ones you like and they appear on your own website automatically through one line your developer installs once. With patient permission, the same case teaches your Visualize." data-zh="所有已儲存的案例都會集中在這裡。選擇要公開的案例後，它們便會透過網站工程師一次安裝的嵌入程式碼，自動顯示在您的官網上。在取得顧客同意後，同一個案例也能用來引導您診所的 Visualize 模擬。">Saved cases collect here. Publish the ones you like and they appear on your own website automatically through one line your developer installs once. With patient permission, the same case teaches your Visualize.</p>
       </div>
     </div>
   </div>
 
-  <div class="callout">
+  <div class="callout" data-en="&lt;b&gt;Make it yours first.&lt;/b&gt; Open &lt;b&gt;Settings&lt;/b&gt; and add your clinic logo. The portal, your gallery, and every before and after you export take on your logo and brand colour on their own. Nothing says SkinDay to your patients." data-zh="&lt;b&gt;先建立您的診所品牌。&lt;/b&gt; 開啟&lt;b&gt;設定&lt;/b&gt;並上傳診所 Logo。診所後台、案例作品集，以及每一張匯出的療程前後對比圖，都會自動套用您的 Logo 與品牌色彩。顧客看到的是您的診所品牌，而不是 SkinDay。">
     <b>Make it yours first.</b> Open <b>Settings</b> and add your clinic logo. The portal, your gallery, and every before and after you export take on your logo and brand colour on their own. Nothing says SkinDay to your patients.
   </div>
 
-  <h2 class="sec">Your team</h2>
-  <p class="sub">Invite people from Settings. Everyone on your team uses all three tabs, Studio, Visualize, and Case Library. Roles are about who runs the account, not what each person can open, and every action is recorded against the person who took it, so nobody should share a login.</p>
+  <h2 class="sec" data-en="Your team" data-zh="您的團隊">Your team</h2>
+  <p class="sub" data-en="Invite people from Settings. Everyone on your team uses all three tabs, Studio, Visualize, and Case Library. Roles are about who runs the account, not what each person can open, and every action is recorded against the person who took it, so nobody should share a login." data-zh="您可以從「設定」邀請團隊成員。所有成員都能使用 Studio、Visualize 與案例庫三個分頁。角色的差別主要在於帳號與團隊管理權限，而不是能開啟哪些功能。系統會記錄每一項操作由哪位成員執行，因此請勿共用登入帳號。">Invite people from Settings. Everyone on your team uses all three tabs, Studio, Visualize, and Case Library. Roles are about who runs the account, not what each person can open, and every action is recorded against the person who took it, so nobody should share a login.</p>
 
   <div class="roles">
-    <div class="role"><span class="r">Owner</span><span class="d">Signs the agreements and holds billing. Usually set up once, then hands the day to day to an admin.</span></div>
-    <div class="role"><span class="r">Admin</span><span class="d">Runs the team: invites people, sets roles, and removes access. The person actually in the portal each day.</span></div>
-    <div class="role"><span class="r">Injector / Technician</span><span class="d">A working seat for the people performing treatments. Full access to every tab.</span></div>
-    <div class="role"><span class="r">Consultant</span><span class="d">A working seat for the people running consultations. Full access to every tab.</span></div>
-    <div class="role"><span class="r">Marketing</span><span class="d">A working seat for whoever curates the gallery and website. Full access to every tab.</span></div>
-    <div class="role"><span class="r">Staff</span><span class="d">A general working seat for front-desk and support. Full access to every tab.</span></div>
+    <div class="role" data-en='&lt;span class="r"&gt;Owner&lt;/span&gt;&lt;span class="d"&gt;Signs the agreements and holds billing. Usually set up once, then hands the day to day to an admin.&lt;/span&gt;' data-zh='&lt;span class="r"&gt;負責人&lt;/span&gt;&lt;span class="d"&gt;代表診所接受協議並管理訂閱付款。通常完成初始設定後，可將日常管理交由管理員負責。&lt;/span&gt;'><span class="r">Owner</span><span class="d">Signs the agreements and holds billing. Usually set up once, then hands the day to day to an admin.</span></div>
+    <div class="role" data-en='&lt;span class="r"&gt;Admin&lt;/span&gt;&lt;span class="d"&gt;Runs the team: invites people, sets roles, and removes access. The person actually in the portal each day.&lt;/span&gt;' data-zh='&lt;span class="r"&gt;管理員&lt;/span&gt;&lt;span class="d"&gt;負責團隊管理，包括邀請成員、設定角色與移除存取權限，通常也是日常操作後台的人員。&lt;/span&gt;'><span class="r">Admin</span><span class="d">Runs the team: invites people, sets roles, and removes access. The person actually in the portal each day.</span></div>
+    <div class="role" data-en='&lt;span class="r"&gt;Injector / Technician&lt;/span&gt;&lt;span class="d"&gt;A working seat for the people performing treatments. Full access to every tab.&lt;/span&gt;' data-zh='&lt;span class="r"&gt;醫師／治療人員&lt;/span&gt;&lt;span class="d"&gt;提供給實際執行療程的人員使用，可完整存取所有功能分頁。&lt;/span&gt;'><span class="r">Injector / Technician</span><span class="d">A working seat for the people performing treatments. Full access to every tab.</span></div>
+    <div class="role" data-en='&lt;span class="r"&gt;Consultant&lt;/span&gt;&lt;span class="d"&gt;A working seat for the people running consultations. Full access to every tab.&lt;/span&gt;' data-zh='&lt;span class="r"&gt;諮詢師&lt;/span&gt;&lt;span class="d"&gt;提供給負責顧客諮詢的人員使用，可完整存取所有功能分頁。&lt;/span&gt;'><span class="r">Consultant</span><span class="d">A working seat for the people running consultations. Full access to every tab.</span></div>
+    <div class="role" data-en='&lt;span class="r"&gt;Marketing&lt;/span&gt;&lt;span class="d"&gt;A working seat for whoever curates the gallery and website. Full access to every tab.&lt;/span&gt;' data-zh='&lt;span class="r"&gt;行銷人員&lt;/span&gt;&lt;span class="d"&gt;提供給負責整理案例作品集與官網內容的人員使用，可完整存取所有功能分頁。&lt;/span&gt;'><span class="r">Marketing</span><span class="d">A working seat for whoever curates the gallery and website. Full access to every tab.</span></div>
+    <div class="role" data-en='&lt;span class="r"&gt;Staff&lt;/span&gt;&lt;span class="d"&gt;A general working seat for front-desk and support. Full access to every tab.&lt;/span&gt;' data-zh='&lt;span class="r"&gt;一般員工&lt;/span&gt;&lt;span class="d"&gt;適合櫃檯與支援人員使用，可完整存取所有功能分頁。&lt;/span&gt;'><span class="r">Staff</span><span class="d">A general working seat for front-desk and support. Full access to every tab.</span></div>
   </div>
 
   <div class="cta">
-    <a href="https://skinday.com/clinic-portal">Open Visualize Pro</a>
-    <div class="fine">Sign in with the email your invitation was sent to.</div>
+    <a href="https://skinday.com/clinic-portal" data-en="Open Visualize Pro" data-zh="開啟 Visualize Pro">Open Visualize Pro</a>
+    <div class="fine" data-en="Sign in with the email your invitation was sent to." data-zh="請使用收到邀請信的電子郵件地址登入。">Sign in with the email your invitation was sent to.</div>
   </div>
 
-  <div class="foot">Powered by <b>SkinDay</b></div>
+  <div class="foot" data-en="Powered by &lt;b&gt;SkinDay&lt;/b&gt;" data-zh="技術支援 &lt;b&gt;SkinDay&lt;/b&gt;">Powered by <b>SkinDay</b></div>
 </div>
+<script>
+  function detectLang(){try{var s=localStorage.getItem('sd-lang');if(s==='zh'||s==='en')return s;}catch(e){}try{var n=(navigator.language||(navigator.languages&&navigator.languages[0])||'').toLowerCase();if(n.indexOf('zh')===0)return 'zh';}catch(e){}return 'en';}
+  var currentLang=detectLang();
+  function setLang(l){currentLang=l;try{localStorage.setItem('sd-lang',l);}catch(e){}applyLang();}
+  function applyLang(){
+    var isZh=currentLang==='zh';
+    document.body.classList.toggle('zh',isZh);
+    document.documentElement.setAttribute('lang',isZh?'zh-TW':'en');
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){el.innerHTML=isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');});
+    document.querySelectorAll('.lang-btn').forEach(function(b){b.classList.toggle('active',(b.textContent.trim()==='EN'&&!isZh)||(b.textContent.trim()==='繁中'&&isZh));});
+    document.title=isZh?'Visualize Pro 快速入門':'Getting started with Visualize Pro';
+  }
+  applyLang();
+</script>
 </body>
 </html>
