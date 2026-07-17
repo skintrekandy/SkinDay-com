@@ -235,24 +235,40 @@ exports.handler = async (event) => {
     if (fields.scenarioMode === 'true') {
       // M14: each scenario key declares which baseline treatment types it may
       // build on. Filler-area add-ons work on any baseline; stronger_sculptra and
-      // combination_plan are Sculptra-only; add_biostim_lift is for laser baselines.
+      // combination_plan are Sculptra-only.
+      // M17: widened for combination-plan mode, which stacks validated add-ons on
+      // any primary (biostim/filler/laser/tox). Each list below is the UNION of
+      // what the single-treatment scenario panel and the combination builder can
+      // legitimately send for that key, so widening never regresses the panel and
+      // only ever makes the gate more permissive:
+      //   - cheek/nasolabial/tear-trough/temple/nose/lips + chin/jaw filler stack
+      //     on any primary.
+      //   - RF/HIFU and masseter/Nefertiti neurotoxin now stack on a biostim
+      //     primary (Sculptra + lower-face tox/energy is a standard plan), and on
+      //     each other's non-repeating primaries.
+      //   - add_biostim_lift still excluded from a biostim primary (biostim on
+      //     biostim is the same modality, not a distinct add-on).
+      // Also fixes a pre-existing omission: add_nasolabial_filler was absent from
+      // this map, so the scenario panel's "Add nasolabial fold support" button
+      // (offered on biostim/filler/laser) returned 400 BAD_SCENARIO_KEY on click.
       const SCENARIO_SOURCE_TYPES = {
-        stronger_sculptra:   ['biostim'],
-        combination_plan:    ['biostim'],
-        add_chin_jaw_filler: ['biostim', 'filler', 'laser', 'tox'],
-        add_chin_filler:     ['biostim', 'filler', 'laser', 'tox'],
-        add_jawline_filler:  ['biostim', 'filler', 'laser', 'tox'],
-        add_cheek_filler:    ['filler', 'laser', 'tox'],
-        add_temple_support:  ['biostim', 'filler', 'laser', 'tox'],
-        add_tear_trough:     ['biostim', 'filler', 'laser', 'tox'],
-        add_nose_filler:     ['biostim', 'filler', 'laser', 'tox'],
-        add_lips_filler:     ['biostim', 'filler', 'laser', 'tox'],
-        add_biostim_lift:    ['filler', 'laser', 'tox'],
-        add_rf:              ['filler'],
-        add_hifu:            ['filler'],
-        add_masseter:        ['filler'],
-        add_nefertiti:       ['filler'],
-        stronger_laser:      ['laser']
+        stronger_sculptra:     ['biostim'],
+        combination_plan:      ['biostim'],
+        add_chin_jaw_filler:   ['biostim', 'filler', 'laser', 'tox'],
+        add_chin_filler:       ['biostim', 'filler', 'laser', 'tox'],
+        add_jawline_filler:    ['biostim', 'filler', 'laser', 'tox'],
+        add_cheek_filler:      ['biostim', 'filler', 'laser', 'tox'],
+        add_temple_support:    ['biostim', 'filler', 'laser', 'tox'],
+        add_tear_trough:       ['biostim', 'filler', 'laser', 'tox'],
+        add_nasolabial_filler: ['biostim', 'filler', 'laser', 'tox'],
+        add_nose_filler:       ['biostim', 'filler', 'laser', 'tox'],
+        add_lips_filler:       ['biostim', 'filler', 'laser', 'tox'],
+        add_biostim_lift:      ['filler', 'laser', 'tox'],
+        add_rf:                ['biostim', 'filler', 'tox'],
+        add_hifu:              ['biostim', 'filler', 'tox'],
+        add_masseter:          ['biostim', 'filler', 'laser'],
+        add_nefertiti:         ['biostim', 'filler', 'laser'],
+        stronger_laser:        ['laser']
       };
       if (!SCENARIO_SOURCE_TYPES[fields.scenarioKey]) {
         return { statusCode: 400, headers: { 'Content-Type': 'application/json' },
