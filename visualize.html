@@ -638,7 +638,39 @@
       .scenario-fs-btn { padding:7px 11px; font-size:.68rem; }
       .fs-zoom-btn { padding:5px 9px; }
     }
-  </style>
+  
+    /* ── Consultation mode (clinic-embedded only) ── */
+    #consultOverlay{position:fixed;inset:0;z-index:300;background:#0d0b0a;color:#fff;display:none;flex-direction:column;font-family:'DM Sans',sans-serif;}
+    #consultOverlay.open{display:flex;}
+    #consultOverlay .cm-close{position:absolute;top:14px;right:16px;z-index:5;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;}
+    #consultOverlay .cm-close:hover{background:rgba(255,255,255,.2);}
+    .cm-setup{margin:auto;max-width:420px;width:calc(100% - 40px);text-align:center;padding:24px;}
+    .cm-setup h2{font-size:22px;font-weight:600;margin:0 0 8px;}
+    .cm-setup p{opacity:.75;font-size:14px;margin:0 0 22px;line-height:1.5;}
+    .cm-list{display:flex;flex-direction:column;gap:10px;margin-bottom:24px;text-align:left;}
+    .cm-list label{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.18);border-radius:8px;cursor:pointer;font-size:15px;}
+    .cm-list label:hover{background:rgba(255,255,255,.06);}
+    .cm-list input{width:18px;height:18px;accent-color:var(--gold,#C9A96E);}
+    .cm-start{width:100%;background:var(--gold,#C9A96E);color:#1C1714;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;}
+    .cm-stage{flex:1;display:none;flex-direction:column;padding:56px 16px 20px;min-height:0;}
+    #consultOverlay.staged .cm-setup{display:none;}
+    #consultOverlay.staged .cm-stage{display:flex;}
+    .cm-angle-title{text-align:center;font-size:18px;font-weight:600;margin-bottom:12px;}
+    .cm-pair{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0;}
+    .cm-pane{position:relative;background:#000;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+    .cm-pane img{width:100%;height:100%;object-fit:contain;}
+    .cm-pane .cm-lbl{position:absolute;left:10px;bottom:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.55);padding:4px 9px;border-radius:5px;}
+    .cm-pane .cm-lbl.sim{color:var(--gold,#C9A96E);}
+    .cm-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:16px;}
+    .cm-arrow{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .cm-arrow:disabled{opacity:.3;cursor:not-allowed;}
+    .cm-dots{display:flex;gap:7px;}
+    .cm-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);}
+    .cm-dot.on{background:var(--gold,#C9A96E);}
+    .cm-counter{font-size:12px;opacity:.6;margin-top:8px;text-align:center;}
+    .cm-disc{text-align:center;font-size:11px;opacity:.5;margin-top:6px;}
+    @media(max-width:640px){ .cm-pair{grid-template-columns:1fr;grid-template-rows:1fr 1fr;} }
+</style>
 </head>
 <body>
 
@@ -861,6 +893,8 @@
           <div class="area-chip active" data-angle="frontal"><span class="tick">✓</span><span data-en="Frontal" data-zh="正面">Frontal</span></div>
           <div class="area-chip" data-angle="r45"><span class="tick">✓</span><span data-en="Right 45°" data-zh="右側 45°">Right 45°</span></div>
           <div class="area-chip" data-angle="l45"><span class="tick">✓</span><span data-en="Left 45°" data-zh="左側 45°">Left 45°</span></div>
+          <div class="area-chip" data-angle="r90"><span class="tick">✓</span><span data-en="Right 90°" data-zh="右側 90°">Right 90°</span></div>
+          <div class="area-chip" data-angle="l90"><span class="tick">✓</span><span data-en="Left 90°" data-zh="左側 90°">Left 90°</span></div>
         </div>
       </div>
       <div class="photo-guide" id="photoGuide" data-en="<strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong>" data-zh="<strong>僅限臉部照片。</strong>Visualize 用於臉部療程預覽，請上傳清楚的臉部近照，不要使用全身照或距離太遠的照片。<strong>照片品質是影響生成效果最重要的因素。</strong>光線不足、背景雜亂或裁切太緊，都容易造成瑕疵或效果不明顯，即使 AI 再進步也一樣。<strong>上傳前請先閱讀拍攝指南。</strong>"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
@@ -927,6 +961,7 @@
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
         <span data-en="Fullscreen" data-zh="全螢幕">Fullscreen</span>
       </button>
+      <button class="zoom-reset" id="consultBtn" type="button" style="display:none;align-items:center;gap:5px;border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--deep);"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span data-en="Consultation" data-zh="談詢模式">Consultation</span></button>
     </div>
     <div class="result-grid" id="resultGrid">
       <div class="result-card"><img id="originalResult" alt="Original photo" /><div class="result-tag" data-en="Original" data-zh="原始照片">Original</div></div>
@@ -1136,6 +1171,29 @@
   </div>
 </div>
 
+<div id="consultOverlay" role="dialog" aria-modal="true" aria-label="Consultation preview">
+  <button class="cm-close" id="consultClose" type="button" data-en="Close" data-zh="關閉">Close</button>
+  <div class="cm-setup" id="consultSetup">
+    <h2 data-en="Consultation preview" data-zh="談詢預覽">Consultation preview</h2>
+    <p data-en="Choose the angles to walk through with the client." data-zh="選擇要與顧客一起檢視的角度。">Choose the angles to walk through with the client.</p>
+    <div class="cm-list" id="consultList"></div>
+    <button class="cm-start" id="consultStart" type="button" data-en="Start" data-zh="開始">Start</button>
+  </div>
+  <div class="cm-stage" id="consultStage">
+    <div class="cm-angle-title" id="consultAngleTitle"></div>
+    <div class="cm-pair">
+      <div class="cm-pane"><img id="consultBefore" alt=""><span class="cm-lbl" data-en="Before" data-zh="治療前">Before</span></div>
+      <div class="cm-pane"><img id="consultAfter" alt=""><span class="cm-lbl sim" data-en="Simulated" data-zh="模擬預覽">Simulated</span></div>
+    </div>
+    <div class="cm-nav">
+      <button class="cm-arrow" id="consultPrev" type="button" aria-label="Previous">‹</button>
+      <div class="cm-dots" id="consultDots"></div>
+      <button class="cm-arrow" id="consultNext" type="button" aria-label="Next">›</button>
+    </div>
+    <div class="cm-counter" id="consultCounter"></div>
+    <div class="cm-disc" data-en="Simulated · AI-generated preview, not a prediction of results" data-zh="模擬 · AI 生成預覽，並非結果預測">Simulated · AI-generated preview, not a prediction of results</div>
+  </div>
+</div>
 <footer>
   <div class="brand">Skin<span>Day</span></div>
   <div data-en="SkinDay Visualize · Consultation previews only · AI-generated, not a prediction of results" data-zh="SkinDay Visualize · 僅供諮詢預覽 · AI 生成，並非結果預測">SkinDay Visualize · Consultation previews only · AI-generated, not a prediction of results</div>
@@ -1303,7 +1361,7 @@
     </ul>
 
     <!-- THREE ANGLES -->
-    <h3 data-en="5 · The three angles" data-zh="5 · 三個角度">5 · The three angles</h3>
+    <h3 data-en="5 · The five angles" data-zh="5 · 五個角度">5 · The five angles</h3>
     <svg class="guide-svg" viewBox="0 0 330 130" xmlns="http://www.w3.org/2000/svg" aria-label="The three photo angles">
       <g fill="none" stroke="#1C1714" stroke-width="1.6" stroke-linecap="round">
         <g transform="translate(10,6)">
@@ -1337,7 +1395,29 @@
       </g>
     </svg>
     <p class="guide-rule" data-en="The 45° check: the dotted line through the nose tip should just touch the far cheek. Nose well inside the cheek line = turn too shallow. Nose past it = too far toward profile." data-zh="45° 檢查方式：通過鼻尖的參考線應剛好接近遠側臉頰。若鼻尖仍明顯在臉頰線內，代表轉得不夠；若鼻尖超過太多，則太接近側臉。">The 45° check: the dotted line through the nose tip should just touch the far cheek. Nose well inside the cheek line = turn too shallow. Nose past it = too far toward profile.</p>
-    <p class="guide-rule" style="color:var(--rose);font-weight:600;" data-en="The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only - one great photo beats three mediocre ones." data-zh="正面照通常能得到最清楚的結果。斜側角度可補充下臉部資訊。若不確定，請只使用正面照；一張好照片勝過三張普通照片。">The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only - one great photo beats three mediocre ones.</p>
+    <svg class="guide-svg" viewBox="0 0 330 130" xmlns="http://www.w3.org/2000/svg" aria-label="The two 90° profile angles">
+      <g fill="none" stroke="#1C1714" stroke-width="1.6" stroke-linecap="round">
+        <g transform="translate(215,8)">
+          <path d="M 26,86 Q 10,72 10,50 Q 10,18 38,11 Q 60,6 70,21 Q 76,30 76,39 L 84,51 L 76,54 Q 79,60 74,62 Q 78,68 71,70 Q 72,79 60,81 Q 46,84 38,78"/>
+          <path d="M 38,46 q 9,-5 9,5 q 0,9 -9,7"/>
+          <path d="M 64,35 q 4,-2 7,0"/>
+          <line x1="84" y1="6" x2="84" y2="92" stroke="#C8725A" stroke-width="1.3" stroke-dasharray="3 3"/>
+        </g>
+        <g transform="translate(115,8) scale(-1,1)">
+          <path d="M 26,86 Q 10,72 10,50 Q 10,18 38,11 Q 60,6 70,21 Q 76,30 76,39 L 84,51 L 76,54 Q 79,60 74,62 Q 78,68 71,70 Q 72,79 60,81 Q 46,84 38,78"/>
+          <path d="M 38,46 q 9,-5 9,5 q 0,9 -9,7"/>
+          <path d="M 64,35 q 4,-2 7,0"/>
+          <line x1="84" y1="6" x2="84" y2="92" stroke="#C8725A" stroke-width="1.3" stroke-dasharray="3 3"/>
+        </g>
+      </g>
+      <g font-family="DM Sans, sans-serif" font-size="9.5" fill="#8A7B72" text-anchor="middle">
+        <text x="73" y="116" data-en="Left 90°" data-zh="左側 90°">Left 90°</text>
+        <text x="257" y="116" data-en="Right 90°" data-zh="右側 90°">Right 90°</text>
+      </g>
+    </svg>
+    <p class="guide-rule" data-en="The 90° check: a true side profile shows exactly one eye and one ear, with the nose tip as the outermost point on the dotted line. If any of the far eye or its lashes is still visible, turn further." data-zh="90° 檢查方式：標準側面照只會看到一隻眼睛與一隻耳朵，鼻尖應是參考線上最外側的點。若仍能看到另一隻眼睛或睫毛，代表轉得不夠。">The 90° check: a true side profile shows exactly one eye and one ear, with the nose tip as the outermost point on the dotted line. If any of the far eye or its lashes is still visible, turn further.</p>
+    <p class="guide-rule" data-en="The 90° profiles read the jawline, chin projection, submental area, and nose profile best. Add them when the treatment targets those." data-zh="90° 側面最能呈現下顎線、下巴前突、下巴下方與鼻子的側面線條。若療程針對這些部位，建議加上這兩個角度。">The 90° profiles read the jawline, chin projection, submental area, and nose profile best. Add them when the treatment targets those.</p>
+    <p class="guide-rule" style="color:var(--rose);font-weight:600;" data-en="The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only - one great photo beats several mediocre ones." data-zh="正面照通常能得到最清楚的結果。斜側角度可補充下臉部資訊。若不確定，請只使用正面照；一張好照片勝過多張普通照片。">The frontal gives the clearest result. The obliques add lower-face context. If in doubt, use frontal only - one great photo beats several mediocre ones.</p>
 
     <div class="btn-row guide-close"><button class="btn btn-primary" id="guideCloseBtn" type="button" data-en="Got it" data-zh="我知道了">Got it</button></div>
   </div>
@@ -1448,8 +1528,8 @@ var I18N = {
     genPreSubmit: function(n){ return n > 1
       ? 'Generating ' + n + ' angles can take a few minutes. You can keep this tab open - each result appears as soon as it is ready.'
       : 'This takes a minute or two. You can keep this tab open - the preview appears as soon as it is ready.'; },
-    angleFrontal: 'Frontal', angleR45: 'Right 45°', angleL45: 'Left 45°',
-    angleHintFrontal: 'Frontal photo', angleHintR45: 'Right 45° photo', angleHintL45: 'Left 45° photo',
+    angleFrontal: 'Frontal', angleR45: 'Right 45°', angleL45: 'Left 45°', angleR90: 'Right 90°', angleL90: 'Left 90°',
+    angleHintFrontal: 'Frontal photo', angleHintR45: 'Right 45° photo', angleHintL45: 'Left 45° photo', angleHintR90: 'Right 90° photo', angleHintL90: 'Left 90° photo',
     fullscreen: 'Fullscreen', download: 'Download', scenarioDisc: 'Scenario simulation, not a guaranteed outcome'
   },
   zh: {
@@ -1524,8 +1604,8 @@ var I18N = {
     genPreSubmit: function(n){ return n > 1
       ? '\u751f\u6210 ' + n + ' \u500b\u89d2\u5ea6\u53ef\u80fd\u9700\u8981\u5e7e\u5206\u9418\u3002\u60a8\u53ef\u4ee5\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\uff0c\u6bcf\u500b\u7d50\u679c\u5b8c\u6210\u5f8c\u6703\u7acb\u5373\u986f\u793a\u3002'
       : '\u9019\u9700\u8981\u4e00\u5230\u5169\u5206\u9418\u3002\u60a8\u53ef\u4ee5\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\uff0c\u9810\u89bd\u5b8c\u6210\u5f8c\u6703\u7acb\u5373\u986f\u793a\u3002'; },
-    angleFrontal: '\u6b63\u9762', angleR45: '\u53f3\u5074 45\u00b0', angleL45: '\u5de6\u5074 45\u00b0',
-    angleHintFrontal: '\u6b63\u9762\u7167\u7247', angleHintR45: '\u53f3\u5074 45\u00b0 \u7167\u7247', angleHintL45: '\u5de6\u5074 45\u00b0 \u7167\u7247',
+    angleFrontal: '\u6b63\u9762', angleR45: '\u53f3\u5074 45\u00b0', angleL45: '\u5de6\u5074 45\u00b0', angleR90: '\u53f3\u5074 90\u00b0', angleL90: '\u5de6\u5074 90\u00b0',
+    angleHintFrontal: '\u6b63\u9762\u7167\u7247', angleHintR45: '\u53f3\u5074 45\u00b0 \u7167\u7247', angleHintL45: '\u5de6\u5074 45\u00b0 \u7167\u7247', angleHintR90: '\u53f3\u5074 90\u00b0 \u7167\u7247', angleHintL90: '\u5de6\u5074 90\u00b0 \u7167\u7247',
     fullscreen: '\u5168\u87a2\u5e55', download: '\u4e0b\u8f09', scenarioDisc: '\u60c5\u5883\u6a21\u64ec\uff0c\u4e26\u975e\u4fdd\u8b49\u7d50\u679c'
   }
 };
@@ -1534,12 +1614,16 @@ function angleLabel(id){
   if(id === 'frontal') return t('angleFrontal');
   if(id === 'r45') return t('angleR45');
   if(id === 'l45') return t('angleL45');
+  if(id === 'r90') return t('angleR90');
+  if(id === 'l90') return t('angleL90');
   return (typeof ANGLE_DEF !== 'undefined' && ANGLE_DEF[id]) ? ANGLE_DEF[id].label : id;
 }
 function angleHint(id){
   if(id === 'frontal') return t('angleHintFrontal');
   if(id === 'r45') return t('angleHintR45');
   if(id === 'l45') return t('angleHintL45');
+  if(id === 'r90') return t('angleHintR90');
+  if(id === 'l90') return t('angleHintL90');
   return (typeof ANGLE_DEF !== 'undefined' && ANGLE_DEF[id]) ? ANGLE_DEF[id].hint : id;
 }
 function detectLang(){
@@ -1606,9 +1690,13 @@ const ANGLE_DEF = {
   r45:     { label:'Right 45°', short:'Right 45', hint:'Right 45° photo',
              help:"Patient's right cheek toward the camera, about halfway to profile." },
   l45:     { label:'Left 45°',  short:'Left 45',  hint:'Left 45° photo',
-             help:"Patient's left cheek toward the camera, about halfway to profile." }
+             help:"Patient's left cheek toward the camera, about halfway to profile." },
+  r90:     { label:'Right 90°', short:'Right 90', hint:'Right 90° photo',
+             help:"Patient's right side fully to the camera, a true side profile." },
+  l90:     { label:'Left 90°',  short:'Left 90',  hint:'Left 90° photo',
+             help:"Patient's left side fully to the camera, a true side profile." }
 };
-const ANGLE_ORDER = ['frontal','r45','l45'];
+const ANGLE_ORDER = ['frontal','r45','l45','r90','l90'];
 
 // Upload QC thresholds. M14: all hard gates removed -- gpt-image-2 handles dark,
 // soft, and small-face photos well enough that rejections only add friction. The
@@ -3728,7 +3816,7 @@ async function prepAndStartSlot(angleId, auth, isRegen, fillerIntensity){
   // to default to 'frontal' for all oblique angles.
   // M11.1: also append explicit 'view' in prompt-view token format as cheap insurance,
   // since normalizeView() checks sel.view before sel.angle.
-  const promptView = angleId === 'r45' ? 'oblique_right' : angleId === 'l45' ? 'oblique_left' : 'frontal';
+  const promptView = angleId === 'r45' ? 'oblique_right' : angleId === 'l45' ? 'oblique_left' : angleId === 'r90' ? 'profile_right' : angleId === 'l90' ? 'profile_left' : 'frontal';
   form.append('angle', angleId);
   form.append('view', promptView);
   if(state.sex) form.append('sex', state.sex);
@@ -4403,7 +4491,7 @@ async function startEnhancedSlot(angleId, auth){
   formData.append('projection', 'optimistic');
   formData.append('intensity', 'enhanced');
   if(state.sex) formData.append('sex', state.sex);
-  const enhPromptView = angleId === 'r45' ? 'oblique_right' : angleId === 'l45' ? 'oblique_left' : 'frontal';
+  const enhPromptView = angleId === 'r45' ? 'oblique_right' : angleId === 'l45' ? 'oblique_left' : angleId === 'r90' ? 'profile_right' : angleId === 'l90' ? 'profile_left' : 'frontal';
   formData.append('angle', angleId);
   formData.append('view', enhPromptView);
   formData.append('note', STRONG_PROMPT_SUFFIX);
@@ -5624,8 +5712,7 @@ async function runScenario(scenarioKey){
     form.append('rawScenarioMode', 'false');
     if(sl.jobId) form.append('sourceJobId', sl.jobId);
     const promptView = angleId === 'r45' ? 'oblique_right'
-                     : angleId === 'l45' ? 'oblique_left'
-                     : 'frontal';
+                     : angleId === 'l45' ? 'oblique_left' : angleId === 'r90' ? 'profile_right' : angleId === 'l90' ? 'profile_left' : 'frontal';
     form.append('angle', angleId);
     form.append('view',  promptView);
     if(state.sex) form.append('sex', state.sex);
@@ -6279,6 +6366,42 @@ document.querySelectorAll('.scenario-btn[data-scenario]').forEach(btn => {
 /* ───────── Init ───────── */
 renderSlots();
 syncGenerateBtn();
+</script>
+<script>
+(function(){
+  var ov=document.getElementById('consultOverlay'); if(!ov) return;
+  var btn=document.getElementById('consultBtn');
+  try{ if(typeof sdEmbedActive==='function' && sdEmbedActive() && btn){ btn.style.display='inline-flex'; } }catch(e){}
+  var listEl=document.getElementById('consultList'), startBtn=document.getElementById('consultStart');
+  var titleEl=document.getElementById('consultAngleTitle'), beforeImg=document.getElementById('consultBefore'), afterImg=document.getElementById('consultAfter');
+  var dotsEl=document.getElementById('consultDots'), counterEl=document.getElementById('consultCounter');
+  var prevBtn=document.getElementById('consultPrev'), nextBtn=document.getElementById('consultNext'), closeBtn=document.getElementById('consultClose');
+  var cmAngles=[], cmIdx=0;
+  function doneAngles(){ var order=(typeof ANGLE_ORDER!=='undefined')?ANGLE_ORDER:Object.keys(state.slots); return order.filter(function(id){ var sl=state.slots[id]; return sl && sl.resultDataUrl; }); }
+  function beforeUrl(sl){ return sl.cropBeforeCache || sl.beforeDataUrl || sl.originalDataUrl || ''; }
+  function lab(id){ try{ return angleLabel(id); }catch(e){ return id; } }
+  function openSetup(){ var ids=doneAngles(); if(!ids.length) return; listEl.innerHTML='';
+    ids.forEach(function(id){ var l=document.createElement('label'); var cb=document.createElement('input'); cb.type='checkbox'; cb.value=id; cb.checked=true;
+      var sp=document.createElement('span'); sp.textContent=lab(id); l.appendChild(cb); l.appendChild(sp); listEl.appendChild(l); });
+    ov.classList.remove('staged'); ov.classList.add('open'); document.body.style.overflow='hidden'; }
+  function start(){ var picked=[].slice.call(listEl.querySelectorAll('input:checked')).map(function(i){return i.value;}); if(!picked.length) return;
+    cmAngles=picked; cmIdx=0; ov.classList.add('staged'); render(); }
+  function render(){ if(!cmAngles.length) return; if(cmIdx<0) cmIdx=0; if(cmIdx>cmAngles.length-1) cmIdx=cmAngles.length-1;
+    var id=cmAngles[cmIdx], sl=state.slots[id]; if(!sl) return; titleEl.textContent=lab(id); beforeImg.src=beforeUrl(sl); afterImg.src=sl.resultDataUrl||'';
+    dotsEl.innerHTML=''; cmAngles.forEach(function(_,i){ var d=document.createElement('span'); d.className='cm-dot'+(i===cmIdx?' on':''); dotsEl.appendChild(d); });
+    counterEl.textContent=(cmIdx+1)+' / '+cmAngles.length; prevBtn.disabled=(cmIdx===0); nextBtn.disabled=(cmIdx===cmAngles.length-1); }
+  function next(){ if(cmIdx<cmAngles.length-1){ cmIdx++; render(); } }
+  function prev(){ if(cmIdx>0){ cmIdx--; render(); } }
+  function close(){ ov.classList.remove('open','staged'); document.body.style.overflow=''; }
+  if(btn) btn.addEventListener('click', openSetup);
+  startBtn.addEventListener('click', start); nextBtn.addEventListener('click', next); prevBtn.addEventListener('click', prev); closeBtn.addEventListener('click', close);
+  ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
+  document.addEventListener('keydown', function(e){ if(!ov.classList.contains('open')) return;
+    if(e.key==='Escape'){ close(); } else if(ov.classList.contains('staged')){ if(e.key==='ArrowRight') next(); else if(e.key==='ArrowLeft') prev(); } });
+  var sx=null;
+  ov.addEventListener('touchstart', function(e){ if(e.touches&&e.touches.length===1) sx=e.touches[0].clientX; }, {passive:true});
+  ov.addEventListener('touchend', function(e){ if(sx===null||!ov.classList.contains('staged')){ sx=null; return; } var dx=e.changedTouches[0].clientX-sx; sx=null; if(Math.abs(dx)>50){ if(dx<0) next(); else prev(); } }, {passive:true});
+})();
 </script>
 </body>
 </html>
