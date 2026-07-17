@@ -817,9 +817,31 @@
   <!-- tab bar removed M11.1: single-tool page, no nav needed -->
 
   <section class="flow">
+    <!-- Step 1: patient photos (M17: photo-first reorder) -->
+    <div class="card">
+      <div class="step-num" data-en="Step 1 · Patient photos" data-zh="步驟 1 · 顧客照片">Step 1 · Patient photos</div>
+      <div class="field">
+        <label data-en="Angles to simulate (select one or more)" data-zh="選擇要模擬的角度（可選一個或多個）">Angles to simulate (select one or more)</label>
+        <div class="area-grid three" id="angleGrid">
+          <div class="area-chip active" data-angle="frontal"><span class="tick">✓</span><span data-en="Frontal" data-zh="正面">Frontal</span></div>
+          <div class="area-chip" data-angle="r45"><span class="tick">✓</span><span data-en="Right 45°" data-zh="右側 45°">Right 45°</span></div>
+          <div class="area-chip" data-angle="l45"><span class="tick">✓</span><span data-en="Left 45°" data-zh="左側 45°">Left 45°</span></div>
+          <div class="area-chip" data-angle="r90"><span class="tick">✓</span><span data-en="Right 90°" data-zh="右側 90°">Right 90°</span></div>
+          <div class="area-chip" data-angle="l90"><span class="tick">✓</span><span data-en="Left 90°" data-zh="左側 90°">Left 90°</span></div>
+        </div>
+        <div class="combo-angle-hint" id="comboAngleHint" style="display:none;" data-en="Combination mode: each angle re-runs every treatment in the plan, so cost scales with the number of angles. Frontal plus both 45° angles is the usual consultation set." data-zh="組合模式：每個角度都會重新生成計畫中的每項療程，費用會隨角度數量增加。正面加上左右 45° 是常見的諮詢組合。">Combination mode: each angle re-runs every treatment in the plan, so cost scales with the number of angles. Frontal plus both 45° angles is the usual consultation set.</div>
+      </div>
+      <div class="photo-guide" id="photoGuide" data-en="<strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong>" data-zh="<strong>僅限臉部照片。</strong>Visualize 用於臉部療程預覽，請上傳清楚的臉部近照，不要使用全身照或距離太遠的照片。<strong>照片品質是影響生成效果最重要的因素。</strong>光線不足、背景雜亂或裁切太緊，都容易造成瑕疵或效果不明顯，即使 AI 再進步也一樣。<strong>上傳前請先閱讀拍攝指南。</strong>"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
+      <button class="guide-link" id="guideBtn" type="button" data-en="📷 Photo guide &amp; quality checklist (important - read before uploading)" data-zh="📷 拍攝指南與照片品質檢查表（重要，請先閱讀）">📷 Photo guide &amp; quality checklist (important - read before uploading)</button>
+      <div class="slot-grid" id="uploadSlots"></div>
+      <div class="occlusion-note" data-en="Before uploading, make sure hair, hands, glasses, and masks are off the face. These are not detected automatically." data-zh="上傳前，請確認頭髮、手、眼鏡或口罩沒有遮住臉部。系統不會自動偵測這些遮擋。">Before uploading, make sure hair, hands, glasses, and masks are off the face. These are not detected automatically.</div>
+      <label class="bg-toggle"><input type="checkbox" id="blackBgChk" checked /><span data-en="Replace background with black on the generated image." data-zh="在生成圖片中替換為黑色背景。">Replace background with black on the generated image.</span></label>
+      <div class="privacy-note"><span>🔒</span><span data-en="The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading." data-zh="在您按下「生成」前，照片會保留在此瀏覽器中。按下生成後，照片只會為了本次請求傳送給 AI 影像服務供應商（OpenAI），不會用於模型訓練。上傳前，您必須已取得顧客同意。">The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading.</span></div>
+    </div>
+
     <!-- M17: Step 0 - single vs combination plan -->
     <div class="card">
-      <div class="step-num" data-en="Step 0 · Plan type" data-zh="步驟 0 · 療程規劃方式">Step 0 · Plan type</div>
+      <div class="step-num" data-en="Step 2 · Plan type" data-zh="步驟 2 · 療程規劃方式">Step 2 · Plan type</div>
       <div class="type-toggle duo" id="planModeToggle" style="margin-bottom:0;">
         <button class="type-btn active" data-plan-mode="single" type="button">
           <strong data-en="Single Treatment" data-zh="單一療程">Single Treatment</strong>
@@ -834,7 +856,7 @@
 
     <!-- Step 1: choose treatment type -->
     <div class="card">
-      <div class="step-num" data-en="Step 1 · What do you want to visualize?" data-zh="步驟 1 · 想預覽哪一類療程？">Step 1 · What do you want to visualize?</div>
+      <div class="step-num" data-en="Step 3 · What do you want to visualize?" data-zh="步驟 3 · 想預覽哪一類療程？">Step 3 · What do you want to visualize?</div>
       <div class="combo-block-note" id="comboPrimaryNote1" style="display:none;" data-en="Block 1 · Primary treatment" data-zh="區塊 1 · 主要療程">Block 1 · Primary treatment</div>
       <div class="type-toggle quad" id="typeToggle">
         <button class="type-btn active" data-type="biostim" type="button"><strong data-en="Biostimulation" data-zh="膠原增生類">Biostimulation</strong></button>
@@ -846,7 +868,7 @@
 
     <!-- Step 2: treatment details -->
     <div class="card">
-      <div class="step-num" data-en="Step 2 · Treatment details" data-zh="步驟 2 · 療程細節">Step 2 · Treatment details</div>
+      <div class="step-num" data-en="Step 4 · Treatment details" data-zh="步驟 4 · 療程細節">Step 4 · Treatment details</div>
 
       <!-- FILLER controls -->
       <div id="fillerControls" class="hidden">
@@ -955,27 +977,9 @@
       </div>
     </div>
 
-    <!-- Step 3: upload & generate -->
+    <!-- Review & generate (M17: photo-first reorder) -->
     <div class="card">
-      <div class="step-num" data-en="Step 3 · Photos &amp; generate" data-zh="步驟 3 · 上傳照片並生成">Step 3 · Photos &amp; generate</div>
-      <div class="field">
-        <label data-en="Angles to simulate (select one or more)" data-zh="選擇要模擬的角度（可選一個或多個）">Angles to simulate (select one or more)</label>
-        <div class="area-grid three" id="angleGrid">
-          <div class="area-chip active" data-angle="frontal"><span class="tick">✓</span><span data-en="Frontal" data-zh="正面">Frontal</span></div>
-          <div class="area-chip" data-angle="r45"><span class="tick">✓</span><span data-en="Right 45°" data-zh="右側 45°">Right 45°</span></div>
-          <div class="area-chip" data-angle="l45"><span class="tick">✓</span><span data-en="Left 45°" data-zh="左側 45°">Left 45°</span></div>
-          <div class="area-chip" data-angle="r90"><span class="tick">✓</span><span data-en="Right 90°" data-zh="右側 90°">Right 90°</span></div>
-          <div class="area-chip" data-angle="l90"><span class="tick">✓</span><span data-en="Left 90°" data-zh="左側 90°">Left 90°</span></div>
-        </div>
-        <div class="combo-angle-hint" id="comboAngleHint" style="display:none;" data-en="Combination mode: each angle re-runs every treatment in the plan, so cost scales with the number of angles. Frontal plus both 45° angles is the usual consultation set." data-zh="組合模式：每個角度都會重新生成計畫中的每項療程，費用會隨角度數量增加。正面加上左右 45° 是常見的諮詢組合。">Combination mode: each angle re-runs every treatment in the plan, so cost scales with the number of angles. Frontal plus both 45° angles is the usual consultation set.</div>
-      </div>
-      <div class="photo-guide" id="photoGuide" data-en="<strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong>" data-zh="<strong>僅限臉部照片。</strong>Visualize 用於臉部療程預覽，請上傳清楚的臉部近照，不要使用全身照或距離太遠的照片。<strong>照片品質是影響生成效果最重要的因素。</strong>光線不足、背景雜亂或裁切太緊，都容易造成瑕疵或效果不明顯，即使 AI 再進步也一樣。<strong>上傳前請先閱讀拍攝指南。</strong>"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
-      <button class="guide-link" id="guideBtn" type="button" data-en="📷 Photo guide &amp; quality checklist (important - read before uploading)" data-zh="📷 拍攝指南與照片品質檢查表（重要，請先閱讀）">📷 Photo guide &amp; quality checklist (important - read before uploading)</button>
-      <div class="slot-grid" id="uploadSlots"></div>
-      <div class="occlusion-note" data-en="Before uploading, make sure hair, hands, glasses, and masks are off the face. These are not detected automatically." data-zh="上傳前，請確認頭髮、手、眼鏡或口罩沒有遮住臉部。系統不會自動偵測這些遮擋。">Before uploading, make sure hair, hands, glasses, and masks are off the face. These are not detected automatically.</div>
-      <label class="bg-toggle"><input type="checkbox" id="blackBgChk" checked /><span data-en="Replace background with black on the generated image." data-zh="在生成圖片中替換為黑色背景。">Replace background with black on the generated image.</span></label>
-      <div class="privacy-note"><span>🔒</span><span data-en="The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading." data-zh="在您按下「生成」前，照片會保留在此瀏覽器中。按下生成後，照片只會為了本次請求傳送給 AI 影像服務供應商（OpenAI），不會用於模型訓練。上傳前，您必須已取得顧客同意。">The photo stays in this browser until you press Generate. Generating sends the photo to the AI image provider (OpenAI) for that single request only. It is not used to train the model. You must have the patient's consent before uploading.</span></div>
-
+      <div class="step-num" data-en="Review &amp; generate" data-zh="確認並生成">Review &amp; generate</div>
       <div class="field" style="margin-top:14px;">
         <label data-en="Your name or clinic (optional, appears on export)" data-zh="您的姓名或診所名稱（選填，會顯示於匯出圖片）">Your name or clinic (optional, appears on export)</label>
         <input id="clinicName" placeholder="e.g. Dr. Smith · ABC Cosmetic Clinic" maxlength="60" />
@@ -1011,7 +1015,7 @@
       <div class="disclaimer"><span>⚠️</span><span data-en="Every export is labelled and carries a permanent consultation-only disclaimer. Outputs are simulations for communication, never a guaranteed result or medical prediction." data-zh="每張匯出圖片都會標示為諮詢用途，並附上永久聲明。輸出內容僅為溝通用模擬預覽，絕不是保證結果或醫療預測。">Every export is labelled and carries a permanent consultation-only disclaimer. Outputs are simulations for communication, never a guaranteed result or medical prediction.</span></div>
       <p style="font-size:.72rem;color:var(--muted);margin:8px 0 0;line-height:1.5;" data-en="Early access · We're continuously improving results. Quality varies by photo - see the photo guide for best outcomes." data-zh="早期試用 · 我們會持續改善生成效果。結果會受照片品質影響，建議依照拍攝指南取得最佳效果。">Early access · We're continuously improving results. Quality varies by photo - see the photo guide for best outcomes.</p>
 
-      <div class="status"><div class="dot" id="dot"></div><span id="statusText" data-en="Choose a treatment, then add the patient photos" data-zh="請先選擇療程，再加入顧客照片">Choose a treatment, then add the patient photos</span></div>
+      <div class="status"><div class="dot" id="dot"></div><span id="statusText" data-en="Add the patient photos, then build the treatment plan" data-zh="請加入顧客照片，再建立治療計畫">Add the patient photos, then build the treatment plan</span></div>
       <div id="genCard" class="gen-card" style="display:none;"></div>
 
       <div class="btn-row" style="text-align:center;margin-top:18px;"><button class="btn btn-primary" id="generateBtn" disabled data-en="Generate simulated preview" data-zh="生成模擬預覽">Generate simulated preview</button></div>
@@ -6695,9 +6699,7 @@ function comboPlanSnapshot(){
 // multi-modality PLAN instead.
 //
 // Exclusions that ARE intentional (not restrictions to remove):
-//  - biostim primary excludes add_biostim_lift (biostim on biostim) and
-//    add_cheek_filler (Sculptra already restores lateral cheek/midface volume,
-//    so a cheek-filler add-on would double-count the same zone).
+//  - biostim primary excludes add_biostim_lift only (see below).
 //  - a primary never offers an add-on that repeats itself (energy primary does
 //    not offer RF/HIFU again; tox primary does not offer masseter/Nefertiti
 //    again).
@@ -6710,10 +6712,15 @@ function comboPlanSnapshot(){
 // allowlist has not been widened to match, those specific add-on passes will
 // be rejected at generation time (the chain keeps the partial result and says
 // so). Widen the server allowlist to the same pairs to guarantee completion.
+//  - biostim primary excludes add_biostim_lift (biostim on biostim is the same
+//    modality, not a distinct add-on). Cheek filler on a biostim primary IS
+//    offered: Sculptra restores lateral cheek volume, but whether additional
+//    HA cheek augmentation is warranted is the injector's clinical call, not
+//    the software's (Andy's decision).
 const COMBO_ELIGIBILITY = {
   biostim: ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler',
-            'add_temple_support','add_tear_trough','add_nasolabial_filler',
-            'add_nose_filler','add_lips_filler',
+            'add_cheek_filler','add_temple_support','add_tear_trough',
+            'add_nasolabial_filler','add_nose_filler','add_lips_filler',
             'add_rf','add_hifu','add_masseter','add_nefertiti'],
   filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler',
             'add_cheek_filler','add_temple_support','add_tear_trough',
