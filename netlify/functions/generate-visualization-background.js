@@ -67,7 +67,7 @@
 
 const OpenAI = require('openai');
 const { getStore, connectLambda } = require('@netlify/blobs');
-const { buildCorePrompt, CHIN_JAW_SAFETY, usesChinJawSafety, buildScenarioPrompt, buildPlanPrompt } = require('./prompts');
+const { buildCorePrompt, CHIN_JAW_SAFETY, usesChinJawSafety, buildScenarioPrompt, buildPlanPrompt, buildPlanPromptConcise } = require('./prompts');
 const { logGeneration } = require('./log-generation');
 
 // === VERBATIM from generate-visualization.js. Do not diverge this copy in isolation. ===
@@ -127,6 +127,12 @@ function canonicalAngle(raw) {
   const a = String(raw || '').toLowerCase().trim();
   if (a === 'r45' || a === 'right45' || a === 'oblique_right') return 'oblique_right';
   if (a === 'l45' || a === 'left45'  || a === 'oblique_left')  return 'oblique_left';
+  // 90-degree profiles are a distinct matching bucket. Without these, r90/l90
+  // (and profile_*) fell through to 'frontal', so a saved 90-degree case would
+  // cross-match frontal queries. Visualize sends angle=r90/l90; the case-save
+  // form stores profile_right/profile_left; both canonicalize here.
+  if (a === 'r90' || a === 'right90' || a === 'profile_right') return 'profile_right';
+  if (a === 'l90' || a === 'left90'  || a === 'profile_left')  return 'profile_left';
   return 'frontal'; // default
 }
 
@@ -870,13 +876,23 @@ exports.handler = async (event) => {
       }
 
       let planPrompt;
+      // A/B arm: 'concise' (default) uses the minimal hand-written prompt;
+      // 'full' reproduces the original assembled prompt. Client sends
+      // f.planPromptMode from ?planprompt; default concise since the assembled
+      // arm was confirmed to over-beautify and drift texture.
+      const planPromptMode = (String(f.planPromptMode || 'concise').toLowerCase() === 'full') ? 'full' : 'concise';
       try {
-        planPrompt = buildPlanPrompt(plan, f.view || 'frontal');
+        planPrompt = (planPromptMode === 'full')
+          ? buildPlanPrompt(plan, f.view || 'frontal')
+          : buildPlanPromptConcise(plan, f.view || 'frontal');
       } catch (e) {
         await fail('Could not build plan prompt: ' + ((e && e.message) || 'error'), 'bad_request');
         await refundIfBilled(store, jobId, 'plan prompt build failed');
         return { statusCode: 200 };
       }
+      console.log('[M17] plan prompt mode=' + planPromptMode
+        + ' primary=' + ((plan.primary && plan.primary.type) || '?')
+        + ' addons=' + ((plan.addons && plan.addons.length) || 0));
 
       const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
