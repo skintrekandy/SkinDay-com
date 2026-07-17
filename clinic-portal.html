@@ -1941,6 +1941,7 @@ function reloadTool(panel) {
 */
 
 function fitFrame(frameId) {
+  if (document.fullscreenElement || document.webkitFullscreenElement) return; // don't reflow while an embedded overlay is fullscreen (would clamp the parent scroll)
   const f = $(frameId);
   let d;
   try { d = f.contentDocument; } catch (e) { return; }
