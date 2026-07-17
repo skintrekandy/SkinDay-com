@@ -1726,7 +1726,7 @@ const state = {
   toxMode:'combined', // 'masseter' | 'nefertiti' | 'combined' -- Neurotoxin mode
   enhancedStartedAt: 0, enhancedTimerInterval: null,
   selectedAngles:['frontal'], activeAngle:'frontal',
-  slots:{ frontal:makeSlot(), r45:makeSlot(), l45:makeSlot() }
+  slots: ANGLE_ORDER.reduce((m,id) => (m[id] = makeSlot(), m), {})
 };
 function activeSlot(){ return state.slots[state.activeAngle]; }
 
