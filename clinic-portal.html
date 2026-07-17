@@ -1940,6 +1940,8 @@ function reloadTool(panel) {
    patients, where it belongs.
 */
 
+function libAngleLabel(a){ return ({frontal:'Frontal',oblique_right:'Right 45°',r45:'Right 45°',oblique_left:'Left 45°',l45:'Left 45°',profile_right:'Right 90°',r90:'Right 90°',profile_left:'Left 90°',l90:'Left 90°'}[String(a||'').toLowerCase()] || String(a||'').replace(/_/g,' ')); }
+function libPhenotypeLabel(p){ return ({hollow_deflated:'Volume loss',full_descended:'Sagging',mixed:'Mixed'}[String(p||'').toLowerCase()] || String(p||'').replace(/_/g,' ')); }
 let visOverlayOpen = false;
 window.addEventListener('message', (ev) => {
   if (ev.origin === location.origin && ev.data && ev.data.type === 'sd:overlayFs') {
@@ -2839,7 +2841,7 @@ async function runPatientSearch() {
     const sub = [
       patientLabel(r) ? r.treatment_label : null,
       treatmentName(r.treatment),
-      r.angle,
+      libAngleLabel(r.angle),
       r.injector_name ? 'by ' + r.injector_name : null,
       new Date(r.created_at).toISOString().slice(0, 10)
     ].filter(Boolean).join(' \u00b7 ');
@@ -3042,8 +3044,7 @@ function simPlate(r, perms, seriesSize) {
   const meta = [
     patientLabel(r),
     r.treatment_label,
-    r.angle,
-    r.model,
+    libAngleLabel(r.angle),
     r.created_at ? new Date(r.created_at).toISOString().slice(0, 10) : ''
   ].filter(Boolean).join(' \u00b7 ');
 
@@ -3347,10 +3348,10 @@ function plate(r, perms, seriesSize) {
     r.treatment_label,
     r.injector_name ? 'by ' + r.injector_name : '',
     r.consultant_name ? 'consult ' + r.consultant_name : '',
-    r.angle,
+    libAngleLabel(r.angle),
     intervalLabel(r.interval_months),
     span,
-    r.phenotype
+    libPhenotypeLabel(r.phenotype)
   ].filter(Boolean).join(' · ');
 
   // The crop sits on the title, not buried in the meta line, because it is the
