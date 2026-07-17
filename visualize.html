@@ -7220,6 +7220,16 @@ const COMBO_PIPELINE = (function(){
   } catch(e){ return 'layered'; }
 })();
 
+// Single-pass prompt A/B arm. 'concise' (default) = minimal hand-written prompt;
+// 'full' = the original assembled prompt. Flip with ?planprompt=full. Only
+// affects the single-pass pipeline.
+const COMBO_PLAN_PROMPT = (function(){
+  try {
+    const p = new URLSearchParams(location.search).get('planprompt');
+    return (p === 'full' || p === 'concise') ? p : 'concise';
+  } catch(e){ return 'concise'; }
+})();
+
 // A/B telemetry: layered region-composite fallbacks by angle. When a composite
 // cannot be built the pass shows a raw full-frame re-render, the suspected cause
 // of oblique/profile degradation. Kept in-memory and echoed to the console so it
@@ -7271,6 +7281,7 @@ async function prepAndStartPlanSlot(angleId, auth, isRegen, planObj){
   form.append('type', state.type);                            // billing keys off this
   form.append('planMode', 'true');
   form.append('plan', JSON.stringify(planObj));
+  form.append('planPromptMode', COMBO_PLAN_PROMPT);
   form.append('jobId', jobId);
   form.append('angle', angleId);
   form.append('view', promptView);

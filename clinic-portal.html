@@ -2105,8 +2105,23 @@ const GRID_PAIRS = {
   '2x2': [[0, 2], [1, 3]],
   '2x3': [[0, 3], [1, 4], [2, 5]]
 };
-const ANGLE_ORDER = ['frontal', 'oblique_right', 'oblique_left'];
-const ANGLE_LABEL = { frontal: 'Frontal', oblique_right: 'Oblique right', oblique_left: 'Oblique left' };
+// Angle dropdown for the case-save form. VALUES are the canonical forms the
+// system already matches on: oblique_right/oblique_left for 45 degrees,
+// profile_right/profile_left for 90 degrees. LABELS mirror Visualize's angle
+// names (R45/L45/R90/L90). Keeping oblique_right/oblique_left as the stored
+// values means existing saved cases and the worker's angle matching (which
+// already aliases r45 -> oblique_right) keep working with NO data migration:
+// oblique_right is simply shown and treated as Right 45. The two 90-degree
+// options (profile_right/profile_left) are new; libAngleLabel already renders
+// them, and the worker's canonicalAngle is extended to bucket them for matching.
+const ANGLE_ORDER = ['frontal', 'oblique_right', 'oblique_left', 'profile_right', 'profile_left'];
+const ANGLE_LABEL = {
+  frontal:       { en: 'Frontal',   zh: '正面' },
+  oblique_right: { en: 'Right 45°', zh: '右側 45°' },
+  oblique_left:  { en: 'Left 45°',  zh: '左側 45°' },
+  profile_right: { en: 'Right 90°', zh: '右側 90°' },
+  profile_left:  { en: 'Left 90°',  zh: '左側 90°' }
+};
 
 /* M12: the crop.
    Studio's crop preset is a single global (S.preset) read by getBoxForSlot for
@@ -2482,18 +2497,23 @@ function renderPairs(pairs) {
     ANGLE_ORDER.forEach(a => {
       const o = document.createElement('option');
       o.value = a;
-      o.textContent = ANGLE_LABEL[a];
+      const lab = ANGLE_LABEL[a] || { en: a, zh: a };
+      o.setAttribute('data-en', lab.en);
+      o.setAttribute('data-zh', lab.zh);
+      o.textContent = sdT(lab.en, lab.zh);
       sel.appendChild(o);
     });
-    // A 2x3 grid is three angles in Studio's column order. A 3-timepoint grid is
-    // one angle at several times, so every pair carries the same angle.
+    // A multi-angle grid is one angle per column in Studio's column order. A
+    // 3-timepoint grid is one angle at several times, so every pair is frontal.
     sel.value = (studioGridId() === '3h') ? 'frontal' : (ANGLE_ORDER[i] || 'frontal');
 
     const wrap = document.createElement('div');
     wrap.className = 'pair-field';
     const lab = document.createElement('label');
     lab.className = 'eyebrow';
-    lab.textContent = 'Angle';
+    lab.setAttribute('data-en', 'Angle');
+    lab.setAttribute('data-zh', '角度');
+    lab.textContent = sdT('Angle', '角度');
     wrap.append(lab, sel);
 
     row.append(thumbs, wrap);
