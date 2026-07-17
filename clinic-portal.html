@@ -3105,6 +3105,12 @@ function simPlate(r, perms, seriesSize) {
     if (!confirm('Withdraw consent for this simulation? The record and the images are removed.')) return;
     run(wd, st, '/api/clinic-case-consent', {
       action: 'revoke', case_id: r.case_id, clinic_id: clinicId, purpose: 'store'
+    }, () => {
+      const grpBody = el.closest('.lib-body');
+      el.remove();
+      if (grpBody && !grpBody.querySelector('.plate')) {
+        grpBody.innerHTML = '<p class="note">' + sdT('No simulations left in this treatment.', '此療程已無模擬影像。') + '</p>';
+      }
     });
   };
 
@@ -3337,6 +3343,41 @@ const mark = (label, on, live) =>
   '<span class="perm-mark' + (on ? ' on' : '') + (live ? ' live' : '') + '">' +
   '<span class="dot"></span>' + label + '</span>';
 
+// The meta line, factored out so an in-place edit (e.g. removing an injector
+// name) can rebuild it without re-rendering the whole Case Library.
+function plateMeta(r){
+  const span = (r.before_date && r.after_date)
+    ? r.before_date + ' \u2192 ' + r.after_date
+    : (r.before_date || r.after_date || '');
+  return [
+    patientLabel(r),
+    r.treatment_label,
+    r.injector_name ? 'by ' + r.injector_name : '',
+    r.consultant_name ? 'consult ' + r.consultant_name : '',
+    libAngleLabel(r.angle),
+    intervalLabel(r.interval_months),
+    span,
+    libPhenotypeLabel(r.phenotype)
+  ].filter(Boolean).join(' \u00b7 ');
+}
+
+// Rebuild the Stored/Visualize/Website badges on a single plate in place, so
+// toggling a reference or publish state does not collapse the open folder or
+// jump the scroll position.
+function refreshPlateLedger(el, r, perms){
+  const ledger = el.querySelector('.ledger');
+  if(!ledger) return;
+  ledger.innerHTML =
+    mark('Stored', !!perms.store, false) +
+    mark('Visualize', !!perms.visualize && r.visualize_approved, false) +
+    mark('Website', !!r.published_before_path, !!r.published_before_path);
+}
+
+function refreshPlateMeta(el, r){
+  const m = el.querySelector('.plate-meta');
+  if(m) m.textContent = plateMeta(r);
+}
+
 function plate(r, perms, seriesSize) {
   const el = document.createElement('article');
   el.className = 'plate';
@@ -3363,16 +3404,7 @@ function plate(r, perms, seriesSize) {
   const span = (r.before_date && r.after_date)
     ? r.before_date + ' \u2192 ' + r.after_date
     : (r.before_date || r.after_date || '');
-  const meta = [
-    patientLabel(r),
-    r.treatment_label,
-    r.injector_name ? 'by ' + r.injector_name : '',
-    r.consultant_name ? 'consult ' + r.consultant_name : '',
-    libAngleLabel(r.angle),
-    intervalLabel(r.interval_months),
-    span,
-    libPhenotypeLabel(r.phenotype)
-  ].filter(Boolean).join(' · ');
+  const meta = plateMeta(r);
 
   // The crop sits on the title, not buried in the meta line, because it is the
   // shortest honest answer to "how much of this patient is on the internet".
@@ -3408,9 +3440,17 @@ function plate(r, perms, seriesSize) {
   pub.textContent = published ? 'Remove from website' : 'Show on website';
   pub.disabled = !perms.gallery_site && !published;
   if (pub.disabled) pub.title = sdT('The patient did not agree to public display.','此顧客未同意公開展示。');
-  pub.onclick = () => run(pub, st, '/api/clinic-case-publish', {
-    action: published ? 'unpublish' : 'publish', case_id: r.id, clinic_id: clinicId
-  });
+  pub.onclick = () => {
+    const isPub = !!r.published_before_path;
+    run(pub, st, '/api/clinic-case-publish', {
+      action: isPub ? 'unpublish' : 'publish', case_id: r.id, clinic_id: clinicId
+    }, () => {
+      r.published_before_path = isPub ? null : (r.published_before_path || 'published');
+      pub.textContent = r.published_before_path ? 'Remove from website' : 'Show on website';
+      pub.disabled = !perms.gallery_site && !r.published_before_path;
+      refreshPlateLedger(el, r, perms);
+    });
+  };
 
   const ref = document.createElement('button');
   ref.className = 'quiet';
@@ -3426,7 +3466,16 @@ function plate(r, perms, seriesSize) {
       st.className = 'note bad';
       st.textContent = error.message || 'That change was refused.';
       ref.disabled = false;
-    } else loadLibrary();
+    } else {
+      r.visualize_approved = !r.visualize_approved;
+      ref.textContent = r.visualize_approved ? 'Stop using as reference' : 'Use as reference';
+      ref.disabled = !perms.visualize && !r.visualize_approved;
+      refreshPlateLedger(el, r, perms);
+      st.className = 'note';
+      st.textContent = r.visualize_approved
+        ? sdT('Now used as a reference in Visualize.', '已設為 Visualize 的參考案例。')
+        : sdT('No longer used as a reference.', '已停止作為參考案例。');
+    }
   };
 
   // A named person can change their mind, or leave, or never have been asked. That
@@ -3446,7 +3495,13 @@ function plate(r, perms, seriesSize) {
         st.className = 'note bad';
         st.textContent = error.message || 'That change was refused.';
         inj.disabled = false;
-      } else loadLibrary();
+      } else {
+        r.injector_name = null;
+        refreshPlateMeta(el, r);
+        inj.remove();
+        st.className = 'note';
+        st.textContent = sdT('Injector name removed.', '已移除施作者姓名。');
+      }
     };
   }
 
@@ -3458,6 +3513,14 @@ function plate(r, perms, seriesSize) {
     run(wd, st, '/api/clinic-case-consent', {
       action: 'revoke', case_id: r.id, clinic_id: clinicId,
       purpose: 'store', reason: 'patient withdrew consent'
+    }, () => {
+      // The case is deleted. Remove just this row so the folder stays open and
+      // the scroll position holds; if it was the last one, leave a quiet note.
+      const grpBody = el.closest('.lib-body');
+      el.remove();
+      if (grpBody && !grpBody.querySelector('.plate')) {
+        grpBody.innerHTML = '<p class="note">' + sdT('No cases left in this treatment.', '此療程已無案例。') + '</p>';
+      }
     });
   };
 
@@ -4682,7 +4745,7 @@ $('simSaveBtn').addEventListener('click', (ev) => {
   saveSimulations();
 });
 
-async function run(btn, st, path, payload) {
+async function run(btn, st, path, payload, onSuccess) {
   btn.disabled = true;
   st.className = 'note';
   st.textContent = 'Working…';
@@ -4694,7 +4757,12 @@ async function run(btn, st, path, payload) {
       body: JSON.stringify(payload)
     });
     const body = await res.json().catch(() => ({}));
-    if (res.ok && body.ok) { loadLibrary(); loadGallery(); }
+    if (res.ok && body.ok) {
+      // onSuccess updates just the affected row (keeps the folder open and the
+      // scroll put); without it, fall back to a full re-render.
+      if (onSuccess) { onSuccess(body); loadGallery(); }
+      else { loadLibrary(); loadGallery(); }
+    }
     else {
       st.className = 'note bad';
       st.textContent = body.error || 'That did not go through.';
