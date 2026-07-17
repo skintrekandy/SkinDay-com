@@ -652,7 +652,7 @@
     .cm-list label:hover{background:rgba(255,255,255,.06);}
     .cm-list input{width:18px;height:18px;accent-color:var(--gold,#C9A96E);}
     .cm-start{width:100%;background:var(--gold,#C9A96E);color:#1C1714;border:none;border-radius:8px;padding:14px;font-size:15px;font-weight:600;cursor:pointer;}
-    .cm-stage{flex:1;display:none;flex-direction:column;padding:56px 16px 20px;min-height:0;}
+    .cm-stage{flex:1;display:none;flex-direction:column;padding:56px 16px 20px;min-height:0;position:relative;}
     #consultOverlay.staged .cm-setup{display:none;}
     #consultOverlay.staged .cm-stage{display:flex;}
     .cm-angle-title{text-align:center;font-size:18px;font-weight:600;margin-bottom:12px;}
@@ -662,8 +662,10 @@
     .cm-pane .cm-lbl{position:absolute;left:10px;bottom:10px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:rgba(0,0,0,.55);padding:4px 9px;border-radius:5px;}
     .cm-pane .cm-lbl.sim{color:var(--gold,#C9A96E);}
     .cm-nav{display:flex;align-items:center;justify-content:center;gap:18px;margin-top:16px;}
-    .cm-arrow{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.25);color:#fff;width:44px;height:44px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-    .cm-arrow:disabled{opacity:.3;cursor:not-allowed;}
+    .cm-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:3;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;width:48px;height:48px;border-radius:50%;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;}
+    .cm-arrow:hover:not(:disabled){background:rgba(255,255,255,.26);}
+    #consultPrev{left:16px;} #consultNext{right:16px;}
+    .cm-arrow:disabled{opacity:.25;cursor:default;}
     .cm-dots{display:flex;gap:7px;}
     .cm-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3);}
     .cm-dot.on{background:var(--gold,#C9A96E);}
@@ -726,7 +728,7 @@
         <div class="lock-form" id="unavailForm" style="display:none;">
           <div class="lock-err" id="lockErr" style="color:var(--muted);">Sign-in is temporarily unavailable. Please try again shortly.</div>
         </div>
-        <div class="lock-foot">Photos are used only for the requested preview. Outputs are for consultation use and are not guaranteed treatment results. Questions? Email <a href="mailto:hello@skinday.ca">hello@skinday.ca</a>.</div>
+        <div class="lock-foot">Photos are used only for the requested preview. Outputs are for consultation use and are not guaranteed treatment results. Questions? Email <a href="mailto:hello@skinday.com">hello@skinday.com</a>.</div>
       </div>
     </div>
 
@@ -1226,7 +1228,7 @@
       <div>
         <div style="font-size:.84rem;font-weight:600;color:var(--deep);margin-bottom:4px;">Case uploads coming soon</div>
         <div style="font-size:.8rem;color:var(--muted);line-height:1.55;">Clinic case uploads require compliant private storage and a patient consent workflow. We are building this now. In the meantime, contact us to have your cases added directly.</div>
-        <a href="mailto:hello@skinday.ca?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
+        <a href="mailto:hello@skinday.com?subject=Visualize case library" style="display:inline-block;margin-top:10px;font-size:.78rem;color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,169,110,.3);">Contact us to add your cases</a>
       </div>
     </div>
     <!-- Existing cases (shown below the upload form, filtered by current selection) -->
@@ -6037,7 +6039,7 @@ function openScenarioFullscreen(scenarioKey){
 
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  if(scnFsZoom) scnFsZoom.reset();
+  sdRequestFs(overlay); if(scnFsZoom) scnFsZoom.reset();
   applyFsRotate(overlay);
 }
 
@@ -6106,7 +6108,7 @@ window.addEventListener('resize', function(){
 
 function closeScenarioFullscreen(){
   const overlay = document.getElementById('scenarioFsOverlay');
-  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotate'); }
+  sdExitFs(); if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotate'); }
   document.body.style.overflow = '';
 }
 
@@ -6329,12 +6331,12 @@ function openPreviewFullscreen(){
   if(dlBtn) dlBtn.onclick = () => { const d = document.getElementById('downloadBtn'); if(d) d.click(); };
   overlay.classList.add('open');
   document.body.style.overflow = 'hidden';
-  if(prvFsZoom) prvFsZoom.reset();
+  sdRequestFs(overlay); if(prvFsZoom) prvFsZoom.reset();
   applyFsRotate(overlay);
 }
 function closePreviewFullscreen(){
   const overlay = document.getElementById('previewFsOverlay');
-  if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotate'); }
+  sdExitFs(); if(overlay){ overlay.classList.remove('open'); overlay.classList.remove('fs-rotate'); }
   document.body.style.overflow = '';
 }
 (function wirePreviewFsOverlay(){
@@ -6368,6 +6370,9 @@ renderSlots();
 syncGenerateBtn();
 </script>
 <script>
+window.sdRequestFs=function(el){try{var fn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;if(fn){var p=fn.call(el);if(p&&p.catch)p.catch(function(){});}}catch(e){}};
+window.sdExitFs=function(){try{if(document.fullscreenElement||document.webkitFullscreenElement){var fn=document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen;if(fn)fn.call(document);}}catch(e){}};
+['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){document.addEventListener(ev,function(){if(!(document.fullscreenElement||document.webkitFullscreenElement)){['scenarioFsOverlay','previewFsOverlay','consultOverlay'].forEach(function(id){var o=document.getElementById(id);if(o)o.classList.remove('open','staged','fs-rotate');});document.body.style.overflow='';}});});
 (function(){
   var ov=document.getElementById('consultOverlay'); if(!ov) return;
   var btn=document.getElementById('consultBtn');
@@ -6383,16 +6388,16 @@ syncGenerateBtn();
   function openSetup(){ var ids=doneAngles(); if(!ids.length) return; listEl.innerHTML='';
     ids.forEach(function(id){ var l=document.createElement('label'); var cb=document.createElement('input'); cb.type='checkbox'; cb.value=id; cb.checked=true;
       var sp=document.createElement('span'); sp.textContent=lab(id); l.appendChild(cb); l.appendChild(sp); listEl.appendChild(l); });
-    ov.classList.remove('staged'); ov.classList.add('open'); document.body.style.overflow='hidden'; }
+    ov.classList.remove('staged'); ov.classList.add('open'); document.body.style.overflow='hidden'; sdRequestFs(ov); }
   function start(){ var picked=[].slice.call(listEl.querySelectorAll('input:checked')).map(function(i){return i.value;}); if(!picked.length) return;
     cmAngles=picked; cmIdx=0; ov.classList.add('staged'); render(); }
   function render(){ if(!cmAngles.length) return; if(cmIdx<0) cmIdx=0; if(cmIdx>cmAngles.length-1) cmIdx=cmAngles.length-1;
-    var id=cmAngles[cmIdx], sl=state.slots[id]; if(!sl) return; titleEl.textContent=lab(id); beforeImg.src=beforeUrl(sl); afterImg.src=sl.resultDataUrl||'';
+    var id=cmAngles[cmIdx], sl=state.slots[id]; if(!sl) return; titleEl.textContent=lab(id); beforeImg.src=beforeUrl(sl); afterImg.src=sl.cropResultCache||sl.resultDataUrl||'';
     dotsEl.innerHTML=''; cmAngles.forEach(function(_,i){ var d=document.createElement('span'); d.className='cm-dot'+(i===cmIdx?' on':''); dotsEl.appendChild(d); });
     counterEl.textContent=(cmIdx+1)+' / '+cmAngles.length; prevBtn.disabled=(cmIdx===0); nextBtn.disabled=(cmIdx===cmAngles.length-1); }
   function next(){ if(cmIdx<cmAngles.length-1){ cmIdx++; render(); } }
   function prev(){ if(cmIdx>0){ cmIdx--; render(); } }
-  function close(){ ov.classList.remove('open','staged'); document.body.style.overflow=''; }
+  function close(){ sdExitFs(); ov.classList.remove('open','staged'); document.body.style.overflow=''; }
   if(btn) btn.addEventListener('click', openSetup);
   startBtn.addEventListener('click', start); nextBtn.addEventListener('click', next); prevBtn.addEventListener('click', prev); closeBtn.addEventListener('click', close);
   ov.addEventListener('click', function(e){ if(e.target===ov) close(); });
