@@ -77,8 +77,10 @@
     .upload-grid.g-3h { grid-template-columns: 1fr 1fr 1fr; }
     .upload-grid.g-2x2 { grid-template-columns: 1fr 1fr; }
     .upload-grid.g-2x3 { grid-template-columns: 1fr 1fr 1fr; }
+    .upload-grid.g-2x5 { grid-template-columns: repeat(5, 1fr); }
     .upload-grid.g-2v .upload-zone,
     .upload-grid.g-2x2 .upload-zone,
+    .upload-grid.g-2x5 .upload-zone,
     .upload-grid.g-2x3 .upload-zone { aspect-ratio: 4/5; }
     .upload-grid.g-2h .upload-zone,
     .upload-grid.g-3h .upload-zone { aspect-ratio: 3/4; }
@@ -251,9 +253,13 @@
       .preset-grid.face-presets { grid-template-columns: repeat(2,1fr); }
       .export-formats { grid-template-columns: repeat(2,1fr); }
     }
+    @media (max-width: 760px) {
+      .upload-grid.g-2x5 { grid-template-columns: repeat(3,1fr); }
+    }
     @media (max-width: 460px) {
       .upload-grid.g-2x3 { grid-template-columns: 1fr 1fr; }
       .upload-grid.g-3h { grid-template-columns: 1fr 1fr; }
+      .upload-grid.g-2x5 { grid-template-columns: 1fr 1fr; }
     }
   </style>
   <script async src="https://plausible.io/js/pa-s9ic7e_4fbKlTLHHXTR_P.js"></script>
@@ -348,6 +354,27 @@
         </div>
         <div class="grid-name" data-en="2 x 3" data-zh="2 x 3">2 x 3</div>
         <div class="grid-desc" data-en="3 angles" data-zh="三個角度">3 angles</div>
+      </button>
+      <!-- 2x5 -->
+      <button class="grid-btn" data-grid="2x5" onclick="selGrid('2x5')">
+        <div class="grid-icon" style="flex-direction:column;gap:3px;">
+          <div style="display:flex;gap:2px;">
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+          </div>
+          <div style="display:flex;gap:2px;">
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+            <div class="gi-cell" style="width:8px;height:14px;"></div>
+          </div>
+        </div>
+        <div class="grid-name" data-en="2 x 5" data-zh="2 x 5">2 x 5</div>
+        <div class="grid-desc" data-en="5 angles" data-zh="五個角度">5 angles</div>
       </button>
     </div>
 
@@ -658,6 +685,7 @@ const GRID_CONFIG = {
   '3h':  { count:3, rows:1, cols:3, defaultLabels:['Photo 1','Photo 2','Photo 3'], rowLabels:[] },
   '2x2': { count:4, rows:2, cols:2, defaultLabels:['Before','Before','After','After'], rowLabels:['Before','After'] },
   '2x3': { count:6, rows:2, cols:3, defaultLabels:['Before','Before','Before','After','After','After'], rowLabels:['Before','After'] },
+  '2x5': { count:10, rows:2, cols:5, defaultLabels:['Before','Before','Before','Before','Before','After','After','After','After','After'], rowLabels:['Before','After'] },
 };
 
 // Localized default slot labels (Before/After/Photo N). Used only for the
