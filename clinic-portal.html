@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Visualize Pro</title>
+<title data-en="Visualize Pro" data-zh="Visualize Pro 診所後台">Visualize Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
 <style>
   /* ------------------------------------------------------------------ *
      Visualize Pro: the clinic's own daily instrument.
@@ -553,9 +553,25 @@
   .billing-lede { color:var(--muted); font-size:15px; line-height:1.7; margin:0 0 18px; max-width:64ch; }
   .plan-current { font-size:14px; color:var(--muted); margin:12px 0 0; }
   .plan-current strong { color:var(--ink); font-weight:600; }
+
+  /* --- Bilingual (EN / 繁中) --- */
+  .lang-toggle{display:inline-flex;align-items:center;gap:8px;}
+  .lang-sep{width:1px;height:11px;background:var(--line,rgba(0,0,0,.15));}
+  .lang-btn{background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--muted,#8A7F76);padding:0;transition:color .2s;}
+  .lang-btn.active{color:var(--ink,#1C1714);}
+  .lang-btn:hover:not(.active){color:var(--accent,#C8725A);}
+  .gate .lang-toggle{justify-content:center;margin:0 0 22px;}
+  body.zh{--font-ui:'Noto Sans TC','Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;}
+  body.zh em{font-style:normal;}
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 </head>
 <body>
+<script>
+  function sdDetectLang(){try{var s=localStorage.getItem('sd-lang');if(s==='zh'||s==='en')return s;}catch(e){}try{var n=(navigator.language||(navigator.languages&&navigator.languages[0])||'').toLowerCase();if(n.indexOf('zh')===0)return 'zh';}catch(e){}return 'en';}
+  var sdLang = sdDetectLang();
+  function sdT(en,zh){return sdLang==='zh'?zh:en;}
+</script>
 
 <header id="hdr" style="display:none;">
   <span class="brandlock">
@@ -565,53 +581,55 @@
     <span class="pro-tag">Visualize Pro</span>
   </span>
   <span class="spacer"></span>
-  <button id="settingsBtn" title="Settings">Settings</button>
-  <button id="signOut">Sign out</button>
+  <div class="lang-toggle" role="group" aria-label="Language"><button class="lang-btn active" onclick="sdSetLang('en')">EN</button><div class="lang-sep"></div><button class="lang-btn" onclick="sdSetLang('zh')">繁中</button></div>
+  <button id="settingsBtn" title="Settings" data-en="Settings" data-zh="設定">Settings</button>
+  <button id="signOut" data-en="Sign out" data-zh="登出">Sign out</button>
 </header>
 
 <nav class="tabs" id="tabs" style="display:none;">
   <button class="tab active" data-panel="studio">Studio</button>
   <button class="tab" data-panel="visualize">Visualize</button>
-  <button class="tab" data-panel="library">Case Library</button>
+  <button class="tab" data-panel="library" data-en="Case Library" data-zh="案例資料庫">Case Library</button>
 </nav>
 
 <div class="wrap">
   <section class="gate sec" id="gate">
-    <span class="eyebrow">Clinic portal</span>
-    <h1 class="display">One case.<br>More value.</h1>
-    <p class="lede">Prepare it in Studio, publish it to your gallery, and, with patient permission, use it to guide your clinic's simulations.</p>
+    <div class="lang-toggle" role="group" aria-label="Language"><button class="lang-btn active" onclick="sdSetLang('en')">EN</button><div class="lang-sep"></div><button class="lang-btn" onclick="sdSetLang('zh')">繁中</button></div>
+    <span class="eyebrow" data-en="Clinic portal" data-zh="診所後台">Clinic portal</span>
+    <h1 class="display" data-en="One case.&lt;br&gt;More value." data-zh="一個案例。&lt;br&gt;創造更多價值。">One case.<br>More value.</h1>
+    <p class="lede" data-en="Prepare it in Studio, publish it to your gallery, and, with patient permission, use it to guide your clinic's simulations." data-zh="在 Studio 整理案例、發布到診所案例牆，並在取得顧客同意後，用來引導診所的模擬結果。">Prepare it in Studio, publish it to your gallery, and, with patient permission, use it to guide your clinic's simulations.</p>
     <div class="field">
-      <label class="eyebrow" for="email">Email</label>
+      <label class="eyebrow" for="email" data-en="Email" data-zh="電子郵件">Email</label>
       <input type="email" id="email" autocomplete="username">
     </div>
     <div class="field">
-      <label class="eyebrow" for="password">Password</label>
+      <label class="eyebrow" for="password" data-en="Password" data-zh="密碼">Password</label>
       <input type="password" id="password" autocomplete="current-password">
     </div>
-    <button class="act" id="signIn">Sign in</button>
+    <button class="act" id="signIn" data-en="Sign in" data-zh="登入">Sign in</button>
     <div class="note bad" id="gateNote"></div>
     <div class="swap">
-      No account? <button class="linkish" id="toSignUp">Create one for your clinic</button>
+      <span data-en="No account?" data-zh="還沒有帳號？">No account?</span> <button class="linkish" id="toSignUp" data-en="Create one for your clinic" data-zh="為診所建立帳號">Create one for your clinic</button>
     </div>
     <div class="swap">
-      <button class="linkish" id="toForgot">Forgot your password?</button>
+      <button class="linkish" id="toForgot" data-en="Forgot your password?" data-zh="忘記密碼？">Forgot your password?</button>
     </div>
   </section>
 
   <!-- Ask for a reset. Sends a recovery email through Supabase; the link brings
        them back to this same page with a recovery token, handled on load. -->
   <section class="gate sec" id="forgot" style="display:none;">
-    <span class="eyebrow">Reset password</span>
-    <h1 class="display">Forgot your password.</h1>
-    <p class="lede">Enter your email and we will send you a link to set a new one.</p>
+    <span class="eyebrow" data-en="Reset password" data-zh="重設密碼">Reset password</span>
+    <h1 class="display" data-en="Forgot your password." data-zh="忘記密碼了。">Forgot your password.</h1>
+    <p class="lede" data-en="Enter your email and we will send you a link to set a new one." data-zh="輸入電子郵件，我們會寄送重設密碼連結給你。">Enter your email and we will send you a link to set a new one.</p>
     <div class="field">
-      <label class="eyebrow" for="forgotEmail">Email</label>
+      <label class="eyebrow" for="forgotEmail" data-en="Email" data-zh="電子郵件">Email</label>
       <input type="email" id="forgotEmail" autocomplete="username">
     </div>
-    <button class="act" id="forgotSend">Send reset link</button>
+    <button class="act" id="forgotSend" data-en="Send reset link" data-zh="寄送重設連結">Send reset link</button>
     <div class="note" id="forgotNote"></div>
     <div class="swap">
-      <button class="linkish" id="forgotBack">Back to sign in</button>
+      <button class="linkish" id="forgotBack" data-en="Back to sign in" data-zh="返回登入">Back to sign in</button>
     </div>
   </section>
 
@@ -619,57 +637,57 @@
        the URL carries a recovery token and Supabase has put us in a recovery
        session. -->
   <section class="gate sec" id="resetPw" style="display:none;">
-    <span class="eyebrow">Reset password</span>
-    <h1 class="display">Set a new password.</h1>
-    <p class="lede">Choose a new password for your account.</p>
+    <span class="eyebrow" data-en="Reset password" data-zh="重設密碼">Reset password</span>
+    <h1 class="display" data-en="Set a new password." data-zh="設定新密碼。">Set a new password.</h1>
+    <p class="lede" data-en="Choose a new password for your account." data-zh="請為帳號設定新密碼。">Choose a new password for your account.</p>
     <div class="field">
-      <label class="eyebrow" for="newPw">New password</label>
+      <label class="eyebrow" for="newPw" data-en="New password" data-zh="新密碼">New password</label>
       <input type="password" id="newPw" autocomplete="new-password">
-      <small>At least eight characters.</small>
+      <small data-en="At least eight characters." data-zh="至少 8 個字元。">At least eight characters.</small>
     </div>
-    <button class="act" id="resetSave">Save new password</button>
+    <button class="act" id="resetSave" data-en="Save new password" data-zh="儲存新密碼">Save new password</button>
     <div class="note" id="resetNote"></div>
   </section>
 
 
   <section class="gate sec" id="signup" style="display:none;">
-    <span class="eyebrow">Clinic portal</span>
-    <h1 class="display">Set up your clinic.</h1>
-    <p class="lede">A few details, then two short agreements. Your patients' photographs stay yours, and you can take them with you at any time.</p>
+    <span class="eyebrow" data-en="Clinic portal" data-zh="診所後台">Clinic portal</span>
+    <h1 class="display" data-en="Set up your clinic." data-zh="建立診所資料。">Set up your clinic.</h1>
+    <p class="lede" data-en="A few details, then two short agreements. Your patients' photographs stay yours, and you can take them with you at any time." data-zh="填寫幾項基本資料，再閱讀兩份簡短協議。顧客照片的所有權仍屬於診所，您隨時可以完整匯出帶走。">A few details, then two short agreements. Your patients' photographs stay yours, and you can take them with you at any time.</p>
 
     <div class="field">
-      <label class="eyebrow" for="suClinic">Clinic name</label>
+      <label class="eyebrow" for="suClinic" data-en="Clinic name" data-zh="診所名稱">Clinic name</label>
       <input type="text" id="suClinic" maxlength="120" autocomplete="organization">
     </div>
     <div class="row2">
       <div class="field">
-        <label class="eyebrow" for="suCity">City</label>
+        <label class="eyebrow" for="suCity" data-en="City" data-zh="城市">City</label>
         <input type="text" id="suCity" maxlength="80" autocomplete="address-level2">
       </div>
       <div class="field">
-        <label class="eyebrow" for="suCountry">Country</label>
+        <label class="eyebrow" for="suCountry" data-en="Country" data-zh="國家／地區">Country</label>
         <input type="text" id="suCountry" maxlength="80" autocomplete="country-name">
       </div>
     </div>
     <div class="field">
-      <label class="eyebrow" for="suSite">Website (optional)</label>
+      <label class="eyebrow" for="suSite" data-en="Website (optional)" data-zh="網站（選填）">Website (optional)</label>
       <input type="text" id="suSite" maxlength="200" placeholder="yourclinic.com">
-      <small>Used to flag when you invite someone from outside your own domain. Nothing else.</small>
+      <small data-en="Used to flag when you invite someone from outside your own domain. Nothing else." data-zh="僅用於提醒您受邀者的電子郵件是否來自診所網域，不作其他用途。">Used to flag when you invite someone from outside your own domain. Nothing else.</small>
     </div>
     <div class="field">
-      <label class="eyebrow" for="suEmail">Your email</label>
+      <label class="eyebrow" for="suEmail" data-en="Your email" data-zh="您的電子郵件">Your email</label>
       <input type="email" id="suEmail" autocomplete="username">
     </div>
     <div class="field">
-      <label class="eyebrow" for="suPass">Password</label>
+      <label class="eyebrow" for="suPass" data-en="Password" data-zh="密碼">Password</label>
       <input type="password" id="suPass" autocomplete="new-password">
-      <small>At least eight characters.</small>
+      <small data-en="At least eight characters." data-zh="至少 8 個字元。">At least eight characters.</small>
     </div>
 
-    <button class="act" id="doSignUp">Create clinic</button>
+    <button class="act" id="doSignUp" data-en="Create clinic" data-zh="建立診所">Create clinic</button>
     <div class="note" id="suNote"></div>
     <div class="swap">
-      Already have an account? <button class="linkish" id="toSignIn">Sign in</button>
+      <span data-en="Already have an account?" data-zh="已經有帳號？">Already have an account?</span> <button class="linkish" id="toSignIn" data-en="Sign in" data-zh="登入">Sign in</button>
     </div>
   </section>
 
@@ -679,9 +697,9 @@
        be a banner someone dismisses. -->
   <section class="sec" id="agreements" style="display:none;">
     <div class="sec-head">
-      <span class="eyebrow" id="agFor">Before you begin</span>
-      <h1 class="display" id="agHead">Two things to read.</h1>
-      <p class="lede" id="agLede">Short, and written to be read. They say what we do with your patients' photographs, and what we will never do.</p>
+      <span class="eyebrow" id="agFor" data-en="Before you begin" data-zh="開始之前">Before you begin</span>
+      <h1 class="display" id="agHead" data-en="Two things to read." data-zh="請先閱讀兩份文件。">Two things to read.</h1>
+      <p class="lede" id="agLede" data-en="Short, and written to be read. They say what we do with your patients' photographs, and what we will never do." data-zh="內容簡短且易懂，說明我們會如何處理顧客照片，以及我們絕對不會做的事。">Short, and written to be read. They say what we do with your patients' photographs, and what we will never do.</p>
     </div>
 
     <!-- Who is signing. "hello@clinic.ca accepted" is a materially weaker record
@@ -690,15 +708,15 @@
     <div class="panel" id="agSigner">
       <div class="row2">
         <div class="field">
-          <label class="eyebrow" for="agName">Your name</label>
+          <label class="eyebrow" for="agName" data-en="Your name" data-zh="您的姓名">Your name</label>
           <input type="text" id="agName" maxlength="120" autocomplete="name">
         </div>
         <div class="field">
-          <label class="eyebrow" for="agTitle">Your role at the clinic</label>
-          <input type="text" id="agTitle" maxlength="120" placeholder="Medical Director">
+          <label class="eyebrow" for="agTitle" data-en="Your role at the clinic" data-zh="您在診所的職務">Your role at the clinic</label>
+          <input type="text" id="agTitle" maxlength="120" placeholder="Medical Director" data-en="Medical Director" data-zh="醫療負責人">
         </div>
       </div>
-      <small>Recorded with your acceptance, so it is clear who agreed on the clinic's behalf.</small>
+      <small data-en="Recorded with your acceptance, so it is clear who agreed on the clinic's behalf." data-zh="此資料會與接受紀錄一併保存，以清楚確認代表診所同意的人員。">Recorded with your acceptance, so it is clear who agreed on the clinic's behalf.</small>
     </div>
 
     <div id="agDocs"></div>
@@ -715,48 +733,54 @@
   <div class="wrap">
     <section class="sec">
       <div class="sec-head">
-        <span class="eyebrow">After you export</span>
-        <h2 class="display">Keep this case working.</h2>
-        <p>The export goes to Instagram. The same case, kept here, teaches your Visualize and can appear on your website. Label it the way you would run it in Visualize, or it will not match.</p>
+        <span class="eyebrow" data-en="After you export" data-zh="匯出後">After you export</span>
+        <h2 class="display" data-en="Keep this case working." data-zh="讓這個案例持續發揮價值。">Keep this case working.</h2>
+        <p data-en="The export goes to Instagram. The same case, kept here, teaches your Visualize and can appear on your website. Label it the way you would run it in Visualize, or it will not match." data-zh="匯出的圖片可用於 Instagram；同一案例儲存在這裡後，也能引導 Visualize，並可顯示於診所網站。請依照您在 Visualize 中使用的療程分類標記，否則系統無法正確配對。">The export goes to Instagram. The same case, kept here, teaches your Visualize and can appear on your website. Label it the way you would run it in Visualize, or it will not match.</p>
       </div>
 
       <div class="panel">
-        <div id="libWaiting" class="waiting">
+        <div id="libWaiting" class="waiting" data-en="Build a before and after in Studio above. This panel wakes up when the photos are in." data-zh="請先在上方 Studio 製作療程前後對照；照片放入後，此區塊就會啟用。">
           Build a before and after in Studio above. This panel wakes up when the photos are in.
         </div>
 
-        <div id="libNoPairs" class="waiting" style="display:none;">
+        <div id="libNoPairs" class="waiting" style="display:none;" data-en="This layout cannot be saved as a case. Every other layout can." data-zh="此版型無法儲存為案例，其餘版型皆可。">
           This layout cannot be saved as a case. Every other layout can.
         </div>
 
         <div id="libForm" style="display:none;">
           <div class="grid">
             <div class="field">
-              <label class="eyebrow" for="libType">Treatment</label>
+              <label class="eyebrow" for="libType" data-en="Treatment" data-zh="療程類別">Treatment</label>
               <select id="libType">
-                <option value="biostim">Biostimulation</option>
-                <option value="filler">HA Fillers</option>
-                <option value="tox">Neurotoxin</option>
-                <option value="laser">Energy-Based Devices</option>
+                <option value="biostim" data-en="Biostimulation" data-zh="膠原增生療程">Biostimulation</option>
+                <option value="filler" data-en="HA Fillers" data-zh="玻尿酸填充">HA Fillers</option>
+                <option value="tox" data-en="Neurotoxin" data-zh="肉毒桿菌素">Neurotoxin</option>
+                <option value="laser" data-en="Energy-Based Devices" data-zh="能量型儀器">Energy-Based Devices</option>
               </select>
             </div>
             <div class="field">
-              <label class="eyebrow" id="libSubLabel" for="libSubtype">Product</label>
+              <label class="eyebrow" id="libSubLabel" for="libSubtype" data-en="Product" data-zh="產品">Product</label>
               <select id="libSubtype"></select>
             </div>
           </div>
 
-          <div class="eyebrow" style="margin:22px 0 10px;">Angles in this grid</div>
+          <div class="eyebrow" style="margin:22px 0 10px;" data-en="Angles in this grid" data-zh="此版面中的拍攝角度">Angles in this grid</div>
           <div id="pairs"></div>
 
           <div class="crop-note" id="cropNote"></div>
           <div class="crop-note" id="labelNote" style="display:none;"></div>
 
           <label class="perm" id="injectorRow" style="display:none;">
-            <input type="checkbox" id="cInjector"/>
-            <span>
+            <input type="checkbox" id="cInjector">
+            <span data-en="&lt;b id=&quot;injectorWho&quot;&gt;&lt;/b&gt;
+              &lt;em&gt;Publishes this name under the photographs on your website. The
+              name in Studio is used for the watermark; showing it on your site is
+              a separate choice, and it is the injector's name to give.&lt;/em&gt;" data-zh='&lt;b id="injectorWho"&gt;&lt;/b&gt;
+&lt;em&gt;勾選後，此姓名會顯示在網站案例照片下方。Studio 中的姓名僅用於浮水印；是否公開顯示在網站上是另一項獨立選擇，並應由施作者本人授權。&lt;/em&gt;'>
               <b id="injectorWho"></b>
-              <em>Publishes this name under the photographs on your website. The
+              <em data-en="Publishes this name under the photographs on your website. The
+              name in Studio is used for the watermark; showing it on your site is
+              a separate choice, and it is the injector's name to give." data-zh="勾選後，此姓名會顯示在網站案例照片下方。Studio 中的姓名僅用於浮水印；是否公開顯示在網站上是另一項獨立選擇，並應由施作者本人授權。">Publishes this name under the photographs on your website. The
               name in Studio is used for the watermark; showing it on your site is
               a separate choice, and it is the injector's name to give.</em>
             </span>
@@ -767,55 +791,61 @@
                the clinic's own record of who this is, and nothing else can see it. -->
           <div class="row2" style="margin-top:22px;">
             <div class="field">
-              <label class="eyebrow" for="pName">Patient name (optional)</label>
+              <label class="eyebrow" for="pName" data-en="Patient name (optional)" data-zh="顧客姓名（選填）">Patient name (optional)</label>
               <input type="text" id="pName" maxlength="120" autocomplete="off">
             </div>
             <div class="field">
-              <label class="eyebrow" for="pRef">Your reference (optional)</label>
-              <input type="text" id="pRef" maxlength="60" autocomplete="off" placeholder="Chart or file number">
+              <label class="eyebrow" for="pRef" data-en="Your reference (optional)" data-zh="診所參考編號（選填）">Your reference (optional)</label>
+              <input type="text" id="pRef" maxlength="60" autocomplete="off" placeholder="Chart or file number" data-en="Chart or file number" data-zh="病歷或檔案編號">
             </div>
           </div>
           <div class="field" style="margin-top:16px;">
-            <label class="eyebrow" for="cConsult">Consultant (optional)</label>
-            <input type="text" id="cConsult" maxlength="60" autocomplete="off" placeholder="Who did the consultation, if not the injector">
-            <small>Private to your clinic. For your own records; not shown on your website.</small>
+            <label class="eyebrow" for="cConsult" data-en="Consultant (optional)" data-zh="諮詢人員（選填）">Consultant (optional)</label>
+            <input type="text" id="cConsult" maxlength="60" autocomplete="off" placeholder="Who did the consultation, if not the injector" data-en="Who did the consultation, if not the injector" data-zh="若非施作者本人諮詢，請填寫諮詢人員">
+            <small data-en="Private to your clinic. For your own records; not shown on your website." data-zh="僅供診所內部紀錄，不會顯示在網站上。">Private to your clinic. For your own records; not shown on your website.</small>
             </div>
           </div>
-          <div class="crop-note">Private to your clinic. Never appears on your website, never sent to the model, and destroyed with the case if the patient withdraws.</div>
+          <div class="crop-note" data-en="Private to your clinic. Never appears on your website, never sent to the model, and destroyed with the case if the patient withdraws." data-zh="僅限診所內部使用，不會顯示於網站、不會傳送給模型；若顧客撤回同意，將隨案例一併刪除。">Private to your clinic. Never appears on your website, never sent to the model, and destroyed with the case if the patient withdraws.</div>
 
           <div class="consent">
-            <div class="eyebrow" style="margin-bottom:4px;">What to do with this case</div>
+            <div class="eyebrow" style="margin-bottom:4px;" data-en="What to do with this case" data-zh="此案例的使用方式">What to do with this case</div>
 
             <label class="perm">
               <input type="checkbox" id="cVisualize" checked>
-              <span><b>Teach our Visualize</b>
-                <small>Private. Guides your clinic's simulations. Never shown to anyone.</small></span>
+              <span data-en="&lt;b&gt;Teach our Visualize&lt;/b&gt;
+                &lt;small&gt;Private. Guides your clinic's simulations. Never shown to anyone.&lt;/small&gt;" data-zh="&lt;b&gt;用於引導診所的 Visualize&lt;/b&gt;
+&lt;small&gt;僅限內部使用，用於引導診所的模擬結果，不會對外顯示。&lt;/small&gt;"><b data-en="Teach our Visualize" data-zh="用於引導診所的 Visualize">Teach our Visualize</b>
+                <small data-en="Private. Guides your clinic's simulations. Never shown to anyone." data-zh="僅限內部使用，用於引導診所的模擬結果，不會對外顯示。">Private. Guides your clinic's simulations. Never shown to anyone.</small></span>
             </label>
 
             <label class="perm">
               <input type="checkbox" id="cGallery">
-              <span><b>Allow on our website</b>
-                <small>Lets you publish it from your Library. Nothing goes public until you do.</small></span>
+              <span data-en="&lt;b&gt;Allow on our website&lt;/b&gt;
+                &lt;small&gt;Lets you publish it from your Library. Nothing goes public until you do.&lt;/small&gt;" data-zh="&lt;b&gt;允許發布於診所網站&lt;/b&gt;
+&lt;small&gt;可從案例資料庫發布；在您主動發布前，不會公開任何內容。&lt;/small&gt;"><b data-en="Allow on our website" data-zh="允許發布於診所網站">Allow on our website</b>
+                <small data-en="Lets you publish it from your Library. Nothing goes public until you do." data-zh="可從案例資料庫發布；在您主動發布前，不會公開任何內容。">Lets you publish it from your Library. Nothing goes public until you do.</small></span>
             </label>
           </div>
 
           <div class="attest">
             <label class="perm" style="border:0;padding:0;">
               <input type="checkbox" id="cAttest">
-              <span><b>I have the patient's consent for the uses selected above.</b>
-                <small>Including holding their photographs, and their name or reference if you entered one. Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
+              <span data-en="&lt;b&gt;I have the patient's consent for the uses selected above.&lt;/b&gt;
+                &lt;small&gt;Including holding their photographs, and their name or reference if you entered one. Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when.&lt;/small&gt;" data-zh="&lt;b&gt;我已取得顧客對上述所選用途的同意。&lt;/b&gt;
+&lt;small&gt;包括保存顧客照片，以及您所輸入的姓名或參考編號。取得並保存顧客同意仍由診所負責；SkinDay 只會記錄您作出此聲明的內容與時間。&lt;/small&gt;"><b data-en="I have the patient's consent for the uses selected above." data-zh="我已取得顧客對上述所選用途的同意。">I have the patient's consent for the uses selected above.</b>
+                <small data-en="Including holding their photographs, and their name or reference if you entered one. Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when." data-zh="包括保存顧客照片，以及您所輸入的姓名或參考編號。取得並保存顧客同意仍由診所負責；SkinDay 只會記錄您作出此聲明的內容與時間。">Including holding their photographs, and their name or reference if you entered one. Obtaining and holding that consent remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
             </label>
           </div>
 
           <div style="margin-top:22px;">
-            <button class="act" id="saveBtn">Save to case library</button>
+            <button class="act" id="saveBtn" data-en="Save to case library" data-zh="儲存至案例資料庫">Save to case library</button>
             <div class="note" id="saveNote"></div>
           </div>
         </div>
-      </div>
-    </section>
+      </section></div>
+    
   </div>
-</div>
+
 
 <!-- VISUALIZE: the real visualize.html, embedded. That file is never modified.
      The portal attaches the clinic context to the generation request on its way
@@ -826,72 +856,72 @@
 
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Settings</span>
-      <h2 class="display" id="setTitle">Your clinic.</h2>
-      <p id="setSub">Loading…</p>
-      <p class="note" style="margin-top:10px;">New to the portal? <a href="/visualize-pro-tutorial" target="_blank" rel="noopener">Take the two-minute tour</a>.</p>
+      <span class="eyebrow" data-en="Settings" data-zh="設定">Settings</span>
+      <h2 class="display" id="setTitle" data-en="Your clinic." data-zh="您的診所。">Your clinic.</h2>
+      <p id="setSub" data-en="Loading…" data-zh="載入中…">Loading…</p>
+      <p class="note" style="margin-top:10px;" data-en='New to the portal? &lt;a href="/visualize-pro-tutorial" target="_blank" rel="noopener"&gt;Take the two-minute tour&lt;/a&gt;.' data-zh='第一次使用診所後台？ &lt;a href="/visualize-pro-tutorial" rel="noopener" target="_blank"&gt;觀看兩分鐘快速導覽&lt;/a&gt;.'>New to the portal? <a href="/visualize-pro-tutorial" target="_blank" rel="noopener" data-en="Take the two-minute tour" data-zh="觀看兩分鐘快速導覽">Take the two-minute tour</a>.</p>
     </div>
   </section>
 
   <section class="sec" id="setProfile" style="display:none;">
     <div class="sec-head">
-      <span class="eyebrow">Clinic</span>
-      <h2 class="display">Details.</h2>
-      <p>Your name and logo appear on the gallery you embed on your own website.</p>
+      <span class="eyebrow" data-en="Clinic" data-zh="診所">Clinic</span>
+      <h2 class="display" data-en="Details." data-zh="基本資料。">Details.</h2>
+      <p data-en="Your name and logo appear on the gallery you embed on your own website." data-zh="診所名稱與 Logo 會顯示在嵌入您網站的案例牆中。">Your name and logo appear on the gallery you embed on your own website.</p>
     </div>
     <div class="panel">
       <div class="field">
-        <label class="eyebrow" for="setName">Clinic name</label>
+        <label class="eyebrow" for="setName" data-en="Clinic name" data-zh="診所名稱">Clinic name</label>
         <input type="text" id="setName" maxlength="120">
       </div>
       <div class="row2">
         <div class="field">
-          <label class="eyebrow" for="setCity">City</label>
+          <label class="eyebrow" for="setCity" data-en="City" data-zh="城市">City</label>
           <input type="text" id="setCity" maxlength="80">
         </div>
         <div class="field">
-          <label class="eyebrow" for="setCountry">Country</label>
+          <label class="eyebrow" for="setCountry" data-en="Country" data-zh="國家／地區">Country</label>
           <input type="text" id="setCountry" maxlength="80">
         </div>
       </div>
       <div class="field">
-        <label class="eyebrow" for="setSite">Website</label>
+        <label class="eyebrow" for="setSite" data-en="Website" data-zh="網站">Website</label>
         <input type="text" id="setSite" maxlength="200" placeholder="yourclinic.com">
-        <small>Also used to flag an invitation sent outside your own domain.</small>
+        <small data-en="Also used to flag an invitation sent outside your own domain." data-zh="也用於提醒您邀請是否寄送至診所網域以外的地址。">Also used to flag an invitation sent outside your own domain.</small>
       </div>
 
       <div class="field">
         <label class="eyebrow">Logo</label>
         <div class="logo-row">
-          <div class="logo-box" id="setLogoBox"><span>No logo</span></div>
+          <div class="logo-box" id="setLogoBox" data-en="&lt;span&gt;No logo&lt;/span&gt;" data-zh="&lt;span&gt;尚未上傳 Logo&lt;/span&gt;"><span data-en="No logo" data-zh="尚未上傳 Logo">No logo</span></div>
           <div>
             <input type="file" id="setLogoFile" accept="image/png,image/jpeg,image/webp,image/svg+xml">
             <div class="note" id="setLogoNote"></div>
-            <button class="quiet" id="setLogoRemove" style="margin-top:8px;">Remove logo</button>
+            <button class="quiet" id="setLogoRemove" style="margin-top:8px;" data-en="Remove logo" data-zh="移除 Logo">Remove logo</button>
           </div>
         </div>
       </div>
 
       <div class="brand-block">
-        <label class="eyebrow">Brand appearance</label>
+        <label class="eyebrow" data-en="Brand appearance" data-zh="品牌外觀">Brand appearance</label>
         <div class="brand-preview">
           <span class="brand-chip"></span>
-          <span class="bp-text"><b id="brandName">Your clinic</b><span id="brandSource">Matched from your logo</span></span>
+          <span class="bp-text" data-en='&lt;b id="brandName"&gt;Your clinic&lt;/b&gt;&lt;span id="brandSource"&gt;Matched from your logo&lt;/span&gt;' data-zh='&lt;b id="brandName"&gt;您的診所&lt;/b&gt;&lt;span id="brandSource"&gt;已從 Logo 擷取配色&lt;/span&gt;'><b id="brandName" data-en="Your clinic" data-zh="您的診所">Your clinic</b><span id="brandSource" data-en="Matched from your logo" data-zh="已從 Logo 擷取配色">Matched from your logo</span></span>
           <span style="flex:1"></span>
-          <button class="quiet" id="brandToggle" type="button">Change colour</button>
+          <button class="quiet" id="brandToggle" type="button" data-en="Change colour" data-zh="變更顏色">Change colour</button>
         </div>
         <div id="brandPanel" style="display:none;">
           <div class="swatches" id="brandSwatches"></div>
           <div class="brand-actions">
-            <button class="quiet" id="brandFromLogo">Match my logo</button>
-            <button class="quiet" id="brandReset">Reset to default</button>
+            <button class="quiet" id="brandFromLogo" data-en="Match my logo" data-zh="從我的 Logo 配色">Match my logo</button>
+            <button class="quiet" id="brandReset" data-en="Reset to default" data-zh="恢復預設值">Reset to default</button>
           </div>
           <div class="note" id="brandNote"></div>
         </div>
       </div>
 
       <div style="margin-top:24px;">
-        <button class="act" id="setSave">Save</button>
+        <button class="act" id="setSave" data-en="Save" data-zh="儲存">Save</button>
         <div class="note" id="setNote"></div>
       </div>
     </div>
@@ -899,41 +929,41 @@
 
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Team</span>
-      <h2 class="display">Who can get in.</h2>
-      <p id="teamSub">Every action in this portal is recorded against the person who took it. That only means something if nobody shares a login.</p>
+      <span class="eyebrow" data-en="Team" data-zh="團隊">Team</span>
+      <h2 class="display" data-en="Who can get in." data-zh="可登入的人員。">Who can get in.</h2>
+      <p id="teamSub" data-en="Every action in this portal is recorded against the person who took it. That only means something if nobody shares a login." data-zh="後台中的每項操作都會記錄執行者，因此請勿共用登入帳號。">Every action in this portal is recorded against the person who took it. That only means something if nobody shares a login.</p>
     </div>
 
     <div class="panel" id="inviteBox" style="display:none;">
       <div class="row2">
         <div class="field">
-          <label class="eyebrow" for="invEmail">Invite by email</label>
+          <label class="eyebrow" for="invEmail" data-en="Invite by email" data-zh="以電子郵件邀請">Invite by email</label>
           <input type="email" id="invEmail" placeholder="name@yourclinic.com">
         </div>
         <div class="field">
-          <label class="eyebrow" for="invRole">Role</label>
+          <label class="eyebrow" for="invRole" data-en="Role" data-zh="權限">Role</label>
           <select id="invRole">
-            <option value="staff">Staff</option>
-            <option value="injector">Injector / Technician</option>
-            <option value="consultant">Consultant</option>
-            <option value="marketing">Marketing</option>
-            <option value="admin">Admin</option>
+            <option value="staff" data-en="Staff" data-zh="一般人員">Staff</option>
+            <option value="injector" data-en="Injector / Technician" data-zh="施作者／技術人員">Injector / Technician</option>
+            <option value="consultant" data-en="Consultant" data-zh="諮詢人員">Consultant</option>
+            <option value="marketing" data-en="Marketing" data-zh="行銷人員">Marketing</option>
+            <option value="admin" data-en="Admin" data-zh="管理員">Admin</option>
           </select>
-          <small>Admins can manage the team, purge cases, and export the library.</small>
+          <small data-en="Admins can manage the team, purge cases, and export the library." data-zh="管理員可管理團隊、永久刪除案例及匯出資料庫。">Admins can manage the team, purge cases, and export the library.</small>
         </div>
       </div>
-      <button class="act" id="invSend">Send invitation</button>
+      <button class="act" id="invSend" data-en="Send invitation" data-zh="寄送邀請">Send invitation</button>
       <div class="note" id="invNote"></div>
       <div id="invLink" style="display:none;"></div>
     </div>
 
-    <div id="teamList"><div class="empty"><p>Loading…</p></div></div>
+    <div id="teamList"><div class="empty"><p data-en="Loading…" data-zh="載入中…">Loading…</p></div></div>
   </section>
 
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Billing</span>
-      <h2 class="display" id="billTitle">Plan.</h2>
+      <span class="eyebrow" data-en="Billing" data-zh="訂閱與帳務">Billing</span>
+      <h2 class="display" id="billTitle" data-en="Plan." data-zh="方案。">Plan.</h2>
       <p id="billSub"></p>
     </div>
     <div class="panel" id="billBox"></div>
@@ -941,9 +971,9 @@
 
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Agreements</span>
-      <h2 class="display">What you accepted.</h2>
-      <p>The exact version, and who accepted it on the clinic's behalf.</p>
+      <span class="eyebrow" data-en="Agreements" data-zh="協議">Agreements</span>
+      <h2 class="display" data-en="What you accepted." data-zh="您已接受的文件。">What you accepted.</h2>
+      <p data-en="The exact version, and who accepted it on the clinic's behalf." data-zh="包含文件的確切版本，以及代表診所接受的人員。">The exact version, and who accepted it on the clinic's behalf.</p>
     </div>
     <div id="ackList"></div>
   </section>
@@ -960,45 +990,51 @@
   <div class="wrap">
     <section class="sec" id="simSave" style="display:none;">
       <div class="sec-head">
-        <span class="eyebrow">After you generate</span>
-        <h2 class="display">Keep this simulation.</h2>
-        <p id="simSaveSub">Consumer Visualize keeps nothing. Your Library does, if you choose.</p>
+        <span class="eyebrow" data-en="After you generate" data-zh="生成完成後">After you generate</span>
+        <h2 class="display" data-en="Keep this simulation." data-zh="儲存此模擬結果。">Keep this simulation.</h2>
+        <p id="simSaveSub" data-en="Consumer Visualize keeps nothing. Your Library does, if you choose." data-zh="一般版 Visualize 不會保留資料；您可自行選擇是否儲存至案例資料庫。">Consumer Visualize keeps nothing. Your Library does, if you choose.</p>
       </div>
 
       <div class="panel">
         <div class="row2">
           <div class="field">
-            <label class="eyebrow" for="simPName">Patient name (optional)</label>
+            <label class="eyebrow" for="simPName" data-en="Patient name (optional)" data-zh="顧客姓名（選填）">Patient name (optional)</label>
             <input type="text" id="simPName" maxlength="120" autocomplete="off">
           </div>
           <div class="field">
-            <label class="eyebrow" for="simPRef">Your reference (optional)</label>
-            <input type="text" id="simPRef" maxlength="60" autocomplete="off" placeholder="Chart or file number">
+            <label class="eyebrow" for="simPRef" data-en="Your reference (optional)" data-zh="診所參考編號（選填）">Your reference (optional)</label>
+            <input type="text" id="simPRef" maxlength="60" autocomplete="off" placeholder="Chart or file number" data-en="Chart or file number" data-zh="病歷或檔案編號">
           </div>
         </div>
         <div class="row2">
           <div class="field">
-            <label class="eyebrow" for="simLabel">Label (optional)</label>
-            <input type="text" id="simLabel" maxlength="60" placeholder="How you would describe it to the patient">
+            <label class="eyebrow" for="simLabel" data-en="Label (optional)" data-zh="標籤（選填）">Label (optional)</label>
+            <input type="text" id="simLabel" maxlength="60" placeholder="How you would describe it to the patient" data-en="How you would describe it to the patient" data-zh="您會如何向顧客描述此模擬">
           </div>
           <div class="field">
-            <label class="eyebrow" for="simConsult">Consultant (optional)</label>
-            <input type="text" id="simConsult" maxlength="60" placeholder="Who did the consultation">
+            <label class="eyebrow" for="simConsult" data-en="Consultant (optional)" data-zh="諮詢人員（選填）">Consultant (optional)</label>
+            <input type="text" id="simConsult" maxlength="60" placeholder="Who did the consultation" data-en="Who did the consultation" data-zh="執行諮詢的人員">
           </div>
         </div>
 
         <div class="attest">
           <label class="perm" style="border:0;padding:0;">
             <input type="checkbox" id="simAttest">
-            <span><b>I have this patient's consent to keep their photograph and this simulation.</b>
-              <small>This is the patient in the chair, not the patient whose case guided the result.
+            <span data-en="&lt;b&gt;I have this patient's consent to keep their photograph and this simulation.&lt;/b&gt;
+              &lt;small&gt;This is the patient in the chair, not the patient whose case guided the result.
+              Includes their name or reference if you entered one. Obtaining and holding that consent
+              remains the clinic's responsibility. SkinDay records that you stated it, and when.&lt;/small&gt;" data-zh="&lt;b&gt;我已取得此顧客同意，保存其照片與本次模擬結果。&lt;/b&gt;
+&lt;small&gt;這項同意是針對目前接受諮詢的顧客，而非用來引導結果的參考案例顧客。若您輸入姓名或參考編號，也包含在同意範圍內。取得並保存同意仍由診所負責；SkinDay 只會記錄您作出此聲明的內容與時間。&lt;/small&gt;"><b data-en="I have this patient's consent to keep their photograph and this simulation." data-zh="我已取得此顧客同意，保存其照片與本次模擬結果。">I have this patient's consent to keep their photograph and this simulation.</b>
+              <small data-en="This is the patient in the chair, not the patient whose case guided the result.
+              Includes their name or reference if you entered one. Obtaining and holding that consent
+              remains the clinic's responsibility. SkinDay records that you stated it, and when." data-zh="這項同意是針對目前接受諮詢的顧客，而非用來引導結果的參考案例顧客。若您輸入姓名或參考編號，也包含在同意範圍內。取得並保存同意仍由診所負責；SkinDay 只會記錄您作出此聲明的內容與時間。">This is the patient in the chair, not the patient whose case guided the result.
               Includes their name or reference if you entered one. Obtaining and holding that consent
               remains the clinic's responsibility. SkinDay records that you stated it, and when.</small></span>
           </label>
         </div>
 
         <div style="margin-top:22px;">
-          <button class="act" id="simSaveBtn" disabled>Save to Library</button>
+          <button class="act" id="simSaveBtn" disabled data-en="Save to Library" data-zh="儲存至資料庫">Save to Library</button>
           <div class="note" id="simSaveNote"></div>
         </div>
       </div>
@@ -1015,47 +1051,48 @@
        behind a product name a front desk will not know. -->
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow" id="casesEyebrow">Cases</span>
-      <h2 class="display" id="libHead">Case Library</h2>
-      <p id="libSub">Loading…</p>
+      <span class="eyebrow" id="casesEyebrow" data-en="Cases" data-zh="案例">Cases</span>
+      <h2 class="display" id="libHead" data-en="Case Library" data-zh="案例資料庫">Case Library</h2>
+      <p id="libSub" data-en="Loading…" data-zh="載入中…">Loading…</p>
     </div>
 
     <nav class="subtabs" id="libTabs">
-      <button class="subtab active" data-kind="photograph">Before &amp; After</button>
-      <button class="subtab" data-kind="simulation">Simulations</button>
+      <button class="subtab active" data-kind="photograph" data-en="Before &amp; After" data-zh="療程前後對照">Before &amp; After</button>
+      <button class="subtab" data-kind="simulation" data-en="Simulations" data-zh="模擬結果">Simulations</button>
     </nav>
 
     <div class="searchbar">
-      <input type="search" id="libSearch" autocomplete="off"
-             placeholder="Search name, reference, treatment, injector, date">
+      <input type="search" id="libSearch" autocomplete="off" placeholder="Search name, reference, treatment, injector, date" data-en="Search name, reference, treatment, injector, date" data-zh="搜尋姓名、編號、療程、施作者或日期">
     </div>
     <div id="libResults" style="display:none;"></div>
 
-    <div id="libGroups"><div class="empty"><p>Loading…</p></div></div>
+    <div id="libGroups"><div class="empty"><p data-en="Loading…" data-zh="載入中…">Loading…</p></div></div>
   </section>
 
 <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow" id="siteEyebrow">Website</span>
-      <h2 class="display">Gallery</h2>
-      <p>Whatever you publish appears here, and on your own website, automatically. Your developer installs this line once and never touches it again.</p>
+      <span class="eyebrow" id="siteEyebrow" data-en="Website" data-zh="網站">Website</span>
+      <h2 class="display" data-en="Gallery" data-zh="案例牆">Gallery</h2>
+      <p data-en="Whatever you publish appears here, and on your own website, automatically. Your developer installs this line once and never touches it again." data-zh="您發布的案例會自動顯示在這裡及診所網站上。網站開發人員只需安裝一次這段程式碼，之後無需再修改。">Whatever you publish appears here, and on your own website, automatically. Your developer installs this line once and never touches it again.</p>
     </div>
 
     <div class="panel">
       <div class="embed-code">
         <code id="embedCode"></code>
-        <button class="quiet" id="copyEmbed">Copy</button>
+        <button class="quiet" id="copyEmbed" data-en="Copy" data-zh="複製">Copy</button>
       </div>
       <div class="note" id="copyNote"></div>
 
-      <p class="note" style="margin-top:14px;">
+      <p class="note" style="margin-top:14px;" data-en='Not the one who edits the website? Send your developer this link and they
+        will have everything they need:
+        &lt;a id="devLink" href="#" target="_blank" rel="noopener"&gt;&lt;/a&gt;' data-zh='不是由您維護網站嗎？將此連結傳給網站開發人員，裡面包含所有安裝資訊：&lt;a href="#" id="devLink" rel="noopener" target="_blank"&gt;&lt;/a&gt;'>
         Not the one who edits the website? Send your developer this link and they
         will have everything they need:
         <a id="devLink" href="#" target="_blank" rel="noopener"></a>
       </p>
 
-      <div class="eyebrow" style="margin:26px 0 12px;">Live preview</div>
-      <div id="galleryPreview"><p class="note">Loading…</p></div>
+      <div class="eyebrow" style="margin:26px 0 12px;" data-en="Live preview" data-zh="即時預覽">Live preview</div>
+      <div id="galleryPreview"><p class="note" data-en="Loading…" data-zh="載入中…">Loading…</p></div>
     </div>
   </section>
 
@@ -1064,13 +1101,14 @@
        be an export that rewrites history into one where they never existed. -->
   <section class="sec">
     <div class="sec-head">
-      <span class="eyebrow">Export</span>
-      <h2 class="display">Take it with you.</h2>
-      <p>Every photograph, every simulation, the consent history, and the record of
+      <span class="eyebrow" data-en="Export" data-zh="資料匯出">Export</span>
+      <h2 class="display" data-en="Take it with you." data-zh="隨時完整帶走您的資料。">Take it with you.</h2>
+      <p data-en="Every photograph, every simulation, the consent history, and the record of
+         what was deleted and when. One archive, yours, at any time and for any reason." data-zh="所有照片、模擬結果、同意紀錄，以及刪除內容與時間，都會整理在同一份封存檔中。資料屬於診所，您可隨時基於任何原因匯出。">Every photograph, every simulation, the consent history, and the record of
          what was deleted and when. One archive, yours, at any time and for any reason.</p>
     </div>
     <div class="panel">
-      <button class="act" id="exportBtn">Export everything</button>
+      <button class="act" id="exportBtn" data-en="Export everything" data-zh="匯出全部資料">Export everything</button>
       <div class="note" id="exportNote"></div>
       <div class="note" id="exportProgress" style="margin-top:6px;"></div>
     </div>
@@ -2496,7 +2534,7 @@ $('saveBtn').addEventListener('click', async () => {
   if (!rows.length) { note('saveNote', 'Build a before and after in Studio first.', 'bad'); return; }
 
   if (!$('cAttest').checked) {
-    note('saveNote', 'Confirm you have the patient\u2019s consent for the uses you selected.', 'bad');
+    note('saveNote', sdT('Confirm you have the patient\u2019s consent for the uses you selected.','請確認您已取得顧客對所選用途的同意。'), 'bad');
     return;
   }
 
@@ -3339,7 +3377,7 @@ function plate(r, perms, seriesSize) {
   pub.className = 'quiet';
   pub.textContent = published ? 'Remove from website' : 'Show on website';
   pub.disabled = !perms.gallery_site && !published;
-  if (pub.disabled) pub.title = 'The patient did not agree to public display.';
+  if (pub.disabled) pub.title = sdT('The patient did not agree to public display.','此顧客未同意公開展示。');
   pub.onclick = () => run(pub, st, '/api/clinic-case-publish', {
     action: published ? 'unpublish' : 'publish', case_id: r.id, clinic_id: clinicId
   });
@@ -3348,7 +3386,7 @@ function plate(r, perms, seriesSize) {
   ref.className = 'quiet';
   ref.textContent = r.visualize_approved ? 'Stop using as reference' : 'Use as reference';
   ref.disabled = !perms.visualize && !r.visualize_approved;
-  if (ref.disabled) ref.title = 'The patient did not agree to this use.';
+  if (ref.disabled) ref.title = sdT('The patient did not agree to this use.','此顧客未同意此用途。');
   ref.onclick = async () => {
     ref.disabled = true;
     const { error } = await sb.rpc('set_visualize_approval', {
@@ -3685,13 +3723,13 @@ function renderBilling(sub, c) {
       (sub.current_period_end ? ('Renews ' + new Date(sub.current_period_end).toISOString().slice(0, 10) + '. ') : '') +
       seatsLine;
   } else if (sub.status === 'past_due') {
-    t.textContent = 'A payment did not go through.';
+    t.textContent = sdT('A payment did not go through.','有一筆付款未成功。');
     sb2.textContent =
       'Your gallery is still serving and your library is still readable and exportable. ' +
       'New saves and new simulations are paused until the card is fixed.';
   } else {
     t.textContent = 'Plan.';
-    sb2.textContent = 'Visualize Pro is not subscribed on this clinic.';
+    sb2.textContent = sdT('Visualize Pro is not subscribed on this clinic.','此診所尚未訂閱 Visualize Pro。');
   }
 
   const isOwner = mySettings && mySettings.my_role === 'owner';
@@ -4480,7 +4518,7 @@ function collectFromFrame(timeoutMs) {
 
     const timer = setTimeout(() => {
       window.removeEventListener('message', onMsg);
-      reject(new Error('Visualize did not answer. Reload the tab and try again.'));
+      reject(new Error(sdT('Visualize did not answer. Reload the tab and try again.','Visualize 沒有回應，請重新載入分頁後再試一次。')));
     }, timeoutMs || 15000);
 
     function onMsg(ev) {
@@ -4640,9 +4678,29 @@ async function run(btn, st, path, payload) {
 }
 </script>
 
-<footer class="site-foot">
-  <span class="pw">Powered by</span>
+<footer class="site-foot" data-en='&lt;span class="pw"&gt;Powered by&lt;/span&gt;
+  &lt;a class="sd" href="https://skinday.com" target="_blank" rel="noopener"&gt;SkinDay&lt;/a&gt;' data-zh='&lt;span class="pw"&gt;技術支援&lt;/span&gt;
+&lt;a class="sd" href="https://skinday.com" rel="noopener" target="_blank"&gt;SkinDay&lt;/a&gt;'>
+  <span class="pw" data-en="Powered by" data-zh="技術支援">Powered by</span>
   <a class="sd" href="https://skinday.com" target="_blank" rel="noopener">SkinDay</a>
 </footer>
+<script>
+  function sdApplyLang(){
+    var isZh = sdLang==='zh';
+    document.body.classList.toggle('zh', isZh);
+    document.documentElement.setAttribute('lang', isZh?'zh-TW':'en');
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
+      var val = isZh?el.getAttribute('data-zh'):el.getAttribute('data-en');
+      if(el.tagName==='INPUT'||el.tagName==='TEXTAREA'){el.placeholder=val;}
+      else if(el.namespaceURI==='http://www.w3.org/2000/svg'){el.textContent=val;}
+      else{el.innerHTML=val;}
+    });
+    document.querySelectorAll('.lang-btn').forEach(function(btn){
+      btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
+    });
+  }
+  function sdSetLang(l){sdLang=l;try{localStorage.setItem('sd-lang',l);}catch(e){}sdApplyLang();}
+  sdApplyLang();
+</script>
 </body>
 </html>
