@@ -2834,6 +2834,9 @@ function syncGenerateBtn(){
   const anyInFlight = ids.some(id => state.slots[id].status === 'generating');
   // M17: combination mode needs at least one add-on before generation makes sense.
   const comboMode = state.planMode === 'combo';
+  // Single-pass renders the whole plan in one generation per angle; layered runs
+  // 1 primary + one scenario-priced pass per add-on.
+  const comboSingle = comboMode && (typeof COMBO_PIPELINE !== 'undefined' && COMBO_PIPELINE === 'single');
   const comboBlocks = comboMode ? (1 + state.comboAddons.length) : 1;
   generateBtn.disabled = !(ready && consentChk.checked) || anyInFlight || (comboMode && state.comboAddons.length === 0);
   generateBtn.textContent = comboMode
@@ -2842,13 +2845,13 @@ function syncGenerateBtn(){
 
   // M8: cost preview for metered accounts. Costs come from server config
   // (env-tunable); the fallback matches the server's defaults.
-  // M17: in combination mode each angle runs 1 primary generation plus one
-  // scenario-priced pass per add-on, so combination cost = angles x blocks x per-pass.
+  // M17: layered combination cost = angles x (primary + add-ons x scenario);
+  // single-pass cost = angles x one primary-priced generation.
   // (Subscription context hides all of this via body.sd-sub / .cost-pill.)
   const note = document.getElementById('costNote');
   if(note){
     if(accessMode === 'account' && ids.length){
-      const per = comboMode
+      const per = (comboMode && !comboSingle)
         ? (creditCostFor(state.type) + state.comboAddons.length * scenarioCreditCost())
         : creditCostFor(state.type);
       const total = per * ids.length;
@@ -2857,12 +2860,12 @@ function syncGenerateBtn(){
         ? ' · Balance: <strong>' + creditBalance + '</strong>' + (short ? ' · top up needed' : '')
         : '';
       const primaryCost = creditCostFor(state.type), addonCost = scenarioCreditCost();
-      const breakdown = comboMode
+      const breakdown = (comboMode && !comboSingle)
         ? (ids.length + (ids.length > 1 ? ' angles' : ' angle') + ' × ' +
            (primaryCost === addonCost
              ? (comboBlocks + ' treatments × ' + primaryCost)
              : ('(' + primaryCost + ' + ' + state.comboAddons.length + ' × ' + addonCost + ')')))
-        : (ids.length + (ids.length > 1 ? ' angles' : ' angle') + ' × ' + per);
+        : (ids.length + (ids.length > 1 ? ' angles' : ' angle') + ' × ' + per + (comboSingle ? ' (single-pass)' : ''));
       note.innerHTML = '<span class="cost-pill' + (short ? ' warn' : '') + '">'
         + '<strong>' + total + ' credit' + (total > 1 ? 's' : '') + '</strong>'
         + ' · ' + breakdown
@@ -4286,12 +4289,12 @@ function _progressiveOnDone(id){
 }
 
 async function runGeneration(isRegen){
-  // M17: combination plans run the layered orchestrator instead. Combination
-  // mode with zero add-ons is just a single treatment; it is blocked upstream
-  // (syncGenerateBtn) but guarded here too.
+  // M17: combination plans run either the layered orchestrator or the single-pass
+  // plan pipeline, selectable for the blinded A/B. Combination mode with zero
+  // add-ons is just a single treatment; blocked upstream and guarded here.
   if(state.planMode === 'combo'){
     if(!state.comboAddons.length){ setStatus(t('comboNeedAddon'), 'warn'); return; }
-    return runComboGeneration(isRegen);
+    return (COMBO_PIPELINE === 'single') ? runComboGenerationSingle(isRegen) : runComboGeneration(isRegen);
   }
   const auth = await authHeaders();
   creditShortfall = false;
@@ -6998,6 +7001,10 @@ async function runComboAddonPass(angleId, scenarioKey, auth, inputDataUrl, prima
 
   // Client composites, mirroring runScenario: keep the RUNNING image's real
   // skin and take only the treated region from the re-render.
+  // A/B instrumentation: when a region composite returns null or throws, this
+  // pass falls back to the RAW full-frame re-render for the whole face, which is
+  // the suspected source of oblique/profile fidelity loss. Log the fallback by
+  // angle + key so the hypothesis can be verified against the blinded scores.
   try {
     if(scenarioKey === 'add_lips_filler' || scenarioKey === 'add_nose_filler'){
       const feature = (scenarioKey === 'add_nose_filler') ? 'nose' : 'lips';
@@ -7005,13 +7012,18 @@ async function runComboAddonPass(angleId, scenarioKey, auth, inputDataUrl, prima
       const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
       const composited = await mod.compositeFeatureAddon(baseImg, addonImg, feature);
       if(composited){ out = composited; console.log('[Visualize] combo feature composite applied (' + scenarioKey + ')'); }
+      else { _logCompositeFallback(angleId, scenarioKey, 'composite_returned_null'); }
     } else if(scenarioKey === 'add_chin_jaw_filler' || scenarioKey === 'add_chin_filler' || scenarioKey === 'add_jawline_filler'){
       const [baseImg, addonImg] = await Promise.all([loadImage(inputDataUrl), loadImage(out)]);
       const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
       const composited = await mod.compositeChinJawAddon(baseImg, addonImg);
       if(composited){ out = composited; console.log('[Visualize] combo chin/jaw composite applied (' + scenarioKey + ')'); }
+      else { _logCompositeFallback(angleId, scenarioKey, 'composite_returned_null'); }
     }
-  } catch(e){ console.warn('[Visualize] combo composite skipped (' + scenarioKey + '):', e); }
+  } catch(e){
+    _logCompositeFallback(angleId, scenarioKey, 'composite_threw:' + ((e && e.message) || e));
+    console.warn('[Visualize] combo composite skipped (' + scenarioKey + '):', e);
+  }
 
   // Tone-normalize against the ORIGINAL photo per pass (no-op unless
   // ?tonematch= is set), so any global drift is corrected before it compounds
@@ -7189,6 +7201,215 @@ async function runComboGeneration(isRegen){
     refreshCredits((failIds.length || partialIds.length) ? 2 : 0);
     if(creditShortfall){
       setStatus('Not enough credits to finish this combination plan. Top up to continue.', 'warn');
+      openBuyModal();
+    }
+  }
+}
+
+/* ═════════ M17 v2: single-pass plan pipeline (A/B arm) ═══════════════════════
+   Selectable via ?pipeline=single|layered. Default stays 'layered' so nothing
+   changes for existing users until the blinded A/B is run; flip COMBO_PIPELINE
+   (or the URL param) to compare. Single-pass fires ONE gpt-image-2 plan job per
+   angle from the ORIGINAL photo (buildPlanPrompt on the worker), with NO per-
+   add-on chain and NO region composite -- the clean single-pass arm. The hybrid
+   final composite is deliberately NOT here; it is a later opt-in third arm. */
+const COMBO_PIPELINE = (function(){
+  try {
+    const p = new URLSearchParams(location.search).get('pipeline');
+    return (p === 'single' || p === 'layered') ? p : 'layered';
+  } catch(e){ return 'layered'; }
+})();
+
+// A/B telemetry: layered region-composite fallbacks by angle. When a composite
+// cannot be built the pass shows a raw full-frame re-render, the suspected cause
+// of oblique/profile degradation. Kept in-memory and echoed to the console so it
+// can be read off during the blinded review; window hook for manual dumps.
+const _compositeFallbacks = [];
+function _logCompositeFallback(angleId, scenarioKey, reason){
+  const rec = { angle: angleId, key: scenarioKey, reason: reason, at: Date.now() };
+  _compositeFallbacks.push(rec);
+  try { window.__sdCompositeFallbacks = _compositeFallbacks; } catch(e){}
+  console.warn('[combo-composite-fallback] angle=' + angleId + ' key=' + scenarioKey + ' reason=' + reason);
+}
+
+// Assemble the plan object the worker's buildPlanPrompt expects, from live state.
+function comboPlanForWorker(){
+  const primary = { type: state.type };
+  if(state.type === 'biostim') primary.product = state.product;
+  else if(state.type === 'laser') primary.laserType = state.laserType;
+  else if(state.type === 'tox') primary.toxMode = state.toxMode;
+  else if(state.type === 'filler'){ primary.areas = (state.areas || []).slice(); primary.intensity = state.fillerVolume; }
+  if(state.sex) primary.sex = state.sex;
+  return { primary: primary, addons: state.comboAddons.slice(0, COMBO_MAX_ADDONS) };
+}
+
+// Start one single-pass plan job for an angle: edit target = the ORIGINAL photo
+// (black-bg applied like every other path), plan carried as JSON.
+async function prepAndStartPlanSlot(angleId, auth, isRegen, planObj){
+  const sl = state.slots[angleId];
+  sl.status = 'generating'; sl.error = null; sl.apply = null;
+
+  let beforeDataUrl = sl.originalDataUrl;
+  if(state.blackBg){
+    if(!sl.blackBgCache){
+      try { sl.blackBgCache = await toBlackBackground(sl.originalDataUrl); }
+      catch(err){ try { sl.blackBgCache = await toBlackBackground(sl.originalDataUrl); } catch(err2){ sl.blackBgCache = null; } }
+    }
+    if(sl.blackBgCache) beforeDataUrl = sl.blackBgCache;
+  }
+  sl.beforeDataUrl = beforeDataUrl;
+  if(sl.faceBbox){ try { sl.cropBeforeCache = await cropToFace(sl.beforeDataUrl, sl.faceBbox); } catch(e){} }
+
+  const blob = await resizeToUpload(beforeDataUrl);
+  const jobId = (window.crypto && crypto.randomUUID && crypto.randomUUID()) ||
+                (Date.now() + '-' + Math.random().toString(36).slice(2));
+  const promptView = angleId === 'r45' ? 'oblique_right' : angleId === 'l45' ? 'oblique_left'
+                   : angleId === 'r90' ? 'profile_right' : angleId === 'l90' ? 'profile_left' : 'frontal';
+
+  const form = new FormData();
+  form.append('image', blob, 'patient-' + angleId + '.jpg'); // edit target = original photo
+  form.append('type', state.type);                            // billing keys off this
+  form.append('planMode', 'true');
+  form.append('plan', JSON.stringify(planObj));
+  form.append('jobId', jobId);
+  form.append('angle', angleId);
+  form.append('view', promptView);
+  if(state.sex) form.append('sex', state.sex);
+  if(CLINIC_ID) form.append('clinicId', CLINIC_ID);
+  sl.jobId = jobId;
+
+  const startRes = await fetch('/.netlify/functions/start-visualization', { method:'POST', headers: auth, body: form });
+  if(startRes.status === 401){ await handleAuthFailure(); throw new Error('Session expired.'); }
+  if(startRes.status === 402){
+    creditShortfall = true;
+    let e; try { e = JSON.parse(await startRes.text()); } catch {}
+    throw new Error((e && e.error) || 'Not enough credits for this plan.');
+  }
+  if(!startRes.ok){
+    let e; try { e = JSON.parse(await startRes.text()); } catch {}
+    throw new Error((e && e.error) || ('Could not start plan generation (HTTP ' + startRes.status + ').'));
+  }
+}
+
+// Poll a single-pass plan job. No composite: the raw single-pass image is the
+// combined result (this IS the clean arm being tested).
+async function finishPlanSlot(angleId, auth){
+  const sl = state.slots[angleId];
+  const polled = await pollForResult(sl.jobId, auth);
+  sl.resultDataUrl = polled.image;
+  sl.rawAiDataUrl = polled.image;
+  sl.modelUsed = polled.model;
+  sl.comboCompleted = 1 + (state.lastComboPlan ? state.lastComboPlan.addons.length : 0); // single pass renders the whole plan
+  if(sl.faceBbox){ try { sl.cropResultCache = await cropToFace(sl.resultDataUrl, sl.faceBbox); } catch(e){} }
+  sl.apply = () => sl.resultDataUrl;
+  sl.status = 'done';
+  sdEmitGenerationDone(angleId);
+}
+
+async function runComboGenerationSingle(isRegen){
+  const auth = await authHeaders();
+  creditShortfall = false;
+  let angles = state.selectedAngles.filter(id => state.slots[id].originalDataUrl);
+  if(!angles.length) return;
+  const addons = state.comboAddons.slice(0, COMBO_MAX_ADDONS);
+  if(!addons.length){ setStatus(t('comboNeedAddon'), 'warn'); return; }
+  const planObj = comboPlanForWorker();
+
+  if(!isRegen){
+    track('generation_started', {
+      angles: angles.length,
+      treatment: 'plan-single:' + state.type + '+' + addons.length,
+      embedded: SD_EMBEDDED
+    });
+  }
+
+  // Single-pass cost preflight: one generation per angle, billed by primary type.
+  if(accessMode === 'account'){
+    const per = creditCostFor(state.type);
+    const total = per * angles.length;
+    if(creditBalance != null && creditBalance < total){
+      setStatus('Not enough credits for this plan. Top up to continue.', 'warn');
+      openBuyModal();
+      return;
+    }
+  }
+
+  if(!isRegen){
+    const lowAngles = angles.filter(id => state.slots[id].photoGrade && state.slots[id].photoGrade.level === 'low');
+    if(lowAngles.length){
+      const names = lowAngles.map(id => angleLabel(id)).join(', ');
+      if(!confirm(t('qcLowConfirm')(names))) return;
+    }
+  }
+
+  state.lastComboPlan = comboPlanSnapshot();
+  console.log('[Visualize] M17 pipeline=single | primary=' + state.type + ' | addons=' + addons.length + ' | angles=' + angles.length);
+
+  generateBtn.disabled = true; regenBtn.disabled = true;
+  _genPhases = {};
+  angles.forEach(id => { _genPhases[id] = 'waiting'; });
+  _showGenCard(angles, isRegen);
+
+  try {
+    const started = [];
+    for(const id of angles){
+      _genPhases[id] = 'preparing';
+      _renderGenCard(angles, isRegen);
+      try {
+        await prepAndStartPlanSlot(id, auth, isRegen, planObj);
+        _genPhases[id] = 'generating';
+        started.push(id);
+      } catch(err){
+        _genPhases[id] = 'error';
+        console.error('[Visualize] plan ' + id + ' failed to start:', err);
+        const sl = state.slots[id]; sl.status = 'error'; sl.error = (err && err.message) || 'Could not start generation.';
+      }
+    }
+    if(started.length){
+      await Promise.allSettled(started.map(id =>
+        finishPlanSlot(id, auth)
+          .then(() => _progressiveOnDone(id))
+          .catch(err => {
+            const sl = state.slots[id];
+            sl.status = 'error'; sl.error = (err && err.message) || 'Generation failed.';
+            _progressiveOnDone(id);
+          })
+      ));
+    }
+  } finally {
+    _hideGenCard();
+  }
+
+  const doneIds = angles.filter(id => state.slots[id].status === 'done');
+  const failIds = angles.filter(id => state.slots[id].status === 'error');
+  if(doneIds.length) state.lastGenAt = Date.now();
+
+  if(doneIds.length){
+    if(!doneIds.includes(state.activeAngle)) state.activeAngle = doneIds[0];
+    renderTabs();
+    renderActiveSlot();
+    document.getElementById('outputSection').classList.add('visible');
+    if(!_progressiveRevealed){
+      document.getElementById('outputSection').scrollIntoView({ behavior:'smooth', block:'start' });
+    }
+    updateRegenNote();
+    syncScenariosVisibility();
+  }
+
+  if(!failIds.length){
+    setStatus(t('comboDone')(doneIds.length), 'ok');
+  } else if(doneIds.length){
+    setStatus(doneIds.length + ' of ' + angles.length + ' combined previews generated. Failed: ' +
+      failIds.map(id => ANGLE_DEF[id].short + ' (' + state.slots[id].error + ')').join('; ') + '. Re-generate to retry.', 'warn');
+  } else {
+    setStatus('Generation failed: ' + state.slots[failIds[0]].error, 'warn');
+  }
+  syncGenerateBtn(); regenBtn.disabled = false;
+
+  if(accessMode === 'account'){
+    refreshCredits(failIds.length ? 2 : 0);
+    if(creditShortfall){
+      setStatus('Not enough credits to finish this plan. Top up to continue.', 'warn');
       openBuyModal();
     }
   }
