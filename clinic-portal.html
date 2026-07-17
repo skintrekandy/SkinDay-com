@@ -80,12 +80,12 @@
   }
 
   /* ---------- header (white-label, light) ---------- */
+  .topbar { position:sticky; top:0; z-index:20; background:var(--surface); }
   header {
     background:var(--surface); color:var(--ink);
     border-bottom:1px solid var(--line);
     box-shadow:0 1px 0 var(--accent-line);
     padding:14px 30px; display:flex; align-items:center; gap:16px;
-    position:sticky; top:0; z-index:20;
   }
   header::before {
     content:""; position:absolute; left:0; right:0; top:0; height:2px;
@@ -123,7 +123,6 @@
   .tabs {
     display:flex; gap:6px; padding:0 24px;
     border-bottom:1px solid var(--line); background:var(--surface);
-    position:sticky; top:59px; z-index:19;
     overflow-x:auto; scrollbar-width:none;
   }
   .tabs::-webkit-scrollbar { display:none; }
@@ -497,7 +496,7 @@
     .pro-tag { font-size:9.5px; letter-spacing:.12em; padding:3px 8px; }
     .brandlock { gap:9px; }
     .wrap { padding:0 18px 70px; }
-    .tabs { padding-left:12px; padding-right:12px; top:57px; }
+    .tabs { padding-left:12px; padding-right:12px; }
     .site-foot { padding:18px; }
     .plate { grid-template-columns:1fr; gap:16px; }
     .diptych { max-width:280px; }
@@ -573,6 +572,7 @@
   function sdT(en,zh){return sdLang==='zh'?zh:en;}
 </script>
 
+<div class="topbar" id="topbar">
 <header id="hdr" style="display:none;">
   <span class="brandlock">
     <span class="brand-mono" id="clinicMono" style="display:none;"></span>
@@ -591,6 +591,7 @@
   <button class="tab" data-panel="visualize">Visualize</button>
   <button class="tab" data-panel="library" data-en="Case Library" data-zh="案例資料庫">Case Library</button>
 </nav>
+</div>
 
 <div class="wrap">
   <section class="gate sec" id="gate">
@@ -728,7 +729,7 @@
      panel below belongs to the portal and reads the aligned before / after
      canvases straight out of the embedded page. -->
 <div class="stage" id="panel-studio" style="display:none;">
-  <iframe class="embed" id="studioFrame" title="Studio"></iframe>
+  <iframe class="embed" id="studioFrame" title="Studio" allow="fullscreen" allowfullscreen></iframe>
 
   <div class="wrap">
     <section class="sec">
@@ -981,7 +982,7 @@
 </div>
 
 <div class="stage" id="panel-visualize" style="display:none;">
-  <iframe class="embed" id="visFrame" title="Visualize"></iframe>
+  <iframe class="embed" id="visFrame" title="Visualize" allow="fullscreen" allowfullscreen></iframe>
 
   <!-- Nothing is stored unless someone decides to store it. An exploratory
        generation costs credits and leaves no record of the patient. The consent
