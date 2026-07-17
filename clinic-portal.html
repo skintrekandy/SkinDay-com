@@ -1940,8 +1940,15 @@ function reloadTool(panel) {
    patients, where it belongs.
 */
 
+let visOverlayOpen = false;
+window.addEventListener('message', (ev) => {
+  if (ev.origin === location.origin && ev.data && ev.data.type === 'sd:overlayFs') {
+    visOverlayOpen = !!ev.data.open;
+    if (!visOverlayOpen) { try { fitFrame('visFrame'); } catch (e) {} } // re-fit immediately on close so scroll restores
+  }
+});
 function fitFrame(frameId) {
-  if (document.fullscreenElement || document.webkitFullscreenElement) return; // don't reflow while an embedded overlay is fullscreen (would clamp the parent scroll)
+  if (visOverlayOpen || document.fullscreenElement || document.webkitFullscreenElement) return; // don't reflow while an embedded overlay is open (would clamp the parent scroll)
   const f = $(frameId);
   let d;
   try { d = f.contentDocument; } catch (e) { return; }
