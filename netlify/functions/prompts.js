@@ -312,7 +312,10 @@ const SCULPTRA_VIEW_LOCKS = {
   frontal: 'View lock: this is a frontal consultation photograph. Preserve the exact frontal pose, head position, camera distance, crop, and facial orientation. Do not rotate, re-pose, or make the face more symmetrical than the original.',
   oblique: 'View lock: this is a three-quarter oblique consultation photograph. Preserve the exact three-quarter head angle, camera angle, crop, facial orientation, visible ear position, neck angle, and perspective. Do not rotate the face toward frontal, do not re-pose, and do not rebuild the face.',
   oblique_left: 'View lock: this is a left three-quarter oblique consultation photograph. Preserve the exact left oblique angle, camera angle, crop, visible ear position, neck angle, and perspective. Do not rotate the face toward frontal, do not re-pose, and do not rebuild the face.',
-  oblique_right: 'View lock: this is a right three-quarter oblique consultation photograph. Preserve the exact right oblique angle, camera angle, crop, visible ear position, neck angle, and perspective. Do not rotate the face toward frontal, do not re-pose, and do not rebuild the face.'
+  oblique_right: 'View lock: this is a right three-quarter oblique consultation photograph. Preserve the exact right oblique angle, camera angle, crop, visible ear position, neck angle, and perspective. Do not rotate the face toward frontal, do not re-pose, and do not rebuild the face.',
+  profile: 'View lock: this is a full side-profile consultation photograph (a 90-degree side view). Preserve the exact profile angle, camera angle, crop, the single visible ear and cheek, the jawline-to-neck line, and perspective. Do not rotate the face toward three-quarter or frontal, do not re-pose, and do not rebuild the face.',
+  profile_left: 'View lock: this is a left side-profile consultation photograph (a 90-degree side view with the left side of the face toward the camera). Preserve the exact left profile angle, camera angle, crop, the single visible ear and cheek, the jawline-to-neck line, and perspective. Do not rotate the face toward three-quarter or frontal, do not re-pose, and do not rebuild the face.',
+  profile_right: 'View lock: this is a right side-profile consultation photograph (a 90-degree side view with the right side of the face toward the camera). Preserve the exact right profile angle, camera angle, crop, the single visible ear and cheek, the jawline-to-neck line, and perspective. Do not rotate the face toward three-quarter or frontal, do not re-pose, and do not rebuild the face.'
 };
 
 const SCULPTRA_ALLOWED_ZONES =
@@ -352,15 +355,21 @@ const SCULPTRA_OUTPUT_RULES =
 function normalizeView(sel) {
   const field = String(sel.view || sel.angle || '').toLowerCase().trim();
   if (field === 'oblique_left' || field === 'oblique_right' || field === 'oblique' || field === 'frontal') return field;
+  if (field === 'profile_left' || field === 'profile_right' || field === 'profile') return field;
   // M11.1: client sends angleId values ('r45', 'l45') which did not match the
   // expected prompt-view tokens. Both the aliased angle field and the explicit
   // view field (added to standard/Enhanced form.append calls) are handled here.
   if (field === 'r45' || field === 'right45') return 'oblique_right';
   if (field === 'l45' || field === 'left45')  return 'oblique_left';
+  if (field === 'r90' || field === 'right90') return 'profile_right';
+  if (field === 'l90' || field === 'left90')  return 'profile_left';
   const note = String(sel.note || '');
   if (/\[view:\s*oblique_left\s*\]/i.test(note)) return 'oblique_left';
   if (/\[view:\s*oblique_right\s*\]/i.test(note)) return 'oblique_right';
   if (/\[view:\s*oblique\s*\]/i.test(note)) return 'oblique';
+  if (/\[view:\s*profile_left\s*\]/i.test(note)) return 'profile_left';
+  if (/\[view:\s*profile_right\s*\]/i.test(note)) return 'profile_right';
+  if (/\[view:\s*profile\s*\]/i.test(note)) return 'profile';
   if (/\[view:\s*frontal\s*\]/i.test(note)) return 'frontal';
   return 'frontal';
 }
@@ -379,7 +388,7 @@ function normalizeSculptraPhenotype(sel) {
 function stripInternalSculptraTags(note) {
   if (!note) return '';
   return String(note)
-    .replace(/\[view:\s*(frontal|oblique|oblique_left|oblique_right)\s*\]/ig, '')
+    .replace(/\[view:\s*(frontal|oblique|oblique_left|oblique_right|profile|profile_left|profile_right)\s*\]/ig, '')
     .replace(/\[phenotype:\s*(hollow_deflated|full_descended|mixed)\s*\]/ig, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -962,7 +971,7 @@ function buildCorePrompt(sel) {
   const goal = GOALS[sel_.goal] || GOALS.natural_refinement;
   const mag = INTENSITY[sel_.intensity] || INTENSITY.natural;
 
-  const isOblique = (sel_.view === 'oblique_left' || sel_.view === 'oblique_right' || sel_.view === 'oblique');
+  const isOblique = (sel_.view === 'oblique_left' || sel_.view === 'oblique_right' || sel_.view === 'oblique' || sel_.view === 'profile_left' || sel_.view === 'profile_right' || sel_.view === 'profile');
   const chinJawFraming = isOblique ? CHIN_JAW_OBLIQUE_FRAMING : BASE_FRAMING;
 
   const areaAllowlist = (areas.length === 1 && HA_FILLER_AREA_ALLOWLISTS[areas[0]])
@@ -1336,7 +1345,7 @@ function buildScenarioPrompt(scenarioKey, view, baselineType) {
     const cp = CROSS_ADDON_PROMPTS[scenarioKey];
     if (!cp) throw new Error('Unknown cross-type scenario key: ' + scenarioKey);
     const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
-                       view === 'l45' || view === 'r45');
+                       view === 'l45' || view === 'r45' || view === 'l90' || view === 'r90' || view === 'profile_left' || view === 'profile_right' || view === 'profile');
     // Oblique insurance: on three-quarter views the model tends to "resolve" the
     // busier, more-shadowed side (deeper lid-cheek junction, tear-trough shadow,
     // more visible laxity) by rebuilding its skin, which reads as degraded or
@@ -1354,7 +1363,7 @@ function buildScenarioPrompt(scenarioKey, view, baselineType) {
   if (!s) throw new Error('Unknown scenario key: ' + scenarioKey);
 
   const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
-                     view === 'l45' || view === 'r45');
+                     view === 'l45' || view === 'r45' || view === 'l90' || view === 'r90' || view === 'profile_left' || view === 'profile_right' || view === 'profile');
 
   // stronger_sculptra needs an oblique lead that preserves pose WITHOUT saying
   // "minimum change" -- that phrasing suppresses the Sculptra magnitude we want.
