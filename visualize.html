@@ -967,7 +967,7 @@
           <div class="area-chip" data-angle="r90"><span class="tick">✓</span><span data-en="Right 90°" data-zh="右側 90°">Right 90°</span></div>
           <div class="area-chip" data-angle="l90"><span class="tick">✓</span><span data-en="Left 90°" data-zh="左側 90°">Left 90°</span></div>
         </div>
-        <div class="combo-angle-hint" id="comboAngleHint" style="display:none;" data-en="Combination mode: up to 2 angles (frontal plus one oblique reads best). Each angle renders every treatment in the plan, so more angles multiply generation time and cost." data-zh="組合模式：最多 2 個角度（建議正面加一個 45°）。每個角度都會生成計畫中的每項療程，角度越多，時間與費用成倍增加。">Combination mode: up to 2 angles (frontal plus one oblique reads best). Each angle renders every treatment in the plan, so more angles multiply generation time and cost.</div>
+        <div class="combo-angle-hint" id="comboAngleHint" style="display:none;" data-en="Combination mode: each angle re-runs every treatment in the plan, so cost scales with the number of angles. Frontal plus both 45° angles is the usual consultation set." data-zh="組合模式：每個角度都會重新生成計畫中的每項療程，費用會隨角度數量增加。正面加上左右 45° 是常見的諮詢組合。">Combination mode: each angle re-runs every treatment in the plan, so cost scales with the number of angles. Frontal plus both 45° angles is the usual consultation set.</div>
       </div>
       <div class="photo-guide" id="photoGuide" data-en="<strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong>" data-zh="<strong>僅限臉部照片。</strong>Visualize 用於臉部療程預覽，請上傳清楚的臉部近照，不要使用全身照或距離太遠的照片。<strong>照片品質是影響生成效果最重要的因素。</strong>光線不足、背景雜亂或裁切太緊，都容易造成瑕疵或效果不明顯，即使 AI 再進步也一樣。<strong>上傳前請先閱讀拍攝指南。</strong>"><strong>Faces only.</strong> Visualize simulates facial treatments, so upload a close-up photo of the face (not a full-body or distant shot). <strong>Photo quality is the single biggest factor in result quality.</strong> Poor lighting, busy backgrounds, or tight crops will cause artifacts and weak results regardless of the AI. <strong>Read the photo guide before uploading.</strong></div>
       <button class="guide-link" id="guideBtn" type="button" data-en="📷 Photo guide &amp; quality checklist (important - read before uploading)" data-zh="📷 拍攝指南與照片品質檢查表（重要，請先閱讀）">📷 Photo guide &amp; quality checklist (important - read before uploading)</button>
@@ -1613,8 +1613,6 @@ var I18N = {
     // M17 combination mode
     comboGen: function(a){ return a > 1 ? ('Generate combined preview · ' + a + ' angles') : 'Generate combined preview'; },
     comboNeedAddon: 'Add at least one add-on treatment, or switch back to Single Treatment.',
-    comboAngleCap: 'Combination mode supports up to 2 angles, to keep generation time and cost bounded.',
-    comboAngleTrimmed: 'Combination mode: angle selection reduced to 2.',
     comboPreSubmit: function(a, b){ return 'A combination plan runs ' + b + ' generations per angle, so this can take several minutes. Keep this tab open - the combined result for each angle appears once every treatment in the plan has been applied.'; },
     comboStep: function(k, n){ return 'Rendering plan · ' + k + ' of ' + n; },
     comboDone: function(n){ return n > 1 ? ('All ' + n + ' combined previews generated.') : 'Combined preview generated.'; },
@@ -1699,8 +1697,6 @@ var I18N = {
     // M17 combination mode
     comboGen: function(a){ return a > 1 ? ('\u751f\u6210\u7d44\u5408\u6a21\u64ec\u9810\u89bd \u00b7 ' + a + ' \u500b\u89d2\u5ea6') : '\u751f\u6210\u7d44\u5408\u6a21\u64ec\u9810\u89bd'; },
     comboNeedAddon: '\u8acb\u81f3\u5c11\u52a0\u5165\u4e00\u9805\u52a0\u9078\u7642\u7a0b\uff0c\u6216\u5207\u63db\u56de\u55ae\u4e00\u7642\u7a0b\u3002',
-    comboAngleCap: '\u7d44\u5408\u6a21\u5f0f\u6700\u591a\u652f\u63f4 2 \u500b\u89d2\u5ea6\uff0c\u4ee5\u63a7\u5236\u751f\u6210\u6642\u9593\u8207\u8cbb\u7528\u3002',
-    comboAngleTrimmed: '\u7d44\u5408\u6a21\u5f0f\uff1a\u89d2\u5ea6\u5df2\u7e2e\u6e1b\u70ba 2 \u500b\u3002',
     comboPreSubmit: function(a, b){ return '\u7d44\u5408\u8a08\u756b\u6bcf\u500b\u89d2\u5ea6\u9700\u57f7\u884c ' + b + ' \u6b21\u751f\u6210\uff0c\u53ef\u80fd\u9700\u8981\u6578\u5206\u9418\u3002\u8acb\u4fdd\u6301\u6b64\u5206\u9801\u958b\u555f\uff0c\u6bcf\u500b\u89d2\u5ea6\u7684\u5408\u4f75\u7d50\u679c\u6703\u5728\u8a08\u756b\u4e2d\u6240\u6709\u7642\u7a0b\u5b8c\u6210\u5f8c\u986f\u793a\u3002'; },
     comboStep: function(k, n){ return '\u751f\u6210\u8a08\u756b\u4e2d \u00b7 ' + k + ' / ' + n; },
     comboDone: function(n){ return n > 1 ? ('\u5df2\u751f\u6210\u5168\u90e8 ' + n + ' \u5f35\u7d44\u5408\u6a21\u64ec\u9810\u89bd\u3002') : '\u7d44\u5408\u6a21\u64ec\u9810\u89bd\u5df2\u751f\u6210\u3002'; },
@@ -3167,13 +3163,6 @@ document.querySelectorAll('#angleGrid .area-chip').forEach(chip => {
     const id = chip.dataset.angle;
     const sel = state.selectedAngles;
     if(chip.classList.contains('active') && sel.length === 1) return; // keep one
-    // M17: combination mode caps angle selection at 2. Every angle re-runs the
-    // full plan (one pass per treatment), so a third angle would multiply
-    // sequential passes, cost, and accumulated drift.
-    if(state.planMode === 'combo' && !chip.classList.contains('active') && sel.length >= 2){
-      setStatus(t('comboAngleCap'), 'warn');
-      return;
-    }
     chip.classList.toggle('active');
     state.selectedAngles = ANGLE_ORDER.filter(a =>
       document.querySelector('#angleGrid .area-chip[data-angle="' + a + '"]').classList.contains('active'));
@@ -6641,8 +6630,8 @@ const COMBO_ADDON_DEFS = [
     lineEn:'HA filler \u00b7 nose \u00b7 refined', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u9f3b\u90e8 \u00b7 \u7cbe\u7dfb' },
   { key:'add_lips_filler',       shortEn:'Lip filler',                 shortZh:'\u5507\u90e8\u73bb\u5c3f\u9178', magEn:'full', magZh:'\u98fd\u6eff',
     lineEn:'HA filler \u00b7 lips \u00b7 full (about 2 mL)', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u5634\u5507 \u00b7 \u98fd\u6eff\uff08\u7d04 2 mL\uff09' },
-  { key:'add_biostim_lift',      shortEn:'Biostimulation',             shortZh:'\u81a0\u539f\u589e\u751f', magEn:'expected', magZh:'\u9810\u671f',
-    lineEn:'Biostimulator \u00b7 lateral face \u00b7 expected', lineZh:'\u81a0\u539f\u589e\u751f \u00b7 \u5916\u5074\u81c9\u90e8 \u00b7 \u9810\u671f\u53cd\u61c9' },
+  { key:'add_biostim_lift',      shortEn:'Biostimulation',             shortZh:'\u81a0\u539f\u589e\u751f', magEn:'', magZh:'',
+    lineEn:'Biostimulator \u00b7 lateral face', lineZh:'\u81a0\u539f\u589e\u751f \u00b7 \u5916\u5074\u81c9\u90e8' },
   { key:'add_rf',                shortEn:'RF skin tightening',         shortZh:'\u96fb\u6ce2\u62c9\u76ae\u7dca\u7dfb', magEn:'subtle', magZh:'\u8f15\u5fae',
     lineEn:'RF skin tightening \u00b7 lower face \u00b7 subtle', lineZh:'\u96fb\u6ce2\u62c9\u76ae \u00b7 \u4e0b\u81c9 \u00b7 \u8f15\u5fae' },
   { key:'add_hifu',              shortEn:'HIFU lifting',               shortZh:'\u97f3\u6ce2\u62c9\u63d0', magEn:'subtle', magZh:'\u8f15\u5fae',
@@ -6665,13 +6654,13 @@ const FILLER_AREA_LABELS_ZH = {
 function comboPrimaryLine(){
   if(state.type === 'biostim'){
     return state.product === 'hdr'
-      ? { en:'Biostimulator (Hyperdilute CaHA) \u00b7 full face \u00b7 expected', zh:'\u81a0\u539f\u589e\u751f\uff08\u7a00\u91cb\u6676\u4eae\u74f7 CaHA\uff09 \u00b7 \u5168\u81c9 \u00b7 \u9810\u671f\u53cd\u61c9' }
-      : { en:'Biostimulator (PLLA / Sculptra) \u00b7 full face \u00b7 expected', zh:'\u81a0\u539f\u589e\u751f\uff08PLLA / Sculptra\uff09 \u00b7 \u5168\u81c9 \u00b7 \u9810\u671f\u53cd\u61c9' };
+      ? { en:'Biostimulator (Hyperdilute CaHA) \u00b7 full face', zh:'\u81a0\u539f\u589e\u751f\uff08\u7a00\u91cb\u6676\u4eae\u74f7 CaHA\uff09 \u00b7 \u5168\u81c9' }
+      : { en:'Biostimulator (PLLA / Sculptra) \u00b7 full face', zh:'\u81a0\u539f\u589e\u751f\uff08PLLA / Sculptra\uff09 \u00b7 \u5168\u81c9' };
   }
   if(state.type === 'laser'){
     return state.laserType === 'hifu'
-      ? { en:'HIFU lifting \u00b7 lower face & jawline \u00b7 expected', zh:'\u97f3\u6ce2\u62c9\u63d0 \u00b7 \u4e0b\u81c9\u8207\u4e0b\u984e\u7dda \u00b7 \u9810\u671f\u53cd\u61c9' }
-      : { en:'RF skin tightening \u00b7 lower face & jawline \u00b7 expected', zh:'\u96fb\u6ce2\u62c9\u76ae \u00b7 \u4e0b\u81c9\u8207\u4e0b\u984e\u7dda \u00b7 \u9810\u671f\u53cd\u61c9' };
+      ? { en:'HIFU lifting \u00b7 lower face & jawline', zh:'\u97f3\u6ce2\u62c9\u63d0 \u00b7 \u4e0b\u81c9\u8207\u4e0b\u984e\u7dda' }
+      : { en:'RF skin tightening \u00b7 lower face & jawline', zh:'\u96fb\u6ce2\u62c9\u76ae \u00b7 \u4e0b\u81c9\u8207\u4e0b\u984e\u7dda' };
   }
   if(state.type === 'tox'){
     if(state.toxMode === 'masseter')  return { en:'Neurotoxin \u00b7 masseter \u00b7 subtle', zh:'\u8089\u6bd2 \u00b7 \u54ac\u808c \u00b7 \u8f15\u5fae' };
@@ -6697,11 +6686,59 @@ function comboPlanSnapshot(){
   };
 }
 
-// Allowed add-on keys for the current primary. scenariosForBaseline() computes
-// exactly the (primary type + areas) -> validated CROSS_ADDON key set that the
-// server accepts, so it is reused verbatim; no parallel mapping to drift.
+// M17 (revised): combination mode has its OWN add-on eligibility, independent
+// of the scenario panel. The scenario panel's per-baseline lists
+// (SCENARIOS_BY_TYPE) were authored conservatively for the "explore one more
+// thing" flow and never offered cross-type stacks like Sculptra + lower-face
+// neurotoxin, which are standard real-world combination plans. Reusing them
+// verbatim wrongly greyed those out. This map reflects clinical validity for a
+// multi-modality PLAN instead.
+//
+// Exclusions that ARE intentional (not restrictions to remove):
+//  - biostim primary excludes add_biostim_lift (biostim on biostim) and
+//    add_cheek_filler (Sculptra already restores lateral cheek/midface volume,
+//    so a cheek-filler add-on would double-count the same zone).
+//  - a primary never offers an add-on that repeats itself (energy primary does
+//    not offer RF/HIFU again; tox primary does not offer masseter/Nefertiti
+//    again).
+//  - filler primary excludes add-ons treating the area it already filled
+//    (handled below via AREA_TO_SCENARIO_KEYS).
+//
+// NOTE ON THE SERVER: start-visualization enforces its own baseline+scenario
+// allowlist. The cross-type pairs newly enabled here (biostim+tox, biostim+
+// energy, energy+tox) build correct prompts client-side, but if the server
+// allowlist has not been widened to match, those specific add-on passes will
+// be rejected at generation time (the chain keeps the partial result and says
+// so). Widen the server allowlist to the same pairs to guarantee completion.
+const COMBO_ELIGIBILITY = {
+  biostim: ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler',
+            'add_temple_support','add_tear_trough','add_nasolabial_filler',
+            'add_nose_filler','add_lips_filler',
+            'add_rf','add_hifu','add_masseter','add_nefertiti'],
+  filler:  ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler',
+            'add_cheek_filler','add_temple_support','add_tear_trough',
+            'add_nasolabial_filler','add_nose_filler','add_lips_filler',
+            'add_biostim_lift','add_rf','add_hifu','add_masseter','add_nefertiti'],
+  laser:   ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler',
+            'add_cheek_filler','add_temple_support','add_tear_trough',
+            'add_nasolabial_filler','add_nose_filler','add_lips_filler',
+            'add_biostim_lift','add_masseter','add_nefertiti'],
+  tox:     ['add_chin_jaw_filler','add_chin_filler','add_jawline_filler',
+            'add_cheek_filler','add_temple_support','add_tear_trough',
+            'add_nasolabial_filler','add_nose_filler','add_lips_filler',
+            'add_biostim_lift','add_rf','add_hifu']
+};
+
 function comboAllowedAddonKeys(){
-  return scenariosForBaseline().filter(k => COMBO_ADDON_META[k]);
+  const fam = (state.type === 'biostim') ? 'biostim' : state.type;
+  let list = (COMBO_ELIGIBILITY[fam] || []).slice();
+  // Filler primary: never offer an add-on that treats the area already filled.
+  if(state.type === 'filler' && Array.isArray(state.areas)){
+    const exclude = new Set();
+    state.areas.forEach(a => (AREA_TO_SCENARIO_KEYS[a] || []).forEach(k => exclude.add(k)));
+    list = list.filter(k => !exclude.has(k));
+  }
+  return list.filter(k => COMBO_ADDON_META[k]);
 }
 
 // Prune selections invalidated by a primary change (type switch, filler area
@@ -6737,12 +6774,17 @@ function renderComboAddonGrid(){
     lbl.setAttribute('data-en', def.shortEn);
     lbl.setAttribute('data-zh', def.shortZh);
     lbl.textContent = isZh ? def.shortZh : def.shortEn;
-    const mag = document.createElement('em');
-    mag.className = 'mag-tag';
-    mag.setAttribute('data-en', def.magEn);
-    mag.setAttribute('data-zh', def.magZh);
-    mag.textContent = isZh ? def.magZh : def.magEn;
-    chip.appendChild(tick); chip.appendChild(lbl); chip.appendChild(mag);
+    chip.appendChild(tick); chip.appendChild(lbl);
+    // Magnitude character tag. Some add-ons (biostimulation) have no magnitude
+    // tier, so no tag is shown for them.
+    if(def.magEn){
+      const mag = document.createElement('em');
+      mag.className = 'mag-tag';
+      mag.setAttribute('data-en', def.magEn);
+      mag.setAttribute('data-zh', def.magZh);
+      mag.textContent = isZh ? def.magZh : def.magEn;
+      chip.appendChild(mag);
+    }
     chip.addEventListener('click', () => {
       if(!ok) return;
       const idx = state.comboAddons.indexOf(def.key);
@@ -6814,17 +6856,6 @@ function setPlanMode(mode){
   const angleHintEl = document.getElementById('comboAngleHint');
   if(angleHintEl) angleHintEl.style.display = comboOn ? '' : 'none';
   if(comboOn){
-    // Angle cap: 2 angles maximum in combination mode (frontal + one oblique by
-    // default order). Bounds total passes at 2 x 4 = 8 for a full 4-block plan.
-    if(state.selectedAngles.length > 2){
-      state.selectedAngles = state.selectedAngles.slice(0, 2);
-      document.querySelectorAll('#angleGrid .area-chip').forEach(c => {
-        c.classList.toggle('active', state.selectedAngles.includes(c.dataset.angle));
-      });
-      if(!state.selectedAngles.includes(state.activeAngle)) state.activeAngle = state.selectedAngles[0];
-      renderSlots();
-      setStatus(t('comboAngleTrimmed'), 'idle');
-    }
     refreshComboUI();
   } else {
     const cs = document.getElementById('comboSummary');
