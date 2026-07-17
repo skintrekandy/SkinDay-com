@@ -137,8 +137,6 @@ const FIELD_KEYS = [
               // matching, and it was silently absent from the prompt path too.
   'sourceJobId',
   'scenarioMode', 'scenarioKey', 'rawScenarioMode', 'baselineType',  // M12.2 scenario; M14 baselineType
-  'planMode', 'plan',  // M17 v2: single-pass combination plan (plan = JSON string {primary, addons})
-  'planPromptMode',    // M17: single-pass prompt A/B arm ('concise' | 'full')
   'clinicId'  // M11: explicit clinic context (clinic route only; consumer omits it)
 ];
 
