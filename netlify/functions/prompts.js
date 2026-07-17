@@ -1537,4 +1537,135 @@ function buildPlanPrompt(plan, view){
   return NO_TEXT_RULE + ' ' + frame + viewLead + body + fidelity + lockBlock.trim() + ceiling;
 }
 
-module.exports = { buildCorePrompt, VERSIONS, CHIN_JAW_SAFETY, usesChinJawSafety, FILLER_CHIN_JAWLINE_OVERFILLED, SCENARIO_PROMPTS, buildScenarioPrompt, BIOSTIM_NEGATIVE_GUARDRAIL, buildPlanPrompt };
+// ---------------------------------------------------------------------------
+// M17 concise plan prompt (single-pass A/B arm B).
+// Read (Andy + ChatGPT, after the single-pass montage came back globally
+// beautified and texture-drifted): the assembled buildPlanPrompt concatenates
+// many long, validated transformation clauses, and gpt-image reads the piled-up
+// "support / lift / define / refine" weight as "improve the whole face,"
+// producing global reinterpretation rather than three bounded changes. This arm
+// is deliberately minimal: one strong preservation contract FIRST (the model
+// weights earlier instructions more), short hand-written contributions (NOT the
+// reused long CROSS_ADDON bodies), one overlap rule stated as intent, one large
+// negative block, one conservative ceiling. Purpose: isolate whether prompt
+// DENSITY (not single-pass generation) drives the global reinterpretation. If
+// this still over-beautifies, the limit is the model; if it behaves, density was
+// the cause. Product priority (Andy): texture fidelity outranks avoiding
+// beautification, since deteriorated skin is what makes a result unsellable, so
+// preservation and the negative block carry the most weight here.
+// ---------------------------------------------------------------------------
+
+const CONCISE_FILLER_AREA = {
+  chin:             'chin filler: modest chin projection and better profile balance (do not create a pointed or masculine chin)',
+  jawline:          'jawline filler: modestly sharper mandibular definition (do not create a heavy or masculine jaw, do not erase natural soft tissue)',
+  nose:             'nose filler: subtle dorsal refinement and profile balance (do not narrow or shrink the nose or change the tip)',
+  lips:             'lip filler: subtly fuller, well-defined lips in natural proportion (do not overfill or evert)',
+  cheeks:           'cheek filler: mild midface support (do not overfill or create round, pillowy cheeks)',
+  tear_trough:      'tear-trough filler: mild softening of the under-eye hollow (do not overfill or puff the lower lid)',
+  nasolabial_folds: 'nasolabial filler: mild softening of the folds (do not flatten the midface or overfill)'
+};
+
+const CONCISE_ADDON = {
+  add_biostim_lift:     'biostimulator: mild, diffuse lateral-cheek and lower-face support (no skin smoothing, no facelift look)',
+  add_cheek_filler:     'cheek filler: mild midface support (do not overfill or round the cheeks)',
+  add_chin_filler:      'chin filler: modest chin projection and profile balance (do not create a pointed or masculine chin)',
+  add_chin_jaw_filler:  'chin and jawline filler: modest chin projection and sharper mandibular definition (do not create a heavy or masculine jaw)',
+  add_hifu:             'HIFU: subtle jawline tightening (energy only, no added volume, no skin smoothing)',
+  add_jawline_filler:   'jawline filler: sharper mandibular definition (do not create a heavy or masculine jaw)',
+  add_lips_filler:      'lip filler: subtly fuller, well-defined lips (do not overfill or evert)',
+  add_masseter:         'masseter neurotoxin: a slightly narrower jaw angle (muscle slimming only, no bone change)',
+  add_nasolabial_filler:'nasolabial filler: mild softening of the folds (do not flatten the midface)',
+  add_nefertiti:        'Nefertiti neurotoxin: a cleaner, more lifted jawline (contour only, no volume)',
+  add_nose_filler:      'nose filler: subtle dorsal refinement and profile balance (do not narrow the nose or change the tip)',
+  add_rf:               'RF tightening: slightly firmer lower-face skin (energy only, no added volume, no skin smoothing)',
+  add_tear_trough:      'tear-trough filler: mild under-eye softening (do not overfill or puff the lid)',
+  add_temple_support:   'temple support: mild restoration of temple fullness (do not overfill)'
+};
+
+function concisePrimary(sel){
+  const s = sel || {};
+  if(s.type === 'biostim'){
+    return (s.product === 'hdr')
+      ? 'biostimulator (hyperdilute CaHA): mild firming and support of the lower face and jawline (do not smooth skin, do not add central volume, do not tighten like a facelift)'
+      : 'biostimulator (PLLA / Sculptra): mild, diffuse support of the lateral cheeks and lower face with slightly improved jawline support (do not smooth or resurface skin, do not erase age, do not create facelift-like tightening, do not widen or round the face)';
+  }
+  if(s.type === 'laser'){
+    return (s.laserType === 'hifu')
+      ? 'HIFU: subtle tightening and a slightly crisper jawline (energy-based only, no added volume, no skin smoothing)'
+      : 'RF skin tightening: slightly firmer lower-face skin (energy-based only, no added volume, no skin smoothing)';
+  }
+  if(s.type === 'tox'){
+    if(s.toxMode === 'masseter')  return 'masseter neurotoxin: a slightly narrower jaw angle (muscle slimming only, no volume, no bone change)';
+    if(s.toxMode === 'nefertiti') return 'Nefertiti neurotoxin: a slightly cleaner, more lifted jawline (contour only, no volume)';
+    return 'lower-face neurotoxin: a slightly narrower jaw angle and a cleaner jawline (muscle and contour only, no volume or bone change)';
+  }
+  // filler primary
+  let areas = Array.isArray(s.areas) ? s.areas.slice() : String(s.areas || '').split(',');
+  areas = areas.map(a => a.trim()).filter(a => CONCISE_FILLER_AREA[a]);
+  if(!areas.length) areas = ['chin'];
+  return areas.map(a => CONCISE_FILLER_AREA[a]).join('; ');
+}
+
+function buildPlanPromptConcise(plan, view){
+  const p = plan || {};
+  const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
+                     view === 'l45' || view === 'r45' || view === 'l90' || view === 'r90' ||
+                     view === 'profile_left' || view === 'profile_right' || view === 'profile');
+  const feat = planTreatedFeatures(p);
+
+  // 1. Preservation contract, first and highest priority.
+  const preserve =
+    'CRITICAL, HIGHEST PRIORITY: edit the provided consultation photograph; do not create a new portrait. ' +
+    'The result must remain recognizably the SAME photograph. Preserve exactly: the person\u2019s identity, ' +
+    'ethnicity, and apparent age; facial expression; head pose and angle; camera position, framing, and focal ' +
+    'length; lighting direction, exposure, and white balance; skin texture, pores, fine lines, redness, and ' +
+    'natural pigmentation; hair, loose strands, and any hair clips; eyelashes, eyelids, eyebrows, and eye shape; ' +
+    'the background; and the clothing. ';
+
+  const viewLead = isOblique
+    ? 'This is a three-quarter or profile photograph: keep the exact head angle and orientation; do not rotate the face toward frontal. '
+    : '';
+
+  // 2 + 3. Short lead and concise, hand-written contributions (no reused bodies).
+  const contribs = [];
+  const primC = concisePrimary(p.primary);
+  if(primC) contribs.push(primC);
+  (p.addons || []).forEach(k => { if(CONCISE_ADDON[k]) contribs.push(CONCISE_ADDON[k]); });
+  const planBody =
+    'Simulate ONLY these bounded changes, applied together, each within its own anatomical zone: ' +
+    contribs.map((c, i) => '(' + (i + 1) + ') ' + c).join('; ') + '. ';
+
+  // 4. Overlap rule, stated as intent rather than "do not double-count".
+  const overlap =
+    'Where treatments affect the same area, combine their effects conservatively; the result should read as a ' +
+    'realistic combined outcome, not the sum of each treatment applied independently. ';
+
+  // 5. Negative block (plan-aware: never forbid a feature the plan treats).
+  const neg = [
+    'make the person look younger',
+    'beautify, smooth, resurface, or improve any untreated area',
+    'slim or narrow the overall face',
+    'brighten, whiten, or even out the skin',
+    'reduce redness or pigmentation',
+    'add makeup',
+    'enlarge, open, or reshape the eyes',
+    'change the eyebrows'
+  ];
+  if(!feat.lips) neg.push('change the lips');
+  if(!feat.nose) neg.push('change the nose');
+  neg.push('sharpen the cheekbones beyond the listed treatment');
+  neg.push('reduce facial fat');
+  neg.push('change the hair, hairline, or clips');
+  const negBlock =
+    'Do NOT do any of the following: ' + neg.join('; ') + '. Every untreated feature must stay exactly as photographed. ';
+
+  // 6. Conservative ceiling / final clinical instruction.
+  const ceiling =
+    'Keep the total result conservative and clinically believable; if uncertain, choose the more conservative ' +
+    'outcome. It should look like the expected result an experienced aesthetic physician would realistically ' +
+    'achieve on this exact photograph, never a facelift, never surgery, and never a general beautification.';
+
+  return NO_TEXT_RULE + ' ' + preserve + viewLead + planBody + overlap + negBlock + ceiling;
+}
+
+module.exports = { buildCorePrompt, VERSIONS, CHIN_JAW_SAFETY, usesChinJawSafety, FILLER_CHIN_JAWLINE_OVERFILLED, SCENARIO_PROMPTS, buildScenarioPrompt, BIOSTIM_NEGATIVE_GUARDRAIL, buildPlanPrompt, buildPlanPromptConcise };
