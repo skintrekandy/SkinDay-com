@@ -4340,9 +4340,14 @@ async function cropToFace(dataUrl, bbox){
     const fx0 = bbox.x0 * iw, fy0 = bbox.y0 * ih;
     const fx1 = bbox.x1 * iw, fy1 = bbox.y1 * ih;
     const fw = fx1 - fx0, fh = fy1 - fy0;
-    const mh   = fw * FACE_CROP_MARGIN_H;
-    const mtop = fw * FACE_CROP_MARGIN_TOP;
-    const mbot = fw * FACE_CROP_MARGIN_BOT;
+    // Face-box WIDTH collapses on profile / near-profile turns, which made the
+    // 90 degree crop zoom in and clip the scalp. Floor the margin reference to a
+    // fraction of face HEIGHT (stable across yaw) so profiles frame like the other
+    // angles; frontal and 45 degree are unaffected (their width exceeds the floor).
+    const ref  = Math.max(fw, fh * 0.6);
+    const mh   = ref * FACE_CROP_MARGIN_H;
+    const mtop = ref * FACE_CROP_MARGIN_TOP;
+    const mbot = ref * FACE_CROP_MARGIN_BOT;
     let cx0 = Math.max(0, Math.round(fx0 - mh));
     const cy0 = Math.max(0, Math.round(fy0 - mtop));
     let cx1 = Math.min(iw, Math.round(fx1 + mh));
@@ -6381,10 +6386,17 @@ syncGenerateBtn();
 </script>
 <script>
 try{ if(typeof sdEmbedActive==='function' && sdEmbedActive()) document.body.classList.add('sd-sub'); }catch(e){}
-window.sdRequestFs=function(el){try{var fn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;if(fn){var p=fn.call(el);if(p&&p.catch)p.catch(function(){});}}catch(e){}};
-window.sdExitFs=function(){try{if(document.fullscreenElement||document.webkitFullscreenElement){var fn=document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen;if(fn)fn.call(document);}}catch(e){}};
 var sdSavedScroll=null;
-['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){document.addEventListener(ev,function(){var fs=document.fullscreenElement||document.webkitFullscreenElement;if(fs){try{var w=window.parent||window;sdSavedScroll=(w.pageYOffset!=null?w.pageYOffset:w.scrollY)||0;}catch(e){sdSavedScroll=null;}}else{['scenarioFsOverlay','previewFsOverlay','consultOverlay'].forEach(function(id){var o=document.getElementById(id);if(o)o.classList.remove('open','staged','fs-rotate');});document.body.style.overflow='';if(sdSavedScroll!=null){var target=sdSavedScroll;sdSavedScroll=null;var w2;try{w2=window.parent||window;}catch(e){w2=window;}var n=0;(function restore(){try{w2.scrollTo(0,target);}catch(e){}if(n++<20)requestAnimationFrame(restore);})();}}});});
+function sdW(){ try{ return window.parent||window; }catch(e){ return window; } }
+function sdMsg(open){ try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'sd:overlayFs',open:!!open}, location.origin); }catch(e){} }
+function sdSaveScroll(){ try{ var w=sdW(); sdSavedScroll=(w.pageYOffset!=null?w.pageYOffset:w.scrollY)||0; }catch(e){} }
+function sdRestoreScroll(){ if(sdSavedScroll==null) return; var target=sdSavedScroll, w=sdW(), t0=Date.now();
+  (function loop(){ var y=0; try{ var d=w.document.documentElement, maxY=Math.max(0,(d.scrollHeight||0)-(w.innerHeight||0)); w.scrollTo(0, Math.min(target,maxY)); y=(w.pageYOffset!=null?w.pageYOffset:w.scrollY)||0; }catch(e){ try{ w.scrollTo(0,target); }catch(_){} }
+    if(Math.abs(y-target)>2 && Date.now()-t0<3000) requestAnimationFrame(loop); })();
+}
+window.sdRequestFs=function(el){ sdSaveScroll(); sdMsg(true); try{var fn=el.requestFullscreen||el.webkitRequestFullscreen||el.msRequestFullscreen;if(fn){var p=fn.call(el);if(p&&p.catch)p.catch(function(){});}}catch(e){} };
+window.sdExitFs=function(){ try{if(document.fullscreenElement||document.webkitFullscreenElement){var fn=document.exitFullscreen||document.webkitExitFullscreen||document.msExitFullscreen;if(fn)fn.call(document);}}catch(e){} sdMsg(false); sdRestoreScroll(); };
+['fullscreenchange','webkitfullscreenchange'].forEach(function(ev){document.addEventListener(ev,function(){var fs=document.fullscreenElement||document.webkitFullscreenElement;if(!fs){['scenarioFsOverlay','previewFsOverlay','consultOverlay'].forEach(function(id){var o=document.getElementById(id);if(o)o.classList.remove('open','staged','fs-rotate');});document.body.style.overflow='';sdMsg(false);sdRestoreScroll();}});});
 (function(){
   var ov=document.getElementById('consultOverlay'); if(!ov) return;
   var btn=document.getElementById('consultBtn');
