@@ -1386,4 +1386,155 @@ function buildScenarioPrompt(scenarioKey, view, baselineType) {
   return NO_TEXT_RULE + ' ' + viewLead + s.prompt;
 }
 
-module.exports = { buildCorePrompt, VERSIONS, CHIN_JAW_SAFETY, usesChinJawSafety, FILLER_CHIN_JAWLINE_OVERFILLED, SCENARIO_PROMPTS, buildScenarioPrompt, BIOSTIM_NEGATIVE_GUARDRAIL };
+// ---- M17 v2: single-pass combined-plan prompt --------------------------------
+// Evidence (Rejuuv Sculptra + chin/jaw + nose screenshot) showed the LAYERED
+// path degrades photographic fidelity: each pass re-renders the whole frame, so
+// texture/pores/lighting/hair/eyelashes/background drift compounds across 3-4
+// generations (worst on obliques/profiles, where the region composites are most
+// likely to fall back to a raw full-frame re-render). This builder produces ONE
+// prompt describing the whole plan, so the model repaints the photograph once
+// instead of N times, returning to the known-good single-generation fidelity.
+//
+// It reuses the SAME clinical clauses the per-treatment builders use (add-on
+// clauses are the CROSS_ADDON_PROMPTS bodies with their layered lead/preserve
+// stripped; filler areas come from fillerAreaExpected/FILLER_AREAS), so the
+// clinical logic never forks. The preservation block is PLAN-AWARE: it locks
+// every sensitive feature EXCEPT the ones the plan actually treats (so a plan
+// that includes lips or nose is not told to keep the lips/nose unchanged).
+//
+// Consumed by the worker when a job carries a plan array (single-pass mode);
+// the layered path stays available for the blinded A/B.
+
+// Strip the layered lead/preserve wrapper off a CROSS_ADDON clause and de-frame
+// the "on top of what is already shown" language, since a single pass builds
+// the whole result from the original photo, not on top of a prior render.
+function planAddonContribution(key){
+  const full = CROSS_ADDON_PROMPTS[key];
+  if(!full) return null;
+  let c = full;
+  if(c.indexOf(ADDON_LEAD) === 0) c = c.slice(ADDON_LEAD.length);
+  const pi = c.lastIndexOf(ADDON_PRESERVE);
+  if(pi >= 0) c = c.slice(0, pi);
+  c = c.trim()
+       .replace(/,?\s*added on top of what is already shown/gi, '')
+       .replace(/\s*on top of the [^.,;]*already visible[^.,;]*/gi, '')
+       .replace(/\s*on top of what is already shown/gi, '')
+       .replace(/than the one already visible/gi, 'relative to the untreated face')
+       .replace(/already visible/gi, 'present');
+  return c.replace(/\s+/g, ' ').trim();
+}
+
+// Concise contribution clause for the PRIMARY block, per treatment type.
+function planPrimaryContribution(sel){
+  const s = sel || {};
+  if(s.type === 'biostim'){
+    const prod = (s.product === 'hdr')
+      ? 'a hyperdilute CaHA (Radiesse) biostimulator response: a firmer, better-supported lower face and jawline with a subtle lift and improved skin quality, energy of support rather than added central volume'
+      : 'a PLLA (Sculptra) biostimulator response: broad, soft, three-dimensional collagen-based support across the temples, lateral cheeks, submalar area, and prejowl region, so the face reads lifted and better supported from the sides, with a cleaner jowl and a continuous temple-to-cheek contour. This is diffuse lateral support under the skin, never central or filler-like fullness and never a rounder or wider face';
+    return prod;
+  }
+  if(s.type === 'laser'){
+    return (s.laserType === 'hifu')
+      ? 'a modest HIFU (focused ultrasound) lift: a subtle lift and tightening of the lower face and jawline with a crisper mandibular line, energy-based tightening only, no added volume'
+      : 'a modest RF (radiofrequency) skin-tightening result: the lower-face skin envelope and jawline read a little firmer, smoother, and cleaner, energy-based tightening only, no added volume';
+  }
+  if(s.type === 'tox'){
+    if(s.toxMode === 'masseter')  return 'a neurotoxin masseter-slimming result: the jaw angle reads slightly narrower and softer, muscle slimming only, no volume and no bone change';
+    if(s.toxMode === 'nefertiti') return 'a neurotoxin Nefertiti-lift result: a slightly cleaner, more lifted jawline and a sharper jaw-to-neck transition, contour refinement only, no volume';
+    return 'a neurotoxin lower-face result combining masseter slimming (a slightly narrower, softer jaw angle) with a Nefertiti lift (a cleaner, more lifted jawline and sharper jaw-to-neck transition), muscle and contour only, no volume and no bone change';
+  }
+  // filler primary
+  let areas = Array.isArray(s.areas) ? s.areas.slice() : String(s.areas || '').split(',');
+  areas = areas.map(a => a.trim()).filter(a => FILLER_AREAS[a]);
+  if(!areas.length) areas = ['chin'];
+  const intensity = s.intensity || 'moderate';
+  const parts = areas.map(a => fillerAreaExpected(a, intensity)).filter(Boolean);
+  return 'a hyaluronic acid filler result: ' + parts.join('; ');
+}
+
+// Which sensitive features does the plan actually treat? Drives the plan-aware
+// preservation block so it never forbids a treated feature.
+function planTreatedFeatures(plan){
+  const f = { lips:false, nose:false, underEye:false };
+  const prim = plan.primary || {};
+  const pAreas = Array.isArray(prim.areas) ? prim.areas : String(prim.areas || '').split(',');
+  if(prim.type === 'filler'){
+    if(pAreas.indexOf('lips') >= 0) f.lips = true;
+    if(pAreas.indexOf('nose') >= 0) f.nose = true;
+    if(pAreas.indexOf('tear_trough') >= 0) f.underEye = true;
+  }
+  (plan.addons || []).forEach(k => {
+    if(k === 'add_lips_filler') f.lips = true;
+    if(k === 'add_nose_filler') f.nose = true;
+    if(k === 'add_tear_trough') f.underEye = true;
+  });
+  return f;
+}
+
+function buildPlanPrompt(plan, view){
+  const p = plan || {};
+  const isOblique = (view === 'oblique_left' || view === 'oblique_right' || view === 'oblique' ||
+                     view === 'l45' || view === 'r45' || view === 'l90' || view === 'r90' ||
+                     view === 'profile_left' || view === 'profile_right' || view === 'profile');
+
+  const frame =
+    'This is an original medical consultation photograph. In a SINGLE edit of this exact photograph, ' +
+    'simulate the combined outcome of the complete treatment plan below. Treat this as an edit of the ' +
+    'original photograph, NOT a re-render: the output must remain the same camera image with only the ' +
+    'planned soft-tissue and contour changes applied. ';
+
+  const viewLead = isOblique
+    ? 'IMPORTANT: this is a three-quarter or profile photograph. Preserve the exact head angle, crop, ' +
+      'perspective, and facial orientation; do not rotate the face toward frontal. Do not rebuild, ' +
+      'repaint, or re-render the face; keep the skin on the more-shadowed side exactly as photographed. '
+    : '';
+
+  // Contribution list. Order here is internal composition only (the model applies
+  // them together); it is never surfaced as a treatment sequence.
+  const contribs = [];
+  const primC = planPrimaryContribution(p.primary);
+  if(primC) contribs.push(primC);
+  (p.addons || []).forEach(k => { const c = planAddonContribution(k); if(c) contribs.push(c); });
+
+  const body =
+    'Apply ALL of the following together as one integrated, coherent result, each within its own ' +
+    'anatomical zone: ' +
+    contribs.map((c, i) => '(' + (i + 1) + ') ' + c.replace(/\.\s*$/, '') + '.').join(' ') + ' ' +
+    'Where zones overlap, keep the combined change conservative and do NOT double-count; each treatment ' +
+    'contributes independently and only within its own region. ';
+
+  // Plan-aware preservation. Global fidelity locks always; feature locks only for
+  // features the plan does NOT treat.
+  const feat = planTreatedFeatures(p);
+  const fidelity =
+    'CRITICAL FIDELITY: preserve the original photograph exactly outside the treated zones. ' +
+    'Keep all skin texture, pores, fine lines, and natural pigmentation; do not smooth, retouch, ' +
+    'blur, even out, or wax the skin anywhere, including inside the treated zones. Keep the exact ' +
+    'lighting and its direction and contrast (do not flatten it), the hair including any strands and ' +
+    'hair around clips, the eyelashes and eyelid margins, the clothing, and the plain background exactly ' +
+    'as in the original. Do not brighten, whiten, add contrast, or apply any beauty-filter effect. ' +
+    'Do not de-age: keep wrinkles, texture, and pigmentation appropriate to the original. ' +
+    'Preserve identity, ethnicity and ethnic features, and apparent age; the result must be ' +
+    'unmistakably the same person in the same photograph. ';
+
+  const locks = [];
+  locks.push('Do not enlarge, open, or alter the eyes; do not raise, darken, or reshape the brows.');
+  if(!feat.lips) locks.push('Do not change lip size, shape, color, fullness, or border.');
+  if(!feat.nose) locks.push('Do not alter the nose.');
+  if(!feat.underEye) locks.push('Do not change the eye shape, eyelid, or lashes.');
+  const lockBlock = locks.length ? (' ' + locks.join(' ')) : '';
+
+  // Single magnitude ceiling for the whole plan: keeps the combined edit
+  // believable and stops the model from reading "combined outcome" as licence
+  // for a bigger, more general transformation (or a facelift/surgery look).
+  const ceiling =
+    ' MAGNITUDE CEILING: keep every change clinically conservative and believable for the stated treatments, ' +
+    'and no larger than each treatment can realistically achieve. Energy-device and neurotoxin contributions must ' +
+    'stay clearly below what filler or a biostimulator can do. The combined result must read as a refined, ' +
+    'natural clinical outcome on the same photograph, never a facelift, never surgery, and never a general ' +
+    'beautification of untreated areas.';
+
+  return NO_TEXT_RULE + ' ' + frame + viewLead + body + fidelity + lockBlock.trim() + ceiling;
+}
+
+module.exports = { buildCorePrompt, VERSIONS, CHIN_JAW_SAFETY, usesChinJawSafety, FILLER_CHIN_JAWLINE_OVERFILLED, SCENARIO_PROMPTS, buildScenarioPrompt, BIOSTIM_NEGATIVE_GUARDRAIL, buildPlanPrompt };
