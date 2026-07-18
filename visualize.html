@@ -965,12 +965,12 @@
 
     <!-- M17: combination add-on builder. v1 Beta caps at one complementary treatment (COMBO_MAX_ADDONS). Hidden outside combination mode. -->
     <div class="card hidden" id="comboCard">
-      <div class="step-num" data-en="Block 2 · Complementary treatment" data-zh="區塊 2 · 加選療程">Block 2 · Complementary treatment</div>
+      <div class="step-num" data-en="Blocks 2-4 · Complementary treatments" data-zh="區塊 2-4 · 加選療程">Blocks 2-4 · Complementary treatments</div>
       <div class="field">
-        <label data-en="Add one complementary treatment (optional), applied together with the primary treatment. Choose one." data-zh="加入一項加選療程（選填），會與主要療程一起呈現。請擇一選擇。">Add one complementary treatment (optional), applied together with the primary treatment. Choose one.</label>
+        <label data-en="Add up to 3 complementary treatments (optional), applied together with the primary treatment." data-zh="加入最多 3 項加選療程（選填），會與主要療程一起呈現。">Add up to 3 complementary treatments (optional), applied together with the primary treatment.</label>
         <div class="addon-grid" id="comboAddonGrid"></div>
       </div>
-      <div class="combo-help" data-en="Beta: one primary treatment plus one complementary treatment, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on." data-zh="Beta：一項主要療程加上一項加選療程，合併為單一模擬影像。灰色選項代表與目前的主要療程沒有已驗證的生成路徑，或主要療程已涵蓋該部位。此版本中，各加選療程的強度為固定設定，標籤顯示其預期呈現的程度。">Beta: one primary treatment plus one complementary treatment, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on.</div>
+      <div class="combo-help" data-en="Beta: one primary treatment plus up to 3 complementary treatments, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on." data-zh="Beta：一項主要療程加上最多 3 項加選療程，合併為單一模擬影像。灰色選項代表與目前的主要療程沒有已驗證的生成路徑，或主要療程已涵蓋該部位。此版本中，各加選療程的強度為固定設定，標籤顯示其預期呈現的程度。">Beta: one primary treatment plus up to 3 complementary treatments, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on.</div>
       <div class="combo-plan-list" id="comboPlanList" style="display:none;">
         <div class="combo-plan-title" data-en="Treatment plan" data-zh="治療計畫">Treatment plan</div>
         <div id="comboPlanItems"></div>
@@ -4527,6 +4527,51 @@ async function cropToFace(dataUrl, bbox){
   }
 }
 
+// gpt-image-2 sometimes returns the edited image with the face at a slightly
+// larger scale (and shifted), so the "after" reads as zoomed-in versus the
+// original. Re-detect the face in the result and place it back at the original's
+// normalized face size and position on a black canvas (the background is already
+// black, so the padding is seamless). Deterministic and self-limiting: any
+// missing or implausible detection, or a sub-threshold delta, leaves the result
+// untouched. Scoped to the combination flow for now.
+async function alignResultToOriginal(sl, angleId){
+  try {
+    const o = sl.faceBbox;
+    if(!o || !sl.resultDataUrl || !sl.originalDataUrl) return;
+    if(!(o.x1 > o.x0) || !(o.y1 > o.y0)) return;
+
+    const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+    const resImg = await loadImage(sl.resultDataUrl);
+    const ra = await mod.analyzePhoto(resImg);
+    const r = ra && ra.faceBbox;
+    if(!r || !(r.x1 > r.x0) || !(r.y1 > r.y0)) return;
+
+    const oH = o.y1 - o.y0, rH = r.y1 - r.y0;      // face height is stable across yaw
+    if(oH < 0.02 || rH < 0.02) return;
+    const s = oH / rH;                             // scale result so face heights match
+    if(s < 0.5 || s > 2.0) return;                 // implausible: skip rather than distort
+
+    const ocx = (o.x0 + o.x1) / 2, ocy = (o.y0 + o.y1) / 2;
+    const rcx = (r.x0 + r.x1) / 2, rcy = (r.y0 + r.y1) / 2;
+    if(Math.abs(s - 1) < 0.02 && Math.abs(ocx - rcx) < 0.015 && Math.abs(ocy - rcy) < 0.015) return;
+
+    const rw = resImg.naturalWidth, rh = resImg.naturalHeight;
+    const dx = ocx * rw - rcx * rw * s;            // map result face centre onto original's
+    const dy = ocy * rh - rcy * rh * s;
+    const c = document.createElement('canvas');
+    c.width = rw; c.height = rh;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, rw, rh);
+    ctx.drawImage(resImg, dx, dy, rw * s, rh * s);
+    sl.resultDataUrl = c.toDataURL('image/jpeg', 0.95);
+    sl.rawAiDataUrl = sl.resultDataUrl;
+    console.log('[Visualize] aligned ' + (angleId || '?') + ' result to original (scale ' + s.toFixed(3) + ')');
+  } catch(e){
+    console.warn('[Visualize] alignResultToOriginal skipped:', e && e.message);
+  }
+}
+
 function renderActiveSlot(){
   const sl = activeSlot();
   const multi = state.selectedAngles.length > 1;
@@ -6646,10 +6691,10 @@ const COMBO_ADDON_DEFS = [
     lineEn:'Neurotoxin \u00b7 jawline & neck (Nefertiti) \u00b7 subtle', lineZh:'\u8089\u6bd2 \u00b7 \u4e0b\u984e\u7dda\u8207\u9838\u90e8\uff08Nefertiti\uff09 \u00b7 \u8f15\u5fae' }
 ];
 const COMBO_ADDON_META = COMBO_ADDON_DEFS.reduce((m, d) => (m[d.key] = d, m), {});
-const COMBO_MAX_ADDONS = 1; // v1 (Beta): primary + ONE complementary treatment.
+const COMBO_MAX_ADDONS = 3; // TESTING primary + up to 3 complementary treatments.
 // Soft limit only: the data model (state.comboAddons is an array) and the whole
-// pipeline still support multiple. Raise this to expand (V2 = 3, V3 = unlimited)
-// once combined-image fidelity proves out; nothing else needs to change.
+// pipeline still support multiple. Watch fidelity as passes stack (esp. profiles
+// and diffuse add-ons with no region composite); lower back to 1 if it drifts.
 
 const FILLER_AREA_LABELS_ZH = {
   chin_jawline: '\u4e0b\u5df4\uff0b\u4e0b\u984e\u7dda', chin: '\u4e0b\u5df4', jawline: '\u4e0b\u984e\u7dda',
@@ -7057,6 +7102,9 @@ async function runComboChain(angleId, auth, addons, primaryType, blocks, fillerI
     _progressiveOnDone(angleId);
     return;
   }
+  // Correct any zoom/framing drift on the primary baseline before the add-on
+  // passes composite on top of it, so the whole chain stays aligned.
+  await alignResultToOriginal(sl, angleId);
   sl.comboCompleted = 1;
   sl.comboError = null;
   let current = sl.resultDataUrl;
@@ -7076,6 +7124,8 @@ async function runComboChain(angleId, auth, addons, primaryType, blocks, fillerI
       break; // keep the partial combined result through the last good pass
     }
   }
+  // Final safety: re-align in case an add-on pass reintroduced scale drift.
+  await alignResultToOriginal(sl, angleId);
   if(sl.faceBbox){
     try { sl.cropResultCache = await cropToFace(sl.resultDataUrl, sl.faceBbox); } catch(e){}
   }
