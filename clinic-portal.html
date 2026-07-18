@@ -2103,7 +2103,11 @@ const GRID_PAIRS = {
   // sentence in a prompt.
   '3h':  [[0, 1], [0, 2]],
   '2x2': [[0, 2], [1, 3]],
-  '2x3': [[0, 3], [1, 4], [2, 5]]
+  '2x3': [[0, 3], [1, 4], [2, 5]],
+  // 5 angles, Before row (0-4) over After row (5-9). One export deposits all
+  // five angle cases at once; the save form defaults each pair to ANGLE_ORDER
+  // (frontal / R45 / L45 / R90 / L90), so both 90-degree profiles are captured.
+  '2x5': [[0, 5], [1, 6], [2, 7], [3, 8], [4, 9]]
 };
 // Angle dropdown for the case-save form. VALUES are the canonical forms the
 // system already matches on: oblique_right/oblique_left for 45 degrees,

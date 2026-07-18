@@ -97,7 +97,8 @@
     .upload-zone.bg-removed { border-color: rgba(201,169,110,0.5); }
     .upload-zone img.thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
     .upload-zone.bg-black img.thumb { background: #1C1714; }
-    .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-zone .main-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .upload-zone.filled .main-input { display: none; }
     .upload-zone.filled input.main-input { display: none; }
     .upload-plus { width: 30px; height: 30px; border: 1.5px solid var(--border); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 16px; }
     .upload-txt { font-size: 0.74rem; color: var(--muted); }
@@ -108,10 +109,9 @@
     .slot-label:focus { cursor: text; color: #fff; border-bottom: 1px solid rgba(201,169,110,0.6); }
     .slot-edit-btn { background: rgba(250,247,242,0.16); border: 1px solid rgba(250,247,242,0.32); border-radius: 4px; color: rgba(250,247,242,0.95); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; padding: 2px 7px; flex-shrink: 0; line-height: 1.3; font-family: 'DM Sans', sans-serif; }
     .slot-edit-btn:hover { background: var(--gold); border-color: var(--gold); color: #fff; }
-    .change-btn { position: absolute; top: 7px; right: 7px; z-index: 3; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.68rem; font-family: 'DM Sans', sans-serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; display: none; }
+    .change-btn { position: absolute; top: 7px; right: 7px; z-index: 5; background: rgba(28,23,20,0.6); border: none; color: var(--cream); font-size: 0.68rem; font-family: 'DM Sans', sans-serif; padding: 3px 8px; border-radius: 3px; cursor: pointer; display: none; }
     .upload-zone.filled .change-btn { display: block; }
-    .change-input { position: absolute; top: 7px; right: 7px; z-index: 4; opacity: 0; width: 56px; height: 22px; cursor: pointer; display: none; }
-    .upload-zone.filled .change-input { display: block; }
+    .change-input { display: none; }
     .bg-badge { position: absolute; top: 7px; left: 7px; z-index: 3; background: rgba(201,169,110,0.85); color: #fff; font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; display: none; font-weight: 600; }
     .upload-zone.bg-removed .bg-badge,
     .upload-zone.bg-black .bg-badge { display: block; }
@@ -168,8 +168,11 @@
     .preset-name { font-size: 0.78rem; font-weight: 500; color: var(--deep); }
     .preset-desc { font-size: 0.67rem; color: var(--muted); line-height: 1.4; }
     .zoom-controls { display: grid; gap: 12px; margin-bottom: 20px; }
-    .zoom-box { display: flex; flex-direction: column; gap: 6px; }
-    .zoom-label { font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--deep); display: flex; justify-content: space-between; }
+    .zoom-box { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff; }
+    .zoom-box-head { display: flex; align-items: center; gap: 9px; }
+    .zoom-thumb { width: 42px; height: 42px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: #1C1714; flex-shrink: 0; }
+    .zoom-name { font-size: 0.82rem; font-weight: 600; color: var(--deep); letter-spacing: 0.02em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .zoom-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
     .zoom-label span { color: var(--rose); font-weight: 600; }
     input[type=range].zoom-slider { width: 100%; accent-color: var(--rose); cursor: pointer; }
     .preview-area { display: grid; gap: 12px; margin-bottom: 8px; }
@@ -869,7 +872,7 @@ function makeSlotHTML(i, hideLabel) {
       <input type="file" accept="image/*" class="main-input" id="main-input-${i}"/>
       ${labelBar}
       <div class="bg-badge" id="bg-badge-${i}">Black bg</div>
-      <button class="change-btn">Change</button>
+      <button type="button" class="change-btn" onclick="document.getElementById('change-input-${i}').click()">Change</button>
       <input type="file" accept="image/*" class="change-input" id="change-input-${i}"/>
     </div>
   `;
@@ -963,12 +966,9 @@ function updateSlotLabel(i, val) {
     const txt = zone.querySelector('.upload-txt');
     if (txt && !zone.classList.contains('filled')) txt.textContent = label;
   }
-  // Sync zoom slider label
-  const zoomBox = document.getElementById(`zoom-${i}`);
-  if (zoomBox) {
-    const lblEl = zoomBox.closest('.zoom-box')?.querySelector('.zoom-label');
-    if (lblEl) lblEl.innerHTML = `${label} zoom <span id="zVal-${i}">${Math.round(S.slots[i].zoom*100)}%</span>`;
-  }
+  // Sync zoom card name
+  const zName = document.getElementById(`zName-${i}`);
+  if (zName) zName.textContent = zoomBoxName(i);
   // Sync preview tag input
   const prevInp = document.getElementById(`preview-label-${i}`);
   if (prevInp) prevInp.value = label;
@@ -1361,19 +1361,38 @@ function getPannedBoxes() {
 // ============================================================
 // ZOOM CONTROLS (dynamic per slot count)
 // ============================================================
+function zoomBoxName(i) {
+  // Unique, image-identifying name for each zoom control. In a multi-column
+  // grid with row labels (e.g. 2x5: Before/After over 5 angle columns), every
+  // slot's own label repeats, so append the column number to disambiguate.
+  const sl = S.slots[i];
+  const cfg = GRID_CONFIG[S.grid] || {};
+  const cols = cfg.cols || 1;
+  const rowLabelled = cfg.rowLabels && cfg.rowLabels.length;
+  return (cols > 1 && rowLabelled) ? `${sl.label} · ${(i % cols) + 1}` : sl.label;
+}
+
 function rebuildZoomControls() {
   const wrap = document.getElementById('zoomControls');
   const filled = S.slots.filter(sl => sl.img);
   if (!filled.length) { wrap.innerHTML = ''; return; }
-  const cols = filled.length >= 3 ? 3 : filled.length === 1 ? 1 : 2;
-  wrap.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-  wrap.innerHTML = S.slots.map((sl, i) => sl.img ? `
+  // Responsive: as many cards per row as fit, each a fixed minimum width, so a
+  // 10-slot 2x5 set no longer sprawls into an unreadable wall of sliders.
+  wrap.style.gridTemplateColumns = 'repeat(auto-fill, minmax(210px, 1fr))';
+  wrap.innerHTML = S.slots.map((sl, i) => {
+    if (!sl.img) return '';
+    const thumb = sl.processedDataUrl || sl.origDataUrl || '';
+    return `
     <div class="zoom-box">
-      <div class="zoom-label">${sl.label} zoom <span id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
+      <div class="zoom-box-head">
+        ${thumb ? `<img class="zoom-thumb" src="${thumb}" alt="">` : ''}
+        <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}</div>
+      </div>
+      <div class="zoom-label">Zoom <span id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
       <input type="range" class="zoom-slider" id="zoom-${i}" min="60" max="160" value="${Math.round(sl.zoom*100)}" step="5"
         oninput="onZoom(${i},this.value)"/>
-    </div>
-  ` : '').join('');
+    </div>`;
+  }).join('');
 }
 
 function onZoom(idx, val) {
