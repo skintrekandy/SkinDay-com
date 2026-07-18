@@ -128,6 +128,7 @@
     .combo-plan-item .dotm { width:6px; height:6px; border-radius:50%; background:var(--gold); flex-shrink:0; }
     .combo-plan-item.primary-item .dotm { background:var(--rose); }
     .combo-plan-item .rm { margin-left:auto; background:none; border:none; cursor:pointer; color:var(--rose); font-size:.72rem; padding:2px 4px; }
+    .combo-quality-note { margin-top:12px; font-size:.75rem; line-height:1.55; color:var(--muted); border-left:2px solid var(--gold); padding:6px 0 6px 11px; }
     .combo-summary { margin-top:16px; background:var(--warm, #FAF7F2); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
     .combo-summary-title { font-size:.68rem; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
     .combo-summary ul { list-style:none; margin:0; padding:0; }
@@ -899,7 +900,7 @@
             <button class="pill active" data-volume="moderate" type="button"><strong data-en="Natural" data-zh="自然">Natural</strong></button>
             <button class="pill" data-volume="enhanced" type="button"><strong data-en="Enhanced" data-zh="加強">Enhanced</strong></button>
           </div>
-          <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Natural: 1 syringe.</div>
+          <div class="small" id="fillerVolumeHelp" style="margin-top:6px;color:var(--muted);font-style:italic;">Natural: a subtle, natural-looking correction.</div>
         </div>
       </div>
 
@@ -967,13 +968,14 @@
     <div class="card hidden" id="comboCard">
       <div class="step-num" data-en="Blocks 2-4 · Complementary treatments" data-zh="區塊 2-4 · 加選療程">Blocks 2-4 · Complementary treatments</div>
       <div class="field">
-        <label data-en="Add up to 3 complementary treatments (optional), applied together with the primary treatment." data-zh="加入最多 3 項加選療程（選填），會與主要療程一起呈現。">Add up to 3 complementary treatments (optional), applied together with the primary treatment.</label>
+        <label data-en="Add up to 2 complementary treatments (optional), applied together with the primary treatment." data-zh="加入最多 2 項加選療程（選填），會與主要療程一起呈現。">Add up to 2 complementary treatments (optional), applied together with the primary treatment.</label>
         <div class="addon-grid" id="comboAddonGrid"></div>
       </div>
-      <div class="combo-help" data-en="Beta: one primary treatment plus up to 3 complementary treatments, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on." data-zh="Beta：一項主要療程加上最多 3 項加選療程，合併為單一模擬影像。灰色選項代表與目前的主要療程沒有已驗證的生成路徑，或主要療程已涵蓋該部位。此版本中，各加選療程的強度為固定設定，標籤顯示其預期呈現的程度。">Beta: one primary treatment plus up to 3 complementary treatments, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on.</div>
+      <div class="combo-help" data-en="Beta: one primary treatment plus up to 2 complementary treatments, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on." data-zh="Beta：一項主要療程加上最多 2 項加選療程，合併為單一模擬影像。灰色選項代表與目前的主要療程沒有已驗證的生成路徑，或主要療程已涵蓋該部位。此版本中，各加選療程的強度為固定設定，標籤顯示其預期呈現的程度。">Beta: one primary treatment plus up to 2 complementary treatments, in one combined visualization. Greyed options have no validated generation pathway with the selected primary treatment, or the primary treatment already covers that area. Add-on intensity is fixed per option in this version; the tag shows the expected character of each add-on.</div>
       <div class="combo-plan-list" id="comboPlanList" style="display:none;">
         <div class="combo-plan-title" data-en="Treatment plan" data-zh="治療計畫">Treatment plan</div>
         <div id="comboPlanItems"></div>
+        <div class="combo-quality-note" data-en="Heads up: a combination plan is simulated in several passes (one per treatment), so the image quality is a little lower than a single-treatment simulation, and it softens further with each treatment you add. For the sharpest result, keep the plan to one or two treatments." data-zh="提醒：組合療程會分成多個階段模擬（每項療程一個階段），因此影像品質會略低於單一療程模擬，且每多加一項療程就會更柔化。若要獲得最清晰的結果，建議將計畫控制在一至兩項療程。">Heads up: a combination plan is simulated in several passes (one per treatment), so the image quality is a little lower than a single-treatment simulation, and it softens further with each treatment you add. For the sharpest result, keep the plan to one or two treatments.</div>
       </div>
     </div>
 
@@ -1056,8 +1058,8 @@
       <div id="courseControl" style="display:none;margin-bottom:14px;">
         <div style="font-size:13px;letter-spacing:.04em;text-transform:uppercase;opacity:.75;margin-bottom:8px;">Response Preview</div>
         <div class="view-toggle" id="courseToggle">
-          <button type="button" id="courseExpected" class="active">Baseline (3-4 vials)</button>
-          <button type="button" id="courseEnhanced" class="strong-tab">Ceiling (6-8+ vials)</button>
+          <button type="button" id="courseExpected" class="active">Baseline</button>
+          <button type="button" id="courseEnhanced" class="strong-tab">Ceiling</button>
         </div>
         <div class="small" id="courseHelp" style="margin-top:6px;color:var(--muted);">
           <span id="courseHelpExpected">Baseline: typical treatment plan. Sets realistic expectations for most patients.</span>
@@ -1079,7 +1081,7 @@
           <button type="button" id="biostimViewExpected" class="active">Expected</button>
           <button type="button" id="biostimViewOptimistic">Optimistic</button>
         </div>
-        <div class="small" style="margin-top:6px;color:var(--muted);" id="biostimViewHelp">Expected: realistic outcome after 3-4 vials for most patients.</div>
+        <div class="small" style="margin-top:6px;color:var(--muted);" id="biostimViewHelp">Expected: a realistic outcome for most patients.</div>
       </div>
     </div>
     <div class="compare-wrap" id="compareWrap" style="display:none;">
@@ -1124,7 +1126,7 @@
     <div class="scenarios-grid">
       <button class="scenario-btn" type="button" data-scenario="stronger_sculptra" id="scenBtn_stronger_sculptra">
         <strong data-en="Stronger biostimulation response" data-zh="更明顯的童顏針／膠原增生反應">Stronger biostimulation response</strong>
-        <span data-en="A fuller response after 6-8+ vials/syringes, with more lateral support" data-zh="6–8 瓶／支以上可能帶來更飽滿的反應，並呈現更明顯的外側支撐">A fuller response after 6-8+ vials/syringes, with more lateral support</span>
+        <span data-en="A fuller response, with more lateral support" data-zh="更飽滿的反應，並呈現更明顯的外側支撐">A fuller response, with more lateral support</span>
         <em class="credit-tag">1 credit</em>
       </button>
       <button class="scenario-btn" type="button" data-scenario="add_chin_jaw_filler" id="scenBtn_add_chin_jaw_filler">
@@ -3233,22 +3235,17 @@ function updatePhotoGuide(){
 }
 
 /* ───────── Filler: single-area selection ───────── */
-// Per-area volume tier labels. Large-volume areas scale 1 -> 4+ syringes;
-// delicate areas (nose, tear trough, lips) top out around 1-2 syringes.
+// Qualitative volume character per tier. No dose figures: a syringe or vial
+// count is a treatment recommendation the clinician makes in person, not
+// something this tool states. The tier name plus this descriptor conveys the
+// level without advising a dose.
 const FILLER_VOLUME_LABELS = {
-  chin_jawline: { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
-  chin:         { conservative: '1 syringe', moderate: '1-2 syringes', enhanced: '2-3 syringes' },
-  jawline:      { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '3-4 syringes' },
-  cheeks:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
-  temple:       { conservative: '1 syringe', moderate: '2-3 syringes', enhanced: '4+ syringes' },
-  nose:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
-  tear_trough:  { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
-  lips:         { conservative: 'Light (under 1 syringe)', moderate: '1 syringe', enhanced: 'Full (1-2 syringes)' },
-  nasolabial_folds: { conservative: '1 syringe', moderate: '1-2 syringes', enhanced: '2 syringes' }
+  conservative: 'a subtle, natural-looking correction',
+  moderate:     'a balanced, moderate correction',
+  enhanced:     'a fuller, more defined correction'
 };
 function fillerVolumeLabel(area, tier){
-  const a = FILLER_VOLUME_LABELS[area] || FILLER_VOLUME_LABELS.chin_jawline;
-  return a[tier] || a.conservative;
+  return FILLER_VOLUME_LABELS[tier] || FILLER_VOLUME_LABELS.conservative;
 }
 function updateFillerVolumeHelp(){
   const help = document.getElementById('fillerVolumeHelp');
@@ -4890,7 +4887,7 @@ function updateStrongBtn(){
     if(courseHelp) courseHelp.textContent = doneCount + ' of ' + total + ' previews ready · Runs in background, keep this tab open.';
   } else {
     const anyError = state.selectedAngles.some(id => state.slots[id].strongStatus === 'error');
-    enhBtn.textContent = anyError ? 'Ceiling (retry)' : 'Ceiling (6-8+ vials)';
+    enhBtn.textContent = anyError ? 'Ceiling (retry)' : 'Ceiling';
   }
 }
 
@@ -4946,7 +4943,7 @@ function applyActiveView(){
     state.courseMode = 'standard';
     if(expBtn) expBtn.classList.add('active');
     if(optBtn) optBtn.classList.remove('active');
-    if(helpEl) helpEl.textContent = 'Expected: realistic outcome after 3-4 vials for most patients.';
+    if(helpEl) helpEl.textContent = 'Expected: a realistic outcome for most patients.';
     applyActiveView();
     document.getElementById('simTag').textContent = t('simulatedPrefix') + ' · ' + treatmentName() +
       (state.selectedAngles.length > 1 ? ' · ' + ANGLE_DEF[state.activeAngle].short : '');
@@ -4957,7 +4954,7 @@ function applyActiveView(){
     state.courseMode = 'enhanced';
     if(expBtn) expBtn.classList.remove('active');
     if(optBtn) optBtn.classList.add('active');
-    if(helpEl) helpEl.textContent = 'Optimistic: upper-range result after 3-4 vials for strong responders.';
+    if(helpEl) helpEl.textContent = 'Optimistic: an upper-range result for strong responders.';
     applyActiveView();
     document.getElementById('simTag').textContent = t('simulatedPrefix') + ' · ' + treatmentName() +
       (state.selectedAngles.length > 1 ? ' · ' + ANGLE_DEF[state.activeAngle].short : '') + ' · Optimistic';
@@ -5791,7 +5788,7 @@ function scenarioExportLabel(scenarioKey, baseLabel){
 }
 
 const SCENARIO_DESCRIPTIONS = {
-  stronger_sculptra:   'Higher-dose scenario (6-8+ vials/syringes). Upper-range result, not guaranteed.',
+  stronger_sculptra:   'Stronger-response scenario. Upper-range result, not guaranteed.',
   add_chin_jaw_filler: 'Combination-treatment scenario. Not a guaranteed outcome.',
   add_chin_filler:     'Add-on scenario. Not a guaranteed outcome.',
   add_jawline_filler:  'Add-on scenario. Not a guaranteed outcome.',
@@ -6662,7 +6659,7 @@ document.querySelectorAll('.scenario-btn[data-scenario]').forEach(btn => {
 // hierarchy - there is no per-add-on intensity pathway in v1).
 const COMBO_ADDON_DEFS = [
   { key:'add_chin_jaw_filler',   shortEn:'Chin + jawline filler',      shortZh:'\u4e0b\u5df4\uff0b\u4e0b\u984e\u7dda\u73bb\u5c3f\u9178', magEn:'defined', magZh:'\u660e\u986f',
-    lineEn:'HA filler \u00b7 chin + jawline \u00b7 defined (about 2 syringes)', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u4e0b\u5df4\uff0b\u4e0b\u984e\u7dda \u00b7 \u660e\u986f\uff08\u7d04 2 \u652f\uff09' },
+    lineEn:'HA filler \u00b7 chin + jawline \u00b7 defined', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u4e0b\u5df4\uff0b\u4e0b\u984e\u7dda \u00b7 \u660e\u986f' },
   { key:'add_chin_filler',       shortEn:'Chin filler',                shortZh:'\u4e0b\u5df4\u73bb\u5c3f\u9178', magEn:'defined', magZh:'\u660e\u986f',
     lineEn:'HA filler \u00b7 chin \u00b7 defined', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u4e0b\u5df4 \u00b7 \u660e\u986f' },
   { key:'add_jawline_filler',    shortEn:'Jawline filler',             shortZh:'\u4e0b\u984e\u7dda\u73bb\u5c3f\u9178', magEn:'defined', magZh:'\u660e\u986f',
@@ -6678,7 +6675,7 @@ const COMBO_ADDON_DEFS = [
   { key:'add_nose_filler',       shortEn:'Nose filler',                shortZh:'\u9f3b\u90e8\u73bb\u5c3f\u9178', magEn:'refined', magZh:'\u7cbe\u7dfb',
     lineEn:'HA filler \u00b7 nose \u00b7 refined', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u9f3b\u90e8 \u00b7 \u7cbe\u7dfb' },
   { key:'add_lips_filler',       shortEn:'Lip filler',                 shortZh:'\u5507\u90e8\u73bb\u5c3f\u9178', magEn:'full', magZh:'\u98fd\u6eff',
-    lineEn:'HA filler \u00b7 lips \u00b7 full (about 2 mL)', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u5634\u5507 \u00b7 \u98fd\u6eff\uff08\u7d04 2 mL\uff09' },
+    lineEn:'HA filler \u00b7 lips \u00b7 full', lineZh:'\u73bb\u5c3f\u9178\u586b\u5145 \u00b7 \u5634\u5507 \u00b7 \u98fd\u6eff' },
   { key:'add_biostim_lift',      shortEn:'Biostimulation',             shortZh:'\u81a0\u539f\u589e\u751f', magEn:'', magZh:'',
     lineEn:'Biostimulator \u00b7 lateral face', lineZh:'\u81a0\u539f\u589e\u751f \u00b7 \u5916\u5074\u81c9\u90e8' },
   { key:'add_rf',                shortEn:'RF skin tightening',         shortZh:'\u96fb\u6ce2\u62c9\u76ae\u7dca\u7dfb', magEn:'subtle', magZh:'\u8f15\u5fae',
@@ -6691,10 +6688,10 @@ const COMBO_ADDON_DEFS = [
     lineEn:'Neurotoxin \u00b7 jawline & neck (Nefertiti) \u00b7 subtle', lineZh:'\u8089\u6bd2 \u00b7 \u4e0b\u984e\u7dda\u8207\u9838\u90e8\uff08Nefertiti\uff09 \u00b7 \u8f15\u5fae' }
 ];
 const COMBO_ADDON_META = COMBO_ADDON_DEFS.reduce((m, d) => (m[d.key] = d, m), {});
-const COMBO_MAX_ADDONS = 3; // TESTING primary + up to 3 complementary treatments.
+const COMBO_MAX_ADDONS = 2; // primary + up to 2 complementary treatments (3 total).
 // Soft limit only: the data model (state.comboAddons is an array) and the whole
-// pipeline still support multiple. Watch fidelity as passes stack (esp. profiles
-// and diffuse add-ons with no region composite); lower back to 1 if it drifts.
+// pipeline still support more. Combined-image fidelity degrades as passes stack
+// (each add-on is another re-render), so this is held at 2; lower to 1 if needed.
 
 const FILLER_AREA_LABELS_ZH = {
   chin_jawline: '\u4e0b\u5df4\uff0b\u4e0b\u984e\u7dda', chin: '\u4e0b\u5df4', jawline: '\u4e0b\u984e\u7dda',
