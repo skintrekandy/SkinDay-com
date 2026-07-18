@@ -1183,6 +1183,11 @@ function renderPageCards(clinicsData, append) {
       return ` · ${d < 1 ? (d*1000).toFixed(0)+'m' : d.toFixed(1)+'km'}`;
     })();
 
+    const profileHref = (() => {
+      const s = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
+      return s ? '/clinic/' + s : '#';
+    })();
+
     return `
       <div class="clinic-card${hasPrice ? '' : ' no-price'}" data-id="${c.id}">
         ${photoBanner}
@@ -1209,7 +1214,7 @@ function renderPageCards(clinicsData, append) {
           </span>
         </div>
         <div class="card-footer">
-          <a href="#" class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">View profile →</a>
+          <a href="${profileHref}" class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">View profile →</a>
           <button class="btn-compare-card" id="cmp-${c.id}" onclick="toggleCompare('${c.id}')">+ Compare</button>
         </div>
       </div>`;
@@ -1577,14 +1582,21 @@ window.cardVote = async function(clinicId, vote, btn) {
   try {
     const res = await fetch('/api/submit-visit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote === 'yes', access_token: session.access_token })
+      body: JSON.stringify({ clinic_id: String(clinicId), would_return: vote, access_token: session.access_token })
     });
     if (res.status === 409) { showToast('You have already voted for this clinic.'); return; }
     if (res.ok) {
       const countEl = document.getElementById('vote-' + vote + '-count-' + clinicId);
       if (countEl) countEl.textContent = parseInt(countEl.textContent || '0') + 1;
+    } else {
+      // Revert the optimistic button state and let the user know it did not save.
+      [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.remove('voted', 'voted-on'));
+      showToast('Could not record your vote. Please try again.');
     }
-  } catch(e) {}
+  } catch(e) {
+    [yBtn, nBtn].filter(Boolean).forEach(b => b.classList.remove('voted', 'voted-on'));
+    showToast('Could not record your vote. Please try again.');
+  }
 };
 
 // ─── MISSING CLINIC ───────────────────────────────────────────
@@ -1790,7 +1802,7 @@ function initPins() {
   PIN_ACTIVE = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,   scale: 1.5,  labelOrigin: new google.maps.Point(0, -30) };
 }
 
-function isMobileMapUI() { return window.matchMedia('(hover: none)').matches; }
+function isMobileMapUI() { return window.matchMedia('(max-width: 768px)').matches; }
 function _normCid(cid) { return String(cid); }
 function _getClinic(cid) { return _allClinics.find(c => String(c.id) === _normCid(cid)) || null; }
 function _getMarker(cid) { return _markers.find(m => m._cid === _normCid(cid) && !m._count) || null; }
