@@ -1891,7 +1891,7 @@ function initPins() {
   PIN_ACTIVE = { path: PIN_PATH, fillColor: '#B06070', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2,   scale: 1.5,  labelOrigin: new google.maps.Point(0, -30) };
 }
 
-function isMobileMapUI() { return window.matchMedia('(hover: none)').matches; }
+function isMobileMapUI() { return window.matchMedia('(max-width: 768px)').matches; }
 function _normCid(cid) { return String(cid); }
 function _getClinic(cid) { return _allClinics.find(c => String(c.id) === _normCid(cid)) || null; }
 function _getMarker(cid) { return _markers.find(m => m._cid === _normCid(cid) && !m._count) || null; }
