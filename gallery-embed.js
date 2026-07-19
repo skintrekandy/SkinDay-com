@@ -270,13 +270,15 @@
     '}' +
     '.lb.open { display:flex; }' +
     '.lb-inner { width:100%; max-width:1180px; max-height:100%; overflow:auto; }' +
-    '.lb .pair, .lb .strip { background:transparent; gap:10px; }' +
+    '.lb .pair { display:flex; justify-content:center; align-items:center; gap:10px; background:transparent; }' +
+    '.lb .strip { background:transparent; gap:10px; }' +
     '.lb .frame { background:transparent; overflow:visible; }' +
-    '.lb .frame img {' +
-      'aspect-ratio:auto; object-fit:contain;' +
-      'width:100%; height:auto; max-height:76vh;' +
-    '}' +
-    '@media (max-width:560px){ .lb .pair, .lb .strip { grid-template-columns:1fr; } }' +
+    '.lb .pair .frame { display:flex; }' +
+    '.lb .frame img { aspect-ratio:auto; object-fit:contain; width:100%; height:auto; max-height:76vh; }' +
+    // Pair images size to their own shape (not a fixed half-column), so portrait
+    // full-face and landscape lower-face both sit right next to each other.
+    '.lb .pair .frame img { width:auto; max-width:560px; max-height:80vh; }' +
+    '@media (max-width:560px){ .lb .pair { flex-direction:column; } .lb .pair .frame img { max-width:92vw; max-height:40vh; } }' +
     '.lb .meta {' +
       'border-top:0; padding:14px 0 0; text-align:center;' +
       'color:#e8e0d6; opacity:.8; font-size:13px;' +
@@ -377,24 +379,22 @@
     });
   }
 
-  // A flat list of every before/after pair in the gallery -- each angle of each
-  // case is one slide -- so the lightbox arrows step through EVERYTHING and every
-  // case gets working prev/next, not just multi-angle cards.
+  // The lightbox arrows move between the ANGLES OF ONE CASE only -- never across
+  // to a different patient. slides is rebuilt for whichever card was opened.
   var slides = [];
   var lbIdx = 0;
 
-  function buildSlides() {
-    slides = [];
-    host.querySelectorAll('[data-series]').forEach(function (cardEl) {
-      var tabs = cardEl.querySelectorAll('[role="tab"]');
-      if (tabs.length) {
-        Array.prototype.forEach.call(tabs, function (tab) {
-          slides.push({ cardEl: cardEl, tab: tab });
-        });
-      } else {
-        slides.push({ cardEl: cardEl, tab: null });
-      }
-    });
+  function slidesForCard(cardEl) {
+    var out = [];
+    var tabs = cardEl.querySelectorAll('[role="tab"]');
+    if (tabs.length) {
+      Array.prototype.forEach.call(tabs, function (tab) {
+        out.push({ cardEl: cardEl, tab: tab });
+      });
+    } else {
+      out.push({ cardEl: cardEl, tab: null });
+    }
+    return out;
   }
 
   function renderSlide(i) {
@@ -435,18 +435,13 @@
 
   function openLightbox(cardEl) {
     if (!lb || !cardEl) return;
-    if (!slides.length) buildSlides();
-    // Start on the angle the visitor is actually looking at, then let the arrows
-    // walk the whole gallery from there.
+    // Only this case's angles. Single-angle cases get one slide (no arrows).
+    slides = slidesForCard(cardEl);
     var selectedTab = cardEl.querySelector('[role="tab"][aria-selected="true"]');
-    var startIdx = -1, firstOfCard = -1;
+    var startIdx = 0;
     for (var i = 0; i < slides.length; i++) {
-      if (slides[i].cardEl !== cardEl) continue;
-      if (firstOfCard < 0) firstOfCard = i;
       if (!slides[i].tab || slides[i].tab === selectedTab) { startIdx = i; break; }
     }
-    if (startIdx < 0) startIdx = firstOfCard >= 0 ? firstOfCard : 0;
-    if (startIdx >= slides.length) return;
     renderSlide(startIdx);
     lb.classList.add('open');
     // The host page keeps scrolling behind a fixed overlay otherwise, which reads
@@ -463,7 +458,6 @@
 
   function wireLightbox() {
     if (!useLightbox) return;
-    buildSlides();
     host.querySelectorAll('img').forEach(function (img) {
       img.addEventListener('click', function () {
         openLightbox(img.closest('[data-series]'));

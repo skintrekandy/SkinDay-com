@@ -455,6 +455,7 @@
         </button>
       </div>
       <div class="zoom-controls" id="zoomControls"></div>
+      <div class="preview-area p-2" id="previewArea" style="display:none" aria-hidden="true"></div>
     </div>
 
     <!-- Branding -->
@@ -1461,7 +1462,8 @@ function setupCropGesture(cv, idx) {
 // ============================================================
 function rebuildPreviewArea() {
   const wrap = document.getElementById('previewArea');
-  if (!wrap) return; // export-preview grid removed; crop cards are the preview now
+  if (!wrap) return; // preview canvases are hidden (crop cards are the visible UI),
+  // but the clinic portal reads cv-0..cv-N to detect filled slots + build save thumbnails
   const cfg = GRID_CONFIG[S.grid];
   const countClass = {2:'p-2', 3:'p-3', 4:'p-4', 6:'p-6'}[cfg.count] || 'p-2';
   wrap.className = 'preview-area ' + countClass;
