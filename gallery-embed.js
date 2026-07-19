@@ -270,14 +270,14 @@
     '}' +
     '.lb.open { display:flex; }' +
     '.lb-inner { width:100%; max-width:1180px; max-height:100%; overflow:auto; }' +
-    '.lb .pair { display:flex; justify-content:center; align-items:center; gap:10px; background:transparent; }' +
+    '.lb .pair { display:flex; justify-content:center; align-items:center; gap:0; background:transparent; }' +
     '.lb .strip { background:transparent; gap:10px; }' +
     '.lb .frame { background:transparent; overflow:visible; }' +
-    '.lb .pair .frame { display:flex; }' +
+    // frame hugs its image (not a fixed half-column), so portrait and landscape
+    // pairs both sit edge to edge with no gap in the middle.
+    '.lb .pair .frame { display:flex; flex:0 0 auto; width:auto; max-width:none; }' +
     '.lb .frame img { aspect-ratio:auto; object-fit:contain; width:100%; height:auto; max-height:76vh; }' +
-    // Pair images size to their own shape (not a fixed half-column), so portrait
-    // full-face and landscape lower-face both sit right next to each other.
-    '.lb .pair .frame img { width:auto; max-width:560px; max-height:80vh; }' +
+    '.lb .pair .frame img { width:auto; height:auto; max-width:48vw; max-height:82vh; }' +
     '@media (max-width:560px){ .lb .pair { flex-direction:column; } .lb .pair .frame img { max-width:92vw; max-height:40vh; } }' +
     '.lb .meta {' +
       'border-top:0; padding:14px 0 0; text-align:center;' +
