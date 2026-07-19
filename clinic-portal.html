@@ -2894,7 +2894,7 @@ async function runPatientSearch() {
   res.innerHTML = '';
   const head = document.createElement('p');
   head.className = 'note';
-  head.textContent = files.size + (files.size === 1 ? ' case.' : ' cases.');
+  head.textContent = sdT(files.size + (files.size === 1 ? ' case.' : ' cases.'), files.size + ' 個案例。');
   res.appendChild(head);
 
   files.forEach(rows => {
@@ -2913,8 +2913,8 @@ async function runPatientSearch() {
     const sub = [
       patientLabel(first) ? first.treatment_label : null,
       treatmentName(first.treatment),
-      nAng + (nAng === 1 ? ' angle' : ' angles'),
-      first.injector_name ? 'by ' + first.injector_name : null,
+      sdT(nAng + (nAng === 1 ? ' angle' : ' angles'), nAng + ' 個角度'),
+      first.injector_name ? sdT('by ' + first.injector_name, '由 ' + first.injector_name) : null,
       new Date(first.created_at).toISOString().slice(0, 10)
     ].filter(Boolean).join(' \u00b7 ');
 
@@ -2968,9 +2968,15 @@ const TREATMENT_NAME = {
   tox:     'Neurotoxin',
   laser:   'Energy-based'
 };
+const TREATMENT_NAME_ZH = {
+  biostim: '膠原增生劑',
+  filler:  '填充劑',
+  tox:     '肉毒',
+  laser:   '能量療程'
+};
 
 function treatmentName(t) {
-  return TREATMENT_NAME[t] || t || 'Other';
+  return sdT(TREATMENT_NAME[t] || t || 'Other', TREATMENT_NAME_ZH[t] || TREATMENT_NAME[t] || t || '其他');
 }
 
 async function loadLibrary() {
@@ -2993,10 +2999,10 @@ async function loadLibrary() {
 
   if (!summary || !summary.length) {
     host.innerHTML = (libKind === 'photograph')
-      ? '<div class="empty"><div class="display">Nothing here yet.</div>' +
-        '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>'
-      : '<div class="empty"><div class="display">No simulations kept.</div>' +
-        '<p>Run a simulation in Visualize and save it here. Nothing is kept unless you choose to keep it.</p></div>';
+      ? '<div class="empty"><div class="display">' + sdT('Nothing here yet.', '目前尚無內容。') + '</div>' +
+        '<p>' + sdT('Build a case in Studio and save it. One is enough to start teaching your Visualize.', '在 Studio 建立一個案例並儲存。只要一個就能開始訓練您的 Visualize。') + '</p></div>'
+      : '<div class="empty"><div class="display">' + sdT('No simulations kept.', '尚未保存任何模擬。') + '</div>' +
+        '<p>' + sdT('Run a simulation in Visualize and save it here. Nothing is kept unless you choose to keep it.', '在 Visualize 執行模擬並儲存於此。除非您選擇保留，否則不會保存任何內容。') + '</p></div>';
     $('libSub').textContent = '';
     return;
   }
@@ -3027,12 +3033,26 @@ async function loadLibrary() {
   const list = Array.from(cases.values())
     .sort((a, b) => new Date(b[0].created_at || 0) - new Date(a[0].created_at || 0));
 
-  const noun = list.length === 1 ? 'case' : 'cases';
-  $('libSub').textContent = list.length + ' ' + noun + '. Open one to see the angles.';
+  $('libSub').textContent = sdT(
+    list.length + ' ' + (list.length === 1 ? 'case' : 'cases') + '. Open one to see the angles.',
+    list.length + ' 個案例。點開任一項可查看角度。');
 
   host.innerHTML = '';
   list.forEach(caseRows => host.appendChild(caseFolder(caseRows, perms)));
 }
+
+// The header switches via data-en/data-zh, but the library, search and save form
+// are rendered once with sdT() and were frozen to the sign-in language. On a
+// language toggle, re-render whatever dynamic view is currently showing.
+window.relocalizeDynamic = function () {
+  try {
+    const g = document.getElementById('libGroups');
+    if (g && g.children.length) loadLibrary();
+    const si = document.getElementById('libSearch');
+    if (si && si.value.trim().length >= 2) runPatientSearch();
+    studioGrid = null; // forces the Studio save form to re-render on its next poll
+  } catch (e) {}
+};
 
 // One folder per patient case (a series). Collapsed by default; opening it renders
 // the angle plates -- the same images and action buttons as before, now nested
@@ -3059,14 +3079,14 @@ function caseFolder(rows, perms) {
   metaEl.className = 'case-meta';
   metaEl.textContent = [
     treatmentName(first.treatment),
-    first.injector_name ? 'by ' + first.injector_name : null,
+    first.injector_name ? sdT('by ' + first.injector_name, '由 ' + first.injector_name) : null,
     first.created_at ? new Date(first.created_at).toISOString().slice(0, 10) : null
   ].filter(Boolean).join(' \u00b7 ');
   nameEl.append(titleEl, metaEl);
 
   const count = document.createElement('span');
   count.className = 'count';
-  count.textContent = rows.length + (rows.length === 1 ? ' angle' : ' angles');
+  count.textContent = sdT(rows.length + (rows.length === 1 ? ' angle' : ' angles'), rows.length + ' 個角度');
 
   head.append(caret, nameEl, count);
 
@@ -4999,7 +5019,7 @@ async function run(btn, st, path, payload, onSuccess) {
       btn.classList.toggle('active',(btn.textContent.trim()==='EN'&&!isZh)||(btn.textContent.trim()==='繁中'&&isZh));
     });
   }
-  function sdSetLang(l){sdLang=l;try{localStorage.setItem('sd-lang',l);}catch(e){}sdApplyLang();}
+  function sdSetLang(l){sdLang=l;try{localStorage.setItem('sd-lang',l);}catch(e){}sdApplyLang();if(window.relocalizeDynamic){window.relocalizeDynamic();}}
   sdApplyLang();
 </script>
 </body>
