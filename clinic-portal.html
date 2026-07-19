@@ -280,6 +280,7 @@
     background:var(--line); border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden;
   }
   .search-diptych { max-width:460px; margin:4px 0 16px; }
+  .search-detail { display:grid; gap:14px; margin:8px 0 18px; }
   .frame { position:relative; background:var(--bg); overflow:hidden; margin:0; }
   .frame img {
     display:block; width:100%; aspect-ratio:4/5; object-fit:cover;
@@ -433,12 +434,12 @@
     display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px;
   }
   @media (max-width:560px) { .editor-grid { grid-template-columns:1fr; } }
-  .editor input {
+  .editor input, .editor select {
     width:100%; box-sizing:border-box; padding:11px 12px; border-radius:var(--radius-sm);
     font-family:var(--font-ui); font-size:.94rem;
     border:1px solid var(--line); background:var(--surface); outline:none;
   }
-  .editor input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
+  .editor input:focus, .editor select:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-ring); }
   .searchbar input {
     width:100%; box-sizing:border-box; padding:14px 16px; border-radius:var(--radius-sm);
     font-family:var(--font-ui); font-size:1rem; color:var(--ink);
@@ -2869,13 +2870,31 @@ async function runPatientSearch() {
     return;
   }
 
+  // Consent permissions, keyed by case, so the expanded plates show and drive the
+  // real action buttons (reference / publish / edit) exactly like the folders do.
+  const { data: cons } = await sb.from('clinic_case_consents')
+    .select('case_id,purpose').eq('clinic_id', clinicId)
+    .eq('granted', true).is('revoked_at', null);
+  const perms = {};
+  (cons || []).forEach(c => { (perms[c.case_id] = perms[c.case_id] || {})[c.purpose] = true; });
+
+  // One FILE per case. Search returns a row per angle; group them by series so a
+  // patient's five angles are one file folder, not five loose rows.
+  const files = new Map();
+  data.forEach(r => {
+    const key = r.series_id || ('c:' + (r.case_id || r.id));
+    if (!files.has(key)) files.set(key, []);
+    files.get(key).push(r);
+  });
+
   res.innerHTML = '';
   const head = document.createElement('p');
   head.className = 'note';
-  head.textContent = data.length + (data.length === 1 ? ' match.' : ' matches.');
+  head.textContent = files.size + (files.size === 1 ? ' case.' : ' cases.');
   res.appendChild(head);
 
-  data.forEach(r => {
+  files.forEach(rows => {
+    const first = rows[0];
     const item = document.createElement('div');
     item.className = 'search-item';
 
@@ -2885,13 +2904,14 @@ async function runPatientSearch() {
     const g = document.createElement('div');
     g.className = 'grow';
 
-    const title = patientLabel(r) || r.treatment_label || treatmentName(r.treatment);
+    const title = patientLabel(first) || first.treatment_label || treatmentName(first.treatment);
+    const nAng = rows.length;
     const sub = [
-      patientLabel(r) ? r.treatment_label : null,
-      treatmentName(r.treatment),
-      libAngleLabel(r.angle),
-      r.injector_name ? 'by ' + r.injector_name : null,
-      new Date(r.created_at).toISOString().slice(0, 10)
+      patientLabel(first) ? first.treatment_label : null,
+      treatmentName(first.treatment),
+      nAng + (nAng === 1 ? ' angle' : ' angles'),
+      first.injector_name ? 'by ' + first.injector_name : null,
+      new Date(first.created_at).toISOString().slice(0, 10)
     ].filter(Boolean).join(' \u00b7 ');
 
     g.innerHTML =
@@ -2901,34 +2921,39 @@ async function runPatientSearch() {
     // Source: a simulation comes from Visualize, a photograph from Studio.
     const pill = document.createElement('span');
     pill.className = 'pill';
-    pill.textContent = r.kind === 'simulation' ? 'Visualize' : 'Studio';
+    pill.textContent = first.kind === 'simulation' ? 'Visualize' : 'Studio';
     row.append(g, pill);
 
-    // Click a result to reveal its before/after, loaded on demand, so search is
-    // not a dead end. Photographs key on r.id, simulations on r.case_id.
-    const dip = document.createElement('div');
-    dip.className = 'diptych search-diptych';
-    dip.style.display = 'none';
+    // Click the file to open its angles as full plates -- same images AND the same
+    // action buttons (edit, publish, use as reference) as the treatment folders.
+    const detail = document.createElement('div');
+    detail.className = 'search-detail';
+    detail.style.display = 'none';
     row.addEventListener('click', () => {
-      if (!dip.dataset.loaded) {
-        dip.dataset.loaded = '1';
-        const cid = (r.kind === 'simulation') ? (r.case_id || r.id) : (r.id || r.case_id);
-        [['before', (r.kind === 'simulation') ? sdT('Original', '\u539f\u59cb') : sdT('Before', '\u6cbb\u7642\u524d')],
-         ['after',  (r.kind === 'simulation') ? sdT('Simulated', '\u6a21\u64ec') : sdT('After', '\u6cbb\u7642\u5f8c')]].forEach(([which, label]) => {
-          const fig = document.createElement('figure');
-          fig.className = 'frame';
-          const img = document.createElement('img');
-          const cap = document.createElement('figcaption');
-          cap.textContent = label;
-          fig.append(img, cap);
-          dip.appendChild(fig);
-          loadImage(cid, which, img);
+      if (!detail.dataset.loaded) {
+        detail.dataset.loaded = '1';
+        rows.forEach(r => {
+          const cid = r.case_id || r.id;
+          detail.appendChild(
+            r.kind === 'simulation'
+              ? simPlate(r, perms[cid] || {}, rows.length)
+              : plate({
+                  id: cid, treatment: r.treatment, subtype: r.subtype,
+                  treatment_label: r.treatment_label, injector_name: r.injector_name,
+                  angle: r.angle, crop: r.crop, series_id: r.series_id,
+                  interval_months: r.interval_months, phenotype: r.phenotype,
+                  before_date: r.before_date, after_date: r.after_date,
+                  visualize_approved: r.visualize_approved,
+                  published_before_path: r.published_before_path,
+                  created_at: r.created_at
+                }, perms[cid] || {}, rows.length)
+          );
         });
       }
-      dip.style.display = (dip.style.display === 'none') ? '' : 'none';
+      detail.style.display = (detail.style.display === 'none') ? '' : 'none';
     });
 
-    item.append(row, dip);
+    item.append(row, detail);
     res.appendChild(item);
   });
 }
@@ -3609,6 +3634,12 @@ function buildEditor(r, st) {
   wrap.className = 'editor';
   wrap.style.display = 'none';
 
+  // Treatment and subtype are controlled vocabularies, not free text. Typing a
+  // display name like "Filler" sent an invalid value and the save failed with
+  // "malformed array literal: treatment". These are dropdowns of valid codes now.
+  const TREATMENT_OPTS = [['biostim','Biostimulator'],['filler','Filler'],['tox','Neurotoxin'],['laser','Energy-based']];
+  const subOpts = t => [['', '\u2014']].concat((SUBTYPES[t] && SUBTYPES[t].options) || []);
+
   const fields = [
     ['injector',    'Injector',    r.injector_name || '',   'text'],
     ['consultant',  'Consultant',  r.consultant_name || '', 'text'],
@@ -3616,8 +3647,8 @@ function buildEditor(r, st) {
     ['before_date', 'Before date', r.before_date || '',     'text'],
     ['after_date',  'After date',  r.after_date || '',      'text'],
     ['interval',    'Months between', r.interval_months != null ? String(r.interval_months) : '', 'number'],
-    ['treatment',   'Treatment',   r.treatment || '',       'text'],
-    ['subtype',     'Subtype',     r.subtype || '',         'text'],
+    ['treatment',   'Treatment',   r.treatment || '',       'select', TREATMENT_OPTS],
+    ['subtype',     'Subtype',     r.subtype || '',         'select', subOpts(r.treatment)],
     ['patient_name','Patient name',r.patient_name || '',    'text'],
     ['patient_ref', 'Reference',   r.patient_ref || '',     'text']
   ];
@@ -3625,20 +3656,43 @@ function buildEditor(r, st) {
   const inputs = {};
   const grid = document.createElement('div');
   grid.className = 'editor-grid';
-  fields.forEach(([key, label, val, type]) => {
+  fields.forEach(([key, label, val, type, opts]) => {
     const f = document.createElement('div');
     f.className = 'field';
     const l = document.createElement('label');
     l.className = 'eyebrow';
     l.textContent = label;
-    const i = document.createElement('input');
-    i.type = type;
-    i.value = val;
-    if (type === 'text') i.maxLength = 120;
+    let i;
+    if (type === 'select') {
+      i = document.createElement('select');
+      (opts || []).forEach(([ov, ol]) => {
+        const o = document.createElement('option');
+        o.value = ov; o.textContent = ol;
+        if (ov === val) o.selected = true;
+        i.appendChild(o);
+      });
+    } else {
+      i = document.createElement('input');
+      i.type = type;
+      i.value = val;
+      if (type === 'text') i.maxLength = 120;
+    }
     inputs[key] = { el: i, was: val };
     f.append(l, i);
     grid.appendChild(f);
   });
+
+  // Subtypes are treatment-specific, so repopulate them when treatment changes.
+  if (inputs.treatment && inputs.subtype) {
+    inputs.treatment.el.addEventListener('change', () => {
+      inputs.subtype.el.innerHTML = '';
+      subOpts(inputs.treatment.el.value).forEach(([ov, ol]) => {
+        const o = document.createElement('option');
+        o.value = ov; o.textContent = ol;
+        inputs.subtype.el.appendChild(o);
+      });
+    });
+  }
 
   const save = document.createElement('button');
   save.className = 'act';
