@@ -2555,13 +2555,40 @@ function flatten(canvas) {
   return out;
 }
 
-function canvasToFile(canvas, name) {
-  return new Promise((resolve, reject) => {
-    flatten(canvas).toBlob(blob => {
-      if (!blob) { reject(new Error('That photo could not be processed.')); return; }
-      resolve(new File([blob], name + '.jpg', { type: 'image/jpeg' }));
-    }, 'image/jpeg', 0.92);
+// canvas.toBlob writes a JFIF (APP0) marker, and the upload validator treats any
+// APPn segment as metadata and rejects the save ("before still contains EXIF
+// metadata"). Strip every APP0-APP15 segment so a bare, metadata-free JPEG is
+// sent. This also guarantees no EXIF ever leaves the browser, even if a source
+// image somehow carried it.
+function stripJpegAppMarkers(buf) {
+  const d = new Uint8Array(buf);
+  if (d.length < 2 || d[0] !== 0xFF || d[1] !== 0xD8) return buf; // not a JPEG
+  const out = [0xFF, 0xD8];
+  let i = 2;
+  while (i < d.length - 1) {
+    if (d[i] !== 0xFF) { i++; continue; }
+    const marker = d[i + 1];
+    if (marker === 0xDA || marker === 0xD9) { // SOS (scan) or EOI: copy the rest verbatim
+      for (let k = i; k < d.length; k++) out.push(d[k]);
+      return new Uint8Array(out).buffer;
+    }
+    const len = (d[i + 2] << 8) | d[i + 3];
+    if (marker >= 0xE0 && marker <= 0xEF) {
+      i += 2 + len;                 // drop APPn (JFIF / EXIF / XMP / ICC)
+    } else {
+      for (let k = i; k < i + 2 + len && k < d.length; k++) out.push(d[k]);
+      i += 2 + len;
+    }
+  }
+  return new Uint8Array(out).buffer;
+}
+
+async function canvasToFile(canvas, name) {
+  const blob = await new Promise((resolve, reject) => {
+    flatten(canvas).toBlob(b => b ? resolve(b) : reject(new Error('That photo could not be processed.')), 'image/jpeg', 0.92);
   });
+  const clean = stripJpegAppMarkers(await blob.arrayBuffer());
+  return new File([clean], name + '.jpg', { type: 'image/jpeg' });
 }
 
 $('saveBtn').addEventListener('click', async () => {
