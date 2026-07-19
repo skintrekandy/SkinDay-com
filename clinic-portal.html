@@ -466,6 +466,10 @@
   .lib-head .caret { font-size:.74rem; color:var(--muted); width:12px; }
   .lib-head .name { font-family:var(--font-ui); font-size:1.22rem; font-weight:600; letter-spacing:-.01em; }
   .lib-head .count { font-family:var(--font-mono); font-size:.8rem; color:var(--muted); margin-left:auto; }
+  .lib-head.case { align-items:center; }
+  .lib-head .case-name { display:flex; flex-direction:column; gap:3px; }
+  .lib-head .case-name .case-title { font-family:var(--font-ui); font-size:1.15rem; font-weight:600; letter-spacing:-.01em; }
+  .lib-head .case-name .case-meta { font-family:var(--font-mono); font-size:.72rem; color:var(--muted); }
   .lib-body { padding:0 0 24px; }
   .prov { font-size:.82rem; color:var(--muted); margin-top:8px; line-height:1.5; }
   .empty .display { font-size:23px; }
@@ -2976,7 +2980,7 @@ async function loadLibrary() {
   host.innerHTML = '<div class="empty"><p>Loading…</p></div>';
   Object.keys(libOpen).forEach(k => delete libOpen[k]);
 
-  const { data, error } = await sb.rpc('get_clinic_library_summary', {
+  const { data: summary, error } = await sb.rpc('get_clinic_library_summary', {
     p_clinic_id: clinicId,
     p_kind: libKind
   });
@@ -2987,7 +2991,7 @@ async function loadLibrary() {
     return;
   }
 
-  if (!data || !data.length) {
+  if (!summary || !summary.length) {
     host.innerHTML = (libKind === 'photograph')
       ? '<div class="empty"><div class="display">Nothing here yet.</div>' +
         '<p>Build a case in Studio and save it. One is enough to start teaching your Visualize.</p></div>'
@@ -2997,17 +3001,106 @@ async function loadLibrary() {
     return;
   }
 
-  const items = data.reduce((n, g) => n + (g.case_count || 0), 0);
-  const noun = (libKind === 'photograph')
-    ? (items === 1 ? 'before and after' : 'before and afters')
-    : (items === 1 ? 'simulation' : 'simulations');
-  $('libSub').textContent =
-    items + ' ' + noun + ' across ' +
-    data.length + (data.length === 1 ? ' treatment' : ' treatments') +
-    '. Open one to see the images.';
+  // Case folders, not treatment folders. Fetch every treatment's cases in
+  // parallel, then regroup ALL of them by series so each PATIENT CASE is one
+  // folder. Images still load only when a folder is opened, so a patient's face
+  // never loads until someone actually asks to look at that case.
+  const perTreatment = await Promise.all(summary.map(g =>
+    sb.rpc('get_clinic_library_cases', {
+      p_clinic_id: clinicId, p_kind: libKind, p_treatment: g.treatment, p_limit: 200
+    }).then(res => res.data || []).catch(() => [])
+  ));
+  const rows = perTreatment.flat();
+
+  const { data: cons } = await sb.from('clinic_case_consents')
+    .select('case_id,purpose').eq('clinic_id', clinicId)
+    .eq('granted', true).is('revoked_at', null);
+  const perms = {};
+  (cons || []).forEach(c => { (perms[c.case_id] = perms[c.case_id] || {})[c.purpose] = true; });
+
+  const cases = new Map();
+  rows.forEach(r => {
+    const key = r.series_id || ('c:' + r.case_id);
+    if (!cases.has(key)) cases.set(key, []);
+    cases.get(key).push(r);
+  });
+  const list = Array.from(cases.values())
+    .sort((a, b) => new Date(b[0].created_at || 0) - new Date(a[0].created_at || 0));
+
+  const noun = list.length === 1 ? 'case' : 'cases';
+  $('libSub').textContent = list.length + ' ' + noun + '. Open one to see the angles.';
 
   host.innerHTML = '';
-  data.forEach(g => host.appendChild(groupRow(g)));
+  list.forEach(caseRows => host.appendChild(caseFolder(caseRows, perms)));
+}
+
+// One folder per patient case (a series). Collapsed by default; opening it renders
+// the angle plates -- the same images and action buttons as before, now nested
+// under the case instead of scattered across a treatment list.
+function caseFolder(rows, perms) {
+  const first = rows[0];
+  const wrap = document.createElement('div');
+  wrap.className = 'lib-group';
+
+  const head = document.createElement('button');
+  head.className = 'lib-head case';
+  head.type = 'button';
+
+  const caret = document.createElement('span');
+  caret.className = 'caret';
+  caret.textContent = '\u25b8';
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'case-name';
+  const titleEl = document.createElement('span');
+  titleEl.className = 'case-title';
+  titleEl.textContent = patientLabel(first) || first.treatment_label || treatmentName(first.treatment);
+  const metaEl = document.createElement('span');
+  metaEl.className = 'case-meta';
+  metaEl.textContent = [
+    treatmentName(first.treatment),
+    first.injector_name ? 'by ' + first.injector_name : null,
+    first.created_at ? new Date(first.created_at).toISOString().slice(0, 10) : null
+  ].filter(Boolean).join(' \u00b7 ');
+  nameEl.append(titleEl, metaEl);
+
+  const count = document.createElement('span');
+  count.className = 'count';
+  count.textContent = rows.length + (rows.length === 1 ? ' angle' : ' angles');
+
+  head.append(caret, nameEl, count);
+
+  const body = document.createElement('div');
+  body.className = 'lib-body';
+  body.style.display = 'none';
+
+  head.onclick = () => {
+    const wasOpen = body.style.display !== 'none';
+    body.style.display = wasOpen ? 'none' : 'block';
+    caret.textContent = wasOpen ? '\u25b8' : '\u25be';
+    if (wasOpen || body.dataset.loaded) return;
+    body.dataset.loaded = '1';
+    rows.forEach(r => {
+      const cid = r.case_id || r.id;
+      body.appendChild(
+        r.kind === 'simulation'
+          ? simPlate(r, perms[cid] || {}, rows.length)
+          : plate({
+              id: cid, treatment: r.treatment, subtype: r.subtype,
+              treatment_label: r.treatment_label, injector_name: r.injector_name,
+              angle: r.angle, crop: r.crop, series_id: r.series_id,
+              interval_months: r.interval_months, phenotype: r.phenotype,
+              before_date: r.before_date, after_date: r.after_date,
+              visualize_approved: r.visualize_approved,
+              published_before_path: r.published_before_path,
+              created_at: r.created_at
+            }, perms[cid] || {}, rows.length)
+      );
+    });
+  };
+
+  wrap.append(head, body);
+  return wrap;
 }
 
 function groupRow(g) {

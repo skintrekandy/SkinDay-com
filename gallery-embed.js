@@ -286,7 +286,7 @@
       'color:#e8e0d6; opacity:.5; font-size:12px;' +
     '}' +
     '.lb-nav {' +
-      'position:fixed; top:50%; transform:translateY(-50%);' +
+      'position:fixed; top:50%; transform:translateY(-50%); z-index:5;' +
       'background:rgba(255,255,255,.12); color:#fff; border:0; cursor:pointer;' +
       'width:52px; height:52px; border-radius:50%; font-size:30px; line-height:1;' +
       'align-items:center; justify-content:center;' +
@@ -377,45 +377,77 @@
     });
   }
 
-  var lbTabs = [];
+  // A flat list of every before/after pair in the gallery -- each angle of each
+  // case is one slide -- so the lightbox arrows step through EVERYTHING and every
+  // case gets working prev/next, not just multi-angle cards.
+  var slides = [];
   var lbIdx = 0;
 
-  // Move between angles without leaving the lightbox: cycle the card's angle
-  // tabs and swap the enlarged pair's two images to match.
-  function stepLb(dir) {
-    if (!lbTabs || lbTabs.length < 2) return;
-    lbIdx = (lbIdx + dir + lbTabs.length) % lbTabs.length;
-    var tab = lbTabs[lbIdx];
-    var imgs = lbInner.querySelectorAll('img');
-    if (imgs.length >= 2) {
-      imgs[0].src = tab.getAttribute('data-before');
-      imgs[1].src = tab.getAttribute('data-after');
+  function buildSlides() {
+    slides = [];
+    host.querySelectorAll('[data-series]').forEach(function (cardEl) {
+      var tabs = cardEl.querySelectorAll('[role="tab"]');
+      if (tabs.length) {
+        Array.prototype.forEach.call(tabs, function (tab) {
+          slides.push({ cardEl: cardEl, tab: tab });
+        });
+      } else {
+        slides.push({ cardEl: cardEl, tab: null });
+      }
+    });
+  }
+
+  function renderSlide(i) {
+    if (i < 0 || i >= slides.length) return;
+    lbIdx = i;
+    var sl = slides[i];
+    lbInner.innerHTML = '';
+    if (sl.tab) {
+      // Build the pair from the angle tab's stored urls (styled mode only, so the
+      // 'pair'/'frame' class names are the styled ones).
+      var pair = document.createElement('div');
+      pair.className = 'pair';
+      pair.innerHTML =
+        '<figure class="frame"><img alt=""><figcaption>Before</figcaption></figure>' +
+        '<figure class="frame"><img alt=""><figcaption>After</figcaption></figure>';
+      var pImgs = pair.querySelectorAll('img');
+      pImgs[0].src = sl.tab.getAttribute('data-before') || '';
+      pImgs[1].src = sl.tab.getAttribute('data-after') || '';
+      lbInner.appendChild(pair);
+    } else {
+      var group = sl.cardEl.querySelector('.pair, .strip');
+      if (group) lbInner.appendChild(group.cloneNode(true));
     }
-    if (lbAngle) lbAngle.textContent = tab.textContent || '';
+    var meta = sl.cardEl.querySelector('.meta');
+    if (meta) lbInner.appendChild(meta.cloneNode(true));
+    var by = sl.cardEl.querySelector('.by');
+    if (by) lbInner.appendChild(by.cloneNode(true));
+    if (lbAngle) lbAngle.textContent = sl.tab ? (sl.tab.textContent || '') : '';
+    var multi = slides.length > 1;
+    lbPrev.className = 'lb-nav lb-prev' + (multi ? ' show' : '');
+    lbNext.className = 'lb-nav lb-next' + (multi ? ' show' : '');
+  }
+
+  function stepLb(dir) {
+    if (slides.length < 2) return;
+    renderSlide((lbIdx + dir + slides.length) % slides.length);
   }
 
   function openLightbox(cardEl) {
     if (!lb || !cardEl) return;
-    var group = cardEl.querySelector('.pair, .strip');
-    if (!group) return;
-    lbInner.innerHTML = '';
-    lbInner.appendChild(group.cloneNode(true));
-    var meta = cardEl.querySelector('.meta');
-    if (meta) lbInner.appendChild(meta.cloneNode(true));
-    var by = cardEl.querySelector('.by');
-    if (by) lbInner.appendChild(by.cloneNode(true));
-
-    // Angle navigation, only when the card has more than one angle.
-    lbTabs = Array.prototype.slice.call(cardEl.querySelectorAll('[role="tab"]'));
-    lbIdx = 0;
-    for (var i = 0; i < lbTabs.length; i++) {
-      if (lbTabs[i].getAttribute('aria-selected') === 'true') { lbIdx = i; break; }
+    if (!slides.length) buildSlides();
+    // Start on the angle the visitor is actually looking at, then let the arrows
+    // walk the whole gallery from there.
+    var selectedTab = cardEl.querySelector('[role="tab"][aria-selected="true"]');
+    var startIdx = -1, firstOfCard = -1;
+    for (var i = 0; i < slides.length; i++) {
+      if (slides[i].cardEl !== cardEl) continue;
+      if (firstOfCard < 0) firstOfCard = i;
+      if (!slides[i].tab || slides[i].tab === selectedTab) { startIdx = i; break; }
     }
-    var multi = lbTabs.length > 1;
-    if (lbPrev) lbPrev.className = 'lb-nav lb-prev' + (multi ? ' show' : '');
-    if (lbNext) lbNext.className = 'lb-nav lb-next' + (multi ? ' show' : '');
-    if (lbAngle) lbAngle.textContent = multi ? (lbTabs[lbIdx].textContent || '') : '';
-
+    if (startIdx < 0) startIdx = firstOfCard >= 0 ? firstOfCard : 0;
+    if (startIdx >= slides.length) return;
+    renderSlide(startIdx);
     lb.classList.add('open');
     // The host page keeps scrolling behind a fixed overlay otherwise, which reads
     // as the page being broken rather than as an overlay being open.
@@ -431,6 +463,7 @@
 
   function wireLightbox() {
     if (!useLightbox) return;
+    buildSlides();
     host.querySelectorAll('img').forEach(function (img) {
       img.addEventListener('click', function () {
         openLightbox(img.closest('[data-series]'));
