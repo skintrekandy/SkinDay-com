@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title data-en="Visualize Pro" data-zh="Visualize Pro 診所後台">Visualize Pro</title>
+<title data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
@@ -279,6 +279,7 @@
     display:grid; grid-template-columns:1fr 1fr; gap:2px;
     background:var(--line); border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden;
   }
+  .search-diptych { max-width:460px; margin:4px 0 16px; }
   .frame { position:relative; background:var(--bg); overflow:hidden; margin:0; }
   .frame img {
     display:block; width:100%; aspect-ratio:4/5; object-fit:cover;
@@ -2558,27 +2559,19 @@ function flatten(canvas) {
 // canvas.toBlob writes a JFIF (APP0) marker, and the upload validator treats any
 // APPn segment as metadata and rejects the save ("before still contains EXIF
 // metadata"). Strip every APP0-APP15 segment so a bare, metadata-free JPEG is
-// sent. This also guarantees no EXIF ever leaves the browser, even if a source
-// image somehow carried it.
+// sent. This also guarantees no EXIF ever leaves the browser.
 function stripJpegAppMarkers(buf) {
   const d = new Uint8Array(buf);
-  if (d.length < 2 || d[0] !== 0xFF || d[1] !== 0xD8) return buf; // not a JPEG
+  if (d.length < 2 || d[0] !== 0xFF || d[1] !== 0xD8) return buf;
   const out = [0xFF, 0xD8];
   let i = 2;
   while (i < d.length - 1) {
     if (d[i] !== 0xFF) { i++; continue; }
     const marker = d[i + 1];
-    if (marker === 0xDA || marker === 0xD9) { // SOS (scan) or EOI: copy the rest verbatim
-      for (let k = i; k < d.length; k++) out.push(d[k]);
-      return new Uint8Array(out).buffer;
-    }
+    if (marker === 0xDA || marker === 0xD9) { for (let k = i; k < d.length; k++) out.push(d[k]); return new Uint8Array(out).buffer; }
     const len = (d[i + 2] << 8) | d[i + 3];
-    if (marker >= 0xE0 && marker <= 0xEF) {
-      i += 2 + len;                 // drop APPn (JFIF / EXIF / XMP / ICC)
-    } else {
-      for (let k = i; k < i + 2 + len && k < d.length; k++) out.push(d[k]);
-      i += 2 + len;
-    }
+    if (marker >= 0xE0 && marker <= 0xEF) { i += 2 + len; }
+    else { for (let k = i; k < i + 2 + len && k < d.length; k++) out.push(d[k]); i += 2 + len; }
   }
   return new Uint8Array(out).buffer;
 }
@@ -2883,8 +2876,12 @@ async function runPatientSearch() {
   res.appendChild(head);
 
   data.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'search-item';
+
     const row = document.createElement('div');
     row.className = 'member';
+    row.style.cursor = 'pointer';
     const g = document.createElement('div');
     g.className = 'grow';
 
@@ -2901,11 +2898,38 @@ async function runPatientSearch() {
       '<div class="em">' + title + '</div>' +
       '<div class="sub">' + sub + '</div>';
 
+    // Source: a simulation comes from Visualize, a photograph from Studio.
     const pill = document.createElement('span');
     pill.className = 'pill';
-    pill.textContent = r.kind === 'simulation' ? 'simulated' : 'photograph';
+    pill.textContent = r.kind === 'simulation' ? 'Visualize' : 'Studio';
     row.append(g, pill);
-    res.appendChild(row);
+
+    // Click a result to reveal its before/after, loaded on demand, so search is
+    // not a dead end. Photographs key on r.id, simulations on r.case_id.
+    const dip = document.createElement('div');
+    dip.className = 'diptych search-diptych';
+    dip.style.display = 'none';
+    row.addEventListener('click', () => {
+      if (!dip.dataset.loaded) {
+        dip.dataset.loaded = '1';
+        const cid = (r.kind === 'simulation') ? (r.case_id || r.id) : (r.id || r.case_id);
+        [['before', (r.kind === 'simulation') ? sdT('Original', '\u539f\u59cb') : sdT('Before', '\u6cbb\u7642\u524d')],
+         ['after',  (r.kind === 'simulation') ? sdT('Simulated', '\u6a21\u64ec') : sdT('After', '\u6cbb\u7642\u5f8c')]].forEach(([which, label]) => {
+          const fig = document.createElement('figure');
+          fig.className = 'frame';
+          const img = document.createElement('img');
+          const cap = document.createElement('figcaption');
+          cap.textContent = label;
+          fig.append(img, cap);
+          dip.appendChild(fig);
+          loadImage(cid, which, img);
+        });
+      }
+      dip.style.display = (dip.style.display === 'none') ? '' : 'none';
+    });
+
+    item.append(row, dip);
+    res.appendChild(item);
   });
 }
 
