@@ -169,11 +169,11 @@
     .preset-desc { font-size: 0.67rem; color: var(--muted); line-height: 1.4; }
     .zoom-controls { display: grid; gap: 12px; margin-bottom: 20px; }
     .zoom-box { display: flex; flex-direction: column; gap: 7px; border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: #fff; }
-    .zoom-photo { width: 100%; height: 118px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border); background: #1C1714; }
+    .crop-canvas { width: 100%; height: auto; display: block; border-radius: 7px; border: 1px solid var(--border); background: #1C1714; cursor: grab; touch-action: none; }
+    .crop-canvas:active { cursor: grabbing; }
     .zoom-name { font-size: 0.82rem; font-weight: 600; color: var(--deep); letter-spacing: 0.02em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .zoom-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
-    .zoom-label span { color: var(--rose); font-weight: 600; }
-    input[type=range].zoom-slider { width: 100%; accent-color: var(--rose); cursor: pointer; }
+    .zoom-hint { font-size: 0.68rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+    .zoom-hint .hint-pct { color: var(--rose); font-weight: 600; }
     .preview-area { display: grid; gap: 12px; margin-bottom: 8px; }
     .preview-area.p-2 { grid-template-columns: 1fr 1fr; }
     .preview-area.p-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -1377,36 +1377,85 @@ function rebuildZoomControls() {
   if (!filled.length) { wrap.innerHTML = ''; return; }
   const cfg = GRID_CONFIG[S.grid] || {};
   const cols = cfg.cols || 1;
-  // A Before/After grid (2 rows, 2 row labels) pairs each angle's Before with its
-  // After. Walk column-major so the two sit next to each other, and lay the panel
-  // out two-per-row, so each row is one angle's pair.
+  // Before/After grid: pair each angle's Before with its After, one pair per row.
   const paired = cfg.rows === 2 && cfg.rowLabels && cfg.rowLabels.length === 2;
   let order = S.slots.map((_, i) => i);
-  if (paired) {
-    order = [];
-    for (let c = 0; c < cols; c++) { order.push(c); order.push(cols + c); }
-  }
-  wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(210px, 1fr))';
+  if (paired) { order = []; for (let c = 0; c < cols; c++) { order.push(c); order.push(cols + c); } }
+  wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(220px, 1fr))';
+  const hint = currentLang === 'zh' ? '\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u6216\u6efe\u8f2a\u7e2e\u653e' : 'Drag to move \u00b7 pinch or scroll to zoom';
   wrap.innerHTML = order.map(i => {
     const sl = S.slots[i];
     if (!sl || !sl.img) return '';
-    const thumb = sl.processedDataUrl || sl.origDataUrl || '';
     return `
     <div class="zoom-box">
-      ${thumb ? `<img class="zoom-photo" src="${thumb}" alt="">` : ''}
+      <canvas class="crop-canvas" id="cropc-${i}"></canvas>
       <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}</div>
-      <div class="zoom-label">Zoom <span id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
-      <input type="range" class="zoom-slider" id="zoom-${i}" min="60" max="160" value="${Math.round(sl.zoom*100)}" step="5"
-        oninput="onZoom(${i},this.value)"/>
+      <div class="zoom-hint"><span class="hint-txt" data-en="Drag to move \u00b7 pinch or scroll to zoom" data-zh="\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u6216\u6efe\u8f2a\u7e2e\u653e">${hint}</span><span class="hint-pct" id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
     </div>`;
   }).join('');
+  order.forEach(i => { if (S.slots[i] && S.slots[i].img) setupCropGesture(document.getElementById(`cropc-${i}`), i); });
+  renderCropAdjust();
 }
 
-function onZoom(idx, val) {
-  S.slots[idx].zoom = parseInt(val) / 100;
-  const lbl = document.getElementById(`zVal-${idx}`);
-  if (lbl) lbl.textContent = val + '%';
-  renderPreviews();
+// Direct-manipulation crop adjust: each card shows the actual region-cropped view
+// (what gets exported), and the clinician drags to pan and pinches (or scrolls)
+// to zoom -- no slider, and no need to scroll to a separate preview to check.
+function renderCropAdjust() {
+  if (!S.slots.some(sl => sl.img)) return;
+  const allFilled = S.slots.every(sl => sl.img);
+  const boxes = allFilled ? getPannedBoxes() : null;
+  S.slots.forEach((sl, i) => {
+    if (!sl.img) return;
+    const cv = document.getElementById(`cropc-${i}`);
+    if (!cv) return;
+    const box = boxes ? boxes[i]
+      : (() => { const b = getBoxForSlot(i); return clampBox({ ...b, x: b.x + sl.pan.x, y: b.y + sl.pan.y }, sl.img); })();
+    const CW = 300, CH = Math.max(1, Math.round(CW * box.h / box.w));
+    const draw = img => drawToCanvas(cv, img, box, CW, CH, 1);
+    if (sl.processedDataUrl) {
+      if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) draw(sl._processedImg);
+      else { const im = new Image(); im.onload = () => { sl._processedImg = im; draw(im); }; im.src = sl.processedDataUrl; }
+    } else { draw(sl.img); }
+  });
+}
+
+function setupCropGesture(cv, idx) {
+  if (!cv || cv.dataset.cropInit === '1') return;
+  cv.dataset.cropInit = '1';
+  let drag = null, pinch = null;
+  const clampZoom = z => Math.max(0.6, Math.min(z, 1.6));
+  const sync = () => {
+    renderCropAdjust(); renderPreviews();
+    const v = document.getElementById(`zVal-${idx}`);
+    if (v) v.textContent = Math.round(S.slots[idx].zoom * 100) + '%';
+  };
+  const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const start = e => {
+    if (e.touches && e.touches.length === 2) { pinch = { d0: dist(e.touches), z0: S.slots[idx].zoom }; drag = null; e.preventDefault(); return; }
+    const pt = e.touches ? e.touches[0] : e;
+    drag = { sx: pt.clientX, sy: pt.clientY, ox: S.slots[idx].pan.x, oy: S.slots[idx].pan.y };
+    e.preventDefault();
+  };
+  const move = e => {
+    if (pinch && e.touches && e.touches.length === 2) {
+      S.slots[idx].zoom = clampZoom(pinch.z0 * (dist(e.touches) / pinch.d0));
+      sync(); e.preventDefault(); return;
+    }
+    if (!drag) return;
+    const pt = e.touches ? e.touches[0] : e;
+    const box = getAllBoxes()[idx];
+    const scale = box.w / cv.offsetWidth;
+    S.slots[idx].pan.x = Math.max(-box.w * .3, Math.min(drag.ox - (pt.clientX - drag.sx) * scale, box.w * .3));
+    S.slots[idx].pan.y = Math.max(-box.h * .3, Math.min(drag.oy - (pt.clientY - drag.sy) * scale, box.h * .3));
+    sync(); e.preventDefault();
+  };
+  const end = e => { if (!e.touches || e.touches.length === 0) { drag = null; pinch = null; } };
+  cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', move);
+  cv.addEventListener('mouseup', end); cv.addEventListener('mouseleave', () => { drag = null; });
+  cv.addEventListener('touchstart', start, { passive: false });
+  cv.addEventListener('touchmove', move, { passive: false });
+  cv.addEventListener('touchend', end); cv.addEventListener('touchcancel', end);
+  cv.addEventListener('wheel', e => { e.preventDefault(); S.slots[idx].zoom = clampZoom(S.slots[idx].zoom - e.deltaY * 0.0015); sync(); }, { passive: false });
 }
 
 // ============================================================
@@ -1492,6 +1541,7 @@ function setupDrag(canvasId, idx) {
     S.slots[idx].pan.x = Math.max(-box.w*.3, Math.min(drag.ox - (pt.clientX - drag.sx) * scale, box.w*.3));
     S.slots[idx].pan.y = Math.max(-box.h*.3, Math.min(drag.oy - (pt.clientY - drag.sy) * scale, box.h*.3));
     renderPreviews();
+    renderCropAdjust();
   };
   const end = () => { drag = null; };
   cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', move);
