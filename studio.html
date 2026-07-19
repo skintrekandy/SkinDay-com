@@ -168,9 +168,8 @@
     .preset-name { font-size: 0.78rem; font-weight: 500; color: var(--deep); }
     .preset-desc { font-size: 0.67rem; color: var(--muted); line-height: 1.4; }
     .zoom-controls { display: grid; gap: 12px; margin-bottom: 20px; }
-    .zoom-box { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; background: #fff; }
-    .zoom-box-head { display: flex; align-items: center; gap: 9px; }
-    .zoom-thumb { width: 42px; height: 42px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: #1C1714; flex-shrink: 0; }
+    .zoom-box { display: flex; flex-direction: column; gap: 7px; border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: #fff; }
+    .zoom-photo { width: 100%; height: 118px; object-fit: cover; border-radius: 7px; border: 1px solid var(--border); background: #1C1714; }
     .zoom-name { font-size: 0.82rem; font-weight: 600; color: var(--deep); letter-spacing: 0.02em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .zoom-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; }
     .zoom-label span { color: var(--rose); font-weight: 600; }
@@ -1376,18 +1375,26 @@ function rebuildZoomControls() {
   const wrap = document.getElementById('zoomControls');
   const filled = S.slots.filter(sl => sl.img);
   if (!filled.length) { wrap.innerHTML = ''; return; }
-  // Responsive: as many cards per row as fit, each a fixed minimum width, so a
-  // 10-slot 2x5 set no longer sprawls into an unreadable wall of sliders.
-  wrap.style.gridTemplateColumns = 'repeat(auto-fill, minmax(210px, 1fr))';
-  wrap.innerHTML = S.slots.map((sl, i) => {
-    if (!sl.img) return '';
+  const cfg = GRID_CONFIG[S.grid] || {};
+  const cols = cfg.cols || 1;
+  // A Before/After grid (2 rows, 2 row labels) pairs each angle's Before with its
+  // After. Walk column-major so the two sit next to each other, and lay the panel
+  // out two-per-row, so each row is one angle's pair.
+  const paired = cfg.rows === 2 && cfg.rowLabels && cfg.rowLabels.length === 2;
+  let order = S.slots.map((_, i) => i);
+  if (paired) {
+    order = [];
+    for (let c = 0; c < cols; c++) { order.push(c); order.push(cols + c); }
+  }
+  wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(210px, 1fr))';
+  wrap.innerHTML = order.map(i => {
+    const sl = S.slots[i];
+    if (!sl || !sl.img) return '';
     const thumb = sl.processedDataUrl || sl.origDataUrl || '';
     return `
     <div class="zoom-box">
-      <div class="zoom-box-head">
-        ${thumb ? `<img class="zoom-thumb" src="${thumb}" alt="">` : ''}
-        <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}</div>
-      </div>
+      ${thumb ? `<img class="zoom-photo" src="${thumb}" alt="">` : ''}
+      <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}</div>
       <div class="zoom-label">Zoom <span id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
       <input type="range" class="zoom-slider" id="zoom-${i}" min="60" max="160" value="${Math.round(sl.zoom*100)}" step="5"
         oninput="onZoom(${i},this.value)"/>
