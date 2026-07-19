@@ -162,8 +162,10 @@
 
   var ANGLE = {
     frontal: 'Frontal',
-    oblique_right: 'Oblique right',
-    oblique_left: 'Oblique left'
+    oblique_right: 'R45', r45: 'R45',
+    oblique_left: 'L45', l45: 'L45',
+    profile_right: 'R90', r90: 'R90',
+    profile_left: 'L90', l90: 'L90'
   };
 
   var mount = document.createElement('div');
@@ -283,6 +285,21 @@
       'padding:4px 0 0; text-align:center;' +
       'color:#e8e0d6; opacity:.5; font-size:12px;' +
     '}' +
+    '.lb-nav {' +
+      'position:fixed; top:50%; transform:translateY(-50%);' +
+      'background:rgba(255,255,255,.12); color:#fff; border:0; cursor:pointer;' +
+      'width:52px; height:52px; border-radius:50%; font-size:30px; line-height:1;' +
+      'align-items:center; justify-content:center;' +
+    '}' +
+    '.lb-nav:hover { background:rgba(255,255,255,.22); }' +
+    '.lb.open .lb-nav.show { display:flex; }' +
+    '.lb-nav { display:none; }' +
+    '.lb-prev { left:20px; }' +
+    '.lb-next { right:20px; }' +
+    '.lb-angle {' +
+      'position:fixed; bottom:22px; left:0; right:0; text-align:center;' +
+      'color:#e8e0d6; font-size:12px; letter-spacing:.14em; text-transform:uppercase;' +
+    '}' +
     '.lb-close {' +
       'position:absolute; top:14px; right:18px;' +
       'appearance:none; background:none; border:0;' +
@@ -328,19 +345,53 @@
     lbInner = document.createElement('div');
     lbInner.className = 'lb-inner';
 
+    var lbPrev = document.createElement('button');
+    lbPrev.className = 'lb-nav lb-prev'; lbPrev.type = 'button';
+    lbPrev.setAttribute('aria-label', 'Previous angle'); lbPrev.innerHTML = '\u2039';
+    var lbNext = document.createElement('button');
+    lbNext.className = 'lb-nav lb-next'; lbNext.type = 'button';
+    lbNext.setAttribute('aria-label', 'Next angle'); lbNext.innerHTML = '\u203A';
+    var lbAngle = document.createElement('div');
+    lbAngle.className = 'lb-angle';
+
     lb.appendChild(lbClose);
+    lb.appendChild(lbPrev);
+    lb.appendChild(lbNext);
+    lb.appendChild(lbAngle);
     lb.appendChild(lbInner);
     root.appendChild(lb);
 
     lbClose.addEventListener('click', closeLightbox);
+    lbPrev.addEventListener('click', function (e) { e.stopPropagation(); stepLb(-1); });
+    lbNext.addEventListener('click', function (e) { e.stopPropagation(); stepLb(1); });
     lb.addEventListener('click', function (e) {
       // Backdrop only. A click on a photograph should not close the thing the
       // visitor opened in order to look at the photograph.
       if (e.target === lb) closeLightbox();
     });
     document.addEventListener('keydown', function (e) {
+      if (!lb.classList.contains('open')) return;
       if (e.key === 'Escape' || e.key === 'Esc') closeLightbox();
+      else if (e.key === 'ArrowLeft') stepLb(-1);
+      else if (e.key === 'ArrowRight') stepLb(1);
     });
+  }
+
+  var lbTabs = [];
+  var lbIdx = 0;
+
+  // Move between angles without leaving the lightbox: cycle the card's angle
+  // tabs and swap the enlarged pair's two images to match.
+  function stepLb(dir) {
+    if (!lbTabs || lbTabs.length < 2) return;
+    lbIdx = (lbIdx + dir + lbTabs.length) % lbTabs.length;
+    var tab = lbTabs[lbIdx];
+    var imgs = lbInner.querySelectorAll('img');
+    if (imgs.length >= 2) {
+      imgs[0].src = tab.getAttribute('data-before');
+      imgs[1].src = tab.getAttribute('data-after');
+    }
+    if (lbAngle) lbAngle.textContent = tab.textContent || '';
   }
 
   function openLightbox(cardEl) {
@@ -353,6 +404,18 @@
     if (meta) lbInner.appendChild(meta.cloneNode(true));
     var by = cardEl.querySelector('.by');
     if (by) lbInner.appendChild(by.cloneNode(true));
+
+    // Angle navigation, only when the card has more than one angle.
+    lbTabs = Array.prototype.slice.call(cardEl.querySelectorAll('[role="tab"]'));
+    lbIdx = 0;
+    for (var i = 0; i < lbTabs.length; i++) {
+      if (lbTabs[i].getAttribute('aria-selected') === 'true') { lbIdx = i; break; }
+    }
+    var multi = lbTabs.length > 1;
+    if (lbPrev) lbPrev.className = 'lb-nav lb-prev' + (multi ? ' show' : '');
+    if (lbNext) lbNext.className = 'lb-nav lb-next' + (multi ? ' show' : '');
+    if (lbAngle) lbAngle.textContent = multi ? (lbTabs[lbIdx].textContent || '') : '';
+
     lb.classList.add('open');
     // The host page keeps scrolling behind a fixed overlay otherwise, which reads
     // as the page being broken rather than as an overlay being open.

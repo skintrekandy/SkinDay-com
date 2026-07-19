@@ -455,8 +455,6 @@
         </button>
       </div>
       <div class="zoom-controls" id="zoomControls"></div>
-      <div class="preview-area p-2" id="previewArea"></div>
-      <div class="drag-hint" data-en="Drag each photo to reposition" data-zh="拖曳每張照片以調整位置">Drag each photo to reposition</div>
     </div>
 
     <!-- Branding -->
@@ -1425,7 +1423,7 @@ function setupCropGesture(cv, idx) {
   let drag = null, pinch = null;
   const clampZoom = z => Math.max(0.6, Math.min(z, 1.6));
   const sync = () => {
-    renderCropAdjust(); renderPreviews();
+    renderCropAdjust();
     const v = document.getElementById(`zVal-${idx}`);
     if (v) v.textContent = Math.round(S.slots[idx].zoom * 100) + '%';
   };
@@ -1463,6 +1461,7 @@ function setupCropGesture(cv, idx) {
 // ============================================================
 function rebuildPreviewArea() {
   const wrap = document.getElementById('previewArea');
+  if (!wrap) return; // export-preview grid removed; crop cards are the preview now
   const cfg = GRID_CONFIG[S.grid];
   const countClass = {2:'p-2', 3:'p-3', 4:'p-4', 6:'p-6'}[cfg.count] || 'p-2';
   wrap.className = 'preview-area ' + countClass;
@@ -1520,6 +1519,7 @@ function renderPreviews() {
       drawToCanvas(cv, sl.img, box, pW, pH, 1);
     }
   });
+  renderCropAdjust();
 }
 
 function setupDrag(canvasId, idx) {
