@@ -30,7 +30,7 @@
 
   .wrap{width:min(1120px,calc(100% - 44px));margin:0 auto;}
   /* Emphasis: dark text with a gold underline, so it stays readable */
-  em{font-style:normal;font-weight:500;background:linear-gradient(var(--gold),var(--gold)) left bottom / 100% 2px no-repeat;padding-bottom:1px;}
+  em{font-style:normal;font-weight:500;white-space:nowrap;background:linear-gradient(var(--gold),var(--gold)) left bottom / 100% 2px no-repeat;padding-bottom:1px;}
 
   /* Nav */
   nav{position:sticky;top:0;z-index:40;background:rgba(250,247,242,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);}
@@ -149,7 +149,7 @@
   .loopsec .lead-eyebrow{color:var(--gold);}
   .loopsec h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2.1rem,4.4vw,3.4rem);line-height:1.1;color:var(--cream);max-width:15ch;}
   body.zh .loopsec h2{line-height:1.45;font-family:'Noto Serif TC',serif;}
-  .loopsec h2 .lem{color:var(--gold);font-style:italic;}
+  .loopsec h2 .lem{color:var(--gold);font-style:italic;white-space:nowrap;}
   body.zh .loopsec h2 .lem{font-style:normal;}
   .flowchart{margin-top:52px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .flowchart svg{width:100%;min-width:660px;max-width:880px;height:auto;display:block;margin:0 auto;}
