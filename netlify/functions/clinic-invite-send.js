@@ -29,6 +29,7 @@ const { createClient } = require('@supabase/supabase-js');
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 const FROM = 'SkinDay <hello@skinday.com>';
 const REPLY_TO = 'hello@skinday.com';
@@ -47,9 +48,10 @@ function escapeHtml(s) {
   }[c]));
 }
 
-function emailHtml(clinicName, roleLabel, link) {
+function emailHtml(clinicName, roleLabel, link, inviteeName) {
   const clinic = escapeHtml(clinicName);
   const role = escapeHtml(roleLabel);
+  const nm = escapeHtml(inviteeName || '');
   // Inline styles only. Email clients strip <style> and ignore external CSS.
   return [
     '<!DOCTYPE html><html><body style="margin:0;background:#FAF7F2;font-family:Helvetica,Arial,sans-serif;color:#1C1714;">',
@@ -58,6 +60,7 @@ function emailHtml(clinicName, roleLabel, link) {
     '<tr><td style="padding:34px 40px 0;">',
     '<div style="font-family:Georgia,serif;font-size:26px;font-weight:600;color:#1C1714;">Skin<span style="color:#C9A96E;">Day</span></div>',
     '</td></tr>',
+    (nm ? '<tr><td style="padding:24px 40px 0;font-size:16px;line-height:1.5;color:#1C1714;">Hi ' + nm + ',</td></tr>' : ''),
     '<tr><td style="padding:26px 40px 8px;">',
     '<div style="font-family:Georgia,serif;font-size:22px;line-height:1.3;color:#1C1714;">You have been invited to join ' + clinic + ' on SkinDay.</div>',
     '</td></tr>',
@@ -95,6 +98,7 @@ exports.handler = async function (event) {
   const invitationId = body.invitationId ? String(body.invitationId) : '';
   let email = body.email ? String(body.email).trim() : '';
   const role = body.role ? String(body.role) : 'staff';
+  const inviteeName = body.name ? String(body.name).trim().slice(0, 120) : '';
   // The RPC is the gate, but garbage never needs to reach it. Owner is a role
   // that is transferred, never invited.
   const ALLOWED_ROLES = ['staff', 'injector', 'consultant', 'marketing', 'admin'];
@@ -130,6 +134,24 @@ exports.handler = async function (event) {
     });
     if (invErr) return json(403, { error: invErr.message });
     inv = created;
+  }
+
+  // Best-effort: store the human name the inviter typed, so the team list shows a
+  // person and not just an address. The invitation and its authority never depend
+  // on it; a service client is used because the invitations table is not writable
+  // by the member's own token, and any failure is swallowed.
+  if (inviteeName && SERVICE_KEY) {
+    try {
+      const asService = createClient(SUPABASE_URL, SERVICE_KEY, {
+        auth: { persistSession: false, autoRefreshToken: false }
+      });
+      await asService.from('clinic_invitations')
+        .update({ invitee_name: inviteeName })
+        .eq('clinic_id', clinicId)
+        .eq('email_normalized', String(email || '').toLowerCase())
+        .is('accepted_at', null)
+        .is('revoked_at', null);
+    } catch (e) { /* name is decoration; never fail the invite over it */ }
   }
 
   const origin =
@@ -175,7 +197,7 @@ exports.handler = async function (event) {
         to: [email],
         reply_to: REPLY_TO,
         subject: 'You have been invited to join ' + clinicName + ' on SkinDay',
-        html: emailHtml(clinicName, roleLabel, link)
+        html: emailHtml(clinicName, roleLabel, link, inviteeName)
       })
     });
 
