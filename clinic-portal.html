@@ -898,10 +898,18 @@
   <section class="sec collapsible" id="setAccount">
     <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Your account" data-zh="您的帳號">Your account</span>
-      <h2 class="display" data-en="Change your password." data-zh="變更密碼。">Change your password.</h2>
-      <p data-en="Set a new password for your own sign-in. This changes only your account, not anyone else on the team." data-zh="為您自己的登入設定新密碼；這只會變更您個人的帳號，不影響團隊其他成員。">Set a new password for your own sign-in. This changes only your account, not anyone else on the team.</p>
+      <h2 class="display" data-en="Your account." data-zh="您的帳號。">Your account.</h2>
+      <p data-en="Set the name your team sees, and change your own password. These affect only your account." data-zh="設定團隊會看到的您的姓名，並變更您自己的密碼；這些只會影響您個人的帳號。">Set the name your team sees, and change your own password. These affect only your account.</p>
     </div>
     <div class="panel">
+      <div class="field">
+        <label class="eyebrow" for="acctName" data-en="Your name" data-zh="您的姓名">Your name</label>
+        <input type="text" id="acctName" maxlength="120" placeholder="Full name">
+        <small data-en="Shown to your team, so people see a name and not just an email." data-zh="會顯示給您的團隊，讓成員看到姓名而非只有電子郵件。">Shown to your team, so people see a name and not just an email.</small>
+      </div>
+      <button class="act" id="acctNameSave" data-en="Save name" data-zh="儲存姓名">Save name</button>
+      <div class="note" id="acctNameNote"></div>
+      <hr style="border:none;border-top:1px solid var(--line);margin:22px 0;">
       <div class="field">
         <label class="eyebrow" for="pwNew" data-en="New password" data-zh="新密碼">New password</label>
         <input type="password" id="pwNew" autocomplete="new-password">
@@ -1342,6 +1350,27 @@ async function changeOwnPassword() {
 }
 $('pwSave').addEventListener('click', changeOwnPassword);
 $('pwConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') changeOwnPassword(); });
+
+// Your display name, stored on the account (user_metadata.full_name, the same
+// field the agreement signer pre-fills from). The team list reads it back through
+// get_clinic_member_names so colleagues see a name, not just an email.
+async function saveOwnName() {
+  const el = $('acctName'); if (!el) return;
+  const name = el.value.trim();
+  note('acctNameNote', sdT('Saving\u2026', '\u5132\u5b58\u4e2d\u2026'));
+  const { error } = await sb.auth.updateUser({ data: { full_name: name } });
+  if (error) { note('acctNameNote', error.message, 'bad'); return; }
+  note('acctNameNote', sdT('Saved. Your team will see this name.', '\u5df2\u5132\u5b58\uff0c\u60a8\u7684\u5718\u968a\u5c07\u6703\u770b\u5230\u6b64\u59d3\u540d\u3002'), 'ok');
+}
+if ($('acctNameSave')) $('acctNameSave').addEventListener('click', saveOwnName);
+(async () => {
+  try {
+    const { data: _u } = await sb.auth.getUser();
+    const _meta = (_u && _u.user && _u.user.user_metadata) || {};
+    const _el = $('acctName');
+    if (_el && !_el.value) _el.value = _meta.full_name || _meta.name || '';
+  } catch (e) {}
+})();
 
 // Collapse the rarely-touched Settings sections (password, clinic details) by
 // default; expand on click or keyboard. Studio/Visualize/Library stay the focus.
@@ -4564,6 +4593,21 @@ async function loadTeam() {
     (((c.seats_used || 0) >= (c.seat_limit || 8))
       ? ' You are at your plan\'s seat limit. Upgrade in the Billing section below to invite more people.'
       : '');
+
+  // Accepted members: name from get_clinic_member_names (reads each member's auth
+  // full_name, set in Settings > Your account), merged by user_id. Best-effort: if
+  // the function is not deployed yet, rows fall back to email exactly as before.
+  try {
+    const { data: _nameRows } = await sb.rpc('get_clinic_member_names', { p_clinic_id: clinicId });
+    const _byUser = {};
+    (_nameRows || []).forEach(r => { if (r && r.name) _byUser[String(r.user_id)] = r.name; });
+    (data || []).forEach(m => {
+      if (m && m.kind !== 'invitation' && !m.name && m.user_id) {
+        const _n = _byUser[String(m.user_id)];
+        if (_n) m.name = _n;
+      }
+    });
+  } catch (e) { /* names are decoration; email-only is fine */ }
 
   // Names for pending invitations. get_clinic_team returns the email; the human
   // name the inviter typed lives on clinic_invitations.invitee_name. Read it here
