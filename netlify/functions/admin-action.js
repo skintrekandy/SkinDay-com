@@ -223,12 +223,92 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify({ success: true, count: ids.length, decision }) };
   }
 
-  // ── UNKNOWN ACTION ───────────────────────────────────────────────────────────
+  // == LIST PENDING CLINICS (Visualize Pro sign-up approvals) ==================
+  // New clinics land as approval_status='pending' (DB default). This queue lets
+  // an operator approve (grant portal access) or reject. Enriched with the
+  // owner's email so the reviewer knows who signed up.
+  if (action === 'list-pending-clinics') {
+    const { data: clinics, error } = await supabase
+      .from('clinics')
+      .select('id, name, city, country, created_at')
+      .eq('approval_status', 'pending')
+      .order('created_at', { ascending: true })
+      .limit(200);
+    if (error) {
+      console.error('list-pending-clinics error:', error);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to list pending clinics' }) };
+    }
+    const rows = clinics || [];
+    const ids = rows.map(r => String(r.id));
+    const ownerByClinic = {};
+    if (ids.length) {
+      const { data: mems } = await supabase
+        .from('clinic_memberships')
+        .select('clinic_id, user_id')
+        .in('clinic_id', ids)
+        .eq('role', 'owner')
+        .eq('status', 'active')
+        .is('revoked_at', null);
+      for (const m of (mems || [])) {
+        const cid = String(m.clinic_id);
+        if (ownerByClinic[cid]) continue;
+        try {
+          const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
+          ownerByClinic[cid] = (u && u.user && u.user.email) || null;
+        } catch (e) { /* leave email null */ }
+      }
+    }
+    const out = rows.map(r => ({
+      id: String(r.id),
+      name: r.name,
+      city: r.city,
+      country: r.country,
+      created_at: r.created_at,
+      owner_email: ownerByClinic[String(r.id)] || null
+    }));
+    return { statusCode: 200, headers, body: JSON.stringify({ clinics: out }) };
+  }
+
+  // == APPROVE CLINIC =========================================================
+  if (action === 'approve-clinic') {
+    const { clinic_id } = body;
+    if (!clinic_id) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'clinic_id required' }) };
+    }
+    const { error } = await supabase
+      .from('clinics')
+      .update({ approval_status: 'approved', approved_at: new Date().toISOString() })
+      .eq('id', String(clinic_id));
+    if (error) {
+      console.error('approve-clinic error:', error);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to approve clinic' }) };
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, clinic_id: String(clinic_id) }) };
+  }
+
+  // == REJECT CLINIC ==========================================================
+  if (action === 'reject-clinic') {
+    const { clinic_id } = body;
+    if (!clinic_id) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'clinic_id required' }) };
+    }
+    const { error } = await supabase
+      .from('clinics')
+      .update({ approval_status: 'rejected' })
+      .eq('id', String(clinic_id));
+    if (error) {
+      console.error('reject-clinic error:', error);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to reject clinic' }) };
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, clinic_id: String(clinic_id) }) };
+  }
+
+  // == UNKNOWN ACTION ───────────────────────────────────────────────────────────
   // Directory actions (approve/reject claims, prices, add-clinic) are
   // intentionally not available on the .com global admin.
   return {
     statusCode: 400,
     headers,
-    body: JSON.stringify({ error: "Invalid action. This endpoint supports: list-flagged-votes, review-vote, review-votes-bulk." })
+    body: JSON.stringify({ error: "Invalid action. Supported: list-flagged-votes, review-vote, review-votes-bulk, list-pending-clinics, approve-clinic, reject-clinic." })
   };
 };
