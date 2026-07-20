@@ -720,6 +720,13 @@
        Library, not Studio, not Visualize. The agreement is what makes it
        legitimate for SkinDay to hold this clinic's patients at all, so it cannot
        be a banner someone dismisses. -->
+  <section class="gate sec" id="pendingReview" style="display:none;">
+    <span class="eyebrow" data-en="Almost there" data-zh="即將完成">Almost there</span>
+    <h1 class="display" id="prTitle" data-en="Your clinic is under review." data-zh="您的診所正在審核中。">Your clinic is under review.</h1>
+    <p class="lede" id="prMsg" data-en="Thanks for signing up. Our team is reviewing your clinic and will approve it shortly. You can start as soon as it is approved, and we will be in touch." data-zh="感謝您註冊。我們的團隊正在審核您的診所，很快就會核准。核准後即可開始使用，我們也會與您聯繫。">Thanks for signing up. Our team is reviewing your clinic and will approve it shortly.</p>
+    <button class="act" id="prSignOut" data-en="Sign out" data-zh="登出">Sign out</button>
+  </section>
+
   <section class="sec" id="agreements" style="display:none;">
     <div class="sec-head">
       <span class="eyebrow" id="agFor" data-en="Before you begin" data-zh="開始之前">Before you begin</span>
@@ -1431,11 +1438,12 @@ async function doSignUp() {
 $('doSignUp').addEventListener('click', doSignUp);
 
 $('signOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+$('prSignOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
 async function start() {
   // Any of the three entry screens could be the one that got here. Hide them all,
   // so none can be left covering the portal.
-  ['gate', 'signup'].forEach(id => {
+  ['gate', 'signup', 'pendingReview'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
   });
@@ -1471,8 +1479,28 @@ async function start() {
   clinicId = rows[0].clinic_id;
 
   const { data: c } = await sb.from('clinics')
-    .select('name,logo_url,created_at').eq('id', clinicId).limit(1);
+    .select('name,logo_url,created_at,approval_status').eq('id', clinicId).limit(1);
   setClinicHeader(c && c[0]);
+
+  // Ownership approval gate: a new sign-up is 'pending' until approved in the
+  // admin. Pending or rejected clinics can sign in but see only a status screen,
+  // never the portal. Undefined/approved falls through (safe before the migration).
+  const _approval = c && c[0] && c[0].approval_status;
+  if (_approval === 'pending' || _approval === 'rejected') {
+    if (_approval === 'rejected') {
+      const pt = $('prTitle'), pm = $('prMsg');
+      pt.setAttribute('data-en', 'This clinic was not approved.');
+      pt.setAttribute('data-zh', '此診所未通過審核。');
+      pm.setAttribute('data-en', 'We were not able to approve this clinic for Visualize Pro. If you think this is a mistake, please get in touch.');
+      pm.setAttribute('data-zh', '我們目前無法為此診所開通 Visualize Pro。若您認為有誤，請與我們聯繫。');
+      pt.textContent = sdT(pt.getAttribute('data-en'), pt.getAttribute('data-zh'));
+      pm.textContent = sdT(pm.getAttribute('data-en'), pm.getAttribute('data-zh'));
+    }
+    $('gate').style.display = 'none';
+    $('hdr').style.display = 'flex';
+    $('pendingReview').style.display = 'block';
+    return;
+  }
 
   // A patient photograph must never be SAVED into a relationship that has not been
   // described and signed, so case-save stays blocked until acceptance (see the save

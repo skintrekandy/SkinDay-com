@@ -364,6 +364,9 @@
 
   .btn-approve:hover { opacity: 0.85; }
   .btn-approve:disabled { opacity: 0.4; cursor: default; }
+  .claim-meta-label { display:block; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:2px; }
+  .btn-reject { background:none; border:1px solid rgba(201,169,110,.3); color:var(--dim); padding:.5rem 1.1rem; border-radius:6px; cursor:pointer; font-family:inherit; font-size:.82rem; }
+  .btn-reject:hover { border-color:var(--rose); color:var(--rose); }
 
   .btn-reject {
     padding: 0.6rem 1.25rem;
@@ -675,6 +678,9 @@
     <button class="nav-tab" data-tab="flagged" onclick="switchTab('flagged')">
       &#9873; Flagged Votes <span class="tab-count zero" id="flagged-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="signups" onclick="switchTab('signups')">
+      &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
+    </button>
   </nav>
 
   <main class="admin-main">
@@ -760,6 +766,21 @@
         </div>
       </div>
     </div>
+    <div id="signups-panel" style="display:none">
+      <div class="add-clinic-form" style="max-width:1000px;">
+        <div class="form-title">Clinic Sign-ups</div>
+        <div class="form-subtitle">New clinics awaiting approval. Approve gives full portal access; Reject denies it. A pending clinic can sign in but sees an "under review" screen and cannot save cases.</div>
+        <div id="signups-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">Loading...</div>
+        <div id="signups-error" style="display:none;color:var(--rose);padding:20px 0;font-size:.85rem;"></div>
+        <div id="signups-empty" style="display:none;text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">No clinics awaiting approval.</div>
+        <div id="signups-content" style="display:none;">
+          <div id="signups-cards" class="claims-grid"></div>
+          <div style="text-align:right;margin-top:1rem;">
+            <button onclick="loadSignups()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -811,6 +832,7 @@ async function enterApp(){
   document.getElementById('app').style.display = 'block';
   await loadCosts();
   refreshFlaggedCount(); // show pending-review badge immediately
+  refreshSignupCount(); // show pending clinic sign-ups badge immediately
 }
 
 function refresh(){
@@ -826,10 +848,13 @@ function switchTab(tab){
   });
   var costsP = document.getElementById('costs-panel');
   var flaggedP = document.getElementById('flagged-panel');
+  var signupsP = document.getElementById('signups-panel');
   if (costsP) costsP.style.display = (tab === 'costs') ? 'block' : 'none';
   if (flaggedP) flaggedP.style.display = (tab === 'flagged') ? 'block' : 'none';
+  if (signupsP) signupsP.style.display = (tab === 'signups') ? 'block' : 'none';
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
+  if (tab === 'signups') loadSignups();
 }
 
 // ── FLAGGED VOTES (M36 moderation via admin-action.js) ──────
@@ -962,6 +987,70 @@ async function refreshFlaggedCount(){
     if (n === 0 && currentTab === 'flagged') {
       document.getElementById('flagged-content').style.display = 'none';
       document.getElementById('flagged-empty').style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+// -- CLINIC SIGN-UPS (approval queue) -----------------------------------------
+// New clinics land as approval_status='pending'. Approve grants full portal
+// access; Reject denies it. Backend actions to add in admin-action.js:
+//   list-pending-clinics -> { clinics:[{id,name,city,country,created_at,owner_email}] }
+//   approve-clinic {clinic_id} -> {ok:true}   reject-clinic {clinic_id} -> {ok:true}
+async function loadSignups(){
+  var loading=document.getElementById('signups-loading'), errEl=document.getElementById('signups-error'),
+      emptyEl=document.getElementById('signups-empty'), content=document.getElementById('signups-content');
+  loading.style.display='block'; errEl.style.display='none'; emptyEl.style.display='none'; content.style.display='none';
+  try {
+    var data = await adminAction({ action: 'list-pending-clinics' });
+    var clinics = data.clinics || [];
+    var badge = document.getElementById('signups-count');
+    badge.textContent = clinics.length; badge.classList.toggle('zero', clinics.length === 0);
+    loading.style.display='none';
+    if (!clinics.length) { emptyEl.style.display='block'; return; }
+    renderSignups(clinics); content.style.display='block';
+  } catch (e) { loading.style.display='none'; errEl.textContent = e.message || 'Failed to load.'; errEl.style.display='block'; }
+}
+function renderSignups(clinics){
+  var host = document.getElementById('signups-cards');
+  host.innerHTML = clinics.map(function(c){
+    var when = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    var loc = [c.city, c.country].filter(Boolean).join(', ');
+    return '<div class="claim-card" id="signup-' + esc(c.id) + '">'
+      + '<div class="claim-header"><div class="claim-clinic-name">' + esc(c.name || c.id) + '</div>'
+      + '<span class="status-pill pending">Pending</span></div>'
+      + '<div class="claim-meta">'
+      + '<div><span class="claim-meta-label">Owner</span>' + esc(c.owner_email || '-') + '</div>'
+      + '<div><span class="claim-meta-label">Location</span>' + esc(loc || '-') + '</div>'
+      + '<div><span class="claim-meta-label">Signed up</span>' + esc(when) + '</div>'
+      + '</div>'
+      + '<div class="claim-actions">'
+      + '<button class="btn-approve" onclick="approveClinic(\''+esc(c.id)+'\')">Approve</button>'
+      + '<button class="btn-reject" onclick="rejectClinic(\''+esc(c.id)+'\',\''+esc(c.name||c.id)+'\')">Reject</button>'
+      + '</div></div>';
+  }).join('');
+}
+async function approveClinic(id){
+  try { await adminAction({ action: 'approve-clinic', clinic_id: id });
+    var el = document.getElementById('signup-' + id); if (el) el.remove();
+    showToast('Clinic approved.'); refreshSignupCount();
+  } catch (e) { showToast(e.message || 'Failed.', true); }
+}
+async function rejectClinic(id, name){
+  if (!confirm('Reject ' + (name || 'this clinic') + '? They will not get portal access.')) return;
+  try { await adminAction({ action: 'reject-clinic', clinic_id: id });
+    var el = document.getElementById('signup-' + id); if (el) el.remove();
+    showToast('Clinic rejected.'); refreshSignupCount();
+  } catch (e) { showToast(e.message || 'Failed.', true); }
+}
+async function refreshSignupCount(){
+  try {
+    var data = await adminAction({ action: 'list-pending-clinics' });
+    var n = (data.clinics || []).length;
+    var badge = document.getElementById('signups-count');
+    badge.textContent = n; badge.classList.toggle('zero', n === 0);
+    if (n === 0 && currentTab === 'signups') {
+      document.getElementById('signups-content').style.display='none';
+      document.getElementById('signups-empty').style.display='block';
     }
   } catch (e) {}
 }
