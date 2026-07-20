@@ -42,8 +42,8 @@ exports.handler = async (event) => {
         .select('id, name, neighbourhood, region, photo, logo, lat, lng, rating, reviews')
         .eq('approved', true)
         .eq('country', country);
-      if (metroIdx) idxQuery = idxQuery.eq('metro', metroIdx);
-      if (stateIdx) idxQuery = idxQuery.eq('state', stateIdx);
+      if (metroIdx) idxQuery = idxQuery.ilike('metro', metroIdx);
+      if (stateIdx) idxQuery = idxQuery.ilike('state', stateIdx);
       const { data, error } = await idxQuery
         .order('id', { ascending: true })
         .range(0, 29999);
@@ -84,8 +84,8 @@ exports.handler = async (event) => {
 
       if (search)        q = q.ilike('name', `%${search}%`);
       if (neighbourhood) q = q.eq('neighbourhood', neighbourhood);
-      if (metro)         q = q.eq('metro', metro);
-      if (stateFilter)   q = q.eq('state', stateFilter);
+      if (metro)         q = q.ilike('metro', metro);
+      if (stateFilter)   q = q.ilike('state', stateFilter);
 
       return q;
     };
