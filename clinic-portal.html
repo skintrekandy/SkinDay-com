@@ -149,13 +149,18 @@
   .sec-head { margin-bottom:22px; }
   .sec-head h2 { font-size:30px; font-weight:600; letter-spacing:-.015em; margin:10px 0 4px; }
   .sec-head p { color:var(--muted); font-size:15px; line-height:1.6; margin:0; max-width:62ch; }
-  .collapsible > .sec-head { cursor:pointer; position:relative; padding-right:34px; margin-bottom:0; user-select:none; }
-  .collapsible > .sec-head:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:4px; }
-  .collapsible > .sec-head .chevron { position:absolute; right:6px; top:22px; font-size:17px; line-height:1; color:var(--muted); transition:transform .2s ease; }
-  .collapsible.open > .sec-head .chevron { transform:rotate(90deg); }
-  .collapsible.open > .sec-head { margin-bottom:22px; }
-  .collapsible > .sec-head p, .collapsible > .panel { display:none; }
-  .collapsible.open > .sec-head p, .collapsible.open > .panel { display:block; }
+  /* Collapsible Settings sections: compact clickable bar, obvious accent chevron, collapsed by default */
+  .collapsible { margin-bottom:14px; }
+  .collapsible > .sec-head { cursor:pointer; position:relative; margin-bottom:0; padding:18px 66px 18px 20px; border:1px solid var(--line); border-radius:12px; transition:background .15s ease, border-color .15s ease; user-select:none; }
+  .collapsible > .sec-head:hover { border-color:var(--accent); background:var(--accent-soft); }
+  .collapsible > .sec-head:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .collapsible > .sec-head h2 { font-size:21px; margin:6px 0 0; }
+  .collapsible > .sec-head p { margin-top:12px; }
+  .collapsible > .sec-head .chevron { position:absolute; right:16px; top:24px; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--accent-ink); font-size:12px; line-height:1; box-shadow:0 1px 5px rgba(0,0,0,.15); pointer-events:none; transition:transform .2s ease; }
+  .collapsible.open > .sec-head .chevron { transform:rotate(180deg); }
+  .collapsible.open > .sec-head { margin-bottom:20px; border-color:var(--accent); }
+  .collapsible:not(.open) > :not(.sec-head) { display:none !important; }
+  .collapsible:not(.open) > .sec-head p { display:none; }
 
   .panel {
     background:var(--surface); border:1px solid var(--line);
@@ -878,7 +883,7 @@
   </section>
 
   <section class="sec collapsible" id="setAccount">
-    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▸</span>
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Your account" data-zh="您的帳號">Your account</span>
       <h2 class="display" data-en="Change your password." data-zh="變更密碼。">Change your password.</h2>
       <p data-en="Set a new password for your own sign-in. This changes only your account, not anyone else on the team." data-zh="為您自己的登入設定新密碼；這只會變更您個人的帳號，不影響團隊其他成員。">Set a new password for your own sign-in. This changes only your account, not anyone else on the team.</p>
@@ -898,7 +903,7 @@
   </section>
 
   <section class="sec collapsible" id="setProfile" style="display:none;">
-    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▸</span>
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Clinic" data-zh="診所">Clinic</span>
       <h2 class="display" data-en="Details." data-zh="基本資料。">Details.</h2>
       <p data-en="Your name and logo appear on the gallery you embed on your own website." data-zh="診所名稱與 Logo 會顯示在嵌入您網站的案例牆中。">Your name and logo appear on the gallery you embed on your own website.</p>
@@ -961,8 +966,8 @@
     </div>
   </section>
 
-  <section class="sec">
-    <div class="sec-head">
+  <section class="sec collapsible">
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Team" data-zh="團隊">Team</span>
       <h2 class="display" data-en="Who can get in." data-zh="可登入的人員。">Who can get in.</h2>
       <p id="teamSub" data-en="Every action in this portal is recorded against the person who took it. That only means something if nobody shares a login." data-zh="後台中的每項操作都會記錄執行者，因此請勿共用登入帳號。">Every action in this portal is recorded against the person who took it. That only means something if nobody shares a login.</p>
@@ -994,8 +999,8 @@
     <div id="teamList"><div class="empty"><p data-en="Loading…" data-zh="載入中…">Loading…</p></div></div>
   </section>
 
-  <section class="sec">
-    <div class="sec-head">
+  <section class="sec collapsible">
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Billing" data-zh="訂閱與帳務">Billing</span>
       <h2 class="display" id="billTitle" data-en="Plan." data-zh="方案。">Plan.</h2>
       <p id="billSub"></p>
@@ -1003,8 +1008,8 @@
     <div class="panel" id="billBox"></div>
   </section>
 
-  <section class="sec">
-    <div class="sec-head">
+  <section class="sec collapsible">
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Agreements" data-zh="協議">Agreements</span>
       <h2 class="display" data-en="What you accepted." data-zh="您已接受的文件。">What you accepted.</h2>
       <p data-en="The exact version, and who accepted it on the clinic's behalf." data-zh="包含文件的確切版本，以及代表診所接受的人員。">The exact version, and who accepted it on the clinic's behalf.</p>
