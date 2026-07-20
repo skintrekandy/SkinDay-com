@@ -987,6 +987,10 @@
     </div>
 
     <div class="panel" id="inviteBox" style="display:none;">
+      <div class="field">
+        <label class="eyebrow" for="invName" data-en="Name" data-zh="姓名">Name</label>
+        <input type="text" id="invName" maxlength="120" placeholder="Full name">
+      </div>
       <div class="row2">
         <div class="field">
           <label class="eyebrow" for="invEmail" data-en="Invite by email" data-zh="以電子郵件邀請">Invite by email</label>
@@ -4578,7 +4582,7 @@ function memberRow(m, myRole) {
     : (pending ? 'Invited, not accepted yet' : 'Has not done anything yet');
 
   g.innerHTML =
-    '<div class="em">' + m.email + '</div>' +
+    '<div class="em">' + (m.name ? (m.name + ' <span style="color:var(--muted);font-weight:400;">' + m.email + '</span>') : m.email) + '</div>' +
     '<div class="sub">' + last + (pending && m.expires_at
       ? '. Expires ' + new Date(m.expires_at).toISOString().slice(0, 10) : '') + '</div>';
 
@@ -4703,6 +4707,7 @@ async function sendInvite() {
   const btn = $('invSend');
   const email = $('invEmail').value.trim();
   const role = $('invRole').value;
+  const name = $('invName') ? $('invName').value.trim() : '';
   if (!email) return note('invNote', 'Who are you inviting?', 'bad');
 
   btn.disabled = true;
@@ -4714,7 +4719,7 @@ async function sendInvite() {
     const r = await fetch('/api/clinic-invite-send', {
       method: 'POST',
       headers: { Authorization: 'Bearer ' + t, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clinicId, email, role })
+      body: JSON.stringify({ clinicId, email, role, name })
     });
     const b = await r.json().catch(() => ({}));
     if (!r.ok || !b.ok) throw new Error(b.error || 'That did not go through.');
@@ -4747,6 +4752,7 @@ async function sendInvite() {
       '<span style="user-select:all;">' + (b.link || '') + '</span>';
 
     $('invEmail').value = '';
+    if ($('invName')) $('invName').value = '';
     await loadSettings();
     await loadTeam();
   } catch (e) {
