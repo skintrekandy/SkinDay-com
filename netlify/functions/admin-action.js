@@ -224,66 +224,81 @@ exports.handler = async (event) => {
   }
 
   // == LIST PENDING CLINICS (Visualize Pro sign-up approvals) ==================
-  // New clinics land as approval_status='pending' (DB default). This queue lets
-  // an operator approve (grant portal access) or reject. Enriched with the
-  // owner's email so the reviewer knows who signed up.
+  // Approval lives on clinic_subscriptions.approved (the Pro layer), NOT on
+  // clinics, which is shared with the ~thousands of directory listings. A Pro
+  // sign-up is pending while its subscription row has approved=false and is not
+  // rejected. Enriched with clinic name/location + owner email.
   if (action === 'list-pending-clinics') {
-    const { data: clinics, error } = await supabase
-      .from('clinics')
-      .select('id, name, city, country, created_at')
-      .eq('approval_status', 'pending')
-      .order('created_at', { ascending: true })
+    const { data: subs, error } = await supabase
+      .from('clinic_subscriptions')
+      .select('clinic_id, status')
+      .eq('approved', false)
+      .neq('status', 'rejected')
       .limit(200);
     if (error) {
       console.error('list-pending-clinics error:', error);
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to list pending clinics' }) };
     }
-    const rows = clinics || [];
-    const ids = rows.map(r => String(r.id));
-    const ownerByClinic = {};
-    if (ids.length) {
-      const { data: mems } = await supabase
-        .from('clinic_memberships')
-        .select('clinic_id, user_id')
-        .in('clinic_id', ids)
-        .eq('role', 'owner')
-        .eq('status', 'active')
-        .is('revoked_at', null);
-      for (const m of (mems || [])) {
-        const cid = String(m.clinic_id);
-        if (ownerByClinic[cid]) continue;
-        try {
-          const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
-          ownerByClinic[cid] = (u && u.user && u.user.email) || null;
-        } catch (e) { /* leave email null */ }
-      }
+    const rows = subs || [];
+    const ids = [...new Set(rows.map(r => String(r.clinic_id)))];
+    if (!ids.length) {
+      return { statusCode: 200, headers, body: JSON.stringify({ clinics: [] }) };
     }
-    const out = rows.map(r => ({
-      id: String(r.id),
-      name: r.name,
-      city: r.city,
-      country: r.country,
-      created_at: r.created_at,
-      owner_email: ownerByClinic[String(r.id)] || null
-    }));
+    const { data: clinicRows } = await supabase
+      .from('clinics')
+      .select('id, name, neighbourhood, region, country')
+      .in('id', ids);
+    const cById = {};
+    (clinicRows || []).forEach(c => { cById[String(c.id)] = c; });
+
+    const { data: mems } = await supabase
+      .from('clinic_memberships')
+      .select('clinic_id, user_id')
+      .in('clinic_id', ids)
+      .eq('role', 'owner')
+      .eq('status', 'active')
+      .is('revoked_at', null);
+    const ownerByClinic = {};
+    for (const m of (mems || [])) {
+      const cid = String(m.clinic_id);
+      if (ownerByClinic[cid]) continue;
+      try {
+        const { data: u } = await supabase.auth.admin.getUserById(m.user_id);
+        ownerByClinic[cid] = (u && u.user && u.user.email) || null;
+      } catch (e) { /* leave email null */ }
+    }
+
+    const out = ids.map(cid => {
+      const c = cById[cid] || {};
+      return {
+        id: cid,
+        name: c.name || ('Clinic ' + cid),
+        city: c.neighbourhood || c.region || null,
+        country: c.country || null,
+        owner_email: ownerByClinic[cid] || null
+      };
+    });
     return { statusCode: 200, headers, body: JSON.stringify({ clinics: out }) };
   }
 
   // == APPROVE CLINIC =========================================================
+  // Approving a Pro sign-up flips its subscription to approved and STARTS the
+  // 90-day pilot from this moment (status=trialing, trial_ends_at=now+90d).
   if (action === 'approve-clinic') {
     const { clinic_id } = body;
     if (!clinic_id) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'clinic_id required' }) };
     }
+    const trialEnds = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
     const { error } = await supabase
-      .from('clinics')
-      .update({ approval_status: 'approved', approved_at: new Date().toISOString() })
-      .eq('id', String(clinic_id));
+      .from('clinic_subscriptions')
+      .update({ approved: true, status: 'trialing', trial_ends_at: trialEnds })
+      .eq('clinic_id', String(clinic_id));
     if (error) {
       console.error('approve-clinic error:', error);
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to approve clinic' }) };
     }
-    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, clinic_id: String(clinic_id) }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true, clinic_id: String(clinic_id), trial_ends_at: trialEnds }) };
   }
 
   // == REJECT CLINIC ==========================================================
@@ -293,9 +308,9 @@ exports.handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'clinic_id required' }) };
     }
     const { error } = await supabase
-      .from('clinics')
-      .update({ approval_status: 'rejected' })
-      .eq('id', String(clinic_id));
+      .from('clinic_subscriptions')
+      .update({ approved: false, status: 'rejected' })
+      .eq('clinic_id', String(clinic_id));
     if (error) {
       console.error('reject-clinic error:', error);
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to reject clinic' }) };
