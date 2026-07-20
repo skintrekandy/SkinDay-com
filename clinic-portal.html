@@ -4565,6 +4565,31 @@ async function loadTeam() {
       ? ' You are at your plan\'s seat limit. Upgrade in the Billing section below to invite more people.'
       : '');
 
+  // Names for pending invitations. get_clinic_team returns the email; the human
+  // name the inviter typed lives on clinic_invitations.invitee_name. Read it here
+  // and merge, so a pending row shows a person, not just an address. Best-effort:
+  // if RLS blocks the read, the rows fall back to email exactly as before.
+  try {
+    const _pending = (data || []).filter(m => m && m.kind === 'invitation' && m.email);
+    if (_pending.length) {
+      const { data: _invRows } = await sb.from('clinic_invitations')
+        .select('email_normalized, invitee_name')
+        .eq('clinic_id', clinicId)
+        .is('accepted_at', null)
+        .is('revoked_at', null);
+      const _byEmail = {};
+      (_invRows || []).forEach(r => {
+        if (r && r.invitee_name) _byEmail[String(r.email_normalized || '').toLowerCase()] = r.invitee_name;
+      });
+      (data || []).forEach(m => {
+        if (m && m.kind === 'invitation' && !m.name) {
+          const _n = _byEmail[String(m.email || '').toLowerCase()];
+          if (_n) m.name = _n;
+        }
+      });
+    }
+  } catch (e) { /* names are decoration; email-only is fine */ }
+
   host.innerHTML = '';
   (data || []).forEach(m => host.appendChild(memberRow(m, myRole)));
 }
