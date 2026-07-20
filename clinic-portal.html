@@ -1450,7 +1450,7 @@ async function start() {
 
   let { data: rows, error } = await sb
     .from('clinic_memberships')
-    .select('clinic_id')
+    .select('clinic_id, created_at')
     .eq('status', 'active')
     .is('revoked_at', null)
     .limit(1);
@@ -1479,15 +1479,22 @@ async function start() {
   clinicId = rows[0].clinic_id;
 
   const { data: c } = await sb.from('clinics')
-    .select('name,logo_url,created_at,approval_status').eq('id', clinicId).limit(1);
+    .select('name,logo_url').eq('id', clinicId).limit(1);
   setClinicHeader(c && c[0]);
 
-  // Ownership approval gate: a new sign-up is 'pending' until approved in the
-  // admin. Pending or rejected clinics can sign in but see only a status screen,
-  // never the portal. Undefined/approved falls through (safe before the migration).
-  const _approval = c && c[0] && c[0].approval_status;
-  if (_approval === 'pending' || _approval === 'rejected') {
-    if (_approval === 'rejected') {
+  // Pro sign-up approval lives on clinic_subscriptions.approved (the Pro layer),
+  // NOT on clinics (shared with the directory). An unapproved sign-up can sign in
+  // but sees only a status screen, never the portal. Missing subscription or
+  // approved !== false falls through (safe before the migration, and for any
+  // legacy Pro clinic without the flag set).
+  let _sub0 = null;
+  try {
+    const { data: _sd } = await sb.from('clinic_subscriptions')
+      .select('approved,status').eq('clinic_id', clinicId).limit(1);
+    _sub0 = _sd && _sd[0];
+  } catch (e) { _sub0 = null; }
+  if (_sub0 && _sub0.approved === false) {
+    if (_sub0.status === 'rejected') {
       const pt = $('prTitle'), pm = $('prMsg');
       pt.setAttribute('data-en', 'This clinic was not approved.');
       pt.setAttribute('data-zh', '此診所未通過審核。');
@@ -1507,7 +1514,7 @@ async function start() {
   // handlers). But a clinic gets a 7-day grace window to explore first; only once it
   // lapses does the agreement screen become a hard gate.
   try {
-    const _cc = (c && c[0] && c[0].created_at) ? new Date(c[0].created_at).getTime() : Date.now();
+    const _cc = (rows && rows[0] && rows[0].created_at) ? new Date(rows[0].created_at).getTime() : Date.now();
     AGREE_DEADLINE = _cc + 7 * 24 * 60 * 60 * 1000;
   } catch (e) { AGREE_DEADLINE = Date.now() + 7 * 24 * 60 * 60 * 1000; }
 
