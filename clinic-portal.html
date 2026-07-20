@@ -488,6 +488,10 @@
   .empty p { color:var(--muted); font-size:14.5px; margin:7px 0 0; }
 
   .gate { max-width:384px; margin:12vh auto; }
+  .agree-banner { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:13px 20px; background:var(--accent-soft); border-bottom:1px solid var(--accent); font-size:14px; line-height:1.5; }
+  .agree-banner .agree-banner-txt { flex:1; min-width:240px; }
+  .agree-banner .agree-cta { margin-left:auto; background:var(--accent); color:var(--accent-ink); border:none; border-radius:8px; padding:9px 16px; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap; }
+  .agree-banner .agree-cta:hover { background:var(--accent-strong); }
   .gate .display { font-size:38px; font-weight:600; letter-spacing:-.02em; margin:12px 0 8px; }
   .gate p.lede { color:var(--muted); font-size:15px; line-height:1.6; margin:0 0 28px; }
   .gate button.act { width:100%; margin-top:8px; }
@@ -603,6 +607,8 @@
   <button id="settingsBtn" title="Settings" data-en="Settings" data-zh="設定">Settings</button>
   <button id="signOut" data-en="Sign out" data-zh="登出">Sign out</button>
 </header>
+
+<div id="agreeBanner" class="agree-banner" style="display:none;"></div>
 
 <nav class="tabs" id="tabs" style="display:none;">
   <button class="tab active" data-panel="studio">Studio</button>
@@ -1465,13 +1471,21 @@ async function start() {
   clinicId = rows[0].clinic_id;
 
   const { data: c } = await sb.from('clinics')
-    .select('name,logo_url').eq('id', clinicId).limit(1);
+    .select('name,logo_url,created_at').eq('id', clinicId).limit(1);
   setClinicHeader(c && c[0]);
 
-  // Nothing opens until the clinic has accepted. A patient photograph must not be
-  // uploadable into a relationship that has never been described to anyone.
+  // A patient photograph must never be SAVED into a relationship that has not been
+  // described and signed, so case-save stays blocked until acceptance (see the save
+  // handlers). But a clinic gets a 7-day grace window to explore first; only once it
+  // lapses does the agreement screen become a hard gate.
+  try {
+    const _cc = (c && c[0] && c[0].created_at) ? new Date(c[0].created_at).getTime() : Date.now();
+    AGREE_DEADLINE = _cc + 7 * 24 * 60 * 60 * 1000;
+  } catch (e) { AGREE_DEADLINE = Date.now() + 7 * 24 * 60 * 60 * 1000; }
+
   const pending = await loadAgreements();
-  if (pending > 0) {
+  if (pending > 0 && Date.now() > AGREE_DEADLINE) {
+    // Grace lapsed: hard gate. Nothing opens until an owner accepts.
     $('gate').style.display = 'none';
     $('hdr').style.display = 'flex';
     $('agreements').style.display = 'block';
@@ -1494,6 +1508,8 @@ async function start() {
    only that some text existed somewhere. It would not prove which. */
 
 let myRole = null;
+let AGREE_PENDING = 1;      // 1 until loadAgreements confirms 0; gates case-save
+let AGREE_DEADLINE = null;  // ms epoch; 7-day grace before the hard gate
 
 async function loadAgreements() {
   const host = $('agDocs');
@@ -1503,7 +1519,7 @@ async function loadAgreements() {
     note('agNote', error.message, 'bad');
     return 0;
   }
-  if (!data || !data.length) return 0;
+  if (!data || !data.length) { AGREE_PENDING = 0; return 0; }
 
   // Only an owner can bind the clinic. Everyone else can read, and is told who
   // they need. A receptionist staring at a blocked portal with no explanation is
@@ -1539,6 +1555,7 @@ async function loadAgreements() {
 
   host.innerHTML = '';
   data.forEach(d => host.appendChild(agreementCard(d, isOwner)));
+  AGREE_PENDING = data.length;
   return data.length;
 }
 
@@ -1621,6 +1638,57 @@ function agreementCard(d, isOwner) {
   return el;
 }
 
+// ---- agreement grace banner + voluntary acceptance -------------------------
+// Within the grace window the portal is open but the case-save paths are blocked;
+// this banner counts the days down and lets the owner accept whenever ready.
+function renderAgreeBanner() {
+  const b = $('agreeBanner');
+  if (!b) return;
+  if (AGREE_PENDING > 0 && AGREE_DEADLINE) {
+    const days = Math.max(0, Math.ceil((AGREE_DEADLINE - Date.now()) / 86400000));
+    const owner = myRole === 'owner';
+    const left = sdT(days + ' day' + (days === 1 ? '' : 's') + ' left', '剩 ' + days + ' 天');
+    const msg = owner
+      ? sdT('Review and accept your clinic agreements. You can explore now, but patient cases cannot be saved until they are signed.',
+            '請檢視並接受診所協議。您現在可以先探索，但在完成簽署前無法儲存顧客案例。')
+      : sdT('Your clinic has not accepted its agreements yet, and only an owner can. Cases cannot be saved until it does.',
+            '貴診所尚未接受協議，且僅診所擁有者可簽署。完成前無法儲存案例。');
+    b.innerHTML = '<span class="agree-banner-txt"><strong>' + left + '.</strong> ' + msg + '</span>'
+      + (owner ? '<button type="button" class="agree-cta" id="agreeBannerBtn">' + sdT('Review & accept', '立即檢視並接受') + '</button>' : '');
+    b.style.display = 'flex';
+    const bb = $('agreeBannerBtn');
+    if (bb) bb.onclick = openAgreementsScreen;
+  } else {
+    b.style.display = 'none';
+  }
+}
+function openAgreementsScreen() {
+  ['studio', 'visualize', 'library'].forEach(function (pp) { const el = $('panel-' + pp); if (el) el.style.display = 'none'; });
+  const setp = $('panel-settings'); if (setp) setp.style.display = 'none';
+  settingsOpen = false;
+  $('agreements').style.display = 'block';
+  let later = $('agLater');
+  if (!later) {
+    later = document.createElement('button');
+    later.id = 'agLater'; later.type = 'button'; later.className = 'quiet';
+    later.style.marginTop = '16px';
+    later.textContent = sdT('Not now, I\u2019ll come back to this', '稍後再處理');
+    later.onclick = closeAgreementsScreen;
+    const head = $('agreements').querySelector('.sec-head');
+    (head || $('agreements')).appendChild(later);
+  }
+  later.style.display = (AGREE_DEADLINE && Date.now() <= AGREE_DEADLINE) ? 'inline-block' : 'none';
+  loadAgreements();
+}
+function closeAgreementsScreen() {
+  $('agreements').style.display = 'none';
+  ['visualize', 'library'].forEach(function (pp) { const el = $('panel-' + pp); if (el) el.style.display = 'none'; });
+  $('panel-studio').style.display = 'block';
+  document.querySelectorAll('#tabs .tab').forEach(function (x) { x.classList.remove('active'); });
+  const st = document.querySelector('#tabs .tab[data-panel="studio"]');
+  if (st) st.classList.add('active');
+}
+
 // Everything start() did after the gate, so it can also be reached from the
 // moment the last agreement is accepted rather than only from a fresh sign-in.
 async function openPortal() {
@@ -1638,6 +1706,7 @@ async function openPortal() {
   $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
 
   loadLibrary();
+  renderAgreeBanner();
 
   if (BILLING_RESULT === 'ok') {
     settingsOpen = true;
@@ -2655,6 +2724,7 @@ async function canvasToFile(canvas, name) {
 }
 
 $('saveBtn').addEventListener('click', async () => {
+  if (AGREE_PENDING > 0) { note('saveNote', sdT('Accept your clinic agreements first. You can save patient cases as soon as they are signed.','請先接受診所協議，簽署後即可儲存顧客案例。'), 'bad'); renderAgreeBanner(); return; }
   const rows = Array.from(document.querySelectorAll('.pair'));
   if (!rows.length) { note('saveNote', 'Build a before and after in Studio first.', 'bad'); return; }
 
@@ -4918,6 +4988,7 @@ function collectFromFrame(timeoutMs) {
 async function saveSimulations() {
   const btn = $('simSaveBtn');
   btn.disabled = true;
+  if (AGREE_PENDING > 0) { note('simSaveNote', sdT('Accept your clinic agreements first. You can save as soon as they are signed.','請先接受診所協議，簽署後即可儲存。'), 'bad'); btn.disabled = false; renderAgreeBanner(); return; }
   note('simSaveNote', 'Saving…');
 
   try {
