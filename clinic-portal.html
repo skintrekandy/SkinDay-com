@@ -149,6 +149,13 @@
   .sec-head { margin-bottom:22px; }
   .sec-head h2 { font-size:30px; font-weight:600; letter-spacing:-.015em; margin:10px 0 4px; }
   .sec-head p { color:var(--muted); font-size:15px; line-height:1.6; margin:0; max-width:62ch; }
+  .collapsible > .sec-head { cursor:pointer; position:relative; padding-right:34px; margin-bottom:0; user-select:none; }
+  .collapsible > .sec-head:focus-visible { outline:2px solid var(--accent); outline-offset:4px; border-radius:4px; }
+  .collapsible > .sec-head .chevron { position:absolute; right:6px; top:22px; font-size:17px; line-height:1; color:var(--muted); transition:transform .2s ease; }
+  .collapsible.open > .sec-head .chevron { transform:rotate(90deg); }
+  .collapsible.open > .sec-head { margin-bottom:22px; }
+  .collapsible > .sec-head p, .collapsible > .panel { display:none; }
+  .collapsible.open > .sec-head p, .collapsible.open > .panel { display:block; }
 
   .panel {
     background:var(--surface); border:1px solid var(--line);
@@ -870,8 +877,8 @@
     </div>
   </section>
 
-  <section class="sec" id="setAccount">
-    <div class="sec-head">
+  <section class="sec collapsible" id="setAccount">
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▸</span>
       <span class="eyebrow" data-en="Your account" data-zh="您的帳號">Your account</span>
       <h2 class="display" data-en="Change your password." data-zh="變更密碼。">Change your password.</h2>
       <p data-en="Set a new password for your own sign-in. This changes only your account, not anyone else on the team." data-zh="為您自己的登入設定新密碼；這只會變更您個人的帳號，不影響團隊其他成員。">Set a new password for your own sign-in. This changes only your account, not anyone else on the team.</p>
@@ -890,8 +897,8 @@
     </div>
   </section>
 
-  <section class="sec" id="setProfile" style="display:none;">
-    <div class="sec-head">
+  <section class="sec collapsible" id="setProfile" style="display:none;">
+    <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▸</span>
       <span class="eyebrow" data-en="Clinic" data-zh="診所">Clinic</span>
       <h2 class="display" data-en="Details." data-zh="基本資料。">Details.</h2>
       <p data-en="Your name and logo appear on the gallery you embed on your own website." data-zh="診所名稱與 Logo 會顯示在嵌入您網站的案例牆中。">Your name and logo appear on the gallery you embed on your own website.</p>
@@ -1313,6 +1320,19 @@ async function changeOwnPassword() {
 }
 $('pwSave').addEventListener('click', changeOwnPassword);
 $('pwConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') changeOwnPassword(); });
+
+// Collapse the rarely-touched Settings sections (password, clinic details) by
+// default; expand on click or keyboard. Studio/Visualize/Library stay the focus.
+document.querySelectorAll('#panel-settings .collapsible > .sec-head').forEach(function (head) {
+  var toggle = function () {
+    var open = head.parentElement.classList.toggle('open');
+    head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  };
+  head.addEventListener('click', toggle);
+  head.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+  });
+});
 
 /* Create the account and the clinic. Two steps that must both succeed, and the
    order is not arbitrary: the auth user has to exist before create_clinic_account
