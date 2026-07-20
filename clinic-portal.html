@@ -870,6 +870,26 @@
     </div>
   </section>
 
+  <section class="sec" id="setAccount">
+    <div class="sec-head">
+      <span class="eyebrow" data-en="Your account" data-zh="您的帳號">Your account</span>
+      <h2 class="display" data-en="Change your password." data-zh="變更密碼。">Change your password.</h2>
+      <p data-en="Set a new password for your own sign-in. This changes only your account, not anyone else on the team." data-zh="為您自己的登入設定新密碼；這只會變更您個人的帳號，不影響團隊其他成員。">Set a new password for your own sign-in. This changes only your account, not anyone else on the team.</p>
+    </div>
+    <div class="panel">
+      <div class="field">
+        <label class="eyebrow" for="pwNew" data-en="New password" data-zh="新密碼">New password</label>
+        <input type="password" id="pwNew" autocomplete="new-password">
+      </div>
+      <div class="field">
+        <label class="eyebrow" for="pwConfirm" data-en="Confirm new password" data-zh="再次輸入新密碼">Confirm new password</label>
+        <input type="password" id="pwConfirm" autocomplete="new-password">
+      </div>
+      <button class="act" id="pwSave" data-en="Change password" data-zh="變更密碼">Change password</button>
+      <div class="note" id="pwNote"></div>
+    </div>
+  </section>
+
   <section class="sec" id="setProfile" style="display:none;">
     <div class="sec-head">
       <span class="eyebrow" data-en="Clinic" data-zh="診所">Clinic</span>
@@ -1273,6 +1293,26 @@ async function saveNewPassword() {
 }
 $('resetSave').addEventListener('click', saveNewPassword);
 $('newPw').addEventListener('keydown', e => { if (e.key === 'Enter') saveNewPassword(); });
+
+// Change your own password while signed in (Settings -> Your account). Unlike the
+// recovery flow, the user already has a session, so updateUser applies directly.
+async function changeOwnPassword() {
+  const pw = $('pwNew').value;
+  const cf = $('pwConfirm').value;
+  if (!pw || pw.length < 8) return note('pwNote', 'At least eight characters.', 'bad');
+  if (pw !== cf) return note('pwNote', 'The two passwords do not match.', 'bad');
+  const btn = $('pwSave');
+  btn.disabled = true;
+  note('pwNote', 'Saving…');
+  const { error } = await sb.auth.updateUser({ password: pw });
+  btn.disabled = false;
+  if (error) return note('pwNote', error.message, 'bad');
+  $('pwNew').value = '';
+  $('pwConfirm').value = '';
+  note('pwNote', 'Password changed.', 'ok');
+}
+$('pwSave').addEventListener('click', changeOwnPassword);
+$('pwConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') changeOwnPassword(); });
 
 /* Create the account and the clinic. Two steps that must both succeed, and the
    order is not arbitrary: the auth user has to exist before create_clinic_account
