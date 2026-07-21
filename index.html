@@ -53,9 +53,14 @@
   @media(max-width:760px){
     .nav-links{display:none;}
     .nav-toggle{display:block;}
-    .nav-mobile.open{display:flex;flex-direction:column;gap:20px;position:absolute;top:78px;left:0;right:0;background:var(--cream);border-bottom:1px solid var(--line);padding:28px 32px;z-index:30;}
-    .nav-mobile a{text-decoration:none;font-size:1rem;color:var(--deep);}
-    .nav-mobile .lang-toggle{width:fit-content;}
+    .nav-mobile.open{display:flex;flex-direction:column;gap:12px;position:absolute;top:78px;left:0;right:0;background:var(--cream);border-bottom:1px solid var(--line);padding:24px 32px 30px;z-index:30;max-height:calc(100vh - 78px);overflow-y:auto;}
+    .nav-mobile a{text-decoration:none;font-size:1rem;color:var(--deep);display:flex;align-items:center;}
+    .nav-mobile a.nm-sub{font-size:.98rem;padding-left:2px;}
+    .nav-mobile .nm-group{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:12px;}
+    .nav-mobile .nm-group:first-child{margin-top:0;}
+    .nav-mobile .nm-badge{font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:8px;}
+    body.zh .nav-mobile .nm-group,body.zh .nav-mobile .nm-badge{letter-spacing:.04em;}
+    .nav-mobile .lang-toggle{width:fit-content;margin-top:14px;}
   }
 
   /* ── DIRECTORY DROPDOWN ──────────────────────────── */
@@ -178,7 +183,6 @@
           </button>
           <div class="nav-dir-menu" role="menu">
             <a href="/visualize" class="nav-dir-item" role="menuitem"><span data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</span></a>
-            <a href="/pro" class="nav-dir-item" role="menuitem"><span data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</span><span class="nav-dir-badge" data-en="For clinics" data-zh="診所專用">For clinics</span></a>
             <a href="/visualize/cases" class="nav-dir-item" role="menuitem"><span data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</span></a>
             <a href="/guide" class="nav-dir-item" role="menuitem"><span data-en="Guide" data-zh="使用指南">Guide</span></a>
           </div>
@@ -201,16 +205,22 @@
     </div>
   </div>
   <div class="nav-mobile" id="navMobile">
-    <a href="/canada" data-en="🍁 Canada Directory" data-zh="🍁 加拿大診所目錄">🍁 Canada Directory</a>
-    <a href="/us" data-en="🇺🇸 US Directory" data-zh="🇺🇸 美國診所目錄">🇺🇸 US Directory</a>
-    <a href="/taiwan" data-en="🇹🇼 Taiwan Directory" data-zh="🇹🇼 台灣醫美目錄">🇹🇼 Taiwan Directory</a>
-    <a href="/hongkong" data-en="🇭🇰 Hong Kong Directory" data-zh="🇭🇰 香港醫美目錄">🇭🇰 Hong Kong Directory</a>
-    <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
-    <a href="/pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
-    <a href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
-    <a href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
-    <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
-    <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+    <span class="nm-group" data-en="Directory" data-zh="診所搜尋">Directory</span>
+    <a class="nm-sub" href="/canada" data-en="🍁 Canada" data-zh="🍁 加拿大">🍁 Canada</a>
+    <a class="nm-sub" href="/us" data-en="🇺🇸 USA" data-zh="🇺🇸 美國">🇺🇸 USA</a>
+    <a class="nm-sub" href="/taiwan" data-en="🇹🇼 Taiwan" data-zh="🇹🇼 台灣">🇹🇼 Taiwan</a>
+    <a class="nm-sub" href="/hongkong" data-en="🇭🇰 Hong Kong" data-zh="🇭🇰 香港">🇭🇰 Hong Kong</a>
+
+    <span class="nm-group" data-en="Visualize" data-zh="Visualize">Visualize</span>
+    <a class="nm-sub" href="/visualize" data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</a>
+    <a class="nm-sub" href="/visualize-pro"><span data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</span><span class="nm-badge" data-en="For clinics" data-zh="診所專用">For clinics</span></a>
+    <a class="nm-sub" href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
+    <a class="nm-sub" href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
+
+    <span class="nm-group" data-en="More" data-zh="更多">More</span>
+    <a class="nm-sub" href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+    <a class="nm-sub" href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
+
     <div class="lang-toggle" role="group" aria-label="Language">
       <button class="lang-btn active" onclick="setLang('en')">EN</button>
       <div class="lang-sep"></div>
@@ -277,7 +287,7 @@
   <div class="wrap">
     <span class="pro-tag">Visualize Pro</span>
     <span class="pro-text" data-en="In private pilot with a small number of clinics." data-zh="目前僅開放少數診所參與內測。">In private pilot with a small number of clinics.</span>
-    <a href="/pro" class="pro-link" data-en="Request an invitation" data-zh="申請邀請">Request an invitation</a>
+    <a href="/visualize-pro" class="pro-link" data-en="Request an invitation" data-zh="申請邀請">Request an invitation</a>
   </div>
 </section>
 
@@ -304,7 +314,7 @@
           <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
           <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
           <a href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
-          <a href="/pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
+          <a href="/visualize-pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
         </div>
         <div class="foot-col">
           <h4 data-en="Directory" data-zh="診所目錄">Directory</h4>
