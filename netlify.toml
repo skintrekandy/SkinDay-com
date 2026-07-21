@@ -88,6 +88,22 @@
   force  = true
 
 [[redirects]]
+  from   = "/visualize-pro.html"
+  to     = "/visualize-pro"
+  status = 301
+  force  = true
+
+# ── LEGACY: /pro renamed to /visualize-pro ───────────────────────
+# The Visualize Pro marketing + founding-pilot page moved from /pro to
+# the clearer, self-explanatory /visualize-pro. Redirect the old path so
+# any existing link (outreach emails, external references) still resolves.
+[[redirects]]
+  from   = "/pro"
+  to     = "/visualize-pro"
+  status = 301
+  force  = true
+
+[[redirects]]
   from   = "/contact.html"
   to     = "/contact"
   status = 301
