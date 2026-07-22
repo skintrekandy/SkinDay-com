@@ -2662,7 +2662,29 @@ function slotHiRes(i, frame) {
     const ctx = c.getContext('2d');
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, frame.w, frame.h);
+    // Match Studio's crop exactly, rotation included. Studio lets the clinician
+    // twist a tilted photo level; that rotation lives on S.slots[i].rot and must
+    // be applied the same way here, or a saved case would come out unlevel while
+    // the Studio download looked right. Same rotate-around-centre-and-cover math
+    // as Studio's drawSlotRegion: at rot 0 it is a plain source-rect draw.
+    const rot = (function () {
+      try { return $('studioFrame').contentWindow.eval('(S.slots[' + i + '] && S.slots[' + i + '].rot) || 0'); }
+      catch (e) { return 0; }
+    })();
+    const dw = frame.w, dh = frame.h;
+    if (rot) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(0, 0, dw, dh); ctx.clip();
+      ctx.translate(dw / 2, dh / 2);
+      ctx.rotate(rot);
+      const cc = Math.abs(Math.cos(rot)), ss = Math.abs(Math.sin(rot));
+      const cover = Math.max((dw * cc + dh * ss) / dw, (dw * ss + dh * cc) / dh);
+      ctx.scale(cover, cover);
+      ctx.drawImage(img, box.x, box.y, box.w, box.h, -dw / 2, -dh / 2, dw, dh);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, dw, dh);
+    }
     return c;
   } catch (e) { return null; }
 }

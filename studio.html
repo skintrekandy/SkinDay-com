@@ -155,6 +155,10 @@
     .bg-continue-note { font-size: 0.82rem; color: var(--muted); }
     .btn-continue { background: var(--deep); color: var(--cream); border: none; padding: 12px 28px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
     .btn-continue:hover { background: var(--deep2); }
+    .btn-continue:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+    .btn-skip { background: #fff; color: var(--deep); border: 1.5px solid var(--border); padding: 12px 22px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .btn-skip:hover:not(:disabled) { border-color: var(--gold); background: var(--warm); }
+    .btn-skip:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* ── Crop section ── */
     .crop-section { display: none; margin-top: 8px; }
@@ -171,6 +175,10 @@
     .zoom-box { display: flex; flex-direction: column; gap: 7px; border: 1px solid var(--border); border-radius: 10px; padding: 10px; background: #fff; }
     .crop-canvas { width: 100%; height: auto; display: block; border-radius: 7px; border: 1px solid var(--border); background: #1C1714; cursor: grab; touch-action: none; }
     .crop-canvas:active { cursor: grabbing; }
+    .crop-wrap { position: relative; line-height: 0; border-radius: 7px; overflow: hidden; }
+    .crop-grid { position: absolute; inset: 0; pointer-events: none; }
+    .crop-grid i { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(250,247,242,0.32); }
+    .crop-grid b { position: absolute; left: 0; right: 0; height: 1px; background: rgba(250,247,242,0.32); }
     .zoom-name { font-size: 0.82rem; font-weight: 600; color: var(--deep); letter-spacing: 0.02em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .zoom-hint { font-size: 0.68rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
     .zoom-hint .hint-pct { color: var(--rose); font-weight: 600; }
@@ -405,10 +413,10 @@
     <div class="status"><div class="dot" id="dot"></div><span id="statusText" data-en="Upload your photos to begin" data-zh="上傳照片開始製作">Upload your photos to begin</span></div>
     <div class="progress" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
-    <!-- STEP 3: Background (optional) -->
+    <!-- STEP 3: Background -->
     <div class="bg-controls" id="bgControls" style="display:none;">
       <hr class="divider" style="margin-top:24px;">
-      <div class="step-num" data-en="Step 3 - Background (optional)" data-zh="步驟 3：背景處理（可選）">Step 3 - Background (optional)</div>
+      <div class="step-num" data-en="Step 3 - Background" data-zh="步驟 3：背景處理">Step 3 - Background</div>
       <p class="bg-intro" data-en="Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping." data-zh="想要更乾淨的攝影棚風格？您可以將任何照片的背景替換為純黑背景。原始背景會在您的裝置上移除，主體會保留下來。每張照片約需數秒，因此會在裁切前先完成。">Want a clean studio look? Replace any photo's backdrop with solid black. The original background is removed on your device, so the subject stays. This takes a few seconds per photo, so it is done here before cropping.</p>
       <div class="bg-selectall-row">
         <label class="bg-check-item bg-selectall">
@@ -429,8 +437,9 @@
       <div class="bg-hint" id="bgHint" data-en="Tick the photos you want, then apply a black background." data-zh="勾選要處理的照片，再套用黑色背景。">Tick the photos you want, then apply a black background.</div>
       <div class="bg-progress" id="bgProgress"></div>
       <div class="bg-continue-row" id="bgContinueRow" style="display:none;">
-        <span class="bg-continue-note" id="bgContinueNote" data-en="Backgrounds set? Move on to crop and branding." data-zh="背景設定完成後，可繼續裁切與品牌設定。">Backgrounds set? Move on to crop and branding.</span>
-        <button class="btn-continue" id="bgContinueBtn" onclick="continueToCrop()" data-en="Continue to crop" data-zh="繼續裁切">Continue to crop</button>
+        <span class="bg-continue-note" id="bgContinueNote" data-en="Apply a black background, or choose no black background, to continue." data-zh="請套用黑色背景，或選擇不套用黑色背景，即可繼續。">Apply a black background, or choose no black background, to continue.</span>
+        <button class="btn-skip" id="bgSkipBtn" onclick="skipBg()" data-en="No black background needed" data-zh="不需要套用黑色背景">No black background needed</button>
+        <button class="btn-continue" id="bgContinueBtn" onclick="continueToCrop()" disabled data-en="Continue to crop" data-zh="繼續裁切">Continue to crop</button>
       </div>
     </div>
   </div>
@@ -677,6 +686,9 @@ const S = {
   logoDataUrl: null,
   bgChecked: {},
   rowLabelValues: null,
+  bgProcessing: false,
+  bgResolved: false,
+  master: null,
 };
 
 // Grid config: { count, rows, cols, defaultLabels, rowLabels }
@@ -792,7 +804,7 @@ function rebuildUploadGrid() {
   for (let i = 0; i < cfg.count; i++) {
     const old = S.slots[i];
     newSlots.push(old && old.img ? old : {
-      img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
+      img: null, lm: null, zoom: 1.0, pan: {x:0,y:0}, rot: 0,
       label: defaultLabelFor(S.grid, i),
       date: '', dateParts: {},
       origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
@@ -1016,6 +1028,7 @@ function loadFile(file, idx) {
       S.slots[idx].lm = null;
       S.slots[idx].zoom = 1.0;
       S.slots[idx].pan = {x:0,y:0};
+      S.slots[idx].rot = 0;
       S.slots[idx].origDataUrl = ev.target.result;
       S.slots[idx].processedDataUrl = null;
       S.slots[idx]._processedImg = null;
@@ -1114,21 +1127,45 @@ function showBackgroundStep(message) {
     bg.style.display = 'block';
     bg.scrollIntoView({behavior:'smooth', block:'center'});
   }
-  // The continue button advances to crop (Face) or straight to branding (Body).
+  // Reset the step-3 gate. Nothing is resolved yet, so Continue stays disabled
+  // until the clinician either applies a black background or explicitly declines
+  // it. This also stops the old bug where Continue was clickable mid-processing.
+  S.bgProcessing = false;
+  S.bgResolved = false;
   const cont = document.getElementById('bgContinueRow');
   if (cont) cont.style.display = 'flex';
+  const skip = document.getElementById('bgSkipBtn');
+  if (skip) skip.style.display = '';
   const contBtn = document.getElementById('bgContinueBtn');
   const contNote = document.getElementById('bgContinueNote');
-  if (S.subject === 'body') {
-    if (contBtn) contBtn.textContent = t('continueBranding');
-    if (contNote) contNote.textContent = t('noteBranding');
-  } else {
-    if (contBtn) contBtn.textContent = t('continueCrop');
-    if (contNote) contNote.textContent = t('noteCrop');
-  }
+  if (contBtn) contBtn.textContent = (S.subject === 'body') ? t('continueBranding') : t('continueCrop');
+  if (contNote) contNote.textContent = (currentLang === 'zh')
+    ? '請套用黑色背景，或選擇不套用黑色背景，即可繼續。'
+    : 'Apply a black background, or choose no black background, to continue.';
+  updateBgContinue();
+}
+
+// Continue is available only once step 3 is resolved (a background applied, or
+// the clinician declined it) and nothing is still processing.
+function updateBgContinue() {
+  const btn = document.getElementById('bgContinueBtn');
+  if (btn) btn.disabled = !(S.bgResolved && !S.bgProcessing);
+  const skip = document.getElementById('bgSkipBtn');
+  if (skip) skip.disabled = !!S.bgProcessing;
+}
+
+// Explicit "no black background needed": records the decision and moves on.
+function skipBg() {
+  if (S.bgProcessing) return;
+  S.bgResolved = true;
+  updateBgContinue();
+  continueToCrop();
 }
 
 function continueToCrop() {
+  // Never advance while a background is still being removed, or before the
+  // clinician has resolved step 3.
+  if (S.bgProcessing || !S.bgResolved) return;
   const cs = document.getElementById('cropSection');
   cs.classList.add('visible');
   if (S.subject === 'body') {
@@ -1381,15 +1418,18 @@ function rebuildZoomControls() {
   let order = S.slots.map((_, i) => i);
   if (paired) { order = []; for (let c = 0; c < cols; c++) { order.push(c); order.push(cols + c); } }
   wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(220px, 1fr))';
-  const hint = currentLang === 'zh' ? '\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u6216\u6efe\u8f2a\u7e2e\u653e' : 'Drag to move \u00b7 pinch or scroll to zoom';
+  const hint = currentLang === 'zh' ? '\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u7e2e\u653e\u8207\u65cb\u8f49 \u00b7 \u96d9\u64ca\u9084\u539f' : 'Drag to move \u00b7 two fingers to zoom & rotate \u00b7 double-tap to reset';
   wrap.innerHTML = order.map(i => {
     const sl = S.slots[i];
     if (!sl || !sl.img) return '';
     return `
     <div class="zoom-box">
-      <canvas class="crop-canvas" id="cropc-${i}"></canvas>
+      <div class="crop-wrap">
+        <canvas class="crop-canvas" id="cropc-${i}"></canvas>
+        <div class="crop-grid" aria-hidden="true"><i style="left:33.33%"></i><i style="left:66.66%"></i><b style="top:33.33%"></b><b style="top:66.66%"></b></div>
+      </div>
       <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}</div>
-      <div class="zoom-hint"><span class="hint-txt" data-en="Drag to move \u00b7 pinch or scroll to zoom" data-zh="\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u6216\u6efe\u8f2a\u7e2e\u653e">${hint}</span><span class="hint-pct" id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
+      <div class="zoom-hint"><span class="hint-txt" data-en="Drag to move \u00b7 two fingers to zoom & rotate \u00b7 double-tap to reset" data-zh="\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u7e2e\u653e\u8207\u65cb\u8f49 \u00b7 \u96d9\u64ca\u9084\u539f">${hint}</span><span class="hint-pct" id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
     </div>`;
   }).join('');
   order.forEach(i => { if (S.slots[i] && S.slots[i].img) setupCropGesture(document.getElementById(`cropc-${i}`), i); });
@@ -1410,7 +1450,7 @@ function renderCropAdjust() {
     const box = boxes ? boxes[i]
       : (() => { const b = getBoxForSlot(i); return clampBox({ ...b, x: b.x + sl.pan.x, y: b.y + sl.pan.y }, sl.img); })();
     const CW = 300, CH = Math.max(1, Math.round(CW * box.h / box.w));
-    const draw = img => drawToCanvas(cv, img, box, CW, CH, 1);
+    const draw = img => drawToCanvas(cv, img, box, CW, CH, 1, sl.rot || 0);
     if (sl.processedDataUrl) {
       if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) draw(sl._processedImg);
       else { const im = new Image(); im.onload = () => { sl._processedImg = im; draw(im); }; im.src = sl.processedDataUrl; }
@@ -1421,16 +1461,30 @@ function renderCropAdjust() {
 function setupCropGesture(cv, idx) {
   if (!cv || cv.dataset.cropInit === '1') return;
   cv.dataset.cropInit = '1';
-  let drag = null, pinch = null;
+  let drag = null, pinch = null, lastTap = 0;
   const clampZoom = z => Math.max(0.6, Math.min(z, 1.6));
+  const clampRot = r => Math.max(-0.349, Math.min(r, 0.349)); // +/- 20 degrees
   const sync = () => {
     renderCropAdjust();
     const v = document.getElementById(`zVal-${idx}`);
-    if (v) v.textContent = Math.round(S.slots[idx].zoom * 100) + '%';
+    if (v) {
+      const deg = Math.round((S.slots[idx].rot || 0) * 180 / Math.PI);
+      v.textContent = Math.round(S.slots[idx].zoom * 100) + '%' + (deg ? ` \u00b7 ${deg}\u00b0` : '');
+    }
   };
   const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const ang = t => Math.atan2(t[1].clientY - t[0].clientY, t[1].clientX - t[0].clientX);
   const start = e => {
-    if (e.touches && e.touches.length === 2) { pinch = { d0: dist(e.touches), z0: S.slots[idx].zoom }; drag = null; e.preventDefault(); return; }
+    if (e.touches && e.touches.length === 2) {
+      pinch = { d0: dist(e.touches), z0: S.slots[idx].zoom, a0: ang(e.touches), r0: S.slots[idx].rot || 0 };
+      drag = null; e.preventDefault(); return;
+    }
+    // Double-tap resets rotation (fine adjustment by finger can overshoot).
+    if (e.touches && e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTap < 300) { S.slots[idx].rot = 0; sync(); lastTap = 0; e.preventDefault(); return; }
+      lastTap = now;
+    }
     const pt = e.touches ? e.touches[0] : e;
     drag = { sx: pt.clientX, sy: pt.clientY, ox: S.slots[idx].pan.x, oy: S.slots[idx].pan.y };
     e.preventDefault();
@@ -1438,6 +1492,7 @@ function setupCropGesture(cv, idx) {
   const move = e => {
     if (pinch && e.touches && e.touches.length === 2) {
       S.slots[idx].zoom = clampZoom(pinch.z0 * (dist(e.touches) / pinch.d0));
+      S.slots[idx].rot = clampRot(pinch.r0 + (ang(e.touches) - pinch.a0));
       sync(); e.preventDefault(); return;
     }
     if (!drag) return;
@@ -1451,6 +1506,7 @@ function setupCropGesture(cv, idx) {
   const end = e => { if (!e.touches || e.touches.length === 0) { drag = null; pinch = null; } };
   cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', move);
   cv.addEventListener('mouseup', end); cv.addEventListener('mouseleave', () => { drag = null; });
+  cv.addEventListener('dblclick', e => { e.preventDefault(); S.slots[idx].rot = 0; sync(); });
   cv.addEventListener('touchstart', start, { passive: false });
   cv.addEventListener('touchmove', move, { passive: false });
   cv.addEventListener('touchend', end); cv.addEventListener('touchcancel', end);
@@ -1510,15 +1566,15 @@ function renderPreviews() {
     })();
     if (sl.processedDataUrl) {
       if (sl._processedImg && sl._processedImg.complete && sl._processedImg.naturalWidth) {
-        drawToCanvas(cv, sl._processedImg, box, pW, pH, 1);
+        drawToCanvas(cv, sl._processedImg, box, pW, pH, 1, sl.rot || 0);
       } else {
         const img = new Image();
-        img.onload = () => { sl._processedImg = img; drawToCanvas(cv, img, box, pW, pH, 1); };
+        img.onload = () => { sl._processedImg = img; drawToCanvas(cv, img, box, pW, pH, 1, sl.rot || 0); };
         img.src = sl.processedDataUrl;
       }
     } else {
       sl._processedImg = null;
-      drawToCanvas(cv, sl.img, box, pW, pH, 1);
+      drawToCanvas(cv, sl.img, box, pW, pH, 1, sl.rot || 0);
     }
   });
   renderCropAdjust();
@@ -1554,11 +1610,31 @@ function setupDrag(canvasId, idx) {
   cv.style.cursor = 'grab';
 }
 
-function drawToCanvas(cv, img, box, tw, th, bf) {
+// Shared slot renderer: maps the source crop `box` into a dw x dh frame, applying
+// the slot's rotation around the frame centre and scaling up just enough to keep
+// the frame filled (no empty corners). At rot 0 this is a plain source-rect draw,
+// identical to before. Used by BOTH the crop previews and the export panels, so
+// what the clinician aligns is exactly what exports.
+function drawSlotRegion(ctx, img, box, dw, dh, rot) {
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, dw, dh); ctx.clip();
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.translate(dw / 2, dh / 2);
+  if (rot) {
+    ctx.rotate(rot);
+    const c = Math.abs(Math.cos(rot)), s = Math.abs(Math.sin(rot));
+    const cover = Math.max((dw * c + dh * s) / dw, (dw * s + dh * c) / dh);
+    ctx.scale(cover, cover);
+  }
+  ctx.drawImage(img, box.x, box.y, box.w, box.h, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
+}
+
+function drawToCanvas(cv, img, box, tw, th, bf, rot) {
   cv.width = tw; cv.height = th;
   const ctx = cv.getContext('2d');
   if (!img.complete || !img.naturalWidth) return;
-  ctx.drawImage(img, box.x, box.y, box.w, box.h, 0, 0, tw, th);
+  drawSlotRegion(ctx, img, box, tw, th, rot || 0);
   if (bf && bf !== 1) {
     const id = ctx.getImageData(0,0,tw,th);
     for (let i = 0; i < id.data.length; i+=4) {
@@ -1676,6 +1752,10 @@ async function applyBgBlack() {
   if (!targets.length) return;
   document.getElementById('btnBgBlack').disabled = true;
   document.getElementById('btnBgReset').disabled = true;
+  // Lock the step while the (heavy) removal runs, so Continue cannot be clicked
+  // mid-processing.
+  S.bgProcessing = true;
+  updateBgContinue();
   let done = 0, failed = 0;
   for (let n = 0; n < targets.length; n++) {
     const i = targets[n];
@@ -1696,6 +1776,15 @@ async function applyBgBlack() {
   rebuildBgSlotSelect();
   if (failed === 0) setBgProgress(t('bgDone')(done), 2600);
   else setBgProgress(t('bgPartial')(done, failed), 4000);
+  // Applying a background resolves step 3. Now that a choice has been made the
+  // "no black background needed" option is no longer the relevant path.
+  S.bgProcessing = false;
+  if (done > 0) {
+    S.bgResolved = true;
+    const skip = document.getElementById('bgSkipBtn');
+    if (skip) skip.style.display = 'none';
+  }
+  updateBgContinue();
 }
 
 function setBgProgress(msg, autoclearMs) {
@@ -1963,7 +2052,7 @@ async function generate() {
   const enhance = parseInt(document.getElementById('enhance').value);
   const cfg = GRID_CONFIG[S.grid];
   const gap = 4;
-  const panelH = 1080;
+  const panelH = 1440;
 
   // Draw each slot to a panel canvas
   const panels = S.slots.map((sl, i) => {
@@ -1972,7 +2061,7 @@ async function generate() {
     const pw = Math.round(panelH * aspect);
     const c = document.createElement('canvas'); c.width = pw; c.height = panelH;
     const img = getImgForSlot(i);
-    c.getContext('2d').drawImage(img, box.x, box.y, box.w, box.h, 0, 0, pw, panelH);
+    drawSlotRegion(c.getContext('2d'), img, box, pw, panelH, sl.rot || 0);
     return {canvas: c, w: pw, h: panelH};
   });
 
@@ -2059,56 +2148,78 @@ async function generate() {
   drawWatermark(cctx, compW, compH, clinic, inj, S.wmPos);
   if (S.logoImg) drawLogo(cctx, compW, compH, S.logoImg, document.getElementById('logoPos').value);
 
-  // Letterbox into export format
-  let oW = compW, oH = compH;
-  if (fmt === 'square')   { oW = 1080; oH = 1080; }
-  else if (fmt === 'story')   { oW = 1080; oH = 1920; }
-  else if (fmt === 'portrait') { oW = 1080; oH = 1350; }
+  // Keep the full-resolution composite as the master. Every download and the
+  // on-screen preview are letterboxed from this, so nothing is ever capped at the
+  // old 1080 short side (which was crushing multi-panel grids: six faces sharing a
+  // 1080-wide box left each face around 360px).
+  S.master = compCanvas;
 
+  const out = letterboxComposite(compCanvas, fmt);
   const oc = document.getElementById('outputCanvas');
-  oc.width = oW; oc.height = oH;
-  const ctx = oc.getContext('2d');
-  ctx.fillStyle = '#1C1714'; ctx.fillRect(0, 0, oW, oH);
-  if (fmt !== 'free') {
-    const scale = Math.min(oW/compW, oH/compH);
-    const sw = Math.round(compW*scale), sh = Math.round(compH*scale);
-    const ox2 = Math.round((oW-sw)/2), oy2 = Math.round((oH-sh)/2);
-    ctx.drawImage(compCanvas, ox2, oy2, sw, sh);
-  } else {
-    oc.width = compW; oc.height = compH;
-    const ctx2 = oc.getContext('2d');
-    ctx2.fillStyle = '#1C1714'; ctx2.fillRect(0, 0, compW, compH);
-    ctx2.drawImage(compCanvas, 0, 0);
-  }
+  oc.width = out.width; oc.height = out.height;
+  oc.getContext('2d').drawImage(out, 0, 0);
 
   document.getElementById('outputSection').classList.add('visible');
   document.getElementById('outputSection').scrollIntoView({behavior:'smooth'});
   setSt(t('doneDownload'), 'ok');
 }
 
+// Letterbox the full-resolution composite into an export aspect WITHOUT throwing
+// away resolution. For a fixed aspect we build the smallest canvas of that aspect
+// that still contains the composite at 1:1 (bars fill the remainder), then clamp
+// only if that would exceed a safe canvas area or side length (iOS Safari limits),
+// downscaling proportionally as a last resort rather than defaulting to 1080.
+function letterboxComposite(master, fmt) {
+  const compW = master.width, compH = master.height;
+  const MAX_PX = 16000000, MAX_SIDE = 8192;
+  let oW, oH;
+  if (fmt === 'free') {
+    oW = compW; oH = compH;
+  } else {
+    const a = fmt === 'story' ? (1080 / 1920)
+            : fmt === 'square' ? 1
+            : (1080 / 1350); // portrait (default)
+    oW = Math.max(compW, Math.round(compH * a));
+    oH = Math.round(oW / a);
+  }
+  const clamp = Math.min(1, Math.sqrt(MAX_PX / (oW * oH)), MAX_SIDE / oW, MAX_SIDE / oH);
+  oW = Math.round(oW * clamp); oH = Math.round(oH * clamp);
+
+  const c = document.createElement('canvas');
+  c.width = oW; c.height = oH;
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  ctx.fillStyle = '#1C1714'; ctx.fillRect(0, 0, oW, oH);
+  const sc = Math.min(oW / compW, oH / compH);
+  const sw = Math.round(compW * sc), sh = Math.round(compH * sc);
+  ctx.drawImage(master, Math.round((oW - sw) / 2), Math.round((oH - sh) / 2), sw, sh);
+  return c;
+}
+
 // ============================================================
 // DOWNLOAD
 // ============================================================
 function downloadFormat(format) {
-  const src = document.getElementById('outputCanvas');
-  const sw = src.width, sh = src.height;
-  if (format === 'original') {
-    const a = document.createElement('a');
-    a.download = 'before-after.jpg';
-    a.href = src.toDataURL('image/jpeg', .95);
-    a.click();
+  // Always render from the full-resolution master so a download is never limited
+  // to the old 1080 short side. "Original" keeps the format currently previewed;
+  // the Square / Story buttons re-letterbox the same master into their aspect.
+  const master = S.master;
+  if (!master) {
+    // Fallback: nothing generated yet, just save whatever is on screen.
+    const src = document.getElementById('outputCanvas');
+    const a0 = document.createElement('a');
+    a0.download = 'before-after.jpg';
+    a0.href = src.toDataURL('image/jpeg', .95);
+    a0.click();
     return;
   }
-  const tw = 1080, th = format === 'story' ? 1920 : 1080;
-  const ec = document.createElement('canvas'); ec.width = tw; ec.height = th;
-  const ectx = ec.getContext('2d');
-  ectx.fillStyle = '#1C1714'; ectx.fillRect(0, 0, tw, th);
-  const scale = Math.min(tw/sw, th/sh);
-  const dw = Math.round(sw*scale), dh = Math.round(sh*scale);
-  ectx.drawImage(src, Math.round((tw-dw)/2), Math.round((th-dh)/2), dw, dh);
+  const fmt = (format === 'original')
+    ? document.getElementById('exportFormat').value
+    : format;
+  const c = letterboxComposite(master, fmt);
   const a = document.createElement('a');
-  a.download = `before-after-${format}.jpg`;
-  a.href = ec.toDataURL('image/jpeg', .95);
+  a.download = `before-after${format === 'original' ? '' : '-' + format}.jpg`;
+  a.href = c.toDataURL('image/jpeg', .95);
   a.click();
 }
 
