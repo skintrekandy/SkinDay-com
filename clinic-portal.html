@@ -1279,7 +1279,11 @@ async function signIn() {
     note('gateNote', 'That email and password did not match an account.', 'bad');
     return;
   }
-  start();
+  // Enter through the shared, deferred path (enterApp). Running start() inline
+  // here raced the auth client's session lock right after sign-in, which on some
+  // devices (notably iPad Safari) left the user on the login screen until a
+  // manual refresh.
+  setTimeout(enterApp, 0);
 }
 
 $('toSignUp').addEventListener('click', () => {
@@ -1340,6 +1344,8 @@ async function saveNewPassword() {
   note('resetNote', 'Password updated. Signing you in…', 'ok');
   // They now have a valid session from the recovery flow. Straight into the portal.
   history.replaceState({}, '', location.pathname);
+  inRecovery = false;
+  __booted = true;
   await start();
 }
 $('resetSave').addEventListener('click', saveNewPassword);
@@ -1495,14 +1501,32 @@ async function start() {
     if (el) el.style.display = 'none';
   });
 
-  let { data: rows, error } = await sb
-    .from('clinic_memberships')
-    .select('clinic_id, created_at')
-    .eq('status', 'active')
-    .is('revoked_at', null)
-    .limit(1);
+  // The token can lag a beat behind sign-in, so a transient error here must not
+  // be read as "no clinic" (which would wrongly show Create Clinic). Retry once,
+  // and only treat a clean, empty result as genuinely having no clinic.
+  let rows = null, memErr = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await sb
+      .from('clinic_memberships')
+      .select('clinic_id, created_at')
+      .eq('status', 'active')
+      .is('revoked_at', null)
+      .limit(1);
+    if (!res.error) { rows = res.data || []; memErr = null; break; }
+    memErr = res.error;
+    if (attempt === 0) await new Promise(r => setTimeout(r, 350));
+  }
 
-  if (error || !rows || !rows.length) {
+  if (memErr) {
+    // A real error, not an empty result. Keep them on the sign-in screen with a
+    // retry rather than sending them to Create Clinic.
+    note('gateNote', sdT('We could not load your clinic just now. Please try signing in again.', '目前無法載入您的診所，請重新登入再試一次。'), 'bad');
+    $('gate').style.display = 'block';
+    __booted = false;
+    return;
+  }
+
+  if (!rows || !rows.length) {
     // Somebody who confirmed their email after signing up, or whose clinic
     // creation failed halfway. Their details are still in this tab if they never
     // left it; otherwise the form is empty and they fill it in again. Either way
@@ -2159,30 +2183,27 @@ try {
   if (h.get('type') === 'recovery') inRecovery = true;
 } catch (e) {}
 
-sb.auth.onAuthStateChange((event) => {
-  if (event === 'PASSWORD_RECOVERY') {
-    inRecovery = true;
-    ['gate', 'signup', 'forgot', 'panel-settings'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.style.display = 'none';
-    });
-    $('resetPw').style.display = 'block';
-  }
-});
-
-sb.auth.getSession().then(async ({ data }) => {
-  if (inRecovery) {
-    ['gate', 'signup', 'forgot'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.style.display = 'none';
-    });
-    $('resetPw').style.display = 'block';
-    return;
-  }
-
-  // Invitations are handled entirely on /join-clinic; the guard at the top of
-  // this script sends any invite link there before boot. Here we only boot.
-  const signedIn = !!(data && data.session);
-  if (signedIn) { start(); return; }
-
+// The app enters exactly once per signed-in session, DEFERRED out of the auth
+// callback via setTimeout and gated by __booted. Deferring matters: start()'s own
+// Supabase queries were contending with the auth client's session lock in the
+// same tick as sign-in, which on some devices (iPad Safari especially) left the
+// user staring at the login screen until a manual refresh. Letting the auth event
+// settle first, in its own macrotask, makes sign-in land in the portal directly.
+let __booted = false;
+function enterApp() {
+  if (__booted || inRecovery) return;
+  __booted = true;
+  start();
+}
+function showRecovery() {
+  inRecovery = true;
+  ['gate', 'signup', 'forgot', 'panel-settings'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
+  $('resetPw').style.display = 'block';
+}
+function showSignedOut() {
+  __booted = false;
   // Signed out. The marketing site links here with #signup ("Start free trial")
   // or #login ("Clinic login"). Login is the default screen, so #login needs
   // nothing; #signup opens the Create-clinic screen directly.
@@ -2193,6 +2214,23 @@ sb.auth.getSession().then(async ({ data }) => {
       const s = $('signup'); if (s) s.style.display = 'block';
     }
   } catch (e) {}
+}
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'PASSWORD_RECOVERY') { showRecovery(); return; }
+  if (inRecovery) return; // stay on the reset screen until the new password is set
+  if (event === 'SIGNED_OUT') { __booted = false; setTimeout(showSignedOut, 0); return; }
+  // SIGNED_IN / INITIAL_SESSION / TOKEN_REFRESHED / USER_UPDATED
+  if (session) setTimeout(enterApp, 0);
+  else setTimeout(showSignedOut, 0);
+});
+
+// Fallback for the very first load, in case INITIAL_SESSION is not delivered.
+// enterApp / showSignedOut are idempotent, so this cannot double-enter.
+sb.auth.getSession().then(({ data }) => {
+  if (inRecovery) { showRecovery(); return; }
+  if (data && data.session) setTimeout(enterApp, 0);
+  else setTimeout(showSignedOut, 0);
 });
 
 
