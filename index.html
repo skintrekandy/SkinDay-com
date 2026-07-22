@@ -42,6 +42,8 @@
   .nav-links{display:flex;align-items:center;gap:30px;}
   .nav-links a{text-decoration:none;font-size:.82rem;letter-spacing:.04em;color:var(--deep-soft);transition:color .25s;}
   .nav-links a:hover{color:var(--deep);}
+  .nav-login{font-size:.8rem;letter-spacing:.03em;color:var(--deep);border:1px solid var(--gold);border-radius:999px;padding:6px 14px;text-decoration:none;white-space:nowrap;transition:background .2s,color .2s;}
+  .nav-login:hover{background:var(--deep);color:var(--cream);border-color:var(--deep);}
   .lang-toggle{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;}
   .lang-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.72rem;letter-spacing:.06em;color:#6B5F55;padding:0;transition:color .2s;}
   .lang-btn.active{color:var(--deep);}
@@ -52,6 +54,7 @@
   .nav-mobile{display:none;}
   @media(max-width:760px){
     .nav-links{display:none;}
+    .nav-login{display:none;}
     .nav-toggle{display:block;}
     .nav-mobile.open{display:flex;flex-direction:column;gap:12px;position:absolute;top:78px;left:0;right:0;background:var(--cream);border-bottom:1px solid var(--line);padding:24px 32px 30px;z-index:30;max-height:calc(100vh - 78px);overflow-y:auto;}
     .nav-mobile a{text-decoration:none;font-size:1rem;color:var(--deep);display:flex;align-items:center;}
@@ -183,14 +186,15 @@
           </button>
           <div class="nav-dir-menu" role="menu">
             <a href="/visualize" class="nav-dir-item" role="menuitem"><span data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</span></a>
-            <a href="/visualize-pro" class="nav-dir-item" role="menuitem"><span data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</span><span class="nav-dir-badge" data-en="For clinics" data-zh="診所專用">For clinics</span></a>
             <a href="/visualize/cases" class="nav-dir-item" role="menuitem"><span data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</span></a>
             <a href="/guide" class="nav-dir-item" role="menuitem"><span data-en="Guide" data-zh="使用指南">Guide</span></a>
+            <a href="/studio" class="nav-dir-item" role="menuitem"><span data-en="Studio" data-zh="Studio">Studio</span><span class="nav-dir-badge" data-en="Free" data-zh="免費">Free</span></a>
           </div>
         </div>
-        <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
+        <a href="/visualize-pro" data-en="For Clinics" data-zh="診所專用">For Clinics</a>
         <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
       </div>
+      <a href="/clinic-portal" class="nav-login" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
       <div class="lang-toggle" role="group" aria-label="Language">
         <button class="lang-btn active" onclick="setLang('en')">EN</button>
         <div class="lang-sep"></div>
@@ -214,9 +218,12 @@
 
     <span class="nm-group" data-en="Visualize" data-zh="Visualize">Visualize</span>
     <a class="nm-sub" href="/visualize" data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</a>
-    <a class="nm-sub" href="/visualize-pro"><span data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</span><span class="nm-badge" data-en="For clinics" data-zh="診所專用">For clinics</span></a>
     <a class="nm-sub" href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
     <a class="nm-sub" href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
+
+    <span class="nm-group" data-en="For clinics" data-zh="診所專用">For clinics</span>
+    <a class="nm-sub" href="/visualize-pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
+    <a class="nm-sub" href="/clinic-portal" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
 
     <span class="nm-group" data-en="More" data-zh="更多">More</span>
     <a class="nm-sub" href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
