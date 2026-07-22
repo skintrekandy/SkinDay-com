@@ -201,8 +201,9 @@
   .plan .price small{font-size:.8rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;}
   .plan .seats{font-size:.85rem;color:var(--muted);}
   .plan .pdesc{font-size:.86rem;color:var(--muted);margin:12px 0 16px;min-height:2.4em;}
-  .plan .trial{font-size:.72rem;color:var(--gold-deep);background:var(--gold-bg);border-radius:8px;padding:7px 10px;margin-bottom:16px;text-align:center;font-weight:600;}
-  .plan .pcta{margin-top:auto;display:inline-flex;justify-content:center;align-items:center;background:var(--deep);color:var(--cream);padding:11px 16px;border-radius:999px;font-weight:500;font-size:.9rem;transition:transform .2s;}
+  .plan .trial{font-size:.72rem;color:var(--gold-deep);background:var(--gold-bg);border-radius:8px;padding:7px 10px;margin-bottom:12px;text-align:center;font-weight:600;}
+  .plan .pfoot{margin-top:auto;display:flex;flex-direction:column;}
+  .plan .pcta{display:inline-flex;justify-content:center;align-items:center;background:var(--deep);color:var(--cream);padding:11px 16px;border-radius:999px;font-weight:500;font-size:.9rem;transition:transform .2s;}
   .plan.feat .pcta{background:var(--gold);color:var(--deep);}
   .plan .pcta:hover{transform:translateY(-1px);}
   .plan.ent{background:var(--deep);color:var(--cream);border-color:var(--deep);}
@@ -424,32 +425,40 @@
         <div class="price">$99 <small data-en="USD / mo" data-zh="USD / 月">USD / mo</small></div>
         <div class="seats" data-en="1 seat" data-zh="1 個帳號">1 seat</div>
         <p class="pdesc" data-en="For a solo practitioner." data-zh="適合單人執業。">For a solo practitioner.</p>
+        <div class="pfoot">
         <div class="trial" data-en="14-day free trial · no application" data-zh="14 天免費試用 · 無需申請">14-day free trial · no application</div>
         <a href="/clinic-portal#signup" class="pcta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+        </div>
       </div>
       <div class="plan feat">
         <div class="pop" data-en="Popular" data-zh="熱門">Popular</div>
         <div class="pname">Boutique</div>
         <div class="price">$139 <small data-en="USD / mo" data-zh="USD / 月">USD / mo</small></div>
         <div class="seats" data-en="Up to 4 seats" data-zh="最多 4 個帳號">Up to 4 seats</div>
-        <p class="pdesc" data-en="For a small clinic team." data-zh="適合小型診所團隊。">For a small clinic team.</p>
+        <p class="pdesc" data-en="For a close-knit team." data-zh="適合緊密合作的診所團隊。">For a close-knit team.</p>
+        <div class="pfoot">
         <div class="trial" data-en="14-day free trial · no application" data-zh="14 天免費試用 · 無需申請">14-day free trial · no application</div>
         <a href="/clinic-portal#signup" class="pcta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+        </div>
       </div>
       <div class="plan">
         <div class="pname">Premium</div>
         <div class="price">$199 <small data-en="USD / mo" data-zh="USD / 月">USD / mo</small></div>
         <div class="seats" data-en="Up to 12 seats" data-zh="最多 12 個帳號">Up to 12 seats</div>
         <p class="pdesc" data-en="For a growing practice." data-zh="適合成長中的診所。">For a growing practice.</p>
+        <div class="pfoot">
         <div class="trial" data-en="14-day free trial · no application" data-zh="14 天免費試用 · 無需申請">14-day free trial · no application</div>
         <a href="/clinic-portal#signup" class="pcta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+        </div>
       </div>
       <div class="plan ent">
         <div class="pname">Enterprise</div>
         <div class="price" data-en="Let&rsquo;s talk" data-zh="洽談方案">Let&rsquo;s talk</div>
         <div class="seats" data-en="Multiple locations" data-zh="多據點">Multiple locations</div>
         <p class="pdesc" data-en="For chains and groups." data-zh="適合連鎖與集團診所。">For chains and groups.</p>
-        <a href="#pilot" class="pcta" data-en="Contact us" data-zh="與我們聯繫">Contact us</a>
+        <div class="pfoot">
+        <a href="/contact" class="pcta" data-en="Contact us" data-zh="與我們聯繫">Contact us</a>
+        </div>
       </div>
     </div>
     <p class="allincl" data-en="All plans include Studio, Case Library, Website Gallery, Clinic-guided Visualize, consent management and team access." data-zh="所有方案皆包含 Studio、案例庫、官網案例、診所引導的 Visualize、同意管理與團隊帳號。">All plans include Studio, Case Library, Website Gallery, Clinic-guided Visualize, consent management and team access.</p>
