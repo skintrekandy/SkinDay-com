@@ -1417,7 +1417,7 @@ function rebuildZoomControls() {
   const paired = cfg.rows === 2 && cfg.rowLabels && cfg.rowLabels.length === 2;
   let order = S.slots.map((_, i) => i);
   if (paired) { order = []; for (let c = 0; c < cols; c++) { order.push(c); order.push(cols + c); } }
-  wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(220px, 1fr))';
+  wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(240px, 1fr))';
   const hint = currentLang === 'zh' ? '\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u7e2e\u653e\u8207\u65cb\u8f49 \u00b7 \u96d9\u64ca\u9084\u539f' : 'Drag to move \u00b7 two fingers to zoom & rotate \u00b7 double-tap to reset';
   wrap.innerHTML = order.map(i => {
     const sl = S.slots[i];
