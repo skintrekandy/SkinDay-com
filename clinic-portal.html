@@ -4246,7 +4246,7 @@ function buildEditor(r, st) {
       injector: 'injector', consultant: 'consultant', label: 'label',
       before_date: 'before_date', after_date: 'after_date',
       treatment: 'treatment', subtype: 'subtype',
-      patient_name: 'patient_name', patient_ref: 'ref'
+      patient_name: 'patient', patient_ref: 'ref'
     };
     Object.keys(map).forEach(k => {
       const cur = inputs[k].el.value.trim();
@@ -4283,7 +4283,13 @@ function buildEditor(r, st) {
     }
     st.className = 'note ok';
     st.textContent = 'Saved.';
-    loadLibrary();
+    // Do NOT reload the whole library here. Reloading rebuilds every folder and
+    // collapses the open case, kicking the clinician out mid-edit. Instead update
+    // each field's baseline so the editor reflects the saved state (and a repeat
+    // save is a no-op), and leave the case folder open so the next angle is one
+    // click away. The library re-reads fresh on its next full load.
+    Object.keys(inputs).forEach(k => { inputs[k].was = inputs[k].el.value; });
+    save.disabled = false;
   };
 
   wrap.append(grid, save);
