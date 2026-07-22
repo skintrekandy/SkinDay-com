@@ -502,6 +502,9 @@
   .agree-banner .agree-banner-txt { flex:1; min-width:240px; }
   .agree-banner .agree-cta { margin-left:auto; background:var(--accent); color:var(--accent-ink); border:none; border-radius:8px; padding:9px 16px; font-weight:600; font-size:14px; cursor:pointer; white-space:nowrap; }
   .agree-banner .agree-cta:hover { background:var(--accent-strong); }
+  .agree-banner.trial-locked { background:var(--accent); color:var(--accent-ink); border-bottom-color:var(--accent-strong); }
+  .agree-banner.trial-locked .agree-cta { background:var(--accent-ink); color:var(--accent); }
+  .agree-banner.trial-locked .agree-cta:hover { opacity:.9; }
   .gate .display { font-size:38px; font-weight:600; letter-spacing:-.02em; margin:12px 0 8px; }
   .gate p.lede { color:var(--muted); font-size:15px; line-height:1.6; margin:0 0 28px; }
   .gate button.act { width:100%; margin-top:8px; }
@@ -619,6 +622,7 @@
 </header>
 
 <div id="agreeBanner" class="agree-banner" style="display:none;"></div>
+<div id="trialBanner" class="agree-banner" style="display:none;"></div>
 
 <nav class="tabs" id="tabs" style="display:none;">
   <button class="tab active" data-panel="studio">Studio</button>
@@ -1034,7 +1038,7 @@
     <div id="teamList"><div class="empty"><p data-en="Loading…" data-zh="載入中…">Loading…</p></div></div>
   </section>
 
-  <section class="sec collapsible">
+  <section class="sec collapsible" id="setBilling">
     <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron" aria-hidden="true">▾</span>
       <span class="eyebrow" data-en="Billing" data-zh="訂閱與帳務">Billing</span>
       <h2 class="display" id="billTitle" data-en="Plan." data-zh="方案。">Plan.</h2>
@@ -1533,7 +1537,7 @@ async function start() {
   let _sub0 = null;
   try {
     const { data: _sd } = await sb.from('clinic_subscriptions')
-      .select('approved,status').eq('clinic_id', clinicId).limit(1);
+      .select('approved,status,trial_ends_at,is_pilot').eq('clinic_id', clinicId).limit(1);
     _sub0 = _sd && _sd[0];
   } catch (e) { _sub0 = null; }
   if (_sub0 && _sub0.approved === false) {
@@ -1551,6 +1555,12 @@ async function start() {
     $('pendingReview').style.display = 'block';
     return;
   }
+
+  // Trial lifecycle (no card at sign-up): trialing -> grace (still savable, loud
+  // banner) -> locked (library stays readable, new saves paused until a card is
+  // added). Computed here so the save gates and the banner all read one state.
+  computeTrialState(_sub0);
+  IS_PILOT = !!(_sub0 && _sub0.is_pilot);
 
   // A patient photograph must never be SAVED into a relationship that has not been
   // described and signed, so case-save stays blocked until acceptance (see the save
@@ -1588,6 +1598,89 @@ async function start() {
 let myRole = null;
 let AGREE_PENDING = 1;      // 1 until loadAgreements confirms 0; gates case-save
 let AGREE_DEADLINE = null;  // ms epoch; 7-day grace before the hard gate
+
+// Trial lifecycle. 'ok' = active/paid or legacy (never blocks). 'trial' = inside
+// the free trial. 'grace' = trial ended, saving still allowed for a short window.
+// 'locked' = grace lapsed (or payment failed): library stays readable, new saves
+// paused until a card is added. Only 'locked' blocks saving.
+let TRIAL_STATE = 'ok';
+let TRIAL_ENDS = null;       // ms epoch of trial_ends_at
+let TRIAL_DAYS_LEFT = null;  // days left in the trial ('trial') or in grace ('grace')
+let IS_PILOT = false;        // curated pilot vs self-serve; affects Billing copy only
+const TRIAL_GRACE_MS = 7 * 24 * 60 * 60 * 1000;  // soft grace after trial end before the save-lock
+const TRIAL_WARN_DAYS = 5;  // begin the gentle pre-expiry banner this many days out
+
+function computeTrialState(sub) {
+  TRIAL_STATE = 'ok'; TRIAL_ENDS = null; TRIAL_DAYS_LEFT = null;
+  if (!sub || !sub.status) return;
+  const st = String(sub.status);
+  if (st === 'active') { TRIAL_STATE = 'ok'; return; }
+  if (st === 'past_due' || st === 'canceled' || st === 'cancelled' || st === 'unpaid') { TRIAL_STATE = 'locked'; return; }
+  if (st === 'trialing') {
+    const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at).getTime() : null;
+    TRIAL_ENDS = ends;
+    if (!ends) { TRIAL_STATE = 'trial'; return; }
+    const now = Date.now();
+    if (now <= ends) { TRIAL_STATE = 'trial'; TRIAL_DAYS_LEFT = Math.max(0, Math.ceil((ends - now) / 86400000)); }
+    else if (now <= ends + TRIAL_GRACE_MS) { TRIAL_STATE = 'grace'; TRIAL_DAYS_LEFT = Math.max(0, Math.ceil((ends + TRIAL_GRACE_MS - now) / 86400000)); }
+    else { TRIAL_STATE = 'locked'; }
+    return;
+  }
+  TRIAL_STATE = 'ok';  // unknown status: never block on a value we do not understand
+}
+
+function renderTrialBanner() {
+  const b = $('trialBanner');
+  if (!b) return;
+  const owner = myRole === 'owner';
+  let msg = '', urgent = false, show = false;
+
+  if (TRIAL_STATE === 'trial' && TRIAL_DAYS_LEFT != null && TRIAL_DAYS_LEFT <= TRIAL_WARN_DAYS) {
+    show = true;
+    const left = sdT(TRIAL_DAYS_LEFT + ' day' + (TRIAL_DAYS_LEFT === 1 ? '' : 's') + ' left', '剩 ' + TRIAL_DAYS_LEFT + ' 天');
+    msg = '<strong>' + left + '.</strong> ' + (owner
+      ? sdT('Your free trial is ending. Add a card to keep saving new cases once it does.', '您的免費試用即將結束。新增付款卡片，即可在試用結束後繼續儲存新案例。')
+      : sdT('Your clinic\u2019s free trial is ending, and only an owner can add a card.', '貴診所的免費試用即將結束，僅診所擁有者可新增付款卡片。'));
+  } else if (TRIAL_STATE === 'grace') {
+    show = true; urgent = true;
+    const left = sdT(TRIAL_DAYS_LEFT + ' day' + (TRIAL_DAYS_LEFT === 1 ? '' : 's') + ' left', '剩 ' + TRIAL_DAYS_LEFT + ' 天');
+    msg = '<strong>' + sdT('Your free trial has ended.', '您的免費試用已結束。') + '</strong> ' + (owner
+      ? sdT('You can keep saving for a little longer, but add a card within ' + left + ' to avoid a pause on new cases.', '您仍可再儲存一小段時間，但請在 ' + left + ' 內新增付款卡片，以免新案例儲存被暫停。')
+      : sdT('Cases can still be saved for a short time. Only an owner can add a card.', '案例仍可短暫儲存，僅診所擁有者可新增付款卡片。'));
+  } else if (TRIAL_STATE === 'locked') {
+    show = true; urgent = true;
+    msg = '<strong>' + sdT('Your free trial has ended.', '您的免費試用已結束。') + '</strong> ' + (owner
+      ? sdT('Your library stays readable and your gallery keeps serving. Add a card to save new cases again.', '您的資料庫仍可閱讀、網站作品集持續顯示。請新增付款卡片以繼續儲存新案例。')
+      : sdT('Your library stays readable. Only an owner can add a card to resume saving.', '您的資料庫仍可閱讀。僅診所擁有者可新增付款卡片以恢復儲存。'));
+  }
+
+  if (!show) { b.style.display = 'none'; return; }
+  b.className = 'agree-banner' + (urgent ? ' trial-locked' : '');
+  b.innerHTML = '<span class="agree-banner-txt">' + msg + '</span>'
+    + (owner ? '<button type="button" class="agree-cta" id="trialBannerBtn">' + sdT('Add a card', '新增付款卡片') + '</button>' : '');
+  b.style.display = 'flex';
+  const bb = $('trialBannerBtn');
+  if (bb) bb.onclick = goToBilling;
+}
+
+// Open Settings with the Billing section expanded, so the "Add a card" button and
+// the plan picker are the first thing the owner sees.
+function goToBilling() {
+  settingsOpen = true;
+  document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
+  ['studio', 'visualize', 'library'].forEach(p => { const el = $('panel-' + p); if (el) el.style.display = 'none'; });
+  const setp = $('panel-settings'); if (setp) setp.style.display = 'block';
+  const bill = $('setBilling');
+  if (bill) {
+    bill.classList.add('open');
+    const h = bill.querySelector('.sec-head'); if (h) h.setAttribute('aria-expanded', 'true');
+  }
+  (async () => {
+    await loadSettings();
+    await loadTeam();
+    if (bill && bill.scrollIntoView) bill.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  })();
+}
 
 async function loadAgreements() {
   const host = $('agDocs');
@@ -1785,6 +1878,7 @@ async function openPortal() {
 
   loadLibrary();
   renderAgreeBanner();
+  renderTrialBanner();
 
   if (BILLING_RESULT === 'ok') {
     settingsOpen = true;
@@ -2087,7 +2181,18 @@ sb.auth.getSession().then(async ({ data }) => {
   // Invitations are handled entirely on /join-clinic; the guard at the top of
   // this script sends any invite link there before boot. Here we only boot.
   const signedIn = !!(data && data.session);
-  if (signedIn) start();
+  if (signedIn) { start(); return; }
+
+  // Signed out. The marketing site links here with #signup ("Start free trial")
+  // or #login ("Clinic login"). Login is the default screen, so #login needs
+  // nothing; #signup opens the Create-clinic screen directly.
+  try {
+    const h = (location.hash || '').replace(/^#/, '').toLowerCase();
+    if (h === 'signup') {
+      const g = $('gate'); if (g) g.style.display = 'none';
+      const s = $('signup'); if (s) s.style.display = 'block';
+    }
+  } catch (e) {}
 });
 
 
@@ -2803,6 +2908,7 @@ async function canvasToFile(canvas, name) {
 
 $('saveBtn').addEventListener('click', async () => {
   if (AGREE_PENDING > 0) { note('saveNote', sdT('Accept your clinic agreements first. You can save patient cases as soon as they are signed.','請先接受診所協議，簽署後即可儲存顧客案例。'), 'bad'); renderAgreeBanner(); return; }
+  if (TRIAL_STATE === 'locked') { note('saveNote', sdT('Your free trial has ended, so new cases cannot be saved yet. Add a card in Billing to resume. Your existing library stays readable.','您的免費試用已結束，暫時無法儲存新案例。請至帳務新增付款卡片以恢復，您現有的資料庫仍可閱讀。'), 'bad'); renderTrialBanner(); return; }
   const rows = Array.from(document.querySelectorAll('.pair'));
   if (!rows.length) { note('saveNote', 'Build a before and after in Studio first.', 'bad'); return; }
 
@@ -4285,12 +4391,29 @@ function renderBilling(sub, c) {
 
   if (sub.status === 'trialing') {
     const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at) : null;
-    const days = ends ? Math.max(0, Math.ceil((ends - Date.now()) / 86400000)) : null;
-    // "Pilot", not "free". Pilot frames a privileged arrangement with an endpoint.
-    t.textContent = 'Pilot clinic.';
-    sb2.textContent = (days != null
-      ? days + ' days left in your pilot. Full access, no card on file.'
-      : 'Full access, no card on file.') + (founding ? ' Your founding rate is locked.' : '');
+    const expired = ends && Date.now() > ends.getTime();
+    if (expired) {
+      // Trial elapsed with no card. The library stays readable; the plan picker
+      // below is how they turn saving back on.
+      t.textContent = IS_PILOT
+        ? sdT('Your pilot has ended.','您的試用計畫已結束。')
+        : sdT('Your free trial has ended.','您的免費試用已結束。');
+      sb2.textContent = sdT('Your library stays readable and your gallery keeps serving. Choose a plan below to save new cases again.','您的資料庫仍可閱讀、網站作品集持續顯示。請於下方選擇方案以繼續儲存新案例。') + (founding ? sdT(' Your founding rate is locked.',' 您的創始價格已鎖定。') : '');
+    } else {
+      const days = ends ? Math.max(0, Math.ceil((ends - Date.now()) / 86400000)) : null;
+      if (IS_PILOT) {
+        // A curated pilot: a privileged arrangement with an endpoint.
+        t.textContent = 'Pilot clinic.';
+        sb2.textContent = (days != null
+          ? days + ' days left in your pilot. Full access, no card on file.'
+          : 'Full access, no card on file.') + (founding ? ' Your founding rate is locked.' : '');
+      } else {
+        t.textContent = sdT('Free trial.','免費試用。');
+        sb2.textContent = (days != null
+          ? sdT(days + ' days left in your free trial. Full access, no card on file.', '免費試用剩 ' + days + ' 天。完整功能，無需綁定付款卡片。')
+          : sdT('Full access, no card on file.','完整功能，無需綁定付款卡片。')) + (founding ? sdT(' Your founding rate is locked.',' 您的創始價格已鎖定。') : '');
+      }
+    }
   } else if (sub.status === 'active') {
     t.textContent = (tier ? TIER_LABEL[tier] : 'Visualize Pro') + '.';
     sb2.textContent =
@@ -5156,6 +5279,7 @@ async function saveSimulations() {
   const btn = $('simSaveBtn');
   btn.disabled = true;
   if (AGREE_PENDING > 0) { note('simSaveNote', sdT('Accept your clinic agreements first. You can save as soon as they are signed.','請先接受診所協議，簽署後即可儲存。'), 'bad'); btn.disabled = false; renderAgreeBanner(); return; }
+  if (TRIAL_STATE === 'locked') { note('simSaveNote', sdT('Your free trial has ended, so new work cannot be saved yet. Add a card in Billing to resume. Your library stays readable.','您的免費試用已結束，暫時無法儲存新作品。請至帳務新增付款卡片以恢復，您的資料庫仍可閱讀。'), 'bad'); btn.disabled = false; renderTrialBanner(); return; }
   note('simSaveNote', 'Saving…');
 
   try {

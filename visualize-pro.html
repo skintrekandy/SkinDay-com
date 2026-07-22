@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Visualize Pro · SkinDay</title>
 <link rel="canonical" href="https://skinday.com/visualize-pro">
-<meta name="description" content="Your clinic already takes before-and-after photos. Visualize Pro makes each one work harder: one upload organizes the case, updates your website gallery, and strengthens AI consultations. Private pilot for aesthetic clinics.">
+<meta name="description" content="Your clinic already takes before-and-after photos. Visualize Pro makes each one work harder: one upload organizes the case, updates your website gallery, and strengthens AI consultations. Start a 14-day free trial, no application.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
@@ -157,7 +157,7 @@
     .hero{grid-template-columns:1fr;gap:36px;padding:48px 0 20px;}
     .becomes,.principles,.compare{grid-template-columns:1fr;}
     .value,.trust,.apply{padding:60px 0;}
-    .nav-cta{display:none;}
+    .nav-menu,.nav-login,.tier{display:none;}
     .frow{grid-template-columns:1fr;}
     footer .wrap{flex-direction:column;gap:6px;}
   }
@@ -165,6 +165,74 @@
     .pipe::after,.procbar i,.out,.out .chk{animation:none!important;}
     .out{opacity:1;transform:none;}.out .chk{opacity:1;transform:none;}.procbar i{width:100%;}
     html{scroll-behavior:auto;}
+  }
+  /* ── M19: SaaS product page ─────────────────── */
+  .nav-menu{display:flex;gap:22px;margin-right:2px;}
+  .nav-menu a{font-size:.84rem;letter-spacing:.02em;color:var(--muted);transition:color .2s;}
+  .nav-menu a:hover{color:var(--deep);}
+  .nav-login{font-size:.82rem;color:var(--deep);border:1px solid var(--gold);border-radius:999px;padding:8px 15px;transition:background .2s;white-space:nowrap;}
+  .nav-login:hover{background:var(--gold-bg);}
+  .hero-login{font-size:.92rem;color:var(--muted);margin-top:16px;}
+  .hero-login a{color:var(--gold-deep);border-bottom:1px solid var(--gold);padding-bottom:1px;font-weight:500;}
+  .included{padding:92px 0;}
+  .included h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2rem,4vw,3.1rem);line-height:1.12;max-width:20ch;}
+  body.zh .included h2{line-height:1.45;font-family:'Noto Serif TC',serif;}
+  .incl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;}
+  .incl{background:var(--cream);border:1px solid var(--border);border-radius:16px;padding:26px 24px;}
+  .incl .iic{width:42px;height:42px;border-radius:11px;background:var(--gold-bg);display:grid;place-items:center;margin-bottom:16px;}
+  .incl .iic svg{width:23px;height:23px;stroke:var(--gold-deep);}
+  .incl h3{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:1.32rem;margin-bottom:6px;}
+  body.zh .incl h3{font-family:'Noto Serif TC',serif;}
+  .incl p{font-size:.88rem;color:var(--muted);}
+  .incl .free-tag{display:inline-block;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);border:1px solid var(--gold);border-radius:999px;padding:2px 9px;margin-top:12px;font-weight:600;}
+  body.zh .incl .free-tag{letter-spacing:.03em;}
+  .pricing{padding:92px 0;background:var(--warm);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+  .pricing h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2rem,4vw,3.1rem);line-height:1.12;}
+  body.zh .pricing h2{font-family:'Noto Serif TC',serif;line-height:1.4;}
+  .pricing .sub{font-size:1rem;color:var(--muted);margin-top:12px;max-width:52ch;}
+  .tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px;align-items:stretch;}
+  .plan{background:var(--cream);border:1px solid var(--border);border-radius:18px;padding:26px 22px;display:flex;flex-direction:column;}
+  .plan.feat{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-bg);}
+  .plan .pop{align-self:flex-start;font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-deep);font-weight:700;margin-bottom:10px;}
+  body.zh .plan .pop{letter-spacing:.04em;}
+  .plan .pname{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:500;}
+  body.zh .plan .pname{font-family:'Noto Serif TC',serif;}
+  .plan .price{font-family:'Cormorant Garamond',serif;font-size:2.3rem;font-weight:500;line-height:1;margin:12px 0 2px;}
+  .plan .price small{font-size:.8rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;}
+  .plan .seats{font-size:.85rem;color:var(--muted);}
+  .plan .pdesc{font-size:.86rem;color:var(--muted);margin:12px 0 16px;min-height:2.4em;}
+  .plan .trial{font-size:.72rem;color:var(--gold-deep);background:var(--gold-bg);border-radius:8px;padding:7px 10px;margin-bottom:16px;text-align:center;font-weight:600;}
+  .plan .pcta{margin-top:auto;display:inline-flex;justify-content:center;align-items:center;background:var(--deep);color:var(--cream);padding:11px 16px;border-radius:999px;font-weight:500;font-size:.9rem;transition:transform .2s;}
+  .plan.feat .pcta{background:var(--gold);color:var(--deep);}
+  .plan .pcta:hover{transform:translateY(-1px);}
+  .plan.ent{background:var(--deep);color:var(--cream);border-color:var(--deep);}
+  .plan.ent .pname,.plan.ent .price{color:var(--cream);}
+  .plan.ent .seats,.plan.ent .pdesc{color:rgba(250,247,242,.7);}
+  .plan.ent .pcta{background:var(--gold);color:var(--deep);}
+  .pricing .allincl{margin-top:22px;font-size:.85rem;color:var(--muted);text-align:center;max-width:60ch;margin-left:auto;margin-right:auto;}
+  .finalcta{padding:88px 0;text-align:center;}
+  .finalcta h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2rem,4vw,3rem);line-height:1.12;}
+  body.zh .finalcta h2{font-family:'Noto Serif TC',serif;line-height:1.4;}
+  .finalcta p{color:var(--muted);margin:14px 0 28px;font-size:1.02rem;}
+  .finalcta .cta-row{justify-content:center;}
+  .pilot{padding:76px 0;background:var(--deep);color:var(--cream);}
+  .pilot .lead-eyebrow{color:var(--gold);}
+  .pilot h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(1.7rem,3.4vw,2.5rem);line-height:1.14;color:var(--cream);}
+  body.zh .pilot h2{font-family:'Noto Serif TC',serif;line-height:1.4;}
+  .pilot p.say{font-size:.98rem;color:rgba(250,247,242,.72);max-width:58ch;margin:16px 0 30px;}
+  .foot-nav{display:flex;gap:18px;flex-wrap:wrap;}
+  .foot-nav a{color:var(--muted);}
+  .foot-nav a:hover{color:var(--deep);}
+  .foot-pilot{margin-top:14px;font-size:.82rem;color:var(--muted);}
+  .foot-pilot a{color:var(--gold-deep);border-bottom:1px solid var(--gold);}
+  @media (max-width:900px){
+    .incl-grid{grid-template-columns:1fr;}
+    .tiers{grid-template-columns:1fr 1fr;}
+    .included,.pricing,.finalcta,.pilot{padding:56px 0;}
+    footer .wrap{align-items:flex-start;}
+  }
+  @media (max-width:560px){
+    .tiers{grid-template-columns:1fr;}
   }
 </style>
 </head>
@@ -174,7 +242,12 @@
     <a href="/" class="brand">Skin<span>Day</span></a>
     <span class="tier">Visualize Pro</span>
     <span class="spacer"></span>
-    <a href="#apply" class="nav-cta" data-en="Request an invitation" data-zh="申請加入">Request an invitation</a>
+    <div class="nav-menu">
+      <a href="#how" data-en="How it works" data-zh="運作方式">How it works</a>
+      <a href="#pricing" data-en="Pricing" data-zh="方案價格">Pricing</a>
+    </div>
+    <a href="/clinic-portal#login" class="nav-login" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
+    <a href="/clinic-portal#signup" class="nav-cta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
     <div class="lang-toggle" role="group" aria-label="Language">
       <button class="lang-btn active" onclick="setLang('en')">EN</button>
       <div class="lang-sep"></div>
@@ -184,14 +257,14 @@
 </nav>
 <header class="hero wrap">
   <div>
-    <p class="eyebrow" data-en="Private pilot" data-zh="封閉測試">Private pilot</p>
     <h1 class="serif" data-en="Your clinic already takes before and after photos." data-zh="您的診所早就在拍術前術後照。">Your clinic already takes before and after photos.</h1>
     <p class="kicker serif" data-en="Visualize Pro makes <em>them work for you</em>." data-zh="Visualize Pro讓<em>每一張照片</em>發揮更大的價值。">Visualize Pro makes <em>them work for you</em>.</p>
     <p class="lede" data-en="Upload each completed case once. Visualize Pro automatically organizes every case, keeps your website gallery up to date, and grounds AI consultations using your own clinical outcomes." data-zh="完成一個案例，只需上傳一次。Visualize Pro 會自動整理每一個臨床案例、更新診所官網術前術後案例庫，並以您的真實治療成果提升 AI 諮詢的可信度。">Upload each completed case once. Visualize Pro automatically organizes every case, keeps your website gallery up to date, and grounds AI consultations using your own clinical outcomes.</p>
     <div class="cta-row">
-      <a href="#apply" class="btn" data-en="Request an invitation" data-zh="申請加入">Request an invitation</a>
+      <a href="/clinic-portal#signup" class="btn" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
       <a href="#how" class="btn ghost" data-en="See how it works →" data-zh="看看它如何運作 →">See how it works →</a>
     </div>
+    <p class="hero-login" data-en="Already using Visualize Pro? <a href='/clinic-portal#login'>Clinic login</a>" data-zh="已經在使用 Visualize Pro？<a href='/clinic-portal#login'>診所登入</a>">Already using Visualize Pro? <a href="/clinic-portal#login">Clinic login</a></p>
   </div>
   <div class="flow" role="img" aria-label="One completed case is uploaded once; Visualize Pro then updates the case library, the website gallery, and the AI consultation automatically.">
     <div class="flow-cap" data-en="One upload · three jobs, automated" data-zh="一次上傳，三個工作自動完成">One upload · three jobs, automated</div>
@@ -252,6 +325,45 @@
     </div>
   </div>
 </section>
+<section class="included" id="included">
+  <div class="wrap">
+    <p class="lead-eyebrow" data-en="What&rsquo;s included" data-zh="包含功能">What&rsquo;s included</p>
+    <h2 class="serif" data-en="One subscription. The whole workflow." data-zh="一次訂閱，涵蓋整個流程。">One subscription. The whole workflow.</h2>
+    <div class="incl-grid">
+      <div class="incl">
+        <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span>
+        <h3 data-en="Studio" data-zh="Studio">Studio</h3>
+        <p data-en="Compose clean before-and-after grids right in your browser." data-zh="直接在瀏覽器中製作乾淨的術前術後對比圖。">Compose clean before-and-after grids right in your browser.</p>
+        <span class="free-tag" data-en="Free, and built in" data-zh="免費，已內建">Free, and built in</span>
+      </div>
+      <div class="incl">
+        <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5v14a1 1 0 0 0 1 1h4V4H5a1 1 0 0 0-1 1z"/><path d="M9 4h5l1 16H9z"/><path d="M14 4l4 .6 2 15.4-5-.6"/></svg></span>
+        <h3 data-en="Case Library" data-zh="案例庫">Case Library</h3>
+        <p data-en="Every case organized into folders and searchable in seconds." data-zh="每個案例自動歸檔，數秒內即可搜尋。">Every case organized into folders and searchable in seconds.</p>
+      </div>
+      <div class="incl">
+        <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.6 2.4 15.4 0 18M12 3c-2.4 2.6-2.4 15.4 0 18"/></svg></span>
+        <h3 data-en="Website Gallery" data-zh="官網案例">Website Gallery</h3>
+        <p data-en="Your public before-and-after gallery updates itself as you save." data-zh="官網術前術後案例會隨著儲存自動更新。">Your public before-and-after gallery updates itself as you save.</p>
+      </div>
+      <div class="incl">
+        <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg></span>
+        <h3 data-en="Clinic-guided Visualize" data-zh="診所引導的 Visualize">Clinic-guided Visualize</h3>
+        <p data-en="AI consultation previews, grounded in your own clinical outcomes." data-zh="AI 諮詢預覽，以您自己的真實成果為依據。">AI consultation previews, grounded in your own clinical outcomes.</p>
+      </div>
+      <div class="incl">
+        <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <h3 data-en="Consent management" data-zh="同意管理">Consent management</h3>
+        <p data-en="Per-purpose consent for storage, reference and publishing, with real withdrawal." data-zh="儲存、模擬參考與發布分項同意，撤回即生效。">Per-purpose consent for storage, reference and publishing, with real withdrawal.</p>
+      </div>
+      <div class="incl">
+        <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.5a3 3 0 0 1 0 5.8M21 20a6 6 0 0 0-4-5.6"/></svg></span>
+        <h3 data-en="Team access" data-zh="團隊帳號">Team access</h3>
+        <p data-en="Invite your team with roles for owners, admins, injectors and staff." data-zh="邀請團隊成員，並依負責人、管理者、施打者與員工分派角色。">Invite your team with roles for owners, admins, injectors and staff.</p>
+      </div>
+    </div>
+  </div>
+</section>
 <section class="loopsec" id="loop">
   <div class="wrap">
     <p class="lead-eyebrow" data-en="The loop" data-zh="循環效應">The loop</p>
@@ -301,11 +413,64 @@
     </div>
   </div>
 </section>
-<section class="apply" id="apply">
+<section class="pricing" id="pricing">
   <div class="wrap">
-    <p class="lead-eyebrow" data-en="Founding pilot" data-zh="創始診所測試">Founding pilot</p>
-    <h2 class="serif" data-en="Make the photos you already take work harder." data-zh="讓您本來就在拍的照片，發揮更大的價值。">Make the photos you already take work harder.</h2>
-    <p class="say" data-en="Three months free for a small number of clinics worldwide. Complimentary access, direct support, and founding pricing after." data-zh="邀請少數全球醫美診所免費試用三個月：完整功能、直接支援，測試後享創始診所優惠。">Three months free for a small number of clinics worldwide. Complimentary access, direct support, and founding pricing after.</p>
+    <p class="lead-eyebrow" data-en="Pricing" data-zh="方案價格">Pricing</p>
+    <h2 class="serif" data-en="Start free. No application." data-zh="免費開始，無需申請。">Start free. No application.</h2>
+    <p class="sub" data-en="Every plan includes the full product and a 14-day free trial. Choose by team size; change plans anytime." data-zh="每個方案都包含完整功能與 14 天免費試用。依團隊人數選擇，方案隨時可調整。">Every plan includes the full product and a 14-day free trial. Choose by team size; change plans anytime.</p>
+    <div class="tiers">
+      <div class="plan">
+        <div class="pname">Solo</div>
+        <div class="price">$99 <small data-en="USD / mo" data-zh="USD / 月">USD / mo</small></div>
+        <div class="seats" data-en="1 seat" data-zh="1 個帳號">1 seat</div>
+        <p class="pdesc" data-en="For a solo practitioner." data-zh="適合單人執業。">For a solo practitioner.</p>
+        <div class="trial" data-en="14-day free trial · no application" data-zh="14 天免費試用 · 無需申請">14-day free trial · no application</div>
+        <a href="/clinic-portal#signup" class="pcta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+      </div>
+      <div class="plan feat">
+        <div class="pop" data-en="Popular" data-zh="熱門">Popular</div>
+        <div class="pname">Boutique</div>
+        <div class="price">$139 <small data-en="USD / mo" data-zh="USD / 月">USD / mo</small></div>
+        <div class="seats" data-en="Up to 4 seats" data-zh="最多 4 個帳號">Up to 4 seats</div>
+        <p class="pdesc" data-en="For a small clinic team." data-zh="適合小型診所團隊。">For a small clinic team.</p>
+        <div class="trial" data-en="14-day free trial · no application" data-zh="14 天免費試用 · 無需申請">14-day free trial · no application</div>
+        <a href="/clinic-portal#signup" class="pcta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+      </div>
+      <div class="plan">
+        <div class="pname">Premium</div>
+        <div class="price">$199 <small data-en="USD / mo" data-zh="USD / 月">USD / mo</small></div>
+        <div class="seats" data-en="Up to 12 seats" data-zh="最多 12 個帳號">Up to 12 seats</div>
+        <p class="pdesc" data-en="For a growing practice." data-zh="適合成長中的診所。">For a growing practice.</p>
+        <div class="trial" data-en="14-day free trial · no application" data-zh="14 天免費試用 · 無需申請">14-day free trial · no application</div>
+        <a href="/clinic-portal#signup" class="pcta" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+      </div>
+      <div class="plan ent">
+        <div class="pname">Enterprise</div>
+        <div class="price" data-en="Let&rsquo;s talk" data-zh="洽談方案">Let&rsquo;s talk</div>
+        <div class="seats" data-en="Multiple locations" data-zh="多據點">Multiple locations</div>
+        <p class="pdesc" data-en="For chains and groups." data-zh="適合連鎖與集團診所。">For chains and groups.</p>
+        <a href="#pilot" class="pcta" data-en="Contact us" data-zh="與我們聯繫">Contact us</a>
+      </div>
+    </div>
+    <p class="allincl" data-en="All plans include Studio, Case Library, Website Gallery, Clinic-guided Visualize, consent management and team access." data-zh="所有方案皆包含 Studio、案例庫、官網案例、診所引導的 Visualize、同意管理與團隊帳號。">All plans include Studio, Case Library, Website Gallery, Clinic-guided Visualize, consent management and team access.</p>
+  </div>
+</section>
+<section class="finalcta">
+  <div class="wrap">
+    <h2 class="serif" data-en="Your photos are already being taken." data-zh="這些照片，您本來就在拍。">Your photos are already being taken.</h2>
+    <p data-en="Start a 14-day free trial today. No application, no wait." data-zh="今天就開始 14 天免費試用，無需申請、無需等待。">Start a 14-day free trial today. No application, no wait.</p>
+    <div class="cta-row">
+      <a href="/clinic-portal#signup" class="btn" data-en="Start free trial" data-zh="開始免費試用">Start free trial</a>
+      <a href="/clinic-portal#login" class="btn ghost" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
+    </div>
+  </div>
+</section>
+<section class="pilot" id="pilot">
+  <div class="wrap">
+    <p class="lead-eyebrow" data-en="Early pilot" data-zh="早期試用計畫">Early pilot</p>
+    <h2 class="serif" data-en="Prefer a more hands-on start?" data-zh="想要更完整的導入協助？">Prefer a more hands-on start?</h2>
+    <p class="say" data-en="Our early pilot is separate from the standard 14-day self-serve trial. Selected clinics receive 90 days of complimentary access, guided onboarding, and direct support from our team throughout the setup process." data-zh="我們的早期試用計畫有別於標準的 14 天自助試用。獲選的診所可享有 90 天免費使用、專人導入協助，以及在整個設定過程中我們團隊的直接支援。">Our early pilot is separate from the standard 14-day self-serve trial. Selected clinics receive 90 days of complimentary access, guided onboarding, and direct support from our team throughout the setup process.</p>
+    <p class="say" data-en="It is best suited for multi-location groups and clinics that want to work closely with us from day one." data-zh="最適合多據點集團，以及希望從第一天就與我們密切合作的診所。">It is best suited for multi-location groups and clinics that want to work closely with us from day one.</p>
     <form name="visualize-pro" method="POST" data-netlify="true" netlify-honeypot="company-website">
       <input type="hidden" name="form-name" value="visualize-pro">
       <p class="honey"><label><span data-en="Leave this empty" data-zh="請勿填寫">Leave this empty</span> <input name="company-website"></label></p>
@@ -317,14 +482,22 @@
         <div class="field full"><label for="f-treat" data-en="What do you treat most?" data-zh="診所主要療程">What do you treat most?</label><input id="f-treat" name="treatments" type="text" placeholder="Sculptra, filler, tox, energy-based" required></div>
         <div class="field full"><label for="f-why" data-en="Anything we should know?" data-zh="還有其他想告訴我們的嗎？">Anything we should know?</label><textarea id="f-why" name="why"></textarea></div>
       </div>
-      <button type="submit" data-en="Send application" data-zh="送出申請">Send application</button>
+      <button type="submit" data-en="Request pilot consideration" data-zh="申請試用計畫">Request pilot consideration</button>
     </form>
   </div>
 </section>
 <footer>
   <div class="wrap">
     <span>SkinDay · Visualize Pro</span>
-    <span><a href="/">skinday.com</a></span>
+    <div class="foot-nav">
+      <a href="#how" data-en="How it works" data-zh="運作方式">How it works</a>
+      <a href="#pricing" data-en="Pricing" data-zh="方案價格">Pricing</a>
+      <a href="/clinic-portal#login" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
+      <a href="/">skinday.com</a>
+    </div>
+  </div>
+  <div class="wrap">
+    <p class="foot-pilot" data-en="Interested in an early pilot? <a href='#pilot'>Request pilot consideration →</a>" data-zh="想加入早期試用計畫？<a href='#pilot'>申請試用計畫 →</a>">Interested in an early pilot? <a href="#pilot">Request pilot consideration →</a></p>
   </div>
 </footer>
 <script>
