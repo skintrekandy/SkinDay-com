@@ -483,6 +483,16 @@
   .lib-head .case-name .case-title { font-family:var(--font-ui); font-size:1.15rem; font-weight:600; letter-spacing:-.01em; }
   .lib-head .case-name .case-meta { font-family:var(--font-mono); font-size:.72rem; color:var(--muted); }
   .lib-body { padding:0 0 24px; }
+  .lib-month { border-top:1px solid var(--line); }
+  .lib-month:first-child { border-top:0; }
+  .lib-month-head { width:100%; display:flex; align-items:center; gap:12px; text-align:left; background:none; border:0; padding:17px 2px; cursor:pointer; color:var(--ink); }
+  .lib-month-head:hover { background:var(--surface-2); }
+  .lib-month-head .caret { font-size:.74rem; color:var(--muted); width:12px; }
+  .lib-month-head .m-name { font-family:var(--font-ui); font-size:.98rem; font-weight:700; letter-spacing:0; color:var(--ink); }
+  .lib-month-head .count { font-family:var(--font-mono); font-size:.76rem; color:var(--muted); margin-left:auto; }
+  .lib-month-body { padding:0; }
+  .lib-month-body .lib-group:first-child { border-top:1px solid var(--line); }
+  .lib-month-body .lib-group:last-child { border-bottom:0; }
   .prov { font-size:.82rem; color:var(--muted); margin-top:8px; line-height:1.5; }
   .empty .display { font-size:23px; }
   .empty p { color:var(--muted); font-size:14.5px; margin:7px 0 0; }
@@ -3241,7 +3251,7 @@ async function loadLibrary() {
     list.length + ' 個案例。點開任一項可查看角度。');
 
   host.innerHTML = '';
-  list.forEach(caseRows => host.appendChild(caseFolder(caseRows, perms)));
+  renderLibraryByMonth(host, list, perms);
 }
 
 // The header switches via data-en/data-zh, but the library, search and save form
@@ -3326,6 +3336,53 @@ function caseFolder(rows, perms) {
   return wrap;
 }
 
+var LIB_MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+function libMonthOf(caseRows) {
+  var r0 = caseRows && caseRows[0];
+  var d = (r0 && r0.created_at) ? new Date(r0.created_at) : null;
+  if (!d || isNaN(d.getTime())) return { key: '0000-00', label: sdT('Undated', '未標註日期') };
+  var y = d.getFullYear(), m = d.getMonth();
+  return { key: y + '-' + String(m + 1).padStart(2, '0'), label: sdT(LIB_MONTHS_EN[m] + ' ' + y, y + ' 年 ' + (m + 1) + ' 月') };
+}
+function renderLibraryByMonth(host, list, perms) {
+  var buckets = [], byKey = {};
+  list.forEach(function (caseRows) {
+    var mk = libMonthOf(caseRows);
+    if (!byKey[mk.key]) { byKey[mk.key] = { key: mk.key, label: mk.label, items: [] }; buckets.push(byKey[mk.key]); }
+    byKey[mk.key].items.push(caseRows);
+  });
+  var now = new Date();
+  var currentKey = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  buckets.forEach(function (b, i) {
+    var openThis = (b.key === currentKey) || (i === 0 && !byKey[currentKey]);
+    host.appendChild(monthFolder(b, perms, openThis));
+  });
+}
+function monthFolder(bucket, perms, openByDefault) {
+  var wrap = document.createElement('div');
+  wrap.className = 'lib-month';
+  var head = document.createElement('button');
+  head.className = 'lib-month-head'; head.type = 'button';
+  var caret = document.createElement('span');
+  caret.className = 'caret'; caret.textContent = openByDefault ? '\u25be' : '\u25b8';
+  var name = document.createElement('span');
+  name.className = 'm-name'; name.textContent = bucket.label;
+  var count = document.createElement('span');
+  count.className = 'count';
+  count.textContent = sdT(bucket.items.length + (bucket.items.length === 1 ? ' case' : ' cases'), bucket.items.length + ' 個案例');
+  head.append(caret, name, count);
+  var body = document.createElement('div');
+  body.className = 'lib-month-body';
+  body.style.display = openByDefault ? 'block' : 'none';
+  bucket.items.forEach(function (caseRows) { body.appendChild(caseFolder(caseRows, perms)); });
+  head.onclick = function () {
+    var wasOpen = body.style.display !== 'none';
+    body.style.display = wasOpen ? 'none' : 'block';
+    caret.textContent = wasOpen ? '\u25b8' : '\u25be';
+  };
+  wrap.append(head, body);
+  return wrap;
+}
 function groupRow(g) {
   const wrap = document.createElement('div');
   wrap.className = 'lib-group';
