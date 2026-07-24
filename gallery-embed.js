@@ -118,6 +118,23 @@
 
   var columns = parseInt(script.getAttribute('data-columns'), 10) || 3;
   var limit = parseInt(script.getAttribute('data-limit'), 10) || 0;
+
+  // Optional narrowing, so a clinic can put a treatment-specific gallery on the
+  // page that sells that treatment rather than one gallery of everything. Values
+  // are SkinDay's own codes, matched case-insensitively, comma separated for more
+  // than one. Absent means no narrowing at all, which stays the default.
+  function codeList(attr) {
+    var raw = script.getAttribute(attr);
+    if (!raw) return null;
+    var out = raw.toLowerCase().split(',').map(function (s) { return s.trim(); })
+      .filter(function (s) { return !!s; });
+    return out.length ? out : null;
+  }
+  function inList(value, wanted) {
+    return !!value && wanted.indexOf(String(value).toLowerCase()) !== -1;
+  }
+  var wantTreatment = codeList('data-treatment');
+  var wantSubtype = codeList('data-subtype');
   var accent = script.getAttribute('data-accent') || '#C9A96E';
   var radius = script.getAttribute('data-radius');
   radius = (radius === null) ? 2 : (parseInt(radius, 10) || 0);
@@ -270,15 +287,20 @@
     '}' +
     '.lb.open { display:flex; }' +
     '.lb-inner { width:100%; max-width:1180px; max-height:100%; overflow:auto; }' +
-    '.lb .pair { display:flex; justify-content:center; align-items:center; gap:0; background:transparent; }' +
+    '.lb .pair { display:flex; justify-content:center; align-items:flex-start; gap:0; background:transparent; max-width:100%; }' +
     '.lb .strip { background:transparent; gap:10px; }' +
     '.lb .frame { background:transparent; overflow:visible; }' +
-    // frame hugs its image (not a fixed half-column), so portrait and landscape
-    // pairs both sit edge to edge with no gap in the middle.
-    '.lb .pair .frame { display:flex; flex:0 0 auto; width:auto; max-width:none; }' +
+    // The frame hugs its image, but it must also be allowed to SHRINK. With
+    // flex:0 0 auto the pair could grow wider than the overlay, and a centred
+    // flex row that overflows is clipped at its start edge with no way to scroll
+    // back, which is what cut the before photograph in half down its left side.
+    '.lb .pair .frame { display:block; flex:0 1 auto; min-width:0; width:auto; max-width:50%; }' +
     '.lb .frame img { aspect-ratio:auto; object-fit:contain; width:100%; height:auto; max-height:76vh; }' +
-    '.lb .pair .frame img { width:auto; height:auto; max-width:48vw; max-height:82vh; }' +
-    '@media (max-width:560px){ .lb .pair { flex-direction:column; } .lb .pair .frame img { max-width:92vw; max-height:40vh; } }' +
+    // Width follows height so each photograph keeps its own proportions. Sizing
+    // the box instead and letting contain letterbox inside it would leave dead
+    // space at the inner edges, which reads as a gap between the two faces.
+    '.lb .pair .frame img { display:block; width:auto; height:auto; max-width:100%; max-height:82vh; }' +
+    '@media (max-width:560px){ .lb .pair { flex-direction:column; align-items:center; } .lb .pair .frame { max-width:100%; } .lb .pair .frame img { max-width:92vw; max-height:40vh; } }' +
     '.lb .meta {' +
       'border-top:0; padding:14px 0 0; text-align:center;' +
       'color:#e8e0d6; opacity:.8; font-size:13px;' +
@@ -407,9 +429,18 @@
       // 'pair'/'frame' class names are the styled ones).
       var pair = document.createElement('div');
       pair.className = 'pair';
+      // The caption has to carry the same class the cards use. Unclassed it is an
+      // ordinary in-flow element, and since the frame is a flex row it sat BESIDE
+      // the photograph, holding the before and after apart. That, not any gap
+      // property, was the space in the middle. With the class it overlays the
+      // corner of the image exactly as it does in the grid and occupies no width.
       pair.innerHTML =
-        '<figure class="frame"><img alt=""><figcaption>Before</figcaption></figure>' +
-        '<figure class="frame"><img alt=""><figcaption>After</figcaption></figure>';
+        '<figure class="frame" data-when="before"><img alt="Before">' +
+          (showLabels ? '<figcaption class="tag">Before</figcaption>' : '') +
+        '</figure>' +
+        '<figure class="frame" data-when="after"><img alt="After">' +
+          (showLabels ? '<figcaption class="tag">After</figcaption>' : '') +
+        '</figure>';
       var pImgs = pair.querySelectorAll('img');
       pImgs[0].src = sl.tab.getAttribute('data-before') || '';
       pImgs[1].src = sl.tab.getAttribute('data-after') || '';
@@ -717,6 +748,21 @@
         return;
       }
       var series = seriesFrom(data);
+      // Narrow before limiting, so data-limit counts what is actually shown.
+      // A series matches if the series itself carries the code or any case in it
+      // does, because subtype lives on the case rather than on the series.
+      if (wantTreatment) {
+        series = series.filter(function (s) {
+          return inList(s.treatment, wantTreatment) ||
+            (s.cases || []).some(function (c) { return inList(c.treatment, wantTreatment); });
+        });
+      }
+      if (wantSubtype) {
+        series = series.filter(function (s) {
+          return inList(s.subtype, wantSubtype) ||
+            (s.cases || []).some(function (c) { return inList(c.subtype, wantSubtype); });
+        });
+      }
       if (limit > 0) series = series.slice(0, limit);
       render(series);
     })
