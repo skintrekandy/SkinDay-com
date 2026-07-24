@@ -1860,7 +1860,9 @@ async function twSoltaPreview(){
       '</div>' +
       '<div class="tw-hint" style="margin-top:-.5rem;">Matched against ' + s.clinicsTotal +
         ' Taiwan clinics, of which ' + s.clinicsWithPhone + ' have a phone number on file. ' +
-        'Clinics without one can only be matched on name.</div>';
+        'Clinics without one can only be matched on name.' +
+        (s.duplicateTargets ? ' ' + s.duplicateTargets + ' clinic(s) are listed by Solta under more than one branch line; those collapse to a single record on import.' : '') +
+        '</div>';
 
     if (d.errors && d.errors.length) {
       html += '<div class="form-section-label">Lines that would not parse</div>' +

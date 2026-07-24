@@ -128,12 +128,15 @@
     }
     .hero-eyebrow::before { content: ''; display: block; width: 28px; height: 1px; background: var(--gold); }
     h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: clamp(2.6rem, 5.5vw, 4.4rem);
-      font-weight: 300; line-height: 1.1;
+      font-family: 'Cormorant Garamond', 'Noto Serif TC', serif;
+      /* CJK glyphs read larger than Latin at the same size, and the headline
+         is now a full sentence rather than two short lines, so the ceiling
+         comes down and the leading opens up. */
+      font-size: clamp(2rem, 4.2vw, 3.4rem);
+      font-weight: 400; line-height: 1.35;
       color: var(--cream); margin-bottom: 1.4rem; letter-spacing: -0.01em;
     }
-    h1 em { font-style: italic; color: var(--gold); }
+    h1 em { font-style: normal; color: var(--gold); }
     .hero-sub {
       font-size: 1rem; color: var(--dim); line-height: 1.7;
       max-width: 560px; margin-bottom: 2.4rem; font-weight: 300;
@@ -229,11 +232,31 @@
     /* ─── SECTION ─── */
     .section-header { text-align: center; padding: 72px 5% 40px; }
     .section-eyebrow { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rose); margin-bottom: 0.9rem; }
-    .section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; line-height: 1.2; color: var(--deep); margin-bottom: 0.8rem; }
-    .section-title em { font-style: italic; color: var(--rose); }
+    .section-title { font-family: 'Cormorant Garamond', 'Noto Serif TC', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; line-height: 1.2; color: var(--deep); margin-bottom: 0.8rem; }
+    .section-title em { font-style: normal; color: var(--rose); }
     .section-desc { font-size: 0.95rem; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.65; font-weight: 300; }
 
     /* ─── FILTER BAR ─── */
+    .device-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #fff; border: 1.5px solid var(--border); border-radius: 999px;
+      padding: 0.45rem 1rem; cursor: pointer;
+      font-family: 'Noto Sans TC', 'DM Sans', sans-serif; font-size: 0.82rem;
+      color: var(--deep); transition: all 0.18s; white-space: nowrap;
+    }
+    .device-chip:hover { border-color: var(--rose-m); }
+    .device-chip .device-chip-tick { opacity: 0; transition: opacity 0.18s; font-size: 0.75rem; }
+    .device-chip.on { background: rgba(176,96,112,0.08); border-color: var(--rose); color: var(--rose); }
+    .device-chip.on .device-chip-tick { opacity: 1; }
+
+    .verified-device-badge {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      background: rgba(176,96,112,0.09); color: var(--rose);
+      border-radius: 4px; padding: 0.12rem 0.4rem;
+      font-size: 0.68rem; letter-spacing: 0.02em; margin-left: 0.4rem;
+      vertical-align: middle; white-space: nowrap;
+    }
+
     .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; }
     .filter-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; margin-right: 0.25rem; }
     .sort-select {
@@ -463,7 +486,7 @@
     .compare-col-header .col-meta { font-size: 0.75rem; color: var(--muted); }
     .compare-price-big { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 400; color: var(--deep); line-height: 1; }
     .compare-price-unit { font-size: 0.78rem; color: var(--muted); margin-left: 0.2rem; }
-    .compare-no-price { font-size: 0.85rem; color: var(--dim); font-style: italic; }
+    .compare-no-price { font-size: 0.85rem; color: var(--dim); }
     .compare-stars { color: var(--gold); font-size: 1rem; letter-spacing: 0.04em; }
     .compare-rating-num { font-weight: 600; font-size: 0.95rem; }
     .compare-reviews { font-size: 0.78rem; color: var(--muted); margin-top: 0.15rem; }
@@ -657,9 +680,9 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">SkinDay Taiwan · 台灣醫美診所搜尋</div>
-    <h1>比較醫美診所，<br><em>做更安心的選擇。</em></h1>
-    <p class="hero-sub">評分、照片、診所資料與治療項目，協助你快速掌握全台醫美診所。</p>
-    <p class="hero-sub-zh">從台北、台中到高雄、台南，整理公開資訊與診所資料，讓比較更清楚。</p>
+    <h1>找到適合你的醫美診所，安心做出選擇。</h1>
+    <p class="hero-sub">一次查看診所評分、照片、基本資料與治療項目，更快速地了解與比較全台醫美診所。</p>
+    <p class="hero-sub-zh">從台北、台中、台南到高雄，SkinDay 整理各地診所的公開資訊，讓搜尋更方便、比較更清楚。</p>
     <div class="hero-stats">
       <div>
         <div class="stat-num" id="heroClinicCount">2,172+</div>
@@ -796,10 +819,11 @@
     <select class="sort-select" onchange="sortCards(this.value)" id="mainSortSelect">
       <option value="rating">評分最高</option>
       <option value="reviews" selected>評論最多</option>
-      <option value="price-high">價格：高 → 低</option>
-      <option value="price-low">價格：低 → 高</option>
       <option value="nearest">最近距離</option>
     </select>
+    <button class="device-chip" id="deviceChip" onclick="toggleDeviceFilter()" style="display:none;">
+      <span class="device-chip-tick">✓</span><span id="deviceChipLabel">原廠認證鳳凰電波</span>
+    </button>
   </div>
 
   <div class="cards-grid" id="cardsGrid">
@@ -879,8 +903,6 @@
         <select class="map-list-header-sort" onchange="onMapSort(this.value)">
           <option value="rating">評分最高</option>
           <option value="reviews">評論最多</option>
-          <option value="price-low">價格：低到高</option>
-          <option value="price-high">價格：高到低</option>
         </select>
       </div>
       <div class="map-list-cards" id="mapListCards"></div>
@@ -1038,6 +1060,13 @@ const SB_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
 const COUNTRY = 'taiwan';
 const PAGE_SIZE = 24;
+
+// ─── MANUFACTURER VERIFIED DEVICES (M18) ──────────────────────
+// Clinics that Solta lists as certified for 鳳凰電波. The chip only appears
+// once there is data behind it, so patients never meet an empty filter.
+const VERIFIED_TECH = '鳳凰電波 Thermage FLX';
+let verifiedDeviceIds = null;   // Set of clinic ids, or null before it loads
+let deviceFilterOn = false;
 
 let currentFilter = 'all';
 let currentNameQuery = '';
@@ -1216,6 +1245,7 @@ function buildApiUrl(page) {
   params.set('country', COUNTRY);
   if (currentNameQuery) params.set('search', currentNameQuery);
   if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
+  if (deviceFilterOn) params.set('verified_device', VERIFIED_TECH);
   return '/api/get-clinics?' + params.toString();
 }
 
@@ -1311,6 +1341,7 @@ function renderPageCards(clinicsData, append) {
         <div class="card-header${hasLogo && hasPhoto ? ' has-logo' : ''}">
           <div class="clinic-name">
             ${c.claimed ? `<span class="clinic-name-verified">${c.name}</span>` : c.name}
+            ${verifiedDeviceIds && verifiedDeviceIds.has(String(c.id)) ? `<span class="verified-device-badge">原廠認證 鳳凰電波</span>` : ''}
           </div>
           <div class="clinic-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}${distEl}</div>
           <div class="rating-row">
@@ -2204,6 +2235,32 @@ function unhighlightPinById(cid) {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
+// Reads the manufacturer verified rows straight from Supabase. A failure here
+// is silent on purpose: the directory still works, it just loses the chip.
+async function loadVerifiedDevices() {
+  try {
+    const url = SB_URL + '/rest/v1/clinic_technologies?select=clinic_id'
+      + '&technology=eq.' + encodeURIComponent(VERIFIED_TECH)
+      + '&evidence_type=eq.manufacturer_directory';
+    const res = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } });
+    if (!res.ok) return;
+    const rows = await res.json();
+    verifiedDeviceIds = new Set((rows || []).map(r => String(r.clinic_id)));
+    const chip = document.getElementById('deviceChip');
+    if (chip && verifiedDeviceIds.size > 0) {
+      document.getElementById('deviceChipLabel').textContent =
+        '原廠認證鳳凰電波 · ' + verifiedDeviceIds.size;
+      chip.style.display = 'inline-flex';
+    }
+  } catch (e) { /* directory works without it */ }
+}
+
+function toggleDeviceFilter() {
+  deviceFilterOn = !deviceFilterOn;
+  document.getElementById('deviceChip').classList.toggle('on', deviceFilterOn);
+  fetchPage(0, false);
+}
+
 (async function init() {
   const grid = document.getElementById('cardsGrid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;letter-spacing:0.03em;">載入中…</div>';
@@ -2211,6 +2268,7 @@ function unhighlightPinById(cid) {
   const [indexRes, pageRes] = await Promise.allSettled([
     fetch('/api/get-clinics?mode=index&country=taiwan').then(r => r.ok ? r.json() : []),
     fetch(buildApiUrl(0)).then(r => r.ok ? r.json() : { clinics: [], total: 0, hasMore: false }),
+    loadVerifiedDevices()
   ]);
 
   if (indexRes.status === 'fulfilled' && Array.isArray(indexRes.value)) {
