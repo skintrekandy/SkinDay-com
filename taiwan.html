@@ -238,15 +238,16 @@
 
     /* ─── FILTER BAR ─── */
     .device-chip {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      background: #fff; border: 1.5px solid var(--border); border-radius: 999px;
-      padding: 0.45rem 1rem; cursor: pointer;
-      font-family: 'Noto Sans TC', 'DM Sans', sans-serif; font-size: 0.82rem;
-      color: var(--deep); transition: all 0.18s; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: transparent; border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.55rem 0.95rem; cursor: pointer;
+      font-family: 'DM Sans', 'Noto Serif TC', sans-serif; font-size: 0.85rem;
+      color: var(--muted); transition: all 0.18s; white-space: nowrap; line-height: 1;
     }
     .device-chip:hover { border-color: var(--rose-m); }
     .device-chip .device-chip-tick { opacity: 0; transition: opacity 0.18s; font-size: 0.75rem; }
-    .device-chip.on { background: rgba(176,96,112,0.08); border-color: var(--rose); color: var(--rose); }
+    .device-chip.on { background: rgba(176,96,112,0.06); border-color: var(--rose); color: var(--rose); }
+    .device-chip-map { padding: 0.35rem 0.65rem; font-size: 0.76rem; margin-left: auto; margin-right: 0.5rem; }
     .device-chip.on .device-chip-tick { opacity: 1; }
 
     .verified-device-badge {
@@ -680,7 +681,7 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">SkinDay Taiwan · 台灣醫美診所搜尋</div>
-    <h1>找到適合你的醫美診所，安心做出選擇。</h1>
+    <h1>找到適合你的醫美診所，<br>安心做出選擇。</h1>
     <p class="hero-sub">一次查看診所評分、照片、基本資料與治療項目，更快速地了解與比較全台醫美診所。</p>
     <p class="hero-sub-zh">從台北、台中、台南到高雄，SkinDay 整理各地診所的公開資訊，讓搜尋更方便、比較更清楚。</p>
     <div class="hero-stats">
@@ -900,6 +901,9 @@
     <div class="map-card-list" id="mapCardList">
       <div class="map-list-header" id="mapListHeader">
         <span class="map-list-header-count" id="mapListCount"></span>
+        <button class="device-chip device-chip-map" id="mapDeviceChip" onclick="toggleDeviceFilter()" style="display:none;">
+          <span class="device-chip-tick">✓</span>原廠認證鳳凰電波
+        </button>
         <select class="map-list-header-sort" onchange="onMapSort(this.value)">
           <option value="rating">評分最高</option>
           <option value="reviews">評論最多</option>
@@ -1972,6 +1976,10 @@ async function fetchMapClinics() {
   if (currentFilter && currentFilter !== 'all') {
     url += '&neighbourhood=eq.' + encodeURIComponent(currentFilter);
   }
+  // Manufacturer verified filter, shared with the grid view.
+  if (deviceFilterOn && verifiedDeviceIds && verifiedDeviceIds.size) {
+    url += '&id=in.(' + Array.from(verifiedDeviceIds).map(encodeURIComponent).join(',') + ')';
+  }
   const r = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
   if (!r.ok) throw new Error('fetch failed');
   return (await r.json()).map(normaliseClinic);
@@ -2246,19 +2254,25 @@ async function loadVerifiedDevices() {
     if (!res.ok) return;
     const rows = await res.json();
     verifiedDeviceIds = new Set((rows || []).map(r => String(r.clinic_id)));
-    const chip = document.getElementById('deviceChip');
-    if (chip && verifiedDeviceIds.size > 0) {
-      document.getElementById('deviceChipLabel').textContent =
-        '原廠認證鳳凰電波 · ' + verifiedDeviceIds.size;
-      chip.style.display = 'inline-flex';
+    if (verifiedDeviceIds.size > 0) {
+      ['deviceChip', 'mapDeviceChip'].forEach(function(id){
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'inline-flex';
+      });
     }
   } catch (e) { /* directory works without it */ }
 }
 
 function toggleDeviceFilter() {
   deviceFilterOn = !deviceFilterOn;
-  document.getElementById('deviceChip').classList.toggle('on', deviceFilterOn);
-  fetchPage(0, false);
+  ['deviceChip', 'mapDeviceChip'].forEach(function(id){
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('on', deviceFilterOn);
+  });
+  // Refresh whichever view is on screen. The other picks the state up when it
+  // next loads, so the filter survives switching between them.
+  if (currentView === 'map') reloadMap();
+  else fetchPage(0, false);
 }
 
 (async function init() {
