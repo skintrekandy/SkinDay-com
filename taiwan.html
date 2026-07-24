@@ -138,8 +138,8 @@
     }
     h1 em { font-style: normal; color: var(--gold); }
     .hero-sub {
-      font-size: 1rem; color: var(--dim); line-height: 1.7;
-      max-width: 560px; margin-bottom: 2.4rem; font-weight: 300;
+      font-size: 1.02rem; color: var(--dim); line-height: 1.9;
+      max-width: 600px; margin-bottom: 2.4rem; font-weight: 300;
     }
     .hero-sub-zh {
       font-family: 'Noto Serif TC', serif;
@@ -681,9 +681,8 @@
 <section class="hero">
   <div class="hero-inner">
     <div class="hero-eyebrow">SkinDay Taiwan · 台灣醫美診所搜尋</div>
-    <h1>找到適合你的醫美診所，<br>安心做出選擇。</h1>
-    <p class="hero-sub">一次查看診所評分、照片、基本資料與治療項目，更快速地了解與比較全台醫美診所。</p>
-    <p class="hero-sub-zh">從台北、台中、台南到高雄，SkinDay 整理各地診所的公開資訊，讓搜尋更方便、比較更清楚。</p>
+    <h1>找到適合你的醫美診所</h1>
+    <p class="hero-sub">查看評分、照片、診所資訊與療程項目，幫助你安心比較、做出選擇。</p>
     <div class="hero-stats">
       <div>
         <div class="stat-num" id="heroClinicCount">2,172+</div>
@@ -1269,6 +1268,58 @@ function formatPriceDate(d) {
 }
 
 // ─── RENDER CARDS ─────────────────────────────────────────────
+
+// ─── DISPLAY NAMES ────────────────────────────────────────────
+// Clinic names come from Google Business listings, where clinics pack
+// treatment keywords into the name for search: "愛爾麗診所 台中西屯文心店｜
+// 台中醫美 飛梭雷射|皮秒雷射|音波拉提|...". Patients should see the clinic,
+// not the keyword list. The full name is left untouched in the data and is
+// still what search and matching run against.
+const NAME_NOISE = ['醫美','雷射','電波','音波','皮秒','埋線','抽脂','隆乳','玻尿酸','肉毒',
+  '除斑','除毛','痘','減脂','植髮','推薦','手術','治療','皮膚','美容','拉提','溶脂','針','價格'];
+
+function displayName(raw) {
+  let s = String(raw || '').trim();
+  if (!s) return '';
+
+  // Everything after the first pipe is keyword stuffing.
+  s = s.split(/[｜|]/)[0].trim();
+
+  // Decorative brackets around the whole name.
+  s = s.replace(/^[【\[（(]+/, '').replace(/[】\]）)]+$/, '').trim();
+  if (s.indexOf('】') !== -1) s = s.split('】')[0].replace(/^[【\[]+/, '').trim();
+
+  // Taiwanese clinic names end at 診所 / 醫院 / 中心. Take the LAST such word,
+  // so 臺北醫學大學附設醫院美容醫學中心 keeps its 中心 instead of stopping at
+  // 醫院. Then keep a following branch token if it reads as a place rather
+  // than a treatment.
+  const m = s.match(/^(.*(?:醫院|診所|中心))(.*)$/);
+  if (m) {
+    const base = m[1].trim();
+    const rest = m[2].replace(/^[\s·・\-–—、,，]+/, '').trim();
+    if (rest) {
+      const token = rest.split(/[\s·・|｜,，、]/)[0];
+      const looksLikePlace = token.length <= 8 && !NAME_NOISE.some(w => token.indexOf(w) !== -1);
+      s = looksLikePlace ? base + ' ' + token : base;
+    } else {
+      s = base;
+    }
+  } else if (s.indexOf(' - ') !== -1) {
+    const head = s.split(' - ')[0].trim();
+    if (head.length >= 6) s = head;
+  }
+
+  // Trim on visual width, since a Chinese character occupies about twice the
+  // space of a Latin one and a flat character count cuts Latin names too soon.
+  let width = 0, cut = s.length;
+  for (let i = 0; i < s.length; i++) {
+    width += /[\u2E80-\u9FFF\uF900-\uFAFF\uFF00-\uFFEF]/.test(s.charAt(i)) ? 2 : 1;
+    if (width > 36) { cut = i; break; }
+  }
+  return cut < s.length ? s.slice(0, cut).trim() + '…' : s;
+}
+
+
 function renderPageCards(clinicsData, append) {
   const grid = document.getElementById('cardsGrid');
 
@@ -1344,7 +1395,7 @@ function renderPageCards(clinicsData, append) {
         ${photoBanner}
         <div class="card-header${hasLogo && hasPhoto ? ' has-logo' : ''}">
           <div class="clinic-name">
-            ${c.claimed ? `<span class="clinic-name-verified">${c.name}</span>` : c.name}
+            ${c.claimed ? `<span class="clinic-name-verified">${displayName(c.name)}</span>` : displayName(c.name)}
             ${verifiedDeviceIds && verifiedDeviceIds.has(String(c.id)) ? `<span class="verified-device-badge">原廠認證 鳳凰電波</span>` : ''}
           </div>
           <div class="clinic-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}${distEl}</div>
@@ -1511,7 +1562,7 @@ function updateCompareBar() {
     if (compareList[i]) {
       const c = findClinic(compareList[i]);
       slot.classList.add('filled');
-      slot.innerHTML = `<span class="compare-slot-name">${c ? c.name : compareList[i]}</span><button class="compare-slot-remove" onclick="toggleCompare('${compareList[i]}')">✕</button>`;
+      slot.innerHTML = `<span class="compare-slot-name">${c ? displayName(c.name) : compareList[i]}</span><button class="compare-slot-remove" onclick="toggleCompare('${compareList[i]}')">✕</button>`;
     } else {
       slot.classList.remove('filled');
       slot.innerHTML = '<span class="compare-slot-name">選擇診所</span>';
@@ -1537,7 +1588,7 @@ function openCompareModal() {
   const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
   const maxReviews = Math.max(...clinics.map(c => parseInt(c.reviews)||0));
   let html = `<table class="compare-table ${colClass}"><thead><tr><th></th>`;
-  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${c.name}</div><div class="col-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}</div></td>`; });
+  clinics.forEach(c => { html += `<td class="compare-col-header"><div class="col-name">${displayName(c.name)}</div><div class="col-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}</div></td>`; });
   html += '</tr></thead><tbody>';
   html += '<tr><th>評分</th>';
   clinics.forEach(c => {
@@ -1593,7 +1644,7 @@ window.openClinicModal = async function(id) {
   const content = [
     c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:16px 16px 0 0;" loading="lazy">` : '',
     `<div style="padding:1.75rem;">`,
-    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.6rem;font-weight:500;margin-bottom:0.4rem;line-height:1.2;">${c.name}</h2>`,
+    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.6rem;font-weight:500;margin-bottom:0.4rem;line-height:1.2;">${displayName(c.name)}</h2>`,
     `<p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">📍 ${hood}</p>`,
 
     // Rating row links to Google Maps
@@ -1876,7 +1927,7 @@ async function updateShortlistUI() {
     <div class="shortlist-item">
       <div class="shortlist-item-logo">${c.logo ? `<img src="${c.logo}" alt="">` : c.name.charAt(0)}</div>
       <div class="shortlist-item-info">
-        <div class="shortlist-item-name">${c.name}</div>
+        <div class="shortlist-item-name">${displayName(c.name)}</div>
         <div class="shortlist-item-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''} · ★${c.rating||'—'}</div>
         ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">NT$${c.price}/單位</div>` : ''}
       </div>
@@ -2184,7 +2235,7 @@ function buildMapCard(c, carousel) {
   return `<div class="${cls}" data-cid="${c.id}" onclick="onCardClick('${c.id}')" ${hoverAttrs}>` +
     `<div class="map-card-top">${logoHTML}` +
     `<div class="map-card-name-block">` +
-    `<div class="map-card-name">${c.name||''}</div>` +
+    `<div class="map-card-name">${displayName(c.name)}</div>` +
     `<div class="map-card-meta">📍 ${hood}</div></div>` +
     `<div class="map-card-rating-badge">` +
     `<div class="map-card-rating-score">${rating}</div>` +
