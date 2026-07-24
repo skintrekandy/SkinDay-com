@@ -1853,11 +1853,14 @@ async function twSoltaPreview(){
       '<div class="tw-stats" style="margin-bottom:1rem;">' +
         stat(s.parsed, 'Lines parsed') +
         stat(s.matched, 'Matched', 'var(--green)') +
-        stat(s.unmatched, 'Not in our list') +
+        stat(s.unmatched, 'Unmatched') +
         stat(s.byPhone, 'By phone') +
         stat(s.byName, 'By name') +
         stat(s.flagged + s.unparsed, 'Need a look', (s.flagged + s.unparsed) ? 'var(--rose)' : null) +
-      '</div>';
+      '</div>' +
+      '<div class="tw-hint" style="margin-top:-.5rem;">Matched against ' + s.clinicsTotal +
+        ' Taiwan clinics, of which ' + s.clinicsWithPhone + ' have a phone number on file. ' +
+        'Clinics without one can only be matched on name.</div>';
 
     if (d.errors && d.errors.length) {
       html += '<div class="form-section-label">Lines that would not parse</div>' +
