@@ -364,6 +364,9 @@
 
   .btn-approve:hover { opacity: 0.85; }
   .btn-approve:disabled { opacity: 0.4; cursor: default; }
+  .claim-meta-label { display:block; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:2px; }
+  .btn-reject { background:none; border:1px solid rgba(201,169,110,.3); color:var(--dim); padding:.5rem 1.1rem; border-radius:6px; cursor:pointer; font-family:inherit; font-size:.82rem; }
+  .btn-reject:hover { border-color:var(--rose); color:var(--rose); }
 
   .btn-reject {
     padding: 0.6rem 1.25rem;
@@ -723,6 +726,9 @@
     <button class="nav-tab" data-tab="flagged" onclick="switchTab('flagged')">
       &#9873; Flagged Votes <span class="tab-count zero" id="flagged-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="signups" onclick="switchTab('signups')">
+      &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
+    </button>
     <button class="nav-tab" data-tab="taiwan" onclick="switchTab('taiwan')">
       &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
     </button>
@@ -811,6 +817,21 @@
         </div>
       </div>
     </div>
+    <div id="signups-panel" style="display:none">
+      <div class="add-clinic-form" style="max-width:1000px;">
+        <div class="form-title">Clinic Sign-ups</div>
+        <div class="form-subtitle">New clinics awaiting approval. Approve gives full portal access; Reject denies it. A pending clinic can sign in but sees an "under review" screen and cannot save cases.</div>
+        <div id="signups-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">Loading...</div>
+        <div id="signups-error" style="display:none;color:var(--rose);padding:20px 0;font-size:.85rem;"></div>
+        <div id="signups-empty" style="display:none;text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">No clinics awaiting approval.</div>
+        <div id="signups-content" style="display:none;">
+          <div id="signups-cards" class="claims-grid"></div>
+          <div style="text-align:right;margin-top:1rem;">
+            <button onclick="loadSignups()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ── TAIWAN (M18) ──────────────────────────────────────────────────── -->
     <div id="taiwan-panel" style="display:none">
@@ -823,6 +844,7 @@
         <div class="tw-subnav">
           <button class="tw-subtab active" data-sub="clinics" onclick="twSwitch('clinics')">Clinics</button>
           <button class="tw-subtab" data-sub="doctors" onclick="twSwitch('doctors')">Doctors</button>
+          <button class="tw-subtab" data-sub="solta" onclick="twSwitch('solta')">Solta import</button>
         </div>
 
         <div id="tw-error" style="display:none;color:var(--rose);padding:12px 0;font-size:.85rem;"></div>
@@ -854,8 +876,33 @@
           <div id="tw-doctor-detail" style="display:none;margin-top:1.5rem;"></div>
         </div>
 
+        <!-- SOLTA IMPORT -->
+        <div id="tw-solta-view" style="display:none;">
+          <div class="tw-card">
+            <div class="form-section-label">Paste the Solta certified list</div>
+            <div class="tw-hint" style="margin-bottom:.8rem;">One clinic per line: name, phone, then address. Preview first. Nothing is written until you press Import, and no new clinic rows are ever created.</div>
+            <textarea class="form-input" id="tw-solta-text" rows="8" placeholder="悠美診所-市府 02-2758-6308 台北市信義區忠孝東路四段504號" style="font-family:monospace;font-size:.78rem;resize:vertical;"></textarea>
+            <div style="display:flex;gap:10px;margin-top:1rem;align-items:center;flex-wrap:wrap;">
+              <select class="form-select" id="tw-solta-tech" style="width:auto;"></select>
+              <button class="tw-inline-btn" style="padding:.5rem 1.2rem;" onclick="twSoltaPreview()">Preview</button>
+              <button class="tw-inline-btn" id="tw-solta-import" style="padding:.5rem 1.2rem;border-color:var(--gold);color:var(--gold);display:none;" onclick="twSoltaCommit()">Import</button>
+            </div>
+          </div>
+          <div id="tw-solta-report"></div>
+
+          <div class="tw-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div class="form-section-label" style="margin:0;">Review queue</div>
+              <button class="tw-inline-btn" onclick="twSoltaQueue()">Load queue</button>
+            </div>
+            <div class="tw-hint">Certified clinics that are not in the SkinDay list. Each one is an outreach target: they have a verified device badge waiting the moment they are listed.</div>
+            <div id="tw-solta-queue" style="margin-top:1rem;"></div>
+          </div>
+        </div>
+
       </div>
     </div>
+
   </main>
 </div>
 
@@ -907,10 +954,12 @@ async function enterApp(){
   document.getElementById('app').style.display = 'block';
   await loadCosts();
   refreshFlaggedCount(); // show pending-review badge immediately
+  refreshSignupCount(); // show pending clinic sign-ups badge immediately
 }
 
 function refresh(){
   if (currentTab === 'flagged') { loadFlagged(); }
+  else if (currentTab === 'signups') { loadSignups(); }
   else if (currentTab === 'taiwan') { twLoadStats(); twRefreshCurrentView(); }
   else { costsLoaded = false; loadCosts(); }
 }
@@ -923,12 +972,15 @@ function switchTab(tab){
   });
   var costsP = document.getElementById('costs-panel');
   var flaggedP = document.getElementById('flagged-panel');
-  var taiwanP = document.getElementById('taiwan-panel');
+  var signupsP = document.getElementById('signups-panel');
   if (costsP) costsP.style.display = (tab === 'costs') ? 'block' : 'none';
   if (flaggedP) flaggedP.style.display = (tab === 'flagged') ? 'block' : 'none';
+  if (signupsP) signupsP.style.display = (tab === 'signups') ? 'block' : 'none';
+  var taiwanP = document.getElementById('taiwan-panel');
   if (taiwanP) taiwanP.style.display = (tab === 'taiwan') ? 'block' : 'none';
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
+  if (tab === 'signups') loadSignups();
   if (tab === 'taiwan') twEnter();
 }
 
@@ -1062,6 +1114,70 @@ async function refreshFlaggedCount(){
     if (n === 0 && currentTab === 'flagged') {
       document.getElementById('flagged-content').style.display = 'none';
       document.getElementById('flagged-empty').style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+// -- CLINIC SIGN-UPS (approval queue) -----------------------------------------
+// New clinics land as approval_status='pending'. Approve grants full portal
+// access; Reject denies it. Backend actions to add in admin-action.js:
+//   list-pending-clinics -> { clinics:[{id,name,city,country,created_at,owner_email}] }
+//   approve-clinic {clinic_id} -> {ok:true}   reject-clinic {clinic_id} -> {ok:true}
+async function loadSignups(){
+  var loading=document.getElementById('signups-loading'), errEl=document.getElementById('signups-error'),
+      emptyEl=document.getElementById('signups-empty'), content=document.getElementById('signups-content');
+  loading.style.display='block'; errEl.style.display='none'; emptyEl.style.display='none'; content.style.display='none';
+  try {
+    var data = await adminAction({ action: 'list-pending-clinics' });
+    var clinics = data.clinics || [];
+    var badge = document.getElementById('signups-count');
+    badge.textContent = clinics.length; badge.classList.toggle('zero', clinics.length === 0);
+    loading.style.display='none';
+    if (!clinics.length) { emptyEl.style.display='block'; return; }
+    renderSignups(clinics); content.style.display='block';
+  } catch (e) { loading.style.display='none'; errEl.textContent = e.message || 'Failed to load.'; errEl.style.display='block'; }
+}
+function renderSignups(clinics){
+  var host = document.getElementById('signups-cards');
+  host.innerHTML = clinics.map(function(c){
+    var when = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
+    var loc = [c.city, c.country].filter(Boolean).join(', ');
+    return '<div class="claim-card" id="signup-' + esc(c.id) + '">'
+      + '<div class="claim-header"><div class="claim-clinic-name">' + esc(c.name || c.id) + '</div>'
+      + '<span class="status-pill pending">Pending</span></div>'
+      + '<div class="claim-meta">'
+      + '<div><span class="claim-meta-label">Owner</span>' + esc(c.owner_email || '-') + '</div>'
+      + '<div><span class="claim-meta-label">Location</span>' + esc(loc || '-') + '</div>'
+      + '<div><span class="claim-meta-label">Signed up</span>' + esc(when) + '</div>'
+      + '</div>'
+      + '<div class="claim-actions">'
+      + '<button class="btn-approve" onclick="approveClinic(\''+esc(c.id)+'\')">Approve</button>'
+      + '<button class="btn-reject" onclick="rejectClinic(\''+esc(c.id)+'\',\''+esc(c.name||c.id)+'\')">Reject</button>'
+      + '</div></div>';
+  }).join('');
+}
+async function approveClinic(id){
+  try { await adminAction({ action: 'approve-clinic', clinic_id: id });
+    var el = document.getElementById('signup-' + id); if (el) el.remove();
+    showToast('Clinic approved.'); refreshSignupCount();
+  } catch (e) { showToast(e.message || 'Failed.', true); }
+}
+async function rejectClinic(id, name){
+  if (!confirm('Reject ' + (name || 'this clinic') + '? They will not get portal access.')) return;
+  try { await adminAction({ action: 'reject-clinic', clinic_id: id });
+    var el = document.getElementById('signup-' + id); if (el) el.remove();
+    showToast('Clinic rejected.'); refreshSignupCount();
+  } catch (e) { showToast(e.message || 'Failed.', true); }
+}
+async function refreshSignupCount(){
+  try {
+    var data = await adminAction({ action: 'list-pending-clinics' });
+    var n = (data.clinics || []).length;
+    var badge = document.getElementById('signups-count');
+    badge.textContent = n; badge.classList.toggle('zero', n === 0);
+    if (n === 0 && currentTab === 'signups') {
+      document.getElementById('signups-content').style.display='none';
+      document.getElementById('signups-empty').style.display='block';
     }
   } catch (e) {}
 }
@@ -1700,6 +1816,135 @@ async function twUnverifyDoctor(id){
   } catch (e) { showToast(e.message, true); }
 }
 
+
+// ── SOLTA IMPORT ────────────────────────────────────────────
+let twSoltaReady = false;
+
+function twSoltaInit(){
+  const sel = document.getElementById('tw-solta-tech');
+  if (sel && !sel.options.length && twMeta) {
+    sel.innerHTML = twMeta.technologies.map(function(t){
+      return '<option value="' + esc(t) + '"' + (t === 'Thermage FLX' ? ' selected' : '') + '>' + esc(t) + '</option>';
+    }).join('');
+  }
+}
+
+function twSoltaText(){ return document.getElementById('tw-solta-text').value; }
+function twSoltaTech(){ return document.getElementById('tw-solta-tech').value; }
+
+async function twSoltaPreview(){
+  const report = document.getElementById('tw-solta-report');
+  report.innerHTML = '<div class="tw-card" style="color:var(--muted);font-size:.85rem;">Parsing and matching...</div>';
+  try {
+    const d = await twApi({ action: 'solta-preview', text: twSoltaText(), technology: twSoltaTech() });
+    twSoltaReady = true;
+    document.getElementById('tw-solta-import').style.display = 'inline-block';
+
+    const s = d.summary;
+    const stat = function(n, l, colour){
+      return '<div class="tw-stat"><div class="tw-stat-n"' + (colour ? ' style="color:' + colour + ';"' : '') + '>' + n +
+             '</div><div class="tw-stat-l">' + l + '</div></div>';
+    };
+
+    let html = '<div class="tw-card">' +
+      '<div class="form-section-label">Preview</div>' +
+      '<div class="tw-stats" style="margin-bottom:1rem;">' +
+        stat(s.parsed, 'Lines parsed') +
+        stat(s.matched, 'Matched', 'var(--green)') +
+        stat(s.unmatched, 'Not in our list') +
+        stat(s.byPhone, 'By phone') +
+        stat(s.byName, 'By name') +
+        stat(s.flagged + s.unparsed, 'Need a look', (s.flagged + s.unparsed) ? 'var(--rose)' : null) +
+      '</div>';
+
+    if (d.errors && d.errors.length) {
+      html += '<div class="form-section-label">Lines that would not parse</div>' +
+        d.errors.map(function(e){
+          return '<div class="tw-row" style="cursor:default;"><div><div class="tw-row-name">Line ' + e.line + ': ' + esc(e.error) + '</div>' +
+                 '<div class="tw-row-sub">' + esc(e.raw) + '</div></div></div>';
+        }).join('');
+    }
+
+    if (d.flagged && d.flagged.length) {
+      html += '<div class="form-section-label" style="margin-top:1rem;">Odd looking phone numbers</div>' +
+        d.flagged.map(function(f){
+          return '<div class="tw-row" style="cursor:default;"><div><div class="tw-row-name">' + esc(f.name) + '</div>' +
+                 '<div class="tw-row-sub">' + esc(f.phone) + ' · ' + esc(f.warning) + '</div></div></div>';
+        }).join('') +
+        '<div class="tw-hint">These are usually typos on the Solta page. They can still match on name.</div>';
+    }
+
+    html += '<div class="form-section-label" style="margin-top:1rem;">Will be marked manufacturer verified</div>' +
+      (d.matched.length
+        ? d.matched.map(function(m){
+            const changed = m.solta_name !== m.clinic_name;
+            return '<div class="tw-row" style="cursor:default;"><div>' +
+                   '<div class="tw-row-name">' + esc(m.clinic_name) + '</div>' +
+                   '<div class="tw-row-sub">' + (changed ? 'Solta lists it as ' + esc(m.solta_name) + ' · ' : '') +
+                     'matched by ' + esc(m.method) + ' · id ' + esc(m.clinic_id) + '</div></div>' +
+                   '<span class="tw-badge verified">原廠認證</span></div>';
+          }).join('')
+        : '<div style="color:var(--muted);font-size:.82rem;">Nothing matched.</div>');
+
+    html += '<div class="form-section-label" style="margin-top:1rem;">Going to the review queue</div>' +
+      (d.unmatched.length
+        ? d.unmatched.slice(0, 40).map(function(u){
+            return '<div class="tw-row" style="cursor:default;"><div>' +
+                   '<div class="tw-row-name">' + esc(u.name) + '</div>' +
+                   '<div class="tw-row-sub">' + esc([u.phone, u.address].filter(Boolean).join(' · ')) + '</div></div>' +
+                   '<span class="tw-badge declared">' + esc(u.reason) + '</span></div>';
+          }).join('') + (d.unmatched.length > 40 ? '<div class="tw-hint">Showing the first 40 of ' + d.unmatched.length + '.</div>' : '')
+        : '<div style="color:var(--muted);font-size:.82rem;">Everything matched.</div>');
+
+    html += '</div>';
+    report.innerHTML = html;
+  } catch (e) {
+    report.innerHTML = '';
+    showToast(e.message, true);
+  }
+}
+
+async function twSoltaCommit(){
+  if (!twSoltaReady) { showToast('Preview first.', true); return; }
+  if (!confirm('Import now? Matched clinics get a manufacturer verified badge, the rest go to the review queue.')) return;
+  try {
+    const d = await twApi({ action: 'solta-commit', text: twSoltaText(), technology: twSoltaTech() });
+    showToast(d.message);
+    twLoadStats();
+    twSoltaQueue();
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twSoltaQueue(){
+  const box = document.getElementById('tw-solta-queue');
+  box.innerHTML = '<div style="color:var(--muted);font-size:.85rem;">Loading...</div>';
+  try {
+    const d = await twApi({ action: 'solta-queue', status: 'open' });
+    box.innerHTML = d.queue.length
+      ? d.queue.map(function(q){
+          return '<div class="tw-row" style="cursor:default;"><div>' +
+                 '<div class="tw-row-name">' + esc(q.name) + '</div>' +
+                 '<div class="tw-row-sub">' + esc([q.phone_raw, q.address].filter(Boolean).join(' · ')) + '</div></div>' +
+                 '<div style="display:flex;gap:6px;">' +
+                   '<button class="tw-inline-btn" onclick="twSoltaResolve(' + q.id + ',\'added\')">Added</button>' +
+                   '<button class="tw-inline-btn" onclick="twSoltaResolve(' + q.id + ',\'dismissed\')">Dismiss</button>' +
+                 '</div></div>';
+        }).join('')
+      : '<div style="color:var(--muted);font-size:.82rem;">Queue is empty.</div>';
+  } catch (e) {
+    box.innerHTML = '';
+    showToast(e.message, true);
+  }
+}
+
+async function twSoltaResolve(id, status){
+  try {
+    await twApi({ action: 'solta-queue-resolve', id: id, status: status });
+    showToast('Queue updated.');
+    twSoltaQueue();
+  } catch (e) { showToast(e.message, true); }
+}
+
 // Enter searches, in both sub tabs.
 ['tw-clinic-q','tw-doctor-q','tw-link-q'].forEach(function(elId){
   const el = document.getElementById(elId);
@@ -1711,6 +1956,7 @@ async function twUnverifyDoctor(id){
     else twFindDoctorToLink();
   });
 });
+
 
 </script>
 </body>
