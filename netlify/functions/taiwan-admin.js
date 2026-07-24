@@ -64,6 +64,174 @@ function clean(v) {
   return s === '' ? null : s;
 }
 
+
+// ============================================================================
+// SOLTA IMPORT
+// The Solta Taiwan certified clinic list is pasted in from their site rather
+// than scraped. The parser below turns those lines into rows, and the two
+// actions match them against our Taiwan clinics by phone.
+// ============================================================================
+// Parser for the Solta Taiwan certified clinic list, as pasted from the site.
+// Each line is: name, then phone, then address. Names contain spaces, digits,
+// brackets and Latin text, so the address is found first (it always starts
+// with a city token) and the phone is then taken from the right hand end of
+// what remains. Whatever is left is the name.
+
+const CITIES = [
+  '台北市','臺北市','新北市','基隆市','桃園市','新竹市','新竹縣','苗栗縣',
+  '台中市','臺中市','彰化縣','南投縣','雲林縣','嘉義市','嘉義縣',
+  '台南市','臺南市','高雄市','屏東縣','宜蘭縣','花蓮縣','台東縣','臺東縣',
+  '澎湖縣','金門縣','連江縣'
+];
+const CITY_RE = new RegExp('(' + CITIES.join('|') + ')');
+
+// Allows the punctuation actually seen in the source: full width brackets,
+// en dashes, extension markers, stray spaces.
+const PHONE_TAIL_RE = /[（(]?0[\d\s\-–—()）#＃*]*\d\s*$/;
+
+function normalisePhone(raw) {
+  if (!raw) return null;
+  // Anything after an extension marker is not part of the dialable number.
+  const main = String(raw).split(/[#＃]/)[0];
+  let digits = main.replace(/\D/g, '');
+  // Our clinic rows came from Google and carry international format
+  // (+886 2 2758 6308), while Solta lists local format (02-2758-6308).
+  // Fold both to the local form or nothing matches.
+  if (digits.startsWith('886')) digits = '0' + digits.slice(3);
+  return digits || null;
+}
+
+// Taiwan landlines are 02 plus 8 digits, or another 2 or 3 digit area code
+// plus 7. Mobiles are 09 plus 8. Anything else is a typo on the source site
+// and gets flagged rather than silently matched.
+function phoneLooksValid(digits) {
+  if (!digits) return false;
+  if (!digits.startsWith('0')) return false;
+  if (digits.length < 9 || digits.length > 10) return false;
+  // Taipei numbers are 02 plus eight digits. A short one is a typo on the
+  // source site, for example 0-2321-8188 where the area code lost a digit.
+  if (digits.startsWith('02') && digits.length !== 10) return false;
+  return true;
+}
+
+function parseLine(line, lineNo) {
+  const raw = String(line).replace(/\u00a0/g, ' ').trim();
+  if (!raw) return null;
+
+  const cityMatch = raw.match(CITY_RE);
+  if (!cityMatch) {
+    return { lineNo, raw, error: 'No city found in the address' };
+  }
+
+  const addressStart = cityMatch.index;
+  const address = raw.slice(addressStart).trim();
+  const head = raw.slice(0, addressStart).trim();
+
+  const phoneMatch = head.match(PHONE_TAIL_RE);
+  if (!phoneMatch) {
+    return { lineNo, raw, name: head, address, error: 'No phone found' };
+  }
+
+  const phoneRaw = phoneMatch[0].trim();
+  const name = head.slice(0, phoneMatch.index).trim();
+  const phone = normalisePhone(phoneRaw);
+
+  const districtMatch = address.match(/^(?:台北市|臺北市|新北市|基隆市|桃園市|新竹市|新竹縣|苗栗縣|台中市|臺中市|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|台南市|臺南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|臺東縣|澎湖縣|金門縣|連江縣)([^\d\s]{1,4}?[區市鄉鎮])/);
+
+  return {
+    lineNo,
+    raw,
+    name,
+    phone_raw: phoneRaw,
+    phone,
+    address,
+    city: cityMatch[1],
+    district: districtMatch ? districtMatch[1] : null,
+    warning: name ? (phoneLooksValid(phone) ? null : 'Phone does not look like a Taiwan number') : 'Empty name'
+  };
+}
+
+function parseSoltaList(text) {
+  const rows = [];
+  const errors = [];
+  String(text).split(/\r?\n/).forEach((line, i) => {
+    const parsed = parseLine(line, i + 1);
+    if (!parsed) return;
+    if (parsed.error) errors.push(parsed);
+    else rows.push(parsed);
+  });
+  return { rows, errors };
+}
+// Normalised name, for the fallback match when a phone number is missing or
+// mistyped on the source site.
+function nameKey(s) {
+  return String(s || '').replace(/[\s\u3000()（）【】\[\]・‧,.、,。_-]/g, '').toLowerCase();
+}
+
+const SOLTA_SOURCE_URL = 'https://thermageflx.co/';
+const SOLTA_ORG        = 'Solta Taiwan';
+
+// Loads every Taiwan clinic once and indexes it by phone and by name.
+async function loadTaiwanIndex(supabase) {
+  const byPhone = new Map();
+  const byName  = new Map();
+  const page = 1000;
+  for (let from = 0; ; from += page) {
+    const { data, error } = await supabase
+      .from('clinics')
+      .select('id,name,phone,neighbourhood')
+      .eq('country', 'taiwan')
+      .range(from, from + page - 1);
+    if (error) throw error;
+    if (!data || !data.length) break;
+    data.forEach(c => {
+      const p = normalisePhone(c.phone);
+      if (p) {
+        if (!byPhone.has(p)) byPhone.set(p, []);
+        byPhone.get(p).push(c);
+      }
+      const n = nameKey(c.name);
+      if (n) {
+        if (!byName.has(n)) byName.set(n, []);
+        byName.get(n).push(c);
+      }
+    });
+    if (data.length < page) break;
+  }
+  return { byPhone, byName };
+}
+
+// Matches parsed Solta rows against the index. Phone is the strong key; an
+// exact unique name is accepted as a fallback. Anything ambiguous is left
+// unmatched on purpose, because a wrong match puts a manufacturer verified
+// badge on the wrong clinic.
+function matchSoltaRows(rows, index) {
+  const matched = [];
+  const unmatched = [];
+  rows.forEach(r => {
+    const byPhone = r.phone ? (index.byPhone.get(r.phone) || []) : [];
+    if (byPhone.length === 1) {
+      matched.push({ row: r, clinic: byPhone[0], method: 'phone' });
+      return;
+    }
+    if (byPhone.length > 1) {
+      unmatched.push({ row: r, reason: 'Phone matches ' + byPhone.length + ' clinics' });
+      return;
+    }
+    const byName = index.byName.get(nameKey(r.name)) || [];
+    if (byName.length === 1) {
+      matched.push({ row: r, clinic: byName[0], method: 'name' });
+      return;
+    }
+    if (byName.length > 1) {
+      unmatched.push({ row: r, reason: 'Name matches ' + byName.length + ' clinics' });
+      return;
+    }
+    unmatched.push({ row: r, reason: r.phone ? 'Not in the SkinDay list' : 'No usable phone, no name match' });
+  });
+  return { matched, unmatched };
+}
+
 exports.handler = async (event) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -349,6 +517,127 @@ exports.handler = async (event) => {
       const { error } = await supabase.from('clinic_doctors').delete().eq('id', body.link_id);
       if (error) throw error;
       return ok({ success: true, message: 'Doctor unlinked.' });
+    }
+
+    // ── SOLTA IMPORT ────────────────────────────────────────────────────────
+    // preview does not write. It parses, matches and reports, so the list can
+    // be checked before anything lands on a public profile.
+    if (action === 'solta-preview' || action === 'solta-commit') {
+      const text = body.text;
+      if (!text || !String(text).trim()) return bad(400, 'Paste the Solta list first');
+
+      const technology = clean(body.technology) || 'Thermage FLX';
+      const { rows, errors } = parseSoltaList(text);
+      if (!rows.length) return bad(400, 'Nothing parsed. Check that each line is name, phone, then address.');
+
+      const index = await loadTaiwanIndex(supabase);
+      const { matched, unmatched } = matchSoltaRows(rows, index);
+      const flagged = rows.filter(r => r.warning);
+
+      const summary = {
+        parsed: rows.length,
+        unparsed: errors.length,
+        matched: matched.length,
+        unmatched: unmatched.length,
+        flagged: flagged.length,
+        byPhone: matched.filter(m => m.method === 'phone').length,
+        byName: matched.filter(m => m.method === 'name').length
+      };
+
+      if (action === 'solta-preview') {
+        return ok({
+          summary,
+          matched: matched.slice(0, 200).map(m => ({
+            solta_name: m.row.name, clinic_name: m.clinic.name, clinic_id: m.clinic.id,
+            city: m.row.city, district: m.row.district, method: m.method
+          })),
+          unmatched: unmatched.slice(0, 200).map(u => ({
+            name: u.row.name, phone: u.row.phone_raw, city: u.row.city,
+            district: u.row.district, address: u.row.address, reason: u.reason
+          })),
+          flagged: flagged.slice(0, 50).map(r => ({ name: r.name, phone: r.phone_raw, warning: r.warning })),
+          errors: errors.slice(0, 50).map(e => ({ line: e.lineNo, error: e.error, raw: e.raw }))
+        });
+      }
+
+      // Commit. Matched clinics get the device at manufacturer_directory.
+      const now = new Date().toISOString();
+      const techRows = matched.map(m => ({
+        clinic_id:           String(m.clinic.id),
+        technology,
+        evidence_type:       'manufacturer_directory',
+        source_organization: SOLTA_ORG,
+        source_url:          SOLTA_SOURCE_URL,
+        verification_status: 'currently_listed',
+        notes:               'Listed as ' + m.row.name + ' at ' + m.row.address,
+        last_verified_at:    now
+      }));
+
+      let written = 0;
+      for (let i = 0; i < techRows.length; i += 200) {
+        const chunk = techRows.slice(i, i + 200);
+        const { error } = await supabase
+          .from('clinic_technologies')
+          .upsert(chunk, { onConflict: 'clinic_id,technology' });
+        if (error) throw error;
+        written += chunk.length;
+      }
+
+      // Unmatched go to the review queue. Nothing is created in clinics.
+      const queueRows = unmatched.map(u => ({
+        name:       u.row.name,
+        phone:      u.row.phone,
+        phone_raw:  u.row.phone_raw,
+        address:    u.row.address,
+        city:       u.row.city,
+        district:   u.row.district,
+        technology,
+        reason:     u.reason,
+        status:     'open',
+        last_seen_at: now
+      }));
+
+      let queued = 0;
+      for (let i = 0; i < queueRows.length; i += 200) {
+        const chunk = queueRows.slice(i, i + 200);
+        const { error } = await supabase.from('solta_unmatched').insert(chunk);
+        // A duplicate here just means the row is already queued from a prior run.
+        if (error && error.code !== '23505') throw error;
+        queued += chunk.length;
+      }
+
+      return ok({
+        success: true,
+        summary,
+        written,
+        queued,
+        message: written + ' clinics marked manufacturer verified, ' + queued + ' sent to the review queue.'
+      });
+    }
+
+    // ── REVIEW QUEUE ────────────────────────────────────────────────────────
+    if (action === 'solta-queue') {
+      const { data, error } = await supabase
+        .from('solta_unmatched')
+        .select('*')
+        .eq('status', clean(body.status) || 'open')
+        .order('city').order('district').order('name')
+        .limit(300);
+      if (error) throw error;
+      return ok({ queue: data || [] });
+    }
+
+    if (action === 'solta-queue-resolve') {
+      if (!body.id) return bad(400, 'Missing id');
+      const status = clean(body.status);
+      if (!['added', 'dismissed', 'open'].includes(status)) return bad(400, 'Invalid status');
+      const { error } = await supabase.from('solta_unmatched').update({
+        status,
+        resolved_clinic_id: clean(body.resolved_clinic_id),
+        admin_note: clean(body.admin_note)
+      }).eq('id', body.id);
+      if (error) throw error;
+      return ok({ success: true, message: 'Queue item updated.' });
     }
 
     return bad(400, 'Unknown action: ' + action);
