@@ -1393,12 +1393,14 @@ function twSwitch(sub){
   });
   document.getElementById('tw-clinics-view').style.display = (sub === 'clinics') ? 'block' : 'none';
   document.getElementById('tw-doctors-view').style.display = (sub === 'doctors') ? 'block' : 'none';
+  document.getElementById('tw-solta-view').style.display   = (sub === 'solta')   ? 'block' : 'none';
   twRefreshCurrentView();
 }
 
 function twRefreshCurrentView(){
   if (twSub === 'clinics') twSearchClinics();
-  else twSearchDoctors();
+  else if (twSub === 'doctors') twSearchDoctors();
+  else twSoltaInit();
 }
 
 // ── CLINICS ─────────────────────────────────────────────────
@@ -1824,7 +1826,7 @@ function twSoltaInit(){
   const sel = document.getElementById('tw-solta-tech');
   if (sel && !sel.options.length && twMeta) {
     sel.innerHTML = twMeta.technologies.map(function(t){
-      return '<option value="' + esc(t) + '"' + (t === 'Thermage FLX' ? ' selected' : '') + '>' + esc(t) + '</option>';
+      return '<option value="' + esc(t) + '"' + (t.indexOf('Thermage FLX') !== -1 ? ' selected' : '') + '>' + esc(t) + '</option>';
     }).join('');
   }
 }
