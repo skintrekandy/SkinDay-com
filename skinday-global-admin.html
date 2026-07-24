@@ -1852,7 +1852,8 @@ async function twSoltaPreview(){
       '<div class="form-section-label">Preview</div>' +
       '<div class="tw-stats" style="margin-bottom:1rem;">' +
         stat(s.parsed, 'Lines parsed') +
-        stat(s.matched, 'Matched', 'var(--green)') +
+        stat(s.matched, 'Lines matched', 'var(--green)') +
+        stat(s.distinctClinics, 'Clinics badged', 'var(--green)') +
         stat(s.unmatched, 'Unmatched') +
         stat(s.byPhone, 'By phone') +
         stat(s.byName, 'By name') +
@@ -1861,7 +1862,7 @@ async function twSoltaPreview(){
       '<div class="tw-hint" style="margin-top:-.5rem;">Matched against ' + s.clinicsTotal +
         ' Taiwan clinics, of which ' + s.clinicsWithPhone + ' have a phone number on file. ' +
         'Clinics without one can only be matched on name.' +
-        (s.duplicateTargets ? ' ' + s.duplicateTargets + ' clinic(s) are listed by Solta under more than one branch line; those collapse to a single record on import.' : '') +
+        (s.duplicateTargets ? ' ' + s.duplicateTargets + ' clinic(s) appear on Solta under more than one branch line, which is why ' + s.matched + ' matched lines become ' + s.distinctClinics + ' badged clinics.' : '') +
         '</div>';
 
     if (d.errors && d.errors.length) {
