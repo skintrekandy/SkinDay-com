@@ -22,24 +22,31 @@ const supabase = createClient(
 // to these before they are stored, so the patient-facing filter has one
 // spelling per device. Served to the UI via the 'meta' action so the dropdown
 // and the importer can never drift apart.
+// Canonical device names, Chinese first. Taiwanese patients search 鳳凰電波,
+// not Thermage, so the Chinese term leads and the manufacturer name follows
+// for clinics and for the English side of the site. This exact string is what
+// gets stored in clinic_technologies.technology, so it is also what the
+// device pages will be built on.
 const CANONICAL_TECHNOLOGIES = [
-  'Thermage FLX',
-  'Ultherapy Prime',
-  'Ultherapy',
-  'Sofwave',
-  'Ultraformer III',
-  'Ultraformer MPT',
-  'Picosure',
-  'PicoWay',
-  'Discovery Pico',
-  'Fotona 4D',
-  'CO2 Fractional Laser',
-  'Clear + Brilliant',
-  'Fraxel',
-  'BBL / IPL',
-  'Emsculpt Neo',
-  'CoolSculpting'
+  '鳳凰電波 Thermage FLX',
+  '音波拉提 Ultherapy Prime',
+  '索夫波 Sofwave',
+  '海芙音波 Ultraformer III',
+  '海芙音波 Ultraformer MPT',
+  '玩美電波 Oligio',
+  '蜂巢皮秒 PicoSure',
+  '超皮秒 PicoWay',
+  '探索皮秒 Discovery Pico',
+  '飛梭雷射 Fraxel',
+  '二氧化碳飛梭雷射 CO2 Fractional',
+  '脈衝光 BBL / IPL',
+  '增肌減脂 Emsculpt Neo',
+  '冷凍減脂 CoolSculpting',
+  '微波熱能止汗 miraDry'
 ];
+
+// The device the Solta directory certifies.
+const SOLTA_TECHNOLOGY = '鳳凰電波 Thermage FLX';
 
 const EVIDENCE_TYPES = [
   { value: 'manufacturer_directory', label: '原廠認證 Manufacturer verified' },
@@ -526,7 +533,7 @@ exports.handler = async (event) => {
       const text = body.text;
       if (!text || !String(text).trim()) return bad(400, 'Paste the Solta list first');
 
-      const technology = clean(body.technology) || 'Thermage FLX';
+      const technology = clean(body.technology) || SOLTA_TECHNOLOGY;
       const { rows, errors } = parseSoltaList(text);
       if (!rows.length) return bad(400, 'Nothing parsed. Check that each line is name, phone, then address.');
 
