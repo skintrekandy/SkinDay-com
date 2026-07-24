@@ -182,6 +182,8 @@ const SOLTA_ORG        = 'Solta Taiwan';
 async function loadTaiwanIndex(supabase) {
   const byPhone = new Map();
   const byName  = new Map();
+  const all     = [];          // scanned for prefix and containment matches
+  let withPhone = 0;
   const page = 1000;
   for (let from = 0; ; from += page) {
     const { data, error } = await supabase
@@ -194,6 +196,7 @@ async function loadTaiwanIndex(supabase) {
     data.forEach(c => {
       const p = normalisePhone(c.phone);
       if (p) {
+        withPhone++;
         if (!byPhone.has(p)) byPhone.set(p, []);
         byPhone.get(p).push(c);
       }
@@ -201,11 +204,12 @@ async function loadTaiwanIndex(supabase) {
       if (n) {
         if (!byName.has(n)) byName.set(n, []);
         byName.get(n).push(c);
+        all.push({ clinic: c, key: n });
       }
     });
     if (data.length < page) break;
   }
-  return { byPhone, byName };
+  return { byPhone, byName, all, withPhone, total: all.length };
 }
 
 // Matches parsed Solta rows against the index. Phone is the strong key; an
@@ -215,7 +219,21 @@ async function loadTaiwanIndex(supabase) {
 function matchSoltaRows(rows, index) {
   const matched = [];
   const unmatched = [];
+
+  // Our clinic names came from Google and often carry a marketing tail:
+  // "東區時尚美學診所｜皮秒雷射｜台北微整形｜鳳凰電波...". Solta lists the bare
+  // name. So an exact name comparison misses clinics we genuinely hold, and a
+  // prefix or containment check with a uniqueness requirement recovers them
+  // without loosening the standard: if more than one clinic could be meant,
+  // the row still goes to the queue.
+  // Three characters, because plenty of real clinic names are that short
+  // (植診所, 勤診所). The uniqueness requirement is what keeps it safe, not
+  // the length.
+  const MIN_KEY = 3;
+
   rows.forEach(r => {
+    const key = nameKey(r.name);
+
     const byPhone = r.phone ? (index.byPhone.get(r.phone) || []) : [];
     if (byPhone.length === 1) {
       matched.push({ row: r, clinic: byPhone[0], method: 'phone' });
@@ -225,16 +243,43 @@ function matchSoltaRows(rows, index) {
       unmatched.push({ row: r, reason: 'Phone matches ' + byPhone.length + ' clinics' });
       return;
     }
-    const byName = index.byName.get(nameKey(r.name)) || [];
-    if (byName.length === 1) {
-      matched.push({ row: r, clinic: byName[0], method: 'name' });
+
+    const exact = index.byName.get(key) || [];
+    if (exact.length === 1) {
+      matched.push({ row: r, clinic: exact[0], method: 'name' });
       return;
     }
-    if (byName.length > 1) {
-      unmatched.push({ row: r, reason: 'Name matches ' + byName.length + ' clinics' });
+    if (exact.length > 1) {
+      unmatched.push({ row: r, reason: 'Name matches ' + exact.length + ' clinics' });
       return;
     }
-    unmatched.push({ row: r, reason: r.phone ? 'Not in the SkinDay list' : 'No usable phone, no name match' });
+
+    if (key.length >= MIN_KEY) {
+      const prefix = index.all.filter(x => x.key.startsWith(key));
+      if (prefix.length === 1) {
+        matched.push({ row: r, clinic: prefix[0].clinic, method: 'name start' });
+        return;
+      }
+      if (prefix.length > 1) {
+        unmatched.push({ row: r, reason: 'Name starts ' + prefix.length + ' clinic names' });
+        return;
+      }
+
+      const contains = index.all.filter(x => x.key.indexOf(key) !== -1);
+      if (contains.length === 1) {
+        matched.push({ row: r, clinic: contains[0].clinic, method: 'name within' });
+        return;
+      }
+      if (contains.length > 1) {
+        unmatched.push({ row: r, reason: 'Name appears in ' + contains.length + ' clinic names' });
+        return;
+      }
+    }
+
+    unmatched.push({
+      row: r,
+      reason: r.phone ? 'No phone or name match' : 'No usable phone, no name match'
+    });
   });
   return { matched, unmatched };
 }
@@ -548,7 +593,9 @@ exports.handler = async (event) => {
         unmatched: unmatched.length,
         flagged: flagged.length,
         byPhone: matched.filter(m => m.method === 'phone').length,
-        byName: matched.filter(m => m.method === 'name').length
+        byName: matched.filter(m => m.method !== 'phone').length,
+        clinicsTotal: index.total,
+        clinicsWithPhone: index.withPhone
       };
 
       if (action === 'solta-preview') {
