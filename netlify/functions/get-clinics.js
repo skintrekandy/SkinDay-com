@@ -67,8 +67,31 @@ exports.handler = async (event) => {
     const metro         = params.metro || '';
     const stateFilter   = params.state || '';
     const search        = (params.search || '').trim();
+    // M18: restrict to clinics a manufacturer directory lists for this device,
+    // e.g. verified_device=鳳凰電波 Thermage FLX. Empty means no restriction.
+    const verifiedDevice = (params.verified_device || '').trim();
     const from          = page * PAGE_SIZE;
     const needed        = from + PAGE_SIZE;
+
+    // ── RESOLVE MANUFACTURER VERIFIED CLINIC IDS ─────────────
+    // Only evidence_type='manufacturer_directory' counts here. Clinic declared
+    // entries are shown on a profile but never qualify a clinic for the
+    // verified filter, because that badge is the whole promise.
+    let verifiedIdList = null;
+    if (verifiedDevice) {
+      const vRes = await supabase
+        .from('clinic_technologies')
+        .select('clinic_id')
+        .eq('technology', verifiedDevice)
+        .eq('evidence_type', 'manufacturer_directory')
+        .range(0, 29999);
+
+      if (vRes.error) {
+        console.error('Supabase error (verified devices):', vRes.error);
+        return { statusCode: 500, body: JSON.stringify({ error: vRes.error.message }) };
+      }
+      verifiedIdList = [...new Set((vRes.data || []).map(r => String(r.clinic_id)))];
+    }
 
     // ── BUILD BASE QUERY ─────────────────────────────────────
     // Always scoped to country. Neighbourhood slugs for Taiwan are
@@ -83,6 +106,8 @@ exports.handler = async (event) => {
         .eq('country', country);
 
       if (search)        q = q.ilike('name', `%${search}%`);
+      // An empty list is meaningful: nothing is verified yet, so nothing matches.
+      if (verifiedIdList) q = q.in('id', verifiedIdList);
       if (neighbourhood) q = q.eq('neighbourhood', neighbourhood);
       if (metro)         q = q.ilike('metro', metro);
       if (stateFilter)   q = q.ilike('state', stateFilter);

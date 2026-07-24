@@ -96,10 +96,27 @@ const CITY_RE = new RegExp('(' + CITIES.join('|') + ')');
 // en dashes, extension markers, stray spaces.
 const PHONE_TAIL_RE = /[（(]?0[\d\s\-–—()）#＃*]*\d\s*$/;
 
+// Invisible characters (bidi marks, zero width spaces, BOM) get pasted along
+// with the text and break both the phone regex and digit extraction.
+function stripInvisible(s) {
+  return String(s).replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '');
+}
+
+// City to area code. Used only to repair a number that is already invalid,
+// never to alter one that parses cleanly.
+const CITY_AREA = {
+  '台北市':'02','臺北市':'02','新北市':'02','基隆市':'02',
+  '桃園市':'03','新竹市':'03','新竹縣':'03','宜蘭縣':'03','花蓮縣':'03',
+  '苗栗縣':'037','台中市':'04','臺中市':'04','彰化縣':'04','南投縣':'049',
+  '嘉義市':'05','嘉義縣':'05','雲林縣':'05',
+  '台南市':'06','臺南市':'06','澎湖縣':'06',
+  '高雄市':'07','屏東縣':'08','台東縣':'089','臺東縣':'089'
+};
+
 function normalisePhone(raw) {
   if (!raw) return null;
   // Anything after an extension marker is not part of the dialable number.
-  const main = String(raw).split(/[#＃]/)[0];
+  const main = stripInvisible(raw).split(/[#＃]/)[0];
   let digits = main.replace(/\D/g, '');
   // Our clinic rows came from Google and carry international format
   // (+886 2 2758 6308), while Solta lists local format (02-2758-6308).
@@ -122,7 +139,7 @@ function phoneLooksValid(digits) {
 }
 
 function parseLine(line, lineNo) {
-  const raw = String(line).replace(/\u00a0/g, ' ').trim();
+  const raw = stripInvisible(line).replace(/\u00a0/g, ' ').trim();
   if (!raw) return null;
 
   const cityMatch = raw.match(CITY_RE);
@@ -141,9 +158,21 @@ function parseLine(line, lineNo) {
 
   const phoneRaw = phoneMatch[0].trim();
   const name = head.slice(0, phoneMatch.index).trim();
-  const phone = normalisePhone(phoneRaw);
+  let phone = normalisePhone(phoneRaw);
 
   const districtMatch = address.match(/^(?:台北市|臺北市|新北市|基隆市|桃園市|新竹市|新竹縣|苗栗縣|台中市|臺中市|彰化縣|南投縣|雲林縣|嘉義市|嘉義縣|台南市|臺南市|高雄市|屏東縣|宜蘭縣|花蓮縣|台東縣|臺東縣|澎湖縣|金門縣|連江縣)([^\d\s]{1,4}?[區市鄉鎮])/);
+
+  // A Taipei number written 0-2321-8188 lost a digit from its area code on the
+  // source page. If the address says which city it is in, the number can be
+  // rebuilt and checked, and the repair is reported rather than done quietly.
+  let repairedFrom = null;
+  if (phone && !phoneLooksValid(phone)) {
+    const area = CITY_AREA[cityMatch[1]];
+    if (area && phone.length === 9 && phone.charAt(0) === '0') {
+      const candidate = area + phone.slice(1);
+      if (phoneLooksValid(candidate)) { repairedFrom = phone; phone = candidate; }
+    }
+  }
 
   return {
     lineNo,
@@ -151,10 +180,13 @@ function parseLine(line, lineNo) {
     name,
     phone_raw: phoneRaw,
     phone,
+    repaired_from: repairedFrom,
     address,
     city: cityMatch[1],
     district: districtMatch ? districtMatch[1] : null,
-    warning: name ? (phoneLooksValid(phone) ? null : 'Phone does not look like a Taiwan number') : 'Empty name'
+    warning: !name ? 'Empty name'
+           : repairedFrom ? ('Repaired to ' + phone + ', the source page shows ' + phoneRaw)
+           : (phoneLooksValid(phone) ? null : 'Phone does not look like a Taiwan number')
   };
 }
 
@@ -586,7 +618,12 @@ exports.handler = async (event) => {
       const { matched, unmatched } = matchSoltaRows(rows, index);
       const flagged = rows.filter(r => r.warning);
 
+      const dupIds = {};
+      matched.forEach(m => { const k = String(m.clinic.id); dupIds[k] = (dupIds[k] || 0) + 1; });
+      const duplicateTargets = Object.values(dupIds).filter(n => n > 1).length;
+
       const summary = {
+        duplicateTargets,
         parsed: rows.length,
         unparsed: errors.length,
         matched: matched.length,
@@ -616,7 +653,23 @@ exports.handler = async (event) => {
 
       // Commit. Matched clinics get the device at manufacturer_directory.
       const now = new Date().toISOString();
-      const techRows = matched.map(m => ({
+
+      // Two Solta lines can resolve to the same clinic, typically a chain
+      // listed once per branch where we hold a single row. Postgres rejects a
+      // batch that touches the same key twice ("ON CONFLICT DO UPDATE command
+      // cannot affect row a second time"), so collapse them here, keeping the
+      // strongest match.
+      const rank = { 'phone': 0, 'name': 1, 'name start': 2, 'name within': 3 };
+      const best = new Map();
+      matched.forEach(m => {
+        const id = String(m.clinic.id);
+        const prev = best.get(id);
+        if (!prev || (rank[m.method] ?? 9) < (rank[prev.method] ?? 9)) best.set(id, m);
+      });
+      const deduped = Array.from(best.values());
+      const collapsed = matched.length - deduped.length;
+
+      const techRows = deduped.map(m => ({
         clinic_id:           String(m.clinic.id),
         technology,
         evidence_type:       'manufacturer_directory',
@@ -651,13 +704,28 @@ exports.handler = async (event) => {
         last_seen_at: now
       }));
 
+      // Same story for the queue: drop duplicates within this run first.
+      const seen = new Set();
+      const uniqueQueue = queueRows.filter(q => {
+        const k = q.name + '|' + (q.phone || '') + '|' + q.technology;
+        if (seen.has(k)) return false;
+        seen.add(k);
+        return true;
+      });
+
       let queued = 0;
-      for (let i = 0; i < queueRows.length; i += 200) {
-        const chunk = queueRows.slice(i, i + 200);
+      for (let i = 0; i < uniqueQueue.length; i += 200) {
+        const chunk = uniqueQueue.slice(i, i + 200);
         const { error } = await supabase.from('solta_unmatched').insert(chunk);
-        // A duplicate here just means the row is already queued from a prior run.
-        if (error && error.code !== '23505') throw error;
-        queued += chunk.length;
+        if (!error) { queued += chunk.length; continue; }
+        if (error.code !== '23505') throw error;
+        // Already queued from an earlier run. Insert individually so one
+        // existing row cannot discard the rest of the chunk.
+        for (const row of chunk) {
+          const { error: rowErr } = await supabase.from('solta_unmatched').insert(row);
+          if (!rowErr) queued++;
+          else if (rowErr.code !== '23505') throw rowErr;
+        }
       }
 
       return ok({
@@ -665,7 +733,9 @@ exports.handler = async (event) => {
         summary,
         written,
         queued,
+        collapsed,
         message: written + ' clinics marked manufacturer verified, ' + queued + ' sent to the review queue.'
+                 + (collapsed ? ' ' + collapsed + ' extra Solta line(s) pointed at a clinic already covered.' : '')
       });
     }
 
