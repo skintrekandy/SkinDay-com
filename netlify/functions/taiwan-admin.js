@@ -622,7 +622,13 @@ exports.handler = async (event) => {
       matched.forEach(m => { const k = String(m.clinic.id); dupIds[k] = (dupIds[k] || 0) + 1; });
       const duplicateTargets = Object.values(dupIds).filter(n => n > 1).length;
 
+      // Matched counts Solta LINES. Chains are listed once per branch but map
+      // to one clinic record, so the number of clinics that end up carrying
+      // the badge is smaller. Both numbers are true; report both.
+      const distinctClinics = Object.keys(dupIds).length;
+
       const summary = {
+        distinctClinics,
         duplicateTargets,
         parsed: rows.length,
         unparsed: errors.length,
