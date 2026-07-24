@@ -364,9 +364,6 @@
 
   .btn-approve:hover { opacity: 0.85; }
   .btn-approve:disabled { opacity: 0.4; cursor: default; }
-  .claim-meta-label { display:block; font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin-bottom:2px; }
-  .btn-reject { background:none; border:1px solid rgba(201,169,110,.3); color:var(--dim); padding:.5rem 1.1rem; border-radius:6px; cursor:pointer; font-family:inherit; font-size:.82rem; }
-  .btn-reject:hover { border-color:var(--rose); color:var(--rose); }
 
   .btn-reject {
     padding: 0.6rem 1.25rem;
@@ -601,6 +598,54 @@
     margin-bottom: 1rem;
   }
 
+  /* ── TAIWAN PANEL (M18) ───────────────────────────────────── */
+  .tw-subnav { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .tw-subtab {
+    background: none; border: 1px solid rgba(234,226,216,0.12); color: var(--dim);
+    padding: 0.45rem 1rem; border-radius: 6px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; transition: all 0.2s;
+  }
+  .tw-subtab:hover { border-color: rgba(201,169,110,0.35); color: var(--cream); }
+  .tw-subtab.active { background: rgba(201,169,110,0.12); border-color: var(--gold); color: var(--gold); }
+
+  .tw-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-bottom: 1.75rem; }
+  .tw-stat { background: var(--deep); border: 1px solid rgba(234,226,216,0.07); border-radius: 8px; padding: 0.85rem 1rem; }
+  .tw-stat-n { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; color: var(--cream); line-height: 1.1; }
+  .tw-stat-l { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 0.25rem; }
+
+  .tw-row {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 0.7rem 0.9rem; border: 1px solid rgba(234,226,216,0.07);
+    border-radius: 7px; margin-bottom: 6px; background: var(--deep);
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .tw-row:hover { border-color: rgba(201,169,110,0.3); }
+  .tw-row.selected { border-color: var(--gold); background: rgba(201,169,110,0.06); }
+  .tw-row-name { color: var(--cream); font-size: 0.88rem; }
+  .tw-row-sub { color: var(--muted); font-size: 0.74rem; margin-top: 2px; }
+
+  .tw-badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+    font-size: 0.66rem; letter-spacing: 0.06em; white-space: nowrap;
+  }
+  .tw-badge.verified  { background: var(--green-bg); color: var(--green); }
+  .tw-badge.confirmed { background: rgba(201,169,110,0.16); color: var(--gold); }
+  .tw-badge.declared  { background: rgba(234,226,216,0.08); color: var(--dim); }
+  .tw-badge.soon      { background: var(--rose-bg); color: var(--rose); }
+  .tw-badge.review    { background: var(--red-bg); color: var(--red); }
+
+  .tw-card {
+    background: var(--deep); border: 1px solid rgba(234,226,216,0.07);
+    border-radius: 8px; padding: 1.1rem; margin-bottom: 1rem;
+  }
+  .tw-hint { font-size: 0.74rem; color: var(--muted); line-height: 1.5; margin-top: 0.4rem; }
+  .tw-inline-btn {
+    background: none; border: 1px solid rgba(234,226,216,0.15); color: var(--dim);
+    padding: 0.3rem 0.7rem; border-radius: 5px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.74rem;
+  }
+  .tw-inline-btn:hover { border-color: var(--rose); color: var(--rose); }
+
   .btn-submit-clinic {
     padding: 0.875rem 2rem;
     background: var(--rose);
@@ -678,8 +723,8 @@
     <button class="nav-tab" data-tab="flagged" onclick="switchTab('flagged')">
       &#9873; Flagged Votes <span class="tab-count zero" id="flagged-count">0</span>
     </button>
-    <button class="nav-tab" data-tab="signups" onclick="switchTab('signups')">
-      &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
+    <button class="nav-tab" data-tab="taiwan" onclick="switchTab('taiwan')">
+      &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
     </button>
   </nav>
 
@@ -766,19 +811,49 @@
         </div>
       </div>
     </div>
-    <div id="signups-panel" style="display:none">
-      <div class="add-clinic-form" style="max-width:1000px;">
-        <div class="form-title">Clinic Sign-ups</div>
-        <div class="form-subtitle">New clinics awaiting approval. Approve gives full portal access; Reject denies it. A pending clinic can sign in but sees an "under review" screen and cannot save cases.</div>
-        <div id="signups-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">Loading...</div>
-        <div id="signups-error" style="display:none;color:var(--rose);padding:20px 0;font-size:.85rem;"></div>
-        <div id="signups-empty" style="display:none;text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">No clinics awaiting approval.</div>
-        <div id="signups-content" style="display:none;">
-          <div id="signups-cards" class="claims-grid"></div>
-          <div style="text-align:right;margin-top:1rem;">
-            <button onclick="loadSignups()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
-          </div>
+
+    <!-- ── TAIWAN (M18) ──────────────────────────────────────────────────── -->
+    <div id="taiwan-panel" style="display:none">
+      <div class="add-clinic-form" style="max-width:1100px;">
+        <div class="form-title">Taiwan directory</div>
+        <div class="form-subtitle">Devices and doctors for skinday.com/taiwan. A device or doctor only shows a verified badge to patients when there is a source behind it: Solta for Thermage, the MOHW registry for a licence. Everything else stays 診所自述.</div>
+
+        <div class="tw-stats" id="tw-stats"></div>
+
+        <div class="tw-subnav">
+          <button class="tw-subtab active" data-sub="clinics" onclick="twSwitch('clinics')">Clinics</button>
+          <button class="tw-subtab" data-sub="doctors" onclick="twSwitch('doctors')">Doctors</button>
         </div>
+
+        <div id="tw-error" style="display:none;color:var(--rose);padding:12px 0;font-size:.85rem;"></div>
+
+        <!-- CLINICS -->
+        <div id="tw-clinics-view">
+          <div style="display:flex;gap:10px;margin-bottom:1rem;">
+            <input class="form-input" id="tw-clinic-q" placeholder="Search Taiwan clinics by name or district" style="flex:1;">
+            <button class="tw-inline-btn" onclick="twSearchClinics()" style="padding:.5rem 1.2rem;">Search</button>
+          </div>
+          <div id="tw-clinic-results"></div>
+          <div id="tw-clinic-detail" style="display:none;margin-top:1.5rem;"></div>
+        </div>
+
+        <!-- DOCTORS -->
+        <div id="tw-doctors-view" style="display:none;">
+          <div style="display:flex;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+            <input class="form-input" id="tw-doctor-q" placeholder="Search doctors by name" style="flex:1;min-width:200px;">
+            <select class="form-select" id="tw-doctor-filter" onchange="twSearchDoctors()" style="width:auto;">
+              <option value="all">All doctors</option>
+              <option value="needs_review">Needs review</option>
+              <option value="unverified">Not MOHW verified</option>
+              <option value="verified">MOHW verified</option>
+            </select>
+            <button class="tw-inline-btn" onclick="twSearchDoctors()" style="padding:.5rem 1.2rem;">Search</button>
+            <button class="tw-inline-btn" onclick="twEditDoctor(null)" style="padding:.5rem 1.2rem;">Add doctor</button>
+          </div>
+          <div id="tw-doctor-results"></div>
+          <div id="tw-doctor-detail" style="display:none;margin-top:1.5rem;"></div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -832,11 +907,11 @@ async function enterApp(){
   document.getElementById('app').style.display = 'block';
   await loadCosts();
   refreshFlaggedCount(); // show pending-review badge immediately
-  refreshSignupCount(); // show pending clinic sign-ups badge immediately
 }
 
 function refresh(){
   if (currentTab === 'flagged') { loadFlagged(); }
+  else if (currentTab === 'taiwan') { twLoadStats(); twRefreshCurrentView(); }
   else { costsLoaded = false; loadCosts(); }
 }
 
@@ -848,13 +923,13 @@ function switchTab(tab){
   });
   var costsP = document.getElementById('costs-panel');
   var flaggedP = document.getElementById('flagged-panel');
-  var signupsP = document.getElementById('signups-panel');
+  var taiwanP = document.getElementById('taiwan-panel');
   if (costsP) costsP.style.display = (tab === 'costs') ? 'block' : 'none';
   if (flaggedP) flaggedP.style.display = (tab === 'flagged') ? 'block' : 'none';
-  if (signupsP) signupsP.style.display = (tab === 'signups') ? 'block' : 'none';
+  if (taiwanP) taiwanP.style.display = (tab === 'taiwan') ? 'block' : 'none';
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
-  if (tab === 'signups') loadSignups();
+  if (tab === 'taiwan') twEnter();
 }
 
 // ── FLAGGED VOTES (M36 moderation via admin-action.js) ──────
@@ -991,70 +1066,6 @@ async function refreshFlaggedCount(){
   } catch (e) {}
 }
 
-// -- CLINIC SIGN-UPS (approval queue) -----------------------------------------
-// New clinics land as approval_status='pending'. Approve grants full portal
-// access; Reject denies it. Backend actions to add in admin-action.js:
-//   list-pending-clinics -> { clinics:[{id,name,city,country,created_at,owner_email}] }
-//   approve-clinic {clinic_id} -> {ok:true}   reject-clinic {clinic_id} -> {ok:true}
-async function loadSignups(){
-  var loading=document.getElementById('signups-loading'), errEl=document.getElementById('signups-error'),
-      emptyEl=document.getElementById('signups-empty'), content=document.getElementById('signups-content');
-  loading.style.display='block'; errEl.style.display='none'; emptyEl.style.display='none'; content.style.display='none';
-  try {
-    var data = await adminAction({ action: 'list-pending-clinics' });
-    var clinics = data.clinics || [];
-    var badge = document.getElementById('signups-count');
-    badge.textContent = clinics.length; badge.classList.toggle('zero', clinics.length === 0);
-    loading.style.display='none';
-    if (!clinics.length) { emptyEl.style.display='block'; return; }
-    renderSignups(clinics); content.style.display='block';
-  } catch (e) { loading.style.display='none'; errEl.textContent = e.message || 'Failed to load.'; errEl.style.display='block'; }
-}
-function renderSignups(clinics){
-  var host = document.getElementById('signups-cards');
-  host.innerHTML = clinics.map(function(c){
-    var when = c.created_at ? new Date(c.created_at).toLocaleDateString() : '';
-    var loc = [c.city, c.country].filter(Boolean).join(', ');
-    return '<div class="claim-card" id="signup-' + esc(c.id) + '">'
-      + '<div class="claim-header"><div class="claim-clinic-name">' + esc(c.name || c.id) + '</div>'
-      + '<span class="status-pill pending">Pending</span></div>'
-      + '<div class="claim-meta">'
-      + '<div><span class="claim-meta-label">Owner</span>' + esc(c.owner_email || '-') + '</div>'
-      + '<div><span class="claim-meta-label">Location</span>' + esc(loc || '-') + '</div>'
-      + '<div><span class="claim-meta-label">Signed up</span>' + esc(when) + '</div>'
-      + '</div>'
-      + '<div class="claim-actions">'
-      + '<button class="btn-approve" onclick="approveClinic(\''+esc(c.id)+'\')">Approve</button>'
-      + '<button class="btn-reject" onclick="rejectClinic(\''+esc(c.id)+'\',\''+esc(c.name||c.id)+'\')">Reject</button>'
-      + '</div></div>';
-  }).join('');
-}
-async function approveClinic(id){
-  try { await adminAction({ action: 'approve-clinic', clinic_id: id });
-    var el = document.getElementById('signup-' + id); if (el) el.remove();
-    showToast('Clinic approved.'); refreshSignupCount();
-  } catch (e) { showToast(e.message || 'Failed.', true); }
-}
-async function rejectClinic(id, name){
-  if (!confirm('Reject ' + (name || 'this clinic') + '? They will not get portal access.')) return;
-  try { await adminAction({ action: 'reject-clinic', clinic_id: id });
-    var el = document.getElementById('signup-' + id); if (el) el.remove();
-    showToast('Clinic rejected.'); refreshSignupCount();
-  } catch (e) { showToast(e.message || 'Failed.', true); }
-}
-async function refreshSignupCount(){
-  try {
-    var data = await adminAction({ action: 'list-pending-clinics' });
-    var n = (data.clinics || []).length;
-    var badge = document.getElementById('signups-count');
-    badge.textContent = n; badge.classList.toggle('zero', n === 0);
-    if (n === 0 && currentTab === 'signups') {
-      document.getElementById('signups-content').style.display='none';
-      document.getElementById('signups-empty').style.display='block';
-    }
-  } catch (e) {}
-}
-
 function showToast(msg, isError){
   var t = document.getElementById('toast');
   if (!t) return;
@@ -1176,6 +1187,530 @@ function renderCosts(data){
 }
 
 // renderCosts is provided by the ported cost block above.
+
+// ============================================================
+// TAIWAN DIRECTORY (M18)
+// Devices and doctors for skinday.com/taiwan. Talks only to
+// taiwan-admin.js, which requires taiwan-m18-schema.sql to have
+// been run first. Uses the same admin secret as the rest of
+// this page.
+// ============================================================
+let twSub = 'clinics';
+let twMeta = null;          // canonical device list, evidence types, licence types
+let twClinic = null;        // the clinic currently open
+let twStatsLoaded = false;
+
+async function twApi(payload){
+  const res = await fetch('/.netlify/functions/taiwan-admin', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json().catch(function(){ return {}; });
+  if (!res.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+  return data;
+}
+
+function twError(msg){
+  const el = document.getElementById('tw-error');
+  if (!el) return;
+  if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+// Evidence type to badge. This mapping is the trust ladder, and it is the
+// same wording patients see on the public site.
+function twBadge(evidence){
+  const map = {
+    manufacturer_directory: ['verified',  '原廠認證 Manufacturer'],
+    clinic_confirmed:       ['confirmed', '診所確認 Confirmed'],
+    clinic_declared:        ['declared',  '診所自述 Declared'],
+    coming_soon:            ['soon',      '即將引進 Coming soon'],
+    mohw_registry:          ['verified',  '衛福部登錄 MOHW']
+  };
+  const hit = map[evidence] || ['declared', evidence || 'unknown'];
+  return '<span class="tw-badge ' + hit[0] + '">' + esc(hit[1]) + '</span>';
+}
+
+async function twEnter(){
+  twError('');
+  if (!twMeta) {
+    try { twMeta = await twApi({ action: 'meta' }); }
+    catch (e) { twError(e.message); return; }
+  }
+  if (!twStatsLoaded) twLoadStats();
+  twRefreshCurrentView();
+}
+
+async function twLoadStats(){
+  try {
+    const s = await twApi({ action: 'stats' });
+    twStatsLoaded = true;
+    const cards = [
+      [s.clinics,         'Taiwan clinics'],
+      [s.verifiedDevices, 'Verified devices'],
+      [s.declaredDevices, 'Declared devices'],
+      [s.doctors,         'Doctors'],
+      [s.mohwDoctors,     'MOHW verified'],
+      [s.needsReview,     'Needs review']
+    ];
+    document.getElementById('tw-stats').innerHTML = cards.map(function(c){
+      return '<div class="tw-stat"><div class="tw-stat-n">' + (c[0] || 0) +
+             '</div><div class="tw-stat-l">' + c[1] + '</div></div>';
+    }).join('');
+
+    const badge = document.getElementById('tw-review-count');
+    if (badge) {
+      badge.textContent = s.needsReview || 0;
+      badge.classList.toggle('zero', !s.needsReview);
+    }
+  } catch (e) {
+    twError(e.message);
+  }
+}
+
+function twSwitch(sub){
+  twSub = sub;
+  document.querySelectorAll('.tw-subtab').forEach(function(b){
+    b.classList.toggle('active', b.dataset.sub === sub);
+  });
+  document.getElementById('tw-clinics-view').style.display = (sub === 'clinics') ? 'block' : 'none';
+  document.getElementById('tw-doctors-view').style.display = (sub === 'doctors') ? 'block' : 'none';
+  twRefreshCurrentView();
+}
+
+function twRefreshCurrentView(){
+  if (twSub === 'clinics') twSearchClinics();
+  else twSearchDoctors();
+}
+
+// ── CLINICS ─────────────────────────────────────────────────
+async function twSearchClinics(){
+  const q = document.getElementById('tw-clinic-q').value.trim();
+  const box = document.getElementById('tw-clinic-results');
+  box.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:12px 0;">Loading...</div>';
+  try {
+    const data = await twApi({ action: 'search-clinics', q: q });
+    twError('');
+    if (!data.clinics.length) {
+      box.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:12px 0;">No Taiwan clinics match that search.</div>';
+      return;
+    }
+    box.innerHTML = data.clinics.map(function(c){
+      const sub = [c.neighbourhood, c.reviews ? (c.reviews + ' reviews') : null,
+                   c.slug ? null : 'no profile URL'].filter(Boolean).join(' · ');
+      return '<div class="tw-row" onclick="twOpenClinic(\'' + esc(c.id) + '\')">' +
+               '<div><div class="tw-row-name">' + esc(c.name) + '</div>' +
+               '<div class="tw-row-sub">' + esc(sub) + '</div></div>' +
+               (c.claimed ? '<span class="tw-badge confirmed">Claimed</span>' : '') +
+             '</div>';
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '';
+    twError(e.message);
+  }
+}
+
+async function twOpenClinic(clinicId){
+  const box = document.getElementById('tw-clinic-detail');
+  box.style.display = 'block';
+  box.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:12px 0;">Loading clinic...</div>';
+  try {
+    twClinic = await twApi({ action: 'get-clinic', clinic_id: clinicId });
+    twRenderClinic();
+    box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (e) {
+    box.innerHTML = '';
+    twError(e.message);
+  }
+}
+
+function twRenderClinic(){
+  const c = twClinic.clinic;
+  const techOptions = twMeta.technologies.map(function(t){
+    return '<option value="' + esc(t) + '">' + esc(t) + '</option>';
+  }).join('');
+  const evidenceOptions = twMeta.evidence_types.map(function(e){
+    return '<option value="' + esc(e.value) + '">' + esc(e.label) + '</option>';
+  }).join('');
+
+  const techRows = twClinic.technologies.length
+    ? twClinic.technologies.map(function(t){
+        const src = t.source_organization || (t.source_url ? 'clinic page' : 'no source recorded');
+        return '<div class="tw-row" style="cursor:default;">' +
+                 '<div><div class="tw-row-name">' + esc(t.technology) + ' ' + twBadge(t.evidence_type) + '</div>' +
+                 '<div class="tw-row-sub">' + esc(src) +
+                   (t.source_url ? ' · <a href="' + esc(t.source_url) + '" target="_blank" rel="noopener" style="color:var(--gold);">source</a>' : '') +
+                 '</div></div>' +
+                 '<button class="tw-inline-btn" onclick="twDeleteTech(' + t.id + ')">Remove</button>' +
+               '</div>';
+      }).join('')
+    : '<div style="color:var(--muted);font-size:.82rem;padding:8px 0;">No devices recorded yet. Add the first one below.</div>';
+
+  const doctorRows = twClinic.doctors.length
+    ? twClinic.doctors.map(function(d){
+        return '<div class="tw-row" style="cursor:default;">' +
+                 '<div><div class="tw-row-name">' + esc(d.name_zh) +
+                   (d.title ? ' <span style="color:var(--muted);font-size:.8rem;">' + esc(d.title) + '</span>' : '') +
+                   ' ' + (d.mohw_verified ? twBadge('mohw_registry') : twBadge('clinic_declared')) + '</div>' +
+                 '<div class="tw-row-sub">' + esc([d.name_romanized, d.license_type, d.practice_city].filter(Boolean).join(' · ') || 'no licence details yet') + '</div></div>' +
+                 '<div style="display:flex;gap:6px;">' +
+                   '<button class="tw-inline-btn" onclick="twSwitch(\'doctors\');twEditDoctor(' + d.id + ')">Edit</button>' +
+                   '<button class="tw-inline-btn" onclick="twUnlinkDoctor(' + d.link_id + ')">Unlink</button>' +
+                 '</div>' +
+               '</div>';
+      }).join('')
+    : '<div style="color:var(--muted);font-size:.82rem;padding:8px 0;">No doctors linked yet.</div>';
+
+  document.getElementById('tw-clinic-detail').innerHTML =
+    '<div class="tw-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:.5rem;">' +
+        '<div><div style="font-family:\'Cormorant Garamond\',serif;font-size:1.25rem;color:var(--cream);">' + esc(c.name) + '</div>' +
+        '<div class="tw-row-sub">' + esc([c.neighbourhood, 'id ' + c.id].filter(Boolean).join(' · ')) +
+          (c.website ? ' · <a href="' + esc(c.website) + '" target="_blank" rel="noopener" style="color:var(--gold);">clinic site</a>' : ' · no website on file') +
+        '</div></div>' +
+        '<button class="tw-inline-btn" onclick="twCloseClinic()">Close</button>' +
+      '</div>' +
+    '</div>' +
+
+    // Devices
+    '<div class="tw-card">' +
+      '<div class="form-section-label">Devices</div>' +
+      techRows +
+      '<hr class="form-divider">' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Device</label>' +
+          '<select class="form-select" id="tw-tech-name">' + techOptions + '</select></div>' +
+        '<div class="form-group"><label class="form-label">Evidence</label>' +
+          '<select class="form-select" id="tw-tech-evidence" onchange="twTechEvidenceChanged()">' + evidenceOptions + '</select></div>' +
+      '</div>' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Source organisation</label>' +
+          '<input class="form-input" id="tw-tech-org" placeholder="Solta Taiwan"></div>' +
+        '<div class="form-group"><label class="form-label">Source URL</label>' +
+          '<input class="form-input" id="tw-tech-url" placeholder="https://"></div>' +
+      '</div>' +
+      '<div class="tw-hint" id="tw-tech-hint"></div>' +
+      '<button class="tw-inline-btn" style="margin-top:1rem;padding:.5rem 1.2rem;" onclick="twSaveTech()">Save device</button>' +
+    '</div>' +
+
+    // Doctors
+    '<div class="tw-card">' +
+      '<div class="form-section-label">Doctors at this clinic</div>' +
+      doctorRows +
+      '<hr class="form-divider">' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+        '<input class="form-input" id="tw-link-q" placeholder="Find an existing doctor by name" style="flex:1;min-width:180px;">' +
+        '<input class="form-input" id="tw-link-title" placeholder="Title, e.g. 院長" style="width:160px;">' +
+        '<button class="tw-inline-btn" onclick="twFindDoctorToLink()" style="padding:.5rem 1.2rem;">Find</button>' +
+      '</div>' +
+      '<div id="tw-link-results" style="margin-top:10px;"></div>' +
+      '<div class="tw-hint">A doctor record is shared across clinics, so link the existing record rather than creating a second one. If the doctor is new, add them on the Doctors tab first.</div>' +
+    '</div>';
+
+  twTechEvidenceChanged();
+}
+
+function twCloseClinic(){
+  twClinic = null;
+  document.getElementById('tw-clinic-detail').style.display = 'none';
+}
+
+// The hint changes with the evidence type, because what counts as a source
+// is different for each rung of the ladder.
+function twTechEvidenceChanged(){
+  const ev = document.getElementById('tw-tech-evidence').value;
+  const hints = {
+    manufacturer_directory: 'Name the manufacturer directory this came from, for example Solta Taiwan. The public page will read "Listed in the Solta Taiwan directory as of this date", never "SkinDay certified".',
+    clinic_declared: 'Paste the URL of the clinic page that states this device. The claim is cited to the clinic, not to the manufacturer.',
+    clinic_confirmed: 'Use this once the clinic has confirmed the device through the portal.',
+    coming_soon: 'The clinic has announced this device but is not yet running it.'
+  };
+  document.getElementById('tw-tech-hint').textContent = hints[ev] || '';
+}
+
+async function twSaveTech(){
+  try {
+    await twApi({
+      action: 'save-technology',
+      clinic_id: twClinic.clinic.id,
+      technology: document.getElementById('tw-tech-name').value,
+      evidence_type: document.getElementById('tw-tech-evidence').value,
+      source_organization: document.getElementById('tw-tech-org').value,
+      source_url: document.getElementById('tw-tech-url').value
+    });
+    showToast('Device saved.');
+    await twOpenClinic(twClinic.clinic.id);
+    twLoadStats();
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twDeleteTech(id){
+  if (!confirm('Remove this device from the clinic?')) return;
+  try {
+    await twApi({ action: 'delete-technology', id: id });
+    showToast('Device removed.');
+    await twOpenClinic(twClinic.clinic.id);
+    twLoadStats();
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twFindDoctorToLink(){
+  const q = document.getElementById('tw-link-q').value.trim();
+  const box = document.getElementById('tw-link-results');
+  if (!q) { box.innerHTML = ''; return; }
+  try {
+    const data = await twApi({ action: 'search-doctors', q: q, limit: 10 });
+    box.innerHTML = data.doctors.length
+      ? data.doctors.map(function(d){
+          return '<div class="tw-row" onclick="twLinkDoctor(' + d.id + ')">' +
+                   '<div><div class="tw-row-name">' + esc(d.name_zh) + ' ' +
+                     (d.mohw_verified ? twBadge('mohw_registry') : '') + '</div>' +
+                   '<div class="tw-row-sub">' + esc([d.name_romanized, d.practice_city].filter(Boolean).join(' · ')) + '</div></div>' +
+                   '<span class="tw-badge declared">Attach</span>' +
+                 '</div>';
+        }).join('')
+      : '<div style="color:var(--muted);font-size:.82rem;">No doctor by that name yet. Add them on the Doctors tab.</div>';
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twLinkDoctor(doctorId){
+  try {
+    await twApi({
+      action: 'link-doctor',
+      clinic_id: twClinic.clinic.id,
+      doctor_id: doctorId,
+      title: document.getElementById('tw-link-title').value
+    });
+    showToast('Doctor linked.');
+    await twOpenClinic(twClinic.clinic.id);
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twUnlinkDoctor(linkId){
+  try {
+    await twApi({ action: 'unlink-doctor', link_id: linkId });
+    showToast('Doctor unlinked.');
+    await twOpenClinic(twClinic.clinic.id);
+  } catch (e) { showToast(e.message, true); }
+}
+
+// ── DOCTORS ─────────────────────────────────────────────────
+async function twSearchDoctors(){
+  const q = document.getElementById('tw-doctor-q').value.trim();
+  const filter = document.getElementById('tw-doctor-filter').value;
+  const box = document.getElementById('tw-doctor-results');
+  box.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:12px 0;">Loading...</div>';
+  try {
+    const data = await twApi({ action: 'search-doctors', q: q, filter: filter });
+    twError('');
+    if (!data.doctors.length) {
+      box.innerHTML = '<div style="color:var(--muted);font-size:.85rem;padding:12px 0;">No doctors yet. Add one to get started.</div>';
+      return;
+    }
+    box.innerHTML = data.doctors.map(function(d){
+      const sub = [d.name_romanized, d.license_type, d.practice_city].filter(Boolean).join(' · ');
+      return '<div class="tw-row" onclick="twEditDoctor(' + d.id + ')">' +
+               '<div><div class="tw-row-name">' + esc(d.name_zh) + ' ' +
+                 (d.mohw_verified ? twBadge('mohw_registry') : twBadge('clinic_declared')) +
+                 (d.review_status === 'needs_review' ? ' <span class="tw-badge review">Needs review</span>' : '') +
+                 (d.published ? '' : ' <span class="tw-badge declared">Unpublished</span>') +
+               '</div>' +
+               '<div class="tw-row-sub">' + esc(sub || 'no details yet') + '</div></div>' +
+             '</div>';
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '';
+    twError(e.message);
+  }
+}
+
+async function twEditDoctor(id){
+  const box = document.getElementById('tw-doctor-detail');
+  box.style.display = 'block';
+  let d = { id: null, review_status: 'needs_review', published: false, evidence_type: 'clinic_declared' };
+  if (id) {
+    try {
+      const data = await twApi({ action: 'search-doctors', q: '', limit: 200 });
+      const found = data.doctors.filter(function(x){ return x.id === id; })[0];
+      if (found) d = found;
+    } catch (e) { showToast(e.message, true); return; }
+  }
+
+  const licenceOptions = ['', ].concat(twMeta.license_types).map(function(t){
+    return '<option value="' + esc(t) + '"' + (d.license_type === t ? ' selected' : '') + '>' + (t ? esc(t) : 'Not recorded') + '</option>';
+  }).join('');
+
+  const verifiedBlock = d.mohw_verified
+    ? '<div style="background:var(--green-bg);color:var(--green);padding:.7rem .9rem;border-radius:7px;font-size:.8rem;">' +
+        'MOHW verified by ' + esc(d.mohw_verified_by || 'unknown') +
+        (d.mohw_verified_at ? ' on ' + new Date(d.mohw_verified_at).toLocaleDateString('en-CA') : '') +
+        '</div>' +
+        '<button class="tw-inline-btn" style="margin-top:.6rem;" onclick="twUnverifyDoctor(' + d.id + ')">Clear verification</button>'
+    : '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Licence number</label>' +
+          '<input class="form-input" id="twd-verify-licnum" placeholder="As shown in the registry"></div>' +
+        '<div class="form-group"><label class="form-label">Verified by <span>*</span></label>' +
+          '<input class="form-input" id="twd-verify-by" placeholder="Your name"></div>' +
+      '</div>' +
+      '<div class="tw-hint">The MOHW registry is CAPTCHA gated, so this records a manual lookup. Only licence type, practice city and licence number are covered by it. Board certification, training and KOL roles stay clinic declared.</div>' +
+      '<button class="tw-inline-btn" style="margin-top:.8rem;" onclick="twVerifyDoctor(' + (d.id || 'null') + ')">Record MOHW verification</button>';
+
+  box.innerHTML =
+    '<div class="tw-card">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">' +
+        '<div class="form-section-label" style="margin:0;">' + (d.id ? 'Edit doctor' : 'New doctor') + '</div>' +
+        '<button class="tw-inline-btn" onclick="twCloseDoctor()">Close</button>' +
+      '</div>' +
+      '<input type="hidden" id="twd-id" value="' + (d.id || '') + '">' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Name 中文 <span>*</span></label>' +
+          '<input class="form-input" id="twd-name-zh" value="' + esc(d.name_zh || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Name romanised</label>' +
+          '<input class="form-input" id="twd-name-rom" value="' + esc(d.name_romanized || '') + '"></div>' +
+      '</div>' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Licence type</label>' +
+          '<select class="form-select" id="twd-lic-type">' + licenceOptions + '</select></div>' +
+        '<div class="form-group"><label class="form-label">Practice city</label>' +
+          '<input class="form-input" id="twd-city" value="' + esc(d.practice_city || '') + '"></div>' +
+      '</div>' +
+      '<div class="form-grid full"><div class="form-group">' +
+        '<label class="form-label">Source URL</label>' +
+        '<input class="form-input" id="twd-source" value="' + esc(d.source_url || '') + '" placeholder="The clinic page these details came from"></div></div>' +
+
+      '<hr class="form-divider">' +
+      '<div class="form-section-label">Clinic declared credentials</div>' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Board certification</label>' +
+          '<input class="form-input" id="twd-board" value="' + esc(d.board_cert || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">Training</label>' +
+          '<input class="form-input" id="twd-training" value="' + esc(d.training || '') + '"></div>' +
+      '</div>' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Societies</label>' +
+          '<input class="form-input" id="twd-societies" value="' + esc(d.societies || '') + '"></div>' +
+        '<div class="form-group"><label class="form-label">KOL roles</label>' +
+          '<input class="form-input" id="twd-kol" value="' + esc(d.kol_roles || '') + '"></div>' +
+      '</div>' +
+      '<div class="form-grid full"><div class="form-group">' +
+        '<label class="form-label">Publications</label>' +
+        '<input class="form-input" id="twd-pubs" value="' + esc(d.publications || '') + '"></div></div>' +
+      '<div class="tw-hint">These are never shown as verified. They carry the 診所自述 badge until the doctor confirms them.</div>' +
+
+      '<hr class="form-divider">' +
+      '<div class="form-section-label">MOHW licence verification</div>' +
+      verifiedBlock +
+
+      '<hr class="form-divider">' +
+      '<div class="form-grid">' +
+        '<div class="form-group"><label class="form-label">Review status</label>' +
+          '<select class="form-select" id="twd-review">' +
+            ['needs_review','approved','rejected'].map(function(s){
+              return '<option value="' + s + '"' + (d.review_status === s ? ' selected' : '') + '>' + s.replace('_',' ') + '</option>';
+            }).join('') +
+          '</select></div>' +
+        '<div class="form-group"><label class="form-label">Published to patients</label>' +
+          '<select class="form-select" id="twd-published">' +
+            '<option value="false"' + (d.published ? '' : ' selected') + '>No</option>' +
+            '<option value="true"' + (d.published ? ' selected' : '') + '>Yes</option>' +
+          '</select></div>' +
+      '</div>' +
+      '<div class="tw-hint">Crawled records arrive as needs review and stay invisible to patients until you approve and publish them.</div>' +
+
+      '<div style="display:flex;gap:10px;margin-top:1.25rem;">' +
+        '<button class="tw-inline-btn" style="padding:.55rem 1.4rem;border-color:var(--gold);color:var(--gold);" onclick="twSaveDoctor()">Save doctor</button>' +
+        (d.id ? '<button class="tw-inline-btn" style="padding:.55rem 1.4rem;" onclick="twDeleteDoctor(' + d.id + ')">Delete</button>' : '') +
+      '</div>' +
+    '</div>';
+
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function twCloseDoctor(){
+  document.getElementById('tw-doctor-detail').style.display = 'none';
+}
+
+function twVal(id){ const el = document.getElementById(id); return el ? el.value : ''; }
+
+async function twSaveDoctor(){
+  const id = twVal('twd-id');
+  try {
+    const res = await twApi({
+      action: 'save-doctor',
+      id: id || undefined,
+      name_zh: twVal('twd-name-zh'),
+      name_romanized: twVal('twd-name-rom'),
+      license_type: twVal('twd-lic-type'),
+      practice_city: twVal('twd-city'),
+      source_url: twVal('twd-source'),
+      board_cert: twVal('twd-board'),
+      training: twVal('twd-training'),
+      societies: twVal('twd-societies'),
+      kol_roles: twVal('twd-kol'),
+      publications: twVal('twd-pubs'),
+      review_status: twVal('twd-review'),
+      published: twVal('twd-published') === 'true'
+    });
+    showToast('Doctor saved.');
+    twSearchDoctors();
+    twLoadStats();
+    twEditDoctor(res.id);
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twDeleteDoctor(id){
+  if (!confirm('Delete this doctor? Any clinic links are removed too.')) return;
+  try {
+    await twApi({ action: 'delete-doctor', id: id });
+    showToast('Doctor deleted.');
+    twCloseDoctor();
+    twSearchDoctors();
+    twLoadStats();
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twVerifyDoctor(id){
+  if (!id) { showToast('Save the doctor before recording verification.', true); return; }
+  try {
+    await twApi({
+      action: 'verify-doctor',
+      id: id,
+      mohw_verified_by: twVal('twd-verify-by'),
+      license_number: twVal('twd-verify-licnum'),
+      license_type: twVal('twd-lic-type'),
+      practice_city: twVal('twd-city')
+    });
+    showToast('MOHW verification recorded.');
+    twSearchDoctors();
+    twLoadStats();
+    twEditDoctor(id);
+  } catch (e) { showToast(e.message, true); }
+}
+
+async function twUnverifyDoctor(id){
+  if (!confirm('Clear the MOHW verification for this doctor?')) return;
+  try {
+    await twApi({ action: 'unverify-doctor', id: id });
+    showToast('Verification cleared.');
+    twSearchDoctors();
+    twLoadStats();
+    twEditDoctor(id);
+  } catch (e) { showToast(e.message, true); }
+}
+
+// Enter searches, in both sub tabs.
+['tw-clinic-q','tw-doctor-q','tw-link-q'].forEach(function(elId){
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.addEventListener('keydown', function(e){
+    if (e.key !== 'Enter') return;
+    if (elId === 'tw-clinic-q') twSearchClinics();
+    else if (elId === 'tw-doctor-q') twSearchDoctors();
+    else twFindDoctorToLink();
+  });
+});
 
 </script>
 </body>
