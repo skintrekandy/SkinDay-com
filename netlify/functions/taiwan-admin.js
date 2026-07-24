@@ -207,6 +207,62 @@ function nameKey(s) {
   return String(s || '').replace(/[\s\u3000()（）【】\[\]・‧,.、,。_-]/g, '').toLowerCase();
 }
 
+// Clinic neighbourhood slug to the Chinese district it means. Lifted from
+// taiwan.html so the admin and the public page agree on what a slug is.
+const NEIGHBOURHOOD_DISTRICT = {
+  'changhua-changhua':'彰化市', 'changhua-lukang':'鹿港鎮', 'changhua-yuanlin':'員林市',
+  'chiayi-county-chiayi':'嘉義縣', 'chiayi-east':'東區', 'chiayi-west':'西區',
+  'hsinchu-county-hsinchu':'新竹市', 'hsinchu-county-zhubei':'竹北市', 'hsinchu-east':'東區',
+  'hsinchu-north':'北區', 'hualien-hualien':'花蓮市', 'kaohsiung-cianjhen':'前鎮區',
+  'kaohsiung-cijin':'旗津區', 'kaohsiung-daliao':'大寮區', 'kaohsiung-fengshan':'鳳山區',
+  'kaohsiung-gushan':'鼓山區', 'kaohsiung-lingya':'苓雅區', 'kaohsiung-nanzi':'楠梓區',
+  'kaohsiung-qianjin':'前金區', 'kaohsiung-renwu':'仁武區', 'kaohsiung-sanmin':'三民區',
+  'kaohsiung-sinsing':'新興區', 'kaohsiung-zuoying':'左營區', 'keelung-nuannuan':'暖暖區',
+  'keelung-qidu':'七堵區', 'keelung-renai':'仁愛區', 'keelung-zhongzheng':'中正區',
+  'miaoli-miaoli':'苗栗市', 'miaoli-toufen':'頭份市', 'miaoli-zhunan':'竹南鎮',
+  'nantou-nantou':'南投市', 'new-taipei-banciao':'板橋區', 'new-taipei-banqiao':'板橋區',
+  'new-taipei-jinshan':'金山區', 'new-taipei-linkou':'林口區', 'new-taipei-luzhou':'蘆洲區',
+  'new-taipei-sanchong':'三重區', 'new-taipei-shulin':'樹林區', 'new-taipei-taishan':'泰山區',
+  'new-taipei-tamsui':'淡水區', 'new-taipei-tucheng':'土城區', 'new-taipei-xindian':'新店區',
+  'new-taipei-xinzhuang':'新莊區', 'new-taipei-xizhi':'汐止區', 'new-taipei-yonghe':'永和區',
+  'new-taipei-zhonghe':'中和區', 'pingtung-pingtung':'屏東市', 'taichung-beitun':'北屯區',
+  'taichung-central':'中區', 'taichung-dali':'大里區', 'taichung-east':'東區',
+  'taichung-fengyuan':'豐原區', 'taichung-nantun':'南屯區', 'taichung-north':'北區',
+  'taichung-south':'南區', 'taichung-taiping':'太平區', 'taichung-west':'西區',
+  'taichung-wuri':'烏日區', 'taichung-xitun':'西屯區', 'tainan-annan':'安南區',
+  'tainan-anping':'安平區', 'tainan-east':'東區', 'tainan-north':'北區',
+  'tainan-rende':'仁德區', 'tainan-south':'南區', 'tainan-west-central':'中西區',
+  'tainan-yongkang':'永康區', 'taipei-beitou':'北投區', 'taipei-daan':'大安區',
+  'taipei-datong':'大同區', 'taipei-nangang':'南港區', 'taipei-neihu':'內湖區',
+  'taipei-shilin':'士林區', 'taipei-songshan':'松山區', 'taipei-wanhua':'萬華區',
+  'taipei-wenshan':'文山區', 'taipei-xinyi':'信義區', 'taipei-zhongshan':'中山區',
+  'taipei-zhongzheng':'中正區', 'taitung-taitung':'台東市', 'taoyuan-dayuan':'大園區',
+  'taoyuan-pingzhen':'平鎮區', 'taoyuan-taoyuan':'桃園區', 'taoyuan-zhongli':'中壢區',
+  'taoyuan-zhubei':'竹北市', 'yilan-yilan':'宜蘭市', 'yunlin-douliou':'斗六市',
+  'yunlin-huwei':'虎尾鎮'
+};
+
+// Longest run of characters two names share. Solta writes the branch on the
+// front (中壢愛爾麗診所) while our names, which came from Google, put it on the
+// back (愛爾麗診所 台中西屯文心店). Neither prefix nor containment can see that
+// they are the same clinic, but the shared brand run can.
+function longestCommonRun(a, b) {
+  if (!a || !b) return 0;
+  let best = 0;
+  let prev = new Array(b.length + 1).fill(0);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = new Array(b.length + 1).fill(0);
+    for (let j = 1; j <= b.length; j++) {
+      if (a.charAt(i - 1) === b.charAt(j - 1)) {
+        cur[j] = prev[j - 1] + 1;
+        if (cur[j] > best) best = cur[j];
+      }
+    }
+    prev = cur;
+  }
+  return best;
+}
+
 const SOLTA_SOURCE_URL = 'https://thermageflx.co/';
 const SOLTA_ORG        = 'Solta Taiwan';
 
@@ -214,6 +270,7 @@ const SOLTA_ORG        = 'Solta Taiwan';
 async function loadTaiwanIndex(supabase) {
   const byPhone = new Map();
   const byName  = new Map();
+  const byDistrict = new Map();
   const all     = [];          // scanned for prefix and containment matches
   let withPhone = 0;
   const page = 1000;
@@ -236,12 +293,18 @@ async function loadTaiwanIndex(supabase) {
       if (n) {
         if (!byName.has(n)) byName.set(n, []);
         byName.get(n).push(c);
-        all.push({ clinic: c, key: n });
+        const district = NEIGHBOURHOOD_DISTRICT[c.neighbourhood] || null;
+        const entry = { clinic: c, key: n, district };
+        all.push(entry);
+        if (district) {
+          if (!byDistrict.has(district)) byDistrict.set(district, []);
+          byDistrict.get(district).push(entry);
+        }
       }
     });
     if (data.length < page) break;
   }
-  return { byPhone, byName, all, withPhone, total: all.length };
+  return { byPhone, byName, byDistrict, all, withPhone, total: all.length };
 }
 
 // Matches parsed Solta rows against the index. Phone is the strong key; an
@@ -304,6 +367,29 @@ function matchSoltaRows(rows, index) {
       }
       if (contains.length > 1) {
         unmatched.push({ row: r, reason: 'Name appears in ' + contains.length + ' clinic names' });
+        return;
+      }
+    }
+
+    // Last resort, and the one that catches branch naming: look only at
+    // clinics in the same district, and take the one sharing the longest run
+    // of characters with the Solta name. Scoping to the district is what makes
+    // this safe, and the winner must be clearly ahead of the runner up.
+    const district = r.district;
+    const pool = district ? (index.byDistrict.get(district) || []) : [];
+    if (pool.length && key.length >= MIN_KEY) {
+      let bestScore = 0, runnerUp = 0, bestEntry = null;
+      pool.forEach(x => {
+        const score = longestCommonRun(key, x.key);
+        if (score > bestScore) { runnerUp = bestScore; bestScore = score; bestEntry = x; }
+        else if (score > runnerUp) { runnerUp = score; }
+      });
+      if (bestEntry && bestScore >= 3 && bestScore > runnerUp) {
+        matched.push({ row: r, clinic: bestEntry.clinic, method: 'district' });
+        return;
+      }
+      if (bestScore >= 3 && bestScore === runnerUp) {
+        unmatched.push({ row: r, reason: 'Two clinics in ' + district + ' fit equally well' });
         return;
       }
     }
@@ -665,7 +751,7 @@ exports.handler = async (event) => {
       // batch that touches the same key twice ("ON CONFLICT DO UPDATE command
       // cannot affect row a second time"), so collapse them here, keeping the
       // strongest match.
-      const rank = { 'phone': 0, 'name': 1, 'name start': 2, 'name within': 3 };
+      const rank = { 'phone': 0, 'name': 1, 'name start': 2, 'name within': 3, 'district': 4 };
       const best = new Map();
       matched.forEach(m => {
         const id = String(m.clinic.id);
