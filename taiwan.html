@@ -251,11 +251,11 @@
     .device-chip.on .device-chip-tick { opacity: 1; }
 
     .verified-device-badge {
-      display: inline-flex; align-items: center; gap: 0.25rem;
+      display: inline-flex; align-items: center; flex: none;
       background: rgba(176,96,112,0.09); color: var(--rose);
-      border-radius: 4px; padding: 0.12rem 0.4rem;
-      font-size: 0.68rem; letter-spacing: 0.02em; margin-left: 0.4rem;
-      vertical-align: middle; white-space: nowrap;
+      border-radius: 4px; padding: 0.14rem 0.45rem;
+      font-size: 0.66rem; letter-spacing: 0.02em;
+      margin-left: auto; white-space: nowrap;
     }
 
     .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; }
@@ -1396,12 +1396,12 @@ function renderPageCards(clinicsData, append) {
         <div class="card-header${hasLogo && hasPhoto ? ' has-logo' : ''}">
           <div class="clinic-name">
             ${c.claimed ? `<span class="clinic-name-verified">${displayName(c.name)}</span>` : displayName(c.name)}
-            ${verifiedDeviceIds && verifiedDeviceIds.has(String(c.id)) ? `<span class="verified-device-badge">原廠認證 鳳凰電波</span>` : ''}
           </div>
           <div class="clinic-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''}${distEl}</div>
           <div class="rating-row">
             <span class="stars">${renderStars(c.rating)}</span>
             <span class="rating-num">${c.rating != null ? c.rating : '—'}</span>
+            ${verifiedDeviceIds && verifiedDeviceIds.has(String(c.id)) ? `<span class="verified-device-badge">原廠認證 鳳凰電波</span>` : ''}
           </div>
           <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')} 則 Google 評論</div>
         </div>
@@ -1648,10 +1648,14 @@ window.openClinicModal = async function(id) {
     `<p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">📍 ${hood}</p>`,
 
     // Rating row links to Google Maps
-    `<a href="${ratingUrl}" ${directionsUrl ? 'target="_blank" rel="noopener"' : ''} style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem;text-decoration:none;">`,
+    `<div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:1.25rem;flex-wrap:wrap;">`,
+    `<a href="${ratingUrl}" ${directionsUrl ? 'target="_blank" rel="noopener"' : ''} style="display:inline-flex;align-items:center;gap:0.5rem;text-decoration:none;">`,
     `<span style="color:var(--gold);">★</span><strong style="color:var(--deep);">${c.rating || '—'}</strong>`,
     `<span style="color:var(--muted);font-size:0.82rem;">(${reviews} 則評論)</span>`,
     `</a>`,
+    (verifiedDeviceIds && verifiedDeviceIds.has(String(c.id))
+      ? `<span class="verified-device-badge" style="margin-left:0;">原廠認證 鳳凰電波</span>` : ''),
+    `</div>`,
 
     c.price ? `<p style="margin-bottom:1.25rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/單位</span></p>` : '',
 
