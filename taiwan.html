@@ -424,6 +424,13 @@
     .btn-compare-card.selected { background: var(--gold); border-color: var(--gold); color: var(--deep); font-weight: 600; }
     .clinic-card.comparing { outline: 2px solid var(--gold); outline-offset: -2px; }
     .clinic-card.no-price { opacity: 1; }
+    /* Doctor names on the card, so the team is visible without opening anything */
+    .card-doctor-row { display: none; align-items: baseline; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+    .card-doctor-row.filled { display: flex; }
+    .card-doctor-label { font-size: 0.68rem; letter-spacing: 0.06em; color: var(--muted); margin-right: 0.15rem; }
+    .card-doctor-name { font-family: 'Noto Serif TC', serif; font-size: 0.82rem; color: var(--deep); }
+    .card-doctor-sep { color: var(--border); font-size: 0.75rem; }
+    .card-doctor-more { font-size: 0.72rem; color: var(--muted); }
 
     /* ─── LOAD MORE ─── */
     .load-more-wrap { text-align: center; padding: 2.5rem 5% 0; }
@@ -1472,6 +1479,7 @@ function renderPageCards(clinicsData, append) {
             const tags = ds.map(t => `<span class="card-device-tag">${TECH_LABEL[t] || t}</span>`).join('');
             return `<div class="card-device-row"><span class="card-device-cert">✓ 原廠認證</span>${tags}</div>`;
           })()}
+          <div class="card-doctor-row" data-clinic="${c.id}"></div>
         </div>
         ${priceBlockHTML}
         <div class="card-visit-row">
@@ -1502,6 +1510,7 @@ function renderPageCards(clinicsData, append) {
   syncCompareButtons();
   syncSaveButtons().catch(() => {});
   fetchVisitSignals(clinicsData.map(c => String(c.id))).catch(() => {});
+  fillCardDoctors(clinicsData.map(c => String(c.id))).catch(() => {});
   fetchMyVotes(clinicsData.map(c => String(c.id))).catch(() => {});
 }
 
@@ -1601,6 +1610,26 @@ function teamBlockHTML(list) {
       ${rest > 0 ? `<span style="font-size:0.76rem;border:1px dashed var(--border);border-radius:20px;padding:0.2rem 0.6rem;color:var(--muted);">＋${rest} 位</span>` : ''}
     </div>
   </div>`;
+}
+
+// Doctor names straight onto the cards, so the team is visible without a click.
+// Up to three names; the row stays hidden when a clinic has none.
+async function fillCardDoctors(ids) {
+  if (!ids || !ids.length) return;
+  const map = await fetchDoctorsFor(ids);
+  ids.forEach(id => {
+    const list = map[String(id)] || [];
+    if (!list.length) return;
+    document.querySelectorAll(`.card-doctor-row[data-clinic="${id}"]`).forEach(row => {
+      const shown = list.slice(0, 3);
+      const rest = list.length - shown.length;
+      row.innerHTML = '<span class="card-doctor-label">醫師</span>'
+        + shown.map(d => `<span class="card-doctor-name">${d.name_zh}</span>`)
+               .join('<span class="card-doctor-sep">·</span>')
+        + (rest > 0 ? `<span class="card-doctor-more">＋${rest}</span>` : '');
+      row.classList.add('filled');
+    });
+  });
 }
 
 // ─── DOCTOR NAME SEARCH ───────────────────────────────────────
