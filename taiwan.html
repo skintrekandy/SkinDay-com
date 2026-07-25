@@ -250,15 +250,21 @@
     .device-chip-map { padding: 0.35rem 0.65rem; font-size: 0.76rem; margin-left: auto; margin-right: 0.5rem; }
     .device-chip.on .device-chip-tick { opacity: 1; }
 
-    /* Card badge (Option C): solid rose count pill on the rating row */
-    .verified-device-badge {
-      display: inline-flex; align-items: center; flex: none; gap: 3px;
-      background: var(--rose); color: #fff;
-      border-radius: 20px; padding: 0.16rem 0.55rem;
-      font-size: 0.66rem; font-weight: 500; letter-spacing: 0.02em;
-      margin-left: auto; white-space: nowrap;
+    /* Card badge (Option B): 原廠認證 label + device tags, own row below rating */
+    .card-device-row {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 5px;
+      margin-top: 0.55rem;
     }
-    .verified-device-badge::before { content: '✓'; font-size: 0.6rem; }
+    .card-device-cert {
+      display: inline-flex; align-items: center; gap: 3px;
+      font-size: 0.66rem; font-weight: 500; color: var(--rose);
+      letter-spacing: 0.02em; white-space: nowrap;
+    }
+    .card-device-tag {
+      background: var(--rose-bg); color: #8A3A4C;
+      border-radius: 4px; padding: 2px 7px;
+      font-size: 0.66rem; white-space: nowrap;
+    }
     /* Modal badge (Option B): one 原廠認證 header + device tags */
     .verified-device-box {
       border: 1px solid #E4CFD5; background: rgba(240,224,229,0.35);
@@ -802,7 +808,7 @@
     <div class="search-field" id="deviceSearchField" style="display:none;">
       <div class="search-field-label">原廠認證儀器</div>
       <select id="deviceSelect" onchange="onDeviceSelect(this.value)">
-        <option value="">儀器篩選（全部診所）</option>
+        <option value="">儀器篩選</option>
       </select>
     </div>
     <div class="search-field">
@@ -1436,9 +1442,14 @@ function renderPageCards(clinicsData, append) {
           <div class="rating-row">
             <span class="stars">${renderStars(c.rating)}</span>
             <span class="rating-num">${c.rating != null ? c.rating : '—'}</span>
-            ${(function(){ const ds = clinicDevices(c.id); return ds.length ? `<span class="verified-device-badge">原廠認證 · ${ds.length} 項儀器</span>` : ''; })()}
           </div>
           <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')} 則 Google 評論</div>
+          ${(function(){
+            const ds = clinicDevices(c.id);
+            if (!ds.length) return '';
+            const tags = ds.map(t => `<span class="card-device-tag">${TECH_LABEL[t] || t}</span>`).join('');
+            return `<div class="card-device-row"><span class="card-device-cert">✓ 原廠認證</span>${tags}</div>`;
+          })()}
         </div>
         ${priceBlockHTML}
         <div class="card-visit-row">
@@ -2374,9 +2385,7 @@ function clinicDevices(id) { return deviceById[String(id)] || []; }
 function buildDeviceDropdown() {
   const sel = document.getElementById('deviceSelect');
   if (!sel) return;
-  const allN = allVerifiedIds().size;
-  const opts = ['<option value="">儀器篩選（全部診所）</option>'];
-  if (allN > 0) opts.push('<option value="__all__">原廠認證診所（' + allN + '）</option>');
+  const opts = ['<option value="">儀器篩選</option>'];
   DEVICES.forEach(d => {
     const n = (verifiedByTech[d.tech] || new Set()).size;
     if (n > 0) opts.push('<option value="' + d.tech + '">' + d.label + '（' + n + '）</option>');
