@@ -813,7 +813,7 @@
     </div>
     <div class="search-field">
       <div class="search-field-label">診所名稱</div>
-      <input type="text" id="searchClinicName" name="clinic-name-search" placeholder="搜尋診所名稱" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')applySearch()" />
+      <input type="text" id="searchClinicName" name="clinic-name-search-tw" placeholder="搜尋診所名稱" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')applySearch()" />
     </div>
     <div class="search-actions">
       <button class="btn-nearby" onclick="useNearMe()">📍 附近</button>
