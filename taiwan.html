@@ -813,7 +813,7 @@
     </div>
     <div class="search-field">
       <div class="search-field-label">診所名稱</div>
-      <input type="text" id="searchClinicName" placeholder="搜尋診所名稱" onkeydown="if(event.key==='Enter')applySearch()" />
+      <input type="text" id="searchClinicName" name="clinic-name-search" placeholder="搜尋診所名稱" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')applySearch()" />
     </div>
     <div class="search-actions">
       <button class="btn-nearby" onclick="useNearMe()">📍 附近</button>
@@ -1532,6 +1532,8 @@ function applySearch() {
   const region = NEIGHBOURHOOD_REGION[neighbourhood];
   if (region && neighbourhood !== 'all') { badge.textContent = region; badge.classList.add('visible'); }
   else { badge.classList.remove('visible'); }
+  // Refresh per-device counts to reflect the chosen neighbourhood.
+  buildDeviceDropdown();
   fetchPage(0, false);
   if (!nameQuery) document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -2076,6 +2078,7 @@ function onCompactSearch() {
   currentNameQuery = '';
   const mainSel = document.getElementById('searchNeighbourhood');
   if (mainSel) mainSel.value = val;
+  buildDeviceDropdown();
   reloadMap();
 }
 
@@ -2381,17 +2384,43 @@ async function loadVerifiedDevices() {
 // Which devices does this clinic carry? -> array of tech strings (canonical order)
 function clinicDevices(id) { return deviceById[String(id)] || []; }
 
-// Populate the search-bar device dropdown, showing only devices that have >=1 clinic.
+// Populate the search-bar device dropdown. Counts scope to the currently
+// selected neighbourhood (currentFilter) — e.g. 蜂巢皮秒（8）in 大安區 rather
+// than the global（66）. Computed client-side from clinicsIndex + verifiedByTech,
+// no extra fetch. When no neighbourhood is chosen, counts are the global totals.
 function buildDeviceDropdown() {
   const sel = document.getElementById('deviceSelect');
   if (!sel) return;
+
+  // Ids of clinics in the active neighbourhood, or null = whole country.
+  let hoodIds = null;
+  if (currentFilter && currentFilter !== 'all') {
+    hoodIds = new Set(
+      clinicsIndex
+        .filter(c => c.neighbourhood === currentFilter)
+        .map(c => String(c.id))
+    );
+  }
+  const countFor = (tech) => {
+    const set = verifiedByTech[tech] || new Set();
+    if (!hoodIds) return set.size;
+    let n = 0;
+    set.forEach(id => { if (hoodIds.has(id)) n++; });
+    return n;
+  };
+
   const opts = ['<option value="">儀器篩選</option>'];
   DEVICES.forEach(d => {
-    const n = (verifiedByTech[d.tech] || new Set()).size;
-    if (n > 0) opts.push('<option value="' + d.tech + '">' + d.label + '（' + n + '）</option>');
+    const n = countFor(d.tech);
+    // Keep the option visible even at 0 within a neighbourhood, so the user sees
+    // the device exists but has no verified clinic here — clearer than it vanishing.
+    if ((verifiedByTech[d.tech] || new Set()).size > 0) {
+      opts.push('<option value="' + d.tech + '">' + d.label + '（' + n + '）</option>');
+    }
   });
   sel.innerHTML = opts.join('');
-  // Show the field only if at least one device has clinics.
+  sel.value = activeDevice || '';
+  // Show the field only if at least one device has clinics anywhere.
   const wrap = document.getElementById('deviceSearchField');
   if (wrap) wrap.style.display = opts.length > 1 ? '' : 'none';
   if (typeof syncMapDeviceDropdown === 'function') syncMapDeviceDropdown();
