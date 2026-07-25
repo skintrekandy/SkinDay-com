@@ -816,6 +816,10 @@
       <div class="search-field-label">診所名稱</div>
       <input type="text" id="searchClinicName" name="clinic-name-search-tw" placeholder="搜尋診所名稱" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')applySearch()" />
     </div>
+    <div class="search-field" id="doctorSearchField">
+      <div class="search-field-label">醫師姓名</div>
+      <input type="text" id="searchDoctorName" name="doctor-name-search-tw" placeholder="搜尋醫師姓名" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" readonly onfocus="this.removeAttribute('readonly')" onkeydown="if(event.key==='Enter')applySearch()" />
+    </div>
     <div class="search-actions">
       <button class="btn-nearby" onclick="useNearMe()">📍 附近</button>
       <button class="btn-search" onclick="applySearch()">搜尋</button>
@@ -836,6 +840,8 @@
     </button>
   </div>
 </div>
+
+<div id="doctorResults" style="display:none;padding:0 5%;margin:1.25rem auto 0;max-width:1400px;"></div>
 
 <!-- DIRECTORY SECTION -->
 <section class="comparison-section" id="prices">
@@ -1538,6 +1544,112 @@ async function fetchPage(page, append) {
 
 function loadMore() { fetchPage(currentPage + 1, true); }
 
+
+// ─── DOCTORS ──────────────────────────────────────────────────
+// Doctors are exposed by RLS only when published AND approved, so an empty
+// result here is a legitimate state, not an error. Every surface degrades to
+// showing nothing rather than showing a spinner forever.
+const _doctorCache = new Map();   // clinic_id -> [{id,name_zh}]
+
+async function sbGet(path) {
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/' + path,
+      { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+
+// Doctors for a set of clinics, cached. Two hops rather than a PostgREST embed,
+// so it does not depend on a named foreign key.
+async function fetchDoctorsFor(clinicIds) {
+  const want = clinicIds.map(String).filter(id => !_doctorCache.has(id));
+  if (want.length) {
+    want.forEach(id => _doctorCache.set(id, []));
+    const links = await sbGet('clinic_doctors?select=clinic_id,doctor_id&clinic_id=in.('
+      + want.map(encodeURIComponent).join(',') + ')');
+    if (links && links.length) {
+      const ids = [...new Set(links.map(l => l.doctor_id))];
+      const docs = await sbGet('doctors?select=id,name_zh&id=in.(' + ids.join(',') + ')');
+      const byId = new Map((docs || []).map(d => [String(d.id), d]));
+      links.forEach(l => {
+        const d = byId.get(String(l.doctor_id));
+        if (!d) return;
+        const arr = _doctorCache.get(String(l.clinic_id)) || [];
+        if (!arr.some(x => x.id === d.id)) arr.push(d);
+        _doctorCache.set(String(l.clinic_id), arr);
+      });
+    }
+  }
+  const out = {};
+  clinicIds.forEach(id => { out[String(id)] = _doctorCache.get(String(id)) || []; });
+  return out;
+}
+
+// Team block for the clinic modal. Counts plus up to three names, so a clinic
+// with twelve doctors costs the same height as one with three.
+function teamBlockHTML(list) {
+  if (!list || !list.length) return '';
+  const shown = list.slice(0, 3);
+  const rest = list.length - shown.length;
+  return `<div style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:0.7rem 0.8rem;margin-bottom:0.7rem;">
+    <div style="font-size:0.78rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.45rem;">
+      <span>醫師團隊</span><em style="font-style:normal;color:var(--muted);font-weight:400;font-size:0.75rem;">${list.length} 位</em>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
+      ${shown.map(d => `<span style="font-size:0.76rem;font-family:'Noto Serif TC',serif;border:1px solid var(--border);border-radius:20px;padding:0.2rem 0.6rem;color:var(--deep);background:var(--cream);">${d.name_zh}</span>`).join('')}
+      ${rest > 0 ? `<span style="font-size:0.76rem;border:1px dashed var(--border);border-radius:20px;padding:0.2rem 0.6rem;color:var(--muted);">＋${rest} 位</span>` : ''}
+    </div>
+  </div>`;
+}
+
+// ─── DOCTOR NAME SEARCH ───────────────────────────────────────
+// Results are DOCTORS, then their clinics, because one doctor at several
+// clinics is normal here.
+async function runDoctorSearch(q) {
+  const panel = document.getElementById('doctorResults');
+  const term = (q || '').trim().replace(/醫師$/, '');
+  if (!term) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">搜尋中…</div>';
+
+  const enc = encodeURIComponent('%' + term + '%');
+  const docs = await sbGet('doctors?select=id,name_zh,name_romanized&or=(name_zh.ilike.'
+    + enc + ',name_romanized.ilike.' + enc + ')&limit=25');
+
+  if (!docs || !docs.length) {
+    panel.innerHTML = `<div style="border:1px solid var(--border);background:#fff;border-radius:12px;padding:1rem;font-size:0.85rem;color:var(--muted);">找不到「${term}」這位醫師。</div>`;
+    return;
+  }
+
+  const links = await sbGet('clinic_doctors?select=clinic_id,doctor_id&doctor_id=in.('
+    + docs.map(d => d.id).join(',') + ')') || [];
+  const clinicIds = [...new Set(links.map(l => String(l.clinic_id)))];
+  const known = new Map();
+  clinicIds.forEach(id => { const c = findClinic(id); if (c) known.set(id, c); });
+
+  let html = `<div style="border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;">
+    <div style="font-size:0.72rem;color:var(--muted);padding:0.5rem 0.8rem;border-bottom:1px solid var(--border);background:var(--cream);">找到 ${docs.length} 位醫師</div>`;
+  docs.forEach(d => {
+    const mine = links.filter(l => String(l.doctor_id) === String(d.id));
+    html += `<div style="padding:0.7rem 0.8rem;border-bottom:1px solid var(--border);">
+      <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:600;">${d.name_zh} 醫師${d.name_romanized ? ` <span style="font-size:0.76rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;">${d.name_romanized}</span>` : ''}</div>`;
+    if (!mine.length) {
+      html += '<div style="font-size:0.76rem;color:var(--muted);margin-top:0.2rem;">執業診所資料整理中</div>';
+    } else {
+      html += '<div style="font-size:0.78rem;margin-top:0.3rem;">' + mine.map(l => {
+        const c = known.get(String(l.clinic_id));
+        return c
+          ? `<a href="#" onclick="event.preventDefault();window.openClinicModal('${c.id}')" style="color:var(--rose);text-decoration:none;">${displayName(c.name)}</a> <span style="color:var(--muted);font-size:0.72rem;">${getNeighbourhoodFull(c.neighbourhood) || ''}</span>`
+          : '';
+      }).filter(Boolean).join('<br>') + '</div>';
+    }
+    html += '</div>';
+  });
+  panel.innerHTML = html + '</div>';
+}
+
 // ─── FILTER / SORT ────────────────────────────────────────────
 function applySearch() {
   const neighbourhood = document.getElementById('searchNeighbourhood').value;
@@ -1551,6 +1663,7 @@ function applySearch() {
   // Refresh per-device counts to reflect the chosen neighbourhood.
   buildDeviceDropdown();
   fetchPage(0, false);
+  runDoctorSearch(document.getElementById('searchDoctorName')?.value || '');
   if (!nameQuery) document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
@@ -1648,7 +1761,6 @@ function openCompareModal() {
   const clinics = compareList.map(id => findClinic(id)).filter(Boolean);
   if (clinics.length < 2) return;
   const colClass = 'cols-' + clinics.length;
-  const minPrice = clinics.filter(c => c.price).reduce((m, c) => Math.min(m, parseFloat(c.price)), Infinity);
   const maxRating = Math.max(...clinics.map(c => parseFloat(c.rating)||0));
   const maxReviews = Math.max(...clinics.map(c => parseInt(c.reviews)||0));
   let html = `<table class="compare-table ${colClass}"><thead><tr><th></th>`;
@@ -1659,13 +1771,8 @@ function openCompareModal() {
     const isTop = (parseFloat(c.rating)||0) === maxRating;
     html += `<td${isTop?' class="compare-winner"':''}><span class="compare-stars">★</span> <span class="compare-rating-num">${c.rating||'—'}</span>${isTop?'<span class="compare-winner-tag">最高</span>':''}<div class="compare-reviews">${(c.reviews||0).toLocaleString('zh-TW')} 則評論</div></td>`;
   });
-  html += '</tr><tr><th>NTD 價格</th>';
-  clinics.forEach(c => {
-    const isLowest = c.price && parseFloat(c.price) === minPrice;
-    html += c.price
-      ? `<td${isLowest?' class="compare-winner"':''}><span class="compare-price-big">NT$${c.price}</span><span class="compare-price-unit">/單位</span>${isLowest?'<span class="compare-winner-tag">最優惠</span>':''}</td>`
-      : '<td><span class="compare-no-price">未提供</span></td>';
-  });
+  html += '</tr><tr><th>醫師</th>';
+  clinics.forEach(c => { html += `<td class="compare-doctors" data-clinic="${c.id}">—</td>`; });
   html += '</tr><tr><th>地區</th>';
   clinics.forEach(c => { html += `<td>${getNeighbourhoodFull(c.neighbourhood) || c.region || '—'}</td>`; });
   html += '</tr><tr><th>電話</th>';
@@ -1676,6 +1783,18 @@ function openCompareModal() {
   document.querySelector('.compare-modal-body').innerHTML = html;
   document.getElementById('compareModalOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
+
+  // Top three doctor names per clinic, nothing else. No counts, no specialty,
+  // no verification state.
+  fetchDoctorsFor(clinics.map(c => c.id)).then(map => {
+    document.querySelectorAll('.compare-doctors').forEach(td => {
+      const list = map[String(td.dataset.clinic)] || [];
+      td.innerHTML = list.length
+        ? list.slice(0, 3).map(d =>
+            `<div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;">${d.name_zh}</div>`).join('')
+        : '<span style="color:var(--dim);font-size:0.85rem;">—</span>';
+    });
+  });
 }
 function closeCompareModal() { document.getElementById('compareModalOverlay').classList.remove('open'); document.body.style.overflow = ''; }
 function compareFromShortlist() {
@@ -1728,6 +1847,9 @@ window.openClinicModal = async function(id) {
         + `</div>`;
     })(),
 
+    // Team block, filled in after the modal renders (see below).
+    `<div id="modalTeamSlot"></div>`,
+
     c.price ? `<p style="margin-bottom:1.25rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/單位</span></p>` : '',
 
     // Primary action: Directions
@@ -1767,6 +1889,13 @@ window.openClinicModal = async function(id) {
   overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+
+  // Team block. Fetched after the modal is on screen so it never delays open,
+  // and it simply stays absent when the clinic has no published doctors.
+  fetchDoctorsFor([c.id]).then(map => {
+    const slot = overlay.querySelector('#modalTeamSlot');
+    if (slot) slot.innerHTML = teamBlockHTML(map[String(c.id)] || []);
+  });
 };
 
 window.reportTaiwanClinic = function(id, btn) {
