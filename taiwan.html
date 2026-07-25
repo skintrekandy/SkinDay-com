@@ -250,12 +250,30 @@
     .device-chip-map { padding: 0.35rem 0.65rem; font-size: 0.76rem; margin-left: auto; margin-right: 0.5rem; }
     .device-chip.on .device-chip-tick { opacity: 1; }
 
+    /* Card badge (Option C): solid rose count pill on the rating row */
     .verified-device-badge {
-      display: inline-flex; align-items: center; flex: none;
-      background: rgba(176,96,112,0.09); color: var(--rose);
-      border-radius: 4px; padding: 0.14rem 0.45rem;
-      font-size: 0.66rem; letter-spacing: 0.02em;
+      display: inline-flex; align-items: center; flex: none; gap: 3px;
+      background: var(--rose); color: #fff;
+      border-radius: 20px; padding: 0.16rem 0.55rem;
+      font-size: 0.66rem; font-weight: 500; letter-spacing: 0.02em;
       margin-left: auto; white-space: nowrap;
+    }
+    .verified-device-badge::before { content: '✓'; font-size: 0.6rem; }
+    /* Modal badge (Option B): one 原廠認證 header + device tags */
+    .verified-device-box {
+      border: 1px solid #E4CFD5; background: rgba(240,224,229,0.35);
+      border-radius: 12px; padding: 0.75rem 0.9rem; margin: 0 0 1.25rem;
+    }
+    .verified-device-box-head {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 0.72rem; font-weight: 500; color: var(--rose);
+      letter-spacing: 0.03em; margin-bottom: 0.55rem;
+    }
+    .verified-device-box-head .vdb-tick { font-size: 0.66rem; }
+    .verified-device-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .device-tag {
+      background: var(--cream); border: 1px solid #E4CFD5; color: #5F4A4E;
+      border-radius: 6px; padding: 3px 9px; font-size: 0.72rem; white-space: nowrap;
     }
 
     .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; }
@@ -704,10 +722,10 @@
 <div class="search-wrap">
   <div class="search-bar">
     <div class="search-field">
-      <div class="search-field-label">地區 · Location</div>
+      <div class="search-field-label">地區</div>
       <div class="neighbourhood-wrap">
         <select id="searchNeighbourhood" onchange="applySearch()">
-          <option value="all">全台灣 · All Taiwan</option>
+          <option value="all">全台灣</option>
           <optgroup label="── 台北市 Taipei City ──────────">
             <option value="taipei-daan">大安區 Da'an</option>
             <option value="taipei-zhongshan">中山區 Zhongshan</option>
@@ -781,9 +799,15 @@
         <span class="region-badge" id="regionBadge"></span>
       </div>
     </div>
+    <div class="search-field" id="deviceSearchField" style="display:none;">
+      <div class="search-field-label">原廠認證儀器</div>
+      <select id="deviceSelect" onchange="onDeviceSelect(this.value)">
+        <option value="">儀器篩選（全部診所）</option>
+      </select>
+    </div>
     <div class="search-field">
-      <div class="search-field-label">診所名稱 · Clinic Name</div>
-      <input type="text" id="searchClinicName" placeholder="Search..." onkeydown="if(event.key==='Enter')applySearch()" />
+      <div class="search-field-label">診所名稱</div>
+      <input type="text" id="searchClinicName" placeholder="搜尋診所名稱" onkeydown="if(event.key==='Enter')applySearch()" />
     </div>
     <div class="search-actions">
       <button class="btn-nearby" onclick="useNearMe()">📍 附近</button>
@@ -821,9 +845,6 @@
       <option value="reviews" selected>評論最多</option>
       <option value="nearest">最近距離</option>
     </select>
-    <button class="device-chip" id="deviceChip" onclick="toggleDeviceFilter()" style="display:none;">
-      <span class="device-chip-tick">✓</span><span id="deviceChipLabel">原廠認證鳳凰電波</span>
-    </button>
   </div>
 
   <div class="cards-grid" id="cardsGrid">
@@ -845,7 +866,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
     </button>
     <select id="mapCompactSel" onchange="onCompactSearch()">
-      <option value="all">全台灣 · All Taiwan</option>
+      <option value="all">全台灣</option>
       <optgroup label="── 台北市 ──">
         <option value="taipei-daan">大安區</option>
         <option value="taipei-zhongshan">中山區</option>
@@ -900,9 +921,9 @@
     <div class="map-card-list" id="mapCardList">
       <div class="map-list-header" id="mapListHeader">
         <span class="map-list-header-count" id="mapListCount"></span>
-        <button class="device-chip device-chip-map" id="mapDeviceChip" onclick="toggleDeviceFilter()" style="display:none;">
-          <span class="device-chip-tick">✓</span>原廠認證鳳凰電波
-        </button>
+        <select class="map-list-header-sort" id="mapDeviceSelect" onchange="onDeviceSelect(this.value)" style="display:none;">
+          <option value="">所有原廠認證儀器</option>
+        </select>
         <select class="map-list-header-sort" onchange="onMapSort(this.value)">
           <option value="rating">評分最高</option>
           <option value="reviews">評論最多</option>
@@ -1067,9 +1088,21 @@ const PAGE_SIZE = 24;
 // ─── MANUFACTURER VERIFIED DEVICES (M18) ──────────────────────
 // Clinics that Solta lists as certified for 鳳凰電波. The chip only appears
 // once there is data behind it, so patients never meet an empty filter.
-const VERIFIED_TECH = '鳳凰電波 Thermage FLX';
-let verifiedDeviceIds = null;   // Set of clinic ids, or null before it loads
-let deviceFilterOn = false;
+// Four manufacturer-verified devices patients can search. Order = display order
+// in the dropdown. `tech` is the exact clinic_technologies.technology string;
+// `label` is the short Chinese name shown to patients.
+const DEVICES = [
+  { tech: '鳳凰電波 Thermage FLX',      label: '鳳凰電波' },
+  { tech: '美國音波二代 Ultherapy Prime', label: '美國音波二代' },
+  { tech: '蜂巢皮秒 PicoSure',          label: '蜂巢皮秒' },
+  { tech: '超皮秒 PicoWay',            label: '超皮秒' },
+];
+const TECH_LABEL = Object.fromEntries(DEVICES.map(d => [d.tech, d.label]));
+// Per-device Sets of clinic ids: { '鳳凰電波 Thermage FLX': Set, ... }. Populated
+// by loadVerifiedDevices(). deviceById maps a clinic id -> [tech,...] for badges.
+let verifiedByTech = {};
+let deviceById = {};            // clinic_id(String) -> array of tech strings
+let activeDevice = null;        // the currently selected device tech, or null
 
 let currentFilter = 'all';
 let currentNameQuery = '';
@@ -1248,7 +1281,9 @@ function buildApiUrl(page) {
   params.set('country', COUNTRY);
   if (currentNameQuery) params.set('search', currentNameQuery);
   if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
-  if (deviceFilterOn) params.set('verified_device', VERIFIED_TECH);
+  // A device tech string, or '__all__' for every manufacturer-verified device.
+  // get-clinics.js resolves both to a clinic-id list server-side.
+  if (activeDevice) params.set('verified_device', activeDevice);
   return '/api/get-clinics?' + params.toString();
 }
 
@@ -1401,7 +1436,7 @@ function renderPageCards(clinicsData, append) {
           <div class="rating-row">
             <span class="stars">${renderStars(c.rating)}</span>
             <span class="rating-num">${c.rating != null ? c.rating : '—'}</span>
-            ${verifiedDeviceIds && verifiedDeviceIds.has(String(c.id)) ? `<span class="verified-device-badge">原廠認證 鳳凰電波</span>` : ''}
+            ${(function(){ const ds = clinicDevices(c.id); return ds.length ? `<span class="verified-device-badge">原廠認證 · ${ds.length} 項儀器</span>` : ''; })()}
           </div>
           <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')} 則 Google 評論</div>
         </div>
@@ -1653,9 +1688,16 @@ window.openClinicModal = async function(id) {
     `<span style="color:var(--gold);">★</span><strong style="color:var(--deep);">${c.rating || '—'}</strong>`,
     `<span style="color:var(--muted);font-size:0.82rem;">(${reviews} 則評論)</span>`,
     `</a>`,
-    (verifiedDeviceIds && verifiedDeviceIds.has(String(c.id))
-      ? `<span class="verified-device-badge" style="margin-left:0;">原廠認證 鳳凰電波</span>` : ''),
-    `</div>`,
+    `</div>`,   // close rating row
+    (function(){
+      const ds = clinicDevices(c.id);
+      if (!ds.length) return '';
+      const tags = ds.map(t => `<span class="device-tag">${TECH_LABEL[t] || t}</span>`).join('');
+      return `<div class="verified-device-box">`
+        + `<div class="verified-device-box-head"><span class="vdb-tick">✓</span>原廠認證儀器</div>`
+        + `<div class="verified-device-tags">${tags}</div>`
+        + `</div>`;
+    })(),
 
     c.price ? `<p style="margin-bottom:1.25rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/單位</span></p>` : '',
 
@@ -2032,8 +2074,9 @@ async function fetchMapClinics() {
     url += '&neighbourhood=eq.' + encodeURIComponent(currentFilter);
   }
   // Manufacturer verified filter, shared with the grid view.
-  if (deviceFilterOn && verifiedDeviceIds && verifiedDeviceIds.size) {
-    url += '&id=in.(' + Array.from(verifiedDeviceIds).map(encodeURIComponent).join(',') + ')';
+  const _vids = activeVerifiedIds();
+  if (_vids && _vids.size) {
+    url += '&id=in.(' + Array.from(_vids).map(encodeURIComponent).join(',') + ')';
   }
   const r = await fetch(url, { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } });
   if (!r.ok) throw new Error('fetch failed');
@@ -2302,32 +2345,85 @@ function unhighlightPinById(cid) {
 // is silent on purpose: the directory still works, it just loses the chip.
 async function loadVerifiedDevices() {
   try {
-    const url = SB_URL + '/rest/v1/clinic_technologies?select=clinic_id'
-      + '&technology=eq.' + encodeURIComponent(VERIFIED_TECH)
+    const techs = DEVICES.map(d => d.tech);
+    const inList = '(' + techs.map(t => '"' + t.replace(/"/g,'\\"') + '"').join(',') + ')';
+    const url = SB_URL + '/rest/v1/clinic_technologies?select=clinic_id,technology'
+      + '&technology=in.' + encodeURIComponent(inList)
       + '&evidence_type=eq.manufacturer_directory';
     const res = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } });
     if (!res.ok) return;
     const rows = await res.json();
-    verifiedDeviceIds = new Set((rows || []).map(r => String(r.clinic_id)));
-    if (verifiedDeviceIds.size > 0) {
-      ['deviceChip', 'mapDeviceChip'].forEach(function(id){
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'inline-flex';
-      });
-    }
+    DEVICES.forEach(d => { verifiedByTech[d.tech] = new Set(); });
+    (rows || []).forEach(r => {
+      const id = String(r.clinic_id);
+      if (verifiedByTech[r.technology]) verifiedByTech[r.technology].add(id);
+      (deviceById[id] = deviceById[id] || []).push(r.technology);
+    });
+    // Keep each clinic's device list in canonical DEVICES order for tidy badges.
+    Object.keys(deviceById).forEach(id => {
+      deviceById[id] = DEVICES.map(d => d.tech).filter(t => deviceById[id].includes(t));
+    });
+    buildDeviceDropdown();
   } catch (e) { /* directory works without it */ }
 }
 
-function toggleDeviceFilter() {
-  deviceFilterOn = !deviceFilterOn;
-  ['deviceChip', 'mapDeviceChip'].forEach(function(id){
-    const el = document.getElementById(id);
-    if (el) el.classList.toggle('on', deviceFilterOn);
+// Which devices does this clinic carry? -> array of tech strings (canonical order)
+function clinicDevices(id) { return deviceById[String(id)] || []; }
+
+// Populate the search-bar device dropdown, showing only devices that have >=1 clinic.
+function buildDeviceDropdown() {
+  const sel = document.getElementById('deviceSelect');
+  if (!sel) return;
+  const allN = allVerifiedIds().size;
+  const opts = ['<option value="">儀器篩選（全部診所）</option>'];
+  if (allN > 0) opts.push('<option value="__all__">原廠認證診所（' + allN + '）</option>');
+  DEVICES.forEach(d => {
+    const n = (verifiedByTech[d.tech] || new Set()).size;
+    if (n > 0) opts.push('<option value="' + d.tech + '">' + d.label + '（' + n + '）</option>');
   });
-  // Refresh whichever view is on screen. The other picks the state up when it
-  // next loads, so the filter survives switching between them.
+  sel.innerHTML = opts.join('');
+  // Show the field only if at least one device has clinics.
+  const wrap = document.getElementById('deviceSearchField');
+  if (wrap) wrap.style.display = opts.length > 1 ? '' : 'none';
+  if (typeof syncMapDeviceDropdown === 'function') syncMapDeviceDropdown();
+}
+
+// Union of clinic ids across all four devices (for the "all verified" option).
+function allVerifiedIds() {
+  const s = new Set();
+  Object.values(verifiedByTech).forEach(set => set.forEach(id => s.add(id)));
+  return s;
+}
+
+// The active filter's id Set: one device, or the union when "all" is picked.
+function activeVerifiedIds() {
+  if (activeDevice === '__all__') return allVerifiedIds();
+  if (activeDevice) return verifiedByTech[activeDevice] || new Set();
+  return null;
+}
+
+// Called by both the main search-bar dropdown and the map header dropdown.
+// Empty string clears the filter; a tech string filters to that device.
+function onDeviceSelect(tech) {
+  activeDevice = tech || null;
+  // Keep both dropdowns in sync so switching views doesn't lose the selection.
+  const a = document.getElementById('deviceSelect');
+  const b = document.getElementById('mapDeviceSelect');
+  if (a && a.value !== (tech || '')) a.value = tech || '';
+  if (b && b.value !== (tech || '')) b.value = tech || '';
   if (currentView === 'map') reloadMap();
   else fetchPage(0, false);
+}
+
+// Mirror the main dropdown's options into the map header dropdown once loaded.
+function syncMapDeviceDropdown() {
+  const main = document.getElementById('deviceSelect');
+  const map = document.getElementById('mapDeviceSelect');
+  if (main && map) {
+    map.innerHTML = main.innerHTML;
+    map.value = activeDevice || '';
+    map.style.display = main.parentElement && main.parentElement.style.display !== 'none' ? '' : 'none';
+  }
 }
 
 (async function init() {
