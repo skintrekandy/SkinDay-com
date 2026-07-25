@@ -408,6 +408,7 @@
       padding: 0.75rem 1.4rem;
     }
     .view-link {
+      cursor: pointer;
       font-size: 0.8rem; font-weight: 500; color: var(--rose);
       text-decoration: none; letter-spacing: 0.02em;
       display: flex; align-items: center; gap: 0.3rem; transition: gap 0.2s;
@@ -1271,8 +1272,25 @@ function updateNeighbourhoodCounts() {
 }
 
 // ─── NORMALISE ────────────────────────────────────────────────
+// ─── CLINIC PROFILE SLUGS ─────────────────────────────────────
+// The stored clinics.slug column is the ONLY source of a profile URL.
+// We deliberately do NOT derive a slug from the clinic name: Taiwan names
+// are SEO keyword strings (愛爾麗診所 台南西門店｜...|索夫波Sofwave|肉毒|...),
+// so stripping non-ASCII leaves whatever device brand happens to be in the
+// tail and produces URLs like /clinic/sofwave for an Airlee branch.
+// No slug on file means no profile link, which is correct: a wrong link is
+// worse than an absent one, for顧客 and for Google.
+const slugById = Object.create(null);
+
+function clinicSlug(c) {
+  if (!c) return '';
+  if (c.slug) return String(c.slug);
+  return slugById[String(c.id)] || '';
+}
+
 function normaliseClinic(o) {
   o.id = String(o.id);
+  if (o.slug) slugById[String(o.id)] = String(o.slug);
   if (typeof o.injector_credentials === 'string') { try { o.injector_credentials = JSON.parse(o.injector_credentials); } catch(e) { o.injector_credentials = []; } }
   if (!Array.isArray(o.injector_credentials)) o.injector_credentials = [];
   if (!Array.isArray(o.categories)) o.categories = [];
@@ -1426,10 +1444,8 @@ function renderPageCards(clinicsData, append) {
       return ` · ${d < 1 ? (d*1000).toFixed(0)+'m' : d.toFixed(1)+'km'}`;
     })();
 
-    const profileHref = (() => {
-      const s = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
-      return s ? '/clinic/' + s : '#';
-    })();
+    const cardSlug = clinicSlug(c);
+    const profileAttrs = cardSlug ? ` href="/clinic/${cardSlug}"` : ' role="button" tabindex="0"';
 
     return `
       <div class="clinic-card${hasPrice ? '' : ' no-price'}" data-id="${c.id}">
@@ -1463,7 +1479,7 @@ function renderPageCards(clinicsData, append) {
           </span>
         </div>
         <div class="card-footer">
-          <a href="${profileHref}" class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">查看資料 →</a>
+          <a${profileAttrs} class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">查看資料 →</a>
           <button class="btn-compare-card" id="cmp-${c.id}" onclick="toggleCompare('${c.id}')">+ 比較</button>
         </div>
       </div>`;
@@ -1729,7 +1745,7 @@ window.openClinicModal = async function(id) {
 
     // View full profile link
     (function(){
-      const slug = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
+      const slug = clinicSlug(c);
       return slug ? `<div style="margin-bottom:1rem;"><a href="/clinic/${slug}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">查看完整診所資料 →</a></div>` : '';
     })(),
 
@@ -2083,7 +2099,7 @@ function onCompactSearch() {
 }
 
 async function fetchMapClinics() {
-  let url = SB_URL + '/rest/v1/clinics?select=id,name,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&approved=eq.true&country=eq.taiwan&lat=not.is.null&order=rating.desc.nullslast&limit=5000';
+  let url = SB_URL + '/rest/v1/clinics?select=id,name,slug,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&approved=eq.true&country=eq.taiwan&lat=not.is.null&order=rating.desc.nullslast&limit=5000';
   if (currentFilter && currentFilter !== 'all') {
     url += '&neighbourhood=eq.' + encodeURIComponent(currentFilter);
   }
