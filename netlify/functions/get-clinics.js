@@ -77,15 +77,18 @@ exports.handler = async (event) => {
     // Only evidence_type='manufacturer_directory' counts here. Clinic declared
     // entries are shown on a profile but never qualify a clinic for the
     // verified filter, because that badge is the whole promise.
+    // verified_device='__all__' means the union of every manufacturer-verified
+    // device (the "原廠認證診所" option). A specific value filters to that device.
     let verifiedIdList = null;
     if (verifiedDevice) {
-      const vRes = await supabase
+      let vq = supabase
         .from('clinic_technologies')
         .select('clinic_id')
-        .eq('technology', verifiedDevice)
         .eq('evidence_type', 'manufacturer_directory')
         .range(0, 29999);
+      if (verifiedDevice !== '__all__') vq = vq.eq('technology', verifiedDevice);
 
+      const vRes = await vq;
       if (vRes.error) {
         console.error('Supabase error (verified devices):', vRes.error);
         return { statusCode: 500, body: JSON.stringify({ error: vRes.error.message }) };
