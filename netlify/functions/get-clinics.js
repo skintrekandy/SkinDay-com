@@ -101,6 +101,15 @@ exports.handler = async (event) => {
     // city-prefixed (e.g. taipei-daan, new-taipei-banqiao) and stored
     // verbatim in the neighbourhood column, use exact eq() match.
     // No fuzzy ilike needed: slugs are clean ASCII, no accent variants.
+    //
+    // IMPORTANT: PostgREST cannot AND two filters on the SAME column. The
+    // priced buckets below add a second .in('id', pricedIdList), so if the
+    // base query also did .in('id', verifiedIdList) the two collide and a
+    // device + neighbourhood search silently returns nothing. We therefore
+    // fold the verified-device restriction into a JS Set and filter after
+    // fetching, instead of chaining a second .in('id') here.
+    const verifiedIdSet = verifiedIdList ? new Set(verifiedIdList) : null;
+
     const buildBase = () => {
       let q = supabase
         .from('clinics')
@@ -109,8 +118,6 @@ exports.handler = async (event) => {
         .eq('country', country);
 
       if (search)        q = q.ilike('name', `%${search}%`);
-      // An empty list is meaningful: nothing is verified yet, so nothing matches.
-      if (verifiedIdList) q = q.in('id', verifiedIdList);
       if (neighbourhood) q = q.eq('neighbourhood', neighbourhood);
       if (metro)         q = q.ilike('metro', metro);
       if (stateFilter)   q = q.ilike('state', stateFilter);
@@ -152,7 +159,11 @@ exports.handler = async (event) => {
     // Bucket 2: priced + unclaimed
     // Bucket 3: unpriced + claimed
     // Bucket 4: unpriced + unclaimed (largest pool, least signal)
-    const unpricedNeeded = needed + pricedIdList.length;
+    // When a verified-device filter is active we filter the fetched rows by the
+    // id Set in JS (see note on buildBase). The verified set is small (<=~500),
+    // so widen the range enough that the post-filter still fills the page.
+    const verifiedWiden = verifiedIdSet ? Math.max(30000, needed) : 0;
+    const unpricedNeeded = needed + pricedIdList.length + verifiedWiden;
     const emptyPriced    = { data: [], error: null };
 
     const [pricedClaimedRes, pricedUnclaimedRes, claimedAllRes, unclaimedAllRes, countRes] = await Promise.all([
@@ -169,17 +180,24 @@ exports.handler = async (event) => {
       return { statusCode: 500, body: JSON.stringify({ error: fetchErr.message }) };
     }
 
-    const unpricedClaimed   = (claimedAllRes.data   || []).filter(c => !pricedIdSet.has(String(c.id)));
-    const unpricedUnclaimed = (unclaimedAllRes.data || []).filter(c => !pricedIdSet.has(String(c.id)));
+    // Apply the verified-device restriction here (kept off the SQL to avoid the
+    // two-.in('id') collision that made device + neighbourhood return nothing).
+    const passVerified = (c) => !verifiedIdSet || verifiedIdSet.has(String(c.id));
+
+    const unpricedClaimed   = (claimedAllRes.data   || []).filter(c => !pricedIdSet.has(String(c.id)) && passVerified(c));
+    const unpricedUnclaimed = (unclaimedAllRes.data || []).filter(c => !pricedIdSet.has(String(c.id)) && passVerified(c));
 
     const pool = [
-      ...(pricedClaimedRes.data   || []),
-      ...(pricedUnclaimedRes.data || []),
+      ...(pricedClaimedRes.data   || []).filter(passVerified),
+      ...(pricedUnclaimedRes.data || []).filter(passVerified),
       ...unpricedClaimed,
       ...unpricedUnclaimed,
     ];
 
-    const totalCount = countRes.count || 0;
+    // When verified-filtering in JS, the DB count is the unfiltered total, so
+    // derive the count from the filtered pool instead. (The wide range above
+    // means the pool holds every matching row, so pool.length is exact.)
+    const totalCount = verifiedIdSet ? pool.length : (countRes.count || 0);
     const pageSlice  = pool.slice(from, from + PAGE_SIZE);
 
     // ── FETCH clinic_prices FOR THIS PAGE ─────────────────────
