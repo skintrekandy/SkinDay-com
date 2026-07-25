@@ -1126,6 +1126,7 @@ let activeDevice = null;        // the currently selected device tech, or null
 
 let currentFilter = 'all';
 let currentNameQuery = '';
+let _doctorMode = false;
 let currentSort = 'reviews';
 let currentPage = 0;
 let currentTotal = 0;
@@ -1575,7 +1576,7 @@ async function fetchDoctorsFor(clinicIds) {
   const want = clinicIds.map(String).filter(id => !_doctorCache.has(id));
   if (want.length) {
     want.forEach(id => _doctorCache.set(id, []));
-    const links = await sbGet('clinic_doctors?select=clinic_id,doctor_id&clinic_id=in.('
+    const links = await sbGet('clinic_doctors?select=clinic_id,doctor_id,title&clinic_id=in.('
       + want.map(encodeURIComponent).join(',') + ')');
     if (links && links.length) {
       const ids = [...new Set(links.map(l => l.doctor_id))];
@@ -1585,29 +1586,46 @@ async function fetchDoctorsFor(clinicIds) {
         const d = byId.get(String(l.doctor_id));
         if (!d) return;
         const arr = _doctorCache.get(String(l.clinic_id)) || [];
-        if (!arr.some(x => x.id === d.id)) arr.push(d);
+        if (!arr.some(x => x.id === d.id)) arr.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
         _doctorCache.set(String(l.clinic_id), arr);
       });
     }
   }
   const out = {};
-  clinicIds.forEach(id => { out[String(id)] = _doctorCache.get(String(id)) || []; });
+  clinicIds.forEach(id => { out[String(id)] = orderTeam(_doctorCache.get(String(id)) || [], id); });
   return out;
 }
 
-// Team block for the clinic modal. Counts plus up to three names, so a clinic
-// with twelve doctors costs the same height as one with three.
+// Team order. A Taiwan clinic is very often named after its founding doctor,
+// and that doctor has to lead: 彭賢禮 at 彭賢禮皮膚科診所, not third behind two
+// colleagues. After that, seniority by title, then a stable alphabetical fall-
+// back so the list never reshuffles between renders.
+function orderTeam(list, clinicId) {
+  const c = findClinic(clinicId);
+  const cname = c ? String(c.name || '') : '';
+  const rank = d => {
+    if (d.name_zh && cname.includes(d.name_zh)) return 0;   // eponymous
+    const t = d.title || '';
+    if (t.includes('院長')) return 1;
+    if (t.includes('主任')) return 2;
+    if (t.includes('主治')) return 3;
+    return 4;
+  };
+  return list.slice().sort((a, b) =>
+    rank(a) - rank(b) || String(a.name_zh).localeCompare(String(b.name_zh), 'zh-Hant'));
+}
+
+// Team block for the clinic modal. EVERY doctor, no truncation — a ＋N chip
+// that leads nowhere is worse than the extra two lines of height. The card in
+// the grid still caps at three, where space is genuinely tight.
 function teamBlockHTML(list) {
   if (!list || !list.length) return '';
-  const shown = list.slice(0, 3);
-  const rest = list.length - shown.length;
   return `<div style="border:1px solid var(--border);background:#fff;border-radius:10px;padding:0.7rem 0.8rem;margin-bottom:0.7rem;">
     <div style="font-size:0.78rem;font-weight:500;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;margin-bottom:0.45rem;">
       <span>醫師團隊</span><em style="font-style:normal;color:var(--muted);font-weight:400;font-size:0.75rem;">${list.length} 位</em>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:0.35rem;">
-      ${shown.map(d => `<span style="font-size:0.76rem;font-family:'Noto Serif TC',serif;border:1px solid var(--border);border-radius:20px;padding:0.2rem 0.6rem;color:var(--deep);background:var(--cream);">${d.name_zh}</span>`).join('')}
-      ${rest > 0 ? `<span style="font-size:0.76rem;border:1px dashed var(--border);border-radius:20px;padding:0.2rem 0.6rem;color:var(--muted);">＋${rest} 位</span>` : ''}
+      ${list.map(d => `<span title="${d.title || ''}" style="font-size:0.76rem;font-family:'Noto Serif TC',serif;border:1px solid var(--border);border-radius:20px;padding:0.2rem 0.6rem;color:var(--deep);background:var(--cream);">${d.name_zh}</span>`).join('')}
     </div>
   </div>`;
 }
@@ -1633,50 +1651,70 @@ async function fillCardDoctors(ids) {
 }
 
 // ─── DOCTOR NAME SEARCH ───────────────────────────────────────
-// Results are DOCTORS, then their clinics, because one doctor at several
-// clinics is normal here.
+// Searching a doctor renders the actual CLINIC CARDS they work at, using the
+// same card component as the grid, so the result is something you can act on.
+// Telling someone "she works at iSKIN" and making them search that name again
+// is a dead end.
 async function runDoctorSearch(q) {
   const panel = document.getElementById('doctorResults');
-  const term = (q || '').trim().replace(/醫師$/, '');
-  if (!term) { panel.style.display = 'none'; panel.innerHTML = ''; return; }
+  const grid  = document.getElementById('cardsGrid');
+  const term  = (q || '').trim().replace(/醫師$/, '');
 
+  if (!term) { panel.style.display = 'none'; panel.innerHTML = ''; _doctorMode = false; return; }
+
+  _doctorMode = true;
   panel.style.display = 'block';
-  panel.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">搜尋中…</div>';
+  panel.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;padding:0.6rem 0;">搜尋中…</div>';
 
   const enc = encodeURIComponent('%' + term + '%');
   const docs = await sbGet('doctors?select=id,name_zh,name_romanized&or=(name_zh.ilike.'
     + enc + ',name_romanized.ilike.' + enc + ')&limit=25');
 
   if (!docs || !docs.length) {
-    panel.innerHTML = `<div style="border:1px solid var(--border);background:#fff;border-radius:12px;padding:1rem;font-size:0.85rem;color:var(--muted);">找不到「${term}」這位醫師。</div>`;
+    panel.innerHTML = `<div style="border:1px solid var(--border);background:#fff;border-radius:12px;padding:1rem;font-size:0.88rem;color:var(--muted);">找不到「${term}」這位醫師。</div>`;
+    if (grid) grid.innerHTML = '';
     return;
   }
 
   const links = await sbGet('clinic_doctors?select=clinic_id,doctor_id&doctor_id=in.('
     + docs.map(d => d.id).join(',') + ')') || [];
   const clinicIds = [...new Set(links.map(l => String(l.clinic_id)))];
-  const known = new Map();
-  clinicIds.forEach(id => { const c = findClinic(id); if (c) known.set(id, c); });
 
-  let html = `<div style="border:1px solid var(--border);border-radius:12px;background:#fff;overflow:hidden;">
-    <div style="font-size:0.72rem;color:var(--muted);padding:0.5rem 0.8rem;border-bottom:1px solid var(--border);background:var(--cream);">找到 ${docs.length} 位醫師</div>`;
-  docs.forEach(d => {
-    const mine = links.filter(l => String(l.doctor_id) === String(d.id));
-    html += `<div style="padding:0.7rem 0.8rem;border-bottom:1px solid var(--border);">
-      <div style="font-family:'Noto Serif TC',serif;font-size:0.95rem;font-weight:600;">${d.name_zh} 醫師${d.name_romanized ? ` <span style="font-size:0.76rem;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:400;">${d.name_romanized}</span>` : ''}</div>`;
-    if (!mine.length) {
-      html += '<div style="font-size:0.76rem;color:var(--muted);margin-top:0.2rem;">執業診所資料整理中</div>';
-    } else {
-      html += '<div style="font-size:0.78rem;margin-top:0.3rem;">' + mine.map(l => {
-        const c = known.get(String(l.clinic_id));
-        return c
-          ? `<a href="#" onclick="event.preventDefault();window.openClinicModal('${c.id}')" style="color:var(--rose);text-decoration:none;">${displayName(c.name)}</a> <span style="color:var(--muted);font-size:0.72rem;">${getNeighbourhoodFull(c.neighbourhood) || ''}</span>`
-          : '';
-      }).filter(Boolean).join('<br>') + '</div>';
-    }
-    html += '</div>';
-  });
-  panel.innerHTML = html + '</div>';
+  // Anything not already in memory gets pulled directly, so a doctor at a
+  // clinic outside the current page still resolves to a real card.
+  let clinics = clinicIds.map(id => findClinic(id)).filter(Boolean);
+  const missing = clinicIds.filter(id => !clinics.some(c => String(c.id) === id));
+  if (missing.length) {
+    const extra = await sbGet('clinics?select=id,name,slug,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&id=in.('
+      + missing.map(encodeURIComponent).join(',') + ')');
+    if (extra) clinics = clinics.concat(extra.map(normaliseClinic));
+  }
+
+  const names = docs.map(d => d.name_zh).join('、');
+  panel.innerHTML = `<div style="display:flex;align-items:baseline;gap:0.6rem;flex-wrap:wrap;">
+      <span style="font-family:'Noto Serif TC',serif;font-size:1.05rem;font-weight:600;">${names} 醫師</span>
+      <span style="font-size:0.82rem;color:var(--muted);">執業診所 ${clinics.length} 間</span>
+      <button onclick="clearDoctorSearch()" style="margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:0.25rem 0.7rem;font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;">清除</button>
+    </div>`;
+
+  if (!clinics.length) {
+    panel.innerHTML += '<div style="margin-top:0.6rem;font-size:0.85rem;color:var(--muted);">執業診所資料整理中。</div>';
+    if (grid) grid.innerHTML = '';
+    return;
+  }
+
+  currentPageClinics = clinics;
+  renderPageCards(clinics, false);
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function clearDoctorSearch() {
+  const f = document.getElementById('searchDoctorName');
+  if (f) f.value = '';
+  _doctorMode = false;
+  document.getElementById('doctorResults').style.display = 'none';
+  document.getElementById('doctorResults').innerHTML = '';
+  fetchPage(0, false);
 }
 
 // ─── FILTER / SORT ────────────────────────────────────────────
@@ -1691,8 +1729,10 @@ function applySearch() {
   else { badge.classList.remove('visible'); }
   // Refresh per-device counts to reflect the chosen neighbourhood.
   buildDeviceDropdown();
+  const doctorQ = (document.getElementById('searchDoctorName')?.value || '').trim();
+  if (doctorQ) { runDoctorSearch(doctorQ); return; }
+  if (_doctorMode) { _doctorMode = false; document.getElementById('doctorResults').style.display = 'none'; }
   fetchPage(0, false);
-  runDoctorSearch(document.getElementById('searchDoctorName')?.value || '');
   if (!nameQuery) document.getElementById('prices').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
