@@ -14,7 +14,11 @@
 // ("皮膚科專科醫師") is a judgement call that needs a model. Nothing on the site
 // displays those fields yet, so they can wait.
 //
-// Everything lands review_status='needs_review', published=false.
+// Doctors PUBLISH immediately. A clinic listing its own doctors on its own
+// website is public information and SkinDay is republishing it, not vouching for
+// it. We are not a licensing authority. Corrections come from clinics and
+// doctors contacting us. mohw_verified stays false throughout — that column
+// means "we checked the registry", not "this doctor is unverified".
 //
 // Environment variables, all three already set — nothing new needed:
 //   SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY · ADMIN_SECRET
@@ -226,8 +230,8 @@ async function land(doctors, clinicId, sourceUrl) {
           name_zh: name,
           source_url: sourceUrl,
           evidence_type: 'clinic_declared',   // set explicitly; never rely on the column default
-          review_status: 'needs_review',
-          published: false
+          review_status: 'approved',
+          published: true
         })
       });
       id = made && made[0] && made[0].id;
