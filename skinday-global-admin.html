@@ -876,8 +876,10 @@
           <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
             <div class="form-section-label" style="margin-top:0;">Crawl clinic websites for doctors</div>
             <div class="tw-hint" style="margin-bottom:.75rem;">
-              Works through the 707 single-site clinic domains, a few at a time. Everything it finds lands as
-              <strong>needs review, unpublished</strong>, so nothing reaches patients until you approve it here.
+              Works through the 707 single-site clinic domains, a few at a time. Reads names and titles from each
+              clinic's own team page — no API key and no per-page cost. Names go <strong>live immediately</strong>:
+              a clinic listing its own doctors publicly is public information, and we are republishing it rather than
+              vouching for it. Corrections come from clinics and doctors contacting us.
               Chains and social-only sites are excluded from the queue. Leave the tab open while it runs; press Stop any time.
             </div>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
@@ -1673,7 +1675,7 @@ async function twCrawlStart(retry){
       const res = await fetch('/.netlify/functions/crawl-doctors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-        body: JSON.stringify({ batch: 3, retry: retry === true })
+        body: JSON.stringify({ batch: 5, retry: retry === true })
       });
       data = await res.json();
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
@@ -1685,10 +1687,12 @@ async function twCrawlStart(retry){
     (data.processed || []).forEach(function(p){
       if (p.status === 'done') {
         twCrawlTotals.done++; twCrawlTotals.doctors += p.doctors;
-        twCrawlLog(p.domain + '  ' + p.doctors + ' doctors (' + p.created + ' new, ' + p.linked + ' linked)');
-      } else if (p.status === 'needs_render') {
+        twCrawlLog(p.domain + '  ' + p.doctors + ' doctors: ' + (p.names || '') +
+                   '  (' + p.created + ' new, ' + p.linked + ' linked)');
+      } else if (p.status === 'needs_render' || p.status === 'empty') {
         twCrawlTotals.render++;
-        twCrawlLog(p.domain + '  no doctors in the HTML — needs rendering', 'warn');
+        twCrawlLog(p.domain + '  ' + (p.status === 'empty'
+          ? 'page read fine but lists no doctors' : 'no text in the HTML — needs rendering'), 'warn');
       } else {
         twCrawlTotals.error++;
         twCrawlLog(p.domain + '  ' + (p.error || p.status), 'bad');
