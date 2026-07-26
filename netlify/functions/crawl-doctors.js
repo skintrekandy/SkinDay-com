@@ -87,6 +87,10 @@ const NOT_A_NAME = new Set(['主治','專科','資深','特約','兼任','駐診
   '台中市','臺中市','台南市','臺南市','桃園市','新竹市','嘉義市','彰化縣','苗栗縣']);
 
 const TITLES = ['總院長', '副院長', '院長', '主任醫師', '主治醫師', '主任', '顧問醫師', '醫師'];
+// Words that precede a name but are not titles we record. Trimmed off the front
+// of an over-long run so the name inside can still be found.
+const ROLE_PREFIX = /^(總院長|副院長|執行長|執行董事|創辦人|院長|主任醫師|主治醫師|顧問醫師|主任|醫師|資深|特約|專任|兼任|駐診|特聘|指定|合作)+/;
+
 const TITLE_RANK = { '總院長': 0, '院長': 1, '副院長': 2, '主任': 3, '主任醫師': 4,
                      '主治醫師': 5, '顧問醫師': 6, '醫師': 7 };
 
@@ -151,7 +155,11 @@ function extractDoctors(text) {
     const raw = text.slice(Math.max(0, m.index - 24), m.index)
                     .replace(new RegExp('(' + TITLES.join('|') + ')\\s*$'), '');
     const runMatch = raw.match(/([\u4e00-\u9fff]+)[\s\u3000·、,，.。:：|｜/()（）\[\]-]*$/);
-    const run = runMatch ? runMatch[1] : '';
+    let run = runMatch ? runMatch[1] : '';
+    // Role words that are NOT in TITLES still glue onto the front of a name when
+    // there is no space: 執行長孫克嘉醫師 gave 長孫克嘉, because 長孫 is a genuine
+    // compound surname (長孫無忌). Trim these off an over-long run and re-check.
+    if (run.length > 4) run = run.replace(ROLE_PREFIX, '');
     const lead = (run.length >= 2 && run.length <= 4) ? run : '';
     const beforeName = nameFromChunk(lead);
     if (beforeName) { consider(beforeName, title); continue; }
