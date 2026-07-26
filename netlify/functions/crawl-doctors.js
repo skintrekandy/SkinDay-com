@@ -74,7 +74,17 @@ const NOT_A_NAME = new Set(['主治','專科','資深','特約','兼任','駐診
   '喬雅登','鳳凰電','舒顏萃','艾麗斯','海菲秀','玻尿酸','肉毒桿','洢蓮絲','晶亮瓷','絲儷',
   // Ordinary words:
   '簡介','韓國','權威','須由','能取代','日本','美國','德國','韓式','團隊介','經歷','學歷',
-  '專長','認證','原廠','服務','項目','預約','諮詢','時間','地址','電話','關於']);
+  '專長','認證','原廠','服務','項目','預約','諮詢','時間','地址','電話','關於',
+  // FOUR-character specialty and institution phrases are the residual risk: they
+  // fall inside the 2-4 boundary window, so the run passes and the 3-char tail
+  // then starts with a surname. 乳房外科醫師 yielded 房外科 (房 is a surname).
+  // Both the full phrase and its tail have to be listed.
+  '乳房外科','房外科','一般外科','般外科','整形外科','形外科','美容外科','容外科',
+  '家庭醫學','庭醫學','兒童牙科','童牙科','口腔外科','腔外科','心臟內科','臟內科',
+  '腸胃內科','胃內科','神經內科','經內科','新陳代謝','陳代謝','血液腫瘤','液腫瘤',
+  // institution tails the boundary rule catches only when the full name is long
+  '國立成','花蓮慈','高雄市','高雄長','童綜合','萬芳醫','台北市','臺北市','新北市',
+  '台中市','臺中市','台南市','臺南市','桃園市','新竹市','嘉義市','彰化縣','苗栗縣']);
 
 const TITLES = ['總院長', '副院長', '院長', '主任醫師', '主治醫師', '主任', '顧問醫師', '醫師'];
 const TITLE_RANK = { '總院長': 0, '院長': 1, '副院長': 2, '主任': 3, '主任醫師': 4,
