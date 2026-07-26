@@ -872,6 +872,23 @@
             <button class="tw-inline-btn" onclick="twSearchDoctors()" style="padding:.5rem 1.2rem;">Search</button>
             <button class="tw-inline-btn" onclick="twEditDoctor(null)" style="padding:.5rem 1.2rem;">Add doctor</button>
           </div>
+          <!-- WEBSITE CRAWL -->
+          <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
+            <div class="form-section-label" style="margin-top:0;">Crawl clinic websites for doctors</div>
+            <div class="tw-hint" style="margin-bottom:.75rem;">
+              Works through the 707 single-site clinic domains, a few at a time. Everything it finds lands as
+              <strong>needs review, unpublished</strong>, so nothing reaches patients until you approve it here.
+              Chains and social-only sites are excluded from the queue. Leave the tab open while it runs; press Stop any time.
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button class="tw-inline-btn" id="tw-crawl-start" onclick="twCrawlStart()" style="padding:.5rem 1.2rem;">Start crawl</button>
+              <button class="tw-inline-btn" id="tw-crawl-stop" onclick="twCrawlStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
+              <button class="tw-inline-btn" onclick="twCrawlStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
+              <span id="tw-crawl-progress" style="font-size:.82rem;color:var(--muted);"></span>
+            </div>
+            <div id="tw-crawl-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
+          </div>
+
           <div id="tw-doctor-results"></div>
           <div id="tw-doctor-detail" style="display:none;margin-top:1.5rem;"></div>
         </div>
@@ -1615,6 +1632,86 @@ async function twUnlinkDoctor(linkId){
 }
 
 // ── DOCTORS ─────────────────────────────────────────────────
+
+// ─── WEBSITE CRAWL ────────────────────────────────────────────
+// Calls crawl-doctors a few domains at a time and loops. Small batches so each
+// request finishes well inside the function timeout, and so a bad extraction is
+// visible after seconds rather than after 707 sites.
+let twCrawlRunning = false;
+let twCrawlTotals = { done: 0, doctors: 0, empty: 0, render: 0, error: 0 };
+
+function twCrawlLog(line, tone){
+  const box = document.getElementById('tw-crawl-log');
+  box.style.display = 'block';
+  const colour = tone === 'bad' ? '#b04a4a' : (tone === 'warn' ? '#8a6d3b' : 'inherit');
+  const div = document.createElement('div');
+  div.style.color = colour;
+  div.style.padding = '2px 0';
+  div.textContent = line;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function twCrawlStop(){
+  twCrawlRunning = false;
+  document.getElementById('tw-crawl-stop').style.display = 'none';
+  document.getElementById('tw-crawl-start').style.display = '';
+  twCrawlLog('Stopped.', 'warn');
+}
+
+async function twCrawlStart(retry){
+  if (twCrawlRunning) return;
+  twCrawlRunning = true;
+  twCrawlTotals = { done: 0, doctors: 0, empty: 0, render: 0, error: 0 };
+  document.getElementById('tw-crawl-start').style.display = 'none';
+  document.getElementById('tw-crawl-stop').style.display = '';
+  twCrawlLog(retry ? 'Retrying failed domains…' : 'Starting…');
+
+  while (twCrawlRunning) {
+    let data;
+    try {
+      const res = await fetch('/.netlify/functions/crawl-doctors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+        body: JSON.stringify({ batch: 3, retry: retry === true })
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    } catch (e) {
+      twCrawlLog('Stopping: ' + e.message, 'bad');
+      break;
+    }
+
+    (data.processed || []).forEach(function(p){
+      if (p.status === 'done') {
+        twCrawlTotals.done++; twCrawlTotals.doctors += p.doctors;
+        twCrawlLog(p.domain + '  ' + p.doctors + ' doctors (' + p.created + ' new, ' + p.linked + ' linked)');
+      } else if (p.status === 'needs_render') {
+        twCrawlTotals.render++;
+        twCrawlLog(p.domain + '  no doctors in the HTML — needs rendering', 'warn');
+      } else {
+        twCrawlTotals.error++;
+        twCrawlLog(p.domain + '  ' + (p.error || p.status), 'bad');
+      }
+    });
+
+    document.getElementById('tw-crawl-progress').textContent =
+      twCrawlTotals.done + ' sites, ' + twCrawlTotals.doctors + ' doctors · ' +
+      twCrawlTotals.render + ' need rendering · ' + twCrawlTotals.error + ' failed · ' +
+      (data.remaining || 0) + ' left';
+
+    if (data.done || !(data.processed || []).length || !data.remaining) {
+      twCrawlLog('Finished. ' + twCrawlTotals.doctors + ' doctors across ' + twCrawlTotals.done + ' sites, all unpublished and waiting for review.');
+      break;
+    }
+  }
+
+  twCrawlRunning = false;
+  document.getElementById('tw-crawl-stop').style.display = 'none';
+  document.getElementById('tw-crawl-start').style.display = '';
+  twSearchDoctors();
+}
+
 async function twSearchDoctors(){
   const q = document.getElementById('tw-doctor-q').value.trim();
   const filter = document.getElementById('tw-doctor-filter').value;
