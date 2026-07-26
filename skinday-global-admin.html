@@ -1689,6 +1689,9 @@ async function twCrawlStart(retry){
         twCrawlTotals.done++; twCrawlTotals.doctors += p.doctors;
         twCrawlLog(p.domain + '  ' + p.doctors + ' doctors: ' + (p.names || '') +
                    '  (' + p.created + ' new, ' + p.linked + ' linked)');
+      } else if (p.status === 'suspicious') {
+        twCrawlTotals.render++;
+        twCrawlLog(p.domain + '  ' + p.doctors + ' names — not a team page, skipped', 'warn');
       } else if (p.status === 'needs_render' || p.status === 'empty') {
         twCrawlTotals.render++;
         twCrawlLog(p.domain + '  ' + (p.status === 'empty'
