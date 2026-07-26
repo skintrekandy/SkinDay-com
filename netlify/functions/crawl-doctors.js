@@ -61,7 +61,20 @@ const NOT_A_NAME = new Set(['主治','專科','資深','特約','兼任','駐診
   '所有','各位','團隊','專業','主任','院長','副院','總院','美容','皮膚','整形','醫美','諮詢',
   '合作','指定','推薦','多位','兩位','三位','四位','五位','六位','七位','八位','九位','十位',
   '執業','看診','門診','值班','當日','現場','女性','男性','以上','其他','相關','本站','聯合',
-  '主治醫','專任','特聘','資深主','由本','位醫','名醫','等醫','與醫','的醫']);
+  '主治醫','專任','特聘','資深主','由本','位醫','名醫','等醫','與醫','的醫',
+  // Every one of these parsed as a person on the first live run. Each is the
+  // tail of a longer phrase whose first character is a genuine surname.
+  // Specialties:
+  '皮膚科','皮膚部','麻醉科','麻醉','家醫科','內科','外科','眼科','牙科','婦產科','小兒科',
+  '復健科','神經科','容專科','容外科','容中心','醫美科','雷射科',
+  // Institutions:
+  '林口長','高雄醫','高雄榮','國防醫','馬偕紀','馬偕醫','國泰綜','成大醫','台大醫','臺大醫',
+  '衛福部','衛生福','華民國','尚診所','榮總醫','慈濟醫','長庚醫','奇美醫','亞東紀',
+  // Product and brand names, which appear constantly on these pages:
+  '喬雅登','鳳凰電','舒顏萃','艾麗斯','海菲秀','玻尿酸','肉毒桿','洢蓮絲','晶亮瓷','絲儷',
+  // Ordinary words:
+  '簡介','韓國','權威','須由','能取代','日本','美國','德國','韓式','團隊介','經歷','學歷',
+  '專長','認證','原廠','服務','項目','預約','諮詢','時間','地址','電話','關於']);
 
 const TITLES = ['總院長', '副院長', '院長', '主任醫師', '主治醫師', '主任', '顧問醫師', '醫師'];
 const TITLE_RANK = { '總院長': 0, '院長': 1, '副院長': 2, '主任': 3, '主任醫師': 4,
@@ -70,6 +83,10 @@ const TITLE_RANK = { '總院長': 0, '院長': 1, '副院長': 2, '主任': 3, '
 // Given up to four characters sitting before a title, return the actual name.
 function nameFromChunk(chunk) {
   if (!chunk) return null;
+  // If the WHOLE run is a known non-name, reject it outright. Do not fall back
+  // to a shorter suffix: 舒顏萃醫師 (Sculptra) otherwise yielded 顏萃, because
+  // 顏 is a surname. A stopword means the phrase is not a person at all.
+  if (NOT_A_NAME.has(chunk)) return null;
   if (chunk.length >= 4) {
     const four = chunk.slice(-4);
     if (COMPOUND.has(four.slice(0, 2))) return four;
@@ -113,17 +130,29 @@ function extractDoctors(text) {
     // without this the name came out as 師許嵐 — 師 is itself a rare surname.
     // It also kills prose false positives: "多位醫師駐診，主治醫師均具備" gave
     // 師駐診 before this line existed.
-    const lead = text.slice(Math.max(0, m.index - 8), m.index)
-                     .replace(/[^\u4e00-\u9fff]/g, '')
-                     .replace(new RegExp('(' + TITLES.join('|') + ')', 'g'), '');
+    // THE BOUNDARY RULE, and it is what stops phrase fragments.
+    // A name sits at a word boundary: after a space, punctuation, a line break
+    // or the start of the text. A specialty or an institution does not.
+    //   "台北馬偕紀念醫院皮膚科主治醫師" -> the run of Chinese before the title is
+    //   11 characters long, so 皮膚科 is part of a phrase, not a name.
+    //   "彭賢禮 院長" -> skip the space, the run is 3 characters. A name.
+    // Without this, 皮膚科醫師 parsed as a person 61 times, because 皮 is a real
+    // surname. Same for 麻醉科, 林口長庚, 醫學美容中心, 簡介, 韓國.
+    const raw = text.slice(Math.max(0, m.index - 24), m.index)
+                    .replace(new RegExp('(' + TITLES.join('|') + ')\\s*$'), '');
+    const runMatch = raw.match(/([\u4e00-\u9fff]+)[\s\u3000·、,，.。:：|｜/()（）\[\]-]*$/);
+    const run = runMatch ? runMatch[1] : '';
+    const lead = (run.length >= 2 && run.length <= 4) ? run : '';
     const beforeName = nameFromChunk(lead);
     if (beforeName) { consider(beforeName, title); continue; }
 
     // Nothing usable before it, so the title may introduce the name instead:
     // 院長 王修含
-    const tail = text.slice(m.index + title.length, m.index + title.length + 8)
-                     .replace(/[^\u4e00-\u9fff]/g, '')
-                     .replace(new RegExp('(' + TITLES.join('|') + ')', 'g'), '');
+    const rawTail = text.slice(m.index + title.length, m.index + title.length + 24)
+                        .replace(new RegExp('^\\s*(' + TITLES.join('|') + ')'), '');
+    const tailMatch = rawTail.match(/^[\s\u3000·、,，.。:：|｜/()（）\[\]-]*([\u4e00-\u9fff]+)/);
+    const tailRun = tailMatch ? tailMatch[1] : '';
+    const tail = (tailRun.length >= 2 && tailRun.length <= 4) ? tailRun : '';
     let afterName = null;
     if (tail.length >= 4 && COMPOUND.has(tail.slice(0, 2))) afterName = tail.slice(0, 4);
     else if (tail.length >= 2 && SURNAME.has(tail[0]) && !NOT_A_NAME.has(tail.slice(0, 2))) {
