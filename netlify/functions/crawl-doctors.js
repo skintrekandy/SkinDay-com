@@ -25,7 +25,12 @@
 
 const BATCH_DEFAULT = 5;
 const FETCH_TIMEOUT_MS = 12000;
-const MAX_DOCTORS_PER_PAGE = 40;
+// A real Taiwan aesthetic clinic team is 1-12. More than this many names means
+// the page was a news feed, a blog index or a homepage of article teasers, not a
+// team page — 醫美時尚雜誌, a magazine, yielded 21. Above the cap we land NOTHING
+// and flag the domain, because publishing 36 invented doctors is far worse than
+// missing one real team we can re-crawl.
+const MAX_PLAUSIBLE_TEAM = 15;
 
 const SB = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -127,8 +132,7 @@ function extractDoctors(text) {
     consider(afterName, title);
   }
 
-  return [...found.entries()].slice(0, MAX_DOCTORS_PER_PAGE)
-    .map(([name_zh, title]) => ({ name_zh, title }));
+  return [...found.entries()].map(([name_zh, title]) => ({ name_zh, title }));
 }
 
 // ── Supabase helpers ────────────────────────────────────────────────────────
@@ -185,6 +189,10 @@ function findTeamUrl(html, baseUrl) {
     const href = m[1];
     const label = m[2].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     if (!href || href.startsWith('#') || /^(mailto|tel|javascript):/i.test(href)) continue;
+    // A blog post titled "醫師談皮秒雷射" scores as high as a team page and is
+    // full of other clinics' doctors. Never follow content URLs.
+    if (/\/(blog|news|article|articles|post|posts|category|tag|archive|column|faq|case|cases|video|activity|event|promo)(\/|$|\?)/i.test(href)
+        || /[?&]p=\d|[?&]page_id=/i.test(href)) continue;
     let abs;
     try { abs = new URL(href, baseUrl).href; } catch { continue; }
     if (new URL(abs).hostname !== new URL(baseUrl).hostname) continue;   // same site only
@@ -273,6 +281,11 @@ async function crawlOne(row) {
   // a 門診時間 table — dermayoung.com.tw does exactly that.
   if (!doctors.length && teamUrl !== home.finalUrl) doctors = extractDoctors(toText(home.html));
   if (!doctors.length) return { status: 'empty', team_url: teamUrl, doctors_found: 0 };
+
+  if (doctors.length > MAX_PLAUSIBLE_TEAM) {
+    return { status: 'suspicious', team_url: teamUrl, doctors_found: doctors.length,
+             last_error: 'yielded ' + doctors.length + ' names — likely not a team page, nothing landed' };
+  }
 
   const { created, linked } = await land(doctors, row.clinic_id, teamUrl);
   return { status: 'done', team_url: teamUrl, doctors_found: doctors.length, created, linked,
