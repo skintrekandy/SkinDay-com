@@ -33,24 +33,29 @@ const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET       = 'clinic-photos';
 
 // Ask Google for a card-sized image rather than the full original. lh3 accepts
-// a size suffix on the URL, which keeps us inside the Supabase free tier: the
-// whole directory at ~60KB an image is well under 1GB, where full-size
-// originals would not be. Appended only when the URL has no suffix already.
-// Ask Google for a card-sized image rather than the full original. lh3 accepts
-// a size suffix on the URL, which keeps us inside the Supabase free tier: the
-// whole directory at ~60KB an image sits well under 1GB, where full-size
-// originals would not. Every case where appending could CORRUPT the URL is
-// left untouched instead — a full-size image that loads beats a resized one
-// that 404s.
+// a size suffix on the URL, and this is the single most important line in the
+// file: the Supabase free tier is 1GB, and full-size originals measured
+// 1,363 kB EACH — 8,534 of those is 11.6 GB, eleven times over the limit.
+//
+// ⭐ THE BUG THIS REPLACES: the stored Outscraper URLs ALREADY carry Google's
+// own suffix (...token=w1920-h1080-k-no). The first version saw an existing
+// "=" and bailed out with "already sized, leave it alone", which faithfully
+// downloaded 1920px originals. Preserving Google's size was never the goal.
+// An existing suffix is now REPLACED, not respected.
+//
+// Two shapes are still left untouched, because appending would break them:
+// a URL ending in a real filename (photo.jpg=w800 is not a valid lh3 request)
+// and one carrying a query string. A full-size image that loads still beats a
+// resized one that 404s.
 function sized(url, px) {
   if (!url) return url;
-  if (url.includes('?'))               return url;  // query string: leave alone
-  const tail = url.split('/').pop() || '';
-  if (tail.includes('='))              return url;  // already carries a size
-  if (/\.[a-z0-9]{2,4}$/i.test(tail)) return url;  // ends in a real filename;
-  // appending would give photo.jpg=w800, which is not a valid lh3 request.
-  // Google's resizable URLs end in an opaque token with no extension.
-  return url + '=w' + px;
+  if (url.includes('?')) return url;                 // query string: leave alone
+  const cut  = url.lastIndexOf('/');
+  const tail = url.slice(cut + 1);
+  if (/\.[a-z0-9]{2,4}$/i.test(tail)) return url;    // real filename: leave alone
+  const eq    = tail.indexOf('=');
+  const token = eq === -1 ? tail : tail.slice(0, eq); // drop Google's suffix
+  return url.slice(0, cut + 1) + token + '=w' + px;
 }
 
 function ok(body)      { return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body, null, 2) }; }
@@ -98,6 +103,33 @@ exports.handler = async (event) => {
     // ── STATS ──────────────────────────────────────────────────────────────
     if (action === 'stats') {
       return ok({ action, country: country || 'all', remaining: await countRemaining() });
+    }
+
+    // ── RESET — undo re-hosting so rows can be redone at a smaller size ────
+    // Points photo back at photo_source and clears the stamp, which makes the
+    // rows eligible again. The storage objects are left in place: run uses the
+    // same {country}/{id}.{ext} path with upsert, so they are overwritten and
+    // the bucket total drops to the new size rather than doubling.
+    if (action === 'reset') {
+      let sel = sb.from('clinics')
+        .select('id, photo_source')
+        .not('photo_rehosted_at', 'is', null)
+        .limit(500);
+      if (country) sel = sel.eq('country', country);
+      const { data, error } = await sel;
+      if (error) throw new Error(error.message);
+      const rows = (data || []).filter(r => r.photo_source);
+      const done = await Promise.all(rows.map(r =>
+        sb.from('clinics')
+          .update({ photo: r.photo_source, photo_rehosted_at: null })
+          .eq('id', r.id)
+          .then(res => !res.error)
+      ));
+      return ok({
+        action, reset: done.filter(Boolean).length, attempted: rows.length,
+        skipped_no_source: (data || []).length - rows.length,
+        note: 'These rows are eligible again. Re-run with a smaller px.'
+      });
     }
 
     // ── PROBE — reads only, writes nothing. Run this first. ────────────────
@@ -177,7 +209,7 @@ exports.handler = async (event) => {
       });
     }
 
-    return bad(400, 'Unknown action. Use probe, stats or run.');
+    return bad(400, 'Unknown action. Use probe, stats, run or reset.');
   } catch (e) {
     return bad(500, String(e.message || e));
   }
