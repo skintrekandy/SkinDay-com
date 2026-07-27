@@ -210,12 +210,34 @@ function lineFromUrl(raw) {
   return { line_url: clean, line_id: NOT_A_LINE_ID.has(id.toLowerCase()) ? '' : id };
 }
 
-// A bare @id written next to the word LINE. "官方LINE：@abc123", "加LINE @xyz",
-// and 賴 as slang. The proximity requirement is what keeps a Facebook vanity
-// handle or an email local-part out: one real clinic name in this directory
-// reads 預約請加@ugb9932c and its FACEBOOK page is facebook.com/ugb9932c, so an
-// @ on its own proves nothing about which platform it belongs to.
-const LINE_NEAR = /(line\s*id|line|賴|加好友|官方帳號|官方帳號|line@|加入好友)/i;
+// A bare @id written next to the word LINE. "官方LINE：@abc123", "加LINE @xyz".
+// The proximity requirement is what keeps a Facebook vanity handle or an email
+// local-part out: one real clinic name in this directory reads 預約請加@ugb9932c
+// and its FACEBOOK page is facebook.com/ugb9932c, so an @ on its own proves
+// nothing about which platform it belongs to.
+//
+// TWO OF THESE KEYWORDS WERE TOO LOOSE, AND BOTH FIRE ON REAL DIRECTORY DATA.
+// Found in M18.4 while mining clinics.name for the same handles:
+//
+//   1. Bare /line/i matches INSIDE ordinary words: online, timeline, guideline,
+//      hairline, airline, headline. "線上預約 / online booking @handle" would be
+//      read as a LINE id, and an online-booking line sits on a large share of
+//      Taiwanese clinic sites. Now anchored \b on both sides, which still
+//      matches "LINE：", "LINE官方" and "line@" because a full-width colon and
+//      a CJK character are not ASCII word characters. \bline\s*id\b is kept
+//      ahead of it so the run-together spelling "LINEID" still matches.
+//
+//   2. Bare 賴 is a COMMON TAIWANESE SURNAME, not only LINE slang. Across
+//      clinics.name in this directory, 12 of the 16 hits on 賴 were doctors -
+//      賴俊元 賴憲宏 賴柏如 賴炳文 賴雅薇 張賴妙珣 賴政光 - plus 信賴診所 and
+//      博愛信賴美學, where 信賴 simply means "trust". On a page for 賴柏如醫師,
+//      any @handle within 40 characters would have been written to that clinic
+//      as its LINE id. 賴 now counts only when qualified - 加賴 官方賴 我的賴
+//      私賴 搜尋賴 好友賴, or 賴 followed by id / 帳號. A surname is never
+//      preceded by those, and the slang usage effectively always is.
+//
+// Duplicate 官方帳號 dropped, and line@ removed as redundant under \bline\b.
+const LINE_NEAR = /(\bline\s*id\b|\bline\b|加好友|加入好友|官方帳號|(?:加|官方|我的|私|搜尋|好友)賴|賴\s*(?:id|帳號))/i;
 const TLD_TAIL = /\.(com|net|org|tw|co|io|jp|kr|cn|edu|gov|me)$/i;
 
 function lineFromText(text) {
