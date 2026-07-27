@@ -891,6 +891,29 @@
             <div id="tw-crawl-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
           </div>
 
+          <!-- CONTACT CRAWL (Facebook / Instagram / LINE) -->
+          <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
+            <div class="form-section-label" style="margin-top:0;">Crawl clinic websites for contacts</div>
+            <div class="tw-hint" style="margin-bottom:.75rem;">
+              Reads each clinic's own site for its official <strong>Facebook page, Instagram profile and LINE
+              account</strong>, a few domains at a time. Same 701 domains as the doctor crawl, but tracked on its own
+              status, so the doctor run's history is untouched and either pass can be re-run independently.
+              A link on a clinic's own site IS that clinic's official account, which is why nothing is ever taken from
+              search results or beauty aggregators. LINE is often written as bare text rather than a link
+              (<em>官方LINE：@abc123</em>), so text is read as well as links.
+              <strong>Existing contacts are never overwritten</strong>: only an empty field is filled. A handle that
+              turns up on 3 or more other clinics is treated as a shared plugin and rejected.
+              Leave the tab open while it runs; press Stop any time.
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <button class="tw-inline-btn" id="tw-social-start" onclick="twSocialStart()" style="padding:.5rem 1.2rem;">Start contact crawl</button>
+              <button class="tw-inline-btn" id="tw-social-stop" onclick="twSocialStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
+              <button class="tw-inline-btn" onclick="twSocialStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
+              <span id="tw-social-progress" style="font-size:.82rem;color:var(--muted);"></span>
+            </div>
+            <div id="tw-social-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
+          </div>
+
           <div id="tw-doctor-results"></div>
           <div id="tw-doctor-detail" style="display:none;margin-top:1.5rem;"></div>
         </div>
@@ -1717,6 +1740,98 @@ async function twCrawlStart(retry){
   document.getElementById('tw-crawl-stop').style.display = 'none';
   document.getElementById('tw-crawl-start').style.display = '';
   twSearchDoctors();
+}
+
+// ─── CONTACT CRAWL (Facebook / Instagram / LINE) ───────────────
+// Same client-side loop as the doctor crawl, pointed at crawl-socials and
+// claiming on social_status. Every landed field is named in the log, because a
+// bare count of "3 found" tells you nothing about whether it found the right
+// account.
+let twSocialRunning = false;
+let twSocialTotals = { done: 0, fields: 0, empty: 0, render: 0, shared: 0, error: 0 };
+
+function twSocialLog(line, tone){
+  const box = document.getElementById('tw-social-log');
+  box.style.display = 'block';
+  const colour = tone === 'bad' ? '#b04a4a' : (tone === 'warn' ? '#8a6d3b' : 'inherit');
+  const div = document.createElement('div');
+  div.style.color = colour;
+  div.style.padding = '2px 0';
+  div.textContent = line;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+function twSocialStop(){
+  twSocialRunning = false;
+  document.getElementById('tw-social-stop').style.display = 'none';
+  document.getElementById('tw-social-start').style.display = '';
+  twSocialLog('Stopped.', 'warn');
+}
+
+async function twSocialStart(retry){
+  if (twSocialRunning) return;
+  twSocialRunning = true;
+  twSocialTotals = { done: 0, fields: 0, empty: 0, render: 0, shared: 0, error: 0 };
+  document.getElementById('tw-social-start').style.display = 'none';
+  document.getElementById('tw-social-stop').style.display = '';
+  twSocialLog(retry ? 'Retrying failed domains…' : 'Starting…');
+
+  while (twSocialRunning) {
+    let data;
+    try {
+      const res = await fetch('/.netlify/functions/crawl-socials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+        body: JSON.stringify({ batch: 5, retry: retry === true })
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    } catch (e) {
+      twSocialLog('Stopping: ' + e.message, 'bad');
+      break;
+    }
+
+    (data.processed || []).forEach(function(p){
+      if (p.status === 'done') {
+        twSocialTotals.done++; twSocialTotals.fields += p.found;
+        var bits = [];
+        if (p.line) bits.push('LINE ' + p.line);
+        if (p.facebook) bits.push(p.facebook);
+        if (p.instagram) bits.push(p.instagram);
+        twSocialLog(p.domain + '  +' + p.found + ' (' + (p.fields || '') + ')  ' + bits.join('  ·  '));
+        if (p.error) twSocialLog('   ' + p.domain + '  ' + p.error, 'warn');
+      } else if (p.status === 'suspicious') {
+        twSocialTotals.shared++;
+        twSocialLog(p.domain + '  ' + (p.error || 'shared handle, nothing landed'), 'warn');
+      } else if (p.status === 'empty') {
+        twSocialTotals.empty++;
+        twSocialLog(p.domain + '  page read fine but shows no Facebook, Instagram or LINE', 'warn');
+      } else if (p.status === 'needs_render') {
+        twSocialTotals.render++;
+        twSocialLog(p.domain + '  no text in the HTML — needs rendering', 'warn');
+      } else {
+        twSocialTotals.error++;
+        twSocialLog(p.domain + '  ' + (p.error || p.status), 'bad');
+      }
+    });
+
+    document.getElementById('tw-social-progress').textContent =
+      twSocialTotals.done + ' sites, ' + twSocialTotals.fields + ' contacts · ' +
+      twSocialTotals.empty + ' none listed · ' + twSocialTotals.shared + ' shared · ' +
+      twSocialTotals.render + ' need rendering · ' + twSocialTotals.error + ' failed · ' +
+      (data.remaining || 0) + ' left';
+
+    if (data.done || !(data.processed || []).length || !data.remaining) {
+      twSocialLog('Finished. ' + twSocialTotals.fields + ' contacts across ' +
+                  twSocialTotals.done + ' sites, live on the directory now.');
+      break;
+    }
+  }
+
+  twSocialRunning = false;
+  document.getElementById('tw-social-stop').style.display = 'none';
+  document.getElementById('tw-social-start').style.display = '';
 }
 
 async function twSearchDoctors(){
