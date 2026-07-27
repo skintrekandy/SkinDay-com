@@ -35,6 +35,23 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* Panels for contacts, verified devices and the doctor team. */
+    .panel { border: 1px solid var(--border); background: #fff; border-radius: var(--radius);
+             padding: .85rem 1rem; margin: 0 0 .8rem; }
+    .panel-head { font-family: var(--font-sans); font-size: .82rem; font-weight: 500;
+                  display: flex; align-items: center; justify-content: space-between;
+                  gap: .5rem; margin-bottom: .6rem; color: var(--deep); }
+    .panel-head em { font-style: normal; font-weight: 400; font-size: .76rem; color: var(--muted); }
+    .panel-head .tick { color: var(--gold); margin-right: .35rem; }
+    .panel-note { font-size: .72rem; color: var(--muted); margin-top: .55rem; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: .35rem; }
+    .chip { font-family: var(--font-sans); font-size: .78rem; border: 1px solid var(--border);
+            border-radius: 20px; padding: .2rem .62rem; background: var(--cream); color: var(--text); }
+    .chip-doctor { font-family: 'Noto Serif TC', var(--font-serif), serif; }
+    .contact-row { display: grid; gap: .5rem; }
+    .contact-row .btn { width: 100%; justify-content: center; }
+    .line-id { font-style: normal; color: var(--muted); font-size: .8rem; margin-left: .3rem; }
+
     body {
       background: var(--cream);
       color: var(--text);
@@ -325,7 +342,7 @@
 <script>
 (function() {
   const SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
-  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDY5MTI5NjMsImV4cCI6MjAyMjQ4ODk2M30.tCFqfRDrT-aUfXcSaTBnPj2SZXQfxyCBZGhqenL_b9s';
+  const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
 
   function toSlug(name) {
     return (name || '')
@@ -342,6 +359,80 @@
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  // ── LINE, the same rules as taiwan.html and crawl-socials.js ────────────
+  // A stored line_url is always preferred: lin.ee and page.line.me open in a
+  // desktop browser as well as in the app. The R/ti/p form is only built when an
+  // @id is all we hold, and there the @ MUST travel as %40 or the link fails.
+  function lineHref(c) {
+    if (!c) return '';
+    if (c.line_url) return c.line_url;
+    if (c.line_id) return 'https://line.me/R/ti/p/%40' + encodeURIComponent(String(c.line_id).replace(/^@+/, ''));
+    return '';
+  }
+
+  function hasContacts(c) {
+    return !!(c && (c.facebook_url || c.instagram_url || lineHref(c)));
+  }
+
+  // The four manufacturer-verified devices, short labels as on the cards.
+  const TECH_LABEL = {
+    '\u9CF3\u51F0\u96FB\u6CE2 Thermage FLX': '\u9CF3\u51F0\u96FB\u6CE2',
+    '\u7F8E\u570B\u97F3\u6CE2\u4E8C\u4EE3 Ultherapy Prime': '\u7F8E\u570B\u97F3\u6CE2\u4E8C\u4EE3',
+    '\u8702\u5DE2\u76AE\u79D2 PicoSure': '\u8702\u5DE2\u76AE\u79D2',
+    '\u8D85\u76AE\u79D2 PicoWay': '\u8D85\u76AE\u79D2'
+  };
+
+  // Team order, same rank as taiwan.html: a Taiwan clinic is very often named
+  // after its founding doctor, and that doctor has to lead.
+  function orderTeam(list, clinicName) {
+    const cname = String(clinicName || '');
+    const rank = function (d) {
+      if (d.name_zh && cname.indexOf(d.name_zh) !== -1) return 0;
+      const t = d.title || '';
+      if (t.indexOf('\u9662\u9577') !== -1) return 1;
+      if (t.indexOf('\u4E3B\u4EFB') !== -1) return 2;
+      if (t.indexOf('\u4E3B\u6CBB') !== -1) return 3;
+      return 4;
+    };
+    return list.slice().sort(function (a, b) {
+      return rank(a) - rank(b) || String(a.name_zh).localeCompare(String(b.name_zh), 'zh-Hant');
+    });
+  }
+
+  // Structured data. sameAs carries the contact channels M18.3 collected, so a
+  // search engine can tie the clinic to its own Facebook, Instagram and LINE.
+  function injectJsonLd(clinic, url, loc, country, photo) {
+    const same = [clinic.website, clinic.facebook_url, clinic.instagram_url, lineHref(clinic)].filter(Boolean);
+    const ld = {
+      '@context': 'https://schema.org',
+      '@type': 'MedicalClinic',
+      name: clinic.name,
+      url: url
+    };
+    if (loc || country) {
+      ld.address = { '@type': 'PostalAddress', addressLocality: loc || country,
+                     addressCountry: clinic.country === 'hongkong' ? 'HK' : 'TW' };
+    }
+    if (clinic.phone) ld.telephone = clinic.phone;
+    if (photo) ld.image = photo;
+    if (same.length) ld.sameAs = same;
+    if (clinic.lat && clinic.lng) {
+      ld.geo = { '@type': 'GeoCoordinates', latitude: Number(clinic.lat), longitude: Number(clinic.lng) };
+    }
+    if (clinic.rating && clinic.reviews) {
+      ld.aggregateRating = { '@type': 'AggregateRating', ratingValue: String(clinic.rating),
+                             reviewCount: String(clinic.reviews), bestRating: '5' };
+    }
+    let el = document.getElementById('clinic-jsonld');
+    if (!el) {
+      el = document.createElement('script');
+      el.type = 'application/ld+json';
+      el.id = 'clinic-jsonld';
+      document.head.appendChild(el);
+    }
+    el.textContent = JSON.stringify(ld);
   }
 
   function starsHtml(rating) {
@@ -370,7 +461,11 @@
 
   function updateMeta(clinic) {
     const lang = primaryLang(clinic.country);
-    const slug = toSlug(clinic.name);
+    // The canonical URL comes from the STORED slug. Deriving it from the name
+    // was how this page produced /clinic/sofwave for an Airlee branch: Taiwan
+    // clinic names are SEO keyword strings, so stripping non-ASCII leaves
+    // whatever device brand sits in the marketing tail.
+    const slug = clinic.slug || toSlug(clinic.name);
     const url = 'https://skinday.com/clinic/' + slug;
     const loc = clinic.neighbourhood || clinic.district || '';
     const country = countryLabel(clinic.country, lang);
@@ -404,7 +499,9 @@
     setMeta('tw-image', 'content', photo);
   }
 
-  function renderClinic(clinic) {
+  function renderClinic(clinic, doctors, devices) {
+    doctors = doctors || [];
+    devices = devices || [];
     updateMeta(clinic);
 
     const lang = primaryLang(clinic.country);
@@ -476,6 +573,58 @@
         '</div></div>';
     }
 
+    // ── VERIFIED DEVICES ──────────────────────────────────────────────────
+    const devicesHtml = devices.length
+      ? '<div class="panel"><div class="panel-head"><span class="tick">\u2713</span>'
+        + (lang === 'zh' ? '\u539F\u5EE0\u8A8D\u8A3C\u5100\u5668' : 'Manufacturer-verified devices') + '</div>'
+        + '<div class="chip-row">'
+        + devices.map(function (t) { return '<span class="chip">' + escapeHtml(TECH_LABEL[t] || t) + '</span>'; }).join('')
+        + '</div></div>'
+      : '';
+
+    // ── DOCTOR TEAM. Published from what the clinic states on its own site, so
+    //    the caveat is on the page rather than implied.
+    const teamHtml = doctors.length
+      ? '<div class="panel"><div class="panel-head">'
+        + (lang === 'zh' ? '\u91AB\u5E2B\u5718\u968A' : 'Doctors')
+        + '<em>' + doctors.length + (lang === 'zh' ? ' \u4F4D' : '') + '</em></div>'
+        + '<div class="chip-row">'
+        + doctors.map(function (d) {
+            return '<span class="chip chip-doctor" title="' + escapeHtml(d.title || '') + '">' + escapeHtml(d.name_zh) + '</span>';
+          }).join('')
+        + '</div><p class="panel-note">'
+        + (lang === 'zh'
+            ? '\u7531\u8A3A\u6240\u81EA\u884C\u516C\u958B\u4E4B\u8CC7\u6599\u6574\u7406\uFF0C\u975E\u57F7\u696D\u767B\u8A18\u67E5\u6838\u3002'
+            : 'Compiled from what the clinic publishes on its own website.')
+        + '</p></div>'
+      : '';
+
+    // ── CONTACT CHANNELS. LINE first: in Taiwan it is how a patient books. The
+    //    @id is printed beside it because the deep link does nothing on a
+    //    desktop browser, where a readable id you can type into the app is the
+    //    only thing that works.
+    let contactHtml = '';
+    if (hasContacts(clinic)) {
+      const line = lineHref(clinic);
+      const rows = [];
+      if (line) {
+        rows.push('<a class="btn btn-outline" href="' + escapeHtml(line) + '" target="_blank" rel="noopener">'
+          + '\uD83D\uDCAC ' + (lang === 'zh' ? 'LINE \u8AEE\u8A62' : 'LINE')
+          + (clinic.line_id ? ' <em class="line-id">' + escapeHtml(clinic.line_id) + '</em>' : '') + '</a>');
+      }
+      if (clinic.facebook_url) {
+        rows.push('<a class="btn btn-outline" href="' + escapeHtml(clinic.facebook_url) + '" target="_blank" rel="noopener">'
+          + '\uD83D\uDC4D ' + (lang === 'zh' ? 'Facebook \u7C89\u7D72\u9801' : 'Facebook') + '</a>');
+      }
+      if (clinic.instagram_url) {
+        rows.push('<a class="btn btn-outline" href="' + escapeHtml(clinic.instagram_url) + '" target="_blank" rel="noopener">'
+          + '\uD83D\uDCF7 Instagram</a>');
+      }
+      contactHtml = '<div class="panel"><div class="panel-head">'
+        + (lang === 'zh' ? '\u806F\u7D61\u65B9\u5F0F' : 'Contact') + '</div>'
+        + '<div class="contact-row">' + rows.join('') + '</div></div>';
+    }
+
     const html = heroHtml +
       '<div class="clinic-wrap">' +
         '<div class="breadcrumb">' +
@@ -495,6 +644,9 @@
         '<hr class="divider" />' +
         infoGridHtml +
         ((websiteBtn || mapsBtn) ? '<div class="action-row">' + websiteBtn + mapsBtn + '</div>' : '') +
+        contactHtml +
+        devicesHtml +
+        teamHtml +
         photosHtml +
         '<div class="back-section">' +
           '<a href="' + dirUrl + '">' +
@@ -505,6 +657,12 @@
       '</div>';
 
     document.getElementById('clinic-root').innerHTML = html;
+
+    injectJsonLd(clinic,
+      'https://skinday.com/clinic/' + (clinic.slug || toSlug(clinic.name)),
+      loc, country,
+      photos.length ? photos[0] : '');
+
     // Hide SSR block if present (injected server-side)
     const ssr = document.getElementById('ssr-content');
     if (ssr) ssr.style.display = 'none';
@@ -519,66 +677,75 @@
     document.getElementById('clinic-root').innerHTML = html;
   }
 
-  async function init() {
-    // Extract slug from URL path: /clinic/my-clinic-name
-    const parts = window.location.pathname.split('/').filter(Boolean);
-    const slug = decodeURIComponent(parts[parts.length - 1] || '');
-
-    if (!slug || slug === 'clinic') {
-      renderNotFound('');
-      return;
-    }
-
+  async function sbGet(path) {
     try {
-      const res = await fetch(
-        SUPABASE_URL + '/rest/v1/clinics' +
-        '?select=id,name,neighbourhood,country,phone,website,rating,reviews,photos' +
-        '&country=in.(taiwan,hongkong)' +
-        '&order=id',
-        {
-          headers: {
-            apikey: SUPABASE_ANON,
-            Authorization: 'Bearer ' + SUPABASE_ANON
-          }
-        }
-      );
+      const r = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+        headers: { apikey: SUPABASE_ANON, Authorization: 'Bearer ' + SUPABASE_ANON }
+      });
+      if (!r.ok) { console.error('clinic-com: ' + r.status + ' on ' + path); return null; }
+      return await r.json();
+    } catch (e) { console.error('clinic-com:', e); return null; }
+  }
 
-      if (!res.ok) {
-        console.error('clinic-com: fetch failed', res.status);
-        renderNotFound(slug);
-        return;
-      }
-
-      const clinics = await res.json();
-
-      function toSlugLocal(name) {
-        return (name || '')
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-+|-+$/g, '')
-          .trim();
-      }
-
-      const clinic = clinics.find(c => toSlugLocal(c.name) === slug);
-
-      if (!clinic) {
-        renderNotFound(slug);
-        return;
-      }
-
-      // Parse photos if stored as JSON string
-      if (clinic.photos && typeof clinic.photos === 'string') {
-        try { clinic.photos = JSON.parse(clinic.photos); } catch(e) { clinic.photos = []; }
-      }
-
-      renderClinic(clinic);
-
-    } catch (err) {
-      console.error('clinic-com: error', err);
-      renderNotFound(slug);
+  async function init() {
+    // /clinic/drskin-ks -> drskin-ks
+    const parts = window.location.pathname.split('/').filter(Boolean);
+    let slug = decodeURIComponent(parts[parts.length - 1] || '');
+    if (!slug || slug === 'clinic') {
+      // ?slug= is a fallback so the page can be opened directly for testing.
+      slug = new URLSearchParams(window.location.search).get('slug') || '';
     }
+    if (!slug) { renderNotFound(''); return; }
+
+    // ⛔ THIS IS THE FIX. The previous version fetched EVERY taiwan + hongkong
+    // clinic and looked for one whose NAME slugified to the URL. Two failures in
+    // one query. First, stored slugs are DOMAIN-derived since the slug migration
+    // (drskin-ks), so a name-derived slug almost never matches and every profile
+    // fell through to "Clinic not found". Second, PostgREST caps an unbounded
+    // select at 1000 rows, so even a clinic that would have matched might not be
+    // in the response at all.
+    //
+    // Now it asks the database the actual question: which clinic has this slug.
+    const cols = 'id,name,slug,neighbourhood,region,city,country,lat,lng,phone,website,'
+      + 'rating,reviews,photos,place_id,maps_url,facebook_url,instagram_url,line_url,line_id';
+    const rows = await sbGet('clinics?select=' + cols
+      + '&slug=eq.' + encodeURIComponent(slug)
+      + '&country=in.(taiwan,hongkong)&approved=eq.true&limit=1');
+
+    if (!rows || !rows.length) { renderNotFound(slug); return; }
+    const clinic = rows[0];
+
+    if (clinic.photos && typeof clinic.photos === 'string') {
+      try { clinic.photos = JSON.parse(clinic.photos); } catch (e) { clinic.photos = []; }
+    }
+
+    // Doctors: two hops rather than a PostgREST embed, so it does not depend on
+    // a named foreign key. An empty result is a legitimate state, not an error.
+    let doctors = [];
+    const links = await sbGet('clinic_doctors?select=doctor_id,title&clinic_id=eq.' + encodeURIComponent(clinic.id));
+    if (links && links.length) {
+      const ids = [];
+      links.forEach(function (l) { if (ids.indexOf(l.doctor_id) === -1) ids.push(l.doctor_id); });
+      const docs = await sbGet('doctors?select=id,name_zh&id=in.(' + ids.join(',') + ')');
+      const byId = {};
+      (docs || []).forEach(function (d) { byId[String(d.id)] = d; });
+      links.forEach(function (l) {
+        const d = byId[String(l.doctor_id)];
+        if (!d) return;
+        if (!doctors.some(function (x) { return String(x.id) === String(d.id); })) {
+          doctors.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
+        }
+      });
+      doctors = orderTeam(doctors, clinic.name);
+    }
+
+    const techRows = await sbGet('clinic_technologies?select=technology&clinic_id=eq.' + encodeURIComponent(clinic.id));
+    const devices = [];
+    (techRows || []).forEach(function (t) {
+      if (t.technology && devices.indexOf(t.technology) === -1) devices.push(t.technology);
+    });
+
+    renderClinic(clinic, doctors, devices);
   }
 
   init();
