@@ -33,6 +33,17 @@ const FETCH_TIMEOUT_MS = 12000;
 // plausibility check on its OUTPUT before it publishes.
 const MAX_SHARED_CLINICS = 3;
 
+// Chain domains are in the social queue (they were only ever excluded because a
+// DOCTOR cannot be attributed to a branch; a chain's Facebook page can). When a
+// domain is shared by several clinic rows, the contacts found on it are applied
+// to every branch.
+//
+// LINE is the one channel where that is arguable, because branch-specific LINE
+// accounts are common in Taiwan and a filled column will not be overwritten
+// later by a better one. Set this to false to find chain LINE accounts and
+// deliberately NOT land them; the log still names every one it saw.
+const CHAIN_LINE_TO_ALL_BRANCHES = true;
+
 const SB = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -51,6 +62,13 @@ function repairEncoding(u) {
 
 function hostOf(u) {
   try { return new URL(u).hostname.toLowerCase(); } catch { return ''; }
+}
+
+// Hostname with www. dropped, to compare against crawl_queue.domain, which is
+// stored lowercased and www-stripped.
+function bareHost(u) {
+  try { return new URL(repairEncoding(String(u || ''))).hostname.toLowerCase().replace(/^www\./, ''); }
+  catch { return ''; }
 }
 
 function pathOf(u) {
@@ -274,43 +292,80 @@ function findContactUrl(html, baseUrl) {
 }
 
 // ── Plausibility, before anything publishes ─────────────────────────────────
-async function isShared(column, value, clinicId) {
-  const rows = await sb(`clinics?select=id&country=eq.taiwan&${column}=eq.`
-    + encodeURIComponent(value) + `&id=neq.${encodeURIComponent(clinicId)}&limit=${MAX_SHARED_CLINICS + 1}`);
+// A chain's page legitimately appears on all of its own branches, so the
+// branches themselves must be excluded from the count or the second branch
+// would look like evidence of a shared plugin.
+async function isShared(column, value, excludeIds) {
+  let q = `clinics?select=id&country=eq.taiwan&${column}=eq.` + encodeURIComponent(value);
+  if (excludeIds.length) q += `&id=not.in.(${excludeIds.map(encodeURIComponent).join(',')})`;
+  const rows = await sb(q + `&limit=${MAX_SHARED_CLINICS + 1}`);
   return (rows || []).length >= MAX_SHARED_CLINICS;
 }
 
+// ── Who receives what this domain published ─────────────────────────────────
+// Every Taiwan clinic whose website sits on this exact host. PostgREST can only
+// do a substring match here, and substring-matching a hostname is precisely the
+// bug that once killed beautybox.com.tw for containing "x.com", so the host is
+// re-checked EXACTLY in JS before any row is accepted as a branch.
+async function siblingsFor(domain, clinicId) {
+  const cols = 'id,name,website,facebook_url,instagram_url,line_url,line_id';
+  const rows = await sb(`clinics?select=${cols}&country=eq.taiwan&website=ilike.`
+    + encodeURIComponent('*' + domain + '*') + '&limit=200') || [];
+  const sibs = rows.filter(r => bareHost(r.website) === domain);
+  if (!sibs.some(r => String(r.id) === String(clinicId))) {
+    const own = await sb(`clinics?select=${cols}&country=eq.taiwan`
+      + `&id=eq.${encodeURIComponent(clinicId)}`);
+    if (own && own.length) sibs.push(own[0]);
+  }
+  return sibs;
+}
+
 // ── Landing. Fills NULL columns only, never overwrites. ─────────────────────
-async function land(found, clinicId) {
-  const current = await sb('clinics?select=id,facebook_url,instagram_url,line_url,line_id'
-    + `&id=eq.${encodeURIComponent(clinicId)}&country=eq.taiwan`);
-  if (!current || !current.length) return { landed: 0, skipped: [], note: 'clinic not found in taiwan' };
+async function land(found, row) {
+  const targets = await siblingsFor(row.domain, row.clinic_id);
+  if (!targets.length) return { landed: 0, branches: 0, skipped: ['no taiwan clinic on this domain'] };
 
-  const c = current[0];
-  const patch = {};
+  const ids = targets.map(t => String(t.id));
+  const isChain = targets.length > 1;
   const skipped = [];
+  const allow = {};
 
-  if (found.facebook_url && !c.facebook_url) {
-    if (await isShared('facebook_url', found.facebook_url, clinicId)) skipped.push('facebook shared');
-    else patch.facebook_url = found.facebook_url;
+  if (found.facebook_url) {
+    if (await isShared('facebook_url', found.facebook_url, ids)) skipped.push('facebook shared');
+    else allow.facebook_url = found.facebook_url;
   }
-  if (found.instagram_url && !c.instagram_url) {
-    if (await isShared('instagram_url', found.instagram_url, clinicId)) skipped.push('instagram shared');
-    else patch.instagram_url = found.instagram_url;
+  if (found.instagram_url) {
+    if (await isShared('instagram_url', found.instagram_url, ids)) skipped.push('instagram shared');
+    else allow.instagram_url = found.instagram_url;
   }
-  if (found.line_url && !c.line_url) {
-    if (await isShared('line_url', found.line_url, clinicId)) skipped.push('line shared');
-    else patch.line_url = found.line_url;
+  const lineBlocked = isChain && !CHAIN_LINE_TO_ALL_BRANCHES;
+  if (lineBlocked && (found.line_url || found.line_id)) {
+    skipped.push('chain LINE found but held back by CHAIN_LINE_TO_ALL_BRANCHES');
+  } else {
+    if (found.line_url) {
+      if (await isShared('line_url', found.line_url, ids)) skipped.push('line shared');
+      else allow.line_url = found.line_url;
+    }
+    if (found.line_id && !skipped.includes('line shared')) allow.line_id = found.line_id;
   }
-  if (found.line_id && !c.line_id && !skipped.includes('line shared')) patch.line_id = found.line_id;
 
-  const keys = Object.keys(patch);
-  if (!keys.length) return { landed: 0, skipped };
+  let landed = 0, branches = 0;
+  const fieldNames = new Set();
 
-  await sb(`clinics?id=eq.${encodeURIComponent(clinicId)}&country=eq.taiwan`, {
-    method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(patch)
-  });
-  return { landed: keys.length, skipped, fields: keys };
+  for (const t of targets) {
+    const patch = {};
+    for (const k of Object.keys(allow)) if (!t[k]) patch[k] = allow[k];
+    const keys = Object.keys(patch);
+    if (!keys.length) continue;
+    await sb(`clinics?id=eq.${encodeURIComponent(t.id)}&country=eq.taiwan`, {
+      method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(patch)
+    });
+    landed += keys.length;
+    branches += 1;
+    keys.forEach(k => fieldNames.add(k));
+  }
+
+  return { landed, branches, skipped, fields: [...fieldNames], isChain, targetCount: targets.length };
 }
 
 // ── One domain ──────────────────────────────────────────────────────────────
@@ -344,18 +399,25 @@ async function crawlOne(row) {
     return { social_status: 'empty', socials_found: 0 };
   }
 
-  const { landed, skipped, fields } = await land(found, row.clinic_id);
+  const { landed, branches, skipped, fields, targetCount } = await land(found, row);
 
   if (!landed && skipped.length) {
-    return { social_status: 'suspicious', socials_found: 0,
-             social_error: 'rejected as shared: ' + skipped.join(', ') };
+    return { social_status: 'suspicious', socials_found: 0, branches: 0,
+             social_error: 'nothing landed: ' + skipped.join(', ') };
+  }
+  if (!landed) {
+    // Everything found was already on file. Not a failure, and not new data.
+    return { social_status: 'done', socials_found: 0, branches: 0,
+             social_error: 'all channels already on file', found, source };
   }
 
   return {
     social_status: 'done',
     socials_found: landed,
-    social_error: skipped.length ? 'partly rejected as shared: ' + skipped.join(', ') : null,
+    branches,
+    social_error: skipped.length ? 'partly held back: ' + skipped.join(', ') : null,
     fields: fields || [],
+    targetCount,
     found,
     source
   };
@@ -416,6 +478,8 @@ exports.handler = async (event) => {
         status: result.social_status,
         found: result.socials_found || 0,
         fields: (result.fields || []).join(', '),
+        branches: result.branches || 0,
+        clinics_on_domain: result.targetCount || 0,
         facebook: f.facebook_url || null,
         instagram: f.instagram_url || null,
         line: f.line_url || f.line_id || null,
