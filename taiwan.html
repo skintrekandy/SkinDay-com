@@ -1858,6 +1858,8 @@ function openCompareModal() {
   clinics.forEach(c => { html += `<td>${c.phone ? `<a href="tel:${c.phone}" style="color:var(--rose)">${c.phone}</a>` : '—'}</td>`; });
   html += '</tr><tr><th>網站</th>';
   clinics.forEach(c => { html += `<td>${c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="color:var(--rose);font-size:0.82rem;">前往網站 →</a>` : '—'}</td>`; });
+  html += '</tr><tr><th>聯絡方式</th>';
+  clinics.forEach(c => { html += `<td class="compare-contacts" data-clinic="${c.id}">—</td>`; });
   html += '</tr></tbody></table>';
   document.querySelector('.compare-modal-body').innerHTML = html;
   document.getElementById('compareModalOverlay').classList.add('open');
@@ -1871,6 +1873,30 @@ function openCompareModal() {
       td.innerHTML = list.length
         ? list.slice(0, 3).map(d =>
             `<div style="font-family:'Noto Serif TC',serif;font-size:0.88rem;">${d.name_zh}</div>`).join('')
+        : '<span style="color:var(--dim);font-size:0.85rem;">—</span>';
+    });
+  });
+
+  // LINE / Facebook / Instagram. /api/get-clinics does not return these
+  // columns — the same gap that hid the profile slug — so they are topped up
+  // here for the two or three compared clinics only, not the whole country.
+  // LINE prefers the stored URL and falls back to building one from line_id;
+  // the id carries its leading @, which line.me expects percent-encoded.
+  sbGet('clinics?select=id,facebook_url,instagram_url,line_url,line_id&id=in.('
+        + clinics.map(c => c.id).join(',') + ')').then(rows => {
+    const by = Object.create(null);
+    (rows || []).forEach(r => { by[String(r.id)] = r; });
+    document.querySelectorAll('.compare-contacts').forEach(td => {
+      const r = by[String(td.dataset.clinic)] || {};
+      const lineHref = r.line_url
+        || (r.line_id ? 'https://line.me/R/ti/p/' + encodeURIComponent(r.line_id) : '');
+      const links = [];
+      if (lineHref) links.push(['LINE', lineHref]);
+      if (r.facebook_url) links.push(['Facebook', r.facebook_url]);
+      if (r.instagram_url) links.push(['Instagram', r.instagram_url]);
+      td.innerHTML = links.length
+        ? links.map(([label, href]) =>
+            `<div style="margin-bottom:0.25rem;"><a href="${href}" target="_blank" rel="noopener" style="color:var(--rose);font-size:0.82rem;">${label} →</a></div>`).join('')
         : '<span style="color:var(--dim);font-size:0.85rem;">—</span>';
     });
   });
