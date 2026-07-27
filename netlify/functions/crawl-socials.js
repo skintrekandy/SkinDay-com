@@ -52,6 +52,38 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET;
 // %25 -> %  undoes double-encoding (%2540 -> %40).  %3F/%3D/%26 were reserved
 // characters that something encoded by mistake. UTF-8 runs like %E5%85%89 are
 // LEFT alone: that form is valid in a URL and works in a browser.
+// Hrefs in real Taiwan clinic HTML arrive with HTML entities still in them, so
+// `?a=1&#038;b=2` was being stored verbatim. Decode before anything parses it.
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&#0*38;|&amp;/gi, '&')
+    .replace(/&#0*39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#0*35;/gi, '#')
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>');
+}
+
+// A trailing %20 or stray whitespace makes the link 404.
+function trimTail(u) {
+  return String(u || '').replace(/(?:%20|\s|%09)+$/i, '');
+}
+
+// Any social "account" whose path is an asset is a button image, an embed
+// script or a tracking pixel, never an account.
+const ASSET_TAIL = /\.(gif|png|jpe?g|webp|svg|js|css|ico|json)$/i;
+
+// Handles that belong to the tooling a clinic's site was built with, not to the
+// clinic. Every one of these was actually landed by the first pass.
+const VENDOR_HANDLE = new Set([
+  'wix', 'settings', 'qr', 'simplybook', 'ancorathemes', 'squarespace',
+  'shopify', 'wordpress', 'bio.sites', 'embed.js', 'facebook', 'instagram',
+  'line', 'google', 'sharer', 'plugins', 'tr', 'business'
+]);
+
+function firstSeg(path) {
+  return String(path || '').split('/')[0].split('?')[0].toLowerCase();
+}
+
 function repairEncoding(u) {
   return String(u || '')
     .replace(/%25/g, '%')
@@ -97,6 +129,9 @@ function fbCanon(raw) {
   path = path.split('#')[0];
   if (!path) return '';                       // bare facebook.com identifies nobody
   if (/\s|%20/.test(path)) return '';         // two urls jammed into one field
+  if (ASSET_TAIL.test(path)) return '';       // an image or a script
+  if (VENDOR_HANDLE.has(firstSeg(path))) return '';   // facebook.com/wix, /settings, /qr
+  if (/^messages(\/|$)/i.test(path)) return '';       // a Messenger thread, not a page
 
   let out;
   if (/^profile\.php/i.test(path)) {
@@ -123,28 +158,49 @@ function igCanon(raw) {
   path = path.replace(/profilecard\/?$/i, '');   // a share widget, not the profile
   if (!path || IG_REJECT.test(path)) return '';
   if (/\s|%20/.test(path)) return '';
+  if (ASSET_TAIL.test(path)) return '';               // instagram.com/embed.js
+  if (VENDOR_HANDLE.has(firstSeg(path))) return '';   // instagram.com/wix, /bio.sites
   return 'https://www.instagram.com/' + path.replace(/\/+$/, '');
 }
 
 // ── LINE ────────────────────────────────────────────────────────────────────
 // The hard one, because a LINE account is very often NOT a URL at all.
-const LINE_HOSTS = /(^|\.)(line\.me|lin\.ee|line\.naver\.jp)$/;
-const LINE_REJECT = /\/(R\/msg|R\/share|R\/nv|share|about|terms|privacy|download|ch\/sticker)(\/|$|\?)/i;
+// EXACT host whitelist, not a suffix match. The first pass landed
+// tr.line.me tracking pixels, page-share.line.me og-images, an oashop.line.me
+// storefront and a biz.line.naver.jp button IMAGE as clinic contacts, all of
+// which are subdomains of a LINE domain and none of which is an account.
+const LINE_HOSTS = new Set([
+  'line.me', 'www.line.me', 'lin.ee', 'www.lin.ee',
+  'page.line.me', 'liff.line.me', 'line.naver.jp', 'www.line.naver.jp'
+]);
+const LINE_REJECT = /\/(R\/msg|R\/share|R\/nv|R\/oaMessage|share|about|terms|privacy|download|ch\/sticker)(\/|$|\?)/i;
+
+// Placeholder ids left in a template. Landed verbatim by the first pass.
+const NOT_A_LINE_ID = new Set([
+  '@12345678', '@1234567', '@abc123', '@yourid', '@lineid', '@line',
+  '@callmeback', '@xxxx', '@0000000', '@example'
+]);
 
 function lineFromUrl(raw) {
   const u = repairEncoding(raw);
   const host = hostOf(u);
-  if (!LINE_HOSTS.test(host)) return null;
-  if (/^social-plugins?\./i.test(host)) return null;
+  if (!LINE_HOSTS.has(host)) return null;
   if (LINE_REJECT.test(u)) return null;
   const path = pathOf(u);
   if (!path) return null;                        // line.me itself is not an account
+  if (ASSET_TAIL.test(path)) return null;        // a button image or a tracking gif
+
+  // Query strings on a LINE link are tracking (openQrModal, oat_content, ts,
+  // from=page). The only one that carries meaning is liff's accountId.
+  const keepQuery = host === 'liff.line.me' && /accountId=/i.test(u);
+  const clean = trimTail(keepQuery ? u : u.split('?')[0]);
 
   // An @id spelled out in the URL is the one thing we can claim as an id. A
   // lin.ee or page.line.me slug is NOT assumed to be the @id: it is a short
   // code, and inventing an id from it would send patients to a stranger.
-  const at = (u.match(/(?:%40|@|~%40|~@)([A-Za-z0-9._-]{2,20})/) || [])[1] || '';
-  return { line_url: u, line_id: at ? '@' + at : '' };
+  const at = (clean.match(/(?:%40|@|~%40|~@)([A-Za-z0-9._-]{2,20})/) || [])[1] || '';
+  const id = at ? '@' + at : '';
+  return { line_url: clean, line_id: NOT_A_LINE_ID.has(id.toLowerCase()) ? '' : id };
 }
 
 // A bare @id written next to the word LINE. "官方LINE：@abc123", "加LINE @xyz",
@@ -165,6 +221,7 @@ function lineFromText(text) {
     if (/[A-Za-z0-9._%+-]/.test(before)) continue;         // also an email address
     const ctx = text.slice(Math.max(0, m.index - 40), m.index + id.length + 10);
     if (!LINE_NEAR.test(ctx)) continue;
+    if (NOT_A_LINE_ID.has(('@' + id).toLowerCase())) continue;
     return { line_url: '', line_id: '@' + id };
   }
   return null;
@@ -175,7 +232,7 @@ function hrefs(html) {
   const out = [];
   const re = /(?:href|content|data-href|src)\s*=\s*["']([^"']+)["']/gi;
   let m;
-  while ((m = re.exec(html)) !== null) out.push(m[1]);
+  while ((m = re.exec(html)) !== null) out.push(trimTail(decodeEntities(m[1])));
   return out;
 }
 
