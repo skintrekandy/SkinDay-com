@@ -443,6 +443,111 @@
     return '\u2605'.repeat(full) + (half ? '\u00BD' : '') + '\u2606'.repeat(empty);
   }
 
+  // ─── TAIWAN NEIGHBOURHOOD LABELS ──────────────────────────────────────────
+  // Ported verbatim from taiwan.html. The directory cards have always rendered
+  // 西屯區 · 台中市 while this page showed the raw slug taichung-xitun, because
+  // the map lived only in taiwan.html. clinics.neighbourhood stores a latin slug
+  // and is the join key for filters, so it is NOT translated in the database —
+  // it is translated at render time, here, exactly as the directory does it.
+  // Taiwan only: Hong Kong slugs are left untouched.
+  const NEIGHBOURHOOD_LABEL = {
+    'taipei-daan':'大安區','taipei-zhongshan':'中山區','taipei-songshan':'松山區',
+    'taipei-xinyi':'信義區','taipei-zhongzheng':'中正區','taipei-shilin':'士林區',
+    'taipei-neihu':'內湖區','taipei-datong':'大同區','taipei-wanhua':'萬華區',
+    'taipei-nangang':'南港區','taipei-wenshan':'文山區','taipei-beitou':'北投區',
+    'new-taipei-banqiao':'板橋區','new-taipei-xinzhuang':'新莊區','new-taipei-sanchong':'三重區',
+    'new-taipei-zhonghe':'中和區','new-taipei-yonghe':'永和區','new-taipei-xindian':'新店區',
+    'new-taipei-luzhou':'蘆洲區','new-taipei-tucheng':'土城區','new-taipei-taishan':'泰山區',
+    'new-taipei-xizhi':'汐止區','new-taipei-jinshan':'金山區',
+    'taoyuan-taoyuan':'桃園區','taoyuan-zhongli':'中壢區','taoyuan-pingzhen':'平鎮區',
+    'taoyuan-zhongli':'中壢區',
+    'hsinchu-east':'東區','hsinchu-north':'北區','hsinchu-county-zhubei':'竹北市',
+    'taichung-west':'西區','taichung-xitun':'西屯區','taichung-north':'北區',
+    'taichung-nantun':'南屯區','taichung-beitun':'北屯區','taichung-south':'南區',
+    'taichung-east':'東區','taichung-central':'中區',
+    'tainan-east':'東區','tainan-west-central':'中西區','tainan-north':'北區','tainan-south':'南區',
+    'tainan-annan':'安南區','tainan-anping':'安平區',
+    'kaohsiung-lingya':'苓雅區','kaohsiung-sanmin':'三民區','kaohsiung-zuoying':'左營區',
+    'kaohsiung-gushan':'鼓山區','kaohsiung-sinsing':'新興區','kaohsiung-qianjin':'前金區',
+    'kaohsiung-cianjhen':'前鎮區','kaohsiung-nanzi':'楠梓區','kaohsiung-cijin':'旗津區',
+    'keelung-renai':'仁愛區','keelung-zhongzheng':'中正區','keelung-qidu':'七堵區',
+    'miaoli-miaoli':'苗栗市','changhua-changhua':'彰化市',
+    'nantou-nantou':'南投市','yunlin-huwei':'虎尾鎮','yunlin-douliou':'斗六市',
+    'chiayi-west':'西區','chiayi-east':'東區',
+    'pingtung-pingtung':'屏東市','taitung-taitung':'台東市',
+    'hualien-hualien':'花蓮市','yilan-yilan':'宜蘭市',
+    // Extended — covers all slugs seen in DB data
+    'taipei-zhongshan':'中山區',
+    'hsinchu-east':'東區','hsinchu-north':'北區','hsinchu-county-zhubei':'竹北市',
+    'hsinchu-county-zhubei':'竹北市','hsinchu-county-hsinchu':'新竹市',
+    'taichung-beitun':'北屯區','taichung-taiping':'太平區','taichung-dali':'大里區',
+    'taichung-wuri':'烏日區','taichung-fengyuan':'豐原區',
+    'new-taipei-yonghe':'永和區','new-taipei-zhonghe':'中和區',
+    'new-taipei-banciao':'板橋區','new-taipei-linkou':'林口區',
+    'new-taipei-tamsui':'淡水區','new-taipei-shulin':'樹林區',
+    'taoyuan-zhongli':'中壢區','taoyuan-taoyuan':'桃園區',
+    'taoyuan-zhubei':'竹北市','taoyuan-dayuan':'大園區',
+    'kaohsiung-zuoying':'左營區','kaohsiung-fengshan':'鳳山區',
+    'kaohsiung-daliao':'大寮區','kaohsiung-renwu':'仁武區',
+    'tainan-yongkang':'永康區','tainan-rende':'仁德區',
+    'chiayi-county-chiayi':'嘉義縣','pingtung-pingtung':'屏東市',
+    'yunlin-douliou':'斗六市','yunlin-huwei':'虎尾鎮',
+    'changhua-yuanlin':'員林市','changhua-lukang':'鹿港鎮',
+    'miaoli-toufen':'頭份市','miaoli-zhunan':'竹南鎮',
+    'keelung-zhongzheng':'中正區','keelung-qidu':'七堵區',
+    'keelung-nuannuan':'暖暖區',
+  };
+
+  const SLUG_TO_CITY_ZH = {
+    'taipei':'台北市','new-taipei':'新北市','taoyuan':'桃園市',
+    'taichung':'台中市','tainan':'台南市','kaohsiung':'高雄市',
+    'hsinchu':'新竹市','hsinchu-county':'新竹縣','keelung':'基隆市',
+    'chiayi':'嘉義市','chiayi-county':'嘉義縣','yunlin':'雲林縣',
+    'changhua':'彰化縣','miaoli':'苗栗縣','nantou':'南投縣',
+    'pingtung':'屏東縣','hualien':'花蓮縣','taitung':'台東縣','yilan':'宜蘭縣',
+  };
+
+  function getCityFromSlug(slug) {
+    if (!slug) return '';
+    for (const [prefix, city] of Object.entries(SLUG_TO_CITY_ZH)) {
+      if (slug === prefix || slug.startsWith(prefix + '-')) return city;
+    }
+    return '';
+  }
+
+  function getNeighbourhoodFull(slug) {
+    const district = getNeighbourhoodLabel(slug);
+    const city = getCityFromSlug(slug);
+    if (!district) return city || slug || '';
+    if (!city) return district;
+    return district + ' · ' + city;
+  }
+
+  const CITY_PREFIXES = ['taipei','new-taipei','taoyuan','taichung','tainan','kaohsiung',
+    'hsinchu','hsinchu-county','keelung','chiayi','chiayi-county','yunlin','changhua',
+    'miaoli','nantou','pingtung','hualien','taitung','yilan'];
+
+  function getNeighbourhoodLabel(slug) {
+    if (!slug) return '';
+    if (NEIGHBOURHOOD_LABEL[slug]) return NEIGHBOURHOOD_LABEL[slug];
+    // For unknown slugs, try stripping city prefix then return remaining parts
+    for (const prefix of CITY_PREFIXES) {
+      if (slug.startsWith(prefix + '-')) {
+        const rest = slug.slice(prefix.length + 1);
+        // Convert hyphenated remainder to title case as last resort
+        return rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      }
+    }
+    return slug;
+  }
+  // Taiwan renders 區 · 市; every other country keeps its stored value.
+  function localeLabel(clinic) {
+    if (!clinic) return '';
+    const raw = clinic.neighbourhood || clinic.district || '';
+    if (clinic.country !== 'taiwan') return raw;
+    return getNeighbourhoodFull(raw) || raw;
+  }
+
   function countryLabel(country, lang) {
     if (country === 'taiwan') return lang === 'zh' ? '\u53F0\u7063' : 'Taiwan';
     if (country === 'hongkong') return lang === 'zh' ? '\u9999\u6E2F' : 'Hong Kong';
@@ -467,7 +572,7 @@
     // whatever device brand sits in the marketing tail.
     const slug = clinic.slug || toSlug(clinic.name);
     const url = 'https://skinday.com/clinic/' + slug;
-    const loc = clinic.neighbourhood || clinic.district || '';
+    const loc = localeLabel(clinic);
     const country = countryLabel(clinic.country, lang);
     const photo = (clinic.photos && clinic.photos.length) ? clinic.photos[0] : 'https://skinday.com/og-default.jpg';
 
@@ -505,7 +610,7 @@
     updateMeta(clinic);
 
     const lang = primaryLang(clinic.country);
-    const loc = clinic.neighbourhood || clinic.district || '';
+    const loc = localeLabel(clinic);
     const country = countryLabel(clinic.country, lang);
     const countryClass = clinic.country === 'hongkong' ? 'hongkong' : 'taiwan';
     const dirUrl = dirPath(clinic.country);
