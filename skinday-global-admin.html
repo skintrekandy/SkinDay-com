@@ -896,8 +896,11 @@
             <div class="form-section-label" style="margin-top:0;">Crawl clinic websites for contacts</div>
             <div class="tw-hint" style="margin-bottom:.75rem;">
               Reads each clinic's own site for its official <strong>Facebook page, Instagram profile and LINE
-              account</strong>, a few domains at a time. Same 701 domains as the doctor crawl, but tracked on its own
-              status, so the doctor run's history is untouched and either pass can be re-run independently.
+              account</strong>, a few domains at a time. Covers the 701 single-site domains from the doctor crawl
+              <strong>plus the chain domains</strong>, which were only ever excluded because a doctor cannot be
+              attributed to a branch. Contacts found on a chain's site are applied to every branch on that domain.
+              Tracked on its own status, so the doctor run's history is untouched, chains stay invisible to the doctor
+              crawl, and either pass can be re-run independently.
               A link on a clinic's own site IS that clinic's official account, which is why nothing is ever taken from
               search results or beauty aggregators. LINE is often written as bare text rather than a link
               (<em>官方LINE：@abc123</em>), so text is read as well as links.
@@ -1799,7 +1802,9 @@ async function twSocialStart(retry){
         if (p.line) bits.push('LINE ' + p.line);
         if (p.facebook) bits.push(p.facebook);
         if (p.instagram) bits.push(p.instagram);
-        twSocialLog(p.domain + '  +' + p.found + ' (' + (p.fields || '') + ')  ' + bits.join('  ·  '));
+        var where = p.clinics_on_domain > 1
+          ? '  [' + p.branches + ' of ' + p.clinics_on_domain + ' branches]' : '';
+        twSocialLog(p.domain + '  +' + p.found + ' (' + (p.fields || '') + ')' + where + '  ' + bits.join('  ·  '));
         if (p.error) twSocialLog('   ' + p.domain + '  ' + p.error, 'warn');
       } else if (p.status === 'suspicious') {
         twSocialTotals.shared++;
