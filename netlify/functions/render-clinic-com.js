@@ -30,6 +30,45 @@ function toSlug(name) {
     .replace(/^-+|-+$/g, '');
 }
 
+// ── LINE, the same rules as taiwan.html, clinic.html and crawl-socials.js ──
+// A stored line_url is always preferred: lin.ee and page.line.me open in a
+// desktop browser as well as in the app. The R/ti/p form is only built when an
+// @id is all we hold, and there the @ MUST travel as %40 or the link fails.
+function lineHref(c) {
+  if (!c) return '';
+  if (c.line_url) return c.line_url;
+  if (c.line_id) return 'https://line.me/R/ti/p/%40' + encodeURIComponent(String(c.line_id).replace(/^@+/, ''));
+  return '';
+}
+
+function hasContacts(c) {
+  return !!(c && (c.facebook_url || c.instagram_url || lineHref(c)));
+}
+
+// The four manufacturer-verified devices, short labels as on the cards.
+const TECH_LABEL = {
+  '\u9CF3\u51F0\u96FB\u6CE2 Thermage FLX': '\u9CF3\u51F0\u96FB\u6CE2',
+  '\u7F8E\u570B\u97F3\u6CE2\u4E8C\u4EE3 Ultherapy Prime': '\u7F8E\u570B\u97F3\u6CE2\u4E8C\u4EE3',
+  '\u8702\u5DE2\u76AE\u79D2 PicoSure': '\u8702\u5DE2\u76AE\u79D2',
+  '\u8D85\u76AE\u79D2 PicoWay': '\u8D85\u76AE\u79D2'
+};
+
+// Team order, same rank as taiwan.html: a Taiwan clinic is very often named
+// after its founding doctor, and that doctor has to lead.
+function orderTeam(list, clinicName) {
+  const cname = String(clinicName || '');
+  const rank = (d) => {
+    if (d.name_zh && cname.indexOf(d.name_zh) !== -1) return 0;
+    const t = d.title || '';
+    if (t.indexOf('\u9662\u9577') !== -1) return 1;
+    if (t.indexOf('\u4E3B\u4EFB') !== -1) return 2;
+    if (t.indexOf('\u4E3B\u6CBB') !== -1) return 3;
+    return 4;
+  };
+  return list.slice().sort((a, b) =>
+    rank(a) - rank(b) || String(a.name_zh).localeCompare(String(b.name_zh), 'zh-Hant'));
+}
+
 function countryLabel(country, lang) {
   if (country === 'taiwan') return lang === 'zh' ? '\u53F0\u7063' : 'Taiwan';
   if (country === 'hongkong') return lang === 'zh' ? '\u9999\u6E2F' : 'Hong Kong';
@@ -72,7 +111,13 @@ function buildSchema(clinic, url) {
     name: clinic.name,
     url,
     ...(clinic.phone && { telephone: clinic.phone }),
-    ...(clinic.website && { sameAs: clinic.website }),
+    // sameAs carries every official channel M18.3 collected, so a search engine
+    // can tie the clinic to its own Facebook, Instagram and LINE accounts. It
+    // was a single string before, which could only ever hold the website.
+    ...((() => {
+      const same = [clinic.website, clinic.facebook_url, clinic.instagram_url, lineHref(clinic)].filter(Boolean);
+      return same.length ? { sameAs: same } : {};
+    })()),
     address: {
       '@type': 'PostalAddress',
       addressLocality: clinic.neighbourhood || '',
@@ -91,9 +136,11 @@ function buildSchema(clinic, url) {
   return JSON.stringify(schema).replace(/</g, '\\u003c');
 }
 
-function renderFullPage(clinic) {
+function renderFullPage(clinic, doctors, devices) {
+  doctors = doctors || [];
+  devices = devices || [];
   const lang = primaryLang(clinic.country);
-  const slug = toSlug(clinic.name);
+  const slug = clinic.slug || toSlug(clinic.name);
   const url = `${SITE}/clinic/${slug}`;
   const loc = escapeHtml(clinic.neighbourhood || '');
   const country = countryLabel(clinic.country, lang);
@@ -168,6 +215,50 @@ function renderFullPage(clinic) {
     </div>`);
   }
 
+  // ── PANELS: contacts, verified devices, doctor team ─────────────────────
+  const PANEL = 'border:1px solid #E8E0D6;background:#fff;border-radius:12px;padding:14px 16px;margin-top:16px;';
+  const HEAD  = "font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:#1C1714;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;";
+  const CHIPS = 'display:flex;flex-wrap:wrap;gap:6px;';
+  const CHIP  = "font-family:'DM Sans',sans-serif;font-size:12.5px;border:1px solid #E8E0D6;border-radius:20px;padding:3px 10px;background:#FAF7F2;color:#2C2724;";
+  const CBTN  = "display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 16px;border:1.5px solid #E8E0D6;border-radius:8px;color:#1C1714;font-size:14px;text-decoration:none;font-family:'DM Sans',sans-serif;";
+
+  // LINE first: in Taiwan it is how a patient books. The @id is printed beside
+  // it because the deep link does nothing on a desktop browser, where a
+  // readable id you can type into the app is the only thing that works.
+  let contactPanel = '';
+  if (hasContacts(clinic)) {
+    const line = lineHref(clinic);
+    const rows = [];
+    if (line) {
+      rows.push(`<a href="${escapeHtml(line)}" target="_blank" rel="noopener" style="${CBTN}">\uD83D\uDCAC ${lang === 'zh' ? 'LINE \u8AEE\u8A62' : 'LINE'}${clinic.line_id ? ` <em style="font-style:normal;color:#7A6E68;font-size:13px;">${escapeHtml(clinic.line_id)}</em>` : ''}</a>`);
+    }
+    if (clinic.facebook_url) {
+      rows.push(`<a href="${escapeHtml(clinic.facebook_url)}" target="_blank" rel="noopener" style="${CBTN}">\uD83D\uDC4D ${lang === 'zh' ? 'Facebook \u7C89\u7D72\u9801' : 'Facebook'}</a>`);
+    }
+    if (clinic.instagram_url) {
+      rows.push(`<a href="${escapeHtml(clinic.instagram_url)}" target="_blank" rel="noopener" style="${CBTN}">\uD83D\uDCF7 Instagram</a>`);
+    }
+    contactPanel = `<div style="${PANEL}">
+      <div style="${HEAD}">${lang === 'zh' ? '\u806F\u7D61\u65B9\u5F0F' : 'Contact'}</div>
+      <div style="display:grid;gap:8px;">${rows.join('')}</div>
+    </div>`;
+  }
+
+  const devicePanel = devices.length
+    ? `<div style="${PANEL}">
+        <div style="${HEAD}"><span><span style="color:#C9A96E;margin-right:5px;">\u2713</span>${lang === 'zh' ? '\u539F\u5EE0\u8A8D\u8A3C\u5100\u5668' : 'Manufacturer-verified devices'}</span></div>
+        <div style="${CHIPS}">${devices.map(t => `<span style="${CHIP}">${escapeHtml(TECH_LABEL[t] || t)}</span>`).join('')}</div>
+      </div>`
+    : '';
+
+  const teamPanel = doctors.length
+    ? `<div style="${PANEL}">
+        <div style="${HEAD}"><span>${lang === 'zh' ? '\u91AB\u5E2B\u5718\u968A' : 'Doctors'}</span><em style="font-style:normal;font-weight:400;font-size:12px;color:#7A6E68;">${doctors.length}${lang === 'zh' ? ' \u4F4D' : ''}</em></div>
+        <div style="${CHIPS}">${doctors.map(d => `<span style="${CHIP}font-family:'Noto Serif TC',serif;" title="${escapeHtml(d.title || '')}">${escapeHtml(d.name_zh)}</span>`).join('')}</div>
+        <p style="font-size:11.5px;color:#7A6E68;margin-top:9px;">${lang === 'zh' ? '\u7531\u8A3A\u6240\u81EA\u884C\u516C\u958B\u4E4B\u8CC7\u6599\u6574\u7406\uFF0C\u975E\u57F7\u696D\u767B\u8A18\u67E5\u6838\u3002' : 'Compiled from what the clinic publishes on its own website.'}</p>
+      </div>`
+    : '';
+
   // Action buttons
   const websiteBtn = clinic.website
     ? `<a href="${escapeHtml(clinic.website)}" target="_blank" rel="nofollow noopener" style="display:inline-flex;align-items:center;gap:7px;padding:11px 22px;border-radius:8px;background:#1C1714;color:#FAF7F2;font-size:14px;font-weight:500;text-decoration:none;font-family:'DM Sans',sans-serif;">
@@ -197,13 +288,6 @@ function renderFullPage(clinic) {
     </div>`;
   }
 
-  // SEO hidden block for Googlebot
-  const seoBlock = `<div id="ssr-content" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;">
-    <h1>${name}</h1>
-    <p>${name} ${lang === 'zh' ? '\u662F\u4F4D\u65BC' + countryEsc + loc + '\u7684\u91AB\u7F8E\u8A3A\u6240\u3002' : 'is an aesthetic clinic in ' + loc + ', ' + countryEsc + '.'}</p>
-    ${clinic.rating ? `<p>${lang === 'zh' ? 'Google\u8A55\u5206' : 'Google rating'}: ${escapeHtml(String(clinic.rating))}</p>` : ''}
-    ${clinic.phone ? `<p>${lang === 'zh' ? '\u96FB\u8A71' : 'Phone'}: ${escapeHtml(clinic.phone)}</p>` : ''}
-  </div>`;
 
   const indexableMeta = clinicIsIndexable(clinic)
     ? `<script type="application/ld+json">${buildSchema(clinic, url)}</script>`
@@ -249,7 +333,6 @@ function renderFullPage(clinic) {
   </style>
 </head>
 <body>
-${seoBlock}
 <nav class="nav">
   <a href="/" class="nav-logo">Skin<span>Day</span></a>
   <a href="${dirUrl}" class="nav-back">
@@ -289,6 +372,10 @@ ${heroHtml}
     ${mapsBtn}
   </div>
 
+  ${contactPanel}
+  ${devicePanel}
+  ${teamPanel}
+
   ${photosHtml}
 
   <div style="margin-top:40px;padding-top:24px;border-top:1px solid #E8E0D6;">
@@ -317,18 +404,52 @@ exports.handler = async (event) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const { data: clinics, error } = await supabase
-      .from('clinics')
-      .select('id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url')
-      .in('country', ['taiwan', 'hongkong', 'usa'])
-      .not('name', 'is', null);
+    const COUNTRIES = ['taiwan', 'hongkong', 'usa'];
+    // Columns including the new slug column (primary, indexed path).
+    const COLS = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url, slug, '
+      + 'facebook_url, instagram_url, line_url, line_id';
+    // Columns without slug (fallback path, works before the migration runs).
+    const COLS_BASE = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url, '
+      + 'facebook_url, instagram_url, line_url, line_id';
 
-    if (error) {
-      console.error('render-clinic-com: supabase error', error.message);
-      return { statusCode: 500, body: 'Database error' };
+    let clinic = null;
+
+    // Primary path: single indexed lookup on the slug column. On a slug
+    // collision the most-reviewed clinic wins, deterministically.
+    {
+      const { data, error } = await supabase
+        .from('clinics')
+        .select(COLS)
+        .eq('slug', slug)
+        .in('country', COUNTRIES)
+        .not('name', 'is', null)
+        .order('reviews', { ascending: false, nullsFirst: false })
+        .limit(1);
+      if (error) {
+        // Most likely cause: slug column not present yet (migration not run).
+        console.warn('render-clinic-com: slug lookup failed, using fallback:', error.message);
+      } else if (data && data.length) {
+        clinic = data[0];
+      }
     }
 
-    const clinic = (clinics || []).find(c => toSlug(c.name) === slug);
+    // Fallback path: if the slug column is missing or not yet backfilled,
+    // fetch and match on the computed slug so no valid clinic ever 404s.
+    if (!clinic) {
+      const { data, error } = await supabase
+        .from('clinics')
+        .select(COLS_BASE)
+        .in('country', COUNTRIES)
+        .not('name', 'is', null)
+        .range(0, 9999);   // was 29999. This scan runs on EVERY miss, and a
+                           // crawler hitting stale urls repeats it, so keep it
+                           // comfortably above the real row count and no more.
+      if (error) {
+        console.error('render-clinic-com: fallback fetch error', error.message);
+        return { statusCode: 500, body: 'Database error' };
+      }
+      clinic = (data || []).find(c => toSlug(c.name) === slug) || null;
+    }
 
     if (!clinic) {
       return {
@@ -342,9 +463,50 @@ exports.handler = async (event) => {
       try { clinic.photos = JSON.parse(clinic.photos); } catch(e) { clinic.photos = []; }
     }
 
-    const html = renderFullPage(clinic);
+    // Doctors and verified devices, fetched server-side so they are in the HTML
+    // Googlebot receives rather than appearing after hydration. Two hops rather
+    // than a PostgREST embed, so this does not depend on a named foreign key.
+    // Either query failing is a legitimate empty state, never a 500.
+    let doctors = [];
+    let devices = [];
+    try {
+      const { data: links } = await supabase
+        .from('clinic_doctors')
+        .select('doctor_id, title')
+        .eq('clinic_id', clinic.id);
+      if (links && links.length) {
+        const ids = [...new Set(links.map(l => l.doctor_id))];
+        const { data: docs } = await supabase
+          .from('doctors')
+          .select('id, name_zh')
+          .in('id', ids);
+        const byId = new Map((docs || []).map(d => [String(d.id), d]));
+        links.forEach(l => {
+          const d = byId.get(String(l.doctor_id));
+          if (!d) return;
+          if (!doctors.some(x => String(x.id) === String(d.id))) {
+            doctors.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
+          }
+        });
+        doctors = orderTeam(doctors, clinic.name);
+      }
+    } catch (e) {
+      console.warn('render-clinic-com: doctors lookup failed:', e.message);
+    }
+    try {
+      const { data: techs } = await supabase
+        .from('clinic_technologies')
+        .select('technology')
+        .eq('clinic_id', clinic.id);
+      devices = [...new Set((techs || []).map(t => t.technology).filter(Boolean))];
+    } catch (e) {
+      console.warn('render-clinic-com: devices lookup failed:', e.message);
+    }
+
+    const html = renderFullPage(clinic, doctors, devices);
     const indexable = clinicIsIndexable(clinic);
-    console.log(`render-clinic-com slug=${slug} country=${clinic.country} indexable=${indexable}`);
+    console.log(`render-clinic-com slug=${slug} country=${clinic.country} indexable=${indexable}`
+      + ` doctors=${doctors.length} devices=${devices.length} contacts=${hasContacts(clinic) ? 'yes' : 'no'}`);
 
     return {
       statusCode: 200,
