@@ -195,8 +195,12 @@ function lineFromUrl(raw) {
   const keepQuery = host === 'liff.line.me' && /accountId=/i.test(u);
   // line.naver.jp is LINE's legacy domain. It still resolves but redirects, so
   // fold it to line.me and keep one shape in the column.
+  // A '#' fragment is never part of a LINE account, and every LINE host serves
+  // https, so force it rather than storing whatever scheme the page used.
   const clean = trimTail(keepQuery ? u : u.split('?')[0])
-    .replace(/^https?:\/\/(www\.)?line\.naver\.jp\//i, 'https://line.me/');
+    .split('#')[0]
+    .replace(/^https?:\/\/(www\.)?line\.naver\.jp\//i, 'https://line.me/')
+    .replace(/^http:\/\//i, 'https://');
 
   // An @id spelled out in the URL is the one thing we can claim as an id. A
   // lin.ee or page.line.me slug is NOT assumed to be the @id: it is a short
