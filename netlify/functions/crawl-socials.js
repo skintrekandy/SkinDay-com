@@ -193,7 +193,10 @@ function lineFromUrl(raw) {
   // Query strings on a LINE link are tracking (openQrModal, oat_content, ts,
   // from=page). The only one that carries meaning is liff's accountId.
   const keepQuery = host === 'liff.line.me' && /accountId=/i.test(u);
-  const clean = trimTail(keepQuery ? u : u.split('?')[0]);
+  // line.naver.jp is LINE's legacy domain. It still resolves but redirects, so
+  // fold it to line.me and keep one shape in the column.
+  const clean = trimTail(keepQuery ? u : u.split('?')[0])
+    .replace(/^https?:\/\/(www\.)?line\.naver\.jp\//i, 'https://line.me/');
 
   // An @id spelled out in the URL is the one thing we can claim as an id. A
   // lin.ee or page.line.me slug is NOT assumed to be the @id: it is a short
