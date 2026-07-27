@@ -1,0 +1,433 @@
+// netlify/functions/crawl-socials.js
+//
+// Reads a clinic's OWN website for its official Facebook page, Instagram
+// profile and LINE account. NO API KEY AND NO PER-PAGE COST: the extraction is
+// a parser, exactly like crawl-doctors.js.
+//
+// Why only the clinic's own site. A social link on a clinic's own homepage IS
+// that clinic's official account, by definition. Handles taken from search
+// results or beauty aggregators are frequently a fan page, an agency's page, or
+// a competitor, and there is no way to tell from the outside. So this function
+// never searches for anything; it reads the page the clinic published.
+//
+// Contacts PUBLISH immediately, same reasoning as the doctors: a clinic
+// advertising its own LINE account on its own website is public information and
+// SkinDay republishes it rather than vouching for it.
+//
+// This function NEVER OVERWRITES an existing value. It only fills a column that
+// is currently NULL, so the 405 contacts recovered in Phase 1 cannot be clobbered
+// by a worse guess from a homepage footer.
+//
+// Queue: it claims on `social_status`, NOT on `status`. The doctor run's own
+// per-domain history is left completely alone and either pass can be re-run.
+//
+// Environment variables, all three already set, nothing new needed:
+//   SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY · ADMIN_SECRET
+
+const BATCH_DEFAULT = 5;
+const FETCH_TIMEOUT_MS = 12000;
+
+// If the same handle turns up on this many OTHER clinics, it is a shared
+// plugin, an aggregator or a marketing agency's own account, not this clinic's.
+// The doctor crawl's hard lesson was that any bulk extraction needs a
+// plausibility check on its OUTPUT before it publishes.
+const MAX_SHARED_CLINICS = 3;
+
+const SB = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+// ── Encoding repair, identical in effect to the Phase 1 SQL ──────────────────
+// %25 -> %  undoes double-encoding (%2540 -> %40).  %3F/%3D/%26 were reserved
+// characters that something encoded by mistake. UTF-8 runs like %E5%85%89 are
+// LEFT alone: that form is valid in a URL and works in a browser.
+function repairEncoding(u) {
+  return String(u || '')
+    .replace(/%25/g, '%')
+    .replace(/%3F/gi, '?')
+    .replace(/%3D/gi, '=')
+    .replace(/%26/gi, '&');
+}
+
+function hostOf(u) {
+  try { return new URL(u).hostname.toLowerCase(); } catch { return ''; }
+}
+
+function pathOf(u) {
+  try { return new URL(u).pathname.replace(/^\/+/, ''); } catch { return ''; }
+}
+
+// ── Facebook ────────────────────────────────────────────────────────────────
+const FB_HOSTS = /(^|\.)(facebook\.com|fb\.com|fb\.me|facebook\.net)$/;
+
+// Anything here is not a clinic's page: share widgets, tracking pixels, the
+// login wall, and content URLs. A GROUP is a forum and a POST is not a page.
+const FB_REJECT = /\/(sharer|share_channel|dialog|plugins|tr|l\.php|login|recover|help|policies|privacy|terms|watch|events?|groups|marketplace|gaming|hashtag|story\.php|permalink\.php|photo|photos|video|videos|media|notes|reviews_page|pages\/create)(\/|$|\?|\.php)/i;
+
+const FB_HOST_REJECT = /^(l|lm|developers|business|business-help|web|apps|connect|static|scontent|m\.static)\./i;
+
+function fbCanon(raw) {
+  const u = repairEncoding(raw);
+  const host = hostOf(u);
+  if (!FB_HOSTS.test(host)) return '';
+  if (FB_HOST_REJECT.test(host)) return '';
+  if (FB_REJECT.test(u)) return '';
+  // A shared POST is not a page. share/<token>/ resolves to a page; share/p/ is a post.
+  if (/\/share\/p\//i.test(u)) return '';
+
+  let path = pathOf(u);
+  path = path.split('#')[0];
+  if (!path) return '';                       // bare facebook.com identifies nobody
+  if (/\s|%20/.test(path)) return '';         // two urls jammed into one field
+
+  let out;
+  if (/^profile\.php/i.test(path)) {
+    const id = (u.match(/[?&]id=(\d+)/) || [])[1];
+    if (!id) return '';
+    out = 'profile.php?id=' + id;             // mibextid / locale / eav are tracking
+  } else {
+    // Drop a trailing page sub-tab so the link lands on the page itself.
+    out = path.replace(/(posts|timeline|about|photos|videos|reviews|community)\/?$/i, '');
+    if (!out || out === '/') return '';
+  }
+  return 'https://www.facebook.com/' + out;
+}
+
+// ── Instagram ───────────────────────────────────────────────────────────────
+const IG_HOSTS = /(^|\.)(instagram\.com|instagr\.am)$/;
+const IG_REJECT = /^(p|reel|reels|stories|explore|tv|accounts|direct|about|developer|legal|topics|directory)(\/|$)/i;
+
+function igCanon(raw) {
+  const u = repairEncoding(raw);
+  if (!IG_HOSTS.test(hostOf(u))) return '';
+  let path = pathOf(u).split('#')[0];
+  if (!path) return '';
+  path = path.replace(/profilecard\/?$/i, '');   // a share widget, not the profile
+  if (!path || IG_REJECT.test(path)) return '';
+  if (/\s|%20/.test(path)) return '';
+  return 'https://www.instagram.com/' + path.replace(/\/+$/, '');
+}
+
+// ── LINE ────────────────────────────────────────────────────────────────────
+// The hard one, because a LINE account is very often NOT a URL at all.
+const LINE_HOSTS = /(^|\.)(line\.me|lin\.ee|line\.naver\.jp)$/;
+const LINE_REJECT = /\/(R\/msg|R\/share|R\/nv|share|about|terms|privacy|download|ch\/sticker)(\/|$|\?)/i;
+
+function lineFromUrl(raw) {
+  const u = repairEncoding(raw);
+  const host = hostOf(u);
+  if (!LINE_HOSTS.test(host)) return null;
+  if (/^social-plugins?\./i.test(host)) return null;
+  if (LINE_REJECT.test(u)) return null;
+  const path = pathOf(u);
+  if (!path) return null;                        // line.me itself is not an account
+
+  // An @id spelled out in the URL is the one thing we can claim as an id. A
+  // lin.ee or page.line.me slug is NOT assumed to be the @id: it is a short
+  // code, and inventing an id from it would send patients to a stranger.
+  const at = (u.match(/(?:%40|@|~%40|~@)([A-Za-z0-9._-]{2,20})/) || [])[1] || '';
+  return { line_url: u, line_id: at ? '@' + at : '' };
+}
+
+// A bare @id written next to the word LINE. "官方LINE：@abc123", "加LINE @xyz",
+// and 賴 as slang. The proximity requirement is what keeps a Facebook vanity
+// handle or an email local-part out: one real clinic name in this directory
+// reads 預約請加@ugb9932c and its FACEBOOK page is facebook.com/ugb9932c, so an
+// @ on its own proves nothing about which platform it belongs to.
+const LINE_NEAR = /(line\s*id|line|賴|加好友|官方帳號|官方帳號|line@|加入好友)/i;
+const TLD_TAIL = /\.(com|net|org|tw|co|io|jp|kr|cn|edu|gov|me)$/i;
+
+function lineFromText(text) {
+  const re = /@([A-Za-z0-9._-]{3,20})/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const id = m[1];
+    if (TLD_TAIL.test(id)) continue;                       // an email address
+    const before = text.charAt(m.index - 1);
+    if (/[A-Za-z0-9._%+-]/.test(before)) continue;         // also an email address
+    const ctx = text.slice(Math.max(0, m.index - 40), m.index + id.length + 10);
+    if (!LINE_NEAR.test(ctx)) continue;
+    return { line_url: '', line_id: '@' + id };
+  }
+  return null;
+}
+
+// ── Extraction ──────────────────────────────────────────────────────────────
+function hrefs(html) {
+  const out = [];
+  const re = /(?:href|content|data-href|src)\s*=\s*["']([^"']+)["']/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) out.push(m[1]);
+  return out;
+}
+
+// Among several valid candidates, the shortest path is the account root:
+// /drskin.ks beats /drskin.ks/photos, and a page beats a deep link.
+function shortestPath(list) {
+  return list.sort((a, b) =>
+    (pathOf(a).split('/').filter(Boolean).length - pathOf(b).split('/').filter(Boolean).length)
+    || (a.length - b.length))[0] || '';
+}
+
+function extractSocials(html, baseUrl, text) {
+  const abs = [];
+  for (const h of hrefs(html)) {
+    if (!h || h.startsWith('#') || /^(mailto|tel|javascript):/i.test(h)) continue;
+    try { abs.push(new URL(repairEncoding(h), baseUrl).href); } catch { /* ignore */ }
+  }
+
+  const fb = [...new Set(abs.map(fbCanon).filter(Boolean))];
+  const ig = [...new Set(abs.map(igCanon).filter(Boolean))];
+
+  const lineHits = abs.map(lineFromUrl).filter(Boolean);
+  // A url that spells out an @id is worth more than a bare short code.
+  lineHits.sort((a, b) => (b.line_id ? 1 : 0) - (a.line_id ? 1 : 0));
+  const line = lineHits[0] || lineFromText(text) || null;
+
+  return {
+    facebook_url: shortestPath(fb),
+    instagram_url: shortestPath(ig),
+    line_url: line ? line.line_url : '',
+    line_id: line ? line.line_id : ''
+  };
+}
+
+// ── Supabase ────────────────────────────────────────────────────────────────
+async function sb(path, opts = {}) {
+  const r = await fetch(`${SB}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      apikey: SB_KEY,
+      Authorization: `Bearer ${SB_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: opts.prefer || 'return=representation',
+      ...(opts.headers || {})
+    }
+  });
+  const text = await r.text();
+  if (!r.ok) throw new Error(`supabase ${r.status}: ${text.slice(0, 300)}`);
+  return text ? JSON.parse(text) : null;
+}
+
+async function getPage(url) {
+  const ac = new AbortController();
+  const t = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, {
+      signal: ac.signal,
+      redirect: 'follow',
+      headers: { 'User-Agent': 'SkinDayBot/1.0 (+https://skinday.com)' }
+    });
+    if (!r.ok) return { ok: false, error: `http ${r.status}` };
+    const html = await r.text();
+    return { ok: true, html, finalUrl: r.url || url };
+  } catch (e) {
+    return { ok: false, error: e.name === 'AbortError' ? 'timeout' : String(e.message || e) };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function toText(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<\/(p|div|li|tr|h[1-6]|section|article)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+    .slice(0, 120000);
+}
+
+// Socials usually sit in the header or footer of the homepage. When the
+// homepage gives nothing, a contact page is the one other place worth a look,
+// and only then, so the common case still costs a single fetch.
+const CONTACT_HINTS = [
+  ['聯絡我們', 100], ['聯絡方式', 100], ['預約諮詢', 95], ['線上預約', 95],
+  ['聯絡', 85], ['預約', 80], ['諮詢', 75], ['contact', 85], ['booking', 70], ['about', 40]
+];
+
+function findContactUrl(html, baseUrl) {
+  const links = [];
+  const re = /<a\b[^>]*href\s*=\s*["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const href = m[1];
+    const label = m[2].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!href || href.startsWith('#') || /^(mailto|tel|javascript):/i.test(href)) continue;
+    if (/\/(blog|news|article|articles|post|posts|category|tag|archive|column|case|cases|video|activity|event|promo)(\/|$|\?)/i.test(href)
+        || /[?&]p=\d|[?&]page_id=/i.test(href)) continue;
+    let a;
+    try { a = new URL(href, baseUrl).href; } catch { continue; }
+    try { if (new URL(a).hostname !== new URL(baseUrl).hostname) continue; } catch { continue; }
+    const hay = (decodeURIComponent(a) + ' ' + label).toLowerCase();
+    let score = 0;
+    for (const [w, s] of CONTACT_HINTS) if (hay.includes(w.toLowerCase())) score = Math.max(score, s);
+    if (score) links.push({ a, score });
+  }
+  links.sort((x, y) => y.score - x.score);
+  return links.length ? links[0].a : null;
+}
+
+// ── Plausibility, before anything publishes ─────────────────────────────────
+async function isShared(column, value, clinicId) {
+  const rows = await sb(`clinics?select=id&country=eq.taiwan&${column}=eq.`
+    + encodeURIComponent(value) + `&id=neq.${encodeURIComponent(clinicId)}&limit=${MAX_SHARED_CLINICS + 1}`);
+  return (rows || []).length >= MAX_SHARED_CLINICS;
+}
+
+// ── Landing. Fills NULL columns only, never overwrites. ─────────────────────
+async function land(found, clinicId) {
+  const current = await sb('clinics?select=id,facebook_url,instagram_url,line_url,line_id'
+    + `&id=eq.${encodeURIComponent(clinicId)}&country=eq.taiwan`);
+  if (!current || !current.length) return { landed: 0, skipped: [], note: 'clinic not found in taiwan' };
+
+  const c = current[0];
+  const patch = {};
+  const skipped = [];
+
+  if (found.facebook_url && !c.facebook_url) {
+    if (await isShared('facebook_url', found.facebook_url, clinicId)) skipped.push('facebook shared');
+    else patch.facebook_url = found.facebook_url;
+  }
+  if (found.instagram_url && !c.instagram_url) {
+    if (await isShared('instagram_url', found.instagram_url, clinicId)) skipped.push('instagram shared');
+    else patch.instagram_url = found.instagram_url;
+  }
+  if (found.line_url && !c.line_url) {
+    if (await isShared('line_url', found.line_url, clinicId)) skipped.push('line shared');
+    else patch.line_url = found.line_url;
+  }
+  if (found.line_id && !c.line_id && !skipped.includes('line shared')) patch.line_id = found.line_id;
+
+  const keys = Object.keys(patch);
+  if (!keys.length) return { landed: 0, skipped };
+
+  await sb(`clinics?id=eq.${encodeURIComponent(clinicId)}&country=eq.taiwan`, {
+    method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(patch)
+  });
+  return { landed: keys.length, skipped, fields: keys };
+}
+
+// ── One domain ──────────────────────────────────────────────────────────────
+async function crawlOne(row) {
+  const home = await getPage(row.home_url);
+  if (!home.ok) return { social_status: 'error', social_error: `home: ${home.error}` };
+
+  const homeText = toText(home.html);
+  let found = extractSocials(home.html, home.finalUrl, homeText);
+  let source = home.finalUrl;
+
+  const nothing = f => !f.facebook_url && !f.instagram_url && !f.line_url && !f.line_id;
+
+  if (nothing(found)) {
+    const contactUrl = findContactUrl(home.html, home.finalUrl);
+    if (contactUrl && contactUrl !== home.finalUrl) {
+      const page = await getPage(contactUrl);
+      if (page.ok) {
+        const t = toText(page.html);
+        const second = extractSocials(page.html, page.finalUrl, t);
+        if (!nothing(second)) { found = second; source = page.finalUrl; }
+      }
+    }
+  }
+
+  if (nothing(found)) {
+    if (homeText.length < 200) {
+      return { social_status: 'needs_render', socials_found: 0,
+               social_error: 'page has almost no text' };
+    }
+    return { social_status: 'empty', socials_found: 0 };
+  }
+
+  const { landed, skipped, fields } = await land(found, row.clinic_id);
+
+  if (!landed && skipped.length) {
+    return { social_status: 'suspicious', socials_found: 0,
+             social_error: 'rejected as shared: ' + skipped.join(', ') };
+  }
+
+  return {
+    social_status: 'done',
+    socials_found: landed,
+    social_error: skipped.length ? 'partly rejected as shared: ' + skipped.join(', ') : null,
+    fields: fields || [],
+    found,
+    source
+  };
+}
+
+// ── Handler ─────────────────────────────────────────────────────────────────
+exports.handler = async (event) => {
+  const json = (code, body) => ({
+    statusCode: code,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (event.httpMethod !== 'POST') return json(405, { error: 'POST only' });
+
+  const given = (event.headers || {})['x-admin-secret'] || (event.headers || {})['X-Admin-Secret'];
+  if (!ADMIN_SECRET || given !== ADMIN_SECRET) return json(401, { error: 'unauthorised' });
+
+  if (!SB || !SB_KEY) return json(500, { error: 'SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set' });
+
+  let body = {};
+  try { body = JSON.parse(event.body || '{}'); } catch {}
+  const batch = Math.min(Math.max(parseInt(body.batch, 10) || BATCH_DEFAULT, 1), 8);
+  const retry = body.retry === true;
+
+  try {
+    const want = retry ? 'in.(pending,error)' : 'eq.pending';
+    const claim = await sb(`crawl_queue?select=*&social_status=${want}&order=id.asc&limit=${batch}`);
+    if (!claim || !claim.length) {
+      return json(200, { done: true, processed: [], remaining: 0, note: 'social queue empty' });
+    }
+
+    const ids = claim.map(r => r.id);
+    await sb(`crawl_queue?id=in.(${ids.join(',')})`, {
+      method: 'PATCH', prefer: 'return=minimal',
+      body: JSON.stringify({ social_status: 'running' })
+    });
+
+    const processed = [];
+    for (const row of claim) {
+      let result;
+      try { result = await crawlOne(row); }
+      catch (e) { result = { social_status: 'error', social_error: String(e.message || e).slice(0, 400) }; }
+
+      await sb(`crawl_queue?id=eq.${row.id}`, {
+        method: 'PATCH', prefer: 'return=minimal',
+        body: JSON.stringify({
+          social_status: result.social_status,
+          socials_found: result.socials_found || 0,
+          social_error: result.social_error || null,
+          social_fetched_at: new Date().toISOString()
+        })
+      });
+
+      const f = result.found || {};
+      processed.push({
+        domain: row.domain,
+        status: result.social_status,
+        found: result.socials_found || 0,
+        fields: (result.fields || []).join(', '),
+        facebook: f.facebook_url || null,
+        instagram: f.instagram_url || null,
+        line: f.line_url || f.line_id || null,
+        source: result.source || null,
+        error: result.social_error || null
+      });
+    }
+
+    const pending = await sb('crawl_queue?select=id&social_status=eq.pending',
+      { prefer: 'count=exact' });
+    return json(200, { done: false, processed, remaining: (pending || []).length });
+  } catch (e) {
+    return json(500, { error: String(e.message || e).slice(0, 500) });
+  }
+};
