@@ -1460,7 +1460,16 @@ function renderPageCards(clinicsData, append) {
     })();
 
     const cardSlug = clinicSlug(c);
-    const profileAttrs = cardSlug ? ` href="/clinic/${cardSlug}"` : ' role="button" tabindex="0"';
+    // 查看資料 used to carry a real href AND an onclick calling
+    // event.preventDefault(), so the browser never navigated: the profile page
+    // was reachable by Google and unreachable by a person, who only ever got
+    // the modal. Now the link navigates. stopPropagation is still needed so
+    // the card's own click handler does not fire the modal underneath it.
+    // With no slug on file there is no page to go to, so fall back to the
+    // modal rather than link nowhere — a dead link is worse than no link.
+    const profileLink = cardSlug
+      ? `<a href="/clinic/${cardSlug}" class="view-link" onclick="event.stopPropagation();">查看資料 →</a>`
+      : `<a href="#" role="button" class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">查看資料 →</a>`;
 
     return `
       <div class="clinic-card${hasPrice ? '' : ' no-price'}" data-id="${c.id}">
@@ -1495,7 +1504,7 @@ function renderPageCards(clinicsData, append) {
           </span>
         </div>
         <div class="card-footer">
-          <a${profileAttrs} class="view-link" onclick="event.preventDefault();event.stopPropagation();window.openClinicModal('${c.id}')">查看資料 →</a>
+          ${profileLink}
           <button class="btn-compare-card" id="cmp-${c.id}" onclick="toggleCompare('${c.id}')">+ 比較</button>
         </div>
       </div>`;
@@ -2683,11 +2692,21 @@ function syncMapDeviceDropdown() {
   const grid = document.getElementById('cardsGrid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;letter-spacing:0.03em;">載入中…</div>';
 
-  const [indexRes, pageRes] = await Promise.allSettled([
+  const [indexRes, pageRes, , slugRes] = await Promise.allSettled([
     fetch('/api/get-clinics?mode=index&country=taiwan').then(r => r.ok ? r.json() : []),
     fetch(buildApiUrl(0)).then(r => r.ok ? r.json() : { clinics: [], total: 0, hasMore: false }),
-    loadVerifiedDevices()
+    loadVerifiedDevices(),
+    // Every profile link depends on clinics.slug, but /api/get-clinics does not
+    // return that column — which is why the map query and the modal top-up both
+    // name it explicitly in their own selects. Without this, clinicSlug()
+    // returns '' for every card and both profile links vanish silently.
+    // Two tiny columns for the whole country, one request, cached by the CDN.
+    sbGet('clinics?select=id,slug&approved=eq.true&country=eq.taiwan&limit=5000')
   ]);
+
+  if (slugRes.status === 'fulfilled' && Array.isArray(slugRes.value)) {
+    for (const r of slugRes.value) if (r && r.slug) slugById[String(r.id)] = String(r.slug);
+  }
 
   if (indexRes.status === 'fulfilled' && Array.isArray(indexRes.value)) {
     clinicsIndex = indexRes.value.map(normaliseClinic);
