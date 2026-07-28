@@ -238,7 +238,8 @@ function buildSchema(clinic, url) {
         bestRating: 5
       }
     }),
-    ...(clinic.photos && clinic.photos.length > 0 && { image: clinic.photos[0] })
+    ...((clinic.photos && clinic.photos.length > 0) || clinic.photo
+      ? { image: (clinic.photos && clinic.photos[0]) || clinic.photo } : {})
   };
   return JSON.stringify(schema).replace(/</g, '\\u003c');
 }
@@ -255,7 +256,13 @@ function renderFullPage(clinic, doctors, devices) {
   const name = escapeHtml(clinic.name || '');
   const dirUrl = dirPath(clinic.country);
   const photos = Array.isArray(clinic.photos) ? clinic.photos : [];
-  const photo = photos.length > 0 ? photos[0] : null;
+  // ⭐ The hero used to read photos[0] ONLY. clinics.photos has never been
+  // populated, while clinics.photo (the single card image, now re-hosted into
+  // our own storage) is present for ~2,000 Taiwan clinics — so every profile
+  // rendered the empty-state house icon even though a good photo existed one
+  // column over. The gallery grid below still uses the photos array; this
+  // fallback just stops the hero going blank when only `photo` is on file.
+  const photo = photos.length > 0 ? photos[0] : (clinic.photo || null);
 
   // Title + description
   const title = lang === 'zh'
@@ -513,10 +520,10 @@ exports.handler = async (event) => {
 
     const COUNTRIES = ['taiwan', 'hongkong', 'usa'];
     // Columns including the new slug column (primary, indexed path).
-    const COLS = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url, slug, '
+    const COLS = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, photo, place_id, maps_url, slug, '
       + 'facebook_url, instagram_url, line_url, line_id';
     // Columns without slug (fallback path, works before the migration runs).
-    const COLS_BASE = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, place_id, maps_url, '
+    const COLS_BASE = 'id, name, neighbourhood, country, phone, website, rating, reviews, photos, photo, place_id, maps_url, '
       + 'facebook_url, instagram_url, line_url, line_id';
 
     let clinic = null;
