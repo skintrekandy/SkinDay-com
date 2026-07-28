@@ -574,7 +574,8 @@
     const url = 'https://skinday.com/clinic/' + slug;
     const loc = localeLabel(clinic);
     const country = countryLabel(clinic.country, lang);
-    const photo = (clinic.photos && clinic.photos.length) ? clinic.photos[0] : 'https://skinday.com/og-default.jpg';
+    const photo = (clinic.photos && clinic.photos.length) ? clinic.photos[0]
+                 : (clinic.photo || 'https://skinday.com/og-default.jpg');
 
     let title, desc;
     if (lang === 'zh') {
@@ -631,10 +632,15 @@
         '</div>';
     }
 
-    // Hero photo or placeholder
+    // Hero photo or placeholder.
+    // ⭐ photos[] has never been populated; clinics.photo (the single card
+    // image, re-hosted into our own storage) exists for ~2,000 Taiwan clinics.
+    // Without this fallback every profile showed the empty-state icon while a
+    // perfectly good photo sat one column over.
     let heroHtml = '';
-    if (photos.length > 0) {
-      heroHtml = '<img class="clinic-hero" src="' + escapeHtml(photos[0]) + '" alt="' + escapeHtml(clinic.name) + '" loading="eager" />';
+    const heroSrc = photos.length > 0 ? photos[0] : (clinic.photo || '');
+    if (heroSrc) {
+      heroHtml = '<img class="clinic-hero" src="' + escapeHtml(heroSrc) + '" alt="' + escapeHtml(clinic.name) + '" loading="eager" />';
     } else {
       heroHtml = '<div class="clinic-hero-placeholder"><svg width="48" height="48" fill="none" stroke="#999" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>';
     }
@@ -812,7 +818,7 @@
     //
     // Now it asks the database the actual question: which clinic has this slug.
     const cols = 'id,name,slug,neighbourhood,region,city,country,lat,lng,phone,website,'
-      + 'rating,reviews,photos,place_id,maps_url,facebook_url,instagram_url,line_url,line_id';
+      + 'rating,reviews,photos,photo,place_id,maps_url,facebook_url,instagram_url,line_url,line_id';
     const rows = await sbGet('clinics?select=' + cols
       + '&slug=eq.' + encodeURIComponent(slug)
       + '&country=in.(taiwan,hongkong)&approved=eq.true&limit=1');
