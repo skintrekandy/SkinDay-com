@@ -578,10 +578,40 @@ const CENSUS_CONTEXT = DEVICE_CONTEXT.concat([
   'handpieces', 'wavelength', 'ablative', 'fractional', 'traitement'
 ]);
 
+// ⭐⭐⭐ RANKED, NOT FIRST-COME.
+// The old loop stopped at the first 8 surviving tokens IN DOCUMENT ORDER, and a
+// chain's mega-menu sits at the top of the DOM. laseraway.com therefore returned
+// Underarms, Brazilian, Bikini and Bundles while Astanza Duality, XTherma and
+// Kirby-Paradigm — all named further down the same page — never made the cut.
+// Now every candidate is collected, SCORED, and the best kept.
+const STRONG_CONTEXT = [
+  'device', 'devices', 'system', 'systems', 'platform', 'platforms',
+  'technology', 'technologies', 'handpiece', 'handpieces', 'machine',
+  'wavelength', 'q switched', 'q-switched', 'fda cleared', 'nd yag',
+  'we use', 'powered by', 'utilizing', 'utilising', 'equipped'
+];
+
 function censusUnknowns(rawText, matcher, mfrKnown) {
   const src = stripUrls(stripMarks(rawText));
   const flat = ' ' + norm(src) + ' ';
   const known = matcher.map(e => e.token);
+
+  // ⭐ A TRADEMARK SYMBOL IS THE STRONGEST FREE SIGNAL ON THE PAGE. Read it from
+  // the RAW text, because stripMarks() removes ® and ™ before anything else runs.
+  // "Astanza® Duality", "XTherma®", "Potenza™" — a clinic marks the product names
+  // it does not own, and marks nothing in its navigation.
+  const tmTokens = new Set();
+  {
+    const tre = /([A-Za-z][A-Za-z0-9+\-]{2,24}(?:\s+[A-Z][A-Za-z0-9+\-]{1,24})?)\s*[\u00ae\u2122]/g;
+    let t;
+    while ((t = tre.exec(String(rawText))) !== null) {
+      const nn = norm(t[1]);
+      if (!nn) continue;
+      tmTokens.add(nn);
+      const parts = nn.split(' ');
+      if (parts.length > 1) { tmTokens.add(parts[0]); tmTokens.add(parts[parts.length - 1]); }
+    }
+  }
   const lowerElsewhere = new Set();
   {
     const re2 = /\b([a-z][a-z]{3,})\b/g;
@@ -592,7 +622,9 @@ function censusUnknowns(rawText, matcher, mfrKnown) {
   const out = [];
   const seen = new Set();
   let m;
-  while ((m = re.exec(src)) !== null && out.length < 8) {
+  let scanned = 0;
+  while ((m = re.exec(src)) !== null && scanned < 4000) {
+    scanned++;
     const raw = m[1].trim();
     const n = norm(raw);
     if (!n || seen.has(n) || STOPWORDS.has(n)) continue;
@@ -623,9 +655,33 @@ function censusUnknowns(rawText, matcher, mfrKnown) {
     const ctx = flat.slice(Math.max(0, at + 1 - 70), at + 1 + n.length + 70);
     if (!hasAny(ctx, CENSUS_CONTEXT)) continue;
     seen.add(n);
-    out.push({ token: raw, token_norm: n });
+
+    // ── SCORE ──────────────────────────────────────────────────────────────
+    // Nav labels survive every filter above (they are capitalised, sit near the
+    // word "laser", and never appear lowercase). What separates a product name
+    // from a menu item is the company it keeps.
+    let score = 0;
+    if (tmTokens.has(n)) score += 6;                       // marked ® or ™
+    if (hasAny(ctx, STRONG_CONTEXT)) score += 4;           // "system", "we use", "wavelength"
+    const tight = flat.slice(Math.max(0, at + 1 - 28), at + 1 + n.length + 28);
+    if (hasAny(tight, STRONG_CONTEXT)) score += 2;         // and close by
+    // Repeated in prose is a product; a nav label usually appears once or twice
+    // in the text stream even though it is visually everywhere.
+    let occurrences = 0, from = 0, hit;
+    while ((hit = flat.indexOf(' ' + n + ' ', from)) !== -1 && occurrences < 12) { occurrences++; from = hit + 1; }
+    if (occurrences >= 3) score += 2;
+    // Two unknown capitalised words side by side is the shape of a maker plus a
+    // model — "Astanza Duality", "Kirby Paradigm".
+    const before = src.slice(Math.max(0, m.index - 30), m.index);
+    if (/[A-Z][a-zA-Z]{2,}[\s\u00ae\u2122]*$/.test(before)) score += 2;
+
+    out.push({ token: raw, token_norm: n, score: score });
   }
-  return out;
+
+  // ⭐ Best first, then cut. This is the whole fix: the cut used to happen in
+  // document order, so a mega-menu ate the budget before the content was read.
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, 12).map(u => ({ token: u.token, token_norm: u.token_norm, score: u.score }));
 }
 
 const STOPWORDS = new Set([
@@ -681,7 +737,25 @@ const STOPWORDS = new Set([
   'understanding', 'unlike', 'experience', 'introduced', 'combines',
   'combining', 'targets', 'target', 'stimulating', 'delivers', 'offering',
   'proud', 'best', 'most', 'also', 'each', 'both', 'these', 'those', 'while',
-  'every', 'first', 'second', 'third', 'other', 'others', 'over', 'under'
+  'every', 'first', 'second', 'third', 'other', 'others', 'over', 'under',
+  // ── NAVIGATION AND BODY AREAS. Added 2026-08-02 after laseraway.com's
+  // mega-menu filled the entire census with menu labels. A chain site lists
+  // every treatable body part at the top of the DOM.
+  'underarms', 'underarm', 'bikini', 'brazilian', 'abdomen', 'buttocks',
+  'sideburns', 'stomach', 'thighs', 'thigh', 'shoulders', 'shoulder',
+  'knuckles', 'nipples', 'cheeks', 'cheek', 'chin', 'lips', 'forehead',
+  'jawline', 'masseter', 'nostrils', 'toes', 'feet', 'hands', 'calves',
+  'bundles', 'bundle', 'areas', 'area', 'popular', 'explore', 'location',
+  'locations', 'points', 'premiere', 'instant', 'wellness', 'savings',
+  'rewards', 'loyalty', 'promo', 'promos', 'offers', 'offer', 'addons',
+  'addon', 'concern', 'concerns', 'financing', 'finance', 'checkout',
+  'account', 'profile', 'settings', 'support', 'help', 'careers', 'press',
+  'partners', 'franchise', 'membership', 'memberships', 'referral',
+  'crows', 'bunny', 'smokers', 'marionette', 'nasolabial', 'hyperhidrosis',
+  'contouring', 'tightening', 'brightening', 'hydrate', 'aging', 'regenerative',
+  'radiofrequency', 'photofacial', 'photofacials',
+  'story', 'class', 'best', 'discover', 'cutting', 'edge', 'latest',
+  'ensuring', 'effective', 'providing', 'committed', 'features', 'options'
 ]);
 
 
@@ -1038,8 +1112,18 @@ async function crawlHost(row, matcher) {
         byDevice.set(m.device_id, Object.assign({}, m, { source_url: p.url }));
       }
     }
+    // ⭐ PAGE RANK MATTERS. Home was read first and used to win every tie, so a
+    // nav label from the homepage beat the same-named token found in prose on
+    // the technology page. Tech and service pages now outrank home.
+    const pageRank = TECH_PATH.test(p.url) ? 3 : (SERVICE_PATH.test(p.url) ? 2 : 1);
     for (const u of res.unknowns) {
-      if (!unknowns.has(u.token_norm)) unknowns.set(u.token_norm, Object.assign({}, u, { source_url: p.url }));
+      const cand = Object.assign({}, u, { source_url: p.url, page_rank: pageRank });
+      const prev = unknowns.get(u.token_norm);
+      if (!prev
+          || pageRank > (prev.page_rank || 0)
+          || (pageRank === (prev.page_rank || 0) && (u.score || 0) > (prev.score || 0))) {
+        unknowns.set(u.token_norm, cand);
+      }
     }
   }
 
@@ -1060,7 +1144,9 @@ async function crawlHost(row, matcher) {
     sitemapUrls: sitemapLinks.length,
     sitemapSource: sm.source,
     matches,
-    unknowns: [...unknowns.values()].slice(0, MAX_UNKNOWNS_PER_HOST)
+    unknowns: [...unknowns.values()]
+      .sort((a, b) => (b.page_rank || 0) - (a.page_rank || 0) || (b.score || 0) - (a.score || 0))
+      .slice(0, MAX_UNKNOWNS_PER_HOST)
   };
 }
 
