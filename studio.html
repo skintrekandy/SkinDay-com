@@ -180,6 +180,7 @@
     .crop-grid i { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(250,247,242,0.32); }
     .crop-grid b { position: absolute; left: 0; right: 0; height: 1px; background: rgba(250,247,242,0.32); }
     .zoom-name { font-size: 0.82rem; font-weight: 600; color: var(--deep); letter-spacing: 0.02em; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .no-face { margin-left: 6px; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.01em; color: #8A6A2F; background: #F1E9D9; border: 1px solid #E0D2B4; border-radius: 999px; padding: 1px 7px; white-space: nowrap; cursor: help; }
     .zoom-hint { font-size: 0.68rem; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
     .zoom-hint .hint-pct { color: var(--rose); font-weight: 600; }
     .preview-area { display: grid; gap: 12px; margin-bottom: 8px; }
@@ -1256,21 +1257,45 @@ function lmToBaseBox(lm, iw, ih, preset) {
   if (preset === 'upper') { top = foreY - faceH * .15; bot = nose.y - faceH * .05; }
   if (preset === 'eyes')  { top = browY - faceH * .20; bot = nose.y + faceH * .08; }
   const box = {x: cxA - halfW, y: top, w: halfW * 2, h: bot - top, cx: cxA, cy: (top + bot) / 2};
-  if (preset === 'full') {
-    const targetAR = 4/5;
-    const ar = box.w / box.h;
-    if (ar < targetAR) box.w = box.h * targetAR;
-    else if (ar > targetAR) box.h = box.w / targetAR;
-    box.x = box.cx - box.w / 2;
-    box.y = box.cy - box.h / 2;
-  }
+  return lockPresetAspect(box, preset);
+}
+
+// THE 4:5 LOCK THAT KEEPS EVERY 'full' CROP THE SAME SHAPE.
+//
+// This used to live inside lmToBaseBox only. That was the bug: a slot whose face
+// was NOT detected never reaches lmToBaseBox at all, it falls through to
+// faceFallbackBox, and the fallback derived its shape from the PHOTOGRAPH rather
+// than from a target aspect. On a 1080x1620 frame that is 0.84*iw by 0.93*ih, an
+// aspect of 0.60 against the locked 0.80.
+//
+// The angle MediaPipe misses most often is the 90 degree profile, so the symptom
+// was a full-face grid where four angles exported at one shape and the profile at
+// another -- narrower, and (because the composite drives the letterbox canvas)
+// about 75% of the resolution of the panels beside it. Deterministic, so retrying
+// reproduced it exactly.
+//
+// Locking both paths means a missed face can change WHERE the crop sits, which is
+// unavoidable without landmarks, but never what SHAPE it is.
+function lockPresetAspect(box, preset) {
+  if (preset !== 'full') return box;
+  const targetAR = 4 / 5;
+  const ar = box.w / box.h;
+  if (!isFinite(ar) || ar <= 0) return box;
+  if (ar < targetAR) box.w = box.h * targetAR;
+  else if (ar > targetAR) box.h = box.w / targetAR;
+  box.x = box.cx - box.w / 2;
+  box.y = box.cy - box.h / 2;
   return box;
 }
 
+// Used when no face was detected in this photograph. Widening past the frame is
+// fine and expected: getBoxForSlot passes the result through fitBoxToImage, which
+// shrinks UNIFORMLY, so the locked aspect survives the fit.
 function faceFallbackBox(iw, ih, preset) {
   const p = {full:[.03,.96,.08,.92], lower:[.40,.90,.08,.92], upper:[.03,.40,.08,.92], eyes:[.25,.56,.08,.92]};
   const [t, b, l, r] = p[preset] || [.03,.96,.08,.92];
-  return {x: l*iw, y: t*ih, w: (r-l)*iw, h: (b-t)*ih, cx: (l+r)/2*iw, cy: (t+b)/2*ih};
+  const box = {x: l*iw, y: t*ih, w: (r-l)*iw, h: (b-t)*ih, cx: (l+r)/2*iw, cy: (t+b)/2*ih};
+  return lockPresetAspect(box, preset);
 }
 
 // Shrink a box to fit inside the photograph WITHOUT changing its shape.
@@ -1419,6 +1444,14 @@ function rebuildZoomControls() {
   if (paired) { order = []; for (let c = 0; c < cols; c++) { order.push(c); order.push(cols + c); } }
   wrap.style.gridTemplateColumns = paired ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(240px, 1fr))';
   const hint = currentLang === 'zh' ? '\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u7e2e\u653e\u8207\u65cb\u8f49 \u00b7 \u96d9\u64ca\u9084\u539f' : 'Drag to move \u00b7 two fingers to zoom & rotate \u00b7 double-tap to reset';
+  // A slot with no landmarks is centred on the frame instead of on the face. The
+  // shape now matches the rest of the grid either way, but the clinician should
+  // still know which panel needs a manual nudge -- 90 degree profiles are the
+  // usual case, and the transient "no faces detected" status is easy to miss.
+  const noFaceTag = currentLang === 'zh' ? '\u672a\u5075\u6e2c\u5230\u81c9\u90e8' : 'no face found';
+  const noFaceTip = currentLang === 'zh'
+    ? '\u6b64\u7167\u7247\u672a\u5075\u6e2c\u5230\u81c9\u90e8\uff0c\u88c1\u5207\u4ee5\u756b\u9762\u70ba\u4e2d\u5fc3\u3002\u8acb\u62d6\u66f3\u5fae\u8abf\u3002'
+    : 'No face was detected in this photo, so the crop is centred on the frame. Drag to adjust.';
   wrap.innerHTML = order.map(i => {
     const sl = S.slots[i];
     if (!sl || !sl.img) return '';
@@ -1428,7 +1461,7 @@ function rebuildZoomControls() {
         <canvas class="crop-canvas" id="cropc-${i}"></canvas>
         <div class="crop-grid" aria-hidden="true"><i style="left:33.33%"></i><i style="left:66.66%"></i><b style="top:33.33%"></b><b style="top:66.66%"></b></div>
       </div>
-      <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}</div>
+      <div class="zoom-name" id="zName-${i}">${zoomBoxName(i)}${sl.lm ? '' : `<span class="no-face" title="${noFaceTip}">${noFaceTag}</span>`}</div>
       <div class="zoom-hint"><span class="hint-txt" data-en="Drag to move \u00b7 two fingers to zoom & rotate \u00b7 double-tap to reset" data-zh="\u62d6\u66f3\u79fb\u52d5 \u00b7 \u96d9\u6307\u7e2e\u653e\u8207\u65cb\u8f49 \u00b7 \u96d9\u64ca\u9084\u539f">${hint}</span><span class="hint-pct" id="zVal-${i}">${Math.round(sl.zoom*100)}%</span></div>
     </div>`;
   }).join('');
