@@ -4,8 +4,10 @@ const { createClient } = require('@supabase/supabase-js');
 // Includes photo + logo (Google Maps CDN URLs stored at import time)
 // Includes country + region for multi-country routing
 // Includes lat + lng for Near Me distance calc on the frontend
+// Includes slug: profile links MUST use it, not a slugified name. Chain
+// branches share a name (LaserAway x74) and only the slug separates them.
 const CARD_FIELDS = `
-  id, name, neighbourhood, region, country, state, metro,
+  id, name, slug, neighbourhood, region, country, state, metro,
   rating, reviews, place_id,
   phone, website,
   claimed, approved, promo, promo_text,
@@ -39,7 +41,7 @@ exports.handler = async (event) => {
       const stateIdx = params.state || '';
       let idxQuery = supabase
         .from('clinics')
-        .select('id, name, neighbourhood, region, photo, logo, lat, lng, rating, reviews')
+        .select('id, name, slug, neighbourhood, region, photo, logo, lat, lng, rating, reviews')
         .eq('approved', true)
         .eq('country', country);
       if (metroIdx) idxQuery = idxQuery.ilike('metro', metroIdx);
@@ -222,7 +224,7 @@ exports.handler = async (event) => {
 
     // ── MERGE ─────────────────────────────────────────────────
     const keep = [
-      'id', 'name', 'neighbourhood', 'region', 'country', 'state', 'metro',
+      'id', 'name', 'slug', 'neighbourhood', 'region', 'country', 'state', 'metro',
       'rating', 'reviews', 'place_id',
       'phone', 'website',
       'claimed', 'approved', 'promo', 'promo_text',
