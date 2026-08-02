@@ -750,6 +750,9 @@
     <button class="nav-tab" data-tab="data" onclick="switchTab('data')">
       &#9635; Data <span class="tab-count zero" id="data-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="devices" onclick="switchTab('devices')">
+      &#9881; Devices <span class="tab-count zero" id="dc-count">0</span>
+    </button>
   </nav>
 
   <main class="admin-main">
@@ -1016,6 +1019,91 @@
       </div>
     </div>
 
+    <!-- ── DEVICE CRAWL (M39 ported from skinday.ca for M19/US) ───────────── -->
+    <div id="devices-panel" style="display:none">
+
+      <div class="add-clinic-form">
+        <div class="form-title">Device crawl</div>
+        <div class="form-subtitle">Reads each clinic's own website for the aesthetic devices they run, matched against the curated reference list. Nothing here is visible to patients: candidates sit in a table the public key cannot read, and only approving one publishes a device.</div>
+
+        <div class="form-section-label">Country</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <select class="form-input" id="dc-country" style="max-width:220px;" onchange="dcCountryChanged()">
+            <option value="usa">United States</option>
+            <option value="canada">Canada</option>
+            <option value="taiwan">Taiwan</option>
+            <option value="hongkong">Hong Kong</option>
+            <option value="">Every country</option>
+          </select>
+          <span style="font-size:.78rem;color:var(--muted);">The queue holds every country. Choosing one here scopes the crawl, the retry and the counts, so a US run can never drain Canada's queue.</span>
+        </div>
+
+        <div class="form-section-label" style="margin-top:1rem;">Run</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn-primary" id="dc-start" onclick="dcStart()">Start crawl</button>
+          <button class="btn-ghost" id="dc-stop" onclick="dcStop()" style="display:none;">Stop</button>
+          <button class="btn-ghost" onclick="dcStart(true)">Retry failed</button>
+          <span id="dc-progress" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
+          <input class="form-input" id="dc-one-host" placeholder="laseraway.com" style="max-width:260px;" onkeydown="if(event.key==='Enter')dcTestHost()" />
+          <button class="btn-ghost" onclick="dcTestHost()">Test this host</button>
+          <span style="font-size:.78rem;color:var(--muted);">Crawls one site now and shows exactly what it read, whatever its queue status or country.</span>
+        </div>
+
+        <div class="form-subtitle" style="margin-top:.6rem;">This only advances while the tab is open and awake, so do not run it alongside another crawl. Watch the first ten hosts before leaving it to loop. Each device shows how it was found: <strong>own page</strong> means the clinic has a dedicated page for that machine, which is the strongest evidence; <strong>named</strong> means it was written in the page text; <strong>blog</strong> means it appeared in an article and may be a device they only wrote about.</div>
+
+        <div id="dc-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
+      </div>
+
+      <div class="add-clinic-form" style="margin-top:1.4rem;">
+        <div class="form-title">Review candidates</div>
+        <div class="form-subtitle">Approving publishes the device on the clinic, marked as listed rather than verified, and dates it to the day the page was read. A newly published device also writes an entry to the change feed, which is what a manufacturer subscribes to.</div>
+
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <select class="form-input" id="dc-cand-status" style="max-width:170px;" onchange="dcLoadCandidates()">
+            <option value="pending">Needs review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select class="form-input" id="dc-cand-conf" style="max-width:210px;" onchange="dcLoadCandidates()">
+            <option value="">Any evidence</option>
+            <option value="own_page">Own page only</option>
+            <option value="exact">Named in the text only</option>
+            <option value="blog_only">Blog mentions only</option>
+          </select>
+          <select class="form-input" id="dc-cand-device" style="max-width:280px;" onchange="dcLoadCandidates()">
+            <option value="">Every device</option>
+          </select>
+          <button class="btn-ghost" onclick="dcLoadCandidates()">Refresh</button>
+          <span id="dc-cand-stats" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+
+        <div id="dc-cand-actions" style="display:none;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <button class="btn-ghost" onclick="dcSelectAll(true)">Select all</button>
+          <button class="btn-ghost" onclick="dcSelectOwnPage()">Select only the ones with their own page</button>
+          <button class="btn-ghost" onclick="dcSelectAll(false)">Clear</button>
+          <button class="btn-approve" onclick="dcApproveSelected()">Approve selected</button>
+          <button class="btn-reject" onclick="dcRejectSelected()">Reject selected</button>
+          <span id="dc-cand-msg" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+
+        <div id="dc-cand-list"></div>
+      </div>
+
+      <div class="add-clinic-form" style="margin-top:1.4rem;">
+        <div class="form-title">Unmatched names</div>
+        <div class="form-subtitle">Capitalised names that sat next to a device word on a clinic page and matched nothing in the reference list. This is how the real long tail gets found. Anything appearing on several hosts is probably a machine worth adding to the list.</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <button class="btn-ghost" onclick="dcLoadUnknowns()">Load unmatched names</button>
+          <span id="dc-unknown-msg" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div id="dc-unknown-list"></div>
+      </div>
+
+    </div>
+
   </main>
 </div>
 
@@ -1094,6 +1182,9 @@ function switchTab(tab){
   if (taiwanP) taiwanP.style.display = (tab === 'taiwan') ? 'block' : 'none';
   var dataP = document.getElementById('data-panel');
   if (dataP) dataP.style.display = (tab === 'data') ? 'block' : 'none';
+  var devP = document.getElementById('devices-panel');
+  if (devP) devP.style.display = (tab === 'devices') ? 'block' : 'none';
+  if (tab === 'devices') dcEnter();
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
@@ -2364,6 +2455,405 @@ async function dtReset(){
   document.getElementById('dt-bar').style.width = '0%';
   document.getElementById('dt-projection').textContent = '';
   dtRender(); dtCheck();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DEVICE CRAWL (M39, ported from skinday.ca for M19)
+// Loops /.netlify/functions/crawl-devices a few hosts at a time from the
+// browser. That function owns the whole surface, crawl and review both, so
+// admin-action.js is untouched by this.
+//
+// ⭐ EVERY CALL CARRIES A COUNTRY. The queue is shared across countries now,
+// and without scoping a US run drains Canada's pending rows and "retry failed"
+// requeues Canada's errors.
+// ═══════════════════════════════════════════════════════════════════════════
+const DC_FN = '/.netlify/functions/crawl-devices';
+let dcRunning  = false;
+let dcRunId    = null;
+let dcTotals   = { hosts: 0, devices: 0, empty: 0, errors: 0, render: 0 };
+let dcCandidates = [];
+let dcEntered  = false;
+
+function dcCountry() {
+  const el = document.getElementById('dc-country');
+  return el ? el.value : 'usa';
+}
+
+function dcEnter() {
+  if (dcEntered) { dcLoadStats(); return; }
+  dcEntered = true;
+  dcLoadStats();
+  dcLoadCandidates();
+}
+
+function dcCountryChanged() {
+  // Country scopes the queue counts and the candidate list, so both reload.
+  dcLoadStats();
+  dcLoadCandidates();
+}
+
+async function dcCall(body) {
+  const res = await fetch(DC_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  return { ok: res.ok, data };
+}
+
+function dcLog(html, colour) {
+  const box = document.getElementById('dc-log');
+  box.style.display = 'block';
+  const line = document.createElement('div');
+  if (colour) line.style.color = colour;
+  line.innerHTML = html;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function dcButtons(running) {
+  document.getElementById('dc-start').style.display = running ? 'none' : '';
+  document.getElementById('dc-stop').style.display  = running ? '' : 'none';
+}
+
+function dcStop() {
+  dcRunning = false;
+  dcButtons(false);
+  dcLog('stopped.', 'var(--muted)');
+}
+
+function dcConfLabel(conf) {
+  if (conf === 'own_page')  return '<span style="background:var(--green-bg);color:var(--green);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">own page</span>';
+  if (conf === 'blog_only') return '<span style="background:var(--red-bg);color:var(--red);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">blog only</span>';
+  return '<span style="background:var(--warm);color:var(--muted);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">named</span>';
+}
+
+async function dcStart(retry) {
+  if (dcRunning) return;
+  const country = dcCountry();
+  dcRunning = true;
+  dcTotals = { hosts: 0, devices: 0, empty: 0, errors: 0, render: 0 };
+  dcRunId = null;
+  dcButtons(true);
+  dcLog((retry === true ? 'retrying hosts that failed' : 'starting') +
+        ' · ' + (country || 'every country') + '…', 'var(--muted)');
+
+  // ⭐ A SINGLE BAD RESPONSE MUST NOT END THE RUN. Netlify returns an HTML error
+  // page when a function is killed, which arrives here as "Unexpected token '<'".
+  // That is transient: back off and carry on, give up only after several in a row.
+  let consecutiveFailures = 0;
+  const MAX_CONSECUTIVE_FAILURES = 5;
+
+  while (dcRunning) {
+    let data;
+    try {
+      const r = await dcCall({ action: 'crawl', batch: 3, retry: retry === true, run_id: dcRunId, country: country });
+      data = r.data;
+      if (!r.ok) throw new Error((data && data.error) || 'request failed');
+    } catch (e) {
+      consecutiveFailures++;
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        dcLog('stopping after ' + consecutiveFailures + ' consecutive failures: '
+              + esc(String((e && e.message) || e)), 'var(--red)');
+        break;
+      }
+      const waitMs = 2000 * consecutiveFailures;
+      dcLog('hiccup (' + consecutiveFailures + '/' + MAX_CONSECUTIVE_FAILURES + '): '
+            + esc(String((e && e.message) || e))
+            + ' · retrying in ' + (waitMs / 1000) + 's', 'var(--gold)');
+      await new Promise(r2 => setTimeout(r2, waitMs));
+      continue;
+    }
+
+    consecutiveFailures = 0;
+    retry = false;                     // requeue once, not on every loop
+    if (data.run_id) dcRunId = data.run_id;
+
+    for (const p of (data.processed || [])) {
+      dcTotals.hosts++;
+      const host = esc(p.host);
+      if (p.status === 'done') {
+        dcTotals.devices += (p.devices || []).length;
+        const list = (p.devices || [])
+          .map(d => esc(d.model) + ' ' + dcConfLabel(d.confidence)).join(', ');
+        dcLog('<strong>' + host + '</strong> · ' + list +
+              ' · across ' + p.clinics + ' clinic' + ((p.clinics === 1) ? '' : 's') +
+              (p.thin_only ? ' · <span style="color:var(--gold);">javascript only, read from its sitemap</span>' : '') +
+              (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls' : '') +
+              ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
+              'var(--green)');
+      } else if (p.status === 'empty') {
+        dcTotals.empty++;
+        dcLog(host + ' · no devices found' +
+              (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls read' : '') +
+              ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
+              'var(--muted)');
+      } else if (p.status === 'needs_render') {
+        dcTotals.render++;
+        dcLog(host + ' · javascript only, and its sitemap did not help either'
+              + (p.sitemap_urls ? ' (sitemap had ' + p.sitemap_urls + ' urls)' : ' (no sitemap found)'),
+              'var(--gold)');
+      } else {
+        dcTotals.errors++;
+        dcLog(host + ' · ' + esc(p.error || p.status), 'var(--red)');
+      }
+    }
+
+    document.getElementById('dc-progress').textContent =
+      dcTotals.hosts + ' hosts · ' + dcTotals.devices + ' devices · ' +
+      dcTotals.empty + ' none found · ' + dcTotals.render + ' need rendering · ' +
+      dcTotals.errors + ' failed · ' +
+      ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
+
+    if (data.done) { dcLog('queue empty for ' + (country || 'every country') + '. done.', 'var(--muted)'); break; }
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  dcRunning = false;
+  dcButtons(false);
+  dcLoadStats();
+}
+
+// ⭐ Crawl ONE host on demand and print the matcher's working. Ignores queue
+// status, `excluded` and country by design: the point is to inspect a host the
+// normal loop would skip.
+async function dcTestHost() {
+  const input = document.getElementById('dc-one-host');
+  const host = (input && input.value || '').trim();
+  if (!host) { dcLog('Enter a host first.', 'var(--red)'); return; }
+
+  dcLog('testing ' + esc(host) + ' …', 'var(--muted)');
+
+  let data;
+  try {
+    const r = await dcCall({ action: 'crawl', host: host, batch: 1 });
+    data = r.data;
+    if (!r.ok) { dcLog('error: ' + esc((data && data.error) || 'request failed'), 'var(--red)'); return; }
+  } catch (e) {
+    dcLog('network error: ' + esc(String((e && e.message) || e)), 'var(--red)');
+    return;
+  }
+
+  if (data.note) { dcLog(esc(data.note), 'var(--gold)'); return; }
+
+  (data.processed || []).forEach(p => {
+    const d = p.diagnostic || {};
+    dcLog('<strong>' + esc(p.host) + '</strong> · verdict: ' + esc(p.status), 'var(--deep)');
+    dcLog('   pages read: ' + (d.pages_read != null ? d.pages_read : '?')
+          + ' · tech page: ' + esc(d.tech_url || 'none picked')
+          + ' · sitemap: ' + (d.sitemap_urls || 0) + ' urls'
+          + (d.sitemap_source ? ' from ' + esc(d.sitemap_source) : '')
+          + (d.thin_only ? ' · JAVASCRIPT ONLY' : ''), 'var(--muted)');
+    if (d.error) dcLog('   fetch error: ' + esc(d.error), 'var(--red)');
+    if ((d.matched || []).length) {
+      dcLog('   matched ' + d.matched.length + ':', 'var(--green)');
+      d.matched.forEach(m => dcLog('      ' + esc(m), 'var(--green)'));
+    } else {
+      dcLog('   matched nothing', 'var(--red)');
+    }
+    if ((d.unmatched_sample || []).length) {
+      dcLog('   unmatched names seen: ' + esc(d.unmatched_sample.join(', ')), 'var(--gold)');
+    }
+    var candBits = p.inserted + ' candidate row(s) written';
+    if (typeof p.candidates_new === 'number' || typeof p.candidates_refreshed === 'number') {
+      candBits = (p.candidates_new || 0) + ' new · ' + (p.candidates_refreshed || 0) + ' refreshed';
+    }
+    dcLog('   ' + p.clinics + ' clinic row(s) on this host · ' + candBits, 'var(--muted)');
+  });
+
+  dcLoadStats();
+}
+
+function dcCandMsg(text, colour) {
+  const el = document.getElementById('dc-cand-msg');
+  if (!el) return;
+  el.textContent = text || '';
+  el.style.color = colour || 'var(--muted)';
+}
+
+async function dcLoadStats() {
+  const country = dcCountry();
+  const { ok, data } = await dcCall({ action: 'candidate-stats', country: country });
+  if (!ok || !data || !data.counts) return;
+
+  document.getElementById('dc-cand-stats').textContent =
+    data.counts.pending + ' to review · ' + data.counts.approved + ' approved · ' +
+    data.counts.rejected + ' rejected · ' + data.clinic_devices + ' published · ' +
+    data.queue.pending + ' hosts left to crawl in ' + (country || 'every country');
+
+  const el = document.getElementById('dc-count');
+  if (el) {
+    el.textContent = data.counts.pending;
+    el.classList.toggle('zero', data.counts.pending === 0);
+  }
+
+  // Rebuild the device filter from what is actually waiting, keeping whatever is
+  // selected. Counts sit in the option text so a device dominating the queue is
+  // obvious before anyone selects all — that is either a real discovery or a bad
+  // alias, and both want looking at before a bulk approve.
+  const sel = document.getElementById('dc-cand-device');
+  if (sel && Array.isArray(data.by_device)) {
+    const keep = sel.value;
+    let opts = '<option value="">Every device (' + data.counts.pending + ')</option>';
+    data.by_device.forEach(function (d) {
+      opts += '<option value="' + d.device_id + '">' +
+              esc(d.model) + ' · ' + esc(d.manufacturer || '—') +
+              ' (' + d.pending + ')</option>';
+    });
+    sel.innerHTML = opts;
+    if (keep && sel.querySelector('option[value="' + keep + '"]')) sel.value = keep;
+  }
+}
+
+async function dcLoadCandidates() {
+  const status = document.getElementById('dc-cand-status').value;
+  const conf   = document.getElementById('dc-cand-conf').value;
+  const device = document.getElementById('dc-cand-device').value;
+  const list   = document.getElementById('dc-cand-list');
+  list.innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading candidates…</div>';
+  dcCandMsg('');
+
+  const { ok, data } = await dcCall({
+    action: 'list-candidates', status: status, confidence: conf,
+    device_id: device, limit: 300, country: dcCountry()
+  });
+  if (!ok) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load candidates</div><div class="empty-desc">' +
+      esc((data && data.error) || 'Please try again.') + '</div></div>';
+    return;
+  }
+
+  dcCandidates = data.candidates || [];
+  dcRenderCandidates();
+  dcLoadStats();
+}
+
+function dcRenderCandidates() {
+  const list = document.getElementById('dc-cand-list');
+  const actions = document.getElementById('dc-cand-actions');
+  const reviewing = document.getElementById('dc-cand-status').value === 'pending';
+
+  if (!dcCandidates.length) {
+    actions.style.display = 'none';
+    list.innerHTML = '<div class="empty-state"><div class="empty-title">Nothing here</div><div class="empty-desc">No candidates with that status in this country. Run the crawl above first.</div></div>';
+    return;
+  }
+  actions.style.display = reviewing ? 'flex' : 'none';
+
+  // Grouped by host, because one host produces a row per device per branch and
+  // they are almost always the same decision.
+  const byHost = {};
+  dcCandidates.forEach(c => {
+    const k = c.host || 'unknown';
+    (byHost[k] = byHost[k] || []).push(c);
+  });
+
+  let html = '';
+  Object.keys(byHost).sort().forEach(host => {
+    const rows = byHost[host];
+    html += '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.9rem;overflow:hidden;">';
+    html += '<div style="background:var(--warm);padding:.55rem .8rem;font-size:.82rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;">' +
+            '<strong>' + esc(host) + '</strong>' +
+            '<a href="' + esc(rows[0].source_url || '#') + '" target="_blank" rel="noopener" style="color:var(--rose);text-decoration:none;">open the page it came from</a>' +
+            '</div>';
+
+    rows.forEach(c => {
+      html += '<div style="padding:.7rem .8rem;border-top:1px solid var(--border);font-size:.84rem;">' +
+        '<div style="display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;">' +
+          (reviewing ? '<input type="checkbox" class="dc-cand-cb" value="' + esc(c.id) + '" data-own="' + (c.confidence === 'own_page' ? '1' : '0') + '">' : '') +
+          '<strong>' + esc(c.model) + '</strong>' +
+          '<span style="color:var(--muted);">' + esc(c.manufacturer) + '</span>' +
+          '<span style="color:var(--gold);font-size:.78rem;">' + esc(String(c.category || '').replace(/_/g, ' ')) + '</span>' +
+          dcConfLabel(c.confidence) +
+        '</div>' +
+        '<div style="color:var(--muted);margin-top:.3rem;font-size:.78rem;">' +
+          esc(c.clinic_name) + (c.clinic_region ? ', ' + esc(c.clinic_region) : '') +
+          ' · matched "' + esc(c.matched_text || '') + '" on a ' + esc(c.page_kind || 'page') + ' page' +
+        '</div>' +
+        (reviewing
+          ? '<div style="margin-top:.5rem;display:flex;gap:.4rem;">' +
+            '<button class="btn-approve" onclick="dcDecide([\'' + c.id + '\'], true)">Approve</button>' +
+            '<button class="btn-reject" onclick="dcDecide([\'' + c.id + '\'], false)">Reject</button>' +
+            '</div>'
+          : (c.note ? '<div style="color:var(--muted);margin-top:.35rem;font-size:.76rem;">' + esc(c.note) + '</div>' : '')) +
+        '</div>';
+    });
+    html += '</div>';
+  });
+
+  list.innerHTML = html;
+}
+
+function dcSelectAll(on) {
+  document.querySelectorAll('.dc-cand-cb').forEach(cb => { cb.checked = !!on; });
+}
+
+function dcSelectOwnPage() {
+  document.querySelectorAll('.dc-cand-cb').forEach(cb => { cb.checked = cb.dataset.own === '1'; });
+}
+
+function dcSelectedIds() {
+  return [...document.querySelectorAll('.dc-cand-cb:checked')].map(cb => cb.value);
+}
+
+function dcApproveSelected() { dcDecide(dcSelectedIds(), true); }
+function dcRejectSelected()  { dcDecide(dcSelectedIds(), false); }
+
+async function dcDecide(ids, approve) {
+  if (!ids || !ids.length) { dcCandMsg('Nothing selected.', 'var(--red)'); return; }
+  if (approve && ids.length > 1 && !confirm('Publish ' + ids.length + ' devices? They go live on the directory.')) return;
+
+  dcCandMsg((approve ? 'Publishing ' : 'Rejecting ') + ids.length + '…');
+
+  const { ok, data } = await dcCall({
+    action: approve ? 'approve-candidates' : 'reject-candidates',
+    ids: ids
+  });
+
+  if (!ok) { dcCandMsg(esc((data && data.error) || 'Failed.'), 'var(--red)'); return; }
+
+  if (approve) {
+    const ev = data.new_events ? ', ' + data.new_events + ' logged to the change feed' : '';
+    dcCandMsg((data.approved || 0) + ' published' + ev + '.', 'var(--green)');
+  } else {
+    dcCandMsg((data.rejected || 0) + ' rejected.', 'var(--muted)');
+  }
+  if (data.errors && data.errors.length) dcCandMsg(esc(data.errors[0]), 'var(--red)');
+
+  dcLoadCandidates();
+}
+
+async function dcLoadUnknowns() {
+  const list = document.getElementById('dc-unknown-list');
+  const msg  = document.getElementById('dc-unknown-msg');
+  list.innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading…</div>';
+  msg.textContent = '';
+
+  const { ok, data } = await dcCall({ action: 'list-unknowns' });
+  if (!ok) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load</div><div class="empty-desc">' +
+      esc((data && data.error) || 'Please try again.') + '</div></div>';
+    return;
+  }
+
+  const rows = data.unknowns || [];
+  if (!rows.length) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-title">Nothing yet</div><div class="empty-desc">Unmatched names appear here once the crawl has run.</div></div>';
+    return;
+  }
+
+  msg.textContent = rows.length + ' distinct names, most widespread first';
+  list.innerHTML =
+    '<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:.84rem;">' +
+    rows.map(u =>
+      '<div style="padding:.5rem .8rem;border-top:1px solid var(--border);display:flex;gap:1rem;align-items:baseline;justify-content:space-between;flex-wrap:wrap;">' +
+      '<strong>' + esc(u.token) + '</strong>' +
+      '<span style="color:var(--muted);font-size:.78rem;">on ' + u.host_count + ' host' + (u.host_count === 1 ? '' : 's') +
+      (u.sample_url ? ' · <a href="' + esc(u.sample_url) + '" target="_blank" rel="noopener" style="color:var(--rose);text-decoration:none;">see one</a>' : '') +
+      '</span></div>'
+    ).join('') + '</div>';
 }
 
 </script>
