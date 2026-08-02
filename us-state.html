@@ -1184,6 +1184,10 @@ function renderPageCards(clinicsData, append) {
     })();
 
     const profileHref = (() => {
+      // Use the stored slug. It is globally unique and carries the city suffix that
+      // separates chain branches (laseraway-beverly-hills vs laseraway-irvine).
+      // Deriving it from the name here collapsed every branch onto one URL.
+      if (c.slug) return '/clinic/' + c.slug;
       const s = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
       return s ? '/clinic/' + s : '#';
     })();
@@ -1494,7 +1498,7 @@ window.openClinicModal = async function(id) {
 
     // View full profile link
     (function(){
-      const slug = (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
+      const slug = c.slug || (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
       return slug ? `<div style="margin-bottom:1rem;"><a href="/clinic/${slug}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">View full profile →</a></div>` : '';
     })(),
 
@@ -1848,7 +1852,7 @@ function onCompactSearch() {
 }
 
 async function fetchMapClinics() {
-  let url = SB_URL + '/rest/v1/clinics?select=id,name,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&approved=eq.true&country=eq.usa&state=eq.' + STATE + (currentMetro ? '&metro=eq.' + currentMetro : '') + '&lat=not.is.null&order=rating.desc.nullslast&limit=5000';
+  let url = SB_URL + '/rest/v1/clinics?select=id,name,slug,neighbourhood,region,lat,lng,rating,reviews,claimed,price,logo,photo,phone,website,place_id&approved=eq.true&country=eq.usa&state=eq.' + STATE + (currentMetro ? '&metro=eq.' + currentMetro : '') + '&lat=not.is.null&order=rating.desc.nullslast&limit=5000';
   if (currentFilter && currentFilter !== 'all') {
     url += '&neighbourhood=eq.' + encodeURIComponent(currentFilter);
   }
