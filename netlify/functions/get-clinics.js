@@ -55,6 +55,7 @@ async function loadCategoryMeta(supabase) {
 async function fetchDevicesFor(supabase, clinicIds) {
   if (!clinicIds || !clinicIds.length) return {};
   try {
+    const meta = await loadCategoryMeta(supabase);
     const { data, error } = await supabase
       .from('clinic_devices')
       .select('clinic_id, status, device_reference!inner(id, model, manufacturer, category, active)')
@@ -70,6 +71,8 @@ async function fetchDevicesFor(supabase, clinicIds) {
         model: d.model,
         manufacturer: d.manufacturer,
         category: d.category,
+        category_label: ((meta || {})[d.category] || {}).label_en
+                        || String(d.category || '').replace(/_/g, ' '),
         status: r.status,
         slug: slugifyModel(d.model)
       });
@@ -84,15 +87,25 @@ async function fetchDevicesFor(supabase, clinicIds) {
 
 // Resolve ?device= / ?devicecat= to the set of clinic ids that own it.
 // Returns null when no device filter is active.
-async function resolveDeviceClinicIds(supabase, deviceSlug, deviceCat) {
-  if (!deviceSlug && !deviceCat) return null;
+async function resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGroup) {
+  if (!deviceSlug && !deviceCat && !deviceGroup) return null;
   try {
+    // A group is a set of categories, resolved from device_categories.
+    let groupCats = null;
+    if (deviceGroup) {
+      const meta = await loadCategoryMeta(supabase);
+      groupCats = Object.values(meta || {})
+        .filter(m => m.group_key === deviceGroup)
+        .map(m => m.category);
+      if (!groupCats.length) return new Set();
+    }
     let q = supabase
       .from('clinic_devices')
       .select('clinic_id, device_reference!inner(model, category, active)')
       .eq('device_reference.active', true)
       .range(0, 49999);
-    if (deviceCat) q = q.eq('device_reference.category', deviceCat);
+    if (deviceCat)   q = q.eq('device_reference.category', deviceCat);
+    if (groupCats)   q = q.in('device_reference.category', groupCats);
     const { data, error } = await q;
     if (error) throw new Error(error.message);
     let rows = data || [];
@@ -148,22 +161,66 @@ exports.handler = async (event) => {
           body: JSON.stringify({ models: [], categories: [], groups: [] })
         };
       }
-      // Attach label / group / ordering to every category. A category with no
-      // group (lesion_removal) is bucketed last rather than dropped, so 38
-      // clinics do not vanish from a three-tier filter.
-      const out = data || { models: [], categories: [], groups: [] };
-      out.categories = (out.categories || []).map(c => {
-        const m = (meta || {})[c.category] || {};
-        return {
-          category:    c.category,
-          clinics:     c.clinics,
-          label:       m.label_en || String(c.category || '').replace(/_/g, ' '),
-          sort_order:  m.sort_order == null ? 999 : m.sort_order,
-          group_key:   m.group_key   || '_other',
-          group_label: m.group_label || 'Other',
-          group_order: m.group_order == null ? 900 : m.group_order
-        };
+      // ⭐ RESHAPE INTO THE NESTED FORM skinday.ca's panel EXPECTS, so the
+      // three-tier picker ports across verbatim instead of being rewritten:
+      //   groups: [{ key, label, clinics, categories: [{category,label,clinics}] }]
+      //   models_by_category: { <category>: [{ model, slug, clinics }] }
+      // A category with no group (lesion_removal) is bucketed last rather than
+      // dropped, so its clinics do not vanish from a three-tier filter.
+      const raw = data || { models: [], categories: [], groups: [] };
+      const catMeta = (c) => (meta || {})[c] || {};
+
+      const modelsOut = (raw.models || []).map(m => ({
+        model: m.model, category: m.category, clinics: m.clinics,
+        slug: slugifyModel(m.model)
+      }));
+
+      const modelsByCategory = {};
+      modelsOut
+        .slice()
+        .sort((a, b) => (b.clinics || 0) - (a.clinics || 0))
+        .forEach(m => {
+          (modelsByCategory[m.category] = modelsByCategory[m.category] || []).push(m);
+        });
+
+      const groupMap = {};
+      (raw.categories || []).forEach(c => {
+        const m  = catMeta(c.category);
+        const gk = m.group_key || '_other';
+        const g  = (groupMap[gk] = groupMap[gk] || {
+          key: gk,
+          label: m.group_label || 'Other',
+          order: m.group_order == null ? 900 : m.group_order,
+          clinics: 0,
+          categories: []
+        });
+        g.categories.push({
+          category: c.category,
+          label: m.label_en || String(c.category || '').replace(/_/g, ' '),
+          clinics: c.clinics,
+          sort_order: m.sort_order == null ? 999 : m.sort_order
+        });
       });
+
+      // Group clinic counts come from the RPC (distinct clinics across the whole
+      // group), NOT the sum of its categories — a clinic owning both an RF and a
+      // HIFU device must not be counted twice.
+      (raw.groups || []).forEach(g => {
+        const key = g.key || g.group_key;
+        if (key && groupMap[key]) groupMap[key].clinics = g.clinics;
+      });
+
+      const out = {
+        clinics_with_devices: raw.clinics_with_devices || 0,
+        models: modelsOut,
+        models_by_category: modelsByCategory,
+        groups: Object.values(groupMap)
+          .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label))
+          .map(g => {
+            g.categories.sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label));
+            return g;
+          })
+      };
 
       return {
         statusCode: 200,
@@ -215,6 +272,7 @@ exports.handler = async (event) => {
     // M19: the patient-facing technology filter.
     const deviceSlug = (params.device || '').trim().toLowerCase();
     const deviceCat  = (params.devicecat || '').trim();
+    const deviceGroup = (params.devicegroup || '').trim();
     const from          = page * PAGE_SIZE;
     const needed        = from + PAGE_SIZE;
 
@@ -254,7 +312,7 @@ exports.handler = async (event) => {
     // fold the verified-device restriction into a JS Set and filter after
     // fetching, instead of chaining a second .in('id') here.
     const verifiedIdSet = verifiedIdList ? new Set(verifiedIdList) : null;
-    const deviceIdSet   = await resolveDeviceClinicIds(supabase, deviceSlug, deviceCat);
+    const deviceIdSet   = await resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGroup);
 
     const buildBase = () => {
       let q = supabase
