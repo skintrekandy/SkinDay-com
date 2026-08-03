@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>SkinDay Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FBFCFD; --surface:#FFFFFF; --surface-2:#F7F9FB;
+    --ink:#14181D; --ink-2:#3A424C; --muted:#697079; --faint:#9AA1AA;
+    --line:#E7EBEF; --line-2:#F0F3F6;
+    --accent:#147D74; --accent-strong:#0F5F58; --accent-soft:#EAF4F2;
+    --comp:#C0473A; --comp-soft:#FBEEEC;
+    --gold:#B9822E;
+    --radius:14px; --radius-sm:9px;
+    --shadow:0 1px 2px rgba(20,26,33,.03), 0 10px 30px -22px rgba(20,26,33,.28);
+    --font-ui:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-ui); font-size:16px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  a { color:var(--accent-strong); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .mono { font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); }
+
+  #gate { position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:24px; z-index:50; }
+  .gate-card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:40px 36px; width:100%; max-width:400px; }
+  .gate-card .brand { font-size:22px; font-weight:600; }
+  .gate-card .brand b { color:var(--accent-strong); }
+  .gate-card .sub { color:var(--muted); font-size:14px; margin:6px 0 24px; }
+  .gate-card input { width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:var(--radius-sm); font:inherit; font-size:15px; margin-top:8px; background:var(--surface); }
+  .gate-card input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .gate-err { color:var(--comp); font-size:13px; margin-top:12px; min-height:18px; }
+
+  #app { display:none; }
+  header.top { position:sticky; top:0; z-index:20; background:var(--surface); border-bottom:1px solid var(--line); }
+  .top-in { max-width:1120px; margin:0 auto; padding:16px 28px; display:flex; align-items:center; gap:16px; }
+  .top .brand { font-size:17px; font-weight:600; }
+  .top .brand b { color:var(--accent-strong); }
+  .top .badge { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:4px 11px; }
+  .top .spacer { flex:1; }
+  .top button.out { background:none; border:0; color:var(--muted); font:inherit; font-size:13px; cursor:pointer; }
+  .top button.out:hover { color:var(--ink); }
+  .tabs { max-width:1120px; margin:0 auto; padding:0 28px; display:flex; gap:26px; border-bottom:1px solid var(--line); }
+  .tabs button { background:none; border:0; padding:15px 2px; font:inherit; font-size:14.5px; font-weight:500; color:var(--muted); border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; display:flex; align-items:center; gap:7px; }
+  .tabs button:hover { color:var(--ink); }
+  .tabs button.on { color:var(--ink); border-bottom-color:var(--accent); }
+  .tabs .listcount { font-family:var(--font-mono); font-size:10px; background:var(--accent); color:#fff; border-radius:100px; padding:1px 6px; }
+
+  /* Settings follows the Visualize Pro portal: collapsible sections, collapsed
+     by default, each stating what it is for before it shows a control. */
+  .sec { margin-bottom:14px; }
+  .sec-head { cursor:pointer; position:relative; padding:18px 66px 18px 20px; border:1px solid var(--line); border-radius:12px; transition:background .15s ease, border-color .15s ease; user-select:none; }
+  .sec-head:hover { border-color:var(--accent); background:var(--accent-soft); }
+  .sec-head:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+  .sec-head h2 { font-size:21px; font-weight:600; letter-spacing:-.015em; margin:6px 0 0; }
+  .sec-head p { color:var(--muted); font-size:15px; line-height:1.6; margin:12px 0 0; max-width:62ch; }
+  .sec-head .chevron { position:absolute; right:16px; top:24px; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent); color:#fff; font-size:12px; line-height:1; box-shadow:0 1px 5px rgba(0,0,0,.15); pointer-events:none; transition:transform .2s ease; }
+  .sec.open > .sec-head .chevron { transform:rotate(180deg); }
+  .sec.open > .sec-head { margin-bottom:20px; border-color:var(--accent); }
+  .sec:not(.open) > :not(.sec-head) { display:none !important; }
+  .sec:not(.open) > .sec-head p { display:none; }
+  .eyebrow { font-family:var(--font-mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); display:block; margin-bottom:7px; }
+  .box { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:28px; box-shadow:var(--shadow); }
+  .field { margin-bottom:18px; }
+  .field input[type=text], .field input[type=email], .field select { width:100%; padding:12px 13px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); font:inherit; font-size:15.5px; }
+  .field input:focus, .field select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .field small { display:block; color:var(--muted); font-size:13px; margin-top:7px; line-height:1.5; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .act { background:var(--accent); color:#fff; border:0; border-radius:var(--radius-sm); padding:11px 18px; font:inherit; font-size:14.5px; font-weight:500; cursor:pointer; }
+  .act:hover { background:var(--accent-strong); }
+  .quiet { background:none; border:1px solid var(--line); color:var(--ink-2); border-radius:var(--radius-sm); padding:9px 14px; font:inherit; font-size:13.5px; cursor:pointer; }
+  .quiet:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .note { font-size:13.5px; margin-top:10px; color:var(--muted); line-height:1.55; }
+  .readonly { font-family:var(--font-mono); font-size:13px; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line-2); border-radius:var(--radius-sm); padding:11px 13px; }
+  .swatches { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .swatch { width:30px; height:30px; border-radius:8px; cursor:pointer; padding:0; border:2px solid transparent; box-shadow:0 0 0 1px var(--line); transition:transform .1s ease; }
+  .swatch:hover { transform:scale(1.08); }
+  .swatch.sel { border-color:var(--surface); box-shadow:0 0 0 2px var(--ink); }
+  .swatch-custom { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:13.5px; color:var(--muted); }
+  .swatch-custom input[type=color] { width:30px; height:30px; border:0; background:none; padding:0; cursor:pointer; }
+  .member { display:flex; align-items:center; gap:14px; padding:16px 2px; border-top:1px solid var(--line); }
+  .member:last-child { border-bottom:1px solid var(--line); }
+  .member .em { font-size:.98rem; font-weight:500; }
+  .member .sub { font-size:.82rem; color:var(--muted); margin-top:2px; }
+  .member .grow { flex:1; }
+  .member.off { opacity:.5; }
+  .rpill { font-family:var(--font-mono); font-size:.66rem; letter-spacing:.06em; text-transform:uppercase; border-radius:100px; padding:4px 9px; border:1px solid var(--line); color:var(--muted); }
+  .rpill.you { border-color:var(--accent); color:var(--accent-strong); }
+  .quiet.on { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+  .invite-link { margin-top:14px; padding:14px; border-radius:var(--radius-sm); background:var(--surface-2); font-family:var(--font-mono); font-size:.8rem; word-break:break-all; line-height:1.6; border:1px solid var(--line); }
+
+  .note-ro { margin-top:12px; padding:12px 14px; border-radius:var(--radius-sm); background:var(--surface-2); border:1px solid var(--line-2); font-size:14.5px; line-height:1.55; color:var(--ink-2); white-space:pre-wrap; }
+  .thread { margin-top:14px; border-top:1px solid var(--line-2); padding-top:12px; }
+  .cmt { padding:9px 0; border-bottom:1px solid var(--line-2); }
+  .cmt:last-of-type { border-bottom:0; }
+  .cmeta { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.04em; color:var(--faint); }
+  .cbody { font-size:14.5px; line-height:1.55; margin-top:4px; white-space:pre-wrap; }
+  .cadd { display:flex; gap:9px; align-items:flex-start; margin-top:10px; }
+  .cinput { flex:1; font:inherit; font-size:14px; padding:9px 11px; border:1px solid var(--line); border-radius:var(--radius-sm); resize:vertical; background:var(--surface); }
+  .cinput:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .linkish { background:none; border:0; padding:0; cursor:pointer; font-family:var(--font-mono); font-size:10.5px; color:var(--accent-strong); }
+
+  .cov { margin-top:16px; padding-top:14px; border-top:1px solid var(--line-2); font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--muted); }
+  .cov b { color:var(--ink-2); font-weight:500; }
+
+  main { max-width:1120px; margin:0 auto; padding:32px 28px 90px; }
+  .panel { display:none; } .panel.on { display:block; }
+
+  .geobar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:32px; }
+  .geobar select { font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 34px 10px 14px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 11px center; background-size:14px; }
+  .geobar select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .geobar .sep { color:var(--faint); }
+  .geobar .reset { background:none; border:0; color:var(--accent-strong); font:inherit; font-size:13px; cursor:pointer; }
+
+  .hero { margin-bottom:40px; }
+  .hero .big { font-size:52px; font-weight:600; letter-spacing:-.025em; line-height:1; }
+  .hero .big .unit { font-size:22px; font-weight:500; color:var(--muted); letter-spacing:0; }
+  .hero .sub { font-size:15.5px; color:var(--muted); margin-top:12px; max-width:64ch; }
+  .hero .share { color:var(--accent-strong); font-weight:600; }
+
+  .sec-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin:36px 0 18px; }
+  .sec-label:first-child { margin-top:0; }
+
+  .cat { margin-bottom:36px; }
+  .cat-head { display:flex; align-items:baseline; gap:12px; margin-bottom:8px; padding-bottom:10px; border-bottom:1px solid var(--line-2); }
+  .cat-head .name { font-size:19px; font-weight:600; letter-spacing:-.01em; }
+  .cat-head .grp { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
+  .cat-head .count { margin-left:auto; font-size:14px; color:var(--muted); }
+  .cat-head .count b { color:var(--ink); font-weight:600; }
+  .dev { display:flex; align-items:center; gap:18px; padding:16px 4px; border-bottom:1px solid var(--line-2); }
+  .dev:last-child { border-bottom:0; }
+  .dev .dn { font-size:16px; font-weight:500; }
+  .dev .focus { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); border:1px solid var(--accent); border-radius:100px; padding:2px 8px; margin-left:10px; }
+  .dev .spacer { flex:1; }
+  .dev .num { font-size:26px; font-weight:600; letter-spacing:-.02em; min-width:52px; text-align:right; }
+  .dev .num .l { display:block; font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:400; margin-top:2px; }
+  .genrows { margin:2px 0 10px; padding:6px 14px; background:var(--surface-2); border-radius:var(--radius-sm); }
+  .genrow { display:flex; align-items:center; padding:7px 0; border-bottom:1px solid var(--line-2); }
+  .genrow:last-child { border-bottom:0; }
+  .genrow .gm { font-size:14px; color:var(--ink-2); } .genrow .spacer { flex:1; }
+  .genrow .gc { font-family:var(--font-mono); font-size:14px; font-weight:500; }
+
+  /* category competitive donuts — share of identified INSTALLATIONS.
+     Deliberately NOT the same metric as #board (share of clinics), which
+     overlaps and therefore stays a bar. Never merge the two headings. */
+  .dgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
+  .dcard { border:1px solid var(--line-2); border-radius:var(--radius-sm); padding:18px 16px 14px; cursor:pointer; transition:border-color .15s ease, background .15s ease; }
+  .dcard:hover { border-color:var(--accent); background:var(--surface-2); }
+  .dcard .dhead { display:flex; align-items:baseline; gap:8px; margin-bottom:2px; }
+  .dcard .dtitle { font-size:14.5px; font-weight:500; line-height:1.25; }
+  .dcard .drank { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border:1px solid var(--accent); border-radius:100px; padding:2px 8px; white-space:nowrap; }
+  .dcard .drank.off { color:var(--faint); background:transparent; border-color:var(--line); }
+  .dcard .dsub { font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-bottom:12px; }
+  .dcard .dring { display:flex; align-items:center; gap:14px; }
+  .dcard svg { flex:0 0 auto; }
+  .dcard .dmid { font-family:var(--font-mono); font-size:19px; font-weight:600; fill:var(--ink); }
+  .dcard .dmids { font-family:var(--font-mono); font-size:7.5px; letter-spacing:.08em; fill:var(--faint); }
+  .dcard .dlegend { flex:1; min-width:0; }
+  .dcard .dl { display:flex; align-items:center; gap:7px; font-size:11.5px; color:var(--muted); line-height:1.7; }
+  .dcard .dl b { font-weight:500; color:var(--ink); }
+  .dcard .dl.you b { color:var(--accent-strong); font-weight:600; }
+  .dcard .dl .sw { width:8px; height:8px; border-radius:2px; flex:0 0 auto; }
+  .dcard .dl .dn { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dcard .dl .dp { margin-left:auto; font-family:var(--font-mono); font-size:10.5px; }
+  .dnote { font-size:12px; color:var(--faint); margin-top:14px; line-height:1.5; }
+
+  /* category competitive list */
+  .crow { display:flex; align-items:center; gap:16px; padding:16px 4px; border-bottom:1px solid var(--line-2); cursor:pointer; }
+  .crow:hover { background:var(--surface-2); }
+  .crow .cn { font-size:15.5px; font-weight:500; min-width:170px; }
+  .crow .cn .cg { display:block; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-top:2px; }
+  .crow .bar { flex:1; height:8px; border-radius:4px; background:var(--line-2); overflow:hidden; display:flex; }
+  .crow .bar .o { background:var(--accent); } .crow .bar .c { background:var(--comp); }
+  .crow .cshare { min-width:80px; text-align:right; font-size:14px; font-weight:600; color:var(--accent-strong); }
+  .crow .cshare .cl { display:block; font-family:var(--font-mono); font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); font-weight:400; }
+
+  .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  .toolbar select { font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 34px 10px 14px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 11px center; background-size:14px; }
+  .toolbar select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .toolbar .count { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+
+  .acct { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:12px; box-shadow:var(--shadow); }
+  .acct .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .acct .aname { font-size:16.5px; font-weight:600; }
+  .acct .ameta { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .acct .ascore { margin-left:auto; text-align:right; padding-left:16px; }
+  .acct .ascore .s { font-size:26px; font-weight:600; color:var(--accent-strong); line-height:1; letter-spacing:-.02em; }
+  .acct .ascore .sl { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
+  .contacts { display:flex; gap:16px; flex-wrap:wrap; margin-top:11px; }
+  .contacts a, .contacts span { font-size:13px; color:var(--ink-2); display:inline-flex; align-items:center; gap:6px; }
+  .contacts .ico { color:var(--accent); }
+  .contacts .vc { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border:1px solid var(--accent); border-radius:100px; padding:1px 6px; margin-left:7px; }
+  .plates { display:flex; gap:7px; flex-wrap:wrap; margin-top:13px; }
+  /* A clinic with 20 machines was 20 pills in 20 hues, which read as a paint
+     chart rather than an inventory. Devices are now GROUPED UNDER THEIR MAKER,
+     the tenant's group first and accented, everyone else neutral. The colour
+     carried no information a label cannot carry better, so the dots are gone. */
+  .mfrs { margin-top:14px; display:flex; flex-direction:column; gap:9px; }
+  .mfr { display:grid; grid-template-columns:150px 1fr; gap:12px; align-items:baseline; }
+  .mfr .mn { font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); line-height:1.75; }
+  .mfr .mn .ct { display:inline-block; font-weight:500; font-size:10px; color:var(--muted); background:var(--surface-2); border:1px solid var(--line-2); border-radius:100px; padding:0 5px; margin-left:5px; letter-spacing:0; }
+  .mfr.ours .mn { color:var(--accent-strong); font-weight:700; }
+  .mfr.ours .mn .ct { color:var(--accent-strong); background:var(--accent-soft); border-color:var(--accent); }
+  .mfr .md { display:flex; gap:6px; flex-wrap:wrap; }
+  @media (max-width:640px){ .mfr { grid-template-columns:1fr; gap:3px; } }
+  .plate { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; padding:4px 10px; border-radius:6px; border:1px solid var(--line-2); color:var(--ink-2); background:var(--surface); cursor:pointer; }
+  .plate:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .plate.ours { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); font-weight:500; }
+  .plate.on { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  /* Evidence panel. Every claim on this page came from somewhere; this is where
+     a rep can see where, and judge it. It shows the text we actually matched,
+     not a paraphrase — "Laser Genesis" reads very differently from "PicoSure",
+     and a rep should be able to tell those apart before making a call. */
+  .ev { margin-top:10px; border:1px solid var(--line-2); border-left:3px solid var(--accent); border-radius:var(--radius-sm); background:var(--surface-2); padding:12px 14px; font-size:12.5px; color:var(--ink-2); line-height:1.6; }
+  .ev .evh { font-family:var(--font-mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); margin-bottom:5px; }
+  .ev .evq { font-weight:500; color:var(--ink); }
+  .ev .evm { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:6px; display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .ev .evm a { word-break:break-all; }
+  .ev .evwarn { margin-top:7px; color:var(--muted); font-style:italic; }
+  .reasons { display:flex; gap:7px; flex-wrap:wrap; margin-top:13px; }
+  .reason { font-size:12px; color:var(--muted); background:var(--surface-2); border:1px solid var(--line-2); border-radius:100px; padding:4px 11px; }
+  .reason.key { color:var(--accent-strong); background:var(--accent-soft); border-color:var(--accent); }
+  .actions { display:flex; gap:9px; margin-top:15px; align-items:center; }
+  .btn { font:inherit; font-size:13px; font-weight:500; padding:8px 15px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
+  .btn:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .btn.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
+  .btn.mini { padding:6px 11px; font-size:12px; }
+  .note-edit { width:100%; margin-top:12px; padding:10px 13px; border:1px solid var(--line); border-radius:var(--radius-sm); font:inherit; font-size:13px; resize:vertical; min-height:40px; background:var(--surface-2); }
+  .note-edit:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); background:var(--surface); }
+  .note-saved { font-family:var(--font-mono); font-size:10px; color:var(--accent-strong); }
+
+  .empty { text-align:center; color:var(--faint); font-size:14px; padding:56px 20px; }
+  .spin { display:inline-block; width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:middle; }
+  @keyframes sp { to { transform:rotate(360deg); } }
+
+  @media (max-width:760px) {
+    .hero .big { font-size:40px; }
+    .crow .cn { min-width:120px; }
+    .acct .ascore { margin-left:0; padding-left:0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div class="gate-card" id="gateSignin">
+    <div class="brand">SkinDay <b>Market Intelligence</b></div>
+    <div class="sub">The aesthetic device landscape.</div>
+    <span class="mono">Email</span>
+    <input id="gEmail" type="email" autocomplete="username" placeholder="you@company.com" autofocus>
+    <span class="mono" style="display:block;margin-top:14px">Password</span>
+    <input id="gPass" type="password" autocomplete="current-password">
+    <div style="margin-top:18px"><button class="act" id="gLogin" style="width:100%">Sign in</button></div>
+    <div class="gate-err" id="gateErr"></div>
+    <button class="quiet" id="gKeyToggle" style="margin-top:10px;width:100%;border:0;color:var(--muted)">Use an access key instead</button>
+    <div id="gKeyBox" style="display:none;margin-top:10px">
+      <span class="mono">Access key</span>
+      <input id="pw" type="password" autocomplete="off" placeholder="key">
+    </div>
+  </div>
+
+  <!-- Accepting an invitation. Shown only when the URL carries a token, and the
+       token is exchanged for a password the person chooses themselves. -->
+  <div class="gate-card" id="gateJoin" style="display:none">
+    <div class="brand">SkinDay <b>Market Intelligence</b></div>
+    <div class="sub" id="joinSub">Checking your invitation...</div>
+    <div id="joinForm" style="display:none">
+      <span class="mono">Choose a password</span>
+      <input id="jPass" type="password" autocomplete="new-password">
+      <span class="mono" style="display:block;margin-top:14px">Confirm password</span>
+      <input id="jPass2" type="password" autocomplete="new-password">
+      <div style="margin-top:18px"><button class="act" id="jGo" style="width:100%">Set password and continue</button></div>
+    </div>
+    <div class="gate-err" id="joinErr"></div>
+  </div>
+</div>
+
+<div id="app">
+  <header class="top">
+    <div class="top-in">
+      <div class="brand">SkinDay <b>Market Intelligence</b></div>
+      <span class="badge" id="mfrBadge"></span>
+      <div class="spacer"></div>
+      <span class="mono" id="whoami"></span>
+      <button class="out" id="settingsBtn" style="display:none">Settings</button>
+      <button class="out" id="signout">Sign out</button>
+    </div>
+    <div class="tabs">
+      <button data-tab="portfolio" class="on">Overview</button>
+      <button data-tab="accounts">Accounts</button>
+      <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
+    </div>
+  </header>
+
+  <main>
+    <div class="geobar" id="geobar">
+      <span class="mono">Territory</span>
+      <select id="selProvince"><option value="">All territories</option></select>
+      <span class="sep" id="sepHood" style="display:none">&#8250;</span>
+      <select id="selHood" style="display:none"><option value="">All areas</option></select>
+      <button class="reset" id="geoReset" style="display:none">Reset</button>
+      <span class="mono" id="geoLocked" style="display:none"></span>
+    </div>
+
+    <section class="panel on" id="panel-portfolio">
+      <div class="hero" id="hero"><div class="empty"><span class="spin"></span></div></div>
+      <div id="board"></div>
+      <div class="sec-label">Identified accounts by category</div>
+      <div id="portfolioList"><div class="empty"><span class="spin"></span></div></div>
+      <div class="sec-label">Competitive field by category</div>
+      <div id="catlist"><div class="empty"><span class="spin"></span></div></div>
+    </section>
+
+    <section class="panel" id="panel-accounts">
+      <div class="toolbar">
+        <select id="acctCategory"><option value="">All categories</option></select>
+        <select id="acctSegment">
+          <option value="">All accounts</option>
+          <option value="ours">Warm &#8212; running your devices</option>
+          <option value="competitor">Cold &#8212; running a competitor</option>
+          <option value="greenfield">Cold &#8212; no devices</option>
+          <option value="research">Pending research</option>
+        </select>
+        <select id="acctMfr"><option value="">Any manufacturer</option></select>
+        <select id="acctDist"><option value="">Any distributor</option></select>
+        <span class="count" id="acctCount"></span>
+      </div>
+      <div id="acctList"><div class="empty">Choose a filter to load accounts.</div></div>
+    </section>
+
+    <!-- SETTINGS. Reached from the header, not the tab bar: the tabs are the
+         three things a rep does, and settings is not one of them. -->
+    <section class="panel" id="panel-settings">
+
+      <div class="sec open" style="margin-bottom:26px">
+        <div class="sec-head" style="border:0;padding:0;cursor:default">
+          <span class="eyebrow">Settings</span>
+          <h2 style="font-size:30px">Your organisation.</h2>
+          <p id="setLede"></p>
+        </div>
+      </div>
+
+      <div class="sec" id="secAccount">
+        <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron">&#9662;</span>
+          <span class="eyebrow">Your account</span>
+          <h2>Your name and password.</h2>
+          <p>The name your team sees on saved accounts and comments, and your own password. These affect only you.</p>
+        </div>
+        <div class="box">
+          <div class="field">
+            <label class="eyebrow" for="myName">Your name</label>
+            <input type="text" id="myName" maxlength="120">
+            <small id="myEmail"></small>
+          </div>
+          <button class="act" id="myNameSave">Save name</button>
+          <span class="note" id="myNameMsg" style="margin-left:10px"></span>
+          <hr style="border:none;border-top:1px solid var(--line);margin:22px 0">
+          <div class="field">
+            <label class="eyebrow" for="pwCur">Current password</label>
+            <input type="text" id="pwCur" style="-webkit-text-security:disc">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label class="eyebrow" for="pwNew">New password</label>
+              <input type="text" id="pwNew" style="-webkit-text-security:disc">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="pwNew2">Confirm</label>
+              <input type="text" id="pwNew2" style="-webkit-text-security:disc">
+            </div>
+          </div>
+          <small style="display:block;color:var(--muted);font-size:13px;margin-bottom:14px">At least 10 characters. Changing it signs you out everywhere.</small>
+          <button class="act" id="pwSave">Change password</button>
+          <span class="note" id="pwMsg" style="margin-left:10px"></span>
+        </div>
+      </div>
+
+      <div class="sec" id="secOrg">
+        <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron">&#9662;</span>
+          <span class="eyebrow">Organisation</span>
+          <h2>Name and appearance.</h2>
+          <p>Your name and colour appear across the dashboard for everyone on your team.</p>
+        </div>
+        <div class="box">
+          <div class="field">
+            <label class="eyebrow" for="setName">Display name</label>
+            <input type="text" id="setName" maxlength="120">
+          </div>
+          <div class="field">
+            <label class="eyebrow">Installed base defined by</label>
+            <div class="readonly" id="setOwnerType"></div>
+            <small>Set by your agreement with SkinDay. Contact us to change it.</small>
+          </div>
+          <div class="field">
+            <label class="eyebrow">Accent colour</label>
+            <div class="swatches" id="brandSwatches"></div>
+            <div class="swatch-custom" style="margin-top:12px">
+              <input type="color" id="setAccent"><span>Custom</span>
+              <input type="text" id="setAccentHex" placeholder="#147D74" style="width:110px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:12.5px">
+            </div>
+          </div>
+          <div class="field">
+            <label class="eyebrow" for="setLogo">Logo URL</label>
+            <input type="text" id="setLogo" placeholder="https://...">
+            <small>Must be https. Leave blank for none.</small>
+          </div>
+          <button class="act" id="setSave">Save</button>
+          <span class="note" id="setMsg" style="margin-left:10px"></span>
+        </div>
+      </div>
+
+      <div class="sec" id="secFocus">
+        <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron">&#9662;</span>
+          <span class="eyebrow">Focus devices</span>
+          <h2>What the team is pushing.</h2>
+          <p>Marked devices are highlighted across the dashboard so reps can see at a glance where the current push is. Change these whenever priorities move.</p>
+        </div>
+        <div class="box"><div id="focusList"><div class="empty"><span class="spin"></span></div></div></div>
+      </div>
+
+      <div class="sec" id="secTeam">
+        <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron">&#9662;</span>
+          <span class="eyebrow">Team</span>
+          <h2>Who can get in.</h2>
+          <p>Saved accounts and notes are recorded against the person who made them. That only means something if nobody shares a login.</p>
+        </div>
+        <div class="box">
+          <div class="field">
+            <label class="eyebrow" for="invName">Name</label>
+            <input type="text" id="invName" maxlength="120" placeholder="Full name">
+          </div>
+          <div class="row2">
+            <div class="field">
+              <label class="eyebrow" for="invEmail">Invite by email</label>
+              <input type="email" id="invEmail" placeholder="name@company.com">
+            </div>
+            <div class="field">
+              <label class="eyebrow" for="invRole">Role</label>
+              <select id="invRole">
+                <option value="rep">Field rep</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+              <small>Managers see every rep's list. Admins also manage the team and these settings.</small>
+            </div>
+          </div>
+          <div class="field">
+            <label class="eyebrow" for="invProvince">Territory</label>
+            <select id="invProvince"><option value="">All territories</option></select>
+            <small id="invTerritoryNote">A rep with a territory only ever sees that province.</small>
+          </div>
+          <button class="act" id="invSend">Send invitation</button>
+          <span class="note" id="invNote" style="margin-left:10px"></span>
+          <div class="invite-link" id="invLink" style="display:none"></div>
+        </div>
+        <div id="teamList"></div>
+      </div>
+
+    </section>
+
+    <section class="panel" id="panel-list">
+      <div class="sec-label">My list</div>
+      <div id="savedList"><div class="empty">Saved clinics appear here. Add them from Accounts.</div></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var API='/.netlify/functions/mi-dashboard';
+  var KEY=null, geo={province:'',city:'',neighbourhood:''};
+
+  // ⭐ COUNTRY VOCABULARY. The tenant carries a country; the page only carries
+  // the WORDS for it. "province" stays the wire name everywhere (the RPCs
+  // resolve it to state for the US), so nothing but labels changes here.
+  var CTY = { key:'canada', country:'Canada', all:'All Canada', region:'province', regions:'provinces' };
+  var CTY_MAP = {
+    canada:   { key:'canada',   country:'Canada',    all:'All Canada',    region:'province', regions:'provinces' },
+    usa:      { key:'usa',      country:'the US',    all:'All states',    region:'state',    regions:'states' },
+    taiwan:   { key:'taiwan',   country:'Taiwan',    all:'All Taiwan',    region:'city',     regions:'cities' },
+    hongkong: { key:'hongkong', country:'Hong Kong', all:'All Hong Kong', region:'district', regions:'districts' }
+  };
+  // An unknown country falls back to neutral wording rather than to Canada's,
+  // so a new country added in SQL is merely unpolished here, never WRONG.
+  var CTY_DEFAULT = { key:'', country:'all territories', all:'All territories', region:'territory', regions:'territories' };
+  function setCountry(c){
+    CTY = CTY_MAP[String(c||'').toLowerCase()] || CTY_DEFAULT;
+    ['selProvince','invProvince'].forEach(function(id){
+      var sel = el(id);
+      if (sel && sel.options.length && !sel.options[0].value) sel.options[0].textContent = CTY.all;
+    });
+    var note = document.getElementById('invTerritoryNote');
+    if (note) note.textContent = 'A rep with a territory only ever sees that ' + CTY.region + '.';
+  }
+  var loaded={accounts:false,list:false};
+  var COVERAGE=null;
+  var ME=null;
+  var catCache=[], savedIds={};
+  // devices with a real generation pair -> ordered newer-first spellings for display grouping
+  var GENSPLIT={ 'PicoSure':true, 'Elite':true };
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function el(id){ return document.getElementById(id); }
+  function api(action, extra){
+    var body=Object.assign({action:action,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
+    return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY},body:JSON.stringify(body)})
+      .then(function(r){ if(r.status===401) throw {unauth:true}; return r.json().then(function(j){ if(!r.ok) throw j; return j; }); });
+  }
+
+  function tryKey(k){
+    KEY=k;
+    return api('overview',{}).then(function(res){
+      applyIdentity(res.tenant||{});
+      el('gate').style.display='none'; el('app').style.display='block';
+      fillSelect(el('selProvince'),res.geo||[],CTY.all);
+      COVERAGE=res.coverage||null;
+      renderHero(res.kpis); renderBoard(res.leaderboard||[]);
+      renderCategoryShare(res.category_share||[]); catCache=res.categories||[]; seedCategorySelects();
+      api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
+      loadFilterOptions(); loadSavedIds();
+    }).catch(function(e){ KEY=null; el('gateErr').textContent=e&&e.unauth?'Incorrect access key.':'Could not connect. Try again.'; });
+  }
+
+  // Branding, role and territory all arrive from the API. Nothing about a
+  // customer is written into this page.
+  function applyIdentity(t){
+    ME=t;
+    el('mfrBadge').textContent=t.display_name||'';
+    el('whoami').textContent=[t.user_name,t.role].filter(Boolean).join(' \u00b7 ');
+    if(t.accent_hex && /^#[0-9A-Fa-f]{6}$/.test(t.accent_hex)){
+      var r=document.documentElement.style;
+      r.setProperty('--accent',t.accent_hex);
+      r.setProperty('--accent-strong','color-mix(in srgb, '+t.accent_hex+' 78%, #000)');
+      r.setProperty('--accent-soft','color-mix(in srgb, '+t.accent_hex+' 12%, #fff)');
+    }
+    // An admin on a tenant-level code has no personal user row, so gating the
+    // whole Settings tab on user_id locked out the very person who sets it up.
+    el('settingsBtn').style.display=(t.role==='admin'||t.user_id)?'':'none';
+    // Name and password need a personal account to edit.
+    el('secAccount').style.display=t.user_id?'':'none';
+    el('myName').value=t.user_name||'';
+    el('myEmail').textContent=t.email||'';
+    el('secOrg').style.display=t.role==='admin'?'':'none';
+    el('secTeam').style.display=t.role==='admin'?'':'none';
+    if(t.role==='admin'){
+      el('setLede').textContent='Signed in as '+(t.user_name||'admin')+'. Changes here apply to everyone at '+(t.display_name||'your organisation')+'.';
+      el('setOwnerType').textContent=(t.owner_type==='distributor'?'Distributor portfolio \u00b7 ':'Manufacturer portfolio \u00b7 ')+(t.owner_name||'');
+      el('setName').value=t.display_name||'';
+      el('setAccentHex').value=t.accent_hex||'';
+      if(/^#[0-9A-Fa-f]{6}$/.test(t.accent_hex||'')) el('setAccent').value=t.accent_hex;
+      el('setLogo').value=t.logo_url||'';
+      renderSwatches(t.accent_hex||'');
+    }
+    setCountry(t.country);
+    // a locked territory is not a choice, so the control is removed rather than disabled
+    if(t.province){
+      geo.province=t.province;
+      el('selProvince').style.display='none';
+      el('geoLocked').style.display='';
+      el('geoLocked').textContent=String(t.province).toUpperCase()+' territory';
+    }
+  }
+  // an invitation link, exchanged for a password the person picks
+  var joinTok=(location.hash.match(/[#&]t=([^&]+)/)||[])[1];
+  var hashKey=(location.hash.match(/[#&]k=([^&]+)/)||[])[1];
+  if(joinTok){
+    joinTok=decodeURIComponent(joinTok);
+    history.replaceState(null,'',location.pathname);
+    el('gateSignin').style.display='none'; el('gateJoin').style.display='';
+    KEY='none';
+    api('invite_status',{token:joinTok}).then(function(res){
+      if(!res.invite){ el('joinSub').textContent='This invitation has expired or has already been used. Ask your admin to send a new one.'; KEY=null; return; }
+      el('joinSub').innerHTML='Welcome, <b>'+esc(res.invite.name)+'</b>. Set a password to join '+esc(res.invite.org)+'.';
+      el('joinForm').style.display=''; el('joinForm').setAttribute('data-email',res.invite.email||'');
+      KEY=null;
+    }).catch(function(){ el('joinSub').textContent='Could not check this invitation.'; KEY=null; });
+  } else if(hashKey){
+    history.replaceState(null,'',location.pathname); tryKey(decodeURIComponent(hashKey));
+  }
+  el('jGo').addEventListener('click',function(){
+    var a=el('jPass').value, b=el('jPass2').value;
+    if(a.length<10){ el('joinErr').textContent='At least 10 characters.'; return; }
+    if(a!==b){ el('joinErr').textContent='The two passwords do not match.'; return; }
+    el('joinErr').textContent='Setting up...'; KEY='none';
+    api('accept_invite',{token:joinTok,password:a,email:el('joinForm').getAttribute('data-email')})
+      .then(function(res){ KEY=null; if(res.session) tryKey(res.session); else { el('joinSub').textContent='Password set. You can sign in now.'; el('gateJoin').style.display='none'; el('gateSignin').style.display=''; } })
+      .catch(function(e){ KEY=null; el('joinErr').textContent=(e&&e.error)?e.error:'Could not set your password.'; });
+  });
+  el('gKeyToggle').addEventListener('click',function(){
+    var b=el('gKeyBox'); b.style.display=b.style.display==='none'?'':'none'; if(b.style.display==='') el('pw').focus();
+  });
+  function doLogin(){
+    var em=el('gEmail').value.trim(), pw=el('gPass').value;
+    if(!em||!pw){ el('gateErr').textContent='Enter your email and password.'; return; }
+    el('gateErr').textContent='Signing in...'; KEY='none';
+    api('login',{email:em,password:pw}).then(function(res){
+      KEY=null; if(res.session) tryKey(res.session); else el('gateErr').textContent='Email or password is incorrect.';
+    }).catch(function(e){ KEY=null; el('gateErr').textContent=(e&&e.error)?e.error:'Could not sign in.'; });
+  }
+  el('gLogin').addEventListener('click',doLogin);
+  el('gPass').addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(); });
+  el('pw').addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ var v=el('pw').value.trim(); if(!v)return; el('gateErr').textContent='Checking...'; tryKey(v); } });
+  el('signout').addEventListener('click',function(){ api('logout',{}).catch(function(){}).then(function(){ location.reload(); }); });
+
+  el('settingsBtn').addEventListener('click',function(){
+    Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){ x.classList.remove('on'); });
+    Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(p){ p.classList.remove('on'); });
+    el('panel-settings').classList.add('on');
+    loadTeam(); loadFocus();
+  });
+  // collapsible sections, collapsed until asked for
+  Array.prototype.forEach.call(document.querySelectorAll('#panel-settings .sec > .sec-head[role=button]'),function(h){
+    function tog(){ var sec=h.parentNode; var open=sec.classList.toggle('open'); h.setAttribute('aria-expanded',open?'true':'false'); }
+    h.addEventListener('click',tog);
+    h.addEventListener('keydown',function(ev){ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); tog(); } });
+  });
+
+  var SWATCHES=['#147D74','#1F6FB2','#4F55C4','#8A4FBE','#B23A6E','#C0563A','#B9822E','#2F7D4F','#3A4A5C','#14181D'];
+  function renderSwatches(cur){
+    el('brandSwatches').innerHTML=SWATCHES.map(function(c){
+      return '<button class="swatch'+(c.toLowerCase()===(cur||'').toLowerCase()?' sel':'')+'" data-c="'+c+'" style="background:'+c+'" title="'+c+'"></button>';
+    }).join('');
+    Array.prototype.forEach.call(el('brandSwatches').querySelectorAll('.swatch'),function(b){
+      b.addEventListener('click',function(){
+        var c=b.getAttribute('data-c');
+        el('setAccentHex').value=c; el('setAccent').value=c; renderSwatches(c);
+      });
+    });
+  }
+
+  function loadFocus(){
+    if(!ME||ME.role!=='admin') return;
+    api('list_focus',{}).then(function(res){ renderFocus(res.focus||[]); })
+      .catch(function(){ el('focusList').innerHTML='<div class="note">Could not load devices.</div>'; });
+  }
+  function renderFocus(rows){
+    if(!rows.length){ el('focusList').innerHTML='<div class="note">No devices on file for your portfolio yet.</div>'; return; }
+    el('focusList').innerHTML=rows.map(function(d){
+      return '<div class="member">'+
+        '<div class="grow"><div class="em">'+esc(d.model)+'</div>'+
+        '<div class="sub">'+(d.installs||0)+' identified accounts</div></div>'+
+        '<button class="quiet focustog'+(d.is_focus?' on':'')+'" data-model="'+esc(d.model)+'" data-on="'+(d.is_focus?'0':'1')+'">'+
+        (d.is_focus?'&#10003; Focus':'Set as focus')+'</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(el('focusList').querySelectorAll('.focustog'),function(b){
+      b.addEventListener('click',function(){
+        api('set_focus',{model:b.getAttribute('data-model'),on:b.getAttribute('data-on')==='1'})
+          .then(loadFocus).catch(handleErr);
+      });
+    });
+  }
+
+  function loadTeam(){
+    if(!ME||ME.role!=='admin') return;
+    el('teamList').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    api('list_users',{}).then(function(res){ renderTeam(res.users||[]); }).catch(function(){ el('teamList').innerHTML=''; });
+    fillNamed(el('invProvince'),[],CTY.all);
+    api('geo',{}).then(function(r){ var sel=el('invProvince'); sel.innerHTML='<option value="">'+esc(CTY.all)+'</option>'+(r.geo||[]).map(function(g){ return '<option value="'+esc(g.value)+'">'+esc(String(g.value).toUpperCase())+'</option>'; }).join(''); }).catch(function(){});
+  }
+  function renderTeam(rows){
+    if(!rows.length){ el('teamList').innerHTML='<div class="note">Nobody invited yet.</div>'; return; }
+    el('teamList').innerHTML=rows.map(function(u){
+      var bits=[u.email||'no email'];
+      if(u.province) bits.push(String(u.province).toUpperCase()+' territory');
+      bits.push((u.saved_count||0)+' saved');
+      return '<div class="member'+(u.active?'':' off')+'">'+
+        '<div class="grow"><div class="em">'+esc(u.name)+'</div><div class="sub">'+esc(bits.join(' \u00b7 '))+'</div></div>'+
+        '<span class="rpill'+(ME&&u.user_id===ME.user_id?' you':'')+'">'+esc(u.role)+'</span>'+
+        '<button class="quiet togactive" data-uid="'+u.user_id+'" data-to="'+(u.active?'0':'1')+'">'+(u.active?'Deactivate':'Reactivate')+'</button>'+
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(el('teamList').querySelectorAll('.togactive'),function(b){
+      b.addEventListener('click',function(){
+        api('set_user_active',{user_id:b.getAttribute('data-uid'),active:b.getAttribute('data-to')==='1'})
+          .then(loadTeam).catch(handleErr);
+      });
+    });
+  }
+  el('invSend').addEventListener('click',function(){
+    var nm=el('invName').value.trim();
+    if(!nm){ el('invNote').textContent='A name is required.'; return; }
+    el('invNote').textContent='Creating...'; el('invLink').style.display='none';
+    api('invite_user',{name:nm,email:el('invEmail').value.trim(),role:el('invRole').value,province:el('invProvince').value})
+      .then(function(res){
+        var u=res.user||{};
+        el('invNote').textContent='Invited.';
+        el('invLink').style.display='';
+        var link=location.origin+location.pathname+'#k='+encodeURIComponent(u.access_code||'');
+        el('invLink').innerHTML='<b>Send this link to '+esc(nm)+'</b><br>'+esc(link)+
+          '<br><span style="color:var(--muted)">Shown once. If it is lost, invite again.</span>';
+        el('invName').value=''; el('invEmail').value='';
+        loadTeam();
+      }).catch(function(e){ el('invNote').textContent=(e&&e.error)?e.error:'Could not invite.'; });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(b){
+    b.addEventListener('click',function(){
+      Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){ x.classList.remove('on'); });
+      Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(p){ p.classList.remove('on'); });
+      b.classList.add('on');
+      var tab=b.getAttribute('data-tab'); el('panel-'+tab).classList.add('on');
+      if(tab==='accounts'&&!loaded.accounts) loadAccounts();
+      if(tab==='list') loadSaved();
+    });
+  });
+
+  function fillSelect(sel,rows,allLabel){
+    var cur=sel.value;
+    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){ return '<option value="'+esc(r.value)+'">'+esc(r.value)+' ('+r.clinics+')</option>'; }).join('');
+    if(cur) sel.value=cur;
+  }
+  el('selProvince').addEventListener('change',function(){
+    geo.province=this.value; geo.neighbourhood='';
+    el('selHood').style.display=geo.province?'':'none'; el('sepHood').style.display=geo.province?'':'none'; el('geoReset').style.display=geo.province?'':'none';
+    if(geo.province) api('geo',{}).then(function(res){ fillSelect(el('selHood'),res.geo||[],'All areas'); });
+    onGeoChange();
+  });
+  el('selHood').addEventListener('change',function(){ geo.neighbourhood=this.value; onGeoChange(); });
+  el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; this.style.display='none'; onGeoChange(); });
+  function onGeoChange(){
+    loaded.accounts=false; loaded.list=false;
+    refreshPortfolio(); loadFilterOptions();
+    if(el('panel-accounts').classList.contains('on')) loadAccounts();
+    if(el('panel-list').classList.contains('on')) loadSaved();
+  }
+
+  function refreshPortfolio(){
+    el('hero').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    el('portfolioList').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    el('catlist').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    api('coverage',{}).then(function(res){ COVERAGE=res.coverage||null; })
+      .catch(function(){})
+      .then(function(){ return api('kpis',{}); })
+      .then(function(res){ renderHero(res.kpis); }).catch(handleErr);
+    api('leaderboard',{limit:3}).then(function(res){ renderBoard(res.leaderboard||[]); }).catch(handleErr);
+    api('portfolio',{}).then(function(res){ renderPortfolio(res.portfolio||[]); }).catch(handleErr);
+    api('category_share',{top:4}).then(function(res){ renderCategoryShare(res.category_share||[]); }).catch(handleErr);
+    api('categories',{}).then(function(res){ catCache=res.categories||[]; seedCategorySelects(); }).catch(handleErr);
+  }
+  // Counts, not claims of completeness. The coverage line states the base the
+  // percentages are drawn from, so nothing implies a national census - and it
+  // says nothing about where the data comes from.
+  function renderHero(k){
+    if(!k){ el('hero').innerHTML=''; return; }
+    var where = geo.neighbourhood || (geo.province?geo.province.toUpperCase():CTY.country);
+    var cov = COVERAGE || {};
+    var pending = (cov.clinics!=null && cov.verified!=null) ? (cov.clinics-cov.verified) : null;
+    el('hero').innerHTML='<div class="big">'+(k.with_ours!=null?k.with_ours:'—')+' <span class="unit">identified accounts</span></div>'+
+      '<div class="sub">Clinics in '+esc(where)+' with '+esc((ME&&ME.display_name)||'your')+' equipment identified'+
+      (k.without_ours!=null?', and <span class="share">'+k.without_ours+'</span> without.':'.')+'</div>'+
+      (cov.verified!=null
+        ? '<div class="cov"><b>'+cov.verified+'</b> clinics with verified equipment'+
+          (pending!=null?' &middot; <b>'+pending+'</b> pending research':'')+
+          (cov.last_updated?' &middot; updated '+esc(new Date(cov.last_updated).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})):'')+
+          '</div>'
+        : '');
+  }
+  function renderPortfolio(rows){
+    if(!rows.length){ el('portfolioList').innerHTML='<div class="empty">No installed base in this territory.</div>'; return; }
+    var order=[], groups={};
+    rows.forEach(function(r){
+      if(!groups[r.category]){ groups[r.category]={label:r.label||r.category,group_label:r.group_label,devices:[],total:0}; order.push(r.category); }
+      groups[r.category].devices.push(r); groups[r.category].total+=(r.installs||0);
+    });
+    el('portfolioList').innerHTML=order.map(function(cat){
+      var g=groups[cat];
+      var devs=g.devices.map(function(d){
+        var row='<div class="dev"><span class="dn">'+esc(d.model)+(d.focus?'<span class="focus">Focus</span>':'')+'</span>'+
+          '<span class="spacer"></span><span class="num">'+(d.installs||0)+'<span class="l">clinics</span></span></div>';
+        // generation sub-rows ONLY for the two real-pair devices, plain numbers
+        if (GENSPLIT[d.model] && ((d.gen_newer||0)+(d.gen_base||0))>0){
+          var newerLabel = d.model==='PicoSure' ? 'PicoSure Pro' : 'Elite iQ / Elite+';
+          row += '<div class="genrows">'+
+            '<div class="genrow"><span class="gm">'+newerLabel+'</span><span class="spacer"></span><span class="gc">'+(d.gen_newer||0)+'</span></div>'+
+            '<div class="genrow"><span class="gm">'+esc(d.model)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_base||0)+'</span></div>'+
+          '</div>';
+        }
+        return row;
+      }).join('');
+      return '<div class="cat"><div class="cat-head"><span class="name">'+esc(g.label)+'</span>'+
+        '<span class="grp">'+esc(g.group_label||'')+'</span><span class="count"><b>'+g.total+'</b> installs</span></div>'+devs+'</div>';
+    }).join('');
+  }
+  function renderBoard(rows){
+    if(!rows||!rows.length){ el('board').innerHTML=''; return; }
+    el('board').innerHTML='<div class="sec-label">Share of verified accounts</div><div class="cat">'+rows.map(function(r){
+      return '<div class="dev"><span class="dn">'+esc(r.manufacturer)+(r.is_ours?'<span class="focus">You</span>':'')+'</span>'+
+        '<span class="spacer"></span><span class="num">'+r.pct+'%<span class="l">'+r.clinics+' clinics</span></span></div>';
+    }).join('')+'</div>';
+  }
+
+  function loadFilterOptions(){
+    api('filter_options',{}).then(function(res){
+      var o=res.options||{};
+      fillNamed(el('acctMfr'),o.manufacturers||[],'Any manufacturer');
+      fillNamed(el('acctDist'),o.distributors||[],'Any distributor');
+    }).catch(function(){});
+  }
+  function fillNamed(sel,rows,allLabel){
+    var cur=sel.value;
+    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){
+      return '<option value="'+esc(r.name)+'">'+esc(r.name)+' ('+r.clinics+')</option>'; }).join('');
+    if(cur) sel.value=cur;
+  }
+
+  function sharePct(o,c){ o=o||0; c=c||0; var t=o+c; return t?Math.round(o/t*100):0; }
+  // Competitive field by category, drawn as donuts. The metric is SHARE OF
+  // IDENTIFIED INSTALLATIONS within one category: every device row belongs to
+  // exactly one maker, so slices are mutually exclusive and sum to 100. That is
+  // why a pie is honest here and dishonest for #board, which counts CLINICS and
+  // overlaps. A clinic with two InMode machines counts twice here and once
+  // there, so the two panels will never reconcile — keep the labels apart.
+  var CAT_LABEL={};
+  function renderCategoryShare(rows){
+    var box=el('catlist');
+    if(!rows||!rows.length){ box.innerHTML='<div class="empty">No category data.</div>'; return; }
+    var byCat={}, order=[];
+    rows.forEach(function(r){
+      if(!byCat[r.category]){ byCat[r.category]={ label:r.category_label||r.category, group:r.group_label||'', total:r.total_installs||0, slices:[] }; order.push(r.category); }
+      byCat[r.category].slices.push(r);
+      CAT_LABEL[r.category]=r.category_label||r.category;
+    });
+    box.innerHTML='<div class="dgrid">'+order.map(function(cat){
+      var c=byCat[cat];
+      var mine=null;
+      c.slices.forEach(function(s){ if(s.is_ours) mine=s; });
+      return '<div class="dcard" data-cat="'+esc(cat)+'">'+
+        '<div class="dhead"><span class="dtitle">'+esc(c.label)+'</span>'+rankPill(mine)+'</div>'+
+        '<div class="dsub">'+esc(c.group)+'</div>'+
+        '<div class="dring">'+donutSvg(c.slices, mine)+'<div class="dlegend">'+
+          c.slices.map(function(s){
+            return '<div class="dl'+(s.is_ours?' you':'')+'">'+
+              '<span class="sw" style="background:'+sliceColor(s)+'"></span>'+
+              '<span class="dn"><b>'+esc(s.manufacturer)+'</b></span>'+
+              '<span class="dp">'+fmtPct(s.pct)+'%</span></div>';
+          }).join('')+
+        '</div></div>'+
+      '</div>';
+    }).join('')+'</div>'+
+    '<div class="dnote">Share of identified installations within each category, across clinics with verified equipment. Each machine counts once, so slices total 100%. This is not the same measure as share of verified accounts above, where a clinic running several manufacturers counts under each.</div>';
+
+    Array.prototype.forEach.call(box.querySelectorAll('.dcard'),function(card){
+      card.addEventListener('click',function(){
+        el('acctCategory').value=card.getAttribute('data-cat');
+        el('acctSegment').value='competitor';
+        document.querySelector('.tabs button[data-tab="accounts"]').click();
+        loadAccounts();
+      });
+    });
+  }
+  function rankPill(mine){
+    if(!mine) return '<span class="drank off">Not present</span>';
+    var r=parseInt(mine.rn,10)||0;
+    if(!r||r>900) return '<span class="drank off">Unranked</span>';
+    return '<span class="drank'+(r<=3?'':' off')+'">#'+r+'</span>';
+  }
+  // The tenant always takes the accent; everyone else takes a muted grey ramp,
+  // deliberately, so a competitor never gets brand identity inside this portal.
+  var GREYS=['#B9BEC6','#CBD0D7','#DCE0E5','#E8EBEE','#F0F2F4'];
+  function sliceColor(s){
+    if(s.is_ours) return 'var(--accent)';
+    var i=(parseInt(s.rn,10)||1)-1;
+    return GREYS[Math.min(i,GREYS.length-1)];
+  }
+  function fmtPct(p){ var n=Number(p)||0; return n>=10?Math.round(n):n.toFixed(1); }
+  function donutSvg(slices, mine){
+    var R=34, C=2*Math.PI*R, off=0;
+    var arcs=slices.map(function(s){
+      var frac=Math.max(0,Math.min(1,(Number(s.pct)||0)/100));
+      var len=C*frac;
+      var a='<circle r="'+R+'" cx="0" cy="0" fill="none" stroke="'+sliceColor(s)+'" stroke-width="13"'+
+        ' stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'"'+
+        ' stroke-dashoffset="'+(-off).toFixed(2)+'"></circle>';
+      off+=len; return a;
+    }).join('');
+    var mid=mine?fmtPct(mine.pct)+'%':'—';
+    return '<svg width="92" height="92" viewBox="-46 -46 92 92" role="img" aria-label="share of installations">'+
+      '<g transform="rotate(-90)">'+arcs+'</g>'+
+      '<text class="dmid" x="0" y="2" text-anchor="middle" dominant-baseline="middle">'+mid+'</text>'+
+      '<text class="dmids" x="0" y="15" text-anchor="middle">YOURS</text>'+
+    '</svg>';
+  }
+  function seedCategorySelects(){
+    var opts='<option value="">All categories</option>'+catCache.map(function(c){ return '<option value="'+esc(c.category)+'">'+esc(c.label||c.category)+'</option>'; }).join('');
+    var ac=el('acctCategory'); var cur=ac.value; ac.innerHTML=opts; ac.value=cur;
+  }
+
+  function contactsHtml(a){
+    var bits=[];
+    if(a.phone) bits.push('<a href="tel:'+esc(a.phone)+'"><span class="ico">&#9742;</span>'+esc(a.phone)+'</a>');
+    // Email is absent for most of the country (populated in ON/AB/QC/BC only),
+    // so it renders when present and leaves no gap when it isn't.
+    // `email_source` distinguishes an address the clinic GAVE us from one
+    // scraped off a public page — a rep should know which they are writing to.
+    if(a.email){
+      var given=(a.email_source==='owner'||a.email_source==='claimed');
+      bits.push('<a href="mailto:'+esc(a.email)+'"><span class="ico">&#9993;</span>'+esc(a.email)+
+        (given?'<span class="vc" title="Provided by the clinic through SkinDay">Given</span>':'')+'</a>');
+    }
+    if(a.website) bits.push('<a href="'+esc(a.website)+'" target="_blank" rel="noopener"><span class="ico">&#8599;</span>Website</a>');
+    if(a.neighbourhood) bits.push('<span><span class="ico">&#9678;</span>'+esc(a.neighbourhood)+'</span>');
+    return bits.length?'<div class="contacts">'+bits.join('')+'</div>':'';
+  }
+  // Devices grouped under their manufacturer. Tenant's group always first and
+  // accented; competitors follow by how much of the clinic they hold, which is
+  // the order a rep cares about. Unattributed devices collect under "Other" at
+  // the end rather than being dropped.
+  function platesHtml(devs){
+    if(!devs||!devs.length) return '';
+    var groups={}, order=[];
+    devs.forEach(function(d){
+      var m=d.manufacturer||'Other';
+      if(!groups[m]){ groups[m]={ name:m, ours:!!d.is_ours, devs:[] }; order.push(m); }
+      if(d.is_ours) groups[m].ours=true;
+      groups[m].devs.push(d);
+    });
+    order.sort(function(a,b){
+      var A=groups[a], B=groups[b];
+      if(A.ours!==B.ours) return A.ours?-1:1;
+      if(A.name==='Other') return 1;
+      if(B.name==='Other') return -1;
+      if(A.devs.length!==B.devs.length) return B.devs.length-A.devs.length;
+      return A.name<B.name?-1:1;
+    });
+    return '<div class="mfrs">'+order.map(function(m){
+      var g=groups[m];
+      return '<div class="mfr'+(g.ours?' ours':'')+'">'+
+        '<div class="mn">'+esc(g.name)+(g.devs.length>1?' <span class="ct">'+g.devs.length+'</span>':'')+'</div>'+
+        '<div class="md">'+g.devs.map(function(d){
+          return '<span class="plate'+(d.is_ours?' ours':'')+'" role="button" tabindex="0"'+
+                 ' data-ev="'+esc(JSON.stringify({
+                     m:d.model||'', t:d.matched_text||'', u:d.source_url||'',
+                     s:d.status||'', d:d.last_seen||''
+                   }))+'">'+esc(d.model)+'</span>';
+        }).join('')+'</div>'+
+      '</div>';
+    }).join('')+'</div><div class="evslot"></div>';
+  }
+  // One panel per card, replaced on each click, so a rep never ends up with six
+  // open boxes. Clicking the same plate again closes it.
+  function bindEvidence(root){
+    Array.prototype.forEach.call(root.querySelectorAll('.plate'),function(p){
+      function open(e){
+        e.stopPropagation();
+        var card=p.closest('.acct')||root;
+        var slot=card.querySelector('.evslot'); if(!slot) return;
+        var was=p.classList.contains('on');
+        Array.prototype.forEach.call(card.querySelectorAll('.plate.on'),function(o){ o.classList.remove('on'); });
+        if(was){ slot.innerHTML=''; return; }
+        p.classList.add('on');
+        slot.innerHTML=evidenceHtml(JSON.parse(p.getAttribute('data-ev')));
+      }
+      p.addEventListener('click',open);
+      p.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(e); } });
+    });
+  }
+  function evidenceHtml(v){
+    var bits=[];
+    if(v.d) bits.push('Last checked '+esc(String(v.d).slice(0,10)));
+    if(v.s) bits.push(esc(v.s==='listed'?'Listed on the clinic\u2019s own site':v.s));
+    if(v.u) bits.push('<a href="'+esc(v.u)+'" target="_blank" rel="noopener">View source</a>');
+    // The matched string IS the evidence. When it differs from the model name it
+    // is usually a treatment or a spelling variant, and that distinction is the
+    // whole point of showing this at all.
+    var loose = v.t && v.m && v.t.toLowerCase().replace(/[^a-z0-9]/g,'')
+                            !== v.m.toLowerCase().replace(/[^a-z0-9]/g,'');
+    return '<div class="ev">'+
+      '<div class="evh">Evidence for '+esc(v.m)+'</div>'+
+      (v.t ? 'Found <span class="evq">\u201c'+esc(v.t)+'\u201d</span> on the clinic\u2019s website.'
+           : 'No matched text recorded for this entry.')+
+      (loose ? '<div class="evwarn">This is not the model name itself. Worth confirming with the clinic which platform they run.</div>' : '')+
+      (bits.length?'<div class="evm">'+bits.join('')+'</div>':'')+
+    '</div>';
+  }
+
+  ['acctCategory','acctSegment','acctMfr','acctDist'].forEach(function(id){ el(id).addEventListener('change',loadAccounts); });
+  function loadAccounts(){
+    loaded.accounts=true; el('acctList').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    api('accounts',{category:el('acctCategory').value,segment:el('acctSegment').value,
+                    filter_manufacturer:el('acctMfr').value,filter_distributor:el('acctDist').value,
+                    limit:200}).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
+  }
+  function renderAccounts(rows){
+    el('acctCount').textContent=rows.length+(rows.length===200?'+ shown':' identified accounts');
+    if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
+    el('acctList').innerHTML=rows.map(function(a){ return acctCard(a); }).join('');
+    wireSaveButtons(el('acctList')); bindEvidence(el('acctList'));
+  }
+  function acctCard(a){
+    var saved=savedIds[a.clinic_id];
+    return '<div class="acct" data-cid="'+esc(a.clinic_id)+'">'+
+      '<div class="head"><span class="aname">'+esc(a.name)+'</span><span class="ameta">'+(a.reviews!=null?a.reviews+' reviews':'')+'</span></div>'+
+      contactsHtml(a)+platesHtml(a.devices||[])+
+      '<div class="actions"><button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'\u2713 Saved':'+ Save to my list')+'</button></div>'+
+    '</div>';
+  }
+  function wireSaveButtons(container){
+    Array.prototype.forEach.call(container.querySelectorAll('.savebtn'),function(btn){
+      btn.addEventListener('click',function(){
+        var cid=btn.getAttribute('data-cid');
+        if(savedIds[cid]){ api('remove_account',{clinic_id:cid}).then(function(){ delete savedIds[cid]; btn.classList.remove('on'); btn.textContent='+ Save to my list'; updateListCount(); loaded.list=false; }).catch(handleErr); }
+        else { api('save_account',{clinic_id:cid}).then(function(){ savedIds[cid]=true; btn.classList.add('on'); btn.textContent='\u2713 Saved'; updateListCount(); loaded.list=false; }).catch(handleErr); }
+      });
+    });
+  }
+
+  function loadSavedIds(){ api('list_saved',{}).then(function(res){ (res.saved||[]).forEach(function(s){ savedIds[s.clinic_id]=true; }); updateListCount(); }).catch(function(){}); }
+  // The badge counts what is in the current territory, so it agrees with the
+  // list underneath it rather than with the whole country.
+  function updateListCount(){ var n=Object.keys(savedIds).length; var c=el('listCount'); c.textContent=n; c.style.display=n?'':'none'; }
+  function loadSaved(){ loaded.list=true; el('savedList').innerHTML='<div class="empty"><span class="spin"></span></div>'; api('list_saved',{}).then(function(res){ renderSaved(res.saved||[]); }).catch(handleErr); }
+  function whenTxt(iso){
+    if(!iso) return '';
+    var d=new Date(iso), now=new Date(), mins=Math.round((now-d)/60000);
+    if(mins<1) return 'just now';
+    if(mins<60) return mins+' min ago';
+    if(mins<1440) return Math.round(mins/60)+' h ago';
+    if(mins<10080) return Math.round(mins/1440)+' d ago';
+    return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+  }
+  function commentsHtml(a){
+    var list=(a.comments||[]).map(function(c){
+      return '<div class="cmt"><div class="cmeta">'+esc(c.author)+' &middot; '+esc(whenTxt(c.at))+
+        (c.edited_at?' &middot; edited '+esc(whenTxt(c.edited_at)):'')+
+        ((c.mine||(ME&&ME.role==='admin'))?' <button class="linkish delcmt" data-id="'+c.id+'">delete</button>':'')+
+        '</div><div class="cbody">'+esc(c.body)+'</div></div>';
+    }).join('');
+    return '<div class="thread">'+list+
+      '<div class="cadd"><textarea class="cinput" data-cid="'+esc(a.clinic_id)+'" rows="2" placeholder="Add a comment for the team..."></textarea>'+
+      '<button class="quiet addcmt" data-cid="'+esc(a.clinic_id)+'">Comment</button></div></div>';
+  }
+  function renderSaved(rows){
+    savedIds={}; rows.forEach(function(r){ if(r.is_mine) savedIds[r.clinic_id]=true; }); updateListCount();
+    if(!rows.length){ el('savedList').innerHTML='<div class="empty">No saved clinics yet. Add them from Accounts.</div>'; return; }
+    el('savedList').innerHTML=rows.map(function(a){
+      var when=a.note_updated_at||a.saved_at;
+      var meta=[a.neighbourhood,(a.province||'').toUpperCase()].filter(Boolean).join(', ')+
+               (a.reviews!=null?' \u00b7 '+a.reviews+' reviews':'')+
+               (a.is_mine?'':' \u00b7 saved by '+esc(a.saved_by||''));
+      // A note belongs to whoever wrote it. Anyone else reads it and comments below.
+      // Admins moderate the whole board, including notes they did not write.
+      var canEdit = a.can_edit || (ME && ME.role === 'admin');
+      var noteBlock = canEdit
+        ? '<textarea class="note-edit" data-cid="'+esc(a.clinic_id)+'" placeholder="Add a note (call outcome, contact name, next step)...">'+esc(a.note||'')+'</textarea>'+
+          (a.is_mine?'':'<div class="cmeta">note by '+esc(a.saved_by||'')+'</div>')+
+          '<div class="actions"><button class="btn mini savenote" data-cid="'+esc(a.clinic_id)+'">Save note</button>'+
+          '<span class="note-saved" data-cid="'+esc(a.clinic_id)+'" style="display:none">saved</span>'+
+          '<button class="btn mini removebtn" data-cid="'+esc(a.clinic_id)+'">Remove</button>'+
+          (when?'<span class="cmeta" style="margin-left:auto">note '+esc(whenTxt(when))+'</span>':'')+'</div>'
+        : (a.note ? '<div class="note-ro">'+esc(a.note)+'<div class="cmeta">'+esc(a.saved_by||'')+
+                    (when?' &middot; '+esc(whenTxt(when)):'')+'</div></div>' : '');
+      return '<div class="acct" data-cid="'+esc(a.clinic_id)+'">'+
+        '<div class="head"><span class="aname">'+esc(a.name)+'</span><span class="ameta">'+meta+'</span></div>'+
+        contactsHtml(a)+platesHtml(a.devices)+noteBlock+commentsHtml(a)+
+      '</div>';
+    }).join('');
+    bindEvidence(el('savedList'));
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.savenote'),function(btn){
+      btn.addEventListener('click',function(){ var cid=btn.getAttribute('data-cid');
+        var ta=el('savedList').querySelector('textarea.note-edit[data-cid="'+cid+'"]');
+        api('set_note',{clinic_id:cid,note:ta.value}).then(function(res){
+          var s2=el('savedList').querySelector('.note-saved[data-cid="'+cid+'"]');
+          if(res.result&&res.result.ok===false){ s2.textContent='not yours'; }
+          s2.style.display=''; setTimeout(function(){ s2.style.display='none'; s2.textContent='saved'; },1500);
+        }).catch(handleErr); });
+    });
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.removebtn'),function(btn){
+      btn.addEventListener('click',function(){ var cid=btn.getAttribute('data-cid');
+        api('remove_account',{clinic_id:cid}).then(function(){ delete savedIds[cid]; updateListCount(); loadSaved(); }).catch(handleErr); });
+    });
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.addcmt'),function(btn){
+      btn.addEventListener('click',function(){ var cid=btn.getAttribute('data-cid');
+        var ta=el('savedList').querySelector('textarea.cinput[data-cid="'+cid+'"]');
+        if(!ta.value.trim()) return;
+        api('add_comment',{clinic_id:cid,body:ta.value.trim()}).then(loadSaved).catch(handleErr); });
+    });
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.delcmt'),function(btn){
+      btn.addEventListener('click',function(){
+        api('delete_comment',{comment_id:btn.getAttribute('data-id')}).then(loadSaved).catch(handleErr); });
+    });
+  }
+
+  function handleErr(e){
+    if(e&&e.unauth){ location.reload(); return; }
+    var msg=(e&&e.detail)?e.detail:(e&&e.error)?e.error:'Something went wrong.';
+    console.error('MI error:',e);
+    ['hero','portfolioList','catlist','acctList','savedList'].forEach(function(id){ var box=el(id); if(box&&box.querySelector('.spin')) box.innerHTML='<div class="empty">Could not load: '+esc(msg)+'</div>'; });
+  }
+})();
+</script>
+</body>
+</html>
