@@ -689,13 +689,27 @@
   // The two client-side checks mirror exactly what mi_set_tenant_branding
   // raises on, so a bad value shows a message in the form instead of a 500 in
   // a console the user should never have to open.
+  // ⛔ THE CUSTOM COLOUR PICKER HAD NO LISTENER. Picking a colour moved the
+  // swatch and nothing else — setAccentHex kept its old value, so Save sent the
+  // OLD colour and the change looked like it had failed. The swatch ROW worked
+  // because its handler writes both fields. Now they mirror each other.
+  el('setAccent').addEventListener('input',function(){
+    var c=(this.value||'').toUpperCase();
+    el('setAccentHex').value=c;
+    renderSwatches(c);
+  });
+  el('setAccentHex').addEventListener('input',function(){
+    var c=(this.value||'').trim();
+    if(/^#[0-9A-Fa-f]{6}$/.test(c)){ el('setAccent').value=c; renderSwatches(c); }
+  });
+
   el('setSave').addEventListener('click',function(){
     var btn=this, msg=el('setMsg');
     var hex=(el('setAccentHex').value||'').trim();
     if(hex && !/^#[0-9A-Fa-f]{6}$/.test(hex)){ msg.textContent='Colour must be a 6-digit hex, e.g. #C0563A'; return; }
     var logo=(el('setLogo').value||'').trim();
     if(logo && !/^https:\/\//i.test(logo)){ msg.textContent='Logo URL must start with https://'; return; }
-    btn.disabled=true; msg.textContent='Saving\u2026';
+    btn.disabled=true; msg.style.color=''; msg.textContent='Saving\u2026';
     api('save_settings',{display_name:(el('setName').value||'').trim(),accent_hex:hex||null,logo_url:logo})
       .then(function(res){
         btn.disabled=false; msg.textContent='\u2713 Saved';
@@ -707,7 +721,14 @@
         if(res&&res.tenant) applyIdentity(Object.assign({},ME||{},res.tenant));
         setTimeout(function(){ msg.textContent=''; },2500);
       })
-      .catch(function(e){ btn.disabled=false; msg.textContent=(e&&e.detail)?e.detail:'Could not save. Try again.'; });
+      .catch(function(e){
+        btn.disabled=false;
+        // Show the SERVER'S OWN message, not a generic one. Three rounds were
+        // lost to a 500 whose detail was only visible in the browser console.
+        msg.style.color='#B3261E';
+        msg.textContent=(e&&(e.detail||e.error))?String(e.detail||e.error):'Could not save. Try again.';
+        console.error('[save_settings]', e);
+      });
   });
 
   el('myNameSave').addEventListener('click',function(){
