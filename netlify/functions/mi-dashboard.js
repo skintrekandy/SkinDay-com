@@ -335,8 +335,13 @@ exports.handler = async (event) => {
 
       // the tenant's own installed base, their taxonomy
       case 'portfolio': {
-        const { data, error } = await supabase.rpc('mi_portfolio', Object.assign({ p_country: country, p_regions: regions, 
-          p_province: province, p_neighbourhood: neighbourhood
+        // p_tenant_id scopes the FOCUS flag. mi_focus_devices is keyed on
+        // manufacturer, and two tenants can share an owner_name (Cynosure
+        // Canada and Cynosure US do), so without this each sees the other's
+        // focus list and can overwrite it.
+        const { data, error } = await supabase.rpc('mi_portfolio', Object.assign({ p_country: country, p_regions: regions,
+          p_province: province, p_neighbourhood: neighbourhood,
+          p_tenant_id: me.tenant_id || null
         }, owner));
         if (error) throw error;
         return json(200, { portfolio: data || [] });
