@@ -27,22 +27,20 @@ const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-const MATCHER_VERSION = '2026-08-03-pagebudget';
+const MATCHER_VERSION = '2026-08-03-candidate-queue';
 
 // ⭐⭐ THE PAGE BUDGET. Was a flat hard stop at 3, which was never a decision —
 // it was a default nobody revisited, and it handled the highest-value hosts
 // worst. westdermatology.com is 20 clinics on ONE host and returned nothing,
 // because 3 pages cannot cover a group site's index plus its device pages.
 // Depth now scales with how many clinics ride on the host.
-const PAGE_BUDGET_BASE = 5;
-const PAGE_BUDGET_PER_EXTRA_CLINIC = 2;
-const PAGE_BUDGET_CAP = 20;
+// Raised 20 -> 35 with the candidate queue. Under the old formula the cap was
+// the main defence against runaway cost, because the budget was driven by clinic
+// count and had no relationship to what the site contained. Now it can only be
+// reached by a host that genuinely exposes ~30 device and treatment pages, which
+// is exactly the host worth spending 35 fetches on.
+const PAGE_BUDGET_CAP = 35;
 
-function pageBudget(clinicCount) {
-  const n = Math.max(1, Number(clinicCount) || 1);
-  return Math.min(PAGE_BUDGET_CAP,
-                  PAGE_BUDGET_BASE + PAGE_BUDGET_PER_EXTRA_CLINIC * (n - 1));
-}
 const MAX_UNKNOWNS_PER_HOST = 15;
 // ⚠️⚠️ THE USER AGENT AND HEADERS ARE LOAD-BEARING, not boilerplate.
 //
@@ -1049,43 +1047,63 @@ function scoreLink(url, hints) {
 // Three characters is too short to score a path on: "bbl" matches /rabble/ and
 // /wobbly/. Those devices are still found in page TEXT; this is only about
 // deciding which pages to spend the budget on, so the bar is deliberately high.
-function deviceSlugTokens(matcher) {
-  const out = new Set();
-  for (const e of (matcher || [])) {
-    const t = String(e.token || '');
-    if (t.length >= 5 && !/\s/.test(t)) out.add(t);
-  }
-  return out;
+
+
+// ⭐⭐ THE URL VOCABULARY, KEYED BY DEVICE.
+//
+// ⛔ WHAT THIS REPLACES, and it was my bug: the previous version kept only
+// tokens of 5+ characters WITH NO SPACES. That silently discarded every
+// multiword device — Clear + Brilliant, GentleMax Pro, Alma Hybrid, Hollywood
+// Spectra, Excel V, Venus Legacy — so `/services/clear-brilliant/` could never
+// be selected. It also treated three spellings of one device as three separate
+// signals, which let a single machine outrank a page naming two.
+//
+// Both sides are now normalised to WORD SEQUENCES and compared as whole words:
+//   "Clear + Brilliant"          -> ["clear","brilliant"]
+//   "/services/clear-brilliant/" -> ["services","clear","brilliant"]
+// A one-word name still has to be 4+ characters, because a 3-letter word
+// sequence ("bbl") matches too much on its own; those devices are still found
+// in page TEXT, this only decides which pages earn budget.
+function pathWords(s) {
+  return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().split(/\s+/).filter(Boolean);
 }
 
-function pickDeviceSlugLinks(links, host, exclude, tokens, n) {
-  if (!tokens || !tokens.size) return [];
-  const scored = [];
-  const seenUrl = new Set();
-  for (const l of links) {
-    let u;
-    try { u = new URL(l); } catch (e) { continue; }
-    if (u.hostname.replace(/^www\./, '') !== host) continue;
-    const path = u.pathname.toLowerCase();
-    if (ASSET_PATH.test(path)) continue;
-    // A blog post named sofwave-vs-morpheus8 is a comparison article, not a
-    // device page. The SEO false-positive lesson applies to page SELECTION as
-    // much as to matching.
-    if (BLOG_PATH.test(path)) continue;
-    if (exclude && exclude.has(l)) continue;
-    if (seenUrl.has(l)) continue;
-    const flat = norm(path.replace(/[^a-z0-9]+/g, ' '));
-    let hits = 0;
-    for (const t of tokens) if (flat.indexOf(t) !== -1) hits++;
-    if (!hits) continue;
-    seenUrl.add(l);
-    // More device names in one slug is a stronger page; shorter paths beat
-    // deeply nested ones at equal strength.
-    scored.push({ url: l, score: hits * 100 - path.split('/').filter(Boolean).length });
+function containsSequence(hay, needle) {
+  if (!needle.length || needle.length > hay.length) return false;
+  for (let i = 0; i + needle.length <= hay.length; i++) {
+    let hit = true;
+    for (let j = 0; j < needle.length; j++) if (hay[i + j] !== needle[j]) { hit = false; break; }
+    if (hit) return true;
   }
-  scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, Math.max(0, n)).map(x => x.url);
+  return false;
 }
+
+function deviceUrlVocab(matcher) {
+  const byDevice = new Map();
+  for (const e of (matcher || [])) {
+    const words = pathWords(e.surface || e.model || '');
+    if (!words.length) continue;
+    if (words.length === 1 && words[0].length < 4) continue;
+    if (!byDevice.has(e.device_id)) byDevice.set(e.device_id, []);
+    byDevice.get(e.device_id).push(words);
+  }
+  return byDevice;
+}
+
+// ⭐ TIER B — commercially relevant TREATMENT paths.
+// The insight this encodes: a device is not always named in the URL that sells
+// it. LightSheer lives on /services/laser-hair-removal/, not /lightsheer/.
+// Device-named URLs alone can never reach it. These pages score lower than a
+// device page and are read after them, but they are where a large share of the
+// remaining install base is actually described.
+const TREATMENT_PATH = new RegExp([
+  'laser-hair-remov', 'hair-reduction', 'skin-resurfac', 'resurfacing',
+  'photofacial', 'photo-facial', 'ipl', 'pigmentation', 'sun-damage',
+  'vascular', 'rosacea', 'redness', 'spider-vein', 'skin-tighten',
+  'microneedl', 'micro-needl', 'body-contour', 'fat-reduction', 'cellulite',
+  'tattoo-remov', 'acne-scar', 'scar-treat', 'hair-restor', 'vaginal-rejuv',
+  'skin-rejuven', 'laser-treat', 'laser-center', 'laser-skin'
+].join('|'), 'i');
 
 function pickLink(links, hints, host, exclude) {
   let bestUrl = null, bestScore = 0;
@@ -1104,6 +1122,85 @@ function pickLink(links, hints, host, exclude) {
 // 3-page budget could ever use. With a real budget the useful move is to take
 // the top N — a group site's /care/ index links to /services/<device>/ pages,
 // and those own-page slugs are the evidence tier the matcher trusts most.
+// ⭐⭐⭐ THE CANDIDATE QUEUE.
+//
+// The old shape was "find a few likely pages, then look for device names". For
+// a catalogue site that is backwards. This builds a RANKED QUEUE of everything
+// the sitemap and the pages read so far expose, then spends the budget from the
+// top. A page that names a device outranks a treatment page, which outranks a
+// catalogue filter, and anything that looks like a comparison article is
+// rejected outright rather than scored.
+//
+// ⚠️ isComparisonPath() runs HERE, not only in ownership scoring. A URL like
+// /clear-brilliant-vs-moxi/ names two devices and would otherwise be the
+// highest-scoring page on the whole site — the Skin Trek Sofwave bug, one layer
+// further up. Every protection used for evidence must also apply to selection.
+function buildCandidates(urls, host, exclude, vocab, matcher) {
+  const seenUrl = new Set();
+  const out = [];
+  for (const l of urls) {
+    let u;
+    try { u = new URL(l); } catch (e) { continue; }
+    if (u.hostname.replace(/^www\./, '') !== host) continue;
+    if (seenUrl.has(l) || (exclude && exclude.has(l))) continue;
+    const path = u.pathname.toLowerCase();
+    if (ASSET_PATH.test(path)) continue;
+    if (BLOG_PATH.test(path)) continue;
+    if (isComparisonPath(path, Array.isArray(matcher) ? matcher : [])) continue;
+
+    const words = pathWords(path + ' ' + u.search);
+    let score = 0, devices = 0, why = '';
+
+    // Tier A — a device named in the path. Counted ONCE PER DEVICE, so three
+    // spellings of one machine cannot outrank a page naming two machines.
+    for (const [, variants] of vocab) {
+      if (variants.some(v => containsSequence(words, v))) devices++;
+    }
+    if (devices) { score += 100 * devices; why = 'device-named'; }
+
+    // Tier B — a treatment category page.
+    if (!devices && TREATMENT_PATH.test(path)) { score += 50; why = 'treatment'; }
+
+    // A filtered service catalogue. Generic Toolset/WP-Views detection, not a
+    // rule for one company: this template family is used by many US derm groups.
+    if (/[?&]wpv-/i.test(l) || /[?&](service|category|treatment|procedure)/i.test(l)) {
+      score += 80; why = why || 'catalogue-filter';
+      if (/cosmetic|aesthetic|laser/i.test(u.search)) score += 20;
+    }
+    if (TECH_PATH.test(path))    { score += 60; why = why || 'technology'; }
+    if (SERVICE_PATH.test(path)) { score += 20; why = why || 'service'; }
+
+    // Pages that never carry equipment.
+    if (/(location|contact|team|staff|about|privacy|terms|career|patient-(form|resource)|insurance|financ|physician|provider|doctor)/i.test(path)) score -= 100;
+
+    if (score <= 0) continue;
+    score -= u.pathname.split('/').filter(Boolean).length;  // prefer shallower
+    seenUrl.add(l);
+    out.push({ url: l, score, why, devices });
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out;
+}
+
+// ⭐⭐ THE BUDGET FOLLOWS THE EVIDENCE, NOT THE CLINIC COUNT.
+//
+// ⛔ WHAT THIS REPLACES, also my bug: the budget scaled with how many clinic
+// rows sat on the host. lasercarespecialists.com has ONE clinic row and a
+// 382-URL catalogue, so it got 5 pages, found HydraFacial and Ultherapy, and
+// stopped. West Dermatology got 20 pages only because it has 20 clinics, then
+// spent them walking an alphabetical list of medical conditions.
+//
+// Clinic count says nothing about how many pages a site needs. What matters is
+// how many pages actually look like they describe equipment — which is exactly
+// what the candidate queue has just counted. A small medspa still costs ~6
+// pages; a catalogue site earns as many as it has real candidates.
+function budgetFor(candidates, clinicCount) {
+  const A = candidates.filter(c => c.devices).length;
+  const B = candidates.filter(c => !c.devices && c.score >= 50).length;
+  const floor = Math.min(8, 5 + Math.max(0, (Number(clinicCount) || 1) - 1));
+  return Math.max(floor, Math.min(PAGE_BUDGET_CAP, 3 + A + Math.min(B, 12)));
+}
+
 function pickLinks(links, hints, host, exclude, n) {
   const scored = [];
   const seenUrl = new Set();
@@ -1160,8 +1257,12 @@ async function crawlHost(row, matcher) {
   let lastError = null;
   let sawJsOnly = false;
 
-  const budget = pageBudget(Array.isArray(row.clinic_ids) ? row.clinic_ids.length : 1);
-
+  // ⚠️ DECLARED BEFORE readPage, NOT AFTER. readPage closes over `budget`, and
+  // the homepage is fetched before the candidate queue exists — a `const`
+  // declared further down puts it in the temporal dead zone and throws on the
+  // very first fetch of every host. It starts at the floor so the homepage and
+  // the www/http fallbacks always fit, then the queue raises it.
+  let budget = 5;
   const readPage = async url => {
     if (seen.has(url) || pages.length >= budget) return null;
     seen.add(url);
@@ -1227,66 +1328,52 @@ async function crawlHost(row, matcher) {
     return { status: 'error', pagesTried, lastError, matches: [], unknowns: [] };
   }
 
-  // ⭐⭐ THE SITEMAP IS FETCHED FIRST NOW, NOT LAST. It was only ever used to
-  // compute the own-page signal after the fact; its real value is as a MAP of
-  // the site, available before we decide what to read.
   const sm = await sitemapUrls(host.replace(/^www\./, ''));
   const sitemapLinks = sm.urls;
+  const bareHost = host.replace(/^www\./, '');
+
+  // ---- discovery ----------------------------------------------------------
+  // Everything we know about the site before deciding what to read: the
+  // sitemap, plus every link on the homepage (which is where the catalogue
+  // filter URLs live on the Toolset template — they are ordinary <a href>
+  // links in the footer, not form state, so no form parsing is needed).
+  const vocab = deviceUrlVocab(matcher);
+  let candidates = buildCandidates(
+    sitemapLinks.concat(homePage ? homePage.links : []),
+    bareHost, seen, vocab, matcher
+  );
+  budget = budgetFor(candidates, Array.isArray(row.clinic_ids) ? row.clinic_ids.length : 1);
 
   let techUrl = null;
   if (homePage) {
-    techUrl = pickLink(homePage.links, TECH_HINTS, host.replace(/^www\./, ''), seen);
+    techUrl = pickLink(homePage.links, TECH_HINTS, bareHost, seen);
     if (techUrl) await readPage(techUrl);
   }
 
-  // ⭐⭐⭐ DEVICE-SLUG PAGES COME BEFORE EVERYTHING ELSE.
-  // westdermatology.com spent all 16 pages of its budget walking an
-  // ALPHABETICAL medical-condition index — Acne, Actinic Keratosis, Allergies,
-  // Alopecia Areata — and matched nothing, because its cosmetic services sit
-  // behind a QUERY FILTER (?wpv-services2=cosmetic-dermatology) rather than a
-  // path any picker could recognise. No page budget reaches them by walking.
-  //
-  // But /services/bbl-photofacial/ is right there in the sitemap. A URL whose
-  // slug contains a device name is the strongest lead on the whole site, and
-  // it needs no knowledge of how the site is organised. Reading those first
-  // turns the budget from "N arbitrary pages" into "the N pages most likely to
-  // name a device", on every host rather than only group sites.
-  const deviceTokens = deviceSlugTokens(matcher);
-  for (const u of pickDeviceSlugLinks(sitemapLinks.concat(homePage ? homePage.links : []),
-                                      host.replace(/^www\./, ''), seen, deviceTokens, budget)) {
-    if (pages.length >= budget) break;
-    await readPage(u);
-  }
-
-  if (homePage && pages.length < budget) {
-    const svcUrl = pickLink(homePage.links, SERVICE_HINTS, host.replace(/^www\./, ''), seen);
-    const svcPage = svcUrl ? await readPage(svcUrl) : null;
-
-    // A service index is still worth following when no technology page exists
-    // and the slug pass found little — but it now spends what is LEFT, never
-    // what the device-slug pages needed.
-    if (!techUrl && svcPage) {
-      for (const p of pickPagedLinks(svcPage.links, host.replace(/^www\./, ''), seen, 2)) {
-        if (pages.length >= budget) break;
-        await readPage(p);
+  // ---- spend the budget from the top of the queue --------------------------
+  const skipped = [];
+  for (const c of candidates) {
+    if (pages.length >= budget) { skipped.push(c); continue; }
+    const p = await readPage(c.url);
+    // A catalogue page earns its children: reading /care/?wpv-services2=... is
+    // only useful if the /services/<device>/ links it lists are then read too.
+    if (p && c.why === 'catalogue-filter') {
+      const more = buildCandidates(p.links, bareHost, seen, vocab, matcher);
+      for (const m of more) {
+        if (pages.length >= budget) { skipped.push(m); continue; }
+        if (m.devices || m.score >= 50) await readPage(m.url);
       }
-      const childHints = SERVICE_HINTS.concat(TECH_HINTS);
-      for (const c of pickLinks(svcPage.links, childHints, host.replace(/^www\./, ''), seen, budget)) {
+      for (const pg of pickPagedLinks(p.links, bareHost, seen, 3)) {
         if (pages.length >= budget) break;
-        await readPage(c);
+        await readPage(pg);
       }
     }
   }
 
-  // ⭐ Spend whatever budget is left on the best remaining service/technology
-  // links across every page read so far. On a single-clinic site this usually
-  // does nothing (the budget is already spent); on a group site it is where the
-  // per-device pages get read. Ordered by score, so the weakest links are the
-  // ones that go unread when the budget runs out.
+  // Whatever is left goes to the best remaining links across everything read.
   if (pages.length < budget) {
     const soFar = pages.flatMap(p => p.links);
-    const fillHints = TECH_HINTS.concat(SERVICE_HINTS);
-    for (const u of pickLinks(soFar, fillHints, host.replace(/^www\./, ''), seen, budget - pages.length)) {
+    for (const u of pickLinks(soFar, TECH_HINTS.concat(SERVICE_HINTS), bareHost, seen, budget - pages.length)) {
       if (pages.length >= budget) break;
       await readPage(u);
     }
@@ -1340,6 +1427,14 @@ async function crawlHost(row, matcher) {
     thinOnly: thinOnly,
     sitemapUrls: sitemapLinks.length,
     sitemapSource: sm.source,
+    // ⭐ SELECTION DIAGNOSTICS. "tech page: none picked" told us nothing three
+    // times today; what was needed was which high-value pages were found and
+    // which were skipped. `skipped` is the actionable half — a device-named URL
+    // sitting in it means the budget was the binding constraint, not the site.
+    budget: budget,
+    candidatesA: candidates.filter(c => c.devices).length,
+    candidatesB: candidates.filter(c => !c.devices && c.score >= 50).length,
+    skipped: skipped.slice(0, 8).map(c => ({ url: c.url, score: c.score, why: c.why })),
     matches,
     unknowns: [...unknowns.values()]
       .sort((a, b) => (b.page_rank || 0) - (a.page_rank || 0) || (b.score || 0) - (a.score || 0))
@@ -1669,6 +1764,13 @@ async function doCrawl(supabase, body) {
         sitemap_urls: out.sitemapUrls || 0,
         sitemap_source: out.sitemapSource || null,
         thin_only: !!out.thinOnly,
+        // ⭐ What the selector decided, and what it had to leave. A device-named
+        // URL in `skipped_high_value` means the budget was the constraint; an
+        // empty candidate count means the site genuinely names no equipment.
+        budget: out.budget || null,
+        device_page_candidates: out.candidatesA || 0,
+        treatment_page_candidates: out.candidatesB || 0,
+        skipped_high_value: (out.skipped || []).map(s => s.url + ' — score ' + s.score + ' — ' + s.why),
         matched: out.matches.map(m => m.model + ' [' + m.confidence + '/' + m.page_kind + '] via "' + m.matched_text + '"'),
         unmatched_sample: out.unknowns.map(u => u.token),
         error: out.lastError || null,
