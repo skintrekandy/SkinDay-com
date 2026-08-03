@@ -681,6 +681,52 @@
       });
     });
   }
+  // ⛔⛔ THESE THREE BUTTONS HAD NO HANDLERS AT ALL — the markup existed, the API
+  // actions existed, the SQL functions worked, and nothing joined them up. The
+  // same gap is live on skinday.ca; branding was set once at the start and
+  // never changed, so nobody hit it.
+  //
+  // The two client-side checks mirror exactly what mi_set_tenant_branding
+  // raises on, so a bad value shows a message in the form instead of a 500 in
+  // a console the user should never have to open.
+  el('setSave').addEventListener('click',function(){
+    var btn=this, msg=el('setMsg');
+    var hex=(el('setAccentHex').value||'').trim();
+    if(hex && !/^#[0-9A-Fa-f]{6}$/.test(hex)){ msg.textContent='Colour must be a 6-digit hex, e.g. #C0563A'; return; }
+    var logo=(el('setLogo').value||'').trim();
+    if(logo && !/^https:\/\//i.test(logo)){ msg.textContent='Logo URL must start with https://'; return; }
+    btn.disabled=true; msg.textContent='Saving\u2026';
+    api('save_settings',{display_name:(el('setName').value||'').trim(),accent_hex:hex||null,logo_url:logo})
+      .then(function(res){
+        btn.disabled=false; msg.textContent='\u2713 Saved';
+        if(res&&res.tenant) applyIdentity(res.tenant);
+        setTimeout(function(){ msg.textContent=''; },2500);
+      })
+      .catch(function(e){ btn.disabled=false; msg.textContent=(e&&e.detail)?e.detail:'Could not save. Try again.'; });
+  });
+
+  el('myNameSave').addEventListener('click',function(){
+    var btn=this, msg=el('myNameMsg');
+    var nm=(el('myName').value||'').trim();
+    if(!nm){ if(msg) msg.textContent='Enter a name.'; return; }
+    btn.disabled=true; if(msg) msg.textContent='Saving\u2026';
+    api('set_own_name',{name:nm})
+      .then(function(){ btn.disabled=false; if(msg){ msg.textContent='\u2713 Saved'; setTimeout(function(){ msg.textContent=''; },2500);} })
+      .catch(function(e){ btn.disabled=false; if(msg) msg.textContent=(e&&e.detail)?e.detail:'Could not save.'; });
+  });
+
+  el('pwSave').addEventListener('click',function(){
+    var btn=this, msg=el('pwMsg');
+    var a=(el('pwNew').value||''), b=(el('pwNew2')||{}).value;
+    if(a.length<8){ if(msg) msg.textContent='Use at least 8 characters.'; return; }
+    if(b!==undefined && a!==b){ if(msg) msg.textContent='The two passwords do not match.'; return; }
+    btn.disabled=true; if(msg) msg.textContent='Saving\u2026';
+    api('set_password',{password:a})
+      .then(function(){ btn.disabled=false; el('pwNew').value=''; if(el('pwNew2')) el('pwNew2').value='';
+        if(msg){ msg.textContent='\u2713 Password changed'; setTimeout(function(){ msg.textContent=''; },2500);} })
+      .catch(function(e){ btn.disabled=false; if(msg) msg.textContent=(e&&e.detail)?e.detail:'Could not change password.'; });
+  });
+
   el('invSend').addEventListener('click',function(){
     var nm=el('invName').value.trim();
     if(!nm){ el('invNote').textContent='A name is required.'; return; }
