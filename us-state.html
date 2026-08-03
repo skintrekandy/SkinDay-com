@@ -316,7 +316,10 @@
 
     /* Device chips on the card. Model names only — the card's job is "does this
        clinic have the machine I searched for". */
-    .card-devices { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0 1.1rem 0.85rem; }
+    /* Sits INSIDE .card-header, above its divider — the same place Canada puts
+       it. Hung below the divider with no top padding it read as stuck to the
+       line. */
+    .card-devices { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.65rem; }
     .dev-chip {
       display: inline-flex; align-items: center; gap: 0.25rem;
       text-decoration: none;
@@ -1518,8 +1521,8 @@ function renderPageCards(clinicsData, append) {
             <span class="rating-num">${c.rating != null ? c.rating : '-'}</span>
           </div>
           <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')}  Google reviews</div>
+          ${devChipRow}
         </div>
-        ${devChipRow}
         ${priceBlockHTML}
         <div class="card-visit-row">
           <span class="card-visit-prompt">
