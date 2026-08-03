@@ -1053,7 +1053,11 @@
           <button class="btn-primary" id="dc-start" onclick="dcStart()">Start crawl</button>
           <button class="btn-ghost" id="dc-stop" onclick="dcStop()" style="display:none;">Stop</button>
           <button class="btn-ghost" onclick="dcStart(true)">Retry failed</button>
+          <button class="btn-ghost" id="dc-requeue" onclick="dcRequeue()">Requeue everything</button>
           <span id="dc-progress" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">
+          <strong>Requeue everything</strong> puts every host in the chosen country back to pending, including ones already crawled, so a fresh run reads the whole country again. Hosts excluded on purpose stay excluded. Use it after the matcher or the reference list changes; a normal Start only picks up hosts never read.
         </div>
 
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
@@ -2592,6 +2596,34 @@ function dcConfLabel(conf) {
   if (conf === 'own_page')  return '<span style="background:var(--green-bg);color:var(--green);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">own page</span>';
   if (conf === 'blog_only') return '<span style="background:var(--red-bg);color:var(--red);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">blog only</span>';
   return '<span style="background:var(--warm);color:var(--muted);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">named</span>';
+}
+
+// ⭐ Requeue: ask the server how many rows it WOULD touch, show that number in
+// the confirm, then do it. A destructive-looking action should never be
+// confirmed against a number the person had to guess at.
+async function dcRequeue() {
+  if (dcRunning) { alert('Stop the crawl before requeueing.'); return; }
+  const country = dcCountry();
+  const label = country || 'every country';
+  const btn = document.getElementById('dc-requeue');
+  if (btn) btn.disabled = true;
+  try {
+    const pre = await dcCall({ action: 'requeue', country: country, preview: true });
+    if (!pre.ok) throw new Error((pre.data && pre.data.error) || 'request failed');
+    const n = (pre.data && pre.data.would_requeue) || 0;
+    if (!n) { alert('Nothing to requeue for ' + label + '.'); return; }
+    if (!confirm('Put ' + n + ' hosts in ' + label + ' back to pending?\n\n'
+                 + 'The next crawl will read all of them again. Nothing already '
+                 + 'published is deleted.')) return;
+    const r = await dcCall({ action: 'requeue', country: country });
+    if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
+    dcLog('requeued ' + ((r.data && r.data.requeued) || 0) + ' hosts · ' + label
+          + ' — press Start crawl to run them', 'var(--muted)');
+  } catch (e) {
+    alert('Requeue failed: ' + String((e && e.message) || e));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function dcStart(retry) {
