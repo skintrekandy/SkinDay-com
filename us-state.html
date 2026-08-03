@@ -236,16 +236,130 @@
 
     /* ─── FILTER BAR ─── */
     .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; flex-wrap: wrap; }
-    /* Device chips. Deliberately styled apart from anything the clinic says
-       about itself: these are the actual machines, read from its own website. */
-    .dev-chip-row { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0 1.1rem 0.85rem; }
-    .dev-chip { font-size: 0.68rem; letter-spacing: 0.01em; padding: 0.16rem 0.5rem; border-radius: 99px;
-                background: #F1EDE6; color: #6B5D54; border: 1px solid #E4DACD; text-decoration: none; white-space: nowrap; }
-    .dev-chip:hover { background: var(--rose); color: #fff; border-color: var(--rose); }
-    .dev-chip-more { font-size: 0.68rem; color: var(--muted); padding: 0.16rem 0.2rem; align-self: center; }
+    .filter-group { display: flex; align-items: center; gap: 0.75rem; }
+
+    /* M39 technology filter, lifted from skinday.ca. A native <select> could not
+       do this: optgroup labels render pale grey and cannot be restyled in
+       Safari, and a native control cannot show three tiers. So it is a custom
+       panel, sized and coloured to match .sort-select. */
+    .tech-picker { position: relative; }
+    .tech-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      max-width: 250px; padding: 0.36rem 0.7rem;
+      font-family: inherit; font-size: 0.8rem; color: var(--deep);
+      background: #fff; border: 1px solid var(--border); border-radius: 6px;
+      cursor: pointer; white-space: nowrap; overflow: hidden;
+    }
+    .tech-btn:hover { border-color: var(--rose-m, var(--rose)); }
+    .tech-btn.on { border-color: var(--rose); color: var(--rose); }
+    #techBtnLabel { overflow: hidden; text-overflow: ellipsis; }
+    .tech-caret { color: var(--muted); font-size: 0.7rem; }
+
+    .tech-panel {
+      display: none; position: absolute; z-index: 60; top: calc(100% + 6px); left: 0;
+      width: 320px; max-width: min(320px, calc(100vw - 2rem));
+      background: #fff; border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: 0 12px 34px rgba(28,23,20,0.13);
+      overflow: hidden;
+    }
+    .tech-panel.open { display: block; }
+    .tech-search {
+      width: 100%; border: none; border-bottom: 1px solid var(--border);
+      padding: 0.62rem 0.8rem; font-family: inherit; font-size: 0.82rem;
+      color: var(--deep); background: var(--cream);
+    }
+    .tech-search:focus { outline: none; background: #fff; }
+    .tech-scroll { max-height: 340px; overflow-y: auto; padding: 0.25rem 0; }
+
+    /* The group heading carries its own count, so there is no "All <category>"
+       row repeating underneath it. Clicking it filters the whole group. */
+    .tech-group {
+      display: flex; align-items: baseline; gap: 0.4rem; width: 100%;
+      padding: 0.5rem 0.8rem 0.3rem;
+      background: none; border: none; cursor: pointer;
+      font-family: 'Cormorant Garamond', serif; font-size: 1rem; font-weight: 600;
+      color: var(--deep); text-align: left;
+    }
+    .tech-group:hover { color: var(--rose); }
+    .tech-group .n { font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500; color: var(--muted); }
+    .tech-group.sel { color: var(--rose); }
+
+    .tech-sub {
+      display: flex; align-items: baseline; gap: 0.4rem; width: 100%;
+      padding: 0.26rem 0.8rem 0.26rem 1.35rem;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 0.78rem; font-weight: 600;
+      color: var(--deep); text-align: left; letter-spacing: 0.01em;
+    }
+    .tech-sub:hover { background: var(--warm); }
+    .tech-sub .n { font-size: 0.68rem; font-weight: 400; color: var(--muted); }
+    .tech-sub.sel { color: var(--rose); }
+
+    .tech-model {
+      display: flex; align-items: baseline; gap: 0.4rem; width: 100%;
+      padding: 0.22rem 0.8rem 0.22rem 2.1rem;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 0.78rem; color: var(--muted);
+      text-align: left;
+    }
+    .tech-model:hover { background: var(--warm); color: var(--deep); }
+    .tech-model .n { font-size: 0.66rem; color: var(--dim, var(--muted)); }
+    .tech-model.sel { color: var(--rose); font-weight: 600; }
+
+    .tech-any {
+      width: 100%; padding: 0.45rem 0.8rem; text-align: left;
+      background: none; border: none; border-bottom: 1px solid var(--border);
+      font-family: inherit; font-size: 0.8rem; color: var(--muted); cursor: pointer;
+    }
+    .tech-any:hover { background: var(--warm); color: var(--deep); }
+    .tech-empty { padding: 1rem 0.8rem; font-size: 0.78rem; color: var(--muted); }
+
+    /* Device chips on the card. Model names only — the card's job is "does this
+       clinic have the machine I searched for". */
+    .card-devices { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0 1.1rem 0.85rem; }
+    .dev-chip {
+      display: inline-flex; align-items: center; gap: 0.25rem;
+      text-decoration: none;
+      font-size: 0.66rem; letter-spacing: 0.02em; font-weight: 500;
+      padding: 0.16rem 0.42rem; border-radius: 4px;
+      background: rgba(200,114,90,0.07);
+      border: 1px solid rgba(200,114,90,0.18);
+      color: var(--deep);
+      white-space: nowrap;
+    }
+    .dev-chip-more { background: transparent; border-style: dashed; color: var(--muted); }
+
+    /* Devices in the modal, grouped by category — the modal has room for the
+       structure the card does not. */
+    .cm-devices-label {
+      font-size: 0.64rem; letter-spacing: 0.09em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 0.5rem;
+    }
+    .cm-devices-list { display: flex; flex-direction: column; gap: 0.55rem; }
+    .cm-dev-group-label {
+      font-size: 0.66rem; letter-spacing: 0.04em; color: var(--dim, var(--muted));
+      margin-bottom: 0.25rem;
+    }
+    .cm-dev-chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .cm-dev-chip {
+      display: inline-flex; align-items: center; gap: 0.28rem;
+      font-size: 0.72rem; letter-spacing: 0.01em; font-weight: 500;
+      padding: 0.2rem 0.5rem; border-radius: 4px;
+      background: rgba(200,114,90,0.07);
+      border: 1px solid rgba(200,114,90,0.18);
+      color: var(--deep); text-decoration: none;
+    }
+    .cm-dev-chip:hover { background: var(--rose-bg, var(--warm)); border-color: var(--rose-m, var(--rose)); }
+    .cm-dev-chip .mfr { color: var(--muted); font-weight: 400; font-size: 0.66rem; }
+    .cm-dev-chip .vtag { color: var(--green, #3D7A55); font-size: 0.6rem; letter-spacing: 0.04em; }
+    .cm-dev-note { font-size: 0.66rem; color: var(--dim, var(--muted)); line-height: 1.5; margin-top: 0.5rem; }
+
     @media (max-width: 640px) {
-      .filter-wrap { gap: 0.5rem; }
-      .filter-wrap select { flex: 1 1 45%; }
+      .filter-wrap { gap: 0.5rem; flex-wrap: wrap; }
+      .filter-group { flex: 0 0 100%; flex-direction: column; align-items: flex-start; gap: 0.3rem; }
+      .tech-btn { max-width: 100%; width: 100%; justify-content: space-between; }
+      .tech-panel { width: calc(100vw - 10%); max-width: none; }
+      .filter-wrap select { width: 100%; }
     }
     .filter-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; margin-right: 0.25rem; }
     .sort-select {
@@ -740,10 +854,20 @@
   </div>
 
   <div class="filter-wrap">
+    <div class="filter-group">
     <span class="filter-label">Technology</span>
-    <select class="sort-select" id="deviceSelect" onchange="applyDevice(this.value)">
-      <option value="">Any technology</option>
-    </select>
+    <div class="tech-picker" id="techPicker">
+      <button type="button" class="tech-btn" id="techBtn" onclick="toggleTechPanel()" aria-haspopup="listbox" aria-expanded="false">
+        <span id="techBtnLabel">Any technology</span>
+        <span class="tech-caret" aria-hidden="true">&#8964;</span>
+      </button>
+      <div class="tech-panel" id="techPanel" role="listbox" aria-label="Technology">
+        <input type="text" class="tech-search" id="techSearch" placeholder="Search a device or treatment" oninput="renderTechPanel()" autocomplete="off" />
+        <div class="tech-scroll" id="techScroll"></div>
+      </div>
+    </div>
+    </div>
+    <div class="filter-group">
     <span class="filter-label">Sort</span>
     <select class="sort-select" onchange="sortCards(this.value)" id="mainSortSelect">
       <option value="rating">Highest rated</option>
@@ -752,6 +876,7 @@
       <option value="price-low">Price: low → high</option>
       <option value="nearest">Nearest</option>
     </select>
+    </div>
   </div>
 
   <div class="cards-grid" id="cardsGrid">
@@ -1006,105 +1131,161 @@ let currentTotal = 0;
 let currentPageClinics = [];
 let clinicsIndex = [];
 
-// ── DEVICES / TECHNOLOGY FILTER ────────────────────────────────────────────
-let currentDevice    = '';   // model slug
-let currentDeviceCat = '';   // category key
-const DEVICE_MIN_CLINICS = 3;   // an option too thin to be worth a click is hidden
-const DEVICE_CAT_LABEL = {};    // filled from the facets response
+// ── TECHNOLOGY FILTER (M39, lifted from skinday.ca) ───────────────────────
+// A deep-linkable param applied server-side, three tiers, searchable. Options
+// come from /api/get-clinics?mode=device-facets, which returns a clinic COUNT
+// on every entry — offering all 141 models would bury the patient in options
+// returning two clinics each.
+let currentDevice      = null;   // model slug
+let currentDeviceCat   = null;   // category key
+let currentDeviceGroup = null;   // parent group key
+let deviceFacets       = null;
 
-// index.html had NO escaping helper and my first device chips interpolated the
-// model raw. Model and manufacturer strings come from a crawl of third-party
-// websites, so that was an injection path. Everything device-shaped goes
-// through these two.
+const DEVICE_MIN_CLINICS = 3;
+
+// Model and manufacturer strings come from a crawl of third-party websites, so
+// they are escaped before being interpolated into HTML.
 function devEsc(v) {
   return String(v == null ? '' : v)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
-function devSlug(v) {
-  return String(v == null ? '' : v).toLowerCase()
-    .replace(/\+/g, ' plus ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// Shared with the modal so the two cannot disagree on what "morpheus8" means.
+function devSlug(model) {
+  return String(model || '').toLowerCase()
+    .replace(/[\u00ae\u2122]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
-// Facets load NON-BLOCKING, so the grid never waits on them. If it fails the
-// control simply stays on "Any technology".
-//
-// ⭐ THREE TIERS, IN ANDY'S ORDER. The M41 taxonomy puts parent groups above
-// categories, with a group_order set deliberately: Laser & Light first,
-// Resurfacing low. Sorting alphabetically instead — as my first build did —
-// inverts exactly that intent and puts Ablative Resurfacing at the top.
 async function loadDeviceFacets() {
-  const sel = document.getElementById('deviceSelect');
-  if (!sel) return;
   try {
     const res = await fetch('/api/get-clinics?mode=device-facets&country=' + COUNTRY);
     if (!res.ok) return;
-    const f = await res.json();
-    const models = Array.isArray(f.models) ? f.models : [];
-    const cats   = Array.isArray(f.categories) ? f.categories : [];
-    if (!models.length || !cats.length) return;
-
-    const catByKey = {};
-    cats.forEach(c => { catByKey[c.category] = c; DEVICE_CAT_LABEL[c.category] = c.label; });
-
-    // models -> category
-    const modelsByCat = {};
-    models.forEach(m => {
-      if ((m.clinics || 0) < DEVICE_MIN_CLINICS) return;
-      (modelsByCat[m.category] = modelsByCat[m.category] || []).push(m);
-    });
-
-    // categories -> group
-    const groups = {};
-    cats.forEach(c => {
-      if (!modelsByCat[c.category]) return;          // no visible models, no row
-      const g = (groups[c.group_key] = groups[c.group_key] || {
-        key: c.group_key, label: c.group_label, order: c.group_order, cats: []
-      });
-      g.cats.push(c);
-    });
-
-    let html = '<option value="">Any technology</option>';
-    Object.values(groups)
-      .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label))
-      .forEach(g => {
-        html += '<optgroup label="' + devEsc(g.label) + '">';
-        g.cats
-          .sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label))
-          .forEach(c => {
-            html += '<option value="cat:' + devEsc(c.category) + '">'
-                  + devEsc(c.label) + ' \u2014 all (' + (c.clinics || 0) + ')</option>';
-            modelsByCat[c.category]
-              .sort((a, b) => (b.clinics || 0) - (a.clinics || 0))
-              .forEach(m => {
-                html += '<option value="' + devEsc(devSlug(m.model)) + '">'
-                      + '\u00a0\u00a0\u00a0' + devEsc(m.model)
-                      + ' (' + (m.clinics || 0) + ')</option>';
-              });
-          });
-        html += '</optgroup>';
-      });
-    sel.innerHTML = html;
-
-    // Restore a deep link: /us/california?device=morpheus8 or ?devicecat=hifu
-    const qp = new URLSearchParams(location.search);
-    const wantDev = qp.get('device');
-    const wantCat = qp.get('devicecat');
-    const want = wantDev || (wantCat ? 'cat:' + wantCat : '');
-    if (want && sel.querySelector('option[value="' + want.replace(/"/g, '') + '"]')) sel.value = want;
-  } catch (e) { /* control stays on "Any technology" */ }
+    deviceFacets = await res.json();
+    renderTechPanel();
+    syncTechButton();
+  } catch (e) {
+    // The directory works without it; the control just stays on "Any".
+    console.warn('[device facets] unavailable', e);
+  }
 }
 
-function applyDevice(v) {
-  if (v && v.indexOf('cat:') === 0) { currentDeviceCat = v.slice(4); currentDevice = ''; }
-  else                              { currentDevice = v || '';       currentDeviceCat = ''; }
-  // Deep link, so "Morpheus8 in Los Angeles" is a shareable URL.
-  const u = new URL(location.href);
-  if (currentDevice) u.searchParams.set('device', currentDevice); else u.searchParams.delete('device');
-  if (currentDeviceCat) u.searchParams.set('devicecat', currentDeviceCat); else u.searchParams.delete('devicecat');
-  history.replaceState(null, '', u.toString());
-  if (typeof fetchPage === 'function') fetchPage(0, false);
+function toggleTechPanel(force) {
+  const panel = document.getElementById('techPanel');
+  const btn   = document.getElementById('techBtn');
+  if (!panel || !btn) return;
+  const open = (force !== undefined) ? force : !panel.classList.contains('open');
+  panel.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) {
+    renderTechPanel();
+    const q = document.getElementById('techSearch');
+    if (q) { q.value = ''; setTimeout(() => q.focus(), 30); }
+  }
 }
+
+// Click-away close. Registered once, not per open.
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('techPicker');
+  if (wrap && !wrap.contains(e.target)) toggleTechPanel(false);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleTechPanel(false); });
+
+// ⭐ THREE TIERS, and the count lives on the heading rather than in a repeated
+// "All <category>" row underneath it. Group, subcategory, model. Every level is
+// clickable and filters at that level.
+function renderTechPanel() {
+  const box = document.getElementById('techScroll');
+  if (!box || !deviceFacets) return;
+
+  const q = (document.getElementById('techSearch') || {}).value || '';
+  const term = q.trim().toLowerCase();
+  const groups = deviceFacets.groups || [];
+  const byCat = deviceFacets.models_by_category || {};
+
+  let html = '<button type="button" class="tech-any" onclick="applyDevice(\'\')">Any technology</button>';
+  let matches = 0;
+
+  groups.forEach(g => {
+    const cats = (g.categories || []);
+    // While searching, only matching models show, and a group or subcategory
+    // appears only if something under it matched.
+    const catBlocks = cats.map(c => {
+      const models = (byCat[c.category] || []).filter(m => m.clinics >= DEVICE_MIN_CLINICS);
+      const shownModels = term ? models.filter(m => m.model.toLowerCase().includes(term)) : models;
+      const catMatches = !term
+        || c.label.toLowerCase().includes(term)
+        || g.label.toLowerCase().includes(term)
+        || shownModels.length > 0;
+      if (!catMatches) return '';
+      const modelRows = (term ? shownModels : models).map(m => {
+        matches++;
+        return `<button type="button" class="tech-model ${currentDevice === m.slug ? 'sel' : ''}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)} <span class="n">${m.clinics}</span></button>`;
+      }).join('');
+      return `<button type="button" class="tech-sub ${currentDeviceCat === c.category ? 'sel' : ''}" onclick="applyDevice('cat:${c.category}')">${devEsc(c.label)} <span class="n">${c.clinics}</span></button>${modelRows}`;
+    }).join('');
+
+    const groupMatches = !term || g.label.toLowerCase().includes(term) || catBlocks.length > 0;
+    if (!groupMatches || !catBlocks) return;
+
+    html += `<button type="button" class="tech-group ${currentDeviceGroup === g.key ? 'sel' : ''}" onclick="applyDevice('group:${g.key}')">${devEsc(g.label)} <span class="n">${g.clinics}</span></button>${catBlocks}`;
+  });
+
+  if (term && matches === 0) html += '<div class="tech-empty">Nothing matches that.</div>';
+  box.innerHTML = html;
+}
+
+function techLabel() {
+  if (!deviceFacets) return currentDevice || currentDeviceCat || currentDeviceGroup || 'Any technology';
+  if (currentDevice) {
+    const m = (deviceFacets.models || []).find(x => x.slug === currentDevice);
+    return m ? m.model : currentDevice;
+  }
+  if (currentDeviceCat) {
+    for (const g of (deviceFacets.groups || [])) {
+      const c = (g.categories || []).find(x => x.category === currentDeviceCat);
+      if (c) return g.label + ' \u00b7 ' + c.label;
+    }
+    return currentDeviceCat;
+  }
+  if (currentDeviceGroup) {
+    const g = (deviceFacets.groups || []).find(x => x.key === currentDeviceGroup);
+    return g ? g.label : currentDeviceGroup;
+  }
+  return 'Any technology';
+}
+
+function syncTechButton() {
+  const btn = document.getElementById('techBtn');
+  const lab = document.getElementById('techBtnLabel');
+  if (!btn || !lab) return;
+  const active = !!(currentDevice || currentDeviceCat || currentDeviceGroup);
+  lab.textContent = techLabel();
+  btn.classList.toggle('on', active);
+}
+
+function syncDeviceUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (currentDevice) params.set('device', currentDevice); else params.delete('device');
+  if (currentDeviceCat) params.set('devicecat', currentDeviceCat); else params.delete('devicecat');
+  if (currentDeviceGroup) params.set('devicegroup', currentDeviceGroup); else params.delete('devicegroup');
+  const qs = params.toString();
+  window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+}
+
+function applyDevice(val) {
+  currentDevice = null; currentDeviceCat = null; currentDeviceGroup = null;
+  if (val && val.indexOf('group:') === 0)      currentDeviceGroup = val.slice(6);
+  else if (val && val.indexOf('cat:') === 0)   currentDeviceCat   = val.slice(4);
+  else if (val && val.indexOf('model:') === 0) currentDevice      = val.slice(6);
+  syncTechButton();
+  syncDeviceUrl();
+  toggleTechPanel(false);
+  fetchPage(0, false);
+}
+
 let compareList = [];
 let isLoading = false;
 let userLocation = null;
@@ -1214,8 +1395,9 @@ function buildApiUrl(page) {
   if (currentMetro) params.set('metro', currentMetro);
   if (currentNameQuery) params.set('search', currentNameQuery);
   if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
-  if (currentDevice)    params.set('device', currentDevice);
-  if (currentDeviceCat) params.set('devicecat', currentDeviceCat);
+  if (currentDevice)      params.set('device', currentDevice);
+  if (currentDeviceCat)   params.set('devicecat', currentDeviceCat);
+  if (currentDeviceGroup) params.set('devicegroup', currentDeviceGroup);
   return '/api/get-clinics?' + params.toString();
 }
 
@@ -1300,19 +1482,19 @@ function renderPageCards(clinicsData, append) {
       return ` · ${d < 1 ? (d*1000).toFixed(0)+'m' : d.toFixed(1)+'km'}`;
     })();
 
-    // Model names only, three plus a count. Renders NOTHING when empty — a
-    // clinic with no devices has simply not been read yet, and "None listed"
-    // would read as a finding about the clinic rather than a gap in our data.
-    const devChipRow = (() => {
-      const ds = Array.isArray(c.devices) ? c.devices : [];
-      if (!ds.length) return '';
-      const shown = ds.slice(0, 3).map(d =>
-        `<a class="dev-chip" href="/us/${STATE}?device=${devEsc(d.slug)}"`
-        + ` onclick="event.stopPropagation()" title="${devEsc(d.manufacturer || '')}">${devEsc(d.model)}</a>`
-      ).join('');
-      const more = ds.length > 3 ? `<span class="dev-chip-more">+${ds.length - 3}</span>` : '';
-      return `<div class="dev-chip-row">${shown}${more}</div>`;
-    })();
+    // Devices. The chips above are the clinic's self-declared treatment
+    // CATEGORIES; these are the actual machines. Model names only, no
+    // manufacturer — the card's job is "does this clinic have the machine I
+    // searched for". Nothing renders when there are none, because most clinics
+    // have not had their site read yet and an empty row would read as a finding.
+    const devs = Array.isArray(c.devices) ? c.devices : [];
+    const devShown = devs.slice(0, 3);
+    const devOverflow = devs.length - devShown.length;
+    const devChipRow = devs.length
+      ? `<div class="card-devices" aria-label="Technology listed by this clinic">${
+          devShown.map(d => `<a class="dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}" onclick="event.stopPropagation()">${devEsc(d.model)}</a>`).join('')
+        }${devOverflow > 0 ? `<span class="dev-chip dev-chip-more">+${devOverflow}</span>` : ''}</div>`
+      : '';
 
     const profileHref = (() => {
       // Use the stored slug. It is globally unique and carries the city suffix that
@@ -1628,29 +1810,31 @@ window.openClinicModal = async function(id) {
     c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">🌐 Website</a>` : '',
     `</div>`,
 
-    // Technology. Grouped by category because the modal has room for structure
-    // the card does not. Model bold, manufacturer secondary, a tick if verified.
+    // Technology, grouped by category — the modal has room for the structure
+    // the card does not. Model bold, manufacturer beside it, tick if verified.
     (function(){
-      const ds = Array.isArray(c.devices) ? c.devices : [];
-      if (!ds.length) return '';
-      const byCat = {};
-      ds.forEach(d => { (byCat[d.category || 'other'] = byCat[d.category || 'other'] || []).push(d); });
-      const body = Object.keys(byCat).sort().map(cat => {
-        const label = (DEVICE_CAT_LABEL[cat] || cat.replace(/_/g, ' '));
-        const items = byCat[cat].map(d =>
-          `<div style="display:flex;gap:.4rem;align-items:baseline;padding:.15rem 0;">`
-          + `<strong style="font-size:.86rem;color:var(--deep);">${devEsc(d.model)}</strong>`
-          + `<span style="font-size:.76rem;color:var(--muted);">${devEsc(d.manufacturer || '')}</span>`
-          + (d.status === 'verified' ? `<span style="font-size:.72rem;color:var(--gold);">&#10003;</span>` : '')
-          + `</div>`).join('');
-        return `<div style="margin-bottom:.6rem;">`
-             + `<div style="font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:.2rem;">${devEsc(label)}</div>`
-             + items + `</div>`;
-      }).join('');
-      return `<div style="border-top:1px solid var(--border);padding-top:1rem;margin-bottom:1.25rem;">`
-           + `<div style="font-size:.82rem;font-weight:600;color:var(--deep);margin-bottom:.6rem;">Technology</div>`
-           + body
-           + `<div style="font-size:.72rem;color:var(--muted);margin-top:.4rem;">Listed on the clinic&rsquo;s own website.</div>`
+      const cmDevs = Array.isArray(c.devices) ? c.devices : [];
+      if (!cmDevs.length) return '';
+      const order = [];
+      const seen = {};
+      cmDevs.forEach(d => {
+        const key = d.category_label || d.category || 'Other';
+        if (!seen[key]) { seen[key] = []; order.push(key); }
+        seen[key].push(d);
+      });
+      const body = order.map(key => `
+        <div>
+          <div class="cm-dev-group-label">${devEsc(key)}</div>
+          <div class="cm-dev-chips">${seen[key].map(d =>
+            `<a class="cm-dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}">${devEsc(d.model)}${
+              d.manufacturer ? `<span class="mfr">${devEsc(d.manufacturer)}</span>` : ''
+            }${d.status === 'verified' ? '<span class="vtag">\u2713</span>' : ''}</a>`
+          ).join('')}</div>
+        </div>`).join('');
+      return `<div style="margin-bottom:1.25rem;">`
+           + `<div class="cm-devices-label">Technology</div>`
+           + `<div class="cm-devices-list">${body}</div>`
+           + `<div class="cm-dev-note">Listed from this clinic&rsquo;s own website. A check mark means the clinic confirmed it with us.</div>`
            + `</div>`;
     })(),
 
@@ -2291,8 +2475,10 @@ function unhighlightPinById(cid) {
   //     rendering everything and then re-fetching. ───
   {
     const qp = new URLSearchParams(location.search);
-    currentDevice    = (qp.get('device') || '').trim();
-    currentDeviceCat = (qp.get('devicecat') || '').trim();
+    currentDevice      = (qp.get('device') || '').trim() || null;
+    currentDeviceCat   = (qp.get('devicecat') || '').trim() || null;
+    currentDeviceGroup = (qp.get('devicegroup') || '').trim() || null;
+    syncTechButton();
   }
   loadDeviceFacets();   // non-blocking on purpose: the grid never waits for it
 
