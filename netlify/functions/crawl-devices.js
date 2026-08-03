@@ -1042,6 +1042,51 @@ function scoreLink(url, hints) {
   return best;
 }
 
+// ⭐⭐ Device names as they appear in URL SLUGS. Built from the live matcher, so
+// adding a device to device_reference immediately improves page selection too —
+// no second vocabulary to maintain.
+//
+// Three characters is too short to score a path on: "bbl" matches /rabble/ and
+// /wobbly/. Those devices are still found in page TEXT; this is only about
+// deciding which pages to spend the budget on, so the bar is deliberately high.
+function deviceSlugTokens(matcher) {
+  const out = new Set();
+  for (const e of (matcher || [])) {
+    const t = String(e.token || '');
+    if (t.length >= 5 && !/\s/.test(t)) out.add(t);
+  }
+  return out;
+}
+
+function pickDeviceSlugLinks(links, host, exclude, tokens, n) {
+  if (!tokens || !tokens.size) return [];
+  const scored = [];
+  const seenUrl = new Set();
+  for (const l of links) {
+    let u;
+    try { u = new URL(l); } catch (e) { continue; }
+    if (u.hostname.replace(/^www\./, '') !== host) continue;
+    const path = u.pathname.toLowerCase();
+    if (ASSET_PATH.test(path)) continue;
+    // A blog post named sofwave-vs-morpheus8 is a comparison article, not a
+    // device page. The SEO false-positive lesson applies to page SELECTION as
+    // much as to matching.
+    if (BLOG_PATH.test(path)) continue;
+    if (exclude && exclude.has(l)) continue;
+    if (seenUrl.has(l)) continue;
+    const flat = norm(path.replace(/[^a-z0-9]+/g, ' '));
+    let hits = 0;
+    for (const t of tokens) if (flat.indexOf(t) !== -1) hits++;
+    if (!hits) continue;
+    seenUrl.add(l);
+    // More device names in one slug is a stronger page; shorter paths beat
+    // deeply nested ones at equal strength.
+    scored.push({ url: l, score: hits * 100 - path.split('/').filter(Boolean).length });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, Math.max(0, n)).map(x => x.url);
+}
+
 function pickLink(links, hints, host, exclude) {
   let bestUrl = null, bestScore = 0;
   for (const l of links) {
@@ -1182,21 +1227,46 @@ async function crawlHost(row, matcher) {
     return { status: 'error', pagesTried, lastError, matches: [], unknowns: [] };
   }
 
+  // ⭐⭐ THE SITEMAP IS FETCHED FIRST NOW, NOT LAST. It was only ever used to
+  // compute the own-page signal after the fact; its real value is as a MAP of
+  // the site, available before we decide what to read.
+  const sm = await sitemapUrls(host.replace(/^www\./, ''));
+  const sitemapLinks = sm.urls;
+
   let techUrl = null;
   if (homePage) {
     techUrl = pickLink(homePage.links, TECH_HINTS, host.replace(/^www\./, ''), seen);
     if (techUrl) await readPage(techUrl);
+  }
+
+  // ⭐⭐⭐ DEVICE-SLUG PAGES COME BEFORE EVERYTHING ELSE.
+  // westdermatology.com spent all 16 pages of its budget walking an
+  // ALPHABETICAL medical-condition index — Acne, Actinic Keratosis, Allergies,
+  // Alopecia Areata — and matched nothing, because its cosmetic services sit
+  // behind a QUERY FILTER (?wpv-services2=cosmetic-dermatology) rather than a
+  // path any picker could recognise. No page budget reaches them by walking.
+  //
+  // But /services/bbl-photofacial/ is right there in the sitemap. A URL whose
+  // slug contains a device name is the strongest lead on the whole site, and
+  // it needs no knowledge of how the site is organised. Reading those first
+  // turns the budget from "N arbitrary pages" into "the N pages most likely to
+  // name a device", on every host rather than only group sites.
+  const deviceTokens = deviceSlugTokens(matcher);
+  for (const u of pickDeviceSlugLinks(sitemapLinks.concat(homePage ? homePage.links : []),
+                                      host.replace(/^www\./, ''), seen, deviceTokens, budget)) {
+    if (pages.length >= budget) break;
+    await readPage(u);
+  }
+
+  if (homePage && pages.length < budget) {
     const svcUrl = pickLink(homePage.links, SERVICE_HINTS, host.replace(/^www\./, ''), seen);
     const svcPage = svcUrl ? await readPage(svcUrl) : null;
 
-    // ⭐⭐ THE SERVICE INDEX IS A TECHNOLOGY PAGE WHEN THERE ISN'T ONE.
-    // westdermatology.com has no /technology page at all; it has /care/, which
-    // names devices as headings AND links to /services/<device>/ own-pages.
-    // 20 clinics on that host returned nothing because we read the index and
-    // stopped. When no tech page exists, the index is treated as the spine of
-    // the site: follow its pagination, then its device children.
+    // A service index is still worth following when no technology page exists
+    // and the slug pass found little — but it now spends what is LEFT, never
+    // what the device-slug pages needed.
     if (!techUrl && svcPage) {
-      for (const p of pickPagedLinks(svcPage.links, host.replace(/^www\./, ''), seen, 3)) {
+      for (const p of pickPagedLinks(svcPage.links, host.replace(/^www\./, ''), seen, 2)) {
         if (pages.length >= budget) break;
         await readPage(p);
       }
@@ -1222,13 +1292,7 @@ async function crawlHost(row, matcher) {
     }
   }
 
-  // ---- the sitemap pass ---------------------------------------------------
-  // Run for EVERY host, not just the JavaScript-only ones. It costs one extra
-  // fetch and it feeds the own-page tier directly, which is the evidence the
-  // review queue trusts most.
-  const sm = await sitemapUrls(host.replace(/^www\./, ''));
-  const sitemapLinks = sm.urls;
-
+  // ---- own-page signal ----------------------------------------------------
   // The homepage nav usually carries every device link on the site, so the
   // own-page signal is computed against the union of hrefs from all pages read.
   const allLinks = pages.flatMap(p => p.links).concat(sitemapLinks);
@@ -1306,6 +1370,7 @@ exports.handler = async event => {
   try {
     switch (action) {
       case 'crawl':               return json(200, await doCrawl(supabase, body));
+      case 'requeue':             return json(200, await requeueAll(supabase, body));
       case 'candidate-stats':     return json(200, await candidateStats(supabase, body));
       case 'list-candidates':     return json(200, await listCandidates(supabase, body));
       case 'approve-candidates':  return json(200, await decide(supabase, body, true));
@@ -1650,6 +1715,38 @@ async function doCrawl(supabase, body) {
   }
 
   return { done: false, run_id: runId, processed, remaining: remaining || 0 };
+}
+
+// ---------------------------------------------------------------------------
+// requeue
+// ---------------------------------------------------------------------------
+// ⭐⭐ THE EXISTING "retry" ONLY EVER TOUCHED `error` AND `running` ROWS. After a
+// completed crawl every row is `done`/`empty`/`needs_render`, so pressing Start
+// again claimed almost nothing and looked like a broken crawler — the reason a
+// re-crawl always needed hand-written SQL.
+//
+// This resets the whole country to pending. `excluded` rows are left alone:
+// aggregator, hotel and umbrella hosts are excluded deliberately and a requeue
+// must never quietly re-admit them.
+async function requeueAll(supabase, body) {
+  const country = body.country || null;
+
+  let countQ = supabase.from('crawl_device_queue')
+    .select('id', { count: 'exact', head: true })
+    .eq('excluded', false);
+  if (country) countQ = countQ.eq('country', country);
+  const { count } = await countQ;
+
+  if (body.preview) return { preview: true, country: country, would_requeue: count || 0 };
+
+  let rq = supabase.from('crawl_device_queue')
+    .update({ status: 'pending', last_error: null, attempts: 0 })
+    .eq('excluded', false);
+  if (country) rq = rq.eq('country', country);
+  const { error } = await rq;
+  if (error) throw error;
+
+  return { requeued: count || 0, country: country };
 }
 
 // ---------------------------------------------------------------------------
