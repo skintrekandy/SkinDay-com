@@ -85,37 +85,64 @@ async function fetchDevicesFor(supabase, clinicIds) {
   }
 }
 
-// Resolve ?device= / ?devicecat= to the set of clinic ids that own it.
-// Returns null when no device filter is active.
+// Resolve ?device= / ?devicecat= / ?devicegroup= to the set of clinic ids that
+// own it. Returns null when no device filter is active.
+//
+// ⛔⛔ THIS IS WHERE THE ROW CAP BITES, AND IT ALREADY COST CANADA ONCE.
+// The first version fetched every clinic_devices row with .range(0, 49999) and
+// filtered by slug in JS. PostgREST enforces its OWN max-rows cap regardless of
+// the range asked for, so that returned a TRUNCATED, UNORDERED subset — which
+// is why "XERF in Los Angeles" came back as 2 clinics against 172 statewide.
+// Exactly the bug that made DermaV vanish from the Canadian facet counts.
+//
+// Two changes fix it: resolve the model/category to DEVICE IDS first (device
+//_reference is ~140 rows, never capped), then read clinic_devices by device_id
+// in explicitly ordered pages so nothing is silently dropped.
 async function resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGroup) {
   if (!deviceSlug && !deviceCat && !deviceGroup) return null;
   try {
-    // A group is a set of categories, resolved from device_categories.
-    let groupCats = null;
+    // ── 1. which device rows are we talking about? ──────────────────────
+    let catFilter = null;
     if (deviceGroup) {
       const meta = await loadCategoryMeta(supabase);
-      groupCats = Object.values(meta || {})
+      catFilter = Object.values(meta || {})
         .filter(m => m.group_key === deviceGroup)
         .map(m => m.category);
-      if (!groupCats.length) return new Set();
+      if (!catFilter.length) return new Set();
+    } else if (deviceCat) {
+      catFilter = [deviceCat];
     }
-    let q = supabase
-      .from('clinic_devices')
-      .select('clinic_id, device_reference!inner(model, category, active)')
-      .eq('device_reference.active', true)
-      .range(0, 49999);
-    if (deviceCat)   q = q.eq('device_reference.category', deviceCat);
-    if (groupCats)   q = q.in('device_reference.category', groupCats);
-    const { data, error } = await q;
-    if (error) throw new Error(error.message);
-    let rows = data || [];
+
+    let dq = supabase.from('device_reference').select('id, model').eq('active', true);
+    if (catFilter) dq = dq.in('category', catFilter);
+    const { data: devs, error: dErr } = await dq;
+    if (dErr) throw new Error(dErr.message);
+
+    let deviceIds = (devs || []).map(d => d.id);
     if (deviceSlug) {
-      rows = rows.filter(r => r.device_reference
-        && slugifyModel(r.device_reference.model) === deviceSlug);
+      deviceIds = (devs || [])
+        .filter(d => slugifyModel(d.model) === deviceSlug)
+        .map(d => d.id);
     }
-    // An EMPTY set must stay empty, never null — otherwise "clinics with a
-    // Morpheus8" silently returns every clinic in the state.
-    return new Set(rows.map(r => String(r.clinic_id)));
+    // An EMPTY set must stay an empty SET, never null — otherwise "clinics with
+    // a Morpheus8" silently returns every clinic in the state.
+    if (!deviceIds.length) return new Set();
+
+    // ── 2. read the owning clinics in ORDERED PAGES ─────────────────────
+    const PAGE = 1000;
+    const ids = new Set();
+    for (let from = 0; from < 60000; from += PAGE) {
+      const { data, error } = await supabase
+        .from('clinic_devices')
+        .select('clinic_id')
+        .in('device_id', deviceIds)
+        .order('clinic_id', { ascending: true })
+        .range(from, from + PAGE - 1);
+      if (error) throw new Error(error.message);
+      (data || []).forEach(r => ids.add(String(r.clinic_id)));
+      if (!data || data.length < PAGE) break;
+    }
+    return ids;
   } catch (e) {
     console.error('Device filter failed (non-fatal):', e.message);
     return null;
