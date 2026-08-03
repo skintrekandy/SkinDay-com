@@ -32,6 +32,38 @@ const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET       = 'clinic-photos';
 
+// ── TARGETS ────────────────────────────────────────────────────────────────
+// ?target=photo (default) or ?target=logo. Everything below is driven off this
+// table so the two paths cannot drift apart.
+//
+// ⭐ LOGOS GO IN `clinic-photos` UNDER A `logos/` PREFIX, NOT IN `clinic-logos`.
+// That bucket holds media CLAIMED CLINICS UPLOADED THEMSELVES through the
+// portal. Writing our crawl output beside it is how a future cleanup deletes a
+// paying clinic's own artwork by mistake — that near-miss already happened once
+// with the clinic-<id>/ folders.
+//
+// ⭐ AND LOGOS DEFAULT TO 160px, NOT 480. A photo fills the card; a logo is a
+// small badge in its corner. At 480 the ~14,800 logos would cost as much as a
+// whole country of photos and look no different.
+const TARGETS = {
+  photo: {
+    col:        'photo',
+    sourceCol:  'photo_source',
+    stampCol:   'photo_rehosted_at',
+    prefix:     '',
+    defaultPx:  800,
+    label:      'card photo'
+  },
+  logo: {
+    col:        'logo',
+    sourceCol:  'logo_source',
+    stampCol:   'logo_rehosted_at',
+    prefix:     'logos/',
+    defaultPx:  160,
+    label:      'clinic logo'
+  }
+};
+
 // Ask Google for a card-sized image rather than the full original. lh3 accepts
 // a size suffix on the URL, and this is the single most important line in the
 // file: the Supabase free tier is 1GB, and full-size originals measured
@@ -73,28 +105,39 @@ exports.handler = async (event) => {
   const action  = q.action || 'stats';
   const country = q.country || null;
   const limit   = Math.min(parseInt(q.limit || '25', 10) || 25, 50);
-  const px      = Math.min(parseInt(q.px || '800', 10) || 800, 1600);
+
+  const targetKey = (q.target === 'logo') ? 'logo' : 'photo';
+  const T         = TARGETS[targetKey];
+  const px        = Math.min(parseInt(q.px || String(T.defaultPx), 10) || T.defaultPx, 1600);
+
+  // ⭐ SKIP ROWS THAT HAVE NEVER BEEN REFRESHED. This is the fix for the night
+  // 1,062 never-refreshed New York rows sat AHEAD of California in the id order
+  // and the tool ground on their long-dead URLs for 212,959 requests without
+  // ever reaching the live ones. A row whose data was never refreshed is
+  // holding an original-import URL, which is months old and certainly dead.
+  // Default ON; pass fresh_only=0 to include them.
+  const freshOnly = q.fresh_only !== '0';
+
+  const scope = (sel) => {
+    sel = sel.like(T.col, '%googleusercontent.com%').is(T.stampCol, null);
+    if (country)   sel = sel.eq('country', country);
+    if (freshOnly) sel = sel.not('data_refreshed_at', 'is', null);
+    return sel;
+  };
 
   // rows still pointing at Google
   const pending = async (n) => {
-    let sel = sb.from('clinics')
-      .select('id, name, country, photo')
-      .like('photo', '%googleusercontent.com%')
-      .is('photo_rehosted_at', null)
-      .limit(n);
-    if (country) sel = sel.eq('country', country);
-    const { data, error } = await sel;
+    const { data, error } = await scope(
+      sb.from('clinics').select(`id, name, country, ${T.col}, ${T.sourceCol}`)
+    ).limit(n);
     if (error) throw new Error(error.message);
     return data || [];
   };
 
   const countRemaining = async () => {
-    let sel = sb.from('clinics')
-      .select('id', { count: 'exact', head: true })
-      .like('photo', '%googleusercontent.com%')
-      .is('photo_rehosted_at', null);
-    if (country) sel = sel.eq('country', country);
-    const { count, error } = await sel;
+    const { count, error } = await scope(
+      sb.from('clinics').select('id', { count: 'exact', head: true })
+    );
     if (error) throw new Error(error.message);
     return count || 0;
   };
@@ -102,7 +145,9 @@ exports.handler = async (event) => {
   try {
     // ── STATS ──────────────────────────────────────────────────────────────
     if (action === 'stats') {
-      return ok({ action, country: country || 'all', remaining: await countRemaining() });
+      return ok({ action, target: targetKey, label: T.label,
+                  country: country || 'all', fresh_only: freshOnly,
+                  remaining: await countRemaining() });
     }
 
     // ── RESET — undo re-hosting so rows can be redone at a smaller size ────
@@ -112,21 +157,22 @@ exports.handler = async (event) => {
     // the bucket total drops to the new size rather than doubling.
     if (action === 'reset') {
       let sel = sb.from('clinics')
-        .select('id, photo_source')
-        .not('photo_rehosted_at', 'is', null)
+        .select(`id, ${T.sourceCol}`)
+        .not(T.stampCol, 'is', null)
         .limit(500);
       if (country) sel = sel.eq('country', country);
       const { data, error } = await sel;
       if (error) throw new Error(error.message);
-      const rows = (data || []).filter(r => r.photo_source);
+      const rows = (data || []).filter(r => r[T.sourceCol]);
       const done = await Promise.all(rows.map(r =>
         sb.from('clinics')
-          .update({ photo: r.photo_source, photo_rehosted_at: null })
+          .update({ [T.col]: r[T.sourceCol], [T.stampCol]: null })
           .eq('id', r.id)
           .then(res => !res.error)
       ));
       return ok({
-        action, reset: done.filter(Boolean).length, attempted: rows.length,
+        action, target: targetKey,
+        reset: done.filter(Boolean).length, attempted: rows.length,
         skipped_no_source: (data || []).length - rows.length,
         note: 'These rows are eligible again. Re-run with a smaller px.'
       });
@@ -137,7 +183,7 @@ exports.handler = async (event) => {
       const rows = await pending(8);
       const results = await Promise.all(rows.map(async r => {
         try {
-          const res = await fetch(sized(r.photo, px), { redirect: 'follow' });
+          const res = await fetch(sized(r[T.col], px), { redirect: 'follow' });
           const len = res.headers.get('content-length');
           return {
             id: r.id, name: (r.name || '').slice(0, 28),
@@ -149,7 +195,7 @@ exports.handler = async (event) => {
       }));
       const live = results.filter(r => r.status === 200).length;
       return ok({
-        action, tested: results.length, live,
+        action, target: targetKey, label: T.label, tested: results.length, live,
         verdict: live === 0
           ? 'ALL DEAD — the stored URLs have expired. Refresh them from Outscraper using place_id BEFORE running action=run; you cannot download from a dead link.'
           : live === results.length
@@ -166,7 +212,7 @@ exports.handler = async (event) => {
 
       const out = await Promise.all(rows.map(async r => {
         try {
-          const res = await fetch(sized(r.photo, px), { redirect: 'follow' });
+          const res = await fetch(sized(r[T.col], px), { redirect: 'follow' });
           if (!res.ok) return { id: r.id, ok: false, status: res.status };
 
           const type = res.headers.get('content-type') || 'image/jpeg';
@@ -176,7 +222,7 @@ exports.handler = async (event) => {
           if (!buf.length) return { id: r.id, ok: false, status: 'empty body' };
 
           const ext  = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
-          const path = `${r.country || 'unknown'}/${r.id}.${ext}`;
+          const path = `${T.prefix}${r.country || 'unknown'}/${r.id}.${ext}`;
 
           const up = await sb.storage.from(BUCKET)
             .upload(path, buf, { contentType: type, upsert: true, cacheControl: '31536000' });
@@ -184,10 +230,16 @@ exports.handler = async (event) => {
 
           const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
 
-          // photo_source already holds the Google origin (set by the migration).
-          // Only photo is repointed, so every page picks it up with no change.
+          // The source column keeps the Google origin so a run is reversible.
+          // Only the live column is repointed, so every page picks it up with
+          // no front-end change at all.
+          // ⭐ coalesce in SQL is not available here, so the origin is written
+          // ONLY when it is still empty — re-running must never overwrite the
+          // origin with our own storage URL.
+          const patch = { [T.col]: publicUrl, [T.stampCol]: new Date().toISOString() };
+          if (!r[T.sourceCol]) patch[T.sourceCol] = r[T.col];
           const upd = await sb.from('clinics')
-            .update({ photo: publicUrl, photo_rehosted_at: new Date().toISOString() })
+            .update(patch)
             .eq('id', r.id);
           if (upd.error) return { id: r.id, ok: false, status: 'db: ' + upd.error.message };
 
@@ -199,7 +251,7 @@ exports.handler = async (event) => {
 
       const good = out.filter(r => r.ok);
       return ok({
-        action, attempted: out.length,
+        action, target: targetKey, attempted: out.length,
         rehosted: good.length,
         failed: out.length - good.length,
         kb_stored: good.reduce((a, r) => a + (r.kb || 0), 0),
