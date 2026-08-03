@@ -1278,6 +1278,15 @@ async function doCrawl(supabase, body) {
   }
 
   if (!claimable || !claimable.length) {
+    // ⭐ The queue is exhausted, so this run is genuinely over. Stamp it.
+    // Without this, `finished_at` stays null on every row and a run that died
+    // halfway is indistinguishable from a clean one — which makes a run-vs-run
+    // diff unreadable, since missing devices look like a matcher regression
+    // rather than unread hosts.
+    if (runId) {
+      await supabase.from('device_crawl_runs')
+        .update({ finished_at: new Date().toISOString() }).eq('id', runId);
+    }
     return { done: true, run_id: runId, processed: [], remaining: 0 };
   }
 
