@@ -235,7 +235,18 @@
     .section-desc { font-size: 0.95rem; color: var(--muted); max-width: 520px; margin: 0 auto; line-height: 1.65; font-weight: 300; }
 
     /* ─── FILTER BAR ─── */
-    .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; }
+    .filter-wrap { padding: 0 5% 32px; display: flex; gap: 0.75rem; align-items: center; max-width: 1280px; margin: 0 auto; flex-wrap: wrap; }
+    /* Device chips. Deliberately styled apart from anything the clinic says
+       about itself: these are the actual machines, read from its own website. */
+    .dev-chip-row { display: flex; flex-wrap: wrap; gap: 0.3rem; padding: 0 1.1rem 0.85rem; }
+    .dev-chip { font-size: 0.68rem; letter-spacing: 0.01em; padding: 0.16rem 0.5rem; border-radius: 99px;
+                background: #F1EDE6; color: #6B5D54; border: 1px solid #E4DACD; text-decoration: none; white-space: nowrap; }
+    .dev-chip:hover { background: var(--rose); color: #fff; border-color: var(--rose); }
+    .dev-chip-more { font-size: 0.68rem; color: var(--muted); padding: 0.16rem 0.2rem; align-self: center; }
+    @media (max-width: 640px) {
+      .filter-wrap { gap: 0.5rem; }
+      .filter-wrap select { flex: 1 1 45%; }
+    }
     .filter-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; color: var(--muted); text-transform: uppercase; margin-right: 0.25rem; }
     .sort-select {
       background: transparent; border: 1px solid var(--border); color: var(--deep);
@@ -729,6 +740,10 @@
   </div>
 
   <div class="filter-wrap">
+    <span class="filter-label">Technology</span>
+    <select class="sort-select" id="deviceSelect" onchange="applyDevice(this.value)">
+      <option value="">Any technology</option>
+    </select>
     <span class="filter-label">Sort</span>
     <select class="sort-select" onchange="sortCards(this.value)" id="mainSortSelect">
       <option value="rating">Highest rated</option>
@@ -990,6 +1005,106 @@ let currentPage = 0;
 let currentTotal = 0;
 let currentPageClinics = [];
 let clinicsIndex = [];
+
+// ── DEVICES / TECHNOLOGY FILTER ────────────────────────────────────────────
+let currentDevice    = '';   // model slug
+let currentDeviceCat = '';   // category key
+const DEVICE_MIN_CLINICS = 3;   // an option too thin to be worth a click is hidden
+const DEVICE_CAT_LABEL = {};    // filled from the facets response
+
+// index.html had NO escaping helper and my first device chips interpolated the
+// model raw. Model and manufacturer strings come from a crawl of third-party
+// websites, so that was an injection path. Everything device-shaped goes
+// through these two.
+function devEsc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function devSlug(v) {
+  return String(v == null ? '' : v).toLowerCase()
+    .replace(/\+/g, ' plus ').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+// Facets load NON-BLOCKING, so the grid never waits on them. If it fails the
+// control simply stays on "Any technology".
+//
+// ⭐ THREE TIERS, IN ANDY'S ORDER. The M41 taxonomy puts parent groups above
+// categories, with a group_order set deliberately: Laser & Light first,
+// Resurfacing low. Sorting alphabetically instead — as my first build did —
+// inverts exactly that intent and puts Ablative Resurfacing at the top.
+async function loadDeviceFacets() {
+  const sel = document.getElementById('deviceSelect');
+  if (!sel) return;
+  try {
+    const res = await fetch('/api/get-clinics?mode=device-facets&country=' + COUNTRY);
+    if (!res.ok) return;
+    const f = await res.json();
+    const models = Array.isArray(f.models) ? f.models : [];
+    const cats   = Array.isArray(f.categories) ? f.categories : [];
+    if (!models.length || !cats.length) return;
+
+    const catByKey = {};
+    cats.forEach(c => { catByKey[c.category] = c; DEVICE_CAT_LABEL[c.category] = c.label; });
+
+    // models -> category
+    const modelsByCat = {};
+    models.forEach(m => {
+      if ((m.clinics || 0) < DEVICE_MIN_CLINICS) return;
+      (modelsByCat[m.category] = modelsByCat[m.category] || []).push(m);
+    });
+
+    // categories -> group
+    const groups = {};
+    cats.forEach(c => {
+      if (!modelsByCat[c.category]) return;          // no visible models, no row
+      const g = (groups[c.group_key] = groups[c.group_key] || {
+        key: c.group_key, label: c.group_label, order: c.group_order, cats: []
+      });
+      g.cats.push(c);
+    });
+
+    let html = '<option value="">Any technology</option>';
+    Object.values(groups)
+      .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label))
+      .forEach(g => {
+        html += '<optgroup label="' + devEsc(g.label) + '">';
+        g.cats
+          .sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label))
+          .forEach(c => {
+            html += '<option value="cat:' + devEsc(c.category) + '">'
+                  + devEsc(c.label) + ' \u2014 all (' + (c.clinics || 0) + ')</option>';
+            modelsByCat[c.category]
+              .sort((a, b) => (b.clinics || 0) - (a.clinics || 0))
+              .forEach(m => {
+                html += '<option value="' + devEsc(devSlug(m.model)) + '">'
+                      + '\u00a0\u00a0\u00a0' + devEsc(m.model)
+                      + ' (' + (m.clinics || 0) + ')</option>';
+              });
+          });
+        html += '</optgroup>';
+      });
+    sel.innerHTML = html;
+
+    // Restore a deep link: /us/california?device=morpheus8 or ?devicecat=hifu
+    const qp = new URLSearchParams(location.search);
+    const wantDev = qp.get('device');
+    const wantCat = qp.get('devicecat');
+    const want = wantDev || (wantCat ? 'cat:' + wantCat : '');
+    if (want && sel.querySelector('option[value="' + want.replace(/"/g, '') + '"]')) sel.value = want;
+  } catch (e) { /* control stays on "Any technology" */ }
+}
+
+function applyDevice(v) {
+  if (v && v.indexOf('cat:') === 0) { currentDeviceCat = v.slice(4); currentDevice = ''; }
+  else                              { currentDevice = v || '';       currentDeviceCat = ''; }
+  // Deep link, so "Morpheus8 in Los Angeles" is a shareable URL.
+  const u = new URL(location.href);
+  if (currentDevice) u.searchParams.set('device', currentDevice); else u.searchParams.delete('device');
+  if (currentDeviceCat) u.searchParams.set('devicecat', currentDeviceCat); else u.searchParams.delete('devicecat');
+  history.replaceState(null, '', u.toString());
+  if (typeof fetchPage === 'function') fetchPage(0, false);
+}
 let compareList = [];
 let isLoading = false;
 let userLocation = null;
@@ -1099,6 +1214,8 @@ function buildApiUrl(page) {
   if (currentMetro) params.set('metro', currentMetro);
   if (currentNameQuery) params.set('search', currentNameQuery);
   if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
+  if (currentDevice)    params.set('device', currentDevice);
+  if (currentDeviceCat) params.set('devicecat', currentDeviceCat);
   return '/api/get-clinics?' + params.toString();
 }
 
@@ -1183,6 +1300,20 @@ function renderPageCards(clinicsData, append) {
       return ` · ${d < 1 ? (d*1000).toFixed(0)+'m' : d.toFixed(1)+'km'}`;
     })();
 
+    // Model names only, three plus a count. Renders NOTHING when empty — a
+    // clinic with no devices has simply not been read yet, and "None listed"
+    // would read as a finding about the clinic rather than a gap in our data.
+    const devChipRow = (() => {
+      const ds = Array.isArray(c.devices) ? c.devices : [];
+      if (!ds.length) return '';
+      const shown = ds.slice(0, 3).map(d =>
+        `<a class="dev-chip" href="/us/${STATE}?device=${devEsc(d.slug)}"`
+        + ` onclick="event.stopPropagation()" title="${devEsc(d.manufacturer || '')}">${devEsc(d.model)}</a>`
+      ).join('');
+      const more = ds.length > 3 ? `<span class="dev-chip-more">+${ds.length - 3}</span>` : '';
+      return `<div class="dev-chip-row">${shown}${more}</div>`;
+    })();
+
     const profileHref = (() => {
       // Use the stored slug. It is globally unique and carries the city suffix that
       // separates chain branches (laseraway-beverly-hills vs laseraway-irvine).
@@ -1206,6 +1337,7 @@ function renderPageCards(clinicsData, append) {
           </div>
           <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')}  Google reviews</div>
         </div>
+        ${devChipRow}
         ${priceBlockHTML}
         <div class="card-visit-row">
           <span class="card-visit-prompt">
@@ -1495,6 +1627,32 @@ window.openClinicModal = async function(id) {
     c.phone ? `<a href="tel:${c.phone}" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">📞 Call</a>` : '',
     c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">🌐 Website</a>` : '',
     `</div>`,
+
+    // Technology. Grouped by category because the modal has room for structure
+    // the card does not. Model bold, manufacturer secondary, a tick if verified.
+    (function(){
+      const ds = Array.isArray(c.devices) ? c.devices : [];
+      if (!ds.length) return '';
+      const byCat = {};
+      ds.forEach(d => { (byCat[d.category || 'other'] = byCat[d.category || 'other'] || []).push(d); });
+      const body = Object.keys(byCat).sort().map(cat => {
+        const label = (DEVICE_CAT_LABEL[cat] || cat.replace(/_/g, ' '));
+        const items = byCat[cat].map(d =>
+          `<div style="display:flex;gap:.4rem;align-items:baseline;padding:.15rem 0;">`
+          + `<strong style="font-size:.86rem;color:var(--deep);">${devEsc(d.model)}</strong>`
+          + `<span style="font-size:.76rem;color:var(--muted);">${devEsc(d.manufacturer || '')}</span>`
+          + (d.status === 'verified' ? `<span style="font-size:.72rem;color:var(--gold);">&#10003;</span>` : '')
+          + `</div>`).join('');
+        return `<div style="margin-bottom:.6rem;">`
+             + `<div style="font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold);margin-bottom:.2rem;">${devEsc(label)}</div>`
+             + items + `</div>`;
+      }).join('');
+      return `<div style="border-top:1px solid var(--border);padding-top:1rem;margin-bottom:1.25rem;">`
+           + `<div style="font-size:.82rem;font-weight:600;color:var(--deep);margin-bottom:.6rem;">Technology</div>`
+           + body
+           + `<div style="font-size:.72rem;color:var(--muted);margin-top:.4rem;">Listed on the clinic&rsquo;s own website.</div>`
+           + `</div>`;
+    })(),
 
     // View full profile link
     (function(){
@@ -2127,6 +2285,16 @@ function unhighlightPinById(cid) {
   setTxt('heroMetroLabel', STATE_LABEL);
   const ht = document.getElementById('heroTitle');
   if (ht) ht.innerHTML = 'Compare cosmetic clinics in ' + STATE_LABEL + '.<br><em>Find the right fit before you book.</em>';
+
+  // ─── Device filter: read a deep link BEFORE the first fetch, so
+  //     /us/california?device=morpheus8 lands filtered rather than
+  //     rendering everything and then re-fetching. ───
+  {
+    const qp = new URLSearchParams(location.search);
+    currentDevice    = (qp.get('device') || '').trim();
+    currentDeviceCat = (qp.get('devicecat') || '').trim();
+  }
+  loadDeviceFacets();   // non-blocking on purpose: the grid never waits for it
 
   // ─── Populate metro dropdown for this state ───
   const metroSel = document.getElementById('searchMetro');
