@@ -316,6 +316,18 @@
 
     /* Device chips on the card. Model names only — the card's job is "does this
        clinic have the machine I searched for". */
+    .active-filter-line {
+      max-width: 1280px; margin: -14px auto 0; padding: 0 5% 28px;
+      display: flex; align-items: center; gap: 0.55rem;
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; color: var(--muted);
+    }
+    .active-filter-line .aff-icon { color: var(--rose); display: inline-flex; align-items: center; }
+    .active-filter-clear {
+      background: transparent; border: none; color: var(--rose);
+      font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500;
+      cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 2px;
+    }
+
     /* Sits INSIDE .card-header, above its divider — the same place Canada puts
        it. Hung below the divider with no top padding it read as stuck to the
        line. */
@@ -882,6 +894,14 @@
     </div>
   </div>
 
+  <div class="active-filter-line" id="activeFilterLine" style="display:none;">
+    <span class="aff-icon" aria-hidden="true">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+    </span>
+    <span id="activeFilterText"></span>
+    <button type="button" class="active-filter-clear" onclick="clearAllFilters()">Clear</button>
+  </div>
+
   <div class="cards-grid" id="cardsGrid">
   </div>
 
@@ -1278,6 +1298,43 @@ function syncDeviceUrl() {
   window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
 }
 
+// Human label for whatever technology filter is on, used in the line below the
+// filter bar.
+function activeDeviceLabel() { return techLabel(); }
+
+// ⭐ States the result IN WORDS under the filter bar, so a number the patient
+// cannot see the reasoning for is never left unexplained. Deliberately carries
+// NO coverage caveat: Andy's ruling is that the clinics without a device listed
+// are growth headroom for a manufacturer, not a gap to apologise for.
+function updateActiveFilterLine() {
+  const line = document.getElementById('activeFilterLine');
+  const text = document.getElementById('activeFilterText');
+  if (!line || !text) return;
+
+  const hasDevice = !!(currentDevice || currentDeviceCat || currentDeviceGroup);
+  if (!hasDevice) { line.style.display = 'none'; return; }
+
+  const n = currentTotal || 0;
+  const clinicWord = n === 1 ? 'clinic' : 'clinics';
+
+  if (n > 0) {
+    text.textContent = `${n.toLocaleString()} ${clinicWord} listing ${activeDeviceLabel()}`;
+  } else {
+    // Name the technology rather than the generic "no clinics found": a filtered
+    // result is STRICT, and the patient should see which filter emptied it.
+    text.textContent = `No clinics listing ${activeDeviceLabel()} in this view. Try another area.`;
+  }
+  line.style.display = '';
+}
+
+// Clears whichever technology filter is on and returns to the full list.
+function clearAllFilters() {
+  currentDevice = null; currentDeviceCat = null; currentDeviceGroup = null;
+  syncTechButton();
+  syncDeviceUrl();
+  fetchPage(0, false);
+}
+
 function applyDevice(val) {
   currentDevice = null; currentDeviceCat = null; currentDeviceGroup = null;
   if (val && val.indexOf('group:') === 0)      currentDeviceGroup = val.slice(6);
@@ -1576,6 +1633,7 @@ async function fetchPage(page, append) {
     else { currentPageClinics = raw; }
     currentPage = data.page ?? page;
     currentTotal = data.total ?? 0;
+    updateActiveFilterLine();
     if (raw.length === 0 && !append) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">No clinics match your filters.</div>';
     } else {
@@ -2511,6 +2569,7 @@ function unhighlightPinById(cid) {
     const data = pageRes.value;
     const raw = (data.clinics || []).map(normaliseClinic);
     currentPageClinics = raw; currentPage = 0; currentTotal = data.total || 0;
+    updateActiveFilterLine();
     if (raw.length === 0) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">No clinics found.</div>'; }
     else { renderPageCards(raw, false); }
     const loadMoreBtn = document.getElementById('loadMoreBtn');
