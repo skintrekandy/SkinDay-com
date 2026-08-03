@@ -104,6 +104,10 @@ exports.handler = async (event) => {
   const sb      = createClient(SUPABASE_URL, SUPABASE_KEY);
   const action  = q.action || 'stats';
   const country = q.country || null;
+  // ⭐ STATE. "USA" is no longer one cohort: California was refreshed today and
+  // New York still holds original-import URLs months old. Without this the tool
+  // grinds on New York's dead links and never reaches California.
+  const state   = q.state || null;
   const limit   = Math.min(parseInt(q.limit || '25', 10) || 25, 50);
 
   const targetKey = (q.target === 'logo') ? 'logo' : 'photo';
@@ -121,6 +125,7 @@ exports.handler = async (event) => {
   const scope = (sel) => {
     sel = sel.like(T.col, '%googleusercontent.com%').is(T.stampCol, null);
     if (country)   sel = sel.eq('country', country);
+    if (state)     sel = sel.eq('state', state);
     if (freshOnly) sel = sel.not('data_refreshed_at', 'is', null);
     return sel;
   };
@@ -146,7 +151,8 @@ exports.handler = async (event) => {
     // ── STATS ──────────────────────────────────────────────────────────────
     if (action === 'stats') {
       return ok({ action, target: targetKey, label: T.label,
-                  country: country || 'all', fresh_only: freshOnly,
+                  country: country || 'all', state: state || 'all',
+                  fresh_only: freshOnly,
                   remaining: await countRemaining() });
     }
 
@@ -161,6 +167,7 @@ exports.handler = async (event) => {
         .not(T.stampCol, 'is', null)
         .limit(500);
       if (country) sel = sel.eq('country', country);
+      if (state)   sel = sel.eq('state', state);
       const { data, error } = await sel;
       if (error) throw new Error(error.message);
       const rows = (data || []).filter(r => r[T.sourceCol]);
@@ -196,7 +203,9 @@ exports.handler = async (event) => {
       const live = results.filter(r => r.status === 200).length;
       return ok({
         action, target: targetKey, label: T.label, tested: results.length, live,
-        verdict: live === 0
+        verdict: results.length === 0
+          ? 'NOTHING LEFT — every image in this selection has already been copied. Pick another country or state.'
+          : live === 0
           ? 'ALL DEAD — the stored URLs have expired. Refresh them from Outscraper using place_id BEFORE running action=run; you cannot download from a dead link.'
           : live === results.length
             ? 'ALL LIVE — the URLs still work. Go straight to action=run.'
