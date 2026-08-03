@@ -996,7 +996,6 @@
             <label for="dt-target">What to copy</label>
             <select id="dt-target" onchange="dtTargetChanged()">
               <option value="photo" selected>Card photos</option>
-              <option value="logo">Clinic logos</option>
             </select>
           </div>
           <div>
@@ -1008,7 +1007,7 @@
             </select>
           </div>
         </div>
-        <div class="form-subtitle" id="dt-target-note" style="margin-top:.5rem;">Card photos fill the clinic card, so 480px is right. Logos are a small badge in the corner and only need 160px.</div>
+        <div class="form-subtitle" id="dt-target-note" style="margin-top:.5rem;">Card photos fill the clinic card, so 480px is right. Clinic logos are deliberately not re-hosted: Google's logo links keep working, and the only size Google offers for them is a 44px thumbnail, so copying them buys nothing.</div>
 
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;">
           <button class="btn-ghost"   id="dt-check" onclick="dtCheck()">Check connection</button>
@@ -2450,21 +2449,15 @@ function dtBusy(on){
 // Logos and photos want completely different widths, so the width control
 // rewrites itself rather than relying on anyone remembering.
 function dtTargetChanged(){
-  var t  = document.getElementById('dt-target').value;
+  // Only the photo target remains. Logo re-hosting was removed 2026-08-03:
+  // Google's logo links keep working (they render on the cards today), and the
+  // only size Google serves for them is a 44px thumbnail, so a copy is strictly
+  // worse than the original. The `logo` target still exists in
+  // rehost-photos.js and can be re-exposed here if that ever changes.
   var px = document.getElementById('dt-px');
-  if (t === 'logo') {
-    px.innerHTML = '<option value="160" selected>160px &mdash; recommended for logos</option>'
-                 + '<option value="240">240px</option>'
-                 + '<option value="320">320px</option>';
-    document.getElementById('dt-target-note').textContent =
-      'Logos are a small badge over the corner of the card, so 160px is plenty. There are about 14,800 of them across all four directories.';
-  } else {
-    px.innerHTML = '<option value="480" selected>480px &mdash; recommended</option>'
-                 + '<option value="640">640px</option>'
-                 + '<option value="800">800px</option>';
-    document.getElementById('dt-target-note').textContent =
-      'Card photos fill the clinic card, so 480px is right. Logos are a small badge in the corner and only need 160px.';
-  }
+  px.innerHTML = '<option value="480" selected>480px &mdash; recommended</option>'
+               + '<option value="640">640px</option>'
+               + '<option value="800">800px</option>';
   dtDone = 0; dtFail = 0; dtKb = 0; dtStartLeft = null;
   dtRender();
   dtCheck();
