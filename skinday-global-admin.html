@@ -2736,6 +2736,24 @@ async function dcTestHost() {
           + (d.sitemap_source ? ' from ' + esc(d.sitemap_source) : '')
           + (d.thin_only ? ' · JAVASCRIPT ONLY' : ''), 'var(--muted)');
     if (d.error) dcLog('   fetch error: ' + esc(d.error), 'var(--red)');
+    // ⭐ WHAT THE SELECTOR DECIDED. Without this a thin result is unreadable —
+    // "pages read: 8" says nothing about whether 8 was all the site offered or
+    // all the budget allowed. Candidate counts distinguish those two, and the
+    // skipped list names the pages we could not afford.
+    if (d.budget != null) {
+      dcLog('   budget: ' + d.budget + ' pages'
+            + ' · device-page candidates: ' + (d.device_page_candidates || 0)
+            + ' · treatment-page candidates: ' + (d.treatment_page_candidates || 0),
+            'var(--muted)');
+      if (!d.device_page_candidates && !d.treatment_page_candidates) {
+        dcLog('   no candidate pages found — the site names no devices in its URLs, '
+              + 'or the sitemap did not expose its service pages', 'var(--gold)');
+      }
+    }
+    if ((d.skipped_high_value || []).length) {
+      dcLog('   high-value pages NOT read (budget exhausted):', 'var(--gold)');
+      d.skipped_high_value.forEach(s => dcLog('      ' + esc(s), 'var(--gold)'));
+    }
     if ((d.matched || []).length) {
       dcLog('   matched ' + d.matched.length + ':', 'var(--green)');
       d.matched.forEach(m => dcLog('      ' + esc(m), 'var(--green)'));
