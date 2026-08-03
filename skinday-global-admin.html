@@ -983,11 +983,20 @@
           <div>
             <label for="dt-country">Country</label>
             <select id="dt-country">
-              <option value="taiwan" selected>Taiwan &mdash; do this first</option>
+              <option value="taiwan" selected>Taiwan</option>
               <option value="canada">Canada</option>
-              <option value="usa">USA</option>
+              <option value="usa|california">USA &mdash; California</option>
+              <option value="usa|new-york">USA &mdash; New York</option>
+              <option value="usa">USA &mdash; all states</option>
               <option value="hongkong">Hong Kong</option>
               <option value="">All countries</option>
+            </select>
+          </div>
+          <div>
+            <label for="dt-target">What to copy</label>
+            <select id="dt-target" onchange="dtTargetChanged()">
+              <option value="photo" selected>Card photos</option>
+              <option value="logo">Clinic logos</option>
             </select>
           </div>
           <div>
@@ -999,6 +1008,7 @@
             </select>
           </div>
         </div>
+        <div class="form-subtitle" id="dt-target-note" style="margin-top:.5rem;">Card photos fill the clinic card, so 480px is right. Logos are a small badge in the corner and only need 160px.</div>
 
         <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1rem;">
           <button class="btn-ghost"   id="dt-check" onclick="dtCheck()">Check connection</button>
@@ -2368,8 +2378,17 @@ function dtLog(msg, cls){
 
 async function dtCall(action, extra){
   var p = new URLSearchParams(Object.assign({ action: action }, extra || {}));
+  // "usa|california" -> country=usa & state=california. The US is two states
+  // with completely different data ages, and a country-only run grinds on New
+  // York's long-dead URLs before it ever reaches California.
   var c = document.getElementById('dt-country').value;
-  if (c) p.set('country', c);
+  if (c) {
+    var parts = c.split('|');
+    p.set('country', parts[0]);
+    if (parts[1]) p.set('state', parts[1]);
+  }
+  var t = document.getElementById('dt-target');
+  if (t) p.set('target', t.value);
   try {
     var res = await fetch('/.netlify/functions/rehost-photos?' + p.toString(), {
       headers: { 'x-admin-secret': adminSecret }
@@ -2424,10 +2443,41 @@ function dtBusy(on){
   document.getElementById('dt-stop').disabled = !on;
 }
 
+// Logos and photos want completely different widths, so the width control
+// rewrites itself rather than relying on anyone remembering.
+function dtTargetChanged(){
+  var t  = document.getElementById('dt-target').value;
+  var px = document.getElementById('dt-px');
+  if (t === 'logo') {
+    px.innerHTML = '<option value="160" selected>160px &mdash; recommended for logos</option>'
+                 + '<option value="240">240px</option>'
+                 + '<option value="320">320px</option>';
+    document.getElementById('dt-target-note').textContent =
+      'Logos are a small badge over the corner of the card, so 160px is plenty. There are about 14,800 of them across all four directories.';
+  } else {
+    px.innerHTML = '<option value="480" selected>480px &mdash; recommended</option>'
+                 + '<option value="640">640px</option>'
+                 + '<option value="800">800px</option>';
+    document.getElementById('dt-target-note').textContent =
+      'Card photos fill the clinic card, so 480px is right. Logos are a small badge in the corner and only need 160px.';
+  }
+  dtDone = 0; dtFail = 0; dtKb = 0; dtStartLeft = null;
+  dtRender();
+  dtCheck();
+}
+
 async function dtStart(){
   if (dtRunning) return;
   dtRunning = true; dtBusy(true);
   dtLog('Starting at ' + document.getElementById('dt-px').value + 'px\u2026', 'ok');
+  // \u2b50 STOP AFTER REPEATED TOTAL FAILURE. Failures are never marked on the
+  // row, so a dead batch is retried forever, `remaining` never falls, and the
+  // loop hammers Google's CDN from one Netlify address. On 2026-08-02 that
+  // reached 212,959 failed requests before anyone noticed, because the queue
+  // was full of never-refreshed New York rows whose URLs had long expired.
+  var dtZeroRuns = 0;
+  var DT_MAX_ZERO_RUNS = 4;
+
   while (dtRunning) {
     var r = await dtCall('run', { limit: '25', px: document.getElementById('dt-px').value });
     if (!r) break;
@@ -2436,6 +2486,20 @@ async function dtStart(){
     dtSetLeft(r.remaining); dtRender();
     dtLog(r.rehosted + ' copied, ' + r.failed + ' failed \u2014 ' + r.remaining + ' to go');
     if (r.failures && r.failures.length) dtLog('   first problem: ' + JSON.stringify(r.failures[0]), 'err');
+
+    if (r.rehosted === 0) {
+      dtZeroRuns++;
+      if (dtZeroRuns >= DT_MAX_ZERO_RUNS) {
+        dtLog('\u2715 Stopped: ' + dtZeroRuns + ' batches in a row copied nothing. '
+            + 'Every link in them is refusing to download, so retrying will not help. '
+            + 'The usual cause is that these rows were never refreshed, so their Google '
+            + 'links expired long ago \u2014 refresh them from Outscraper first.', 'err');
+        break;
+      }
+    } else {
+      dtZeroRuns = 0;
+    }
+
     await new Promise(function(z){ setTimeout(z, 400); });   // breathe between batches
   }
   dtRunning = false; dtBusy(false);
