@@ -699,7 +699,12 @@
     api('save_settings',{display_name:(el('setName').value||'').trim(),accent_hex:hex||null,logo_url:logo})
       .then(function(res){
         btn.disabled=false; msg.textContent='\u2713 Saved';
-        if(res&&res.tenant) applyIdentity(res.tenant);
+        // ⛔ MERGE, NEVER REPLACE. save_settings returns ONLY the branding
+        // columns (slug, display_name, owner_type, owner_name, accent_hex,
+        // logo_url) — no role, no user_id, no country. Passing that straight to
+        // applyIdentity wiped the admin identity and HID "Name and appearance"
+        // and "Who can get in" the moment you saved.
+        if(res&&res.tenant) applyIdentity(Object.assign({},ME||{},res.tenant));
         setTimeout(function(){ msg.textContent=''; },2500);
       })
       .catch(function(e){ btn.disabled=false; msg.textContent=(e&&e.detail)?e.detail:'Could not save. Try again.'; });
