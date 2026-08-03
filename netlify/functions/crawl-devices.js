@@ -255,7 +255,7 @@ function buildMatcher(devices) {
         // one that does not is a proximity test ("vivier").
         const exclAdj = exclTokens.filter(p => p.indexOf(tok) !== -1);
         const exclNear = exclTokens.filter(p => p.indexOf(tok) === -1);
-        entries.push({
+        const entry = {
           token: tok,
           device_id: d.id,
           model: d.model,
@@ -266,7 +266,16 @@ function buildMatcher(devices) {
           exclNear: exclNear,
           corroborate: needsCorroboration(tok, !!d.name_is_also_generic)
                        || corrobAliases.has(norm(name))
-        });
+        };
+        entries.push(entry);
+        // ⭐ PLURALS. Clinics write "HydraFacials" and "PhotoFacials" and the
+        // singular never fired — 23 California hosts and 15 Canadian ones lost
+        // to a missing letter. Registering the plural as its own token is
+        // cheaper and safer than stemming inside norm(), which would change
+        // matching for every device at once.
+        if (!/s$/.test(tok) && tok.length >= 4) {
+          entries.push(Object.assign({}, entry, { token: tok + 's' }));
+        }
       }
     }
   }
@@ -755,7 +764,18 @@ const STOPWORDS = new Set([
   'contouring', 'tightening', 'brightening', 'hydrate', 'aging', 'regenerative',
   'radiofrequency', 'photofacial', 'photofacials',
   'story', 'class', 'best', 'discover', 'cutting', 'edge', 'latest',
-  'ensuring', 'effective', 'providing', 'committed', 'features', 'options'
+  'ensuring', 'effective', 'providing', 'committed', 'features', 'options',
+  // ── SCHEMA.ORG VOCABULARY. Belt and braces behind the JSON-LD fix above:
+  // these are markup type names, never a device, and they dominated both runs.
+  'webpage', 'offercatalog', 'localbusiness', 'listitem', 'breadcrumblist',
+  'imageobject', 'instock', 'aggregaterating', 'aggregateoffer', 'searchaction',
+  'readaction', 'reserveaction', 'propertyvalue', 'collectionpage',
+  'contactpoint', 'postaladdress', 'entrypoint', 'medicalbusiness',
+  'medicalclinic', 'medicalorganization', 'medicalprocedure', 'medicaltherapy',
+  'plasticsurgery', 'beautysalon', 'servicename', 'androidplatform',
+  'geocoordinates', 'openinghoursspecification', 'organization', 'creativework',
+  // financing and payment widgets, seen on dozens of US clinic sites
+  'carecredit', 'patientfi', 'cherry', 'affirm', 'klarna', 'afterpay', 'mychart'
 ]);
 
 
@@ -821,7 +841,17 @@ function jsonLdText(html) {
   while ((m = re.exec(html)) !== null && out.length < 6) {
     // Keep the VALUES, drop the JSON punctuation and the keys' quoting. Parsing
     // properly is not worth it: the matcher only wants a bag of words.
-    out.push(m[1].replace(/[{}\[\]"',:]/g, ' ').replace(/\s+/g, ' '));
+    //
+    // ⭐⭐ BUT DROP THE SCHEMA.ORG VOCABULARY FIRST. `"@type":"WebPage"` is
+    // markup, not content, and leaving it in made the unknown-token census
+    // useless: WebPage, OfferCatalog, LocalBusiness, ListItem, BreadcrumbList,
+    // ImageObject, InStock and AggregateRating came top of the list on both the
+    // Canadian and Californian runs. Diagnosed 2026-07-31, applied 2026-08-02.
+    const body = m[1]
+      .replace(/"@[a-zA-Z]+"\s*:\s*"[^"]*"/g, ' ')      // "@type":"WebPage"
+      .replace(/"@[a-zA-Z]+"\s*:\s*\[[^\]]*\]/g, ' ')  // "@type":["A","B"]
+      .replace(/https?:\/\/schema\.org[^"\s]*/gi, ' ');
+    out.push(body.replace(/[{}\[\]"',:]/g, ' ').replace(/\s+/g, ' '));
   }
   return out.join(' ').slice(0, 8000);
 }

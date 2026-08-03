@@ -17,6 +17,98 @@ const CARD_FIELDS = `
 
 const PAGE_SIZE = 24;
 
+// ── DEVICES (M39, ported to the US for M19) ────────────────────────────────
+// slugifyModel lives HERE and not in the browser so the client and the server
+// cannot disagree about what "clear-brilliant" means.
+function slugifyModel(m) {
+  return String(m || '').toLowerCase()
+    .replace(/\+/g, ' plus ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// The device_facets RPC returns categories as { category, clinics } with NO
+// label and NO group. The M41 taxonomy — parent groups plus the group_order
+// Andy set deliberately so lasers come first and resurfacing sits low — lives
+// in device_categories. Enrich here rather than in the browser, so the client
+// stays dumb and the two directories cannot drift apart.
+let CATEGORY_META = null;
+async function loadCategoryMeta(supabase) {
+  if (CATEGORY_META) return CATEGORY_META;
+  try {
+    const { data, error } = await supabase
+      .from('device_categories')
+      .select('category, label_en, sort_order, group_key, group_label, group_order');
+    if (error) throw new Error(error.message);
+    CATEGORY_META = {};
+    (data || []).forEach(r => { CATEGORY_META[r.category] = r; });
+    return CATEGORY_META;
+  } catch (e) {
+    console.error('Category meta failed (non-fatal):', e.message);
+    return {};
+  }
+}
+
+// A device fetch NEVER throws. If it fails the directory renders exactly as it
+// did before devices existed, rather than the whole page going down over a
+// secondary feature.
+async function fetchDevicesFor(supabase, clinicIds) {
+  if (!clinicIds || !clinicIds.length) return {};
+  try {
+    const { data, error } = await supabase
+      .from('clinic_devices')
+      .select('clinic_id, status, device_reference!inner(id, model, manufacturer, category, active)')
+      .in('clinic_id', clinicIds)
+      .eq('device_reference.active', true);
+    if (error) throw new Error(error.message);
+    const map = {};
+    (data || []).forEach(r => {
+      const d = r.device_reference;
+      if (!d) return;
+      const k = String(r.clinic_id);
+      (map[k] = map[k] || []).push({
+        model: d.model,
+        manufacturer: d.manufacturer,
+        category: d.category,
+        status: r.status,
+        slug: slugifyModel(d.model)
+      });
+    });
+    Object.keys(map).forEach(k => map[k].sort((a, b) => a.model.localeCompare(b.model)));
+    return map;
+  } catch (e) {
+    console.error('Device fetch failed (non-fatal):', e.message);
+    return {};
+  }
+}
+
+// Resolve ?device= / ?devicecat= to the set of clinic ids that own it.
+// Returns null when no device filter is active.
+async function resolveDeviceClinicIds(supabase, deviceSlug, deviceCat) {
+  if (!deviceSlug && !deviceCat) return null;
+  try {
+    let q = supabase
+      .from('clinic_devices')
+      .select('clinic_id, device_reference!inner(model, category, active)')
+      .eq('device_reference.active', true)
+      .range(0, 49999);
+    if (deviceCat) q = q.eq('device_reference.category', deviceCat);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    let rows = data || [];
+    if (deviceSlug) {
+      rows = rows.filter(r => r.device_reference
+        && slugifyModel(r.device_reference.model) === deviceSlug);
+    }
+    // An EMPTY set must stay empty, never null — otherwise "clinics with a
+    // Morpheus8" silently returns every clinic in the state.
+    return new Set(rows.map(r => String(r.clinic_id)));
+  } catch (e) {
+    console.error('Device filter failed (non-fatal):', e.message);
+    return null;
+  }
+}
+
 exports.handler = async (event) => {
   try {
     const supabase = createClient(
@@ -36,6 +128,54 @@ exports.handler = async (event) => {
     // Used by taiwan.html on load to build the clinicsIndex for
     // findClinic() lookups (compare, shortlist, modal). Returns
     // id, name, neighbourhood, region, photo, logo only, no price.
+    // ── MODE: device facets ───────────────────────────────────────────────
+    // Aggregated in Postgres by the device_facets RPC rather than pulling every
+    // clinic_devices row into this function to count in JS — that shape hit
+    // PostgREST's row cap and silently truncated the counts.
+    if (params.mode === 'device-facets') {
+      const [{ data, error }, meta] = await Promise.all([
+        supabase.rpc('device_facets', {
+          p_country: country,
+          p_province: params.province || null
+        }),
+        loadCategoryMeta(supabase)
+      ]);
+      if (error) {
+        console.error('device_facets failed:', error.message);
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify({ models: [], categories: [], groups: [] })
+        };
+      }
+      // Attach label / group / ordering to every category. A category with no
+      // group (lesion_removal) is bucketed last rather than dropped, so 38
+      // clinics do not vanish from a three-tier filter.
+      const out = data || { models: [], categories: [], groups: [] };
+      out.categories = (out.categories || []).map(c => {
+        const m = (meta || {})[c.category] || {};
+        return {
+          category:    c.category,
+          clinics:     c.clinics,
+          label:       m.label_en || String(c.category || '').replace(/_/g, ' '),
+          sort_order:  m.sort_order == null ? 999 : m.sort_order,
+          group_key:   m.group_key   || '_other',
+          group_label: m.group_label || 'Other',
+          group_order: m.group_order == null ? 900 : m.group_order
+        };
+      });
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+        },
+        body: JSON.stringify(out),
+      };
+    }
+
     if (params.mode === 'index') {
       const metroIdx = params.metro || '';
       const stateIdx = params.state || '';
@@ -72,6 +212,9 @@ exports.handler = async (event) => {
     // M18: restrict to clinics a manufacturer directory lists for this device,
     // e.g. verified_device=鳳凰電波 Thermage FLX. Empty means no restriction.
     const verifiedDevice = (params.verified_device || '').trim();
+    // M19: the patient-facing technology filter.
+    const deviceSlug = (params.device || '').trim().toLowerCase();
+    const deviceCat  = (params.devicecat || '').trim();
     const from          = page * PAGE_SIZE;
     const needed        = from + PAGE_SIZE;
 
@@ -111,6 +254,7 @@ exports.handler = async (event) => {
     // fold the verified-device restriction into a JS Set and filter after
     // fetching, instead of chaining a second .in('id') here.
     const verifiedIdSet = verifiedIdList ? new Set(verifiedIdList) : null;
+    const deviceIdSet   = await resolveDeviceClinicIds(supabase, deviceSlug, deviceCat);
 
     const buildBase = () => {
       let q = supabase
@@ -164,7 +308,7 @@ exports.handler = async (event) => {
     // When a verified-device filter is active we filter the fetched rows by the
     // id Set in JS (see note on buildBase). The verified set is small (<=~500),
     // so widen the range enough that the post-filter still fills the page.
-    const verifiedWiden = verifiedIdSet ? Math.max(30000, needed) : 0;
+    const verifiedWiden = (verifiedIdSet || deviceIdSet) ? Math.max(30000, needed) : 0;
     const unpricedNeeded = needed + pricedIdList.length + verifiedWiden;
     const emptyPriced    = { data: [], error: null };
 
@@ -184,7 +328,9 @@ exports.handler = async (event) => {
 
     // Apply the verified-device restriction here (kept off the SQL to avoid the
     // two-.in('id') collision that made device + neighbourhood return nothing).
-    const passVerified = (c) => !verifiedIdSet || verifiedIdSet.has(String(c.id));
+    const passVerified = (c) =>
+      (!verifiedIdSet || verifiedIdSet.has(String(c.id))) &&
+      (!deviceIdSet   || deviceIdSet.has(String(c.id)));
 
     const unpricedClaimed   = (claimedAllRes.data   || []).filter(c => !pricedIdSet.has(String(c.id)) && passVerified(c));
     const unpricedUnclaimed = (unclaimedAllRes.data || []).filter(c => !pricedIdSet.has(String(c.id)) && passVerified(c));
@@ -199,11 +345,12 @@ exports.handler = async (event) => {
     // When verified-filtering in JS, the DB count is the unfiltered total, so
     // derive the count from the filtered pool instead. (The wide range above
     // means the pool holds every matching row, so pool.length is exact.)
-    const totalCount = verifiedIdSet ? pool.length : (countRes.count || 0);
+    const totalCount = (verifiedIdSet || deviceIdSet) ? pool.length : (countRes.count || 0);
     const pageSlice  = pool.slice(from, from + PAGE_SIZE);
 
     // ── FETCH clinic_prices FOR THIS PAGE ─────────────────────
     const clinicIds = pageSlice.map(c => String(c.id));
+    const devicesMap = await fetchDevicesFor(supabase, clinicIds);
     let pricesMap = {};
 
     if (clinicIds.length > 0) {
@@ -251,6 +398,12 @@ exports.handler = async (event) => {
       } else {
         out.prices = [];
       }
+
+      // Devices are attached AFTER the keep whitelist, deliberately: an empty
+      // list is omitted entirely rather than rendered as "no devices", because
+      // most clinics have simply not been crawled yet.
+      const devs = devicesMap[String(clinic.id)];
+      if (devs && devs.length) out.devices = devs;
 
       return out;
     });
