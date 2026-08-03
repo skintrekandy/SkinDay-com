@@ -21,6 +21,28 @@ const BATCH_DEFAULT = 3;
 const BATCH_MAX = 5;
 const FETCH_TIMEOUT_MS = 12000;
 const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
+
+// ⭐⭐ BUMP THIS WHENEVER MATCHING LOGIC CHANGES — aliases, normalisation, page
+// selection, reject rules, anything that alters what a given page yields.
+// A run-vs-run diff is a MARKET comparison only when two runs share both this
+// string and their `reference_count`. Otherwise the diff measures our own
+// changes, and every "new" device in it is a backfill rather than a purchase.
+const MATCHER_VERSION = '2026-08-03-pagebudget';
+
+// ⭐⭐ THE PAGE BUDGET. Was a flat hard stop at 3, which was never a decision —
+// it was a default nobody revisited, and it handled the highest-value hosts
+// worst. westdermatology.com is 20 clinics on ONE host and returned nothing,
+// because 3 pages cannot cover a group site's index plus its device pages.
+// Depth now scales with how many clinics ride on the host.
+const PAGE_BUDGET_BASE = 5;
+const PAGE_BUDGET_PER_EXTRA_CLINIC = 2;
+const PAGE_BUDGET_CAP = 20;
+
+function pageBudget(clinicCount) {
+  const n = Math.max(1, Number(clinicCount) || 1);
+  return Math.min(PAGE_BUDGET_CAP,
+                  PAGE_BUDGET_BASE + PAGE_BUDGET_PER_EXTRA_CLINIC * (n - 1));
+}
 const MAX_UNKNOWNS_PER_HOST = 15;
 // ⚠️⚠️ THE USER AGENT AND HEADERS ARE LOAD-BEARING, not boilerplate.
 //
@@ -1033,6 +1055,53 @@ function pickLink(links, hints, host, exclude) {
   return bestUrl;
 }
 
+// ⭐ The plural form. `pickLink` returns the single best link, which was all a
+// 3-page budget could ever use. With a real budget the useful move is to take
+// the top N — a group site's /care/ index links to /services/<device>/ pages,
+// and those own-page slugs are the evidence tier the matcher trusts most.
+function pickLinks(links, hints, host, exclude, n) {
+  const scored = [];
+  const seenUrl = new Set();
+  for (const l of links) {
+    let h;
+    try { h = new URL(l).hostname.replace(/^www\./, ''); } catch (e) { continue; }
+    if (h !== host) continue;
+    if (exclude && exclude.has(l)) continue;
+    if (seenUrl.has(l)) continue;
+    const s = scoreLink(l, hints);
+    if (s <= 0) continue;
+    seenUrl.add(l);
+    scored.push({ url: l, score: s });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, Math.max(0, n)).map(x => x.url);
+}
+
+// Pagination on a service index. WordPress/Toolset group sites split a long
+// treatment list across pages, so page 2 onward is invisible to a picker that
+// only ever reads the first. Cheap and tightly capped: same host, same path,
+// only a numeric page parameter.
+const PAGED_PARAM = /[?&](wpv_paged|paged|page|pg)=\d+/i;
+
+function pickPagedLinks(links, host, exclude, n) {
+  const out = [];
+  const seenUrl = new Set();
+  for (const l of links) {
+    let u;
+    try { u = new URL(l); } catch (e) { continue; }
+    if (u.hostname.replace(/^www\./, '') !== host) continue;
+    if (!PAGED_PARAM.test(l)) continue;
+    if (ASSET_PATH.test(u.pathname.toLowerCase())) continue;
+    if (BLOG_PATH.test(u.pathname.toLowerCase())) continue;
+    if (exclude && exclude.has(l)) continue;
+    if (seenUrl.has(l)) continue;
+    seenUrl.add(l);
+    out.push(l);
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
 // ===========================================================================
 // One host
 // ===========================================================================
@@ -1046,8 +1115,10 @@ async function crawlHost(row, matcher) {
   let lastError = null;
   let sawJsOnly = false;
 
+  const budget = pageBudget(Array.isArray(row.clinic_ids) ? row.clinic_ids.length : 1);
+
   const readPage = async url => {
-    if (seen.has(url) || pages.length >= 3) return null;
+    if (seen.has(url) || pages.length >= budget) return null;
     seen.add(url);
     pagesTried++;
     const r = await getPage(url);
@@ -1116,7 +1187,39 @@ async function crawlHost(row, matcher) {
     techUrl = pickLink(homePage.links, TECH_HINTS, host.replace(/^www\./, ''), seen);
     if (techUrl) await readPage(techUrl);
     const svcUrl = pickLink(homePage.links, SERVICE_HINTS, host.replace(/^www\./, ''), seen);
-    if (svcUrl) await readPage(svcUrl);
+    const svcPage = svcUrl ? await readPage(svcUrl) : null;
+
+    // ⭐⭐ THE SERVICE INDEX IS A TECHNOLOGY PAGE WHEN THERE ISN'T ONE.
+    // westdermatology.com has no /technology page at all; it has /care/, which
+    // names devices as headings AND links to /services/<device>/ own-pages.
+    // 20 clinics on that host returned nothing because we read the index and
+    // stopped. When no tech page exists, the index is treated as the spine of
+    // the site: follow its pagination, then its device children.
+    if (!techUrl && svcPage) {
+      for (const p of pickPagedLinks(svcPage.links, host.replace(/^www\./, ''), seen, 3)) {
+        if (pages.length >= budget) break;
+        await readPage(p);
+      }
+      const childHints = SERVICE_HINTS.concat(TECH_HINTS);
+      for (const c of pickLinks(svcPage.links, childHints, host.replace(/^www\./, ''), seen, budget)) {
+        if (pages.length >= budget) break;
+        await readPage(c);
+      }
+    }
+  }
+
+  // ⭐ Spend whatever budget is left on the best remaining service/technology
+  // links across every page read so far. On a single-clinic site this usually
+  // does nothing (the budget is already spent); on a group site it is where the
+  // per-device pages get read. Ordered by score, so the weakest links are the
+  // ones that go unread when the budget runs out.
+  if (pages.length < budget) {
+    const soFar = pages.flatMap(p => p.links);
+    const fillHints = TECH_HINTS.concat(SERVICE_HINTS);
+    for (const u of pickLinks(soFar, fillHints, host.replace(/^www\./, ''), seen, budget - pages.length)) {
+      if (pages.length >= budget) break;
+      await readPage(u);
+    }
   }
 
   // ---- the sitemap pass ---------------------------------------------------
@@ -1248,7 +1351,8 @@ async function doCrawl(supabase, body) {
   let runId = body.run_id || null;
   if (!runId) {
     const { data } = await supabase.from('device_crawl_runs')
-      .insert({ label: body.label || null }).select('id').single();
+      .insert({ label: body.label || null, matcher_version: MATCHER_VERSION })
+      .select('id').single();
     runId = data ? data.id : null;
   }
 
@@ -1302,6 +1406,40 @@ async function doCrawl(supabase, body) {
     .eq('active', true);
   if (refErr) throw refErr;
   const matcher = buildMatcher(devices || []);
+
+  // ⭐⭐⭐ THE MONTH-OVER-MONTH GUARD. Written once per run, on the first
+  // invocation only (`reference_count is null`), so the rest of the loop costs
+  // nothing.
+  //
+  // `run_type` is DERIVED, never passed in — a flag someone has to remember to
+  // set is a flag that will eventually be wrong, and the whole point is that a
+  // diff can refuse to mislead us. A run counts as a MEASUREMENT run only when
+  // the previous finished run had the same matcher version AND the same number
+  // of active reference rows. Change the code or add a device, and this run is
+  // labelled a BACKFILL automatically: its new devices measure us, not the
+  // market, and must stay out of the manufacturer change feed.
+  if (runId) {
+    const { data: mine } = await supabase.from('device_crawl_runs')
+      .select('reference_count').eq('id', runId).single();
+    if (!mine || mine.reference_count === null) {
+      const refCount = (devices || []).length;
+      const { data: prev } = await supabase.from('device_crawl_runs')
+        .select('matcher_version, reference_count')
+        .not('finished_at', 'is', null)
+        .lt('id', runId)
+        .order('id', { ascending: false })
+        .limit(1);
+      const p = prev && prev[0];
+      const comparable = !!p
+        && p.matcher_version === MATCHER_VERSION
+        && p.reference_count === refCount;
+      await supabase.from('device_crawl_runs').update({
+        reference_count: refCount,
+        matcher_version: MATCHER_VERSION,
+        run_type: comparable ? 'measurement' : 'backfill'
+      }).eq('id', runId);
+    }
+  }
 
   const processed = [];
 
@@ -1395,6 +1533,12 @@ async function doCrawl(supabase, body) {
             host: row.host,
             run_id: runId,
             source_url: m.source_url,
+            // ⭐⭐ The field whose absence cost two diagnoses — Canada's 411 on
+            // 07-31 and the crawl-2 diff on 08-03 — both of which had to fall
+            // back to the candidate table because sightings could not say WHAT
+            // text matched. A per-run history that cannot explain itself is
+            // only half an instrument.
+            matched_text: m.matched_text,
             page_kind: out.thinOnly ? 'sitemap' : m.page_kind,
             confidence: m.confidence
           });
