@@ -27,7 +27,7 @@ const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-const MATCHER_VERSION = '2026-08-03-candidate-queue';
+const MATCHER_VERSION = '2026-08-03-sitemap-rank';
 
 // ⭐⭐ THE PAGE BUDGET. Was a flat hard stop at 3, which was never a decision —
 // it was a default nobody revisited, and it handled the highest-value hosts
@@ -893,7 +893,10 @@ function jsonLdText(html) {
 // dead. That is why the run needed restarting every 10-15 minutes.
 const SITEMAP_TIMEOUT_MS = 4000;
 const MAX_SITEMAP_URLS = 1200;
-const MAX_CHILD_SITEMAPS = 5;
+// Raised 5 -> 12 alongside the ranking below. Five was only ever safe because
+// nothing depended on the sitemap; now page SELECTION does, and a WordPress
+// multisite routinely ships 11 children. MAX_SITEMAP_URLS still bounds the cost.
+const MAX_CHILD_SITEMAPS = 12;
 
 async function getXml(url) {
   const ctl = new AbortController();
@@ -952,9 +955,34 @@ async function sitemapUrls(host) {
   if (!xml) return { urls: [], source: null };
 
   let urls = locs(xml);
-  // A sitemap INDEX points at child sitemaps rather than pages. Follow a few.
+  // A sitemap INDEX points at child sitemaps rather than pages.
+  //
+  // ⛔ WHAT THIS REPLACES: `urls.slice(0, 5)` — the first five in DOCUMENT
+  // ORDER. westdermatology.com lists post, page, physician, location,
+  // research-study, SERVICES (6th), announcements, location-physician,
+  // category, SERVICES2 (10th), author. So we read the blog, the doctors and
+  // the clinical trials, and never once reached the pages that name equipment.
+  // The host returned 458 URLs and ZERO device-page candidates because of this
+  // single line.
+  //
+  // Order is not priority, so rank them: a child sitemap whose own name says
+  // service/treatment/product is where a catalogue site keeps its equipment
+  // pages, and the post/author/category children are the ones we can afford to
+  // drop when the cap bites.
   if (/<sitemapindex\b/i.test(xml)) {
-    const children = urls.slice(0, MAX_CHILD_SITEMAPS);
+    const rank = u => {
+      const s = String(u).toLowerCase();
+      if (/(service|treatment|procedure|care|product|technolog)/.test(s)) return 0;
+      if (/(page|sitemap-?1|post-?sitemap)/.test(s) && !/post/.test(s))   return 1;
+      if (/(physician|provider|doctor|location|research|study|announce)/.test(s)) return 3;
+      if (/(post|news|author|category|tag|archive)/.test(s))              return 4;
+      return 2;
+    };
+    const children = urls
+      .map((u, i) => ({ u, r: rank(u), i }))
+      .sort((a, b) => a.r - b.r || a.i - b.i)
+      .slice(0, MAX_CHILD_SITEMAPS)
+      .map(x => x.u);
     urls = [];
     for (const child of children) {
       const childXml = await getXml(child);
@@ -1146,6 +1174,13 @@ function buildCandidates(urls, host, exclude, vocab, matcher) {
     const path = u.pathname.toLowerCase();
     if (ASSET_PATH.test(path)) continue;
     if (BLOG_PATH.test(path)) continue;
+    // ⛔ DATED PERMALINKS. `/2021/01/18/reveal-beautiful-skin-with-ipl/` is a
+    // blog post, but BLOG_PATH only looks for /blog/ or /news/, so eight of
+    // these outscored the real service pages on westdermatology.com and ate the
+    // whole budget. A path segment that is a year is never an equipment page.
+    if (/\/(19|20)\d{2}\/(\d{1,2}\/)?/.test(path)) continue;
+    // Clinical trials describe a treatment being STUDIED, not equipment owned.
+    if (/\/(research|study|studies|trial|clinical-research|enrolling)/.test(path)) continue;
     if (isComparisonPath(path, Array.isArray(matcher) ? matcher : [])) continue;
 
     const words = pathWords(path + ' ' + u.search);
