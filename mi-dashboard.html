@@ -517,7 +517,7 @@
     return api('overview',{}).then(function(res){
       applyIdentity(res.tenant||{});
       el('gate').style.display='none'; el('app').style.display='block';
-      fillSelect(el('selProvince'),res.geo||[],CTY.all);
+      fillSelect(el('selProvince'),res.geo||[],CTY.all,regionLabel);
       COVERAGE=res.coverage||null;
       // Sign-in must not be a way round the territory gate, so the first paint
       // goes through the same path every later refresh does.
@@ -788,23 +788,33 @@
     });
   });
 
-  // ⭐ Region names are stored lowercase ("california", "new york"), which is
-  // right for filtering and wrong for reading. Formatted HERE rather than
-  // rewritten in the column, so every RPC that filters on the stored value
-  // keeps working. Small words stay lowercase, "DC" and "BC" stay upper.
+  // ⭐ Region names are stored lowercase, and STATES are stored as SLUGS
+  // ("new-york"), while neighbourhoods arrive from Outscraper as real names
+  // ("Agoura Hills"). Those need different treatment: a state's hyphen is a
+  // slug separator and should become a space, but a neighbourhood's hyphen is
+  // part of the name — Winston-Salem and Wilkes-Barre must keep theirs.
+  // Formatted at render, so the stored values every RPC filters on are untouched.
   var REGION_SMALL = { of:1, and:1, the:1 };
-  function regionLabel(v){
+  function titleCase(v){
     var s = String(v == null ? '' : v).trim();
     if (!s) return s;
     if (s.length <= 3 && s === s.toUpperCase()) return s;     // DC, BC, NY
-    return s.toLowerCase().split(/\s+/).map(function(w, i){
-      if (i > 0 && REGION_SMALL[w]) return w;
-      return w.charAt(0).toUpperCase() + w.slice(1);
-    }).join(' ');
+    // split on spaces and hyphens but KEEP the separators
+    return s.toLowerCase().split(/([\s-]+)/).map(function(tok, i){
+      if (/^[\s-]+$/.test(tok)) return tok;
+      if (i > 0 && REGION_SMALL[tok]) return tok;
+      return tok.charAt(0).toUpperCase() + tok.slice(1);
+    }).join('');
   }
-  function fillSelect(sel,rows,allLabel){
-    var cur=sel.value;
-    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){ return '<option value="'+esc(r.value)+'">'+esc(regionLabel(r.value))+' ('+r.clinics+')</option>'; }).join('');
+  // For states/provinces only: a slug separator becomes a space first.
+  function regionLabel(v){
+    var s = String(v == null ? '' : v).trim();
+    if (s.length <= 3 && s === s.toUpperCase()) return s;
+    return titleCase(s.replace(/[-_]+/g, ' '));
+  }
+  function fillSelect(sel,rows,allLabel,fmt){
+    var cur=sel.value; var f = fmt || titleCase;
+    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){ return '<option value="'+esc(r.value)+'">'+esc(f(r.value))+' ('+r.clinics+')</option>'; }).join('');
     if(cur) sel.value=cur;
   }
   el('selProvince').addEventListener('change',function(){
