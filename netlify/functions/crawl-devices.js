@@ -1509,6 +1509,7 @@ exports.handler = async event => {
       case 'list-candidates':     return json(200, await listCandidates(supabase, body));
       case 'approve-candidates':  return json(200, await decide(supabase, body, true));
       case 'reject-candidates':   return json(200, await decide(supabase, body, false));
+      case 'approve-all':         return json(200, await approveAll(supabase, body));
       case 'list-unknowns':       return json(200, await listUnknowns(supabase, body));
       default:                    return json(400, { error: 'unknown action: ' + action });
     }
@@ -2272,6 +2273,92 @@ async function listCandidates(supabase, body) {
         category: dv.category || ''
       });
     })
+  };
+}
+
+// ---------------------------------------------------------------------------
+// approve-all
+// ---------------------------------------------------------------------------
+// ⭐ WHY THIS EXISTS. The review panel's select-all only selects the rows on
+// screen, and the list is capped at 1,000. Approving Canada's 4,340 pending
+// meant repeating it five times and trusting nothing was missed. That is the
+// shape of task that produces mistakes, and it will recur every crawl.
+//
+// ⛔ IT DOES NOT BYPASS decide(). Every batch goes through the same function as
+// a manual approval, so first_seen is still preserved on existing pairs and the
+// change feed still gets exactly one 'added' event per genuinely new pair.
+//
+// ⚠️ RESUMABLE BY DESIGN. A Netlify function has seconds, not minutes, and a
+// 23-page host already produced one timeout. Each call approves at most
+// `batch` candidates and returns how many remain, so the button loops until
+// remaining is zero rather than betting the whole job on one invocation.
+//
+// ⚠️ THE GENERIC HOLD IS THE SAFETY RAIL. `device_reference.name_is_also_generic`
+// already marks the names that are ordinary words: Elite, Icon, Halo, Forma,
+// Soprano, Clarity, xeo, Dermapen. Those are where a bad alias hides, and one
+// wrong device on a chain host is one wrong claim per clinic on it. Held back
+// by default, reviewable on their own afterwards.
+async function approveAll(supabase, body) {
+  const country = ((body && body.country) || '').trim().toLowerCase();
+  const batch = Math.min(Math.max(parseInt(body.batch, 10) || 400, 1), 800);
+  const holdGeneric = body.hold_generic !== false;      // default ON
+  const PEND_CAP = 20000;
+
+  let q = supabase.from('clinic_device_candidates')
+    .select('id, host, device_id')
+    .eq('status', 'pending')
+    .order('host', { ascending: true })
+    .order('id', { ascending: true })
+    .limit(PEND_CAP);
+  if (body.confidence) q = q.eq('confidence', body.confidence);
+  if (body.device_id)  q = q.eq('device_id', parseInt(body.device_id, 10));
+  const { data: pend, error } = await q;
+  if (error) throw error;
+  let rows = pend || [];
+
+  // Country comes from the crawl queue's host map, since candidates carry no
+  // country column. A host with no queue row cannot be attributed and is left
+  // out rather than guessed at.
+  if (country && rows.length) {
+    const hosts = [...new Set(rows.map(r => r.host).filter(Boolean))];
+    const qrows = await selectIn(supabase, 'crawl_device_queue', 'host, country', 'host', hosts);
+    const countryByHost = new Map(qrows.map(r => [r.host, String(r.country || '').toLowerCase()]));
+    rows = rows.filter(r => countryByHost.get(r.host) === country);
+  }
+
+  let heldGeneric = 0;
+  if (holdGeneric && rows.length) {
+    const devIds = [...new Set(rows.map(r => r.device_id))];
+    const devs = await selectIn(supabase, 'device_reference', 'id, name_is_also_generic', 'id', devIds);
+    const generic = new Set(devs.filter(d => d.name_is_also_generic === true).map(d => d.id));
+    const before = rows.length;
+    rows = rows.filter(r => !generic.has(r.device_id));
+    heldGeneric = before - rows.length;
+  }
+
+  if (body.preview) {
+    return {
+      preview: true,
+      country: country || 'every country',
+      would_approve: rows.length,
+      held_generic: heldGeneric,
+      batch: batch,
+      calls_needed: Math.ceil(rows.length / batch)
+    };
+  }
+
+  const slice = rows.slice(0, batch);
+  if (!slice.length) return { approved: 0, remaining: 0, held_generic: heldGeneric, done: true };
+
+  const res = await decide(supabase, { ids: slice.map(r => r.id) }, true);
+  const remaining = Math.max(0, rows.length - slice.length);
+  return {
+    approved: res.approved || 0,
+    new_events: res.new_events || 0,
+    errors: res.errors || [],
+    held_generic: heldGeneric,
+    remaining: remaining,
+    done: remaining === 0
   };
 }
 
