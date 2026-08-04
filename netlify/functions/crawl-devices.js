@@ -2025,12 +2025,13 @@ async function syncExclusions(supabase, body) {
   const ids = [...allIds];
 
   // Which of those clinics are still approved.
+  // Chunked at 500 TEXT ids this was ~15,000 characters of URL, the same
+  // overflow as the review list, and it discarded its error as well. A silent
+  // empty here reads as "no clinic on this host is approved" and would exclude
+  // live hosts from the crawl.
   const approved = new Set();
-  for (let i = 0; i < ids.length; i += 500) {
-    const { data } = await supabase.from('clinics')
-      .select('id').in('id', ids.slice(i, i + 500)).eq('approved', true);
-    for (const c of (data || [])) approved.add(String(c.id));
-  }
+  const approvedRows = await selectIn(supabase, 'clinics', 'id, approved', 'id', ids);
+  for (const c of approvedRows) if (c && c.approved === true) approved.add(String(c.id));
 
   const toExclude = [], toRestore = [];
   for (const r of (rows || [])) {
@@ -2102,23 +2103,46 @@ async function candidateStats(supabase, body) {
   // its own it is a useful signal: one device dominating the queue is either a
   // real discovery or a bad alias, and either way it wants looking at before
   // anyone approves in bulk.
+  //
+  // ⭐ PENDING IS COUNTRY-SCOPED HERE, the other counts are not. The candidates
+  // table has no country column, but it carries `host`, and crawl_device_queue
+  // carries host + country, so pending can be scoped through that map. This is
+  // the number the tab badge shows and the number that misled: the counter said
+  // 4,540 waiting while the list beneath it, correctly scoped, said none.
+  // approved/rejected/published stay global and the page now says so.
   let byDevice = [];
+  let pendingScoped = pending;
+  let pendingTruncated = false;
   try {
-    const { data: pend } = await supabase
-      .from('clinic_device_candidates').select('device_id').eq('status', 'pending').limit(20000);
+    const PEND_CAP = 20000;
+    const { data: pend, error: pendErr } = await supabase
+      .from('clinic_device_candidates').select('device_id, host').eq('status', 'pending').limit(PEND_CAP);
+    if (pendErr) throw pendErr;
+    let rows = pend || [];
+    pendingTruncated = rows.length >= PEND_CAP;
+    if (country && rows.length) {
+      const hosts = [...new Set(rows.map(r => r.host).filter(Boolean))];
+      const qrows = await selectIn(supabase, 'crawl_device_queue', 'host, country', 'host', hosts);
+      const countryByHost = new Map(qrows.map(r => [r.host, String(r.country || '').toLowerCase()]));
+      // A host with no queue row cannot be attributed, so it is left out rather
+      // than guessed at. Hand-added devices are the only way that happens.
+      rows = rows.filter(r => countryByHost.get(r.host) === country);
+    }
+    pendingScoped = rows.length;
     const tally = new Map();
-    for (const r of (pend || [])) tally.set(r.device_id, (tally.get(r.device_id) || 0) + 1);
+    for (const r of rows) tally.set(r.device_id, (tally.get(r.device_id) || 0) + 1);
     if (tally.size) {
-      const { data: devs } = await supabase
-        .from('device_reference').select('id, model, manufacturer').in('id', [...tally.keys()]);
-      byDevice = (devs || []).map(d => ({
+      const devs = await selectIn(supabase, 'device_reference', 'id, model, manufacturer', 'id', [...tally.keys()]);
+      byDevice = devs.map(d => ({
         device_id: d.id, model: d.model, manufacturer: d.manufacturer, pending: tally.get(d.id) || 0
       })).sort((a, b) => b.pending - a.pending || String(a.model).localeCompare(String(b.model)));
     }
-  } catch (e) { byDevice = []; }
+  } catch (e) { byDevice = []; pendingScoped = pending; }
 
   return {
-    counts: { pending, approved, rejected },
+    counts: { pending: pendingScoped, pending_all: pending, approved, rejected },
+    pending_scoped: !!country,
+    pending_truncated: pendingTruncated,
     by_device: byDevice,
     queue: { pending: queuePending, done: queueDone, empty: queueEmpty, needs_render: needsRender, error: queueError },
     clinic_devices: listed,
@@ -2126,49 +2150,116 @@ async function candidateStats(supabase, body) {
   };
 }
 
+// ⛔⛔ WHY THESE HELPERS EXIST (2026-08-04). PostgREST puts an `in` filter in
+// the URL QUERY STRING, so a long id list becomes a long URL and the request
+// fails. Canada's pending pool reached 4,340 rows across 1,688 clinics, so a
+// 300-row page asked for ~300 clinic ids of ~30 characters each: roughly 9,000
+// characters, past the usual header limit.
+//
+// The failure was SILENT because the caller destructured only `data` and threw
+// the error away. `clinicById` came back empty, the country filter then compared
+// every row against an empty map, and the review list rendered "Nothing here"
+// while the counter directly above it read 4,540.
+//
+// It worked for the US the whole time because that pending set is ONE host over
+// 20 clinics: 20 ids, a short URL. The bug needed scale to appear, which is why
+// months of small reviews never showed it.
+//
+// ⚠️ Never call .in() with an unbounded list again. Use these.
+const IN_CHUNK = 60;
+
+async function selectIn(supabase, table, cols, column, values) {
+  const uniq = [...new Set(values)].filter(v => v !== null && v !== undefined);
+  const out = [];
+  for (let i = 0; i < uniq.length; i += IN_CHUNK) {
+    const { data, error } = await supabase
+      .from(table).select(cols).in(column, uniq.slice(i, i + IN_CHUNK));
+    if (error) throw error;
+    if (data && data.length) out.push(...data);
+  }
+  return out;
+}
+
+async function updateIn(supabase, table, patch, column, values) {
+  const uniq = [...new Set(values)].filter(v => v !== null && v !== undefined);
+  for (let i = 0; i < uniq.length; i += IN_CHUNK) {
+    const { error } = await supabase
+      .from(table).update(patch).in(column, uniq.slice(i, i + IN_CHUNK));
+    if (error) throw error;
+  }
+}
+
 // Two hops, never a PostgREST embed. The embed approach broke on the Taiwan
 // crawler and the fix was to join in JS.
+//
+// ⚠️ THE COUNTRY FILTER RUNS IN JS, SO THE ROW CAP MUST NOT RUN BEFORE IT.
+// The old shape took the first 300 pending rows and then filtered by country,
+// which means a country whose rows sort late alphabetically could return an
+// empty list while thousands of its candidates waited. Now it PAGES until the
+// requested number of matching rows is found, or the scan budget runs out.
 async function listCandidates(supabase, body) {
   const status = ['pending', 'approved', 'rejected'].includes(body.status) ? body.status : 'pending';
   const limit = Math.min(Math.max(parseInt(body.limit, 10) || 300, 1), 1000);
-
-  let q = supabase.from('clinic_device_candidates')
-    .select('id, clinic_id, host, device_id, matched_text, source_url, page_kind, confidence, status, note, crawled_at')
-    .eq('status', status)
-    .order('host', { ascending: true })
-    .limit(limit);
-  if (body.confidence) q = q.eq('confidence', body.confidence);
-  // ⚠️ Reviewing one device at a time is the difference between a decision and
-  // a rubber stamp. Without this, "select all" on a pending list takes every
-  // device at once — which is how 46 DermaV rows we had deliberately set aside
-  // went live alongside a legitimate 281-clinic Bela MD batch.
-  if (body.device_id) q = q.eq('device_id', parseInt(body.device_id, 10));
-
-  const { data: cands, error } = await q;
-  if (error) throw error;
-  if (!cands || !cands.length) return { candidates: [] };
-
-  const clinicIds = [...new Set(cands.map(c => c.clinic_id))];
-  const deviceIds = [...new Set(cands.map(c => c.device_id))];
-
-  // US rows carry `state`, Canadian rows carry `province`. Selecting only
-  // province rendered every US candidate with a blank region column.
-  const { data: clinics } = await supabase
-    .from('clinics').select('id, name, province, state, country').in('id', clinicIds);
-  const { data: devices } = await supabase
-    .from('device_reference').select('id, model, manufacturer, category').in('id', deviceIds);
-
-  const clinicById = new Map((clinics || []).map(c => [c.id, c]));
-  const deviceById = new Map((devices || []).map(d => [d.id, d]));
-
-  // Country filter is applied here rather than in SQL: the candidates table has
-  // no country column, and the limit is <=1000 so a JS pass is cheap.
   const wantCountry = (body.country || '').trim().toLowerCase();
-  const keep = wantCountry
-    ? cands.filter(c => ((clinicById.get(c.clinic_id) || {}).country || '') === wantCountry)
-    : cands;
+
+  const PAGE = 500;
+  const MAX_PAGES = 40;          // 20,000 rows scanned, hard ceiling on cost
+  const keep = [];
+  const clinicById = new Map();
+  const deviceById = new Map();
+  let scanned = 0;
+  let truncated = false;
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    let q = supabase.from('clinic_device_candidates')
+      .select('id, clinic_id, host, device_id, matched_text, source_url, page_kind, confidence, status, note, crawled_at')
+      .eq('status', status)
+      .order('host', { ascending: true })
+      .order('id', { ascending: true })   // stable tie-break, or paging can repeat rows
+      .range(page * PAGE, page * PAGE + PAGE - 1);
+    if (body.confidence) q = q.eq('confidence', body.confidence);
+    // ⚠️ Reviewing one device at a time is the difference between a decision and
+    // a rubber stamp. Without this, "select all" on a pending list takes every
+    // device at once — which is how 46 DermaV rows we had deliberately set aside
+    // went live alongside a legitimate 281-clinic Bela MD batch.
+    if (body.device_id) q = q.eq('device_id', parseInt(body.device_id, 10));
+
+    const { data: cands, error } = await q;
+    if (error) throw error;
+    if (!cands || !cands.length) break;
+    scanned += cands.length;
+
+    // US rows carry `state`, Canadian rows carry `province`. Selecting only
+    // province rendered every US candidate with a blank region column.
+    const newClinicIds = cands.map(c => c.clinic_id).filter(id => !clinicById.has(id));
+    if (newClinicIds.length) {
+      const clinics = await selectIn(supabase, 'clinics', 'id, name, province, state, country', 'id', newClinicIds);
+      clinics.forEach(c => clinicById.set(c.id, c));
+    }
+    const newDeviceIds = cands.map(c => c.device_id).filter(id => !deviceById.has(id));
+    if (newDeviceIds.length) {
+      const devices = await selectIn(supabase, 'device_reference', 'id, model, manufacturer, category', 'id', newDeviceIds);
+      devices.forEach(d => deviceById.set(d.id, d));
+    }
+
+    for (const c of cands) {
+      if (wantCountry) {
+        const cl = clinicById.get(c.clinic_id);
+        if (!cl || (cl.country || '').toLowerCase() !== wantCountry) continue;
+      }
+      keep.push(c);
+      if (keep.length >= limit) break;
+    }
+
+    if (keep.length >= limit) { truncated = true; break; }
+    if (cands.length < PAGE) break;
+    if (page === MAX_PAGES - 1) truncated = true;
+  }
 
   return {
+    scanned,
+    returned: keep.length,
+    truncated,
     candidates: keep.map(c => {
       const cl = clinicById.get(c.clinic_id) || {};
       const dv = deviceById.get(c.device_id) || {};
@@ -2188,30 +2279,39 @@ async function decide(supabase, body, approve) {
   const ids = body.ids || (body.id ? [body.id] : []);
   if (!ids.length) return { error: 'no ids', approved: 0, rejected: 0 };
 
-  const { data: cands, error } = await supabase
-    .from('clinic_device_candidates')
-    .select('id, clinic_id, device_id, matched_text, source_url, confidence, run_id, crawled_at')
-    .in('id', ids)
-    .eq('status', 'pending');
-  if (error) throw error;
-  if (!cands || !cands.length) return { approved: 0, rejected: 0, errors: ['nothing pending in that selection'] };
+  // Chunked: a bulk approve of a few hundred rows sends that many uuids, which
+  // is well past what fits in a URL. See the note on selectIn.
+  const cands = (await selectIn(
+    supabase,
+    'clinic_device_candidates',
+    'id, clinic_id, device_id, matched_text, source_url, confidence, run_id, crawled_at, status',
+    'id',
+    ids
+  )).filter(c => c.status === 'pending');
+  if (!cands.length) return { approved: 0, rejected: 0, errors: ['nothing pending in that selection'] };
 
   const now = new Date().toISOString();
 
   if (!approve) {
-    await supabase.from('clinic_device_candidates')
-      .update({ status: 'rejected', reviewed_at: now, note: body.note || null })
-      .in('id', cands.map(c => c.id));
+    await updateIn(supabase, 'clinic_device_candidates',
+      { status: 'rejected', reviewed_at: now, note: body.note || null },
+      'id', cands.map(c => c.id));
     return { rejected: cands.length };
   }
 
   // Which pairs are already published, so first_seen is preserved and the change
   // feed does not log an "added" event for a device that was already there.
-  const { data: existing } = await supabase
-    .from('clinic_devices')
-    .select('clinic_id, device_id')
-    .in('clinic_id', [...new Set(cands.map(c => c.clinic_id))]);
-  const already = new Set((existing || []).map(r => r.clinic_id + '|' + r.device_id));
+  //
+  // ⛔⛔ THIS LOOKUP MUST NOT FAIL SILENTLY. It used to discard its error, and a
+  // failure here does not throw: it returns an EMPTY set, every pair then looks
+  // new, and the upsert below rewrites first_seen on devices that were already
+  // published. That destroys the "installed since" signal described in the note
+  // further down, which is the thing the change feed is actually sold on. It is
+  // also exactly the call that would have failed on a large bulk approve, since
+  // clinic ids are text and the list was unbounded. selectIn throws on error.
+  const existing = await selectIn(supabase, 'clinic_devices', 'clinic_id, device_id',
+    'clinic_id', cands.map(c => c.clinic_id));
+  const already = new Set(existing.map(r => r.clinic_id + '|' + r.device_id));
 
   const today = (cands[0].crawled_at || now).slice(0, 10);
   const isNew = c => !already.has(c.clinic_id + '|' + c.device_id);
@@ -2273,11 +2373,16 @@ async function decide(supabase, body, approve) {
       run_id: c.run_id,
       source_url: c.source_url
     }));
-  if (events.length) await supabase.from('clinic_device_events').insert(events);
+  if (events.length) {
+    for (let i = 0; i < events.length; i += 200) {
+      const { error: evErr } = await supabase.from('clinic_device_events').insert(events.slice(i, i + 200));
+      if (evErr) errors.push(evErr.message);
+    }
+  }
 
-  await supabase.from('clinic_device_candidates')
-    .update({ status: 'approved', reviewed_at: now })
-    .in('id', cands.map(c => c.id));
+  await updateIn(supabase, 'clinic_device_candidates',
+    { status: 'approved', reviewed_at: now },
+    'id', cands.map(c => c.id));
 
   return { approved, new_events: events.length, errors };
 }
