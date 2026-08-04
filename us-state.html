@@ -1116,6 +1116,9 @@ const STATE_METROS = {
     ['san-diego', 'San Diego'],
     ['sacramento', 'Sacramento'],
     ['inland-empire', 'Inland Empire'],
+    ['central-valley', 'Central Valley'],
+    ['central-coast', 'Central Coast'],
+    ['palm-springs', 'Palm Springs'],
   ],
   'new-york': [
     ['new-york-city', 'New York City'],
@@ -1133,6 +1136,8 @@ const METRO_LABELS = {
   'los-angeles': 'Los Angeles', 'orange-county': 'Orange County',
   'san-francisco': 'San Francisco Bay', 'san-diego': 'San Diego',
   'sacramento': 'Sacramento', 'inland-empire': 'Inland Empire',
+  'central-valley': 'Central Valley', 'central-coast': 'Central Coast',
+  'palm-springs': 'Palm Springs',
   'new-york-city': 'New York City'
 };
 const METRO_CENTER = {
@@ -1143,6 +1148,13 @@ const METRO_CENTER = {
   'san-diego':     { lat: 32.7157, lng: -117.1611, zoom: 11 },
   'sacramento':    { lat: 38.5816, lng: -121.4944, zoom: 11 },
   'inland-empire': { lat: 33.9806, lng: -117.3755, zoom: 10 },
+  // Central Valley runs Bakersfield to Stockton and Central Coast runs Santa
+  // Barbara to Monterey, so both are long corridors rather than a city. They
+  // get a wider zoom than a metro tab normally would; centring tight on Fresno
+  // or San Luis Obispo would drop half the clinics out of the initial view.
+  'central-valley': { lat: 36.8000, lng: -119.9000, zoom: 7 },
+  'central-coast':  { lat: 35.4000, lng: -120.7000, zoom: 7 },
+  'palm-springs':   { lat: 33.8303, lng: -116.5453, zoom: 10 },
   'new-york-city': { lat: 40.7128, lng: -74.0060,  zoom: 11 }
 };
 
