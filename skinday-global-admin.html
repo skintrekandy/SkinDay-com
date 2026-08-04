@@ -753,6 +753,9 @@
     <button class="nav-tab" data-tab="devices" onclick="switchTab('devices')">
       &#9881; Devices <span class="tab-count zero" id="dc-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="manual" onclick="switchTab('manual')">
+      &#9998; Add devices
+    </button>
   </nav>
 
   <main class="admin-main">
@@ -1053,6 +1056,7 @@
           <button class="btn-ghost" id="dc-stop" onclick="dcStop()" style="display:none;">Stop</button>
           <button class="btn-ghost" onclick="dcStart(true)">Retry failed</button>
           <button class="btn-ghost" id="dc-requeue" onclick="dcRequeue()">Requeue everything</button>
+          <button class="btn-ghost" id="dc-sync" onclick="dcSync()">Skip de-approved clinics</button>
           <span id="dc-progress" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
         <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">
@@ -1117,6 +1121,65 @@
 
     </div>
 
+
+    <div id="manual-panel" style="display:none">
+      <div class="add-clinic-form">
+        <div class="form-title">Add devices by hand</div>
+        <div class="form-subtitle">For clinics the crawler cannot read &mdash; sites that block us, or that list their equipment somewhere no crawl reaches. What you save here is <strong>published immediately</strong>: it goes straight to the clinic profile, the Technology filter and the Market Intelligence dashboard, with no review step. A person who has read the clinic&rsquo;s own page is stronger evidence than a crawl.</div>
+
+        <div class="form-section-label">1 &mdash; Find the clinic</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <select class="form-input" id="md-country" style="max-width:180px;">
+            <option value="usa" selected>United States</option>
+            <option value="canada">Canada</option>
+            <option value="taiwan">Taiwan</option>
+            <option value="hongkong">Hong Kong</option>
+            <option value="">Every country</option>
+          </select>
+          <input class="form-input" id="md-q" placeholder="clinic name" style="max-width:320px;"
+                 onkeydown="if(event.key==='Enter')mdSearch()" />
+          <button class="btn-ghost" onclick="mdSearch()">Search</button>
+        </div>
+        <div id="md-results" style="margin-top:.7rem;"></div>
+
+        <div id="md-chosen" style="display:none;margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--border);">
+          <div class="form-section-label">2 &mdash; Which clinics</div>
+          <div id="md-clinic-line" style="font-size:.9rem;"></div>
+          <label id="md-host-wrap" style="display:none;font-size:.82rem;color:var(--muted);margin-top:.45rem;">
+            <input type="checkbox" id="md-all-host" /> <span id="md-host-label"></span>
+          </label>
+
+          <div class="form-section-label" style="margin-top:1rem;">3 &mdash; Devices</div>
+          <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+            <select class="form-input" id="md-mfr" style="max-width:240px;" onchange="mdMfrChanged()">
+              <option value="">Manufacturer&hellip;</option>
+            </select>
+            <select class="form-input" id="md-dev" style="max-width:280px;" onchange="mdDevChanged()">
+              <option value="">Device&hellip;</option>
+            </select>
+            <button class="btn-ghost" onclick="mdAddDevice()">Add</button>
+            <span id="md-dist" style="font-size:.78rem;color:var(--muted);"></span>
+          </div>
+          <div id="md-picked" style="margin-top:.7rem;font-size:.85rem;"></div>
+
+          <div class="form-section-label" style="margin-top:1rem;">4 &mdash; Evidence</div>
+          <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+            <select class="form-input" id="md-source" style="max-width:230px;">
+              <option value="website" selected>The clinic&rsquo;s own website</option>
+              <option value="manufacturer">A manufacturer&rsquo;s list</option>
+              <option value="clinic">The clinic told us directly</option>
+            </select>
+            <input class="form-input" id="md-url" placeholder="page you read it on (optional)" style="max-width:420px;" />
+          </div>
+          <div class="form-subtitle" style="margin-top:.5rem;">Where it came from is recorded with every row. A manufacturer&rsquo;s own list outranks a website mention, and the dashboard shows the difference &mdash; so it is worth setting correctly rather than leaving on the default.</div>
+
+          <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:1rem;">
+            <button class="btn-primary" id="md-save" onclick="mdSave()">Publish devices</button>
+            <span id="md-msg" style="font-size:.85rem;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -1197,7 +1260,10 @@ function switchTab(tab){
   if (dataP) dataP.style.display = (tab === 'data') ? 'block' : 'none';
   var devP = document.getElementById('devices-panel');
   if (devP) devP.style.display = (tab === 'devices') ? 'block' : 'none';
+  var manP = document.getElementById('manual-panel');
+  if (manP) manP.style.display = (tab === 'manual') ? 'block' : 'none';
   if (tab === 'devices') dcEnter();
+  if (tab === 'manual') mdEnter();
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
@@ -2594,6 +2660,34 @@ function dcConfLabel(conf) {
 // ⭐ Requeue: ask the server how many rows it WOULD touch, show that number in
 // the confirm, then do it. A destructive-looking action should never be
 // confirmed against a number the person had to guess at.
+// ⭐ Keeps the crawl queue in step with the directory. De-approving a clinic
+// hides it from patients but the crawler carries on fetching it, so every
+// screening pass silently leaves the queue stale. Symmetric: a host that
+// regains an approved clinic is put back.
+async function dcSync() {
+  if (dcRunning) { alert('Stop the crawl first.'); return; }
+  const country = dcCountry();
+  const btn = document.getElementById('dc-sync');
+  if (btn) btn.disabled = true;
+  try {
+    const pre = await dcCall({ action: 'sync-exclusions', country: country, preview: true });
+    if (!pre.ok) throw new Error((pre.data && pre.data.error) || 'request failed');
+    const d = pre.data || {};
+    if (!d.would_exclude && !d.would_restore) { alert('The queue already matches the directory.'); return; }
+    const eg = (d.examples || []).slice(0, 6).join(', ');
+    if (!confirm('Stop crawling ' + (d.would_exclude || 0) + ' host(s) whose clinics are all de-approved'
+                 + ((d.would_restore || 0) ? ', and resume ' + d.would_restore + ' that came back' : '') + '?'
+                 + (eg ? '\n\ne.g. ' + eg : '')
+                 + '\n\nNo clinic or device data is touched.')) return;
+    const r = await dcCall({ action: 'sync-exclusions', country: country });
+    if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
+    dcLog('queue synced \u00b7 ' + (r.data.excluded || 0) + ' host(s) now skipped, '
+          + (r.data.restored || 0) + ' resumed', 'var(--muted)');
+  } catch (e) {
+    alert('Sync failed: ' + String((e && e.message) || e));
+  } finally { if (btn) btn.disabled = false; }
+}
+
 async function dcRequeue() {
   if (dcRunning) { alert('Stop the crawl before requeueing.'); return; }
   const country = dcCountry();
@@ -2961,6 +3055,137 @@ async function dcLoadUnknowns() {
       (u.sample_url ? ' · <a href="' + esc(u.sample_url) + '" target="_blank" rel="noopener" style="color:var(--rose);text-decoration:none;">see one</a>' : '') +
       '</span></div>'
     ).join('') + '</div>';
+}
+
+
+// ===========================================================================
+// MANUAL DEVICE ENTRY  (md*)
+// ---------------------------------------------------------------------------
+// The counterpart to the crawler, for the ~93 California and ~88 Canadian hosts
+// that return 403. Those are not a long tail: blocking correlates with clinic
+// sophistication, so the crawler's blind spot sits exactly where the premium
+// equipment is. Everything saved here is PUBLISHED immediately.
+// ===========================================================================
+let mdRef = [], mdPicked = [], mdClinic = null;
+
+async function mdCall(action, extra) {
+  try {
+    const res = await fetch(DC_FN, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify(Object.assign({ action: action }, extra || {}))
+    });
+    return { ok: res.ok, data: await res.json() };
+  } catch (e) { return { ok: false, data: { error: String(e && e.message || e) } }; }
+}
+
+async function mdEnter() {
+  if (mdRef.length) return;
+  const r = await mdCall('reference-list');
+  if (!r.ok) { document.getElementById('md-msg').textContent = 'Could not load the device list.'; return; }
+  mdRef = (r.data && r.data.devices) || [];
+  const mfrs = [...new Set(mdRef.map(d => d.manufacturer).filter(Boolean))].sort();
+  document.getElementById('md-mfr').innerHTML =
+    '<option value="">Manufacturer\u2026</option>' +
+    mfrs.map(m => '<option value="' + esc(m) + '">' + esc(m) + '</option>').join('');
+}
+
+function mdMfrChanged() {
+  const m = document.getElementById('md-mfr').value;
+  const list = mdRef.filter(d => d.manufacturer === m);
+  document.getElementById('md-dev').innerHTML =
+    '<option value="">Device\u2026</option>' +
+    list.map(d => '<option value="' + d.id + '">' + esc(d.model) + '</option>').join('');
+  document.getElementById('md-dist').textContent = '';
+}
+
+// Distributor is DISPLAYED, never chosen. It is a property of the device, not of
+// the clinic, so letting two people pick it is how the same machine ends up with
+// two different distributors.
+function mdDevChanged() {
+  const id = Number(document.getElementById('md-dev').value);
+  const d = mdRef.find(x => x.id === id);
+  document.getElementById('md-dist').textContent =
+    d && d.distributor_ca ? 'distributed in Canada by ' + d.distributor_ca : '';
+}
+
+async function mdSearch() {
+  const q = document.getElementById('md-q').value.trim();
+  const box = document.getElementById('md-results');
+  if (q.length < 2) { box.innerHTML = '<span style="color:var(--muted);font-size:.85rem;">Type at least two letters.</span>'; return; }
+  box.innerHTML = '<span style="color:var(--muted);font-size:.85rem;">Searching\u2026</span>';
+  const r = await mdCall('search-clinics', { q: q, country: document.getElementById('md-country').value });
+  const rows = (r.data && r.data.clinics) || [];
+  if (!rows.length) { box.innerHTML = '<span style="color:var(--muted);font-size:.85rem;">No approved clinic matches that name.</span>'; return; }
+  box.innerHTML = rows.map(c =>
+    '<div style="padding:.4rem 0;border-bottom:1px solid var(--border);font-size:.85rem;">'
+    + '<a href="#" onclick="mdPick(' + JSON.stringify(JSON.stringify(c)).replace(/"/g, '&quot;') + ');return false;">'
+    + esc(c.name) + '</a> <span style="color:var(--muted);">' + esc(c.region || c.country || '')
+    + (c.host ? ' \u00b7 ' + esc(c.host) : ' \u00b7 no website')
+    + (c.siblings > 1 ? ' \u00b7 ' + c.siblings + ' clinics on this host' : '') + '</span></div>').join('');
+}
+
+function mdPick(json) {
+  mdClinic = JSON.parse(json);
+  document.getElementById('md-chosen').style.display = 'block';
+  document.getElementById('md-clinic-line').innerHTML =
+    '<strong>' + esc(mdClinic.name) + '</strong> <span style="color:var(--muted);">'
+    + esc(mdClinic.region || '') + (mdClinic.host ? ' \u00b7 ' + esc(mdClinic.host) : '') + '</span>';
+  const wrap = document.getElementById('md-host-wrap');
+  if (mdClinic.siblings > 1) {
+    wrap.style.display = 'block';
+    document.getElementById('md-host-label').textContent =
+      'Apply to all ' + mdClinic.siblings + ' clinics on ' + mdClinic.host
+      + ' \u2014 right when the equipment list on the site covers the whole group rather than this one location';
+  } else { wrap.style.display = 'none'; document.getElementById('md-all-host').checked = false; }
+  document.getElementById('md-msg').textContent = '';
+}
+
+function mdAddDevice() {
+  const id = Number(document.getElementById('md-dev').value);
+  if (!id || mdPicked.some(p => p.id === id)) return;
+  const d = mdRef.find(x => x.id === id);
+  if (d) { mdPicked.push(d); mdRenderPicked(); }
+}
+
+function mdDrop(id) { mdPicked = mdPicked.filter(p => p.id !== id); mdRenderPicked(); }
+
+function mdRenderPicked() {
+  document.getElementById('md-picked').innerHTML = mdPicked.length
+    ? mdPicked.map(d => '<span style="display:inline-block;background:var(--warm);border-radius:5px;padding:.15rem .5rem;margin:0 .35rem .35rem 0;">'
+        + esc(d.model) + ' <span style="color:var(--muted);">' + esc(d.manufacturer || '') + '</span> '
+        + '<a href="#" onclick="mdDrop(' + d.id + ');return false;" style="color:var(--red);">&times;</a></span>').join('')
+    : '<span style="color:var(--muted);">No devices chosen yet.</span>';
+}
+
+async function mdSave() {
+  if (!mdClinic || !mdPicked.length) { document.getElementById('md-msg').textContent = 'Pick a clinic and at least one device.'; return; }
+  const all = document.getElementById('md-all-host').checked && mdClinic.siblings > 1;
+  const n = (all ? mdClinic.siblings : 1) * mdPicked.length;
+  if (!confirm('Publish ' + n + ' device row(s)' + (all ? ' across ' + mdClinic.siblings + ' clinics' : '')
+      + '?\n\nThese go live on the directory and the dashboard straight away.')) return;
+
+  const btn = document.getElementById('md-save'); btn.disabled = true;
+  const msg = document.getElementById('md-msg'); msg.textContent = 'Saving\u2026'; msg.style.color = 'var(--muted)';
+  const r = await mdCall('manual-devices', {
+    clinic_id: mdClinic.id, host: all ? mdClinic.host : null,
+    apply_to_host: all,
+    device_ids: mdPicked.map(d => d.id),
+    source: document.getElementById('md-source').value,
+    source_url: document.getElementById('md-url').value.trim() || null
+  });
+  btn.disabled = false;
+  // The server's own message goes in the form, not a console. Three rounds were
+  // lost to that once already.
+  if (!r.ok || (r.data && r.data.error)) {
+    msg.style.color = 'var(--red)';
+    msg.textContent = (r.data && r.data.error) || 'Save failed.';
+    return;
+  }
+  msg.style.color = 'var(--green)';
+  msg.textContent = 'Published ' + (r.data.added || 0) + ' row(s)'
+    + (r.data.skipped ? ' \u00b7 ' + r.data.skipped + ' already on record' : '') + '.';
+  mdPicked = []; mdRenderPicked();
 }
 
 </script>
