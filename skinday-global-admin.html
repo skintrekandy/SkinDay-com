@@ -1102,6 +1102,7 @@
           <button class="btn-ghost" onclick="dcSelectOwnPage()">Select only the ones with their own page</button>
           <button class="btn-ghost" onclick="dcSelectAll(false)">Clear</button>
           <button class="btn-approve" onclick="dcApproveSelected()">Approve selected</button>
+          <button class="btn-approve" id="dc-approve-all" onclick="dcApproveAll()">Approve everything</button>
           <button class="btn-reject" onclick="dcRejectSelected()">Reject selected</button>
           <span id="dc-cand-msg" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
@@ -2708,6 +2709,66 @@ async function dcRequeue() {
           + ' — press Start crawl to run them', 'var(--muted)');
   } catch (e) {
     alert('Requeue failed: ' + String((e && e.message) || e));
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Approves every pending candidate in the selected country, not just the rows
+// on screen. Select all only ever selected the visible page and the list caps
+// at 1,000, so approving 4,340 meant five passes and trusting none was missed.
+//
+// The function approves a batch per call and reports what is left, so this
+// loops. That is deliberate: a single request cannot survive thousands of rows
+// inside a Netlify function's time budget.
+//
+// Devices whose NAME IS ALSO AN ORDINARY WORD are held back by default. That is
+// where a bad alias hides, and on a chain host one wrong device becomes one
+// wrong claim per clinic. Review those on their own with the device filter.
+async function dcApproveAll() {
+  if (dcRunning) { alert('Stop the crawl before approving in bulk.'); return; }
+  const country = dcCountry();
+  const label = country || 'every country';
+  const btn = document.getElementById('dc-approve-all');
+  const deviceSel = document.getElementById('dc-cand-device');
+  const deviceId = deviceSel && deviceSel.value ? deviceSel.value : '';
+  if (btn) btn.disabled = true;
+  try {
+    const pre = await dcCall({ action: 'approve-all', country: country,
+                               device_id: deviceId, preview: true });
+    if (!pre.ok) throw new Error((pre.data && pre.data.error) || 'request failed');
+    const n = (pre.data && pre.data.would_approve) || 0;
+    const held = (pre.data && pre.data.held_generic) || 0;
+    if (!n) {
+      alert('Nothing to approve for ' + label + '.'
+            + (held ? '\n\n' + held + ' held back as generic-name devices.' : ''));
+      return;
+    }
+    if (!confirm('Publish ' + n + ' devices in ' + label + '?\n\n'
+                 + (held ? held + ' rows held back because the device name is also an '
+                         + 'ordinary word. Review those separately.\n\n' : '')
+                 + 'Each newly published device writes an entry to the change feed '
+                 + 'that manufacturers see. Nothing is deleted and install dates on '
+                 + 'devices already published are preserved.')) return;
+
+    let approved = 0, events = 0, guard = 0;
+    for (;;) {
+      const r = await dcCall({ action: 'approve-all', country: country, device_id: deviceId });
+      if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
+      const d = r.data || {};
+      approved += d.approved || 0;
+      events += d.new_events || 0;
+      if (d.errors && d.errors.length) dcLog('approve warning: ' + d.errors.join(' · '), 'var(--red)');
+      dcCandMsg('approved ' + approved + ' · ' + (d.remaining || 0) + ' left…');
+      if (d.done || !(d.remaining > 0)) break;
+      if (++guard > 60) { dcLog('bulk approve stopped after 60 batches, run it again to continue', 'var(--red)'); break; }
+    }
+    dcCandMsg('approved ' + approved + ' · ' + events + ' change-feed entries', 'var(--green)');
+    dcLog('bulk approve · ' + label + ' · ' + approved + ' published · ' + events + ' new events', 'var(--muted)');
+    await dcLoadStats();
+    await dcLoadCandidates();
+  } catch (e) {
+    alert('Bulk approve failed: ' + String((e && e.message) || e));
   } finally {
     if (btn) btn.disabled = false;
   }
