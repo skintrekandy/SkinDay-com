@@ -820,7 +820,12 @@
   el('selProvince').addEventListener('change',function(){
     geo.province=this.value; geo.neighbourhood='';
     el('selHood').style.display=geo.province?'':'none'; el('sepHood').style.display=geo.province?'':'none'; el('geoReset').style.display=geo.province?'':'none';
-    if(geo.province) api('geo',{}).then(function(res){ fillSelect(el('selHood'),res.geo||[],'All areas'); });
+    // regionLabel, not the fillSelect default: US metros are SLUGS
+    // (los-angeles, central-valley) and titleCase deliberately keeps hyphens so
+    // real hyphenated names like Winston-Salem survive. The state select on
+    // line 520 already passes regionLabel; this one was missed, which is why
+    // the territory read "California" but the metro read "Los-Angeles".
+    if(geo.province) api('geo',{}).then(function(res){ fillSelect(el('selHood'),res.geo||[],'All areas',regionLabel); });
     onGeoChange();
   });
   el('selHood').addEventListener('change',function(){ geo.neighbourhood=this.value; onGeoChange(); });
