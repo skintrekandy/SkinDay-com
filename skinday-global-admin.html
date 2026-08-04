@@ -2879,10 +2879,20 @@ async function dcLoadStats() {
   const { ok, data } = await dcCall({ action: 'candidate-stats', country: country });
   if (!ok || !data || !data.counts) return;
 
-  document.getElementById('dc-cand-stats').textContent =
-    data.counts.pending + ' to review · ' + data.counts.approved + ' approved · ' +
-    data.counts.rejected + ' rejected · ' + data.clinic_devices + ' published · ' +
-    data.queue.pending + ' hosts left to crawl in ' + (country || 'every country');
+  // ⛔ THE OLD LINE MIXED TWO SCOPES INTO ONE SENTENCE and ended it with "in
+  // canada": pending/approved/rejected/published were GLOBAL while the queue
+  // count was country-scoped. It read "4540 to review" beside a review list
+  // that correctly showed none for the selected country. A counter that is not
+  // scoped the same way as the thing it counts will mislead every time.
+  // Pending is now scoped server-side; the rest are global and say so.
+  const where = country || 'every country';
+  const bits = [];
+  bits.push(data.counts.pending + ' to review in ' + where);
+  bits.push(data.queue.pending + ' hosts left to crawl in ' + where);
+  bits.push(data.counts.approved + ' approved · ' + data.counts.rejected +
+            ' rejected · ' + data.clinic_devices + ' published, all countries');
+  if (data.pending_truncated) bits.push('pending count capped, more waiting');
+  document.getElementById('dc-cand-stats').textContent = bits.join(' · ');
 
   const el = document.getElementById('dc-count');
   if (el) {
