@@ -519,9 +519,16 @@
       el('gate').style.display='none'; el('app').style.display='block';
       fillSelect(el('selProvince'),res.geo||[],CTY.all);
       COVERAGE=res.coverage||null;
-      renderHero(res.kpis); renderBoard(res.leaderboard||[]);
-      renderCategoryShare(res.category_share||[]); catCache=res.categories||[]; seedCategorySelects();
-      api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
+      // Sign-in must not be a way round the territory gate, so the first paint
+      // goes through the same path every later refresh does.
+      if(CTY.key==='usa' && !geo.province){
+        refreshPortfolio();
+        catCache=res.categories||[]; seedCategorySelects();
+      } else {
+        renderHero(res.kpis); renderBoard(res.leaderboard||[]);
+        renderCategoryShare(res.category_share||[]); catCache=res.categories||[]; seedCategorySelects();
+        api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
+      }
       loadFilterOptions(); loadSavedIds();
     }).catch(function(e){ KEY=null; el('gateErr').textContent=e&&e.unauth?'Incorrect access key.':'Could not connect. Try again.'; });
   }
@@ -562,7 +569,7 @@
       geo.province=t.province;
       el('selProvince').style.display='none';
       el('geoLocked').style.display='';
-      el('geoLocked').textContent=String(t.province).toUpperCase()+' territory';
+      el('geoLocked').textContent=regionLabel(t.province)+' territory';
     }
   }
   // an invitation link, exchanged for a password the person picks
@@ -781,9 +788,23 @@
     });
   });
 
+  // ⭐ Region names are stored lowercase ("california", "new york"), which is
+  // right for filtering and wrong for reading. Formatted HERE rather than
+  // rewritten in the column, so every RPC that filters on the stored value
+  // keeps working. Small words stay lowercase, "DC" and "BC" stay upper.
+  var REGION_SMALL = { of:1, and:1, the:1 };
+  function regionLabel(v){
+    var s = String(v == null ? '' : v).trim();
+    if (!s) return s;
+    if (s.length <= 3 && s === s.toUpperCase()) return s;     // DC, BC, NY
+    return s.toLowerCase().split(/\s+/).map(function(w, i){
+      if (i > 0 && REGION_SMALL[w]) return w;
+      return w.charAt(0).toUpperCase() + w.slice(1);
+    }).join(' ');
+  }
   function fillSelect(sel,rows,allLabel){
     var cur=sel.value;
-    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){ return '<option value="'+esc(r.value)+'">'+esc(r.value)+' ('+r.clinics+')</option>'; }).join('');
+    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){ return '<option value="'+esc(r.value)+'">'+esc(regionLabel(r.value))+' ('+r.clinics+')</option>'; }).join('');
     if(cur) sel.value=cur;
   }
   el('selProvince').addEventListener('change',function(){
@@ -802,6 +823,18 @@
   }
 
   function refreshPortfolio(){
+    // ⭐⭐ THE GATE SITS HERE, NOT ONLY ON THE HERO. Gating the headline alone
+    // would leave the share board and the category donuts showing all-states
+    // figures under a "choose a state" prompt — a worse lie than the original,
+    // because the numbers would look territory-scoped and would not be.
+    if(CTY.key==='usa' && !geo.province){
+      renderHero({});
+      var ask='<div class="empty">Choose a '+esc(CTY.region)+' to see this.</div>';
+      el('portfolioList').innerHTML=ask;
+      el('catlist').innerHTML=ask;
+      el('board').innerHTML='<div class="sec-label">Share of verified accounts</div>'+ask;
+      return;
+    }
     el('hero').innerHTML='<div class="empty"><span class="spin"></span></div>';
     el('portfolioList').innerHTML='<div class="empty"><span class="spin"></span></div>';
     el('catlist').innerHTML='<div class="empty"><span class="spin"></span></div>';
@@ -819,15 +852,31 @@
   // says nothing about where the data comes from.
   function renderHero(k){
     if(!k){ el('hero').innerHTML=''; return; }
-    var where = geo.neighbourhood || (geo.province?geo.province.toUpperCase():CTY.country);
+    // ⭐⭐ NOTHING IS SHOWN UNTIL A TERRITORY IS CHOSEN. An all-states figure
+    // mixes New York into a California rep's numbers, and a rep reads the
+    // headline as their own market. A locked account (t.province) never sees
+    // this because its territory is already set.
+    if(CTY.key==='usa' && !geo.province){
+      el('hero').innerHTML='<div class="big">Choose a '+esc(CTY.region)+'</div>'+
+        '<div class="sub">Figures are reported one '+esc(CTY.region)+' at a time. '+
+        'A combined total would mix markets that have nothing to do with each other.</div>';
+      return;
+    }
+    var where = geo.neighbourhood || (geo.province?regionLabel(geo.province):CTY.country);
     var cov = COVERAGE || {};
     var pending = (cov.clinics!=null && cov.verified!=null) ? (cov.clinics-cov.verified) : null;
+    // ⭐⭐⭐ THE DENOMINATOR. `without_ours` counts every clinic in the country
+    // minus ours — but most of those have never been researched, so it reads as
+    // ten thousand open accounts when the honest figure is the VERIFIED clinics
+    // that carry somebody else's equipment. A rep who checks this once and finds
+    // it inflated stops believing the rest of the page.
+    var otherVerified = (cov.verified!=null && k.with_ours!=null) ? (cov.verified-k.with_ours) : null;
     el('hero').innerHTML='<div class="big">'+(k.with_ours!=null?k.with_ours:'—')+' <span class="unit">identified accounts</span></div>'+
       '<div class="sub">Clinics in '+esc(where)+' with '+esc((ME&&ME.display_name)||'your')+' equipment identified'+
-      (k.without_ours!=null?', and <span class="share">'+k.without_ours+'</span> without.':'.')+'</div>'+
+      (otherVerified!=null?', and <span class="share">'+otherVerified+'</span> running other equipment.':'.')+'</div>'+
       (cov.verified!=null
         ? '<div class="cov"><b>'+cov.verified+'</b> clinics with verified equipment'+
-          (pending!=null?' &middot; <b>'+pending+'</b> pending research':'')+
+          (pending!=null?' &middot; <b>'+pending+'</b> not yet researched':'')+
           (cov.last_updated?' &middot; updated '+esc(new Date(cov.last_updated).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})):'')+
           '</div>'
         : '');
