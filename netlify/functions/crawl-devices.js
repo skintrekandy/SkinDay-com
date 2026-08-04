@@ -1500,7 +1500,11 @@ exports.handler = async event => {
   try {
     switch (action) {
       case 'crawl':               return json(200, await doCrawl(supabase, body));
+      case 'search-clinics':      return json(200, await searchClinics(supabase, body));
+      case 'reference-list':      return json(200, await referenceList(supabase, body));
+      case 'manual-devices':      return json(200, await manualDevices(supabase, body));
       case 'requeue':             return json(200, await requeueAll(supabase, body));
+      case 'sync-exclusions':     return json(200, await syncExclusions(supabase, body));
       case 'candidate-stats':     return json(200, await candidateStats(supabase, body));
       case 'list-candidates':     return json(200, await listCandidates(supabase, body));
       case 'approve-candidates':  return json(200, await decide(supabase, body, true));
@@ -1855,6 +1859,110 @@ async function doCrawl(supabase, body) {
 }
 
 // ---------------------------------------------------------------------------
+// manual device entry
+// ---------------------------------------------------------------------------
+// ⭐⭐ WHY THIS EXISTS: 93 California hosts (and ~88 Canadian ones) return 403 to
+// the crawler. They are not a long tail — blocking correlates with clinic
+// sophistication, so the blind spot sits exactly where the premium equipment is.
+// dermla.com alone was 8 clinics and 7 InMode devices, recovered only by reading
+// the site by hand and hand-writing an insert. This turns that into a form.
+
+async function searchClinics(supabase, body) {
+  const q = String(body.q || '').trim();
+  if (q.length < 2) return { clinics: [] };
+  let sel = supabase.from('clinics')
+    .select('id, name, country, state, province, website, approved')
+    .ilike('name', '%' + q + '%')
+    .eq('approved', true)
+    .limit(25);
+  if (body.country) sel = sel.eq('country', body.country);
+  const { data, error } = await sel;
+  if (error) throw error;
+
+  // ⭐ Sibling clinics on the same host, so a group site can be filled in one
+  // action. This is the "all eight" precedent from dermla: when a service menu
+  // is site-wide rather than per-location, the devices belong to every row.
+  const out = [];
+  for (const c of (data || [])) {
+    let host = null, siblings = 1;
+    try { host = new URL(c.website).hostname.replace(/^www\./, ''); } catch (e) {}
+    if (host) {
+      const { data: q2 } = await supabase.from('crawl_device_queue')
+        .select('clinic_ids').eq('host', host).limit(1);
+      const ids = q2 && q2[0] && Array.isArray(q2[0].clinic_ids) ? q2[0].clinic_ids : [];
+      siblings = Math.max(1, ids.length);
+    }
+    out.push({ id: c.id, name: c.name, country: c.country,
+               region: c.state || c.province || null, host: host, siblings: siblings });
+  }
+  return { clinics: out };
+}
+
+async function referenceList(supabase) {
+  const { data, error } = await supabase.from('device_reference')
+    .select('id, model, manufacturer, category, distributor_ca')
+    .eq('active', true)
+    .order('manufacturer')
+    .order('model');
+  if (error) throw error;
+  return { devices: data || [] };
+}
+
+// Writes straight to clinic_devices — the PUBLISHED table, not candidates.
+// That is deliberate: a human who has read the clinic's own page is stronger
+// evidence than a crawl, so there is nothing left to review. The safeguards are
+// that first_seen is never overwritten and duplicates are ignored.
+async function manualDevices(supabase, body) {
+  const deviceIds = (body.device_ids || []).map(Number).filter(Boolean);
+  const source    = ['website', 'clinic', 'manufacturer'].includes(body.source) ? body.source : 'website';
+  if (!body.clinic_id || !deviceIds.length) return { error: 'pick at least one clinic and one device', added: 0 };
+
+  // ⭐ THE HOST FAN-OUT IS RESOLVED HERE, NOT IN THE BROWSER. The client sends
+  // one clinic and a flag; the server decides which rows that means. A page that
+  // can write to the published table must never be trusted to supply the list of
+  // rows it writes to.
+  let clinicIds = [String(body.clinic_id)];
+  if (body.apply_to_host && body.host) {
+    const { data: q } = await supabase.from('crawl_device_queue')
+      .select('clinic_ids').eq('host', body.host).limit(1);
+    const ids = q && q[0] && Array.isArray(q[0].clinic_ids) ? q[0].clinic_ids.map(String) : [];
+    if (ids.length) clinicIds = [...new Set(ids.concat(clinicIds))];
+  }
+
+  const day = (body.seen_on && /^\d{4}-\d{2}-\d{2}$/.test(body.seen_on))
+    ? body.seen_on : new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
+
+  // Existing pairs are left completely alone — never re-dated, never re-sourced.
+  const { data: existing } = await supabase.from('clinic_devices')
+    .select('clinic_id, device_id').in('clinic_id', clinicIds);
+  const already = new Set((existing || []).map(r => r.clinic_id + '|' + r.device_id));
+
+  const rows = [];
+  for (const cid of clinicIds) {
+    for (const did of deviceIds) {
+      if (already.has(cid + '|' + did)) continue;
+      rows.push({
+        clinic_id: cid, device_id: did,
+        status: 'listed', source: source,
+        source_url: body.source_url || null,
+        matched_text: body.matched_text || null,
+        first_seen: day, last_seen: day, updated_at: now
+      });
+    }
+  }
+  if (!rows.length) return { added: 0, skipped: clinicIds.length * deviceIds.length, note: 'every pair already published' };
+
+  const errors = [];
+  let added = 0;
+  for (let i = 0; i < rows.length; i += 200) {
+    const { error } = await supabase.from('clinic_devices').insert(rows.slice(i, i + 200));
+    if (error) errors.push(error.message); else added += rows.slice(i, i + 200).length;
+  }
+  return { added, skipped: (clinicIds.length * deviceIds.length) - rows.length, errors };
+}
+
+// ---------------------------------------------------------------------------
 // requeue
 // ---------------------------------------------------------------------------
 // ⭐⭐ THE EXISTING "retry" ONLY EVER TOUCHED `error` AND `running` ROWS. After a
@@ -1884,6 +1992,76 @@ async function requeueAll(supabase, body) {
   if (error) throw error;
 
   return { requeued: count || 0, country: country };
+}
+
+// ---------------------------------------------------------------------------
+// sync exclusions
+// ---------------------------------------------------------------------------
+// ⭐⭐ De-approving a clinic hides it from the directory but does NOTHING to the
+// crawl queue, so the crawler keeps spending fetches on nail bars, day spas and
+// hotel spas that were screened out weeks earlier. That gap has to be closed by
+// hand after every screening pass, which means it will eventually be forgotten.
+//
+// This closes it as a step instead: a host whose clinics are ALL de-approved is
+// excluded; a host that regains an approved clinic is un-excluded, so the sync
+// is symmetric and re-running it can never strand a host permanently.
+//
+// ⚠️ It only ever touches rows it can prove something about. A host with no
+// resolvable clinic_ids is LEFT ALONE — silence is not evidence of pollution,
+// and the deliberately-seeded exclusions (aggregators, hotels, umbrella sites)
+// have no clinic rows behind them either.
+async function syncExclusions(supabase, body) {
+  const country = body.country || null;
+
+  let q = supabase.from('crawl_device_queue').select('id, host, clinic_ids, excluded');
+  if (country) q = q.eq('country', country);
+  const { data: rows, error } = await q;
+  if (error) throw error;
+
+  const allIds = new Set();
+  for (const r of (rows || [])) {
+    for (const c of (Array.isArray(r.clinic_ids) ? r.clinic_ids : [])) allIds.add(String(c));
+  }
+  const ids = [...allIds];
+
+  // Which of those clinics are still approved.
+  const approved = new Set();
+  for (let i = 0; i < ids.length; i += 500) {
+    const { data } = await supabase.from('clinics')
+      .select('id').in('id', ids.slice(i, i + 500)).eq('approved', true);
+    for (const c of (data || [])) approved.add(String(c.id));
+  }
+
+  const toExclude = [], toRestore = [];
+  for (const r of (rows || [])) {
+    const cids = (Array.isArray(r.clinic_ids) ? r.clinic_ids : []).map(String);
+    if (!cids.length) continue;                       // nothing proven — leave alone
+    const live = cids.some(c => approved.has(c));
+    if (!live && !r.excluded) toExclude.push(r);
+    if (live && r.excluded)   toRestore.push(r);
+  }
+
+  if (body.preview) {
+    return {
+      preview: true, country: country,
+      would_exclude: toExclude.length,
+      would_restore: toRestore.length,
+      examples: toExclude.slice(0, 15).map(r => r.host)
+    };
+  }
+
+  const chunk = async (list, value) => {
+    for (let i = 0; i < list.length; i += 200) {
+      const slice = list.slice(i, i + 200).map(r => r.id);
+      const { error: e } = await supabase.from('crawl_device_queue')
+        .update({ excluded: value }).in('id', slice);
+      if (e) throw e;
+    }
+  };
+  await chunk(toExclude, true);
+  await chunk(toRestore, false);
+
+  return { excluded: toExclude.length, restored: toRestore.length, country: country };
 }
 
 // ---------------------------------------------------------------------------
