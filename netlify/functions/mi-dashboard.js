@@ -277,10 +277,10 @@ exports.handler = async (event) => {
       // each with a clinic count, energy devices only
       case 'filter_options': {
         const { data, error } = await supabase.rpc('mi_filter_options', { p_country: country, p_regions: regions, 
-          p_province: province, p_neighbourhood: neighbourhood
+          p_province: province, p_neighbourhood: neighbourhood, p_city: city
         });
         if (error) throw error;
-        return json(200, { options: data || { manufacturers: [], distributors: [] } });
+        return json(200, { options: data || { manufacturers: [], distributors: [], devices: [] } });
       }
 
       // the filterable clinic list.
@@ -292,7 +292,17 @@ exports.handler = async (event) => {
           p_province: province, p_city: city, p_neighbourhood: neighbourhood,
           p_category: category, p_segment: segment, p_limit: limit,
           p_filter_manufacturer: nz(body.filter_manufacturer),
-          p_filter_distributor: nz(body.filter_distributor)
+          p_filter_distributor: nz(body.filter_distributor),
+          // Field-rep filters. All optional on the SQL side, so an older client
+          // that sends none of them behaves exactly as before.
+          p_exclude_manufacturer: nz(body.exclude_manufacturer),
+          p_device: nz(body.device),
+          p_min_reviews: body.min_reviews ? parseInt(body.min_reviews, 10) : null,
+          p_sort: nz(body.sort) || 'reviews',
+          // Only trusted as a pair. A lone coordinate would silently produce a
+          // distance from the prime meridian rather than an error.
+          p_near_lat: (body.near_lat != null && body.near_lng != null) ? Number(body.near_lat) : null,
+          p_near_lng: (body.near_lat != null && body.near_lng != null) ? Number(body.near_lng) : null
         }, owner));
         if (error) throw error;
         return json(200, { accounts: data || [] });
