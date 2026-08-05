@@ -244,6 +244,21 @@
   status = 301
   force  = true
 
+# Where Stripe returns after a successful checkout. Nothing here reads the
+# session id: the TENANT is created by the webhook, because a redirect proves
+# someone reached a URL, not that a payment happened.
+[[redirects]]
+  from   = "/mi-welcome"
+  to     = "/mi-welcome.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/mi-welcome.html"
+  to     = "/mi-welcome"
+  status = 301
+  force  = true
+
 # ── SIMULATION LIBRARY ────────────────────────────────────────────
 # /visualize/cases -> the Simulation Library page (indexable marketing
 # page, separate from the gated Visualize tool).
