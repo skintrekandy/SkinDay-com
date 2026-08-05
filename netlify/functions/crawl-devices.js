@@ -27,7 +27,13 @@ const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-const MATCHER_VERSION = '2026-08-03-sitemap-rank';
+const MATCHER_VERSION = '2026-08-05-host-fallback';
+
+// Set at the top of every doCrawl invocation. readPage refuses to start a new
+// fetch past this point, so the function returns a real JSON result instead of
+// being killed mid-flight and handing the client an HTML error page.
+let INVOCATION_DEADLINE = Number.MAX_SAFE_INTEGER;
+const INVOCATION_BUDGET_MS = 20000;
 
 // ⭐⭐ THE PAGE BUDGET. Was a flat hard stop at 3, which was never a decision —
 // it was a default nobody revisited, and it handled the highest-value hosts
@@ -372,7 +378,13 @@ function isComparisonPath(pathname, entries) {
   // tokens and broke drmikeroskies.com/laser-treatments/sciton-halo, because
   // "sciton halo" and "halo" are TWO TOKENS FOR ONE MACHINE and read as a
   // comparison of two devices. One device named two ways is still one device.
-  const flat = ' ' + norm(decodeURIComponent(pathname)) + ' ';
+  // ⛔ decodeURIComponent THROWS on a stray or malformed percent sequence, and a
+  // throw here aborted the whole host with "URI malformed" before a single page
+  // was read. Clinic URLs carry percent-encoded CJK and stray % characters often
+  // enough that this was a real loss, not an edge case. The raw path is a fine
+  // fallback: an undecoded path still matches a device slug.
+  const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
+  const flat = ' ' + norm(safeDecode(pathname)) + ' ';
   const models = new Set();
   for (const e of entries) {
     if (e.token && e.token.length >= 3 && flat.indexOf(' ' + e.token + ' ') !== -1) {
@@ -407,7 +419,10 @@ function ownPagePaths(rawText, pageUrl, entries) {
       if (entries && isComparisonPath(p.pathname, entries)) return;
       if (ASSET_EXT.test(p.pathname) || ASSET_DIR.test(p.pathname)) return;
       if (p.pathname.split('/').filter(Boolean).length > 4) return;   // deep = not a service page
-      paths.push(norm(decodeURIComponent(p.pathname)));
+      // Same reason as the decode in the device-URL matcher above: a malformed
+      // percent sequence must not take down the host.
+      let decoded; try { decoded = decodeURIComponent(p.pathname); } catch (e) { decoded = p.pathname; }
+      paths.push(norm(decoded));
     } catch (e) {}
   };
   if (pageUrl) add(pageUrl);
@@ -1300,6 +1315,16 @@ async function crawlHost(row, matcher) {
   let budget = 5;
   const readPage = async url => {
     if (seen.has(url) || pages.length >= budget) return null;
+    // ⛔ WALL-CLOCK GUARD. Budgets now reach 35 pages, and three slow hosts in one
+    // invocation was overrunning the function's time limit. The proxy then
+    // returned an HTML error page, the client tried to parse it as JSON, and the
+    // loop reported: Unexpected token '<', "<HTML> <HE"... is not valid JSON.
+    // That was never a crawl failure, it was the whole invocation dying.
+    //
+    // Stopping early is safe: whatever has been read is still matched and saved,
+    // and the host is recorded with the pages it managed. Losing the tail of one
+    // host beats losing the batch and stalling the run.
+    if (Date.now() > INVOCATION_DEADLINE) return null;
     seen.add(url);
     pagesTried++;
     const r = await getPage(url);
@@ -1346,21 +1371,33 @@ async function crawlHost(row, matcher) {
   };
 
   let homePage = await readPage(home);
-  if (!homePage && !sawJsOnly) {
-    // one retry on the bare http host, which the price run showed recovers a few
-    homePage = await readPage('http://' + host + '/');
+  const firstError = lastError;   // captured before any fallback overwrites it
+
+  // ⛔⛔ WWW IS ONLY VALID ON AN APEX DOMAIN. The old guard only checked that the
+  // host did not already start with "www.", so every SUBDOMAIN got a www glued
+  // in front of it: www.monterey.californiaskininstitute.com,
+  // www.luminaryglow.my.canva.site, www.r.mesospa.com. None of those hostnames
+  // exist, so they failed DNS and were recorded as "HTTP 0 fetch failed" —
+  // which read as hundreds of dead clinic sites that were never actually dead.
+  const labels = host.split('.').filter(Boolean);
+  const MULTI_TLD = /\.(co|com|net|org|gov|edu|ac)\.[a-z]{2}$/i;
+  const isApex = MULTI_TLD.test(host) ? labels.length === 3 : labels.length === 2;
+
+  if (!homePage && !sawJsOnly && isApex && !/^www\./i.test(host)) {
+    homePage = await readPage('https://www.' + host + '/');
   }
-  // The apex is not always the site. `host` has had any www. stripped, but a
-  // fair number of these domains only answer on www — nine of the top failing
-  // hosts by review count were exactly this, including several 300+ review
-  // clinics. Try the www form before calling the host dead.
-  if (!homePage && !sawJsOnly && !/^www\./i.test(host)) {
-    homePage = await readPage('https://www.' + host + '/')
-            || await readPage('http://www.' + host + '/');
+  // Plain http last, and only on the host we were actually given. It recovers a
+  // few genuinely old sites, but trying it SECOND (as this used to) meant an
+  // http failure masked the https-on-www attempt that would have worked.
+  if (!homePage && !sawJsOnly) {
+    homePage = await readPage('http://' + host + '/');
   }
   // Nothing at all came back, not even a thin page: a genuine fetch failure.
   if (!pages.length) {
-    return { status: 'error', pagesTried, lastError, matches: [], unknowns: [] };
+    // ⚠️ THE FIRST ERROR, NOT THE LAST. A 403 on the apex followed by a 404 on a
+    // www host that does not exist was being filed as a dead domain, so real
+    // blocks were invisible in the error breakdown.
+    return { status: 'error', pagesTried, lastError: firstError || lastError, matches: [], unknowns: [] };
   }
 
   const sm = await sitemapUrls(host.replace(/^www\./, ''));
@@ -1524,6 +1561,7 @@ exports.handler = async event => {
 
 async function doCrawl(supabase, body) {
   const batch = Math.min(Math.max(parseInt(body.batch, 10) || BATCH_DEFAULT, 1), BATCH_MAX);
+  INVOCATION_DEADLINE = Date.now() + INVOCATION_BUDGET_MS;
 
   // ⭐ COUNTRY SCOPING. The queue holds every country now. Without this a US run
   // drains Canada's pending rows and a "retry failed" requeues Canada's errors.
