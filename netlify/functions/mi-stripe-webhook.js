@@ -9,7 +9,7 @@
 // before verifying.
 //
 // Env required on the .com site:
-//   STRIPE_SECRET_KEY (already set, shared with Visualize Pro)
+//   MI_STRIPE_SECRET_KEY (optional, sandbox) or STRIPE_SECRET_KEY
 //   MI_STRIPE_WEBHOOK_SECRET (NEW, and it must NOT reuse STRIPE_WEBHOOK_SECRET:
 //     that one belongs to the Visualize Pro endpoint, and every Stripe endpoint
 //     has its OWN signing secret. Reusing it would break one or the other.)
@@ -18,12 +18,21 @@
 //   MI_FROM_EMAIL (defaults to hello@skinday.ca, the verified Resend domain)
 
 const Stripe = require('stripe');
+
+// ⚠️ KEY SELECTION. MI_STRIPE_SECRET_KEY wins when set, STRIPE_SECRET_KEY is the
+// fallback. That exists so Market Intelligence can run against the SANDBOX while
+// Visualize Pro keeps using the live key in the same account: a live key cannot
+// see sandbox prices, which is exactly how the first checkout failed
+// ("a similar object exists in test mode, but a live mode key was used").
+// Delete MI_STRIPE_SECRET_KEY to go live and this silently falls back.
+const STRIPE_KEY = process.env.MI_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+
 const { createClient } = require('@supabase/supabase-js');
 
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'method not allowed' };
 
-  const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = Stripe(STRIPE_KEY);
   const sig = event.headers['stripe-signature'] || event.headers['Stripe-Signature'];
   const raw = event.isBase64Encoded
     ? Buffer.from(event.body, 'base64').toString('utf8')
