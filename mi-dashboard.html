@@ -179,6 +179,10 @@
   .crow .cshare .cl { display:block; font-family:var(--font-mono); font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:var(--faint); font-weight:400; }
 
   .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:20px; }
+  /* .toolbar sets display:flex, which OVERRIDES the hidden attribute's default
+     display:none. Without this the More filters row stayed visible and the
+     toggle looked broken. Applies to any hidden element, not just the toolbar. */
+  [hidden] { display:none !important; }
   .toolbar select { font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 34px 10px 14px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 11px center; background-size:14px; }
   .toolbar select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .toolbar .count { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
@@ -212,7 +216,10 @@
   }
   .btn.go { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
   .btn.go:hover { background:var(--accent-strong); border-color:var(--accent-strong); color:#fff; }
-  .btn.near.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
+  .btn.near { border-color:var(--accent); color:var(--accent-strong); font-weight:600; }
+  .btn.near:hover { background:var(--accent-soft); }
+  .btn.near.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.near.on:hover { background:var(--accent-strong); color:#fff; }
   .acctgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; }
   @media (max-width:640px){
     .acctgrid { grid-template-columns:1fr; gap:10px; }
@@ -380,6 +387,7 @@
           <option value="distance">Nearest to me</option>
         </select>
         <button class="btn" id="acctMore" type="button" aria-expanded="false">More filters</button>
+        <button class="linkish" id="acctReset" type="button" style="display:none">Reset filters</button>
         <span class="count" id="acctCount"></span>
       </div>
       <div class="toolbar" id="acctAdv" hidden>
@@ -999,15 +1007,18 @@
   function loadFilterOptions(){
     api('filter_options',{}).then(function(res){
       var o=res.options||{};
-      fillNamed(el('acctMfr'),o.manufacturers||[],'Any manufacturer');
+      // ⚠️ THESE STRINGS ARE THE ONES ON SCREEN. fillNamed rewrites the whole
+      // select, so the labels written in the markup are replaced the moment the
+      // options load. Changing the markup alone does nothing.
+      fillNamed(el('acctMfr'),o.manufacturers||[],'Runs any manufacturer');
       fillNamed(el('acctDist'),o.distributors||[],'Any distributor');
       // Server-side now, so it covers the whole territory rather than only the
       // 200 accounts on screen, and it obeys the same energy-category rule as
       // the manufacturer list.
-      fillNamed(el('acctDevice'),o.devices||[],'Any device');
+      fillNamed(el('acctDevice'),o.devices||[],'Runs any device');
       // Same list, opposite meaning: "runs a competitor AND has none of theirs"
       // is the query that fills a sales day, and it takes two selectors to say.
-      fillNamed(el('acctExclude'),o.manufacturers||[],'Not missing anything');
+      fillNamed(el('acctExclude'),o.manufacturers||[],'Missing nothing in particular');
       var ex=el('acctExclude');
       Array.prototype.forEach.call(ex.options,function(op){
         if(op.value) op.textContent='No '+op.value;
@@ -1215,6 +1226,23 @@
       advLabel();
     });
   })();
+  var ACCT_FILTERS=['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev'];
+  // Territory total, captured from an unfiltered load. It is the denominator for
+  // "34 of 412", and it is remembered per territory because changing territory
+  // changes the population, not the filter.
+  var BASE_TOTAL=null, BASE_KEY=null;
+  function geoKey(){ return [geo.province,geo.city,geo.neighbourhood].join('|'); }
+  function activeFilters(){
+    return ACCT_FILTERS.filter(function(id){ return el(id) && el(id).value; }).length
+         + (el('acctSort').value==='distance'?1:0);
+  }
+  el('acctReset').addEventListener('click',function(){
+    ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
+    el('acctSort').value='reviews';
+    NEAR=null; el('acctNear').classList.remove('on'); nearNote('',false);
+    advLabel(); loadAccounts();
+  });
+
   function advCount(){
     return ['acctMfr','acctDevice','acctExclude','acctDist','acctMinRev']
       .filter(function(id){ return el(id) && el(id).value; }).length;
@@ -1223,6 +1251,7 @@
     var n=advCount(), b=el('acctMore');
     b.textContent = n ? 'More filters ('+n+')' : 'More filters';
     b.classList.toggle('on', n>0);
+    el('acctReset').style.display = activeFilters() ? '' : 'none';
   }
 
   ['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev','acctSort']
@@ -1271,7 +1300,34 @@
     api('accounts',body).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
   }
   function renderAccounts(rows){
-    el('acctCount').textContent=rows.length+(rows.length===200?'+ shown':' identified accounts');
+    var total = rows.length && rows[0].total_matches != null
+      ? Number(rows[0].total_matches) : null;
+    var key=geoKey();
+    if(key!==BASE_KEY){ BASE_TOTAL=null; BASE_KEY=key; }
+    // An unfiltered load establishes the territory population. Everything after
+    // it is measured against that.
+    if(!activeFilters() && total!=null) BASE_TOTAL=total;
+
+    var txt;
+    if(rows.length===0){
+      txt = (activeFilters() && BASE_TOTAL!=null)
+        ? '0 of '+BASE_TOTAL.toLocaleString()+' clinics \u00b7 all filtered out'
+        : 'no clinics';
+    } else if(total==null){
+      // total_matches arrives only once the SQL is updated. Until then the old
+      // wording, rather than a number that would be wrong.
+      txt = rows.length + (rows.length===200 ? '+ shown' : ' identified accounts');
+    } else if(activeFilters() && BASE_TOTAL!=null && BASE_TOTAL>total){
+      txt = total.toLocaleString()+' of '+BASE_TOTAL.toLocaleString()+' clinics'+
+            ' \u00b7 '+(BASE_TOTAL-total).toLocaleString()+' filtered out'+
+            (rows.length<total ? ' \u00b7 showing first '+rows.length : '');
+    } else {
+      txt = total.toLocaleString()+' clinics'+
+            (rows.length<total ? ' \u00b7 showing first '+rows.length : '');
+    }
+    el('acctCount').textContent=txt;
+    el('acctReset').style.display = activeFilters() ? '' : 'none';
+
     if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
     el('acctList').innerHTML='<div class="acctgrid">'+rows.map(function(a){ return acctCard(a); }).join('')+'</div>';
     wireSaveButtons(el('acctList')); bindEvidence(el('acctList'));
