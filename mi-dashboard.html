@@ -184,6 +184,30 @@
   .toolbar .count { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
 
   .acct { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:12px; box-shadow:var(--shadow); }
+  /* Field-rep card. The rep is on a phone, standing outside a clinic, so the
+     photo is for RECOGNISING the building and the action row is thumb-sized.
+     Street-view photos are suppressed rather than shown: a roadside shot of a
+     strip mall is worse than a clean tile, and it was the source of the "pale
+     cards" complaint on the patient directory. */
+  .acct.card { padding:0; overflow:hidden; display:flex; flex-direction:column; }
+  .acct.card .shot { position:relative; height:132px; background:var(--surface-2); border-bottom:1px solid var(--line-2); }
+  .acct.card .shot img { width:100%; height:100%; object-fit:cover; display:block; }
+  .acct.card .shot.none { display:flex; align-items:center; justify-content:center; }
+  .acct.card .shot.none span { display:block !important; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); padding:0 14px; text-align:center; }
+  .acct.card .dist { position:absolute; left:10px; bottom:10px; background:rgba(20,24,29,.82); color:#fff; font-family:var(--font-mono); font-size:10.5px; padding:4px 8px; border-radius:20px; }
+  .acct.card .body { padding:16px 18px 4px; }
+  .acct.card .actions { padding:0 18px 16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .acct .stars { color:var(--gold); font-size:12px; letter-spacing:.5px; }
+  .btn.go { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .btn.go:hover { background:var(--accent-strong); border-color:var(--accent-strong); color:#fff; }
+  .btn.near.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
+  .acctgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; }
+  @media (max-width:640px){
+    .acctgrid { grid-template-columns:1fr; gap:10px; }
+    .acct.card .shot { height:112px; }
+    .acct.card .actions .btn { flex:1 1 auto; text-align:center; padding:11px 12px; }
+    .toolbar select, .toolbar .btn { flex:1 1 46%; }
+  }
   .acct .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
   .acct .aname { font-size:16.5px; font-weight:600; }
   .acct .ameta { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
@@ -327,8 +351,30 @@
         </select>
         <select id="acctMfr"><option value="">Any manufacturer</option></select>
         <select id="acctDist"><option value="">Any distributor</option></select>
+      </div>
+      <!-- Second row is the field-rep line: what they run, what they do NOT run,
+           how big, and how it is ordered. "Runs a competitor AND has none of
+           ours" is the query that fills a sales day, and it needs two selectors
+           to express, not one. -->
+      <div class="toolbar">
+        <select id="acctDevice"><option value="">Any device</option></select>
+        <select id="acctExclude"><option value="">Not missing anything</option></select>
+        <select id="acctMinRev">
+          <option value="">Any size</option>
+          <option value="50">50+ reviews</option>
+          <option value="200">200+ reviews</option>
+          <option value="500">500+ reviews</option>
+        </select>
+        <select id="acctSort">
+          <option value="reviews">Most reviews</option>
+          <option value="rating">Best rated</option>
+          <option value="devices">Most equipment</option>
+          <option value="distance">Nearest to me</option>
+        </select>
+        <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
         <span class="count" id="acctCount"></span>
       </div>
+      <div id="acctNearNote" class="cmeta" style="display:none;margin:-4px 0 10px"></div>
       <div id="acctList"><div class="empty">Choose a filter to load accounts.</div></div>
     </section>
 
@@ -935,6 +981,17 @@
       var o=res.options||{};
       fillNamed(el('acctMfr'),o.manufacturers||[],'Any manufacturer');
       fillNamed(el('acctDist'),o.distributors||[],'Any distributor');
+      // Server-side now, so it covers the whole territory rather than only the
+      // 200 accounts on screen, and it obeys the same energy-category rule as
+      // the manufacturer list.
+      fillNamed(el('acctDevice'),o.devices||[],'Any device');
+      // Same list, opposite meaning: "runs a competitor AND has none of theirs"
+      // is the query that fills a sales day, and it takes two selectors to say.
+      fillNamed(el('acctExclude'),o.manufacturers||[],'Not missing anything');
+      var ex=el('acctExclude');
+      Array.prototype.forEach.call(ex.options,function(op){
+        if(op.value) op.textContent='No '+op.value;
+      });
     }).catch(function(){});
   }
   function fillNamed(sel,rows,allLabel){
@@ -1114,25 +1171,97 @@
     '</div>';
   }
 
-  ['acctCategory','acctSegment','acctMfr','acctDist'].forEach(function(id){ el(id).addEventListener('change',loadAccounts); });
+  ['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev','acctSort']
+    .forEach(function(id){ el(id).addEventListener('change',function(){
+      // Asking for "nearest" without a fix is a dead end, so ask for the fix.
+      if(id==='acctSort' && el('acctSort').value==='distance' && !NEAR){ getNear(); return; }
+      loadAccounts();
+    }); });
+
+  // The rep's own position. Held in memory only: never sent anywhere except as
+  // two numbers on the accounts query, never stored, and dropped on reload.
+  var NEAR=null;
+  el('acctNear').addEventListener('click',getNear);
+  function nearNote(msg,show){ var n=el('acctNearNote'); n.textContent=msg||''; n.style.display=show?'':'none'; }
+  function getNear(){
+    if(!navigator.geolocation){ nearNote('This browser cannot share a location.',true); return; }
+    nearNote('Finding your location\u2026',true);
+    el('acctNear').disabled=true;
+    navigator.geolocation.getCurrentPosition(function(pos){
+      NEAR={lat:pos.coords.latitude,lng:pos.coords.longitude};
+      el('acctNear').disabled=false; el('acctNear').classList.add('on');
+      el('acctSort').value='distance';
+      nearNote('Sorted by distance from where you are now.',true);
+      loadAccounts();
+    },function(err){
+      el('acctNear').disabled=false;
+      // Falling back silently would leave the rep looking at a list ordered by
+      // something else while the control says "nearest".
+      if(el('acctSort').value==='distance') el('acctSort').value='reviews';
+      nearNote(err && err.code===1
+        ? 'Location permission was declined, so this is sorted by reviews instead.'
+        : 'Could not get a location just now, so this is sorted by reviews instead.', true);
+      loadAccounts();
+    },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
+  }
+
   function loadAccounts(){
     loaded.accounts=true; el('acctList').innerHTML='<div class="empty"><span class="spin"></span></div>';
-    api('accounts',{category:el('acctCategory').value,segment:el('acctSegment').value,
-                    filter_manufacturer:el('acctMfr').value,filter_distributor:el('acctDist').value,
-                    limit:200}).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
+    var sort=el('acctSort').value;
+    var body={category:el('acctCategory').value,segment:el('acctSegment').value,
+              filter_manufacturer:el('acctMfr').value,filter_distributor:el('acctDist').value,
+              device:el('acctDevice').value,exclude_manufacturer:el('acctExclude').value,
+              min_reviews:el('acctMinRev').value,sort:sort,limit:200};
+    if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
+    api('accounts',body).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
   }
   function renderAccounts(rows){
     el('acctCount').textContent=rows.length+(rows.length===200?'+ shown':' identified accounts');
     if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
-    el('acctList').innerHTML=rows.map(function(a){ return acctCard(a); }).join('');
+    el('acctList').innerHTML='<div class="acctgrid">'+rows.map(function(a){ return acctCard(a); }).join('')+'</div>';
     wireSaveButtons(el('acctList')); bindEvidence(el('acctList'));
+  }
+  function starsHtml(r){
+    if(r==null) return '';
+    var full=Math.round(Number(r));
+    return '<span class="stars">'+new Array(Math.max(0,full)+1).join('\u2605')+
+           new Array(Math.max(0,5-full)+1).join('\u2606')+'</span> '+Number(r).toFixed(1);
+  }
+  // Google Maps directions. Address is preferred over raw coordinates because a
+  // dropped pin on a plaza is less use than a street address the app can label,
+  // and the clinic name disambiguates a shared building.
+  function directionsUrl(a){
+    var dest = a.address ? (a.name+', '+a.address)
+             : (a.lat!=null&&a.lng!=null) ? (a.lat+','+a.lng)
+             : (a.name+' '+(a.neighbourhood||''));
+    return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(dest);
   }
   function acctCard(a){
     var saved=savedIds[a.clinic_id];
-    return '<div class="acct" data-cid="'+esc(a.clinic_id)+'">'+
-      '<div class="head"><span class="aname">'+esc(a.name)+'</span><span class="ameta">'+(a.reviews!=null?a.reviews+' reviews':'')+'</span></div>'+
-      contactsHtml(a)+platesHtml(a.devices||[])+
-      '<div class="actions"><button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'\u2713 Saved':'+ Save to my list')+'</button></div>'+
+    // photo_source tells us where the image came from. Street view is Google's
+    // fallback when a place has no real photograph, and it is not worth showing.
+    var src=String(a.photo_source||'').toLowerCase();
+    var usable=a.photo && src.indexOf('street')===-1 && String(a.photo).indexOf('streetviewpixels')===-1;
+    var shot=usable
+      ? '<div class="shot"><img src="'+esc(a.photo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'none\')"><span style="display:none">'+esc(a.name)+'</span></div>'
+      : '<div class="shot none"><span>'+esc(a.name)+'</span></div>';
+    if(a.distance_km!=null){
+      shot=shot.replace('</div>','<div class="dist">'+Number(a.distance_km).toFixed(1)+' km away</div></div>');
+    }
+    var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
+              (a.n_devices?a.n_devices+' machines':'')].filter(Boolean).join(' &middot; ');
+    return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
+      shot+
+      '<div class="body">'+
+        '<div class="head"><span class="aname">'+esc(a.name)+'</span></div>'+
+        '<div class="ameta" style="margin:4px 0 2px">'+meta+'</div>'+
+        contactsHtml(a)+platesHtml(a.devices||[])+
+      '</div>'+
+      '<div class="actions">'+
+        '<a class="btn go" href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
+        (a.phone?'<a class="btn" href="tel:'+esc(a.phone)+'">Call</a>':'')+
+        '<button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'\u2713 Saved':'+ Save')+'</button>'+
+      '</div>'+
     '</div>';
   }
   function wireSaveButtons(container){
