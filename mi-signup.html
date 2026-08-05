@@ -193,7 +193,11 @@
       })
     }).then(function(r){ return r.json(); }).then(function(d){
       if (d && d.url) { window.location.href = d.url; return; }
-      throw new Error((d && d.error) || 'could not start checkout');
+      // Show the SERVER'S own message, not a generic one. A failure whose real
+      // reason never reaches the screen costs several rounds of guessing, which
+      // is exactly what happened the first time this was tested.
+      var why = (d && d.detail) ? (d.error + ': ' + d.detail) : ((d && d.error) || 'could not start checkout');
+      throw new Error(why);
     }).catch(function(e){
       el('go').disabled = false;
       msg.className = 'msg bad';
