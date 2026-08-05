@@ -198,6 +198,18 @@
   .acct.card .body { padding:16px 18px 4px; }
   .acct.card .actions { padding:0 18px 16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .acct .stars { color:var(--gold); font-size:12px; letter-spacing:.5px; }
+  .pill.chain { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; background:var(--surface-2); border:1px solid var(--line); color:var(--muted); border-radius:100px; padding:3px 9px; white-space:nowrap; }
+  .top-in { position:relative; }
+  .menu { position:absolute; right:0; top:calc(100% + 8px); z-index:40; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow); min-width:210px; padding:8px; }
+  .menu .mono { padding:7px 10px 9px; border-bottom:1px solid var(--line-2); margin-bottom:6px; font-size:11px; word-break:break-all; }
+  .menu .mitem { display:block; width:100%; text-align:left; font:inherit; font-size:14px; padding:10px; border:0; background:none; border-radius:7px; color:var(--ink); cursor:pointer; }
+  .menu .mitem:hover { background:var(--surface-2); color:var(--accent-strong); }
+  @media (max-width:640px){
+    .brand { font-size:15px; }
+    .tabs { gap:18px; padding:0 16px; }
+    .tabs button { font-size:14px; padding:13px 2px; }
+    .top-in { padding-left:16px; padding-right:16px; }
+  }
   .btn.go { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
   .btn.go:hover { background:var(--accent-strong); border-color:var(--accent-strong); color:#fff; }
   .btn.near.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
@@ -309,9 +321,16 @@
       <div class="brand">SkinDay <b>Market Intelligence</b></div>
       <span class="badge" id="mfrBadge"></span>
       <div class="spacer"></div>
-      <span class="mono" id="whoami"></span>
-      <button class="out" id="settingsBtn" style="display:none">Settings</button>
-      <button class="out" id="signout">Sign out</button>
+      <!-- Who you are, Settings and Sign out used to sit here as three separate
+           controls. On a phone that crowded the top of the screen before the rep
+           had seen a single clinic. They are all rare actions, so they live
+           behind one button now. -->
+      <button class="out menubtn" id="menuBtn" aria-haspopup="true" aria-expanded="false">Menu</button>
+      <div class="menu" id="userMenu" hidden>
+        <div class="mono muted" id="whoami"></div>
+        <button class="mitem" id="settingsBtn" style="display:none">Settings</button>
+        <button class="mitem" id="signout">Sign out</button>
+      </div>
     </div>
     <div class="tabs">
       <button data-tab="portfolio" class="on">Overview</button>
@@ -340,39 +359,40 @@
     </section>
 
     <section class="panel" id="panel-accounts">
+      <!-- Primary row: what a rep decides every time. Everything else is behind
+           More filters. The old single row put nine dropdowns on screen before
+           the rep had seen a clinic, which read as a control panel rather than a
+           worklist. -->
       <div class="toolbar">
-        <select id="acctCategory"><option value="">All categories</option></select>
+        <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
         <select id="acctSegment">
-          <option value="">All accounts</option>
-          <option value="ours">Warm &#8212; running your devices</option>
-          <option value="competitor">Cold &#8212; running a competitor</option>
-          <option value="greenfield">Cold &#8212; no devices</option>
-          <option value="research">Pending research</option>
+          <option value="">All clinics</option>
+          <option value="ours">Already running your devices</option>
+          <option value="competitor">Running a competitor, none of yours</option>
+          <option value="greenfield">No equipment identified</option>
+          <option value="research">Not yet researched</option>
         </select>
-        <select id="acctMfr"><option value="">Any manufacturer</option></select>
-        <select id="acctDist"><option value="">Any distributor</option></select>
-      </div>
-      <!-- Second row is the field-rep line: what they run, what they do NOT run,
-           how big, and how it is ordered. "Runs a competitor AND has none of
-           ours" is the query that fills a sales day, and it needs two selectors
-           to express, not one. -->
-      <div class="toolbar">
-        <select id="acctDevice"><option value="">Any device</option></select>
-        <select id="acctExclude"><option value="">Not missing anything</option></select>
-        <select id="acctMinRev">
-          <option value="">Any size</option>
-          <option value="50">50+ reviews</option>
-          <option value="200">200+ reviews</option>
-          <option value="500">500+ reviews</option>
-        </select>
+        <select id="acctCategory"><option value="">All categories</option></select>
         <select id="acctSort">
           <option value="reviews">Most reviews</option>
           <option value="rating">Best rated</option>
           <option value="devices">Most equipment</option>
           <option value="distance">Nearest to me</option>
         </select>
-        <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
+        <button class="btn" id="acctMore" type="button" aria-expanded="false">More filters</button>
         <span class="count" id="acctCount"></span>
+      </div>
+      <div class="toolbar" id="acctAdv" hidden>
+        <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
+        <select id="acctDevice"><option value="">Runs any device</option></select>
+        <select id="acctExclude"><option value="">Missing nothing in particular</option></select>
+        <select id="acctDist"><option value="">Any distributor</option></select>
+        <select id="acctMinRev">
+          <option value="">Any size</option>
+          <option value="50">50+ reviews</option>
+          <option value="200">200+ reviews</option>
+          <option value="500">500+ reviews</option>
+        </select>
       </div>
       <div id="acctNearNote" class="cmeta" style="display:none;margin:-4px 0 10px"></div>
       <div id="acctList"><div class="empty">Choose a filter to load accounts.</div></div>
@@ -1171,8 +1191,43 @@
     '</div>';
   }
 
+  // Header menu. Click outside or Escape closes it.
+  (function(){
+    var b=el('menuBtn'), m=el('userMenu');
+    if(!b||!m) return;
+    function shut(){ m.hidden=true; b.setAttribute('aria-expanded','false'); }
+    b.addEventListener('click',function(e){
+      e.stopPropagation();
+      m.hidden=!m.hidden; b.setAttribute('aria-expanded', m.hidden?'false':'true');
+    });
+    document.addEventListener('click',function(e){ if(!m.hidden && !m.contains(e.target)) shut(); });
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') shut(); });
+  })();
+
+  // More filters. The count on the button is the important part: a rep who
+  // collapsed the panel with three filters still applied would otherwise be
+  // looking at a narrowed list with no visible reason for it.
+  (function(){
+    var b=el('acctMore'), p=el('acctAdv');
+    if(!b||!p) return;
+    b.addEventListener('click',function(){
+      p.hidden=!p.hidden; b.setAttribute('aria-expanded', p.hidden?'false':'true');
+      advLabel();
+    });
+  })();
+  function advCount(){
+    return ['acctMfr','acctDevice','acctExclude','acctDist','acctMinRev']
+      .filter(function(id){ return el(id) && el(id).value; }).length;
+  }
+  function advLabel(){
+    var n=advCount(), b=el('acctMore');
+    b.textContent = n ? 'More filters ('+n+')' : 'More filters';
+    b.classList.toggle('on', n>0);
+  }
+
   ['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev','acctSort']
     .forEach(function(id){ el(id).addEventListener('change',function(){
+      advLabel();
       // Asking for "nearest" without a fix is a dead end, so ask for the fix.
       if(id==='acctSort' && el('acctSort').value==='distance' && !NEAR){ getNear(); return; }
       loadAccounts();
@@ -1250,10 +1305,17 @@
     }
     var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
               (a.n_devices?a.n_devices+' machines':'')].filter(Boolean).join(' &middot; ');
+    // Multi-location brands often buy centrally, so a rep may be better off at
+    // head office than at this address. We state the fact and leave the call to
+    // them: nothing in the data says which location is head office.
+    var chain = a.group_locations
+      ? '<span class="pill chain" title="This brand has '+a.group_locations+
+        ' locations. Purchasing may be handled centrally.">'+a.group_locations+' locations</span>'
+      : '';
     return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
       shot+
       '<div class="body">'+
-        '<div class="head"><span class="aname">'+esc(a.name)+'</span></div>'+
+        '<div class="head"><span class="aname">'+esc(a.name)+'</span>'+chain+'</div>'+
         '<div class="ameta" style="margin:4px 0 2px">'+meta+'</div>'+
         contactsHtml(a)+platesHtml(a.devices||[])+
       '</div>'+
