@@ -344,6 +344,39 @@ exports.handler = async (event) => {
       }
 
       // the tenant's own installed base, their taxonomy
+      case 'feed': {
+        const days = Math.min(Math.max(parseInt(body.days, 10) || 30, 1), 365);
+        const { data, error } = await supabase.rpc('mi_feed', {
+          p_country: country, p_regions: regions,
+          p_province: province, p_city: city, p_neighbourhood: neighbourhood,
+          p_days: days,
+          p_limit: Math.min(Math.max(parseInt(body.limit, 10) || 100, 1), 300),
+          p_national: !!body.national
+        });
+        if (error) throw error;
+        return json(200, { feed: data || {} });
+      }
+
+      // Rep corrections. Written to a QUEUE, never applied. One manufacturer's
+      // rep must not be able to edit a database a competing manufacturer reads,
+      // so a flag is a message to Andy and nothing more.
+      case 'flag': {
+        const KINDS = ['missing_device','wrong_device','device_removed',
+                       'wrong_info','clinic_closed','other'];
+        const kind = KINDS.includes(body.kind) ? body.kind : null;
+        if (!kind || !body.clinic_id) return json(400, { error: 'clinic_id and a valid kind are required' });
+        const { error } = await supabase.from('clinic_flags').insert({
+          clinic_id: String(body.clinic_id),
+          device_id: body.device_id ? parseInt(body.device_id, 10) : null,
+          tenant_id: me.tenant_id || null,
+          user_email: me.email || null,
+          kind: kind,
+          note: (body.note || '').toString().slice(0, 1000) || null
+        });
+        if (error) throw error;
+        return json(200, { ok: true });
+      }
+
       case 'portfolio': {
         // p_tenant_id scopes the FOCUS flag. mi_focus_devices is keyed on
         // manufacturer, and two tenants can share an owner_name (Cynosure
