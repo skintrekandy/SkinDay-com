@@ -478,14 +478,17 @@
         </div>
       </div>
 
-      <!-- Prices are USD everywhere, deliberately: one price list, one set of
-           Stripe products, and two reps in the same organisation either side of
-           the border never see different numbers for the same thing. -->
+      <!-- Priced PER SEAT, not per territory. Territory maps differ by company
+           and change on reorg; seats do not. Users are already individually
+           territory-locked, so how a director divides the country is a setting
+           they control rather than something we sell.
+           USD everywhere: one price list, and two reps in the same organisation
+           either side of the border never see different numbers. -->
       <div class="sec" id="secPlan">
         <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron">&#9662;</span>
           <span class="eyebrow">Plan</span>
           <h2>Your subscription.</h2>
-          <p>Access is by invitation. Every plan starts with a 14-day free trial, and covers one territory.</p>
+          <p>Every plan starts with a 14-day free trial and covers one country. Prices are USD in all markets.</p>
         </div>
         <div class="box">
           <div id="planStatus" class="cmeta" style="margin-bottom:18px"></div>
@@ -493,7 +496,7 @@
             <div class="plan" data-plan="solo">
               <div class="pname">Solo</div>
               <div class="pprice">$99 <span>USD / month</span></div>
-              <div class="pwho">One rep, one territory</div>
+              <div class="pwho">One seat</div>
               <ul>
                 <li>Full account directory with equipment</li>
                 <li>Near me and distance sorting</li>
@@ -506,28 +509,30 @@
               <div class="ptag">Most teams</div>
               <div class="pname">Team</div>
               <div class="pprice">$299 <span>USD / month</span></div>
-              <div class="pwho">Up to 5 seats, one territory &middot; $59 per extra seat</div>
+              <div class="pwho">Up to 5 seats &middot; $59 per extra seat</div>
               <ul>
                 <li>Everything in Solo, for the whole team</li>
-                <li>Assign accounts and territories to reps</li>
+                <li>Assign each rep their own territory</li>
                 <li>Shared account status, so nobody doubles up</li>
                 <li>Team comments</li>
                 <li>Coverage and gaps across the team</li>
               </ul>
             </div>
-            <div class="plan" data-plan="national">
-              <div class="pname">National</div>
-              <div class="pprice">From $1,500 <span>USD / month</span></div>
-              <div class="pwho">Multiple territories, unlimited seats</div>
+            <div class="plan" data-plan="enterprise">
+              <div class="pname">Enterprise</div>
+              <div class="pprice">Let&rsquo;s talk</div>
+              <div class="pwho">Larger teams, more than one country</div>
               <ul>
-                <li>Every territory in the country</li>
+                <li>Unlimited seats</li>
+                <li>More than one country under one agreement</li>
                 <li>Onboarding review of your priority accounts</li>
                 <li>Change-feed exports</li>
-                <li>Category exclusivity available</li>
+                <li>Invoicing rather than card payment</li>
               </ul>
+              <a class="btn go" id="planContact" href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20enterprise%20enquiry" style="margin-top:14px;display:inline-block">Contact us</a>
             </div>
           </div>
-          <p class="cmeta" style="margin-top:16px">Annual billing is ten months for twelve. Prices are USD for all markets. To change plan, reply to your invitation email and we will arrange it.</p>
+          <p class="cmeta" style="margin-top:16px">Annual billing is ten months for twelve. Canada and the United States are separate subscriptions, since they are separate datasets.</p>
         </div>
       </div>
 
