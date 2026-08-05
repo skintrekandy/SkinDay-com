@@ -132,6 +132,16 @@ exports.handler = async (event) => {
   // ---- public actions ---------------------------------------------------------
   // Signing in and accepting an invitation necessarily happen before there is
   // an identity to check, so they sit ahead of the gate.
+  // The signup page needs this BEFORE anyone has an identity, so it sits with
+  // login and accept_invite ahead of the gate. It exposes only manufacturer and
+  // distributor names we already hold devices for, which is public information
+  // and is exactly the vocabulary owner_name has to match.
+  if (body.action === 'companies') {
+    const { data, error } = await supabase.rpc('mi_companies');
+    if (error) return json(500, { error: 'query failed', detail: error.message });
+    return json(200, { companies: data || [] });
+  }
+
   if (body.action === 'login') {
     const { data, error } = await supabase.rpc('mi_login', {
       p_email: String(body.email || '').trim(),
