@@ -29,6 +29,14 @@ const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
 // changes, and every "new" device in it is a backfill rather than a purchase.
 const MATCHER_VERSION = '2026-08-05-host-fallback';
 
+// Per-device, per-run cap on auto-approval. Above this, the device stops
+// publishing unseen for the rest of the run and the rest queues for review.
+// Chosen above any legitimate single-run gain observed so far (the biggest was
+// SculpSure at 59 new clinics in Canada) and far below a runaway alias. A very
+// popular device caught in a backfill can trip it and cost one approval press,
+// which is the right trade against publishing thousands of wrong claims.
+const AUTO_APPROVE_CEILING = 150;
+
 // Set at the top of every doCrawl invocation. readPage refuses to start a new
 // fetch past this point, so the function returns a real JSON result instead of
 // being killed mid-flight and handing the client an HTML error page.
@@ -1752,6 +1760,73 @@ async function doCrawl(supabase, body) {
           }
         } else out.lastError = 'candidate upsert: ' + error.message;
       }
+
+      // ---- AUTO-APPROVAL --------------------------------------------------
+      // ⭐⭐⭐ WHY. Every match used to wait for a human regardless of how strong
+      // the evidence was. One US crawl produced 4,012 rows to review, which is
+      // not a decision, it is a rubber stamp, and rubber stamps are how bad rows
+      // go live. Andy: "how am I going to review 3400+ devices?! unsustainable."
+      //
+      // THE BAR (my call, delegated by Andy 2026-08-05, easy to change here):
+      //   own_page  the site has a page named after the device. Strongest signal.
+      //   exact     the device name appears in the page text, exact match.
+      //   NOT blog_only, NOT generic_review.
+      //   AND the device name must not also be an ordinary English word.
+      //
+      // Restricting to own_page alone would have left most of a 3,722-row batch
+      // in the queue, which defeats the purpose. `name_is_also_generic` is the
+      // real guard: Elite, Icon, Halo, Forma, Soprano, Clarity, xeo, Dermapen
+      // are where bad aliases hide, and they still go to review every time.
+      //
+      // ⚠️ THE CEILING IS THE SAFETY NET. A broken alias always looks the same:
+      // one device suddenly appearing on hundreds of clinics at once. Past the
+      // threshold, that device stops auto-publishing FOR THE REST OF THE RUN and
+      // the remainder queues. Damage is capped at the ceiling rather than the
+      // size of the corpus. Raise or lower AUTO_APPROVE_CEILING as needed.
+      try {
+        const strong = rows.filter(r =>
+          (r.confidence === 'own_page' || r.confidence === 'exact'));
+        if (strong.length) {
+          const devIds = [...new Set(strong.map(r => r.device_id))];
+          const refs = await selectIn(supabase, 'device_reference',
+            'id, name_is_also_generic', 'id', devIds);
+          const generic = new Set(refs.filter(d => d.name_is_also_generic === true).map(d => d.id));
+          const eligibleDevs = devIds.filter(id => !generic.has(id));
+
+          const okDevs = [];
+          for (const did of eligibleDevs) {
+            // Counted across the WHOLE RUN, not this batch, so the ceiling holds
+            // across invocations. Candidates carry run_id, which is what makes
+            // this measurable without any new state.
+            const { count, error: cErr } = await supabase
+              .from('clinic_device_candidates')
+              .select('id', { count: 'exact', head: true })
+              .eq('run_id', runId).eq('device_id', did);
+            if (cErr) continue;                       // on doubt, leave it pending
+            if ((count || 0) <= AUTO_APPROVE_CEILING) okDevs.push(did);
+            else out.autoHeldCeiling = (out.autoHeldCeiling || 0) + 1;
+          }
+
+          if (okDevs.length) {
+            const okSet = new Set(okDevs);
+            // One chunked read over this host's clinics rather than a query per
+            // clinic: a chain host has up to 77 of them and that would be 77
+            // round trips per batch.
+            const cands = await selectIn(supabase, 'clinic_device_candidates',
+              'id, clinic_id, device_id, status', 'clinic_id', clinicIds);
+            const ids = cands
+              .filter(c => c.status === 'pending' && okSet.has(c.device_id))
+              .map(c => c.id);
+            if (ids.length) {
+              // Straight through decide(), never around it: first_seen is still
+              // preserved on existing pairs and the change feed still gets one
+              // entry per genuinely new pair.
+              const res = await decide(supabase, { ids }, true);
+              out.autoApproved = (out.autoApproved || 0) + (res.approved || 0);
+            }
+          }
+        }
+      } catch (e) { out.lastError = out.lastError || ('auto-approve: ' + e.message); }
     }
 
     // ---- sightings: one row per (clinic, device, run, url), plain insert -----
@@ -1863,6 +1938,10 @@ async function doCrawl(supabase, body) {
       // actually new versus a re-confirmation of what we already had.
       candidates_new: out.candidatesNew || 0,
       candidates_refreshed: out.candidatesRefreshed || 0,
+      // Auto-approval, surfaced per host so it is visible while it happens
+      // rather than only as a total afterwards.
+      auto_approved: out.autoApproved || 0,
+      auto_held_ceiling: out.autoHeldCeiling || 0,
       devices: out.matches.map(m => ({ model: m.model, category: m.category, confidence: m.confidence })),
       unknowns: out.unknowns.map(u => u.token),
       error: out.lastError || null
