@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SkinDay Market Intelligence</title>
-<meta name="description" content="Which clinics run which devices, by territory. For aesthetic device manufacturers and their field teams.">
+<meta name="description" content="See which clinics run which devices. Built for aesthetic device reps.">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -57,15 +57,14 @@
 <div class="wrap">
   <div class="brand">SkinDay <b>Market Intelligence</b></div>
 
-  <h1>Know which clinics run which devices.</h1>
-  <p class="lede">Built for field teams at aesthetic device manufacturers. Every clinic in your
-     territory, the equipment they publish, and the evidence behind each one.</p>
+  <h1>Know what they already own before you walk in.</h1>
+  <p class="lede">Every clinic in your market, the equipment on their website, and where it came from.
+     Built for device reps.</p>
 
   <div class="card">
     <div class="field">
       <label for="company">Your company</label>
-      <div class="hint">The manufacturer or distributor you represent. Your dashboard is built
-        around it: your devices, and everyone else's.</div>
+      <div class="hint">Sets what counts as yours, and what counts as competition.</div>
       <select id="company"><option value="">Loading companies…</option></select>
     </div>
 
@@ -85,7 +84,7 @@
 
     <div class="field">
       <label for="email">Work email</label>
-      <div class="hint">We send your sign-in link here.</div>
+      <div class="hint">Where your sign-in link goes.</div>
       <input id="email" type="email" autocomplete="email" placeholder="you@company.com">
     </div>
   </div>
@@ -101,7 +100,7 @@
       <div class="plan on" data-plan="solo">
         <div class="n">Solo</div>
         <div class="p" data-month="$99" data-year="$990">$99 <span class="per">USD / month</span></div>
-        <div class="s">One seat</div>
+        <div class="s">1 seat</div>
       </div>
       <div class="plan" data-plan="team">
         <div class="n">Team</div>
@@ -109,18 +108,17 @@
         <div class="s">Up to 5 seats</div>
       </div>
     </div>
-    <p class="fine">Your first 14 days are free. Cancel before then and you are not charged.
-       Prices are USD in every market. Canada and the United States are separate subscriptions,
-       because they are separate datasets.</p>
+    <p class="fine">14 days free, cancel any time before then. USD. Canada and the United States
+       are separate subscriptions.</p>
   </div>
 
   <button class="go" id="go">Start free trial</button>
   <div class="msg" id="msg"></div>
 
   <div class="ent">
-    <strong>Larger team, or more than one country?</strong>
-    Enterprise covers unlimited seats, multiple markets under one agreement, and invoicing
-    rather than card payment. <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20enterprise%20enquiry">Get in touch</a>.
+    <strong>More than five seats, or both markets?</strong>
+    Tell us the seat count you need and we will set up a plan on the same card checkout.
+    <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20larger%20plan">Ask us</a>.
   </div>
 </div>
 
@@ -181,10 +179,10 @@
 
     if (!company) { msg.className = 'msg bad'; msg.textContent = 'Choose your company first.'; return; }
     if (!email || email.indexOf('@') === -1) {
-      msg.className = 'msg bad'; msg.textContent = 'We need a valid email to send your sign-in link.'; return;
+      msg.className = 'msg bad'; msg.textContent = 'We need a valid email address.'; return;
     }
 
-    el('go').disabled = true; msg.textContent = 'Taking you to checkout…';
+    el('go').disabled = true; msg.textContent = 'One moment…';
     fetch('/api/mi-checkout', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
