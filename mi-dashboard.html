@@ -202,7 +202,45 @@
   .acct.card .body { padding:16px 18px 4px; }
   .acct.card .actions { padding:0 18px 16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .acct .stars { color:var(--gold); font-size:12px; letter-spacing:.5px; }
-  .pill.chain { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; background:var(--surface-2); border:1px solid var(--line); color:var(--muted); border-radius:100px; padding:3px 9px; white-space:nowrap; }
+  /* Multi-location was grey on grey and read as decoration. It is a commercial
+     signal (buying may be central, head office may be the real call), so it gets
+     its own colour and is never confused with a device chip. */
+  .pill.chain { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
+    background:#FBE9F1; border:1px solid #E9AFC9; color:#9C2F63; font-weight:600;
+    border-radius:100px; padding:3px 9px; white-space:nowrap; }
+
+  /* Industry pulse: what is being added most, ranked. Deliberately a list and
+     not a chart. A rep reads names, and a bar chart of ten devices says less
+     than ten rows with counts. */
+  .pulse { margin-bottom:26px; }
+  .pulse h3 { font-size:13px; font-family:var(--font-mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 12px; font-weight:500; }
+  .pulse ol { list-style:none; margin:0; padding:0; }
+  .pulse li { display:flex; align-items:center; gap:12px; padding:11px 14px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); margin-bottom:7px; }
+  .pulse .rk { font-family:var(--font-mono); font-size:11px; color:var(--faint); width:20px; flex:none; }
+  .pulse .nm { font-weight:600; }
+  .pulse .mf { color:var(--muted); font-size:13px; }
+  .pulse .ct { margin-left:auto; font-family:var(--font-mono); font-size:12px; color:var(--accent-strong); white-space:nowrap; }
+  .pulsehead { font-size:13px; font-family:var(--font-mono); letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:0 0 12px; font-weight:500; }
+  .pulse .bar { height:3px; background:var(--accent); border-radius:2px; margin-top:6px; }
+
+  .plans { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; }
+  .plan { border:1px solid var(--line); border-radius:var(--radius-sm); padding:20px 18px; background:var(--surface); position:relative; }
+  .plan.best { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .plan .ptag { position:absolute; top:-9px; left:16px; background:var(--accent); color:#fff; font-family:var(--font-mono); font-size:10px; letter-spacing:.05em; padding:3px 9px; border-radius:100px; }
+  .plan .pname { font-family:var(--font-mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .plan .pprice { font-size:26px; font-weight:600; margin:6px 0 2px; }
+  .plan .pprice span { font-size:12px; font-weight:400; color:var(--muted); }
+  .plan .pwho { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .plan ul { margin:0; padding-left:18px; }
+  .plan li { font-size:13.5px; margin-bottom:6px; }
+  .fev { display:flex; gap:14px; align-items:flex-start; padding:14px 16px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); margin-bottom:8px; }
+  .fev .when { font-family:var(--font-mono); font-size:11px; color:var(--faint); white-space:nowrap; padding-top:2px; }
+  .fev .what { flex:1; min-width:0; }
+  .fev .acts { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .flagbtn { font-size:12px; border:1px solid var(--line); background:none; color:var(--muted); border-radius:7px; padding:7px 10px; cursor:pointer; }
+  .flagbtn:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .flagbtn.done { border-color:#E9AFC9; color:#9C2F63; background:#FBE9F1; }
+  @media (max-width:640px){ .fev { flex-direction:column; gap:6px; } }
   .top-in { position:relative; }
   .menu { position:absolute; right:0; top:calc(100% + 8px); z-index:40; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow); min-width:210px; padding:8px; }
   .menu .mono { padding:7px 10px 9px; border-bottom:1px solid var(--line-2); margin-bottom:6px; font-size:11px; word-break:break-all; }
@@ -342,6 +380,7 @@
     <div class="tabs">
       <button data-tab="portfolio" class="on">Overview</button>
       <button data-tab="accounts">Accounts</button>
+      <button data-tab="feed">New</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
     </div>
   </header>
@@ -363,6 +402,27 @@
       <div id="portfolioList"><div class="empty"><span class="spin"></span></div></div>
       <div class="sec-label">Competitive field by category</div>
       <div id="catlist"><div class="empty"><span class="spin"></span></div></div>
+    </section>
+
+    <section class="panel" id="panel-feed">
+      <div class="toolbar">
+        <select id="feedDays">
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+          <option value="365">Last 12 months</option>
+        </select>
+        <select id="feedScope">
+          <option value="">My territory</option>
+          <option value="1">Whole country</option>
+        </select>
+        <span class="count" id="feedCount"></span>
+      </div>
+      <!-- Sits above everything. When the window spans a matcher change, part of
+           the movement is improved DETECTION rather than new equipment, and a rep
+           reading it as market movement would be wrong. Labelled, not hidden. -->
+      <div id="feedCaveat" class="cmeta" style="display:none;margin:-6px 0 16px"></div>
+      <div class="pulse" id="feedPulse"></div>
+      <div id="feedList"><div class="empty"><span class="spin"></span></div></div>
     </section>
 
     <section class="panel" id="panel-accounts">
@@ -415,6 +475,59 @@
           <span class="eyebrow">Settings</span>
           <h2 style="font-size:30px">Your organisation.</h2>
           <p id="setLede"></p>
+        </div>
+      </div>
+
+      <!-- Prices are USD everywhere, deliberately: one price list, one set of
+           Stripe products, and two reps in the same organisation either side of
+           the border never see different numbers for the same thing. -->
+      <div class="sec" id="secPlan">
+        <div class="sec-head" role="button" tabindex="0" aria-expanded="false"><span class="chevron">&#9662;</span>
+          <span class="eyebrow">Plan</span>
+          <h2>Your subscription.</h2>
+          <p>Access is by invitation. Every plan starts with a 14-day free trial, and covers one territory.</p>
+        </div>
+        <div class="box">
+          <div id="planStatus" class="cmeta" style="margin-bottom:18px"></div>
+          <div class="plans">
+            <div class="plan" data-plan="solo">
+              <div class="pname">Solo</div>
+              <div class="pprice">$99 <span>USD / month</span></div>
+              <div class="pwho">One rep, one territory</div>
+              <ul>
+                <li>Full account directory with equipment</li>
+                <li>Near me and distance sorting</li>
+                <li>Newly identified installs</li>
+                <li>Saved accounts and private notes</li>
+                <li>Evidence on every device</li>
+              </ul>
+            </div>
+            <div class="plan best" data-plan="team">
+              <div class="ptag">Most teams</div>
+              <div class="pname">Team</div>
+              <div class="pprice">$299 <span>USD / month</span></div>
+              <div class="pwho">Up to 5 seats, one territory &middot; $59 per extra seat</div>
+              <ul>
+                <li>Everything in Solo, for the whole team</li>
+                <li>Assign accounts and territories to reps</li>
+                <li>Shared account status, so nobody doubles up</li>
+                <li>Team comments</li>
+                <li>Coverage and gaps across the team</li>
+              </ul>
+            </div>
+            <div class="plan" data-plan="national">
+              <div class="pname">National</div>
+              <div class="pprice">From $1,500 <span>USD / month</span></div>
+              <div class="pwho">Multiple territories, unlimited seats</div>
+              <ul>
+                <li>Every territory in the country</li>
+                <li>Onboarding review of your priority accounts</li>
+                <li>Change-feed exports</li>
+                <li>Category exclusivity available</li>
+              </ul>
+            </div>
+          </div>
+          <p class="cmeta" style="margin-top:16px">Annual billing is ten months for twelve. Prices are USD for all markets. To change plan, reply to your invitation email and we will arrange it.</p>
         </div>
       </div>
 
@@ -571,7 +684,7 @@
     var note = document.getElementById('invTerritoryNote');
     if (note) note.textContent = 'A rep with a territory only ever sees that ' + CTY.region + '.';
   }
-  var loaded={accounts:false,list:false};
+  var loaded={accounts:false,list:false,feed:false};
   var COVERAGE=null;
   var ME=null;
   var catCache=[], savedIds={};
@@ -858,6 +971,7 @@
       b.classList.add('on');
       var tab=b.getAttribute('data-tab'); el('panel-'+tab).classList.add('on');
       if(tab==='accounts'&&!loaded.accounts) loadAccounts();
+      if(tab==='feed'&&!loaded.feed) loadFeed();
       if(tab==='list') loadSaved();
     });
   });
@@ -905,7 +1019,7 @@
   el('selHood').addEventListener('change',function(){ geo.neighbourhood=this.value; onGeoChange(); });
   el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; this.style.display='none'; onGeoChange(); });
   function onGeoChange(){
-    loaded.accounts=false; loaded.list=false;
+    loaded.accounts=false; loaded.list=false; loaded.feed=false;
     refreshPortfolio(); loadFilterOptions();
     if(el('panel-accounts').classList.contains('on')) loadAccounts();
     if(el('panel-list').classList.contains('on')) loadSaved();
@@ -1299,6 +1413,97 @@
     if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
     api('accounts',body).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
   }
+  // ---- New: what changed, and where the wind is blowing --------------------
+  ['feedDays','feedScope'].forEach(function(id){ el(id).addEventListener('change',loadFeed); });
+  function loadFeed(){
+    loaded.feed=true;
+    el('feedList').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    el('feedPulse').innerHTML='';
+    api('feed',{days:el('feedDays').value,national:!!el('feedScope').value,limit:150})
+      .then(function(res){ renderFeed(res.feed||{}); }).catch(handleErr);
+  }
+  function renderFeed(f){
+    var top=f.top_devices||[], evs=f.events||[];
+    var where = f.national ? 'nationally' : 'in your territory';
+    el('feedCount').textContent = (f.total||0).toLocaleString()+' first identified '+where;
+
+    // More than one matcher version in the window means part of this is us
+    // getting better at reading websites, not clinics buying machines. Saying so
+    // costs a line; not saying so costs the rep's trust the first time they
+    // check one of these against what they already know.
+    var vers=f.matcher_versions||[];
+    if(vers.length>1){
+      el('feedCaveat').textContent='Part of this period reflects an improvement in how we read clinic websites, so some entries are newly identified rather than newly installed.';
+      el('feedCaveat').style.display='';
+    } else el('feedCaveat').style.display='none';
+
+    if(top.length){
+      var max=Math.max.apply(null,top.map(function(t){return t.clinics;}));
+      el('feedPulse').innerHTML='<h3>Most added '+where+'</h3><ol>'+top.map(function(t,i){
+        return '<li><span class="rk">'+(i+1)+'</span>'+
+          '<span><span class="nm">'+esc(t.model)+'</span> <span class="mf">'+esc(t.manufacturer||'')+'</span>'+
+          '<div class="bar" style="width:'+Math.round((t.clinics/max)*180)+'px"></div></span>'+
+          '<span class="ct">'+t.clinics+' clinic'+(t.clinics===1?'':'s')+'</span></li>';
+      }).join('')+'</ol>';
+    }
+
+    if(!evs.length){ el('feedList').innerHTML='<div class="empty">Nothing new identified in this period.</div>'; return; }
+    el('feedList').innerHTML='<h3 class="pulsehead">Recently identified</h3>'+evs.map(function(e){
+      return '<div class="fev">'+
+        '<div class="when">'+esc(String(e.observed_at||'').slice(0,10))+'</div>'+
+        '<div class="what">'+
+          '<div><strong>'+esc(e.name)+'</strong>'+(e.neighbourhood?' <span class="mf">'+esc(e.neighbourhood)+'</span>':'')+'</div>'+
+          // "First identified" never "installed": we know when WE saw it.
+          '<div class="cmeta">First identified with <strong>'+esc(e.model)+'</strong>'+
+            (e.manufacturer?' ('+esc(e.manufacturer)+')':'')+'</div>'+
+          '<div class="acts">'+
+            '<a class="btn go" href="'+esc(directionsUrl(e))+'" target="_blank" rel="noopener">Directions</a>'+
+            (e.phone?'<a class="btn" href="tel:'+esc(e.phone)+'">Call</a>':'')+
+            (e.source_url?'<a class="btn" href="'+esc(e.source_url)+'" target="_blank" rel="noopener">Evidence</a>':'')+
+            flagBtn(e.clinic_id, e.device_id)+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+    bindFlags(el('feedList'));
+  }
+
+  // ---- Rep corrections -----------------------------------------------------
+  // A flag is a MESSAGE, not an edit. One manufacturer's rep must never be able
+  // to write into a database a competing manufacturer also reads, so this goes
+  // to a queue Andy reviews. Keeping it to one tap plus one dropdown is the
+  // whole point: a correction that takes a paragraph never gets filed.
+  var FLAG_KINDS=[
+    ['missing_device','A device is missing here'],
+    ['wrong_device','A device listed is wrong'],
+    ['device_removed','They no longer have a device'],
+    ['wrong_info','Contact or clinic details are wrong'],
+    ['clinic_closed','This clinic has closed'],
+    ['other','Something else']
+  ];
+  function flagBtn(cid, did){
+    return '<button class="flagbtn" data-flag="'+esc(cid)+'" data-dev="'+esc(did==null?'':did)+'">Report an issue</button>';
+  }
+  function bindFlags(root){
+    Array.prototype.forEach.call(root.querySelectorAll('.flagbtn'),function(b){
+      if(b.dataset.wired) return; b.dataset.wired='1';
+      b.addEventListener('click',function(){
+        if(b.classList.contains('done')) return;
+        var opts=FLAG_KINDS.map(function(k,i){ return (i+1)+'. '+k[1]; }).join('\n');
+        var pick=prompt('What is wrong with this record?\n\n'+opts+'\n\nEnter a number 1-'+FLAG_KINDS.length+':');
+        if(!pick) return;
+        var idx=parseInt(pick,10)-1;
+        if(!(idx>=0 && idx<FLAG_KINDS.length)) return;
+        var note=prompt('Anything to add? (optional, e.g. which device)')||'';
+        b.disabled=true; b.textContent='Sending\u2026';
+        api('flag',{clinic_id:b.dataset.flag,device_id:b.dataset.dev||null,
+                    kind:FLAG_KINDS[idx][0],note:note})
+          .then(function(){ b.disabled=false; b.classList.add('done'); b.textContent='\u2713 Reported'; })
+          .catch(function(e){ b.disabled=false; b.textContent='Report an issue'; handleErr(e); });
+      });
+    });
+  }
+
   function renderAccounts(rows){
     var total = rows.length && rows[0].total_matches != null
       ? Number(rows[0].total_matches) : null;
@@ -1330,7 +1535,7 @@
 
     if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
     el('acctList').innerHTML='<div class="acctgrid">'+rows.map(function(a){ return acctCard(a); }).join('')+'</div>';
-    wireSaveButtons(el('acctList')); bindEvidence(el('acctList'));
+    wireSaveButtons(el('acctList')); bindEvidence(el('acctList')); bindFlags(el('acctList'));
   }
   function starsHtml(r){
     if(r==null) return '';
@@ -1379,6 +1584,7 @@
         '<a class="btn go" href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
         (a.phone?'<a class="btn" href="tel:'+esc(a.phone)+'">Call</a>':'')+
         '<button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'\u2713 Saved':'+ Save')+'</button>'+
+        flagBtn(a.clinic_id, null)+
       '</div>'+
     '</div>';
   }
