@@ -8,7 +8,7 @@
 // someone opened checkout and changed their mind.
 //
 // Env required on the .com site:
-//   STRIPE_SECRET_KEY
+//   MI_STRIPE_SECRET_KEY (optional, sandbox) or STRIPE_SECRET_KEY
 //   MI_PRICE_SOLO_MONTH / MI_PRICE_SOLO_YEAR
 //   MI_PRICE_TEAM_MONTH / MI_PRICE_TEAM_YEAR
 //   SITE_URL (e.g. https://skinday.com)
@@ -17,6 +17,14 @@
 // hardcoding them means going live is a code change instead of a config change.
 
 const Stripe = require('stripe');
+
+// ⚠️ KEY SELECTION. MI_STRIPE_SECRET_KEY wins when set, STRIPE_SECRET_KEY is the
+// fallback. That exists so Market Intelligence can run against the SANDBOX while
+// Visualize Pro keeps using the live key in the same account: a live key cannot
+// see sandbox prices, which is exactly how the first checkout failed
+// ("a similar object exists in test mode, but a live mode key was used").
+// Delete MI_STRIPE_SECRET_KEY to go live and this silently falls back.
+const STRIPE_KEY = process.env.MI_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
 
 const TRIAL_DAYS = 14;
 
@@ -42,8 +50,8 @@ exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: cors(), body: '' };
   if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
 
-  if (!process.env.STRIPE_SECRET_KEY) return json(500, { error: 'stripe is not configured' });
-  const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  if (!STRIPE_KEY) return json(500, { error: 'stripe is not configured' });
+  const stripe = Stripe(STRIPE_KEY);
 
   let body;
   try { body = JSON.parse(event.body || '{}'); }
