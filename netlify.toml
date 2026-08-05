@@ -229,6 +229,21 @@
   status = 200
   force  = true
 
+# ── MARKET INTELLIGENCE SIGNUP ────────────────────────────────────
+# Public signup page for Market Intelligence. Placed BEFORE the US
+# directory rules so nothing later can shadow it.
+[[redirects]]
+  from   = "/mi-signup"
+  to     = "/mi-signup.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/mi-signup.html"
+  to     = "/mi-signup"
+  status = 301
+  force  = true
+
 # ── SIMULATION LIBRARY ────────────────────────────────────────────
 # /visualize/cases -> the Simulation Library page (indexable marketing
 # page, separate from the gated Visualize tool).

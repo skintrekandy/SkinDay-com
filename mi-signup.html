@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkinDay Market Intelligence</title>
+<meta name="description" content="Which clinics run which devices, by territory. For aesthetic device manufacturers and their field teams.">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FAF7F2; --warm:#F4EDE4; --deep:#1C1714; --rose:#C8725A; --rose-s:#B35F48;
+    --rose-bg:#F5E8E3; --gold:#C9A96E; --muted:#8A7B72; --faint:#B5A89F; --line:#EAE2D8;
+    --font:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
+    --serif:'Cormorant Garamond',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--deep);font-family:var(--font);
+       font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:56px 22px 90px}
+  .brand{font-family:var(--serif);font-size:24px;letter-spacing:.01em}
+  .brand b{font-family:var(--font);font-size:15px;font-weight:600;letter-spacing:.02em;margin-left:8px}
+  h1{font-family:var(--serif);font-size:44px;line-height:1.12;margin:34px 0 12px;font-weight:600}
+  .lede{font-size:18px;color:var(--muted);max-width:52ch;margin:0 0 34px}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 24px;margin-bottom:16px}
+  label{display:block;font-size:13.5px;font-weight:500;margin:0 0 6px}
+  .hint{font-size:13px;color:var(--muted);margin:-2px 0 10px}
+  input,select{width:100%;font:inherit;font-size:15px;padding:12px 13px;border:1px solid var(--line);
+    border-radius:10px;background:var(--cream);color:var(--deep)}
+  input:focus,select:focus{outline:none;border-color:var(--rose)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{margin-bottom:18px}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:6px}
+  .plan{border:1px solid var(--line);border-radius:12px;padding:18px;cursor:pointer;background:#fff;position:relative}
+  .plan:hover{border-color:var(--gold)}
+  .plan.on{border-color:var(--rose);box-shadow:0 0 0 1px var(--rose)}
+  .plan .n{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .plan .p{font-size:26px;font-weight:600;margin:5px 0 1px}
+  .plan .p span{font-size:12px;font-weight:400;color:var(--muted)}
+  .plan .s{font-size:13px;color:var(--muted)}
+  .toggle{display:inline-flex;border:1px solid var(--line);border-radius:100px;padding:3px;background:#fff;margin-bottom:16px}
+  .toggle button{font:inherit;font-size:13px;border:0;background:none;padding:7px 15px;border-radius:100px;cursor:pointer;color:var(--muted)}
+  .toggle button.on{background:var(--deep);color:#fff}
+  .go{width:100%;font:inherit;font-size:16px;font-weight:600;padding:15px;border:0;border-radius:10px;
+      background:var(--rose);color:#fff;cursor:pointer}
+  .go:hover{background:var(--rose-s)}
+  .go:disabled{opacity:.55;cursor:default}
+  .msg{font-size:14px;margin-top:12px;min-height:20px}
+  .msg.bad{color:#B94040}
+  .fine{font-size:13px;color:var(--muted);margin-top:14px}
+  .ent{border:1px dashed var(--line);border-radius:12px;padding:18px;margin-top:16px;font-size:14px;color:var(--muted)}
+  .ent a{color:var(--rose-s)}
+  @media(max-width:640px){h1{font-size:34px}.row,.plans{grid-template-columns:1fr}.wrap{padding:34px 18px 70px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">SkinDay <b>Market Intelligence</b></div>
+
+  <h1>Know which clinics run which devices.</h1>
+  <p class="lede">Built for field teams at aesthetic device manufacturers. Every clinic in your
+     territory, the equipment they publish, and the evidence behind each one.</p>
+
+  <div class="card">
+    <div class="field">
+      <label for="company">Your company</label>
+      <div class="hint">The manufacturer or distributor you represent. Your dashboard is built
+        around it: your devices, and everyone else's.</div>
+      <select id="company"><option value="">Loading companies…</option></select>
+    </div>
+
+    <div class="row">
+      <div class="field">
+        <label for="country">Market</label>
+        <select id="country">
+          <option value="canada">Canada</option>
+          <option value="usa">United States</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="name">Your name</label>
+        <input id="name" type="text" autocomplete="name" placeholder="Jane Smith">
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="email">Work email</label>
+      <div class="hint">We send your sign-in link here.</div>
+      <input id="email" type="email" autocomplete="email" placeholder="you@company.com">
+    </div>
+  </div>
+
+  <div class="card">
+    <span class="eyebrow">Choose a plan</span>
+    <div style="height:12px"></div>
+    <div class="toggle" id="period">
+      <button data-p="month" class="on">Monthly</button>
+      <button data-p="year">Yearly, two months free</button>
+    </div>
+    <div class="plans" id="plans">
+      <div class="plan on" data-plan="solo">
+        <div class="n">Solo</div>
+        <div class="p" data-month="$99" data-year="$990">$99 <span class="per">USD / month</span></div>
+        <div class="s">One seat</div>
+      </div>
+      <div class="plan" data-plan="team">
+        <div class="n">Team</div>
+        <div class="p" data-month="$299" data-year="$2,990">$299 <span class="per">USD / month</span></div>
+        <div class="s">Up to 5 seats</div>
+      </div>
+    </div>
+    <p class="fine">Your first 14 days are free. Cancel before then and you are not charged.
+       Prices are USD in every market. Canada and the United States are separate subscriptions,
+       because they are separate datasets.</p>
+  </div>
+
+  <button class="go" id="go">Start free trial</button>
+  <div class="msg" id="msg"></div>
+
+  <div class="ent">
+    <strong>Larger team, or more than one country?</strong>
+    Enterprise covers unlimited seats, multiple markets under one agreement, and invoicing
+    rather than card payment. <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20enterprise%20enquiry">Get in touch</a>.
+  </div>
+</div>
+
+<script>
+  var el = function(id){ return document.getElementById(id); };
+  var plan = 'solo', period = 'month';
+
+  // The company list comes from device_reference, so it is exactly the set of
+  // names the matcher already uses. Letting someone type a company freehand
+  // would produce an owner_name that matches no device and a dashboard where
+  // nothing is theirs.
+  fetch('/api/mi-dashboard', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'companies' })
+  }).then(function(r){ return r.json(); }).then(function(d){
+    var list = (d && d.companies) || [];
+    var sel = el('company');
+    if (!list.length) { sel.innerHTML = '<option value="">Could not load companies</option>'; return; }
+    sel.innerHTML = '<option value="">Choose your company…</option>' +
+      list.map(function(c){
+        return '<option value="' + esc(c.name) + '" data-kind="' + esc(c.kind) + '">' +
+               esc(c.name) + (c.kind === 'distributor' ? ' (distributor)' : '') + '</option>';
+      }).join('');
+  }).catch(function(){
+    el('company').innerHTML = '<option value="">Could not load companies</option>';
+  });
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+
+  Array.prototype.forEach.call(document.querySelectorAll('#plans .plan'), function(p){
+    p.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('#plans .plan'), function(x){ x.classList.remove('on'); });
+      p.classList.add('on'); plan = p.dataset.plan;
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('#period button'), function(b){
+    b.addEventListener('click', function(){
+      Array.prototype.forEach.call(document.querySelectorAll('#period button'), function(x){ x.classList.remove('on'); });
+      b.classList.add('on'); period = b.dataset.p;
+      Array.prototype.forEach.call(document.querySelectorAll('#plans .p'), function(p){
+        var amount = period === 'year' ? p.dataset.year : p.dataset.month;
+        p.childNodes[0].nodeValue = amount + ' ';
+        p.querySelector('.per').textContent = 'USD / ' + (period === 'year' ? 'year' : 'month');
+      });
+    });
+  });
+
+  el('go').addEventListener('click', function(){
+    var sel = el('company');
+    var opt = sel.options[sel.selectedIndex];
+    var company = sel.value;
+    var kind = opt ? (opt.dataset.kind || 'manufacturer') : 'manufacturer';
+    var email = el('email').value.trim();
+    var msg = el('msg');
+    msg.className = 'msg';
+
+    if (!company) { msg.className = 'msg bad'; msg.textContent = 'Choose your company first.'; return; }
+    if (!email || email.indexOf('@') === -1) {
+      msg.className = 'msg bad'; msg.textContent = 'We need a valid email to send your sign-in link.'; return;
+    }
+
+    el('go').disabled = true; msg.textContent = 'Taking you to checkout…';
+    fetch('/api/mi-checkout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        plan: plan, period: period, email: email, name: el('name').value.trim(),
+        company: company, company_type: kind, country: el('country').value
+      })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      if (d && d.url) { window.location.href = d.url; return; }
+      throw new Error((d && d.error) || 'could not start checkout');
+    }).catch(function(e){
+      el('go').disabled = false;
+      msg.className = 'msg bad';
+      msg.textContent = e.message || 'Something went wrong. Please try again.';
+    });
+  });
+</script>
+</body>
+</html>
