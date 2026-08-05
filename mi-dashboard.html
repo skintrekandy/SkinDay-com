@@ -239,6 +239,26 @@
   .fev .acts { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
   .flagbtn { font-size:12px; border:1px solid var(--line); background:none; color:var(--muted); border-radius:7px; padding:7px 10px; cursor:pointer; }
   .flagbtn:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .flagsheet { position:fixed; inset:0; background:rgba(28,23,20,.42); z-index:200;
+    display:flex; align-items:flex-end; justify-content:center; padding:0; }
+  .flagsheet .fs-in { background:var(--surface); width:100%; max-width:460px;
+    border-radius:18px 18px 0 0; padding:22px 20px 20px; box-shadow:var(--shadow); }
+  .flagsheet .fs-h { font-weight:600; font-size:16px; margin-bottom:14px; }
+  .flagsheet .fs-opts { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+  .flagsheet .fs-opt { text-align:left; font:inherit; font-size:14.5px; padding:13px 14px;
+    border:1px solid var(--line); border-radius:10px; background:none; color:var(--ink); cursor:pointer; }
+  .flagsheet .fs-opt:hover { border-color:var(--accent); }
+  .flagsheet .fs-opt.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent-strong); font-weight:600; }
+  .flagsheet .fs-note { width:100%; font:inherit; font-size:14px; padding:11px 12px;
+    border:1px solid var(--line); border-radius:10px; background:var(--surface-2); color:var(--ink); resize:vertical; }
+  .flagsheet .fs-acts { display:flex; gap:8px; margin-top:14px; }
+  .flagsheet .fs-cancel, .flagsheet .fs-send { flex:1; font:inherit; font-size:15px; padding:13px;
+    border-radius:10px; cursor:pointer; border:1px solid var(--line); background:none; color:var(--muted); }
+  .flagsheet .fs-send { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .flagsheet .fs-send:disabled { opacity:.5; cursor:default; }
+  .flagsheet .fs-msg { font-size:13px; color:var(--red); min-height:16px; margin-top:8px; }
+  @media (min-width:641px){ .flagsheet { align-items:center; }
+    .flagsheet .fs-in { border-radius:16px; } }
   .flagbtn.done { border-color:#E9AFC9; color:#9C2F63; background:#FBE9F1; }
   @media (max-width:640px){ .fev { flex-direction:column; gap:6px; } }
   .top-in { position:relative; }
@@ -380,7 +400,7 @@
     <div class="tabs">
       <button data-tab="portfolio" class="on">Overview</button>
       <button data-tab="accounts">Accounts</button>
-      <button data-tab="feed">New</button>
+      <button data-tab="feed">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
     </div>
   </header>
@@ -412,7 +432,7 @@
           <option value="365">Last 12 months</option>
         </select>
         <select id="feedScope">
-          <option value="">My territory</option>
+          <option value="">Where I am looking</option>
           <option value="1">Whole country</option>
         </select>
         <span class="count" id="feedCount"></span>
@@ -1429,7 +1449,7 @@
   }
   function renderFeed(f){
     var top=f.top_devices||[], evs=f.events||[];
-    var where = f.national ? 'nationally' : 'in your territory';
+    var where = f.national ? 'across the country' : 'in this area';
     el('feedCount').textContent = (f.total||0).toLocaleString()+' first identified '+where;
 
     // More than one matcher version in the window means part of this is us
@@ -1494,19 +1514,69 @@
       if(b.dataset.wired) return; b.dataset.wired='1';
       b.addEventListener('click',function(){
         if(b.classList.contains('done')) return;
-        var opts=FLAG_KINDS.map(function(k,i){ return (i+1)+'. '+k[1]; }).join('\n');
-        var pick=prompt('What is wrong with this record?\n\n'+opts+'\n\nEnter a number 1-'+FLAG_KINDS.length+':');
-        if(!pick) return;
-        var idx=parseInt(pick,10)-1;
-        if(!(idx>=0 && idx<FLAG_KINDS.length)) return;
-        var note=prompt('Anything to add? (optional, e.g. which device)')||'';
-        b.disabled=true; b.textContent='Sending\u2026';
-        api('flag',{clinic_id:b.dataset.flag,device_id:b.dataset.dev||null,
-                    kind:FLAG_KINDS[idx][0],note:note})
-          .then(function(){ b.disabled=false; b.classList.add('done'); b.textContent='\u2713 Reported'; })
-          .catch(function(e){ b.disabled=false; b.textContent='Report an issue'; handleErr(e); });
+        openFlagSheet(b);
       });
     });
+  }
+
+  // An inline sheet, not window.prompt. A browser prompt shows "skinday.com
+  // says" above it, which reads like a phishing dialog, cannot be styled, and
+  // asks a field rep to type a number to choose from a list. The whole point of
+  // the correction loop is that it takes seconds, so it has to be tappable.
+  function openFlagSheet(btn){
+    closeFlagSheet();
+    var wrap=document.createElement('div');
+    wrap.className='flagsheet';
+    wrap.innerHTML =
+      '<div class="fs-in">'+
+        '<div class="fs-h">What is wrong with this record?</div>'+
+        '<div class="fs-opts">'+
+          FLAG_KINDS.map(function(k){
+            return '<button class="fs-opt" data-kind="'+k[0]+'">'+esc(k[1])+'</button>';
+          }).join('')+
+        '</div>'+
+        '<textarea class="fs-note" rows="2" placeholder="Anything to add? Optional."></textarea>'+
+        '<div class="fs-acts">'+
+          '<button class="fs-cancel">Cancel</button>'+
+          '<button class="fs-send" disabled>Send</button>'+
+        '</div>'+
+        '<div class="fs-msg"></div>'+
+      '</div>';
+    document.body.appendChild(wrap);
+
+    var chosen=null;
+    wrap.querySelectorAll('.fs-opt').forEach(function(o){
+      o.addEventListener('click',function(){
+        wrap.querySelectorAll('.fs-opt').forEach(function(x){ x.classList.remove('on'); });
+        o.classList.add('on'); chosen=o.dataset.kind;
+        wrap.querySelector('.fs-send').disabled=false;
+      });
+    });
+    wrap.querySelector('.fs-cancel').addEventListener('click',closeFlagSheet);
+    wrap.addEventListener('click',function(e){ if(e.target===wrap) closeFlagSheet(); });
+    document.addEventListener('keydown',escFlag);
+
+    wrap.querySelector('.fs-send').addEventListener('click',function(){
+      if(!chosen) return;
+      var send=wrap.querySelector('.fs-send');
+      send.disabled=true; send.textContent='Sending\u2026';
+      api('flag',{clinic_id:btn.dataset.flag,device_id:btn.dataset.dev||null,
+                  kind:chosen,note:wrap.querySelector('.fs-note').value})
+        .then(function(){
+          closeFlagSheet();
+          btn.classList.add('done'); btn.textContent='\u2713 Reported. Thank you';
+        })
+        .catch(function(e){
+          send.disabled=false; send.textContent='Send';
+          wrap.querySelector('.fs-msg').textContent='Could not send that. Please try again.';
+        });
+    });
+  }
+  function escFlag(e){ if(e.key==='Escape') closeFlagSheet(); }
+  function closeFlagSheet(){
+    var w=document.querySelector('.flagsheet');
+    if(w) w.parentNode.removeChild(w);
+    document.removeEventListener('keydown',escFlag);
   }
 
   function renderAccounts(rows){
