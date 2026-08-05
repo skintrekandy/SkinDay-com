@@ -1337,7 +1337,8 @@ async function saveNewPassword() {
   note('resetNote', 'Saving…');
   const { error } = await sb.auth.updateUser({ password: pw });
   if (error) {
-    note('resetNote', error.message, 'bad');
+    console.error('reset password failed:', error);
+    note('resetNote', passwordErrorText(error.message), 'bad');
     btn.disabled = false;
     return;
   }
@@ -1353,20 +1354,83 @@ $('newPw').addEventListener('keydown', e => { if (e.key === 'Enter') saveNewPass
 
 // Change your own password while signed in (Settings -> Your account). Unlike the
 // recovery flow, the user already has a session, so updateUser applies directly.
+// Turns a Supabase auth error into something a clinic manager can act on. The
+// raw text is kept as the fallback so a cause we have not seen before still
+// reaches the screen rather than being swallowed.
+//
+// WHY: a member reported "I tried changing the password but it won't work" with
+// no further detail. The handler was already surfacing error.message correctly,
+// but raw API text does not tell a non-technical user what to DO, so it gets
+// reported as "won't work" and the actual cause never travels.
+function passwordErrorText(msg) {
+  const m = String(msg || '').toLowerCase();
+  if (m.includes('session') || m.includes('jwt') || m.includes('token') ||
+      m.includes('not authenticated') || m.includes('unauthorized')) {
+    return sdT('Your sign-in has expired. Please sign out, sign back in, and try again.',
+               '\u60a8\u7684\u767b\u5165\u5df2\u904e\u671f\uff0c\u8acb\u767b\u51fa\u5f8c\u91cd\u65b0\u767b\u5165\u518d\u8a66\u4e00\u6b21\u3002');
+  }
+  if (m.includes('reauthenticat')) {
+    return sdT('For security, please sign out and sign back in first, then change your password.',
+               '\u70ba\u4e86\u5b89\u5168\uff0c\u8acb\u5148\u767b\u51fa\u4e26\u91cd\u65b0\u767b\u5165\uff0c\u518d\u8b8a\u66f4\u5bc6\u78bc\u3002');
+  }
+  if (m.includes('should be different') || m.includes('same_password') || m.includes('same password')) {
+    return sdT('That is already your current password. Please choose a different one.',
+               '\u9019\u5c31\u662f\u60a8\u76ee\u524d\u7684\u5bc6\u78bc\uff0c\u8acb\u9078\u64c7\u4e0d\u540c\u7684\u5bc6\u78bc\u3002');
+  }
+  if (m.includes('weak') || m.includes('leaked') || m.includes('pwned') || m.includes('compromis')) {
+    return sdT('That password has appeared in a known data breach. Please choose a different one.',
+               '\u8a72\u5bc6\u78bc\u66fe\u51fa\u73fe\u65bc\u5df2\u77e5\u7684\u8cc7\u6599\u5916\u6d29\uff0c\u8acb\u9078\u64c7\u5176\u4ed6\u5bc6\u78bc\u3002');
+  }
+  if (m.includes('at least') || m.includes('too short') || m.includes('length')) {
+    return sdT('That password is too short. Please use at least eight characters.',
+               '\u5bc6\u78bc\u592a\u77ed\uff0c\u8acb\u81f3\u5c11\u4f7f\u7528\u516b\u500b\u5b57\u5143\u3002');
+  }
+  if (m.includes('rate limit') || m.includes('too many')) {
+    return sdT('Too many attempts just now. Please wait a minute and try again.',
+               '\u5617\u8a66\u6b21\u6578\u904e\u591a\uff0c\u8acb\u7a0d\u5019\u4e00\u5206\u9418\u518d\u8a66\u3002');
+  }
+  return msg;
+}
+
 async function changeOwnPassword() {
   const pw = $('pwNew').value;
   const cf = $('pwConfirm').value;
-  if (!pw || pw.length < 8) return note('pwNote', 'At least eight characters.', 'bad');
-  if (pw !== cf) return note('pwNote', 'The two passwords do not match.', 'bad');
+  if (!pw || pw.length < 8) {
+    return note('pwNote', sdT('At least eight characters.', '\u81f3\u5c11\u516b\u500b\u5b57\u5143\u3002'), 'bad');
+  }
+  if (pw !== cf) {
+    return note('pwNote', sdT('The two passwords do not match.', '\u5169\u6b21\u8f38\u5165\u7684\u5bc6\u78bc\u4e0d\u4e00\u81f4\u3002'), 'bad');
+  }
   const btn = $('pwSave');
   btn.disabled = true;
-  note('pwNote', 'Saving…');
+  note('pwNote', sdT('Saving\u2026', '\u5132\u5b58\u4e2d\u2026'));
+
+  // The portal renders from state loaded at sign-in, so someone can be looking
+  // at Settings with a session that expired a while ago. Checking first turns a
+  // cryptic API error into a clear instruction.
+  let session = null;
+  try {
+    const { data } = await sb.auth.getSession();
+    session = data && data.session;
+  } catch (e) { session = null; }
+  if (!session) {
+    btn.disabled = false;
+    return note('pwNote',
+      sdT('Your sign-in has expired. Please sign out, sign back in, and try again.',
+          '\u60a8\u7684\u767b\u5165\u5df2\u904e\u671f\uff0c\u8acb\u767b\u51fa\u5f8c\u91cd\u65b0\u767b\u5165\u518d\u8a66\u4e00\u6b21\u3002'), 'bad');
+  }
+
   const { error } = await sb.auth.updateUser({ password: pw });
   btn.disabled = false;
-  if (error) return note('pwNote', error.message, 'bad');
+  if (error) {
+    // Logged in full so the real cause is recoverable from a browser console
+    // even when the person only reports "it won't work".
+    console.error('change password failed:', error);
+    return note('pwNote', passwordErrorText(error.message), 'bad');
+  }
   $('pwNew').value = '';
   $('pwConfirm').value = '';
-  note('pwNote', 'Password changed.', 'ok');
+  note('pwNote', sdT('Password changed.', '\u5bc6\u78bc\u5df2\u8b8a\u66f4\u3002'), 'ok');
 }
 $('pwSave').addEventListener('click', changeOwnPassword);
 $('pwConfirm').addEventListener('keydown', e => { if (e.key === 'Enter') changeOwnPassword(); });
