@@ -2824,6 +2824,11 @@ async function dcStart(retry) {
           .map(d => esc(d.model) + ' ' + dcConfLabel(d.confidence)).join(', ');
         dcLog('<strong>' + host + '</strong> · ' + list +
               ' · across ' + p.clinics + ' clinic' + ((p.clinics === 1) ? '' : 's') +
+              // Auto-approval must be visible as it happens. A rule that
+              // publishes without a human should never be silent, or nobody can
+              // tell the difference between it working and it running wild.
+              (p.auto_approved ? ' · <span style="color:var(--green);">' + p.auto_approved + ' auto-published</span>' : '') +
+              (p.auto_held_ceiling ? ' · <span style="color:var(--red);">' + p.auto_held_ceiling + ' device(s) held: run ceiling reached</span>' : '') +
               (p.thin_only ? ' · <span style="color:var(--gold);">javascript only, read from its sitemap</span>' : '') +
               (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls' : '') +
               ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
