@@ -756,6 +756,9 @@
     <button class="nav-tab" data-tab="manual" onclick="switchTab('manual')">
       &#9998; Add devices
     </button>
+    <button class="nav-tab" data-tab="reports" onclick="switchTab('reports')">
+      &#9873; Reports <span class="tab-count zero" id="rp-count">0</span>
+    </button>
   </nav>
 
   <main class="admin-main">
@@ -1123,6 +1126,25 @@
     </div>
 
 
+    <div id="reports-panel" style="display:none">
+      <div class="add-clinic-form">
+        <div class="form-title">Reported data issues</div>
+        <div class="form-subtitle">What manufacturer reps flag from the dashboard. A report is a <strong>message, never an edit</strong> &mdash; one manufacturer&rsquo;s rep must not be able to change data a competitor reads. Resolving closes the ticket; changing the underlying row is a separate, deliberate act.</div>
+
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 .8rem;">
+          <select class="form-input" id="rp-status" style="max-width:200px;" onchange="rpLoad()">
+            <option value="open" selected>Open</option>
+            <option value="resolved">Resolved</option>
+            <option value="all">All</option>
+          </select>
+          <button class="btn-ghost" onclick="rpLoad()">Refresh</button>
+          <span class="claim-submitted" id="rp-summary"></span>
+        </div>
+
+        <div id="rp-list"><div class="empty-state">Loading&hellip;</div></div>
+      </div>
+    </div>
+
     <div id="manual-panel" style="display:none">
       <div class="add-clinic-form">
         <div class="form-title">Add devices by hand</div>
@@ -1232,11 +1254,13 @@ async function enterApp(){
   document.getElementById('app').style.display = 'block';
   await loadCosts();
   refreshFlaggedCount(); // show pending-review badge immediately
+  rpRefreshCount();     // open rep reports badge
   refreshSignupCount(); // show pending clinic sign-ups badge immediately
 }
 
 function refresh(){
-  if (currentTab === 'flagged') { loadFlagged(); }
+  if (currentTab === 'reports') { rpLoad(); }
+  else if (currentTab === 'flagged') { loadFlagged(); }
   else if (currentTab === 'signups') { loadSignups(); }
   else if (currentTab === 'taiwan') { twLoadStats(); twRefreshCurrentView(); }
   else if (currentTab === 'data') { dtCheck(); }
@@ -1263,8 +1287,11 @@ function switchTab(tab){
   if (devP) devP.style.display = (tab === 'devices') ? 'block' : 'none';
   var manP = document.getElementById('manual-panel');
   if (manP) manP.style.display = (tab === 'manual') ? 'block' : 'none';
+  var rpP = document.getElementById('reports-panel');
+  if (rpP) rpP.style.display = (tab === 'reports') ? 'block' : 'none';
   if (tab === 'devices') dcEnter();
   if (tab === 'manual') mdEnter();
+  if (tab === 'reports') rpLoad();
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
@@ -2629,6 +2656,93 @@ async function dcCall(body) {
   });
   const data = await res.json();
   return { ok: res.ok, data };
+}
+
+// ---- REPORTS (rep correction queue) -----------------------------------------
+// Reuses dcCall: same function, same admin secret, so there is one auth path.
+const RP_KIND_LABEL = {
+  missing_device: 'Missing device',
+  wrong_device:   'Wrong device',
+  device_removed: 'No longer has it',
+  wrong_info:     'Wrong info',
+  clinic_closed:  'Clinic closed',
+  other:          'Other'
+};
+
+function rpEsc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function rpWhen(ts){
+  if (!ts) return '';
+  var d = new Date(ts);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+}
+
+async function rpRefreshCount(){
+  const { ok, data } = await dcCall({ action: 'list-flags', status: 'open', limit: 1 });
+  const badge = document.getElementById('rp-count');
+  if (!badge) return;
+  const n = (ok && data && data.open_total) || 0;
+  badge.textContent = n;
+  badge.classList.toggle('zero', n === 0);
+}
+
+async function rpLoad(){
+  const box = document.getElementById('rp-list');
+  if (!box) return;
+  box.innerHTML = '<div class="empty-state">Loading&hellip;</div>';
+  const status = (document.getElementById('rp-status') || {}).value || 'open';
+  const { ok, data } = await dcCall({ action: 'list-flags', status: status, limit: 200 });
+  if (!ok) { box.innerHTML = '<div class="empty-state">Could not load: ' + rpEsc((data && data.error) || 'error') + '</div>'; return; }
+
+  const badge = document.getElementById('rp-count');
+  if (badge) { badge.textContent = data.open_total || 0; badge.classList.toggle('zero', !data.open_total); }
+
+  const kinds = Object.keys(data.by_kind || {})
+    .sort(function(a,b){ return data.by_kind[b] - data.by_kind[a]; })
+    .map(function(k){ return (RP_KIND_LABEL[k] || k) + ' ' + data.by_kind[k]; });
+  const sum = document.getElementById('rp-summary');
+  if (sum) sum.textContent = (data.open_total || 0) + ' open' + (kinds.length ? ' \u00b7 ' + kinds.join(' \u00b7 ') : '');
+
+  const rows = data.flags || [];
+  if (!rows.length) { box.innerHTML = '<div class="empty-state">Nothing here.</div>'; return; }
+
+  box.innerHTML = rows.map(function(f){
+    // The clinic profile and the source website are one click away, because the
+    // first thing anyone does with a report is go and look at the page.
+    const where = [f.clinic_region, f.clinic_country].filter(Boolean).join(', ');
+    const links = [];
+    if (f.clinic_website) links.push('<a href="' + rpEsc(f.clinic_website) + '" target="_blank" rel="noopener">clinic site</a>');
+    links.push('<span class="claim-id">' + rpEsc(f.clinic_id) + '</span>');
+    const resolved = f.status === 'resolved';
+    return '<div class="claim-card" style="border-left:3px solid ' + (resolved ? '#4b5563' : '#b45309') + ';">' +
+      '<div><strong>' + rpEsc(RP_KIND_LABEL[f.kind] || f.kind) + '</strong>' +
+        (f.device ? ' &mdash; ' + rpEsc(f.device) : '') +
+        (resolved ? ' <span class="claim-submitted">(resolved ' + rpEsc(rpWhen(f.reviewed_at)) + ')</span>' : '') +
+      '</div>' +
+      '<div>' + rpEsc(f.clinic_name || '(unknown clinic)') + (where ? ' <span class="claim-neighbourhood">' + rpEsc(where) + '</span>' : '') + '</div>' +
+      (f.note ? '<div style="margin:.35rem 0;">' + rpEsc(f.note) + '</div>' : '') +
+      '<div class="claim-submitted" style="font-size:.85em;">' +
+        rpEsc(f.reporter || 'unknown reporter') +
+        (f.tenant_id ? ' \u00b7 ' + rpEsc(f.tenant_id) : '') +
+        ' \u00b7 ' + rpEsc(rpWhen(f.created_at)) +
+        ' \u00b7 ' + links.join(' \u00b7 ') +
+      '</div>' +
+      '<div style="margin-top:.5rem;">' +
+        (resolved
+          ? '<button class="btn-ghost" onclick="rpResolve(\'' + rpEsc(f.id) + '\', true)">Reopen</button>'
+          : '<button class="btn-approve" onclick="rpResolve(\'' + rpEsc(f.id) + '\', false)">Mark resolved</button>') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function rpResolve(id, reopen){
+  const { ok, data } = await dcCall({ action: 'resolve-flag', id: id, reopen: !!reopen });
+  if (!ok) { alert('Could not update: ' + ((data && data.error) || 'error')); return; }
+  rpLoad();
 }
 
 function dcLog(html, colour) {
