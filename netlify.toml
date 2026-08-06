@@ -259,6 +259,20 @@
   status = 301
   force  = true
 
+# Where the invitation email lands. The token is a query parameter, which
+# Netlify preserves across the rewrite.
+[[redirects]]
+  from   = "/mi-invite"
+  to     = "/mi-invite.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/mi-invite.html"
+  to     = "/mi-invite"
+  status = 301
+  force  = true
+
 # ── SIMULATION LIBRARY ────────────────────────────────────────────
 # /visualize/cases -> the Simulation Library page (indexable marketing
 # page, separate from the gated Visualize tool).

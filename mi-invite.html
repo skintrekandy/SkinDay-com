@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Set your password &middot; SkinDay Market Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FAF7F2; --deep:#1C1714; --rose:#C8725A; --rose-s:#B35F48;
+    --muted:#8A7B72; --faint:#B5A89F; --line:#EAE2D8; --red:#B94040; --green:#3D7A55;
+    --font:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
+    --serif:'Cormorant Garamond',Georgia,serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--cream);color:var(--deep);font-family:var(--font);
+       font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:460px;margin:0 auto;padding:72px 22px 90px}
+  .brand{font-family:var(--serif);font-size:24px}
+  .brand b{font-family:var(--font);font-size:15px;font-weight:600;margin-left:8px}
+  h1{font-family:var(--serif);font-size:36px;line-height:1.15;margin:32px 0 8px;font-weight:600}
+  p{margin:0 0 16px}
+  .who{color:var(--muted);margin-bottom:26px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px}
+  label{display:block;font-size:13.5px;font-weight:500;margin:0 0 6px}
+  input{width:100%;font:inherit;font-size:15px;padding:12px 13px;border:1px solid var(--line);
+    border-radius:10px;background:var(--cream);color:var(--deep);margin-bottom:16px}
+  input:focus{outline:none;border-color:var(--rose)}
+  button{width:100%;font:inherit;font-size:16px;font-weight:600;padding:14px;border:0;border-radius:10px;
+    background:var(--rose);color:#fff;cursor:pointer}
+  button:hover{background:var(--rose-s)}
+  button:disabled{opacity:.55;cursor:default}
+  .msg{font-size:14px;margin-top:12px;min-height:20px}
+  .msg.bad{color:var(--red)}
+  .msg.ok{color:var(--green)}
+  .fine{font-size:13px;color:var(--muted);margin-top:18px}
+  a{color:var(--rose-s)}
+  @media(max-width:640px){h1{font-size:30px}.wrap{padding:44px 18px 70px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">SkinDay <b>Market Intelligence</b></div>
+
+  <div id="loading" class="who" style="margin-top:34px">Checking your invitation&hellip;</div>
+
+  <div id="form" style="display:none">
+    <h1>Set your password.</h1>
+    <p class="who" id="who"></p>
+    <div class="card">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" autocomplete="new-password" placeholder="At least eight characters">
+      <label for="pw2">Confirm password</label>
+      <input id="pw2" type="password" autocomplete="new-password">
+      <button id="go">Set password and sign in</button>
+      <div class="msg" id="msg"></div>
+    </div>
+  </div>
+
+  <div id="dead" style="display:none">
+    <h1>This link has expired.</h1>
+    <p class="who">Invitations are valid for 14 days, and each one can only be used once.
+       If you have already set a password, sign in as usual.</p>
+    <div class="card">
+      <a href="/mi-dashboard.html">Go to sign in</a>
+      <p class="fine" style="margin-bottom:0">Need a new invitation? Email
+        <a href="mailto:hello@skinday.ca?subject=Market%20Intelligence%20invitation">hello@skinday.ca</a>.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  var el = function(id){ return document.getElementById(id); };
+  var token = new URLSearchParams(location.search).get('token') || '';
+
+  function api(action, extra){
+    return fetch('/api/mi-dashboard', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign({ action: action }, extra || {}))
+    }).then(function(r){ return r.json().then(function(d){
+      if (!r.ok) throw new Error((d && d.error) || ('HTTP ' + r.status));
+      return d;
+    }); });
+  }
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+    return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+
+  function dead(){ el('loading').style.display = 'none'; el('dead').style.display = ''; }
+
+  if (!token) { dead(); }
+  else {
+    // Checked before showing the form. An expired or already-used invitation
+    // should say so up front rather than after someone has typed a password.
+    api('invite_status', { token: token }).then(function(d){
+      var inv = d && d.invite;
+      if (!inv) { dead(); return; }
+      el('loading').style.display = 'none';
+      el('form').style.display = '';
+      el('who').innerHTML = esc(inv.email) + ' &middot; ' + esc(inv.org || '');
+    }).catch(dead);
+  }
+
+  el('go').addEventListener('click', function(){
+    var pw = el('pw').value, pw2 = el('pw2').value, msg = el('msg');
+    msg.className = 'msg';
+    if (!pw || pw.length < 8) {
+      msg.className = 'msg bad'; msg.textContent = 'At least eight characters.'; return;
+    }
+    if (pw !== pw2) {
+      msg.className = 'msg bad'; msg.textContent = 'The two passwords do not match.'; return;
+    }
+    el('go').disabled = true; msg.textContent = 'Setting your password\u2026';
+    api('accept_invite', { token: token, password: pw }).then(function(){
+      msg.className = 'msg ok';
+      msg.textContent = 'Done. Taking you to the dashboard\u2026';
+      setTimeout(function(){ location.href = '/mi-dashboard.html'; }, 900);
+    }).catch(function(e){
+      el('go').disabled = false;
+      msg.className = 'msg bad';
+      // The server's own words, not a generic message.
+      msg.textContent = e.message || 'That did not work. Please try again.';
+    });
+  });
+</script>
+</body>
+</html>
