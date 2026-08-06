@@ -526,7 +526,7 @@
               </ul>
             </div>
             <div class="plan best" data-plan="team">
-              <div class="ptag">Most teams</div>
+              <div class="ptag" id="teamTag">Most teams</div>
               <div class="pname">Team</div>
               <div class="pprice">$299 <span>USD / month</span></div>
               <div class="pwho">Up to 5 seats &middot; $59 per extra seat</div>
@@ -537,6 +537,7 @@
                 <li>Team comments</li>
                 <li>Coverage and gaps across the team</li>
               </ul>
+              <button class="btn go" id="planUpgrade" style="display:none;margin-top:14px">Upgrade to Team</button>
             </div>
             <div class="plan" data-plan="custom">
               <div class="pname">Larger team</div>
@@ -732,7 +733,7 @@
     return api('overview',{}).then(function(res){
       applyIdentity(res.tenant||{});
       el('gate').style.display='none'; el('app').style.display='block';
-      fillSelect(el('selProvince'),res.geo||[],CTY.all,regionLabel);
+      fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
       COVERAGE=res.coverage||null;
       // Sign-in must not be a way round the territory gate, so the first paint
       // goes through the same path every later refresh does.
@@ -1028,6 +1029,15 @@
     var s = String(v == null ? '' : v).trim();
     if (s.length <= 3 && s === s.toUpperCase()) return s;
     return titleCase(s.replace(/[-_]+/g, ' '));
+  }
+  // TERRITORY SELECT ONLY. Canadian provinces are stored as two-letter codes
+  // (on, qc, bc), which titleCase renders as "On" and "Qc". US states are slugs
+  // (california, new-york) and still want title case. Deliberately NOT used for
+  // tier two: a short city name there would be shouted at.
+  function provinceLabel(v){
+    var s = String(v == null ? '' : v).trim();
+    if (s.length <= 3 && /^[a-z]+$/i.test(s)) return s.toUpperCase();
+    return regionLabel(s);
   }
   function fillSelect(sel,rows,allLabel,fmt){
     var cur=sel.value; var f = fmt || titleCase;
@@ -1597,6 +1607,13 @@
       el('planStatus').textContent=bits.join(' \u00b7 ');
       el('planManage').style.display=b.can_manage?'':'none';
 
+      // On Solo, the Team card should offer the upgrade rather than a "Most
+      // teams" badge. A rep who finds this useful and wants colleagues on it
+      // should not have to email anyone to spend more money.
+      var solo = b.plan==='solo';
+      el('planUpgrade').style.display=(solo&&b.can_manage)?'':'none';
+      if(el('teamTag')) el('teamTag').style.display=solo?'none':'';
+
       // ⭐ THE INVITE FORM IS HIDDEN, not just refused. A Solo customer has one
       // seat, which is theirs, so there is never a valid invite to send. Letting
       // them fill in a name and email only to be turned down is a worse
@@ -1618,6 +1635,9 @@
       }
     }).catch(function(){});
   }
+  // Same destination as Manage: Stripe handles proration on an upgrade, and the
+  // webhook raises seat_limit when the new price comes back.
+  el('planUpgrade').addEventListener('click',function(){ el('planPortal').click(); });
   el('planPortal').addEventListener('click',function(){
     var b=el('planPortal'); b.disabled=true; b.textContent='Opening\u2026';
     api('billing_portal',{}).then(function(res){
