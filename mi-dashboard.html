@@ -538,19 +538,22 @@
                 <li>Coverage and gaps across the team</li>
               </ul>
             </div>
-            <div class="plan" data-plan="enterprise">
-              <div class="pname">Enterprise</div>
-              <div class="pprice">Let&rsquo;s talk</div>
-              <div class="pwho">Larger teams, more than one country</div>
+            <div class="plan" data-plan="custom">
+              <div class="pname">Larger team</div>
+              <div class="pprice">Ask us</div>
+              <div class="pwho">More than 5 seats, or both markets</div>
               <ul>
-                <li>Unlimited seats</li>
-                <li>More than one country under one agreement</li>
+                <li>Tell us the seat count you need</li>
+                <li>Set up on the same card checkout</li>
+                <li>Canada and the United States together</li>
                 <li>Onboarding review of your priority accounts</li>
-                <li>Change-feed exports</li>
-                <li>Invoicing rather than card payment</li>
               </ul>
-              <a class="btn go" id="planContact" href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20enterprise%20enquiry" style="margin-top:14px;display:inline-block">Contact us</a>
+              <a class="btn go" id="planContact" href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20custom%20plan" style="margin-top:14px;display:inline-block">Contact us</a>
             </div>
+          </div>
+          <div id="planManage" style="display:none;margin-top:18px">
+            <button class="btn" id="planPortal">Manage or cancel subscription</button>
+            <div class="cmeta" id="planPortalNote" style="margin-top:8px">Opens Stripe, where you can change your card, see invoices, or cancel.</div>
           </div>
           <p class="cmeta" style="margin-top:16px">Annual billing is ten months for twelve. Canada and the United States are separate subscriptions, since they are separate datasets.</p>
         </div>
@@ -766,6 +769,7 @@
     el('myEmail').textContent=t.email||'';
     el('secOrg').style.display=t.role==='admin'?'':'none';
     el('secTeam').style.display=t.role==='admin'?'':'none';
+    if(t.role==='admin') loadBilling();
     if(t.role==='admin'){
       el('setLede').textContent='Signed in as '+(t.user_name||'admin')+'. Changes here apply to everyone at '+(t.display_name||'your organisation')+'.';
       el('setOwnerType').textContent=(t.owner_type==='distributor'?'Distributor portfolio \u00b7 ':'Manufacturer portfolio \u00b7 ')+(t.owner_name||'');
@@ -1578,6 +1582,52 @@
     if(w) w.parentNode.removeChild(w);
     document.removeEventListener('keydown',escFlag);
   }
+
+  // Plan status, seat use, and the door to Stripe's billing portal.
+  function loadBilling(){
+    api('billing',{}).then(function(res){
+      var b=res.billing;
+      if(!b){ el('planStatus').textContent=''; return; }
+      var bits=[];
+      if(b.plan) bits.push(b.plan.charAt(0).toUpperCase()+b.plan.slice(1)+' plan');
+      if(b.seat_limit) bits.push(b.seats_used+' of '+b.seat_limit+' seat'+(b.seat_limit===1?'':'s')+' in use');
+      if(b.sub_status==='trialing'&&b.trial_ends_at){
+        bits.push('trial ends '+new Date(b.trial_ends_at).toLocaleDateString(undefined,{day:'numeric',month:'long'}));
+      } else if(b.sub_status&&b.sub_status!=='active'){ bits.push(b.sub_status); }
+      el('planStatus').textContent=bits.join(' \u00b7 ');
+      el('planManage').style.display=b.can_manage?'':'none';
+
+      // ⭐ THE INVITE FORM IS HIDDEN, not just refused. A Solo customer has one
+      // seat, which is theirs, so there is never a valid invite to send. Letting
+      // them fill in a name and email only to be turned down is a worse
+      // experience than not offering it, and the seat check on the server still
+      // stands as the real guard.
+      var full = b.seat_limit && b.seats_used >= b.seat_limit;
+      var box = el('inviteBox') || (el('invName') && el('invName').closest('.box'));
+      if(full && box){
+        var msg = document.getElementById('seatFullNote');
+        if(!msg){
+          msg=document.createElement('div');
+          msg.id='seatFullNote'; msg.className='note';
+          box.parentNode.insertBefore(msg, box);
+        }
+        msg.textContent = b.seat_limit===1
+          ? 'Your plan is a single seat, so there is nobody to invite. Email hello@skinday.ca to add seats.'
+          : 'All '+b.seat_limit+' seats are in use. Remove someone first, or email hello@skinday.ca to add seats.';
+        box.style.display='none';
+      }
+    }).catch(function(){});
+  }
+  el('planPortal').addEventListener('click',function(){
+    var b=el('planPortal'); b.disabled=true; b.textContent='Opening\u2026';
+    api('billing_portal',{}).then(function(res){
+      if(res&&res.url){ location.href=res.url; return; }
+      throw new Error('no portal url');
+    }).catch(function(e){
+      b.disabled=false; b.textContent='Manage or cancel subscription';
+      el('planPortalNote').textContent=(e&&e.error)?e.error:'Could not open billing just now.';
+    });
+  });
 
   function renderAccounts(rows){
     var total = rows.length && rows[0].total_matches != null
