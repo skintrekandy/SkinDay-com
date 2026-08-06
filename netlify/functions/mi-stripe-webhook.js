@@ -29,6 +29,22 @@ const STRIPE_KEY = process.env.MI_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET
 
 const { createClient } = require('@supabase/supabase-js');
 
+
+// Maps a Stripe price back to a plan and its seat count, so a customer changing
+// plan in the billing portal keeps seat_limit in step. Without this, an upgrade
+// to Team would charge $299 and still allow one seat, which is the worst of both.
+// Env-driven for the same reason as the checkout: sandbox and live differ.
+function planForPrice(priceId) {
+  if (!priceId) return null;
+  if (priceId === process.env.MI_PRICE_SOLO_MONTH || priceId === process.env.MI_PRICE_SOLO_YEAR) {
+    return { plan: 'solo', seats: 1 };
+  }
+  if (priceId === process.env.MI_PRICE_TEAM_MONTH || priceId === process.env.MI_PRICE_TEAM_YEAR) {
+    return { plan: 'team', seats: 5 };
+  }
+  return null;   // unknown price: leave plan and seats alone rather than guess
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'method not allowed' };
 
@@ -106,14 +122,24 @@ exports.handler = async (event) => {
     if (ev.type === 'customer.subscription.updated' ||
         ev.type === 'customer.subscription.deleted') {
       const sub = ev.data.object;
-      await supabase.from('mi_tenants').update({
+      const patch = {
         sub_status: ev.type.endsWith('deleted') ? 'canceled' : sub.status,
         trial_ends_at: sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
         // ⚠️ `active` is what actually gates sign-in, so a cancellation closes
         // the door here rather than only changing a label nobody enforces.
         active: !(ev.type.endsWith('deleted') || sub.status === 'canceled')
-      }).eq('stripe_subscription_id', sub.id);
-      return { statusCode: 200, body: 'subscription updated' };
+      };
+      // Plan changes made in Stripe's billing portal land here. Seats follow the
+      // price, so an upgrade to Team raises the limit to 5 without anyone
+      // touching the database by hand.
+      const item = sub.items && sub.items.data && sub.items.data[0];
+      const mapped = planForPrice(item && item.price && item.price.id);
+      if (mapped && !ev.type.endsWith('deleted')) {
+        patch.plan = mapped.plan;
+        patch.seat_limit = mapped.seats;
+      }
+      await supabase.from('mi_tenants').update(patch).eq('stripe_subscription_id', sub.id);
+      return { statusCode: 200, body: 'subscription updated' + (mapped ? ' to ' + mapped.plan : '') };
     }
 
     return { statusCode: 200, body: 'ignored' };
