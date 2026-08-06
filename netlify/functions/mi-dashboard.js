@@ -384,6 +384,61 @@ exports.handler = async (event) => {
           note: (body.note || '').toString().slice(0, 1000) || null
         });
         if (error) throw error;
+
+        // ⚠️ A correction loop nobody reads is not a loop. The flag is stored
+        // either way; the email is what makes it arrive. It is deliberately
+        // best-effort: a mail failure must not lose the rep's report or make the
+        // button look broken to them.
+        try {
+          const KEY = process.env.MI_RESEND_API_KEY || process.env.RESEND_API_KEY;
+          const to = process.env.MI_FLAGS_EMAIL || 'hello@skinday.ca';
+          if (KEY) {
+            // Names rather than ids, so the email is actionable without a query.
+            const { data: c } = await supabase.from('clinics')
+              .select('name, neighbourhood, province, state, website')
+              .eq('id', String(body.clinic_id)).maybeSingle();
+            let device = null;
+            if (body.device_id) {
+              const { data: d } = await supabase.from('device_reference')
+                .select('model, manufacturer').eq('id', parseInt(body.device_id, 10)).maybeSingle();
+              device = d;
+            }
+            const label = {
+              missing_device: 'A device is missing',
+              wrong_device: 'A device listed is wrong',
+              device_removed: 'They no longer have a device',
+              wrong_info: 'Contact or clinic details are wrong',
+              clinic_closed: 'This clinic has closed',
+              other: 'Something else'
+            }[kind] || kind;
+            const lines = [
+              label,
+              '',
+              'Clinic: ' + ((c && c.name) || body.clinic_id) +
+                (c && c.neighbourhood ? ' (' + c.neighbourhood + ')' : ''),
+              device ? 'Device: ' + device.model + ' (' + device.manufacturer + ')' : null,
+              c && c.website ? 'Website: ' + c.website : null,
+              body.note ? 'Note: ' + body.note : null,
+              '',
+              'Reported by: ' + (me.email || 'unknown') + ' at ' + (me.display_name || 'tenant ' + me.tenant_id),
+              '',
+              'clinic_id: ' + body.clinic_id
+            ].filter(function (x) { return x !== null; }).join('\n');
+
+            await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: { 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: process.env.MI_FROM_EMAIL || 'SkinDay <hello@skinday.ca>',
+                to: [to],
+                reply_to: me.email || undefined,
+                subject: 'Data flag: ' + ((c && c.name) || body.clinic_id),
+                text: lines
+              })
+            });
+          }
+        } catch (e) { /* the flag is saved; a mail failure is not the rep's problem */ }
+
         return json(200, { ok: true });
       }
 
@@ -503,6 +558,59 @@ exports.handler = async (event) => {
         });
         if (error) throw error;
         return json(200, { result: data });
+      }
+
+      // What plan this tenant is on, how many seats are used, and whether we can
+      // hand them to Stripe to manage it themselves.
+      case 'billing': {
+        if (!me.tenant_id) return json(200, { billing: null });
+        const { data: t, error: tErr } = await supabase
+          .from('mi_tenants')
+          .select('plan, seat_limit, sub_status, trial_ends_at, stripe_customer_id, country')
+          .eq('id', me.tenant_id).maybeSingle();
+        if (tErr) throw tErr;
+        const { count } = await supabase.from('mi_users')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', me.tenant_id).eq('active', true);
+        return json(200, { billing: Object.assign({}, t, {
+          seats_used: count || 0,
+          can_manage: !!(t && t.stripe_customer_id)
+        }) });
+      }
+
+      // Cancelling, changing card, and invoices all live in Stripe's own billing
+      // portal. Building our own cancel button would mean reimplementing proration,
+      // dunning and invoice history badly. One redirect instead.
+      case 'billing_portal': {
+        if (!isAdmin) return json(403, { error: 'admin only' });
+        if (!me.tenant_id) return json(400, { error: 'no subscription on this account' });
+        const { data: t, error: tErr } = await supabase
+          .from('mi_tenants').select('stripe_customer_id').eq('id', me.tenant_id).maybeSingle();
+        if (tErr) throw tErr;
+        if (!t || !t.stripe_customer_id) {
+          return json(400, { error: 'This account has no card subscription. Email hello@skinday.ca and we will sort it out.' });
+        }
+        const KEY = process.env.MI_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+        if (!KEY) return json(500, { error: 'billing is not configured' });
+        const site = (process.env.SITE_URL || 'https://skinday.com').replace(/\/+$/, '');
+        // Plain fetch rather than the Stripe SDK: this file has no Stripe
+        // dependency today and one form POST does not justify adding one.
+        const res = await fetch('https://api.stripe.com/v1/billing_portal/sessions', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer ' + KEY,
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            customer: t.stripe_customer_id,
+            return_url: site + '/mi-dashboard.html'
+          }).toString()
+        });
+        const out = await res.json();
+        if (!res.ok) {
+          return json(500, { error: 'could not open billing', detail: (out.error && out.error.message) || '' });
+        }
+        return json(200, { url: out.url });
       }
 
       // ---- Team (admin only) ----
