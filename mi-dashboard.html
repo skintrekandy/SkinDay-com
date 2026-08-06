@@ -400,7 +400,8 @@
     <div class="tabs">
       <button data-tab="portfolio" class="on">Overview</button>
       <button data-tab="accounts">Accounts</button>
-      <button data-tab="feed">Signal</button>
+      <!-- Signal tab hidden for the Kyle pilot 2026-08-06; panel and loadFeed() left intact, restore by removing style -->
+      <button data-tab="feed" style="display:none">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
     </div>
   </header>
@@ -890,7 +891,7 @@
     if(!rows.length){ el('teamList').innerHTML='<div class="note">Nobody invited yet.</div>'; return; }
     el('teamList').innerHTML=rows.map(function(u){
       var bits=[u.email||'no email'];
-      if(u.province) bits.push(String(u.province).toUpperCase()+' territory');
+      if(u.province) bits.push(regionLabel(u.province)+' territory');
       bits.push((u.saved_count||0)+' saved');
       return '<div class="member'+(u.active?'':' off')+'">'+
         '<div class="grow"><div class="em">'+esc(u.name)+'</div><div class="sub">'+esc(bits.join(' \u00b7 '))+'</div></div>'+
@@ -1012,6 +1013,11 @@
   // slug separator and should become a space, but a neighbourhood's hyphen is
   // part of the name — Winston-Salem and Wilkes-Barre must keep theirs.
   // Formatted at render, so the stored values every RPC filters on are untouched.
+  // Four-figure clinic counts read badly unseparated ("9121 clinics").
+  function num(n){
+    if (n == null || isNaN(n)) return String(n == null ? '' : n);
+    return Number(n).toLocaleString('en-US');
+  }
   var REGION_SMALL = { of:1, and:1, the:1 };
   function titleCase(v){
     var s = String(v == null ? '' : v).trim();
@@ -1024,18 +1030,36 @@
       return tok.charAt(0).toUpperCase() + tok.slice(1);
     }).join('');
   }
+  // Canadian provinces are stored as two-letter codes. Codes travel badly: a rep
+  // pastes a screenshot into a deck and "BC" loses its context, while titleCase
+  // renders the raw code mid-sentence as "Bc". Always spell them out.
+  var PROVINCE_NAMES = {
+    ab:'Alberta', bc:'British Columbia', mb:'Manitoba', nb:'New Brunswick',
+    nl:'Newfoundland and Labrador', ns:'Nova Scotia', nt:'Northwest Territories',
+    nu:'Nunavut', on:'Ontario', pe:'Prince Edward Island', qc:'Quebec',
+    sk:'Saskatchewan', yt:'Yukon'
+  };
+  function provinceName(v){
+    var s = String(v == null ? '' : v).trim().toLowerCase();
+    return PROVINCE_NAMES[s] || null;
+  }
   // For states/provinces only: a slug separator becomes a space first.
   function regionLabel(v){
     var s = String(v == null ? '' : v).trim();
+    var full = provinceName(s);
+    if (full) return full;
     if (s.length <= 3 && s === s.toUpperCase()) return s;
     return titleCase(s.replace(/[-_]+/g, ' '));
   }
-  // TERRITORY SELECT ONLY. Canadian provinces are stored as two-letter codes
-  // (on, qc, bc), which titleCase renders as "On" and "Qc". US states are slugs
-  // (california, new-york) and still want title case. Deliberately NOT used for
-  // tier two: a short city name there would be shouted at.
+  // TERRITORY SELECT ONLY. Canadian provinces now resolve to their full name via
+  // regionLabel; this used to uppercase the code, which fixed "Bc" but shipped an
+  // abbreviation instead of a name. US states are slugs (california, new-york)
+  // and still want title case. Deliberately NOT used for tier two: a short city
+  // name there would be shouted at.
   function provinceLabel(v){
     var s = String(v == null ? '' : v).trim();
+    var full = provinceName(s);
+    if (full) return full;
     if (s.length <= 3 && /^[a-z]+$/i.test(s)) return s.toUpperCase();
     return regionLabel(s);
   }
@@ -1074,7 +1098,7 @@
       var ask='<div class="empty">Choose a '+esc(CTY.region)+' to see this.</div>';
       el('portfolioList').innerHTML=ask;
       el('catlist').innerHTML=ask;
-      el('board').innerHTML='<div class="sec-label">Share of verified accounts</div>'+ask;
+      el('board').innerHTML='<div class="sec-label">Share of identified accounts</div>'+ask;
       return;
     }
     el('hero').innerHTML='<div class="empty"><span class="spin"></span></div>';
@@ -1104,21 +1128,47 @@
         'A combined total would mix markets that have nothing to do with each other.</div>';
       return;
     }
-    var where = geo.neighbourhood || (geo.province?regionLabel(geo.province):CTY.country);
+    // Metros and cities are stored as SLUGS (san-francisco, central-valley), so
+    // they must go through regionLabel like everything else or the sentence reads
+    // "clinics in san-francisco".
+    var where = geo.neighbourhood ? regionLabel(geo.neighbourhood)
+              : (geo.province ? regionLabel(geo.province) : CTY.country);
+    var territory = geo.province ? regionLabel(geo.province) : CTY.country;
     var cov = COVERAGE || {};
     var pending = (cov.clinics!=null && cov.verified!=null) ? (cov.clinics-cov.verified) : null;
     // ⭐⭐⭐ THE DENOMINATOR. `without_ours` counts every clinic in the country
     // minus ours — but most of those have never been researched, so it reads as
-    // ten thousand open accounts when the honest figure is the VERIFIED clinics
-    // that carry somebody else's equipment. A rep who checks this once and finds
+    // ten thousand open accounts when the honest figure is the IDENTIFIED
+    // clinics that carry somebody else's equipment. A rep who checks this once and finds
     // it inflated stops believing the rest of the page.
-    var otherVerified = (cov.verified!=null && k.with_ours!=null) ? (cov.verified-k.with_ours) : null;
-    el('hero').innerHTML='<div class="big">'+(k.with_ours!=null?k.with_ours:'—')+' <span class="unit">identified accounts</span></div>'+
-      '<div class="sub">Clinics in '+esc(where)+' with '+esc((ME&&ME.display_name)||'your')+' equipment identified'+
-      (otherVerified!=null?', and <span class="share">'+otherVerified+'</span> running other equipment.':'.')+'</div>'+
+    var otherIdentified = (cov.verified!=null && k.with_ours!=null) ? (cov.verified-k.with_ours) : null;
+    // ⭐ COPY RULE: lead with the rep's own number as a SENTENCE, not a label.
+    // "identified accounts" made him parse a category name before a fact, and
+    // "running other equipment" was vague. "run other manufacturers only" is the
+    // target list stated plainly — "only" matters, or a reader assumes those
+    // clinics might carry ours too. Never say "verified": nothing here is
+    // verified, it is identified from published pages, and a rep who finds one
+    // wrong discounts the whole screen. The 404-of-650 denominator sits in the
+    // same breath as the claim so the share figures below can be defended.
+    var mine = (ME&&ME.display_name) ? esc(ME.display_name) : null;
+    // ⛔⛔ GRAIN MISMATCH, GUARDED HERE UNTIL THE RPC IS FIXED: the `coverage`
+    // call sends the neighbourhood param like every other call, but the RPC
+    // IGNORES it — coverage always returns TERRITORY-WIDE figures. So with a
+    // metro selected, `with_ours` is metro-scoped while `cov.verified` is not,
+    // and subtracting them produced San Francisco 169 against California 3,460
+    // = "3,291 more", a number that reconciles with nothing. While drilled into
+    // a metro we drop the comparison entirely and name the territory explicitly
+    // on the coverage line, rather than print two grains as one sentence.
+    var drilled = !!geo.neighbourhood;
+    el('hero').innerHTML='<div class="big">'+(k.with_ours!=null?num(k.with_ours):'—')+
+      ' <span class="unit">clinics in '+esc(where)+(mine?' run '+mine:' run your equipment')+'</span></div>'+
+      ((otherIdentified!=null && !drilled)
+        ? '<div class="sub"><span class="share">'+num(otherIdentified)+'</span> more run other manufacturers only.</div>'
+        : '')+
       (cov.verified!=null
-        ? '<div class="cov"><b>'+cov.verified+'</b> clinics with verified equipment'+
-          (pending!=null?' &middot; <b>'+pending+'</b> not yet researched':'')+
+        ? '<div class="cov"><b>'+num(cov.verified)+'</b> of <b>'+(cov.clinics!=null?num(cov.clinics):'—')+'</b> clinics in '+
+          esc(territory)+' have equipment identified'+
+          (pending!=null?' &middot; <b>'+num(pending)+'</b> not yet researched':'')+
           (cov.last_updated?' &middot; updated '+esc(new Date(cov.last_updated).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})):'')+
           '</div>'
         : '');
@@ -1151,7 +1201,7 @@
   }
   function renderBoard(rows){
     if(!rows||!rows.length){ el('board').innerHTML=''; return; }
-    el('board').innerHTML='<div class="sec-label">Share of verified accounts</div><div class="cat">'+rows.map(function(r){
+    el('board').innerHTML='<div class="sec-label">Share of identified accounts</div><div class="cat">'+rows.map(function(r){
       return '<div class="dev"><span class="dn">'+esc(r.manufacturer)+(r.is_ours?'<span class="focus">You</span>':'')+'</span>'+
         '<span class="spacer"></span><span class="num">'+r.pct+'%<span class="l">'+r.clinics+' clinics</span></span></div>';
     }).join('')+'</div>';
@@ -1219,7 +1269,7 @@
         '</div></div>'+
       '</div>';
     }).join('')+'</div>'+
-    '<div class="dnote">Share of identified installations within each category, across clinics with verified equipment. Each machine counts once, so slices total 100%. This is not the same measure as share of verified accounts above, where a clinic running several manufacturers counts under each.</div>';
+    '<div class="dnote">Share of identified installations within each category, across clinics with equipment identified. Each machine counts once, so slices total 100%. This is not the same measure as share of identified accounts above, where a clinic running several manufacturers counts under each.</div>';
 
     Array.prototype.forEach.call(box.querySelectorAll('.dcard'),function(card){
       card.addEventListener('click',function(){
