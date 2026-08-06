@@ -14,7 +14,7 @@
 //     that one belongs to the Visualize Pro endpoint, and every Stripe endpoint
 //     has its OWN signing secret. Reusing it would break one or the other.)
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
-//   RESEND_API_KEY, SITE_URL
+//   MI_RESEND_API_KEY (preferred) or RESEND_API_KEY, SITE_URL
 //   MI_FROM_EMAIL (defaults to hello@skinday.ca, the verified Resend domain)
 
 const Stripe = require('stripe');
@@ -124,8 +124,15 @@ exports.handler = async (event) => {
 };
 
 // Returns a short status string rather than throwing. The caller logs it.
+//
+// ⚠️ KEY SELECTION, same shape as the Stripe one. MI_RESEND_API_KEY wins when
+// set. A Resend key can be scoped to a single sending domain, and the first
+// live test failed with "This API key is not authorized to send emails from
+// skinday.ca" because the key in RESEND_API_KEY was scoped elsewhere. Keeping a
+// dedicated key here means the application email keys are never disturbed.
 async function sendInvite(to, company, link) {
-  if (!process.env.RESEND_API_KEY) return 'not sent: RESEND_API_KEY missing on this site';
+  const KEY = process.env.MI_RESEND_API_KEY || process.env.RESEND_API_KEY;
+  if (!KEY) return 'not sent: no Resend key on this site';
   const from = process.env.MI_FROM_EMAIL || 'SkinDay <hello@skinday.ca>';
   const text =
     'Your SkinDay Market Intelligence account for ' + company + ' is ready.\n\n' +
@@ -137,7 +144,7 @@ async function sendInvite(to, company, link) {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
+        'Authorization': 'Bearer ' + KEY,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
