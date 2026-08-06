@@ -88,10 +88,17 @@ exports.handler = async (event) => {
 
       const row = Array.isArray(data) ? data[0] : data;
       const to = md.mi_email || s.customer_email;
+      let mailed = 'skipped';
       if (row && row.invite_token && to) {
-        await sendInvite(to, md.mi_company, site + '/mi-invite?token=' + row.invite_token);
+        mailed = await sendInvite(to, md.mi_company, site + '/mi-invite?token=' + row.invite_token);
       }
-      return { statusCode: 200, body: 'tenant ready' };
+      // ⚠️ The email failure is LOGGED, never thrown. The tenant already exists
+      // and the invite token is already in mi_users, so failing the webhook here
+      // would make Stripe retry a signup that actually succeeded. But it must not
+      // be silent either: the first live test created the tenant, sent nothing,
+      // and reported success, which took a round trip to notice.
+      console.log('mi-signup: tenant ' + (row && row.tenant_id) + ' created, invite email ' + mailed);
+      return { statusCode: 200, body: 'tenant ready, invite email ' + mailed };
     }
 
     // Keeps the dashboard's view of the subscription current without it having
@@ -116,8 +123,9 @@ exports.handler = async (event) => {
   }
 };
 
+// Returns a short status string rather than throwing. The caller logs it.
 async function sendInvite(to, company, link) {
-  if (!process.env.RESEND_API_KEY) return;
+  if (!process.env.RESEND_API_KEY) return 'not sent: RESEND_API_KEY missing on this site';
   const from = process.env.MI_FROM_EMAIL || 'SkinDay <hello@skinday.ca>';
   const text =
     'Your SkinDay Market Intelligence account for ' + company + ' is ready.\n\n' +
@@ -125,14 +133,21 @@ async function sendInvite(to, company, link) {
     'The link is valid for 14 days. Your first 14 days are free, and you can ' +
     'cancel any time before then without being charged.\n\n' +
     'If you have any trouble, just reply to this email.\n\nSkinDay';
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      from, to: [to], subject: 'Your SkinDay Market Intelligence access', text
-    })
-  });
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + process.env.RESEND_API_KEY,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from, to: [to], subject: 'Your SkinDay Market Intelligence access', text
+      })
+    });
+    const body = await res.text();
+    if (!res.ok) return 'FAILED HTTP ' + res.status + ': ' + body.slice(0, 300);
+    return 'sent to ' + to;
+  } catch (e) {
+    return 'FAILED: ' + (e && e.message);
+  }
 }
