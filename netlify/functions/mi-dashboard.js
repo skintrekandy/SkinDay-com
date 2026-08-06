@@ -515,6 +515,38 @@ exports.handler = async (event) => {
       case 'invite_user': {
         if (!isAdmin) return json(403, { error: 'admin only' });
         if (!nz(body.name)) return json(400, { error: 'name required' });
+
+        // ⛔ SEAT LIMIT. It is stored on the tenant by the Stripe webhook and,
+        // until now, nothing looked at it: a Solo customer could invite ten
+        // people and the Team plan had nothing behind it.
+        //
+        // Enforced HERE, at the invite, rather than at sign-in. Blocking an
+        // existing user at sign-in because a plan changed would lock out someone
+        // already working; refusing a NEW invite is the honest place to say no.
+        if (me.tenant_id) {
+          const { data: tRow, error: tErr } = await supabase
+            .from('mi_tenants').select('seat_limit, plan').eq('id', me.tenant_id).maybeSingle();
+          if (tErr) throw tErr;
+          const limit = tRow && tRow.seat_limit;
+          // A null limit means a tenant created before billing existed. Those
+          // are left unlimited rather than silently locked out.
+          if (limit) {
+            const { count, error: cErr } = await supabase
+              .from('mi_users')
+              .select('id', { count: 'exact', head: true })
+              .eq('tenant_id', me.tenant_id)
+              .eq('active', true);
+            if (cErr) throw cErr;
+            if ((count || 0) >= limit) {
+              return json(409, {
+                error: 'Your plan includes ' + limit + ' seat' + (limit === 1 ? '' : 's') +
+                       ', and ' + count + ' ' + (count === 1 ? 'is' : 'are') + ' in use. ' +
+                       'Remove someone first, or email hello@skinday.ca to add seats.'
+              });
+            }
+          }
+        }
+
         const { data, error } = await supabase.rpc('mi_invite_user', {
           p_tenant_id: me.tenant_id,
           p_name: String(body.name).trim(),
