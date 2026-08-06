@@ -157,6 +157,39 @@ function norm(s) {
     .trim();
 }
 
+// ⭐⭐⭐ THE QUALIFIED-MATCH RULE (2026-08-06). `name_is_also_generic` used to
+// send EVERY match on Elite, Icon, Halo, Vbeam, BBL and Aerolase Neo to review,
+// which meant 432 of 496 pending Canadian rows sat waiting on a human. Reading
+// the actual matched_text settled it: across all six devices the BARE model name
+// accounted for ~15 rows. Everything else arrived qualified — "Sciton BBL",
+// "BroadBand Light", "Forever Young BBL", "Cynosure Elite", "Elite iQ",
+// "Halo hybrid fractional", "Palomar Icon", "V Beam", "Aerolase Laser".
+//
+// A qualified string cannot be the ordinary English word. Nobody writes
+// "BroadBand Light" meaning brightness, or "Cynosure Elite" meaning excellent.
+// The ambiguity lives ENTIRELY in the bare token, so that is what needs a human
+// and nothing else does.
+//
+// Andy 2026-08-06: "if the initial crawl get 90-95% data correct, then we should
+// make the flow smoother… repeatable crawling and approving methods, not aiming
+// for 100% correctness."
+// ⚠️ SPACING IS NOT QUALIFICATION. "V Beam" is the model name with a space in
+// it, not a qualified form, and it is 69 of Vbeam's rows — comparing on the
+// spaced string alone would have let every one through. Compare jammed.
+function isBareModelName(matchedText, model) {
+  const jam = v => norm(v || '').replace(/\s+/g, '');
+  const a = jam(matchedText), b = jam(model);
+  if (!a || !b) return true;              // unknown -> treat as bare, i.e. review
+  return a === b;
+}
+// A generic-named device auto-approves only on a QUALIFIED match; a distinctive
+// device is unaffected, because for it the bare model name is the best evidence
+// there is (a Morpheus8 matched as "Morpheus8" must never be held back).
+function passesGenericGuard(matchedText, model, isGeneric) {
+  if (!isGeneric) return true;
+  return !isBareModelName(matchedText, model);
+}
+
 // A device may be written with or without a space before a trailing number
 // ("Morpheus8" / "Morpheus 8"), so both forms are indexed.
 function tokenVariants(name) {
@@ -1601,6 +1634,8 @@ exports.handler = async event => {
       case 'reject-candidates':   return json(200, await decide(supabase, body, false));
       case 'approve-all':         return json(200, await approveAll(supabase, body));
       case 'list-unknowns':       return json(200, await listUnknowns(supabase, body));
+      case 'list-flags':          return json(200, await listFlags(supabase, body));
+      case 'resolve-flag':        return json(200, await resolveFlag(supabase, body));
       default:                    return json(400, { error: 'unknown action: ' + action });
     }
   } catch (e) {
@@ -1834,9 +1869,13 @@ async function doCrawl(supabase, body) {
         if (strong.length) {
           const devIds = [...new Set(strong.map(r => r.device_id))];
           const refs = await selectIn(supabase, 'device_reference',
-            'id, name_is_also_generic', 'id', devIds);
-          const generic = new Set(refs.filter(d => d.name_is_also_generic === true).map(d => d.id));
-          const eligibleDevs = devIds.filter(id => !generic.has(id));
+            'id, model, name_is_also_generic', 'id', devIds);
+          // ⭐ CHANGED 2026-08-06: a generic-named device is no longer excluded
+          // outright. It stays eligible, and the BARE-NAME test below decides
+          // row by row. See isBareModelName() for why.
+          const genericById = new Map(refs.map(d => [d.id, d.name_is_also_generic === true]));
+          const modelById   = new Map(refs.map(d => [d.id, d.model]));
+          const eligibleDevs = devIds;
 
           const okDevs = [];
           for (const did of eligibleDevs) {
@@ -1858,10 +1897,18 @@ async function doCrawl(supabase, body) {
             // clinic: a chain host has up to 77 of them and that would be 77
             // round trips per batch.
             const cands = await selectIn(supabase, 'clinic_device_candidates',
-              'id, clinic_id, device_id, status', 'clinic_id', clinicIds);
+              'id, clinic_id, device_id, status, matched_text', 'clinic_id', clinicIds);
+            let heldBare = 0;
             const ids = cands
-              .filter(c => c.status === 'pending' && okSet.has(c.device_id))
+              .filter(c => {
+                if (c.status !== 'pending' || !okSet.has(c.device_id)) return false;
+                const ok = passesGenericGuard(
+                  c.matched_text, modelById.get(c.device_id), genericById.get(c.device_id));
+                if (!ok) heldBare++;
+                return ok;
+              })
               .map(c => c.id);
+            if (heldBare) out.autoHeldBareName = (out.autoHeldBareName || 0) + heldBare;
             if (ids.length) {
               // Straight through decide(), never around it: first_seen is still
               // preserved on existing pairs and the change feed still gets one
@@ -1986,6 +2033,7 @@ async function doCrawl(supabase, body) {
       // Auto-approval, surfaced per host so it is visible while it happens
       // rather than only as a total afterwards.
       auto_approved: out.autoApproved || 0,
+      auto_held_bare_name: out.autoHeldBareName || 0,
       auto_held_ceiling: out.autoHeldCeiling || 0,
       devices: out.matches.map(m => ({ model: m.model, category: m.category, confidence: m.confidence })),
       unknowns: out.unknowns.map(u => u.token),
@@ -2452,6 +2500,91 @@ async function listCandidates(supabase, body) {
 //
 // ⚠️ RESUMABLE BY DESIGN. A Netlify function has seconds, not minutes, and a
 // 23-page host already produced one timeout. Each call approves at most
+// ---- REP CORRECTION QUEUE ---------------------------------------------------
+// ⭐⭐⭐ WHY THIS EXISTS. Both manufacturer contacts asked for a report button
+// unprompted, and it has been writing to `clinic_flags` and emailing Andy since
+// 2026-08-05 — but there was no way to READ the queue or close an item except
+// SQL. A correction loop nobody can work is not a loop, and it is the whole
+// answer to "the data gets better": we do not need the crawl to be 100% right,
+// we need every wrong row to have a cheap path back.
+//
+// The flag stays a MESSAGE, never an edit. One manufacturer's rep must not be
+// able to change a database a competitor reads, so resolving a flag only closes
+// the ticket — any actual data change is a separate, deliberate act.
+async function listFlags(supabase, body) {
+  const status = ['open', 'resolved', 'all'].includes(body && body.status) ? body.status : 'open';
+  const limit  = Math.min(Math.max(parseInt(body && body.limit, 10) || 100, 1), 300);
+
+  let q = supabase.from('clinic_flags')
+    .select('id, clinic_id, device_id, tenant_id, user_email, kind, note, status, created_at, reviewed_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (status !== 'all') q = q.eq('status', status);
+  const { data, error } = await q;
+  if (error) throw error;
+  const flags = data || [];
+
+  // Names, not ids. A queue that reads "clinic_id 4c8f… device 59" cannot be
+  // worked without a second query per row, which is what made SQL the only way
+  // to use this in the first place.
+  const clinicIds = [...new Set(flags.map(f => f.clinic_id).filter(Boolean))];
+  const deviceIds = [...new Set(flags.map(f => f.device_id).filter(v => v != null))];
+  const clinics = clinicIds.length
+    ? await selectIn(supabase, 'clinics', 'id, name, website, province, state, country', 'id', clinicIds) : [];
+  const devices = deviceIds.length
+    ? await selectIn(supabase, 'device_reference', 'id, model, manufacturer', 'id', deviceIds) : [];
+  const cById = new Map(clinics.map(c => [c.id, c]));
+  const dById = new Map(devices.map(d => [d.id, d]));
+
+  // Open counts by kind, so the queue can be triaged at a glance rather than
+  // read top to bottom.
+  const { data: openRows } = await supabase
+    .from('clinic_flags').select('kind').eq('status', 'open').limit(5000);
+  const byKind = {};
+  for (const r of (openRows || [])) byKind[r.kind] = (byKind[r.kind] || 0) + 1;
+
+  return {
+    status,
+    open_total: (openRows || []).length,
+    by_kind: byKind,
+    flags: flags.map(f => {
+      const c = cById.get(f.clinic_id) || {};
+      const d = f.device_id != null ? (dById.get(f.device_id) || {}) : null;
+      return {
+        id: f.id,
+        kind: f.kind,
+        note: f.note,
+        status: f.status,
+        created_at: f.created_at,
+        reviewed_at: f.reviewed_at,
+        reporter: f.user_email || null,
+        tenant_id: f.tenant_id || null,
+        clinic_id: f.clinic_id,
+        clinic_name: c.name || null,
+        clinic_website: c.website || null,
+        clinic_region: c.province || c.state || null,
+        clinic_country: c.country || null,
+        device_id: f.device_id,
+        device: d ? ((d.manufacturer ? d.manufacturer + ' ' : '') + (d.model || '')).trim() : null
+      };
+    })
+  };
+}
+
+async function resolveFlag(supabase, body) {
+  const ids = Array.isArray(body && body.ids) ? body.ids.filter(Boolean)
+            : (body && body.id ? [body.id] : []);
+  if (!ids.length) return { updated: 0 };
+  const reopen = body && body.reopen === true;
+  const { data, error } = await supabase.from('clinic_flags')
+    .update({ status: reopen ? 'open' : 'resolved',
+              reviewed_at: reopen ? null : new Date().toISOString() })
+    .in('id', ids)
+    .select('id');
+  if (error) throw error;
+  return { updated: (data || []).length, status: reopen ? 'open' : 'resolved' };
+}
+
 // `batch` candidates and returns how many remain, so the button loops until
 // remaining is zero rather than betting the whole job on one invocation.
 //
@@ -2467,7 +2600,7 @@ async function approveAll(supabase, body) {
   const PEND_CAP = 20000;
 
   let q = supabase.from('clinic_device_candidates')
-    .select('id, host, device_id')
+    .select('id, host, device_id, matched_text')
     .eq('status', 'pending')
     .order('host', { ascending: true })
     .order('id', { ascending: true })
@@ -2488,13 +2621,21 @@ async function approveAll(supabase, body) {
     rows = rows.filter(r => countryByHost.get(r.host) === country);
   }
 
+  // ⭐ CHANGED 2026-08-06: this used to drop EVERY row on a generic-named device,
+  // which held back 432 of 496 pending Canadian rows — almost all of them
+  // qualified strings like "BroadBand Light" and "Cynosure Elite" that cannot
+  // mean the ordinary word. Now only the BARE model name is held. Same rule as
+  // crawl-time auto-approval, deliberately, so the button and the crawler can
+  // never disagree about what is safe.
   let heldGeneric = 0;
   if (holdGeneric && rows.length) {
     const devIds = [...new Set(rows.map(r => r.device_id))];
-    const devs = await selectIn(supabase, 'device_reference', 'id, name_is_also_generic', 'id', devIds);
-    const generic = new Set(devs.filter(d => d.name_is_also_generic === true).map(d => d.id));
+    const devs = await selectIn(supabase, 'device_reference', 'id, model, name_is_also_generic', 'id', devIds);
+    const genericById = new Map(devs.map(d => [d.id, d.name_is_also_generic === true]));
+    const modelById   = new Map(devs.map(d => [d.id, d.model]));
     const before = rows.length;
-    rows = rows.filter(r => !generic.has(r.device_id));
+    rows = rows.filter(r => passesGenericGuard(
+      r.matched_text, modelById.get(r.device_id), genericById.get(r.device_id)));
     heldGeneric = before - rows.length;
   }
 
@@ -2503,7 +2644,8 @@ async function approveAll(supabase, body) {
       preview: true,
       country: country || 'every country',
       would_approve: rows.length,
-      held_generic: heldGeneric,
+      held_generic: heldGeneric,        // now: held because matched_text IS the bare model name
+      held_reason: 'bare model name on a device whose name is also an ordinary word',
       batch: batch,
       calls_needed: Math.ceil(rows.length / batch)
     };
