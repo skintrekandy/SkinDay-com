@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SkinDay Market Intelligence</title>
-<meta name="description" content="See which clinics run which devices. Built for aesthetic device reps.">
+<meta name="description" content="Find clinics, see what devices they run, and build a better territory plan.">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -57,14 +57,13 @@
 <div class="wrap">
   <div class="brand">SkinDay <b>Market Intelligence</b></div>
 
-  <h1>Know what they already own before you walk in.</h1>
-  <p class="lede">Every clinic in your market, the equipment on their website, and where it came from.
-     Built for device reps.</p>
+  <h1>Find the right clinics before your next call.</h1>
+  <p class="lede">Search your territory, see the equipment each clinic publishes, and build a more focused prospecting list.</p>
 
   <div class="card">
     <div class="field">
       <label for="company">Your company</label>
-      <div class="hint">Sets what counts as yours, and what counts as competition.</div>
+      <div class="hint">We tailor the dashboard to your company, devices and competitors.</div>
       <select id="company"><option value="">Loading companies…</option></select>
     </div>
 
@@ -84,7 +83,7 @@
 
     <div class="field">
       <label for="email">Work email</label>
-      <div class="hint">Where your sign-in link goes.</div>
+      <div class="hint">Use the email you want linked to your account.</div>
       <input id="email" type="email" autocomplete="email" placeholder="you@company.com">
     </div>
   </div>
@@ -108,17 +107,16 @@
         <div class="s">Up to 5 seats</div>
       </div>
     </div>
-    <p class="fine">14 days free, cancel any time before then. USD. Canada and the United States
-       are separate subscriptions.</p>
+    <p class="fine">Start with a 14-day free trial. Cancel before the trial ends and you will not be charged.
+       Prices are in USD. Canada and the United States are separate market subscriptions.</p>
   </div>
 
   <button class="go" id="go">Start free trial</button>
   <div class="msg" id="msg"></div>
 
   <div class="ent">
-    <strong>More than five seats, or both markets?</strong>
-    Tell us the seat count you need and we will set up a plan on the same card checkout.
-    <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20larger%20plan">Ask us</a>.
+    <strong>Need more than 5 seats or access to both markets?</strong>
+    We can customize a plan for your team. <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20custom%20plan">Contact us</a>.
   </div>
 </div>
 
@@ -179,10 +177,10 @@
 
     if (!company) { msg.className = 'msg bad'; msg.textContent = 'Choose your company first.'; return; }
     if (!email || email.indexOf('@') === -1) {
-      msg.className = 'msg bad'; msg.textContent = 'We need a valid email address.'; return;
+      msg.className = 'msg bad'; msg.textContent = 'We need a valid email to send your sign-in link.'; return;
     }
 
-    el('go').disabled = true; msg.textContent = 'One moment…';
+    el('go').disabled = true; msg.textContent = 'Taking you to checkout…';
     fetch('/api/mi-checkout', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
