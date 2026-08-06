@@ -27,7 +27,7 @@ const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-const MATCHER_VERSION = '2026-08-05-host-fallback';
+const MATCHER_VERSION = '2026-08-05-seo-landing-page';
 
 // Per-device, per-run cap on auto-approval. Above this, the device stops
 // publishing unseen for the rest of the run and the rest queues for review.
@@ -403,6 +403,32 @@ function isComparisonPath(pathname, entries) {
   return false;
 }
 
+// ⚠️⚠️⚠️ THE SEO LANDING PAGE, found on skin-trek.com 2026-08-05 and NOT covered
+// by the comparison fix above. `/ultherapy-toronto` names exactly ONE device, so
+// it is not a comparison path and Ultherapy is correctly an own page. But the
+// PROSE of that page named Sofwave and Ultraformer III, which matched as `exact`
+// on distinctive names and auto-published. Same adversarial pattern as "X vs Y",
+// without the word "vs".
+//
+// THE RULE: when a URL names exactly one device, that device owns the page and
+// every OTHER device found there is demoted. A clinic's /technology/ page names
+// ten machines and stays trustworthy, because its URL names none of them. A page
+// named after one device that mentions three others is marketing, every time.
+//
+// Returns the model that owns the page, or null when the URL names none or many.
+function pageOwnerModel(pathname, entries) {
+  const safeDecode = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };
+  const flat = ' ' + norm(safeDecode(pathname)) + ' ';
+  const models = new Set();
+  for (const e of entries) {
+    if (e.token && e.token.length >= 3 && flat.indexOf(' ' + e.token + ' ') !== -1) {
+      models.add(e.model);
+      if (models.size >= 2) return null;   // two or more: the comparison rule owns it
+    }
+  }
+  return models.size === 1 ? [...models][0] : null;
+}
+
 // ⚠️⚠️ TAKES `entries` NOW, because of a gap in my own comparison fix. The page
 // level test only saw the url being FETCHED. Skin Trek's
 // /nerd/ultherapy-vs-thermage-vs-sofwave arrived from the SITEMAP as one of
@@ -501,6 +527,15 @@ function matchDevices(rawText, pageUrl, matcher, opts) {
   } catch (e) {}
   if (comparisonPage) pageKind = 'blog';
 
+  // Which device, if any, this URL is about. Everything else on the page is
+  // then treated as a mention rather than an installation.
+  let ownerModel = null;
+  if (!comparisonPage) {
+    try {
+      ownerModel = pageOwnerModel(new URL(pageUrl).pathname, Array.isArray(matcher) ? matcher : []);
+    } catch (e) {}
+  }
+
   const isBlog = pageKind === 'blog';
   const pathBlob = ' ' + ownPagePaths(rawText, pageUrl, Array.isArray(matcher) ? matcher : []).join(' ') + ' ';
   const text = ' ' + norm(stripUrls(rawText)) + ' ';
@@ -598,6 +633,16 @@ function matchDevices(rawText, pageUrl, matcher, opts) {
     if (isBlog) confidence = 'blog_only';
     else if (pathHit) confidence = 'own_page';
     else confidence = 'exact';
+
+    // ⛔ THE SEO LANDING PAGE DEMOTION. On a page whose URL names one device,
+    // any OTHER device found only in the prose is a mention, not an install.
+    // Demoted to blog_only, which is never auto-approved, so it reaches a human
+    // instead of the directory. This is what let Sofwave and Ultraformer III
+    // onto Skin Trek from /ultherapy-toronto after the comparison fix had
+    // already closed the "X vs Y" shape.
+    if (ownerModel && entry.model !== ownerModel && !pathHit) {
+      confidence = 'blog_only';
+    }
 
     const prev = found.get(entry.device_id);
     if (!prev || RANK[confidence] > RANK[prev.confidence]) {
