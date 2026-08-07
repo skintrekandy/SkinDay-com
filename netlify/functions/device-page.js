@@ -126,14 +126,19 @@ async function loadCombos(supabase, onlyCountry) {
       : c.metro;
     if (!territory) continue;
 
-    const key = dev.id + '|' + slugify(territory);
+    // ⚠️ SLUG FROM THE LABEL, NOT THE RAW COLUMN. Canadian provinces are stored
+    // as two-letter codes, so slugifying the column gives /devices/morpheus8/on
+    // — a URL nobody searches and nobody can read. The sitemap spells them out,
+    // and the two MUST agree or every listed URL 404s.
+    const territorySlug = slugify(territoryLabel(territory, country));
+    const key = dev.id + '|' + territorySlug;
     let combo = combos.get(key);
     if (!combo) {
       combo = {
         device: dev,
         country,
         territoryRaw: territory,
-        territorySlug: slugify(territory),
+        territorySlug: territorySlug,
         deviceSlug: slugify(dev.model),
         clinics: []
       };
