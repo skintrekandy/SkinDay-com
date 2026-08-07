@@ -234,8 +234,13 @@ exports.handler = async (event) => {
         return json(200, { geo: data || [] });
       }
 
+      // ⭐ p_city / p_neighbourhood added 2026-08-06. This was the ONLY rpc in
+      // this file not given the drill-down, so coverage stayed territory-wide
+      // while every other number followed the selection. The dashboard
+      // subtracts mi_kpis.with_ours from coverage.verified, so a metro
+      // selection produced a state figure minus a metro figure.
       case 'coverage': {
-        const { data, error } = await supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province });
+        const { data, error } = await supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood });
         if (error) throw error;
         return json(200, { coverage: data });
       }
@@ -332,7 +337,7 @@ exports.handler = async (event) => {
           supabase.rpc('mi_leaderboard', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_neighbourhood: neighbourhood, p_limit: 3
           }, owner)),
-          supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province }),
+          supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood }),
           supabase.rpc('mi_category_share', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_neighbourhood: neighbourhood, p_top: 4
           }, owner))
