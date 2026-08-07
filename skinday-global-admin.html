@@ -1187,7 +1187,7 @@
           <div style="margin-top:.8rem;">
             <input class="form-input" id="md-search" style="max-width:340px;"
                    placeholder="&#128269; Or search all devices &mdash; type to filter"
-                   oninput="mdSearch()" autocomplete="off" />
+                   oninput="mdDevSearch()" autocomplete="off" />
             <div id="md-results" style="margin-top:.5rem;max-height:230px;overflow:auto;display:none;
                  border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:.35rem;"></div>
           </div>
@@ -3357,23 +3357,26 @@ function mdPick(json) {
 function mdAddDevice() {
   const id = Number(document.getElementById('md-dev').value);
   if (!id) return;
-  mdPick(id);
+  mdPickDevice(id);
 }
 
 // ⭐ Shared by all three ways in: the two dropdowns, the search list, and the
 // paste box. One entry point so "already added" is handled once.
-function mdPick(id) {
+// ⚠️ NAMED mdPickDevice: mdPick already exists on this panel and picks the
+// CLINIC from the search results. Two functions with one name is a silent
+// break — the later definition simply wins.
+function mdPickDevice(id) {
   id = Number(id);
   if (!id || mdPicked.some(p => p.id === id)) return false;
   const d = mdRef.find(x => x.id === id);
   if (!d) return false;
   mdPicked.push(d);
   mdRenderPicked();
-  mdSearch();                       // keep the tick marks in step
+  mdDevSearch();                    // keep the tick marks in step
   return true;
 }
 
-function mdDrop(id) { mdPicked = mdPicked.filter(p => p.id !== id); mdRenderPicked(); mdSearch(); }
+function mdDrop(id) { mdPicked = mdPicked.filter(p => p.id !== id); mdRenderPicked(); mdDevSearch(); }
 
 // ⭐⭐ ADDING SEVERAL AT ONCE. The dropdown pair is fine for one device and
 // miserable for fifteen, which is what a WAF-blocked clinic page usually lists.
@@ -3389,7 +3392,10 @@ function mdNorm(v) {
 }
 function mdJam(v) { return mdNorm(v).replace(/\s+/g, ''); }
 
-function mdSearch() {
+// ⚠️ NAMED mdDevSearch, NOT mdSearch: mdSearch is already the CLINIC search on
+// this same panel (step 1). Redefining it silently broke clinic lookup — the
+// button was still there and simply filtered devices instead.
+function mdDevSearch() {
   const box = document.getElementById('md-results');
   const q = mdNorm(document.getElementById('md-search').value);
   if (!q || q.length < 2) { box.style.display = 'none'; box.innerHTML = ''; return; }
@@ -3409,7 +3415,7 @@ function mdSearch() {
     : '<div style="color:var(--muted);padding:.3rem;font-size:.85rem;">Nothing matches that.</div>';
 }
 
-function mdToggle(id, on) { if (on) mdPick(id); else mdDrop(id); }
+function mdToggle(id, on) { if (on) mdPickDevice(id); else mdDrop(id); }
 
 // ⚠️ UNMATCHED NAMES ARE REPORTED, NEVER SWALLOWED. A device missing from
 // device_reference is a reference-list gap worth knowing about — silently
@@ -3433,7 +3439,7 @@ function mdMatchPaste() {
     }
     if (!d) { missed.push(nameRaw); return; }
     if (mdPicked.some(p => p.id === d.id)) { already++; return; }
-    if (mdPick(d.id)) added++;
+    if (mdPickDevice(d.id)) added++;
   });
 
   const bits = [];
@@ -3464,7 +3470,7 @@ function mdRenderPicked() {
     : '<span style="color:var(--muted);">Nothing added yet &mdash; pick a device and press <strong>Add this device</strong>, or search / paste a list above.</span>';
 }
 
-function mdClearPicked() { mdPicked = []; mdRenderPicked(); mdSearch(); }
+function mdClearPicked() { mdPicked = []; mdRenderPicked(); mdDevSearch(); }
 
 async function mdSave() {
   if (!mdClinic || !mdPicked.length) { document.getElementById('md-msg').textContent = 'Pick a clinic and at least one device.'; return; }
