@@ -777,7 +777,24 @@ function censusUnknowns(rawText, matcher, mfrKnown) {
     // came back by the dozen from a real Instagram feed embed.
     if ((raw.match(/[A-Z]/g) || []).length >= 3) continue;
     if (m.index > 0 && src[m.index - 1] === '#') continue;   // #LipFiller, #ValentinesGlow
-    if (/\d/.test(n)) continue;                    // "Niagara 0", "Rated 5", "For 3"
+    // ⭐⭐⭐ CHANGED 2026-08-06. This used to be `if (/\d/.test(n)) continue;` —
+    // every token containing a digit was thrown away. The regex above goes to
+    // the trouble of capturing a trailing number, and this line then discarded
+    // it, so NO NUMBERED MACHINE COULD EVER BE DISCOVERED. Proof from run 119:
+    // 46,243 unknown tokens across 3,658 hosts and NOT ONE contained a digit.
+    // Matching was never affected (aliases handle Morpheus8, M22, eCO2 3D), but
+    // device_reference could only ever grow when a human tripped over a name.
+    //
+    // Reject the NOISE SHAPE instead: a capitalised word followed by a bare
+    // small integer is almost always a count, rating or suite number
+    // ("Rated 5", "Niagara 0", "Suite 3"). A model number is either joined to
+    // the word (Morpheus8, M22) or three digits (Optima 518, Spirit 918).
+    if (/^\d+$/.test(n)) continue;                          // a bare number
+    {
+      const tail = n.match(/\s(\d{1,2})$/);
+      const stem = n.replace(/\s\d{1,2}$/, '');
+      if (tail && !/\d/.test(stem) && Number(tail[1]) <= 12) continue;
+    }
     const at = flat.indexOf(' ' + n + ' ');
     if (at === -1) continue;
     // A TIGHT window. Over 160 chars, any page containing the word "laser"
