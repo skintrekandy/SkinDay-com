@@ -1188,8 +1188,12 @@
             <input class="form-input" id="md-search" style="max-width:340px;"
                    placeholder="&#128269; Or search all devices &mdash; type to filter"
                    oninput="mdDevSearch()" autocomplete="off" />
-            <div id="md-results" style="margin-top:.5rem;max-height:230px;overflow:auto;display:none;
-                 border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:.35rem;"></div>
+            <!-- ⚠️ md-dev-results, NOT md-results: md-results is the CLINIC search
+                 results box in step 1. Two elements with one id means
+                 getElementById returns the first, so the device search was
+                 hiding and overwriting the clinic results. -->
+            <div id="md-dev-results" style="margin-top:.5rem;max-height:230px;overflow:auto;display:none;
+                 border:1px solid var(--border);border-radius:6px;padding:.35rem;"></div>
           </div>
 
           <div style="margin-top:.8rem;">
@@ -3396,7 +3400,7 @@ function mdJam(v) { return mdNorm(v).replace(/\s+/g, ''); }
 // this same panel (step 1). Redefining it silently broke clinic lookup — the
 // button was still there and simply filtered devices instead.
 function mdDevSearch() {
-  const box = document.getElementById('md-results');
+  const box = document.getElementById('md-dev-results');
   const q = mdNorm(document.getElementById('md-search').value);
   if (!q || q.length < 2) { box.style.display = 'none'; box.innerHTML = ''; return; }
   const hits = mdRef.filter(function(d){
@@ -3463,9 +3467,13 @@ function mdRenderPicked() {
   }
   document.getElementById('md-picked').innerHTML = mdPicked.length
     ? '<div style="margin-bottom:.35rem;color:var(--muted);">' + mdPicked.length + ' device(s) to publish:</div>'
-      + mdPicked.map(d => '<span style="display:inline-block;background:var(--warm);border-radius:5px;padding:.15rem .5rem;margin:0 .35rem .35rem 0;">'
-        + esc(d.model) + ' <span style="color:var(--muted);">' + esc(d.manufacturer || '') + '</span> '
-        + '<a href="#" onclick="mdDrop(' + d.id + ');return false;" style="color:var(--red);">&times;</a></span>').join('')
+      // ⚠️ The pill used var(--warm) — a light cream — behind the page's light
+      // text, so the device name was unreadable on the dark admin. Outlined
+      // chip instead: transparent fill, visible border, inherited text colour.
+      + mdPicked.map(d => '<span style="display:inline-block;border:1px solid var(--border);'
+        + 'border-radius:5px;padding:.2rem .55rem;margin:0 .4rem .4rem 0;line-height:1.5;white-space:nowrap;">'
+        + '<strong>' + esc(d.model) + '</strong> <span style="color:var(--muted);">' + esc(d.manufacturer || '') + '</span> '
+        + '<a href="#" onclick="mdDrop(' + d.id + ');return false;" style="color:var(--red);text-decoration:none;margin-left:.2rem;">&times;</a></span>').join('')
       + '<div style="margin-top:.3rem;"><a href="#" onclick="mdClearPicked();return false;" style="color:var(--muted);font-size:.8rem;">clear all</a></div>'
     : '<span style="color:var(--muted);">Nothing added yet &mdash; pick a device and press <strong>Add this device</strong>, or search / paste a list above.</span>';
 }
