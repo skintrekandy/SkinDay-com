@@ -194,6 +194,48 @@
   status = 200
   force  = true
 
+# ── DEVICE x TERRITORY LANDING PAGES (SSR) ────────────────────────
+# /technology/                    index of every published combination
+# /technology/morpheus8/ontario   the landing page itself
+# /technology/sitemap.xml         sitemap for the whole set
+#
+# Server-rendered on request for the same reason /clinic/* is: these
+# pages exist to be indexed, and this domain has a negative quality
+# history (109 URLs sitting in "discovered, currently not indexed"),
+# so JS-rendered pages would prove nothing.
+#
+# The function decides the country from the HOST, so this same block
+# goes in skinday.ca's netlify.toml unchanged: .com serves the US
+# metro pages, .ca serves the Canadian province pages, and neither
+# competes with the other.
+#
+# The sitemap rule must come FIRST — /technology/:device/:territory
+# would otherwise swallow /technology/sitemap.xml as a two-segment
+# path.
+[[redirects]]
+  from   = "/technology/sitemap.xml"
+  to     = "/.netlify/functions/device-page"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/technology/:device/:territory"
+  to     = "/.netlify/functions/device-page"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/technology"
+  to     = "/.netlify/functions/device-page"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/technology/"
+  to     = "/.netlify/functions/device-page"
+  status = 200
+  force  = true
+
 # ── US DIRECTORY ──────────────────────────────────────────────────
 # /us              -> state selector (us.html)
 # /us/california   -> state directory (us-state.html, reads state from URL)
