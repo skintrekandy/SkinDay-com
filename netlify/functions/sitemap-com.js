@@ -19,6 +19,63 @@ function toSlug(name) {
     .replace(/^-+|-+$/g, '');
 }
 
+// ── DEVICE x METRO LANDING PAGES ─────────────────────────────────────────────
+// Mirrors device-page.js exactly: same MIN_CLINICS floor, same grain (metro for
+// the US), same exclusion of name_is_also_generic devices. If these two ever
+// disagree the sitemap advertises URLs the function 404s, which is worse than
+// omitting them — so the constants live here as a deliberate copy with this
+// note, not as a guess.
+const DEVICE_MIN_CLINICS = 10;
+
+function devSlug(v) {
+  return String(v == null ? '' : v)
+    .toLowerCase()
+    .replace(/\+/g, ' plus ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function fetchDevicePages(supabase) {
+  const { data: devices, error: dErr } = await supabase
+    .from('device_reference')
+    .select('id, model')
+    .eq('active', true)
+    .eq('name_is_also_generic', false);
+  if (dErr) return { error: dErr };
+  const modelById = new Map((devices || []).map(d => [d.id, d.model]));
+
+  const PAGE = 1000;
+  const pairs = new Map();          // deviceId|metroSlug -> Set(clinic ids)
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('clinic_devices')
+      .select('clinic_id, device_id, clinics!inner(id, country, metro, approved)')
+      .eq('status', 'listed')
+      .eq('clinics.approved', true)
+      .eq('clinics.country', 'usa')
+      .range(from, from + PAGE - 1);
+    if (error) return { error };
+    if (!data || !data.length) break;
+    for (const r of data) {
+      const model = modelById.get(r.device_id);
+      const metro = r.clinics && r.clinics.metro;
+      if (!model || !metro) continue;
+      const key = devSlug(model) + '|' + devSlug(metro);
+      if (!pairs.has(key)) pairs.set(key, new Set());
+      pairs.get(key).add(r.clinic_id);
+    }
+    if (data.length < PAGE) break;
+  }
+
+  const out = [];
+  for (const [key, clinics] of pairs) {
+    if (clinics.size < DEVICE_MIN_CLINICS) continue;   // thin pages 404, never list them
+    const [device, metro] = key.split('|');
+    out.push({ path: `/technology/${device}/${metro}`, clinics: clinics.size });
+  }
+  return { data: out };
+}
+
 function urlEntry(loc, priority, lastmod) {
   return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <priority>${priority}</priority>\n  </url>`;
 }
@@ -80,6 +137,7 @@ exports.handler = async () => {
       { path: '/us',               priority: '0.9' },
       { path: '/us/california',    priority: '0.9' },
       { path: '/us/new-york',      priority: '0.9' },
+      { path: '/technology',       priority: '0.8' },
       { path: '/studio',           priority: '0.7' },
       { path: '/contact',          priority: '0.5' },
       { path: '/terms',            priority: '0.3' },
@@ -113,7 +171,27 @@ exports.handler = async () => {
       if (counts[clinic.country] !== undefined) counts[clinic.country]++;
     }
 
-    console.log(`sitemap-com: ${staticPages.length} static + ${counts.taiwan} TW + ${counts.hongkong} HK + ${counts.usa} US = ${entries.length} total URLs`);
+    // Device x metro pages. A failure here must NOT take down the sitemap —
+    // the clinic URLs are the load-bearing half and were working long before
+    // these pages existed.
+    let deviceCount = 0;
+    try {
+      const { data: devicePages, error: devErr } = await fetchDevicePages(supabase);
+      if (devErr) {
+        console.error('sitemap-com: device pages skipped -', devErr.message);
+      } else {
+        for (const p of devicePages) {
+          // A denser page is a better landing page, so it gets the higher
+          // priority — same reasoning as the review-count rule above.
+          entries.push(urlEntry(`${SITE}${p.path}`, p.clinics >= 30 ? '0.7' : '0.6', today));
+          deviceCount++;
+        }
+      }
+    } catch (e) {
+      console.error('sitemap-com: device pages threw -', e.message);
+    }
+
+    console.log(`sitemap-com: ${staticPages.length} static + ${counts.taiwan} TW + ${counts.hongkong} HK + ${counts.usa} US + ${deviceCount} device x metro = ${entries.length} total URLs`);
 
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
