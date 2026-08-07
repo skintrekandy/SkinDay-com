@@ -2110,8 +2110,12 @@ async function searchClinics(supabase, body) {
 }
 
 async function referenceList(supabase) {
+  // model_aliases is sent so the Add-devices screen can match a PASTED list
+  // against the names a clinic actually writes ("BroadBand Light" -> BBL,
+  // "Forever Young BBL" -> BBL). Without it that box only matches exact model
+  // names, which is the minority of how equipment is written up.
   const { data, error } = await supabase.from('device_reference')
-    .select('id, model, manufacturer, category, distributor_ca')
+    .select('id, model, manufacturer, category, distributor_ca, model_aliases')
     .eq('active', true)
     .order('manufacturer')
     .order('model');
