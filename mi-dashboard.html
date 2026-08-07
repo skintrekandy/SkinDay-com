@@ -1133,7 +1133,6 @@
     // "clinics in san-francisco".
     var where = geo.neighbourhood ? regionLabel(geo.neighbourhood)
               : (geo.province ? regionLabel(geo.province) : CTY.country);
-    var territory = geo.province ? regionLabel(geo.province) : CTY.country;
     var cov = COVERAGE || {};
     var pending = (cov.clinics!=null && cov.verified!=null) ? (cov.clinics-cov.verified) : null;
     // ⭐⭐⭐ THE DENOMINATOR. `without_ours` counts every clinic in the country
@@ -1151,23 +1150,19 @@
     // wrong discounts the whole screen. The 404-of-650 denominator sits in the
     // same breath as the claim so the share figures below can be defended.
     var mine = (ME&&ME.display_name) ? esc(ME.display_name) : null;
-    // ⛔⛔ GRAIN MISMATCH, GUARDED HERE UNTIL THE RPC IS FIXED: the `coverage`
-    // call sends the neighbourhood param like every other call, but the RPC
-    // IGNORES it — coverage always returns TERRITORY-WIDE figures. So with a
-    // metro selected, `with_ours` is metro-scoped while `cov.verified` is not,
-    // and subtracting them produced San Francisco 169 against California 3,460
-    // = "3,291 more", a number that reconciles with nothing. While drilled into
-    // a metro we drop the comparison entirely and name the territory explicitly
-    // on the coverage line, rather than print two grains as one sentence.
-    var drilled = !!geo.neighbourhood;
+    // ⭐ FIXED 2026-08-06 (server-side): mi_coverage now takes p_city and
+    // p_neighbourhood and applies the same scope predicate as mi_kpis, including
+    // the device_reference.active requirement. So every number on this line is
+    // at the SAME grain as the headline and the comparison is sound again — the
+    // client-side suppression that stood in for the fix is gone.
     el('hero').innerHTML='<div class="big">'+(k.with_ours!=null?num(k.with_ours):'—')+
       ' <span class="unit">clinics in '+esc(where)+(mine?' run '+mine:' run your equipment')+'</span></div>'+
-      ((otherIdentified!=null && !drilled)
+      (otherIdentified!=null
         ? '<div class="sub"><span class="share">'+num(otherIdentified)+'</span> more run other manufacturers only.</div>'
         : '')+
       (cov.verified!=null
         ? '<div class="cov"><b>'+num(cov.verified)+'</b> of <b>'+(cov.clinics!=null?num(cov.clinics):'—')+'</b> clinics in '+
-          esc(territory)+' have equipment identified'+
+          esc(where)+' have equipment identified'+
           (pending!=null?' &middot; <b>'+num(pending)+'</b> not yet researched':'')+
           (cov.last_updated?' &middot; updated '+esc(new Date(cov.last_updated).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})):'')+
           '</div>'

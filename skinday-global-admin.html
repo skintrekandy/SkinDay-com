@@ -1180,9 +1180,32 @@
             <select class="form-input" id="md-dev" style="max-width:280px;" onchange="mdDevChanged()">
               <option value="">Device&hellip;</option>
             </select>
-            <button class="btn-ghost" onclick="mdAddDevice()">Add</button>
+            <button class="btn-ghost" onclick="mdAddDevice()">Add this device</button>
             <span id="md-dist" style="font-size:.78rem;color:var(--muted);"></span>
           </div>
+
+          <div style="margin-top:.8rem;">
+            <input class="form-input" id="md-search" style="max-width:340px;"
+                   placeholder="&#128269; Or search all devices &mdash; type to filter"
+                   oninput="mdSearch()" autocomplete="off" />
+            <div id="md-results" style="margin-top:.5rem;max-height:230px;overflow:auto;display:none;
+                 border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:.35rem;"></div>
+          </div>
+
+          <div style="margin-top:.8rem;">
+            <details>
+              <summary style="cursor:pointer;font-size:.85rem;color:var(--muted);">Paste a list of device names</summary>
+              <div style="margin-top:.5rem;">
+                <textarea class="form-input" id="md-paste" rows="4" style="max-width:520px;"
+                  placeholder="One per line, or comma separated &mdash; e.g. copy the equipment list off the clinic&#39;s own page"></textarea>
+                <div style="margin-top:.4rem;">
+                  <button class="btn-ghost" onclick="mdMatchPaste()">Match these</button>
+                  <span id="md-paste-msg" style="font-size:.82rem;margin-left:.5rem;"></span>
+                </div>
+              </div>
+            </details>
+          </div>
+
           <div id="md-picked" style="margin-top:.7rem;font-size:.85rem;"></div>
 
           <div class="form-section-label" style="margin-top:1rem;">4 &mdash; Evidence</div>
@@ -3333,20 +3356,115 @@ function mdPick(json) {
 
 function mdAddDevice() {
   const id = Number(document.getElementById('md-dev').value);
-  if (!id || mdPicked.some(p => p.id === id)) return;
-  const d = mdRef.find(x => x.id === id);
-  if (d) { mdPicked.push(d); mdRenderPicked(); }
+  if (!id) return;
+  mdPick(id);
 }
 
-function mdDrop(id) { mdPicked = mdPicked.filter(p => p.id !== id); mdRenderPicked(); }
+// ⭐ Shared by all three ways in: the two dropdowns, the search list, and the
+// paste box. One entry point so "already added" is handled once.
+function mdPick(id) {
+  id = Number(id);
+  if (!id || mdPicked.some(p => p.id === id)) return false;
+  const d = mdRef.find(x => x.id === id);
+  if (!d) return false;
+  mdPicked.push(d);
+  mdRenderPicked();
+  mdSearch();                       // keep the tick marks in step
+  return true;
+}
+
+function mdDrop(id) { mdPicked = mdPicked.filter(p => p.id !== id); mdRenderPicked(); mdSearch(); }
+
+// ⭐⭐ ADDING SEVERAL AT ONCE. The dropdown pair is fine for one device and
+// miserable for fifteen, which is what a WAF-blocked clinic page usually lists.
+// Two faster routes, both feeding mdPick:
+//   search  — type a few letters, click the ones that match. No manufacturer
+//             needed first, which matters when you know the machine but not who
+//             makes it.
+//   paste   — copy the equipment list straight off the clinic's page. Names are
+//             matched against model AND aliases, so "BroadBand Light" finds BBL.
+function mdNorm(v) {
+  return String(v == null ? '' : v).toLowerCase()
+    .replace(/\+/g, ' plus ').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function mdJam(v) { return mdNorm(v).replace(/\s+/g, ''); }
+
+function mdSearch() {
+  const box = document.getElementById('md-results');
+  const q = mdNorm(document.getElementById('md-search').value);
+  if (!q || q.length < 2) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const hits = mdRef.filter(function(d){
+    const hay = mdNorm((d.manufacturer || '') + ' ' + (d.model || ''));
+    return hay.indexOf(q) !== -1;
+  }).slice(0, 60);
+  box.style.display = 'block';
+  box.innerHTML = hits.length
+    ? hits.map(function(d){
+        const on = mdPicked.some(p => p.id === d.id);
+        return '<label style="display:block;padding:.2rem .3rem;cursor:pointer;font-size:.85rem;">'
+          + '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="mdToggle(' + d.id + ',this.checked)" /> '
+          + esc(d.model) + ' <span style="color:var(--muted);">' + esc(d.manufacturer || '') + '</span>'
+          + '</label>';
+      }).join('')
+    : '<div style="color:var(--muted);padding:.3rem;font-size:.85rem;">Nothing matches that.</div>';
+}
+
+function mdToggle(id, on) { if (on) mdPick(id); else mdDrop(id); }
+
+// ⚠️ UNMATCHED NAMES ARE REPORTED, NEVER SWALLOWED. A device missing from
+// device_reference is a reference-list gap worth knowing about — silently
+// dropping it is how a clinic ends up recorded as owning less than it does.
+function mdMatchPaste() {
+  const raw = document.getElementById('md-paste').value || '';
+  const msg = document.getElementById('md-paste-msg');
+  const names = raw.split(/[\n,;]+/).map(v => v.trim()).filter(Boolean);
+  if (!names.length) { msg.textContent = ''; return; }
+
+  let added = 0, already = 0; const missed = [];
+  names.forEach(function(nameRaw){
+    const n = mdNorm(nameRaw), j = mdJam(nameRaw);
+    if (!n) return;
+    let d = mdRef.find(x => mdNorm(x.model) === n || mdJam(x.model) === j);
+    if (!d) {
+      d = mdRef.find(function(x){
+        const al = x.model_aliases || x.aliases || [];
+        return Array.isArray(al) && al.some(a => mdNorm(a) === n || mdJam(a) === j);
+      });
+    }
+    if (!d) { missed.push(nameRaw); return; }
+    if (mdPicked.some(p => p.id === d.id)) { already++; return; }
+    if (mdPick(d.id)) added++;
+  });
+
+  const bits = [];
+  if (added)   bits.push('added ' + added);
+  if (already) bits.push(already + ' already on the list');
+  if (missed.length) bits.push('no match for: ' + missed.slice(0, 8).join(', ')
+    + (missed.length > 8 ? ' and ' + (missed.length - 8) + ' more' : ''));
+  msg.style.color = missed.length ? 'var(--red)' : 'var(--green)';
+  msg.textContent = bits.join(' \u00b7 ') || 'Nothing matched.';
+}
 
 function mdRenderPicked() {
+  const save = document.getElementById('md-save');
+  // ⭐ The reason a button is disabled belongs ON the button, not in a message
+  // that only appears after you press it. Andy hit exactly this: he had picked
+  // in the dropdowns but never pressed Add, and the screen said nothing until
+  // Publish failed.
+  if (save) {
+    save.disabled = !mdPicked.length;
+    save.title = mdPicked.length ? '' : 'Add at least one device first';
+  }
   document.getElementById('md-picked').innerHTML = mdPicked.length
-    ? mdPicked.map(d => '<span style="display:inline-block;background:var(--warm);border-radius:5px;padding:.15rem .5rem;margin:0 .35rem .35rem 0;">'
+    ? '<div style="margin-bottom:.35rem;color:var(--muted);">' + mdPicked.length + ' device(s) to publish:</div>'
+      + mdPicked.map(d => '<span style="display:inline-block;background:var(--warm);border-radius:5px;padding:.15rem .5rem;margin:0 .35rem .35rem 0;">'
         + esc(d.model) + ' <span style="color:var(--muted);">' + esc(d.manufacturer || '') + '</span> '
         + '<a href="#" onclick="mdDrop(' + d.id + ');return false;" style="color:var(--red);">&times;</a></span>').join('')
-    : '<span style="color:var(--muted);">No devices chosen yet.</span>';
+      + '<div style="margin-top:.3rem;"><a href="#" onclick="mdClearPicked();return false;" style="color:var(--muted);font-size:.8rem;">clear all</a></div>'
+    : '<span style="color:var(--muted);">Nothing added yet &mdash; pick a device and press <strong>Add this device</strong>, or search / paste a list above.</span>';
 }
+
+function mdClearPicked() { mdPicked = []; mdRenderPicked(); mdSearch(); }
 
 async function mdSave() {
   if (!mdClinic || !mdPicked.length) { document.getElementById('md-msg').textContent = 'Pick a clinic and at least one device.'; return; }
