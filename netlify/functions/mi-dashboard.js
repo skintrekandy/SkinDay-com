@@ -243,7 +243,30 @@ exports.handler = async (event) => {
 
   const owner = { p_owner_type: me.owner_type, p_owner_name: me.owner_name };
   const scope = { p_tenant_id: me.tenant_id, p_user_id: me.user_id };
+  // ⭐ Trial state is read from mi_tenants rather than the identity RPC, which
+  // predates these columns. One indexed lookup by id; cheap enough to do on
+  // every call and it keeps the countdown honest if the date is changed while
+  // someone is signed in.
+  let trial = null;
+  if (me.tenant_id) {
+    const { data: t } = await supabase.from('mi_tenants')
+      .select('plan, sub_status, trial_ends_at, seat_limit')
+      .eq('id', me.tenant_id).maybeSingle();
+    if (t && t.trial_ends_at) {
+      const ms = new Date(t.trial_ends_at).getTime() - Date.now();
+      trial = {
+        plan: t.plan || null,
+        status: t.sub_status || null,
+        ends_at: t.trial_ends_at,
+        // Round UP: with 6 hours left a rep should read "1 day", not "0".
+        days_left: Math.max(0, Math.ceil(ms / 86400000)),
+        expired: ms <= 0
+      };
+    }
+  }
+
   const brand = {
+    trial: trial,
     display_name: me.display_name,
     accent_hex: me.accent_hex,
     logo_url: me.logo_url || null,
@@ -634,7 +657,7 @@ exports.handler = async (event) => {
         if (!me.tenant_id) return json(200, { billing: null });
         const { data: t, error: tErr } = await supabase
           .from('mi_tenants')
-          .select('plan, seat_limit, sub_status, trial_ends_at, stripe_customer_id, country')
+          .select('plan, seat_limit, sub_status, trial_ends_at, stripe_customer_id, stripe_subscription_id, country')
           .eq('id', me.tenant_id).maybeSingle();
         if (tErr) throw tErr;
         const { count } = await supabase.from('mi_users')
@@ -642,13 +665,92 @@ exports.handler = async (event) => {
           .eq('tenant_id', me.tenant_id).eq('active', true);
         return json(200, { billing: Object.assign({}, t, {
           seats_used: count || 0,
-          can_manage: !!(t && t.stripe_customer_id)
+          // ⚠️ TWO DIFFERENT QUESTIONS, and conflating them is what left a pilot
+          // with no way to buy. can_manage = "Stripe knows this customer, so the
+          // portal will open". has_subscription = "they are actually paying".
+          // A tenant created by hand has neither; the Subscribe buttons key off
+          // the second, and admin rights rather than the first.
+          can_manage: !!(t && t.stripe_customer_id),
+          has_subscription: !!(t && t.stripe_subscription_id)
         }) });
       }
 
       // Cancelling, changing card, and invoices all live in Stripe's own billing
       // portal. Building our own cancel button would mean reimplementing proration,
       // dunning and invoice history badly. One redirect instead.
+      // ⭐⭐ CONVERTING AN EXISTING TENANT TO A PAID SUBSCRIPTION.
+      // mi-checkout.js handles NEW signups and is deliberately unauthenticated,
+      // so it must never take a tenant id from the body — anyone could attach a
+      // subscription to somebody else's account and change their plan. Here the
+      // caller is already identified and admin-checked, so the tenant is taken
+      // from the SESSION and never from the request.
+      //
+      // This is the path a pilot takes at the end of its 30 days: the tenant
+      // already exists with its saved accounts, notes and users, so the webhook
+      // must ATTACH to it rather than mint a second one.
+      case 'start_subscription': {
+        if (!isAdmin) return json(403, { error: 'admin only' });
+        if (!me.tenant_id) return json(400, { error: 'no account to subscribe' });
+
+        const plan   = String(body.plan || '').toLowerCase();
+        const period = String(body.period || 'month').toLowerCase() === 'year' ? 'year' : 'month';
+        const SEATS  = { solo: 1, team: 5 };
+        if (!SEATS[plan]) return json(400, { error: 'choose a plan' });
+
+        const { data: t, error: tErr } = await supabase.from('mi_tenants')
+          .select('id, display_name, owner_name, owner_type, country, stripe_customer_id, stripe_subscription_id')
+          .eq('id', me.tenant_id).maybeSingle();
+        if (tErr) throw tErr;
+        if (!t) return json(400, { error: 'no account to subscribe' });
+        // Already paying: the billing portal is where plan changes belong, and
+        // a second checkout would create a second subscription on one tenant.
+        if (t.stripe_subscription_id) {
+          return json(400, { error: 'This account already has a subscription. Use Manage subscription to change it.' });
+        }
+
+        const priceId = process.env['MI_PRICE_' + plan.toUpperCase() + '_' + period.toUpperCase()];
+        if (!priceId) return json(500, { error: 'that plan is not available yet' });
+        const KEY = process.env.MI_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY;
+        if (!KEY) return json(500, { error: 'billing is not configured' });
+        const site = (process.env.SITE_URL || 'https://skinday.com').replace(/\/+$/, '');
+
+        // ⚠️ NO TRIAL. mi-checkout gives new signups 14 days; a pilot has already
+        // had its free period and would otherwise get another one.
+        const form = new URLSearchParams({
+          'mode': 'subscription',
+          'line_items[0][price]': priceId,
+          'line_items[0][quantity]': '1',
+          'billing_address_collection': 'required',
+          'automatic_tax[enabled]': 'true',
+          'allow_promotion_codes': 'true',
+          // BOTH of these are read by the webhook. client_reference_id is the
+          // one Stripe surfaces most reliably; the metadata copy survives on the
+          // subscription object when the session is not the event that lands.
+          'client_reference_id': String(t.id),
+          'metadata[mi_tenant_id]': String(t.id),
+          'metadata[mi_plan]': plan,
+          'metadata[mi_seats]': String(SEATS[plan]),
+          'metadata[mi_company]': t.owner_name || t.display_name || '',
+          'subscription_data[metadata][mi_tenant_id]': String(t.id),
+          'subscription_data[metadata][mi_plan]': plan,
+          'subscription_data[metadata][mi_seats]': String(SEATS[plan]),
+          'subscription_data[metadata][mi_company]': t.owner_name || t.display_name || '',
+          'success_url': site + '/mi-dashboard.html?subscribed=1',
+          'cancel_url': site + '/mi-dashboard.html'
+        });
+        if (t.stripe_customer_id) form.set('customer', t.stripe_customer_id);
+        else if (me.email) form.set('customer_email', me.email);
+
+        const res = await fetch('https://api.stripe.com/v1/checkout/sessions', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: form.toString()
+        });
+        const out = await res.json();
+        if (!res.ok) return json(500, { error: 'could not start checkout', detail: (out.error && out.error.message) || '' });
+        return json(200, { url: out.url });
+      }
+
       case 'billing_portal': {
         if (!isAdmin) return json(403, { error: 'admin only' });
         if (!me.tenant_id) return json(400, { error: 'no subscription on this account' });
