@@ -526,6 +526,14 @@
         </div>
       </div>
 
+      <!-- Pilot countdown. Shown only while a trial_ends_at is set, so a paying
+           tenant never sees it. Deliberately plain: a rep should know where they
+           stand without it feeling like a nag. -->
+      <div id="trialBox" style="display:none;margin:-10px 0 26px;padding:16px 20px;border:1px solid var(--line);border-radius:12px;background:var(--accent-soft)">
+        <div style="font-size:17px;font-weight:600" id="trialTitle"></div>
+        <div style="color:var(--muted);font-size:14px;margin-top:4px" id="trialSub"></div>
+      </div>
+
       <!-- Priced PER SEAT, not per territory. Territory maps differ by company
            and change on reorg; seats do not. Users are already individually
            territory-locked, so how a director divides the country is a setting
@@ -552,6 +560,7 @@
                 <li>Saved accounts and private notes</li>
                 <li>Evidence on every device</li>
               </ul>
+              <button class="btn go" id="planBuySolo" style="display:none;margin-top:14px">Subscribe to Solo</button>
             </div>
             <div class="plan best" data-plan="team">
               <div class="ptag" id="teamTag">Most teams</div>
@@ -566,6 +575,7 @@
                 <li>Coverage and gaps across the team</li>
               </ul>
               <button class="btn go" id="planUpgrade" style="display:none;margin-top:14px">Upgrade to Team</button>
+              <button class="btn go" id="planBuyTeam" style="display:none;margin-top:14px">Subscribe to Team</button>
             </div>
             <div class="plan" data-plan="custom">
               <div class="pname">Larger team</div>
@@ -792,6 +802,7 @@
     // An admin on a tenant-level code has no personal user row, so gating the
     // whole Settings tab on user_id locked out the very person who sets it up.
     el('settingsBtn').style.display=(t.role==='admin'||t.user_id)?'':'none';
+    renderTrial(t.trial);
     // Name and password need a personal account to edit.
     el('secAccount').style.display=t.user_id?'':'none';
     el('myName').value=t.user_name||'';
@@ -850,6 +861,24 @@
       .catch(function(e){ KEY=null; el('joinErr').textContent=(e&&e.error)?e.error:'Could not set your password.'; });
   });
   // ---- forgot / reset password ----------------------------------------------
+  // ⭐ Days remaining on a pilot. Rounded UP — with six hours left a rep should
+  // read "1 day", not "0". Hidden entirely when there is no trial date, so a
+  // paying customer never sees a countdown.
+  function renderTrial(tr){
+    var box=el('trialBox'); if(!box) return;
+    if(!tr || !tr.ends_at){ box.style.display='none'; return; }
+    var ends=new Date(tr.ends_at).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'});
+    box.style.display='';
+    if(tr.expired){
+      el('trialTitle').textContent='Your pilot has ended.';
+      el('trialSub').textContent='It ran until '+ends+'. Get in touch to keep your access.';
+      return;
+    }
+    var d=tr.days_left;
+    el('trialTitle').textContent = d===1 ? '1 day left in your pilot' : d+' days left in your pilot';
+    el('trialSub').textContent   = 'Full access to Canada until '+ends+'.';
+  }
+
   el('gForgot').addEventListener('click',function(){
     el('gateSignin').style.display='none'; el('gateForgot').style.display='';
     el('fEmail').value=el('gEmail').value.trim(); el('fEmail').focus();
@@ -1736,6 +1765,17 @@
       // should not have to email anyone to spend more money.
       var solo = b.plan==='solo';
       el('planUpgrade').style.display=(solo&&b.can_manage)?'':'none';
+
+      // ⭐ A tenant with no Stripe subscription — a pilot, or any account set up
+      // by hand — had NOTHING to click here: Manage is hidden without a customer
+      // id and Upgrade only shows on Solo. So the plan cards were a price list
+      // with no way to buy, which is exactly where a pilot ends up on its last
+      // day. These two buttons are that missing path.
+      // loadBilling() is only ever called for an admin (see the role check at
+      // the identity boot), so reaching this line already means admin.
+      var noSub = !b.has_subscription;
+      el('planBuySolo').style.display = noSub ? '' : 'none';
+      el('planBuyTeam').style.display = noSub ? '' : 'none';
       if(el('teamTag')) el('teamTag').style.display=solo?'none':'';
 
       // ⭐ THE INVITE FORM IS HIDDEN, not just refused. A Solo customer has one
@@ -1761,6 +1801,19 @@
   }
   // Same destination as Manage: Stripe handles proration on an upgrade, and the
   // webhook raises seat_limit when the new price comes back.
+  function startSubscription(plan, btn){
+    var label=btn.textContent; btn.disabled=true; btn.textContent='Opening\u2026';
+    api('start_subscription',{plan:plan,period:'month'}).then(function(res){
+      if(res&&res.url){ location.href=res.url; return; }
+      throw new Error('no checkout url');
+    }).catch(function(e){
+      btn.disabled=false; btn.textContent=label;
+      el('planPortalNote').textContent=(e&&e.error)?e.error:'Could not start checkout just now.';
+    });
+  }
+  el('planBuySolo').addEventListener('click',function(){ startSubscription('solo',this); });
+  el('planBuyTeam').addEventListener('click',function(){ startSubscription('team',this); });
+
   el('planUpgrade').addEventListener('click',function(){ el('planPortal').click(); });
   el('planPortal').addEventListener('click',function(){
     var b=el('planPortal'); b.disabled=true; b.textContent='Opening\u2026';
