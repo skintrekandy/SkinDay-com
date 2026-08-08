@@ -357,11 +357,38 @@
     <input id="gPass" type="password" autocomplete="current-password">
     <div style="margin-top:18px"><button class="act" id="gLogin" style="width:100%">Sign in</button></div>
     <div class="gate-err" id="gateErr"></div>
-    <button class="quiet" id="gKeyToggle" style="margin-top:10px;width:100%;border:0;color:var(--muted)">Use an access key instead</button>
+    <button class="quiet" id="gForgot" style="margin-top:10px;width:100%;border:0;color:var(--muted)">Forgot your password?</button>
+    <button class="quiet" id="gKeyToggle" style="margin-top:4px;width:100%;border:0;color:var(--muted)">Use an access key instead</button>
     <div id="gKeyBox" style="display:none;margin-top:10px">
       <span class="mono">Access key</span>
       <input id="pw" type="password" autocomplete="off" placeholder="key">
     </div>
+  </div>
+
+  <!-- Asking for a reset. The response is deliberately the same whether or not
+       the address has an account: anything else lets an anonymous visitor test
+       which emails hold a paid seat. -->
+  <div class="gate-card" id="gateForgot" style="display:none">
+    <div class="brand">SkinDay <b>Market Intelligence</b></div>
+    <div class="sub">Reset your password.</div>
+    <span class="mono">Email</span>
+    <input id="fEmail" type="email" autocomplete="username" placeholder="you@company.com">
+    <div style="margin-top:18px"><button class="act" id="fSend" style="width:100%">Send reset link</button></div>
+    <div class="gate-err" id="forgotErr"></div>
+    <button class="quiet" id="fBack" style="margin-top:10px;width:100%;border:0;color:var(--muted)">Back to sign in</button>
+  </div>
+
+  <!-- Choosing the new password, reached from the emailed link. -->
+  <div class="gate-card" id="gateReset" style="display:none">
+    <div class="brand">SkinDay <b>Market Intelligence</b></div>
+    <div class="sub">Choose a new password.</div>
+    <span class="mono">New password</span>
+    <input id="rPass" type="password" autocomplete="new-password">
+    <span class="mono" style="display:block;margin-top:14px">Confirm</span>
+    <input id="rPass2" type="password" autocomplete="new-password">
+    <div style="margin-top:18px"><button class="act" id="rSave" style="width:100%">Save new password</button></div>
+    <div class="gate-err" id="resetErr"></div>
+    <div style="color:var(--muted);font-size:13px;margin-top:10px">At least 10 characters. This signs you out everywhere else.</div>
   </div>
 
   <!-- Accepting an invitation. Shown only when the URL carries a token, and the
@@ -793,6 +820,12 @@
   // an invitation link, exchanged for a password the person picks
   var joinTok=(location.hash.match(/[#&]t=([^&]+)/)||[])[1];
   var hashKey=(location.hash.match(/[#&]k=([^&]+)/)||[])[1];
+  var resetTok=(location.hash.match(/[#&]r=([^&]+)/)||[])[1];
+  if(resetTok){
+    resetTok=decodeURIComponent(resetTok);
+    history.replaceState(null,'',location.pathname);   // keep it out of history
+    el('gateSignin').style.display='none'; el('gateReset').style.display='';
+  }
   if(joinTok){
     joinTok=decodeURIComponent(joinTok);
     history.replaceState(null,'',location.pathname);
@@ -816,6 +849,52 @@
       .then(function(res){ KEY=null; if(res.session) tryKey(res.session); else { el('joinSub').textContent='Password set. You can sign in now.'; el('gateJoin').style.display='none'; el('gateSignin').style.display=''; } })
       .catch(function(e){ KEY=null; el('joinErr').textContent=(e&&e.error)?e.error:'Could not set your password.'; });
   });
+  // ---- forgot / reset password ----------------------------------------------
+  el('gForgot').addEventListener('click',function(){
+    el('gateSignin').style.display='none'; el('gateForgot').style.display='';
+    el('fEmail').value=el('gEmail').value.trim(); el('fEmail').focus();
+  });
+  el('fBack').addEventListener('click',function(){
+    el('gateForgot').style.display='none'; el('gateSignin').style.display='';
+    el('forgotErr').textContent='';
+  });
+  el('fSend').addEventListener('click',function(){
+    var em=el('fEmail').value.trim();
+    if(!em){ el('forgotErr').textContent='Enter your email.'; return; }
+    var b=el('fSend'); b.disabled=true; el('forgotErr').style.color='var(--muted)';
+    el('forgotErr').textContent='Sending\u2026';
+    KEY='none';
+    api('request_reset',{email:em}).then(function(){
+      KEY=null; b.disabled=false;
+      // Same wording regardless of whether the account exists.
+      el('forgotErr').style.color='var(--muted)';
+      el('forgotErr').textContent='If an account exists for '+em+', a reset link is on its way. It expires in an hour.';
+    }).catch(function(){
+      KEY=null; b.disabled=false;
+      el('forgotErr').style.color='var(--comp)';
+      el('forgotErr').textContent='Could not send that. Try again shortly.';
+    });
+  });
+  el('rSave').addEventListener('click',function(){
+    var p1=el('rPass').value, p2=el('rPass2').value;
+    el('resetErr').style.color='var(--comp)';
+    if(p1.length<10){ el('resetErr').textContent='At least 10 characters.'; return; }
+    if(p1!==p2){ el('resetErr').textContent='Those do not match.'; return; }
+    var b=el('rSave'); b.disabled=true;
+    el('resetErr').style.color='var(--muted)'; el('resetErr').textContent='Saving\u2026';
+    KEY='none';
+    api('reset_password',{token:resetTok,new_password:p1}).then(function(){
+      KEY=null; b.disabled=false;
+      el('gateReset').style.display='none'; el('gateSignin').style.display='';
+      el('gateErr').style.color='var(--muted)';
+      el('gateErr').textContent='Password changed. Sign in with your new one.';
+    }).catch(function(e){
+      KEY=null; b.disabled=false;
+      el('resetErr').style.color='var(--comp)';
+      el('resetErr').textContent=(e&&e.error)||'That link is no longer valid. Request a new one.';
+    });
+  });
+
   el('gKeyToggle').addEventListener('click',function(){
     var b=el('gKeyBox'); b.style.display=b.style.display==='none'?'':'none'; if(b.style.display==='') el('pw').focus();
   });
