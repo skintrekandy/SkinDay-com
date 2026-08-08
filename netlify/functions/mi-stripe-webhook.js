@@ -80,6 +80,40 @@ exports.handler = async (event) => {
         sub = await stripe.subscriptions.retrieve(s.subscription);
         if (sub && sub.metadata && sub.metadata.mi_company) md = sub.metadata;
       }
+      // ⭐⭐ AN EXISTING TENANT CONVERTING, not a new signup. A pilot reaching
+      // the end of its run already HAS a tenant with users, saved accounts and
+      // notes; calling mi_signup_tenant here would create a SECOND tenant, and
+      // the customer would pay for an empty account while their work sat in the
+      // old one. Checked BEFORE the mi_company guard because this path is not a
+      // signup and need not look like one.
+      const existingTenantId = md.mi_tenant_id || s.client_reference_id || null;
+      if (existingTenantId) {
+        const mappedSeats = parseInt(md.mi_seats, 10) || 1;
+        const patch = {
+          plan: md.mi_plan || 'solo',
+          seat_limit: mappedSeats,
+          sub_status: (sub && sub.status) || 'active',
+          // The pilot is over the moment they pay. Leaving trial_ends_at set
+          // would keep a countdown on the screen of a paying customer.
+          trial_ends_at: sub && sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null,
+          active: true
+        };
+        if (typeof s.customer === 'string') patch.stripe_customer_id = s.customer;
+        if (typeof s.subscription === 'string') patch.stripe_subscription_id = s.subscription;
+
+        // ⚠️ Idempotent: Stripe retries, and a retry must not double-apply.
+        // Matching on id alone is safe because every field here is absolute
+        // rather than incremental.
+        const { error: upErr } = await supabase.from('mi_tenants')
+          .update(patch).eq('id', existingTenantId);
+        if (upErr) throw upErr;
+
+        console.log('mi-subscribe: tenant ' + existingTenantId + ' now on ' + patch.plan +
+                    ' (' + mappedSeats + ' seats), sub ' + (patch.stripe_subscription_id || 'n/a'));
+        // No invite email: they already have an account and are signed in.
+        return { statusCode: 200, body: 'existing tenant ' + existingTenantId + ' subscribed' };
+      }
+
       if (!md.mi_company) return { statusCode: 200, body: 'not a market intelligence signup' };
 
       const trialEnds = sub && sub.trial_end
