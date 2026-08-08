@@ -548,10 +548,16 @@
         </div>
         <div class="box">
           <div id="planStatus" class="cmeta" style="margin-bottom:18px"></div>
+          <!-- ⭐ Annual was reachable in the code (MI_PRICE_*_YEAR) and priced in
+               the footnote, but nothing on any screen let anyone choose it. -->
+          <div id="planPeriod" style="display:none;margin:0 0 16px">
+            <button class="btn" type="button" data-period="month" aria-pressed="true">Monthly</button>
+            <button class="btn" type="button" data-period="year" aria-pressed="false">Annual &mdash; two months free</button>
+          </div>
           <div class="plans">
             <div class="plan" data-plan="solo">
               <div class="pname">Solo</div>
-              <div class="pprice">$99 <span>USD / month</span></div>
+              <div class="pprice" id="priceSolo">$99 <span>USD / month</span></div>
               <div class="pwho">One seat</div>
               <ul>
                 <li>Full account directory with equipment</li>
@@ -565,7 +571,7 @@
             <div class="plan best" data-plan="team">
               <div class="ptag" id="teamTag">Most teams</div>
               <div class="pname">Team</div>
-              <div class="pprice">$299 <span>USD / month</span></div>
+              <div class="pprice" id="priceTeam">$299 <span>USD / month</span></div>
               <div class="pwho">Up to 5 seats &middot; $59 per extra seat</div>
               <ul>
                 <li>Everything in Solo, for the whole team</li>
@@ -1776,6 +1782,10 @@
       var noSub = !b.has_subscription;
       el('planBuySolo').style.display = noSub ? '' : 'none';
       el('planBuyTeam').style.display = noSub ? '' : 'none';
+      // Only useful when a plan can actually be chosen. An existing subscriber
+      // switches monthly/annual in Stripe's portal, where proration is handled.
+      el('planPeriod').style.display = noSub ? '' : 'none';
+      if(noSub) renderPlanPrices();
       if(el('teamTag')) el('teamTag').style.display=solo?'none':'';
 
       // ⭐ THE INVITE FORM IS HIDDEN, not just refused. A Solo customer has one
@@ -1801,9 +1811,28 @@
   }
   // Same destination as Manage: Stripe handles proration on an upgrade, and the
   // webhook raises seat_limit when the new price comes back.
+  // Ten months for twelve, matching the footnote and the yearly Stripe prices.
+  var PLAN_PERIOD='month';
+  var PLAN_PRICES={ solo:{month:'$99',year:'$990'}, team:{month:'$299',year:'$2,990'} };
+  function renderPlanPrices(){
+    var unit = PLAN_PERIOD==='year' ? 'USD / year' : 'USD / month';
+    el('priceSolo').innerHTML = PLAN_PRICES.solo[PLAN_PERIOD]+' <span>'+unit+'</span>';
+    el('priceTeam').innerHTML = PLAN_PRICES.team[PLAN_PERIOD]+' <span>'+unit+'</span>';
+    var btns=el('planPeriod').querySelectorAll('button');
+    for(var i=0;i<btns.length;i++){
+      var on = btns[i].getAttribute('data-period')===PLAN_PERIOD;
+      btns[i].setAttribute('aria-pressed', on?'true':'false');
+      btns[i].classList.toggle('go', on);
+    }
+  }
+  el('planPeriod').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-period]'); if(!b) return;
+    PLAN_PERIOD=b.getAttribute('data-period'); renderPlanPrices();
+  });
+
   function startSubscription(plan, btn){
     var label=btn.textContent; btn.disabled=true; btn.textContent='Opening\u2026';
-    api('start_subscription',{plan:plan,period:'month'}).then(function(res){
+    api('start_subscription',{plan:plan,period:PLAN_PERIOD}).then(function(res){
       if(res&&res.url){ location.href=res.url; return; }
       throw new Error('no checkout url');
     }).catch(function(e){
