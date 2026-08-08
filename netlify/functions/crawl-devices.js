@@ -1643,6 +1643,7 @@ exports.handler = async event => {
       case 'search-clinics':      return json(200, await searchClinics(supabase, body));
       case 'reference-list':      return json(200, await referenceList(supabase, body));
       case 'manual-devices':      return json(200, await manualDevices(supabase, body));
+      case 'mark-no-devices':     return json(200, await markNoDevices(supabase, body));
       case 'requeue':             return json(200, await requeueAll(supabase, body));
       case 'sync-exclusions':     return json(200, await syncExclusions(supabase, body));
       case 'candidate-stats':     return json(200, await candidateStats(supabase, body));
@@ -2144,6 +2145,51 @@ async function referenceList(supabase) {
 // That is deliberate: a human who has read the clinic's own page is stronger
 // evidence than a crawl, so there is nothing left to review. The safeguards are
 // that first_seen is never overwritten and duplicates are ignored.
+// ⭐⭐⭐ "A HUMAN LOOKED AND THERE IS NOTHING" — the fact the schema could not
+// hold until 2026-08-06. A 403-blocked clinic sat in "not yet researched"
+// forever and was retried every crawl, because the system could express
+// found-devices and never-looked but not hand-confirmed-empty.
+//
+// ⚠️ THIS IS A COVERAGE FACT, NOT A SALES ONE. Andy: "no device clinics should
+// definitely be opportunities." A clinic with nothing installed is the purest
+// greenfield a rep has — nothing to displace. This stamp must NEVER be used to
+// filter an account out of a target list.
+//
+// The host is deliberately LEFT IN THE QUEUE. The check records what was true
+// today; a clinic that buys next year will publish a page about it, and if the
+// WAF ever relaxes we want to read it.
+async function markNoDevices(supabase, body) {
+  if (!body.clinic_id) return { error: 'no clinic', updated: 0 };
+
+  let clinicIds = [String(body.clinic_id)];
+  // Same fan-out reasoning as manualDevices: the SERVER decides which rows a
+  // host means, never the browser.
+  if (body.apply_to_host && body.host) {
+    const { data: q } = await supabase.from('crawl_device_queue')
+      .select('clinic_ids').eq('host', body.host).limit(1);
+    const ids = q && q[0] && Array.isArray(q[0].clinic_ids) ? q[0].clinic_ids.map(String) : [];
+    if (ids.length) clinicIds = [...new Set(ids.concat(clinicIds))];
+  }
+
+  // ⚠️ Never stamp a clinic that already HAS published devices — that would
+  // assert someone confirmed it empty when it plainly is not.
+  const withDevices = await selectIn(supabase, 'clinic_devices', 'clinic_id', 'clinic_id', clinicIds);
+  const has = new Set((withDevices || []).map(r => String(r.clinic_id)));
+  const target = clinicIds.filter(id => !has.has(id));
+  if (!target.length) return { updated: 0, skipped: clinicIds.length, reason: 'all already have devices' };
+
+  const note = (body.note && String(body.note).trim())
+    ? String(body.note).trim().slice(0, 200)
+    : 'hand-checked, no devices found on site';
+
+  const { data, error } = await supabase.from('clinics')
+    .update({ devices_checked_at: new Date().toISOString(), devices_checked_note: note })
+    .in('id', target)
+    .select('id, name');
+  if (error) throw error;
+  return { updated: (data || []).length, skipped: clinicIds.length - target.length, clinics: data || [] };
+}
+
 async function manualDevices(supabase, body) {
   const deviceIds = (body.device_ids || []).map(Number).filter(Boolean);
   const source    = ['website', 'clinic', 'manufacturer'].includes(body.source) ? body.source : 'website';
@@ -2164,6 +2210,15 @@ async function manualDevices(supabase, body) {
   const day = (body.seen_on && /^\d{4}-\d{2}-\d{2}$/.test(body.seen_on))
     ? body.seen_on : new Date().toISOString().slice(0, 10);
   const now = new Date().toISOString();
+
+  // ⭐ A hand ENTRY is equally a hand CHECK — it just found something. Stamping
+  // it here is what makes the whole WAF-blocked population read as "researched
+  // by hand" rather than a permanent hole in the coverage figure.
+  await supabase.from('clinics')
+    .update({ devices_checked_at: now,
+              devices_checked_note: 'hand-entered from the clinic\'s own site' })
+    .in('id', clinicIds)
+    .is('devices_checked_at', null);
 
   // Existing pairs are left completely alone — never re-dated, never re-sourced.
   const { data: existing } = await supabase.from('clinic_devices')

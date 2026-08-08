@@ -151,6 +151,69 @@ exports.handler = async (event) => {
     if (!data || data.ok !== true) return json(401, { error: 'Email or password is incorrect.' });
     return json(200, { session: data.session });
   }
+  // ---- PASSWORD RESET (pre-gate: someone locked out has no session) ----------
+  // ⚠️ MI CANNOT REUSE THE CLINIC PORTAL'S RESET. That portal runs on Supabase
+  // Auth (sb.auth.resetPasswordForEmail); MI has its own users, its own login
+  // RPC and its own hashing, so Supabase Auth has no password here to reset.
+  // This mirrors the INVITE flow instead, which already works the same shape:
+  // single-use token, short expiry, emailed to the address on file.
+  if (body.action === 'request_reset') {
+    const { data, error } = await supabase.rpc('mi_request_reset', {
+      p_email: String(body.email || '').trim()
+    });
+    if (error) return json(500, { error: 'query failed', detail: error.message });
+
+    // Email is best-effort, and the RESPONSE IS IDENTICAL either way. Telling an
+    // anonymous caller whether an address exists turns this endpoint into a way
+    // to enumerate which emails hold a paid seat.
+    try {
+      const KEY = process.env.MI_RESEND_API_KEY || process.env.RESEND_API_KEY;
+      if (KEY && data && data.token && data.email) {
+        // ⭐ Derived from the REQUEST, not a constant. The dashboard is served
+        // from the same host that handles this call, so the link is always
+        // right — including on branch deploys — with no env var to set or
+        // forget. MI_BASE_URL still wins if it is ever set explicitly.
+        const proto = event.headers['x-forwarded-proto'] || 'https';
+        const host  = event.headers.host || 'skinday.com';
+        const base  = process.env.MI_BASE_URL || (proto + '://' + host);
+        // ⭐ HASH, not a query param — matching the invitation link. A token in
+        // the query string ends up in server logs, referrer headers and browser
+        // history; a hash is never sent to the server at all.
+        const link = base + '/mi-dashboard.html#r=' + encodeURIComponent(data.token);
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: process.env.MI_FROM_EMAIL || 'SkinDay <hello@skinday.ca>',
+            to: [data.email],
+            subject: 'Reset your SkinDay Market Intelligence password',
+            text: [
+              'Someone asked to reset the password for this account.',
+              '',
+              'Open this link to choose a new one. It works once and expires in an hour:',
+              link,
+              '',
+              'If it was not you, ignore this email — nothing has changed and your',
+              'current password still works.'
+            ].join('\n')
+          })
+        });
+      }
+    } catch (e) { /* never reveal a mail failure to an anonymous caller */ }
+
+    return json(200, { ok: true });
+  }
+  if (body.action === 'reset_password') {
+    const { data, error } = await supabase.rpc('mi_reset_password', {
+      p_token: String(body.token || ''),
+      p_new: String(body.new_password || '')
+    });
+    if (error) return json(500, { error: 'query failed', detail: error.message });
+    if (!data || data.ok !== true) return json(400, { error: (data && data.error) || 'That link is no longer valid.' });
+    // Deliberately NOT signed in automatically: every session was just dropped,
+    // and making them type the new password once confirms they know it.
+    return json(200, { ok: true });
+  }
   if (body.action === 'invite_status') {
     const { data, error } = await supabase.rpc('mi_invite_status', {
       p_token: String(body.token || '')
