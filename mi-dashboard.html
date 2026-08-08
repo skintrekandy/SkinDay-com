@@ -772,9 +772,22 @@
       .then(function(r){ if(r.status===401) throw {unauth:true}; return r.json().then(function(j){ if(!r.ok) throw j; return j; }); });
   }
 
+  // ⭐⭐ THE SESSION IS PERSISTED. Before this it lived only in the KEY variable,
+  // so every refresh — and every return from another app, which is what a rep on
+  // the road does all day — dropped them back to the sign-in screen.
+  // localStorage rather than sessionStorage on purpose: sessionStorage dies with
+  // the tab, which is the same problem worn differently. The server session has
+  // its own expiry and every request is still checked, so this stores a token,
+  // never a password, and nothing here grants access on its own.
+  var SESSION_STORE='mi_session';
+  function rememberSession(k){ try{ localStorage.setItem(SESSION_STORE,k); }catch(e){} }
+  function forgetSession(){ try{ localStorage.removeItem(SESSION_STORE); }catch(e){} }
+  function savedSession(){ try{ return localStorage.getItem(SESSION_STORE)||null; }catch(e){ return null; } }
+
   function tryKey(k){
     KEY=k;
     return api('overview',{}).then(function(res){
+      rememberSession(k);
       applyIdentity(res.tenant||{});
       el('gate').style.display='none'; el('app').style.display='block';
       fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
@@ -790,7 +803,14 @@
         api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
       }
       loadFilterOptions(); loadSavedIds();
-    }).catch(function(e){ KEY=null; el('gateErr').textContent=e&&e.unauth?'Incorrect access key.':'Could not connect. Try again.'; });
+    }).catch(function(e){
+      KEY=null;
+      // ⚠️ Only forget the token when the server REJECTED it. A network blip must
+      // not sign someone out — that is the failure a rep hits in a basement car
+      // park, and being logged out for it would be worse than a retry.
+      if(e&&e.unauth) forgetSession();
+      el('gateErr').textContent=e&&e.unauth?'Your session has expired. Please sign in again.':'Could not connect. Try again.';
+    });
   }
 
   // Branding, role and territory all arrive from the API. Nothing about a
@@ -856,6 +876,10 @@
     }).catch(function(){ el('joinSub').textContent='Could not check this invitation.'; KEY=null; });
   } else if(hashKey){
     history.replaceState(null,'',location.pathname); tryKey(decodeURIComponent(hashKey));
+  } else if(!resetTok && savedSession()){
+    // Straight back in. Checked against the server like any other request, so an
+    // expired or revoked token lands on the sign-in card rather than a broken app.
+    tryKey(savedSession());
   }
   el('jGo').addEventListener('click',function(){
     var a=el('jPass').value, b=el('jPass2').value;
@@ -944,7 +968,10 @@
   el('gLogin').addEventListener('click',doLogin);
   el('gPass').addEventListener('keydown',function(ev){ if(ev.key==='Enter') doLogin(); });
   el('pw').addEventListener('keydown',function(ev){ if(ev.key==='Enter'){ var v=el('pw').value.trim(); if(!v)return; el('gateErr').textContent='Checking...'; tryKey(v); } });
-  el('signout').addEventListener('click',function(){ api('logout',{}).catch(function(){}).then(function(){ location.reload(); }); });
+  el('signout').addEventListener('click',function(){
+    forgetSession();
+    api('logout',{}).catch(function(){}).then(function(){ location.reload(); });
+  });
 
   el('settingsBtn').addEventListener('click',function(){
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){ x.classList.remove('on'); });
@@ -1080,16 +1107,36 @@
       .catch(function(e){ btn.disabled=false; if(msg) msg.textContent=(e&&e.detail)?e.detail:'Could not save.'; });
   });
 
+  // set_password returns signed_out:true — the stored token is dead the moment
+  // it succeeds, so keeping it would leave the next refresh failing silently.
   el('pwSave').addEventListener('click',function(){
     var btn=this, msg=el('pwMsg');
+    var cur=(el('pwCur')||{}).value||'';
     var a=(el('pwNew').value||''), b=(el('pwNew2')||{}).value;
-    if(a.length<8){ if(msg) msg.textContent='Use at least 8 characters.'; return; }
+    // ⛔ THIS WAS BROKEN. It posted {password:a}; the server reads body.current
+    // and body.new_password, so every change failed. The Current password field
+    // was on screen and its value was never sent.
+    if(!cur){ if(msg) msg.textContent='Enter your current password.'; return; }
+    // 10, matching mi_set_password and the reset flow. 8 was rejected by the
+    // server after the form said it was fine.
+    if(a.length<10){ if(msg) msg.textContent='Use at least 10 characters.'; return; }
     if(b!==undefined && a!==b){ if(msg) msg.textContent='The two passwords do not match.'; return; }
     btn.disabled=true; if(msg) msg.textContent='Saving\u2026';
-    api('set_password',{password:a})
-      .then(function(){ btn.disabled=false; el('pwNew').value=''; if(el('pwNew2')) el('pwNew2').value='';
+    api('set_password',{current:cur,new_password:a})
+      .then(function(res){
+        btn.disabled=false;
+        el('pwCur').value=''; el('pwNew').value=''; if(el('pwNew2')) el('pwNew2').value='';
+        // Every session was just invalidated, this one included, so the stored
+        // token is dead. Clear it and send them back to sign in with the new one
+        // rather than let the next refresh fail for no visible reason.
+        if(res && res.signed_out){
+          forgetSession();
+          if(msg) msg.textContent='\u2713 Password changed. Signing you back in\u2026';
+          setTimeout(function(){ location.reload(); },1400);
+          return;
+        }
         if(msg){ msg.textContent='\u2713 Password changed'; setTimeout(function(){ msg.textContent=''; },2500);} })
-      .catch(function(e){ btn.disabled=false; if(msg) msg.textContent=(e&&e.detail)?e.detail:'Could not change password.'; });
+      .catch(function(e){ btn.disabled=false; if(msg) msg.textContent=(e&&e.detail)?e.detail:(e&&e.error)?e.error:'Could not change password.'; });
   });
 
   el('invSend').addEventListener('click',function(){
