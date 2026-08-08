@@ -1225,6 +1225,7 @@
 
           <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:1rem;">
             <button class="btn-primary" id="md-save" onclick="mdSave()">Publish devices</button>
+            <button class="btn-ghost" id="md-none" onclick="mdMarkNone()">No devices on this site</button>
             <span id="md-msg" style="font-size:.85rem;"></span>
           </div>
         </div>
@@ -2683,6 +2684,33 @@ async function dcCall(body) {
   });
   const data = await res.json();
   return { ok: res.ok, data };
+}
+
+// ⭐ "No devices on this site". Records that a HUMAN opened the clinic's site
+// and found nothing — the fact a 403-blocked host can never produce on its own.
+// Without it those clinics sit in "not yet researched" forever and get retried
+// every crawl.
+// ⚠️ It is a COVERAGE statement, not a sales one: a clinic with no equipment is
+// the purest greenfield a rep has, and this must never filter it off a list.
+async function mdMarkNone() {
+  if (!mdClinic) { alert('Pick a clinic first.'); return; }
+  const hostBox = document.getElementById('md-all-host');
+  const all = !!(hostBox && hostBox.checked);
+  const where = all && mdClinic.host ? 'all ' + mdClinic.siblings + ' clinics on ' + mdClinic.host : mdClinic.name;
+  if (!confirm('Record that you checked ' + where + ' and found no devices?\n\nThis does not remove the clinic, and it stays in the crawl queue.')) return;
+
+  const btn = document.getElementById('md-none'); btn.disabled = true;
+  const msg = document.getElementById('md-msg'); msg.textContent = 'Saving\u2026'; msg.style.color = 'var(--muted)';
+  const r = await mdCall('mark-no-devices', {
+    clinic_id: mdClinic.id,
+    host: all ? mdClinic.host : null,
+    apply_to_host: all
+  });
+  btn.disabled = false;
+  if (!r || r.error) { msg.style.color = 'var(--red)'; msg.textContent = 'Failed: ' + ((r && r.error) || 'error'); return; }
+  msg.style.color = 'var(--green)';
+  msg.textContent = 'Recorded as checked \u2014 ' + (r.updated || 0) + ' clinic(s)'
+    + (r.skipped ? ', ' + r.skipped + ' skipped (already have devices)' : '') + '.';
 }
 
 // ---- REPORTS (rep correction queue) -----------------------------------------
