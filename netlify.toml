@@ -271,6 +271,22 @@
   status = 200
   force  = true
 
+# ── MARKET INTELLIGENCE DASHBOARD ─────────────────────────────────
+# The dashboard was the only MI page without a clean URL, so every link to it
+# — invitations, password resets, anything sent to a customer — carried a bare
+# .html. Same pattern as the signup and invite pages below.
+[[redirects]]
+  from   = "/mi-dashboard"
+  to     = "/mi-dashboard.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/mi-dashboard.html"
+  to     = "/mi-dashboard"
+  status = 301
+  force  = true
+
 # ── MARKET INTELLIGENCE SIGNUP ────────────────────────────────────
 # Public signup page for Market Intelligence. Placed BEFORE the US
 # directory rules so nothing later can shadow it.
