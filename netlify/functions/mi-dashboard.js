@@ -179,7 +179,7 @@ exports.handler = async (event) => {
         // ⭐ HASH, not a query param — matching the invitation link. A token in
         // the query string ends up in server logs, referrer headers and browser
         // history; a hash is never sent to the server at all.
-        const link = base + '/mi-dashboard.html#r=' + encodeURIComponent(data.token);
+        const link = base + '/mi-dashboard#r=' + encodeURIComponent(data.token);
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
           headers: { 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' },
@@ -735,8 +735,8 @@ exports.handler = async (event) => {
           'subscription_data[metadata][mi_plan]': plan,
           'subscription_data[metadata][mi_seats]': String(SEATS[plan]),
           'subscription_data[metadata][mi_company]': t.owner_name || t.display_name || '',
-          'success_url': site + '/mi-dashboard.html?subscribed=1',
-          'cancel_url': site + '/mi-dashboard.html'
+          'success_url': site + '/mi-dashboard?subscribed=1',
+          'cancel_url': site + '/mi-dashboard'
         });
         if (t.stripe_customer_id) form.set('customer', t.stripe_customer_id);
         else if (me.email) form.set('customer_email', me.email);
@@ -773,7 +773,7 @@ exports.handler = async (event) => {
           },
           body: new URLSearchParams({
             customer: t.stripe_customer_id,
-            return_url: site + '/mi-dashboard.html'
+            return_url: site + '/mi-dashboard'
           }).toString()
         });
         const out = await res.json();
