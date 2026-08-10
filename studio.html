@@ -1019,18 +1019,66 @@ function restoreThumb(i) {
 // ============================================================
 // FILE LOADING
 // ============================================================
+// ⭐⭐⭐ WHY THE PHONE CRASHED AND THE iPAD DID NOT (fixed 2026-08-10).
+// Studio worked on desktop and iPad and killed the tab on an iPhone as soon as
+// photos were uploaded. Three things stacked up, none of which shows on a
+// machine with real memory:
+//   1. every canvas was created at the photo's NATIVE size. A 12MP iPhone photo
+//      is ~48MB of canvas; a 48MP one is nearly 200MB. iOS Safari has a hard
+//      ceiling on TOTAL canvas memory and kills the tab when it is crossed.
+//   2. readAsDataURL keeps the whole file as a base64 string ~33% larger than
+//      the original, held in origDataUrl AND assigned to the image AND used as
+//      the thumbnail source — times the number of slots.
+//   3. MediaPipe FaceMesh is WebAssembly with its own heap, and it initialises
+//      immediately after those canvases exist.
+//
+// THE FIX: downscale ONCE on load. Everything the UI touches works from the
+// smaller copy; the ORIGINAL data URL is kept untouched in origDataUrl so the
+// final composite still renders at full quality.
+//
+// ⚠️ SAFE FOR DETECTION because FaceMesh returns NORMALISED coordinates (0-1).
+// Landmarks found on a 1000px copy map onto the full-size image identically —
+// accuracy is unchanged, memory drops by an order of magnitude.
+const WORK_MAX_EDGE   = 2000;   // what the editor and crop canvases work from
+const DETECT_MAX_EDGE = 1024;   // what FaceMesh is handed
+
+// Returns a downscaled data URL, or the original when it is already small
+// enough — re-encoding a small photo would only lose quality for nothing.
+function downscaleDataUrl(img, maxEdge, quality) {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const longest = Math.max(w, h);
+  if (!longest || longest <= maxEdge) return null;
+  const scale = maxEdge / longest;
+  const c = document.createElement('canvas');
+  c.width  = Math.max(1, Math.round(w * scale));
+  c.height = Math.max(1, Math.round(h * scale));
+  const ctx = c.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, 0, 0, c.width, c.height);
+  const out = c.toDataURL('image/jpeg', quality || 0.92);
+  // Release the backing store immediately rather than waiting for GC — on iOS
+  // the ceiling is on canvas memory OUTSTANDING, not on allocation rate.
+  c.width = c.height = 1;
+  return out;
+}
+
 function loadFile(file, idx) {
   if (!file) return;
   const r = new FileReader();
   r.onload = ev => {
-    const img = new Image();
-    img.onload = () => {
+    const full = new Image();
+    full.onload = () => {
+      // The working image is the downscaled one. The full-resolution data URL
+      // stays in origDataUrl for the final render and for background removal.
+      const small = downscaleDataUrl(full, WORK_MAX_EDGE, 0.92);
+      const img = small ? new Image() : full;
+      const proceed = () => {
       S.slots[idx].img = img;
       S.slots[idx].lm = null;
       S.slots[idx].zoom = 1.0;
       S.slots[idx].pan = {x:0,y:0};
       S.slots[idx].rot = 0;
-      S.slots[idx].origDataUrl = ev.target.result;
+      S.slots[idx].origDataUrl = ev.target.result;   // FULL resolution, untouched
       S.slots[idx].processedDataUrl = null;
       S.slots[idx]._processedImg = null;
       S.slots[idx].bgMode = 'orig';
@@ -1044,7 +1092,9 @@ function loadFile(file, idx) {
       if (old) old.remove();
       const th = document.createElement('img');
       th.className = 'thumb';
-      th.src = ev.target.result;
+      // ⚠️ the SMALL copy, not the original — a full-res thumbnail is a second
+      // decoded copy of a 12MP photo for a 90px box.
+      th.src = small || ev.target.result;
       zone.insertBefore(th, zone.querySelector('.bg-badge') || zone.querySelector('.change-btn'));
 
       rebuildBgSlotSelect();
@@ -1058,8 +1108,11 @@ function loadFile(file, idx) {
         const missing = S.slots.filter(sl => !sl.img).length;
         setSt(t('loadedSome')(S.slots.filter(sl => sl.img).length, S.slots.length, missing), 'warn');
       }
+      };
+      if (small) { img.onload = proceed; img.src = small; }
+      else proceed();
     };
-    img.src = ev.target.result;
+    full.src = ev.target.result;
   };
   r.readAsDataURL(file);
 }
@@ -1081,10 +1134,24 @@ function detect(img) {
       if (r.multiFaceLandmarks?.length > 0) res(r.multiFaceLandmarks[0]);
       else rej(new Error('no face'));
     });
+    // ⚠️ NEVER SEND A NATIVE-RESOLUTION CANVAS. This was the largest single
+    // allocation in the app and the most likely thing to kill an iPhone tab.
+    // FaceMesh returns NORMALISED landmarks, so detecting on a downscaled copy
+    // produces identical results against the full-size image.
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const longest = Math.max(w, h) || 1;
+    const scale = longest > DETECT_MAX_EDGE ? DETECT_MAX_EDGE / longest : 1;
     const c = document.createElement('canvas');
-    c.width = img.naturalWidth; c.height = img.naturalHeight;
-    c.getContext('2d').drawImage(img, 0, 0);
-    await S.fm.send({image: c});
+    c.width  = Math.max(1, Math.round(w * scale));
+    c.height = Math.max(1, Math.round(h * scale));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    try {
+      await S.fm.send({image: c});
+    } finally {
+      // Free the backing store as soon as it has been handed over; on iOS the
+      // limit is on canvas memory OUTSTANDING, not on how fast it is created.
+      c.width = c.height = 1;
+    }
   });
 }
 
@@ -1770,14 +1837,22 @@ async function toBlackBackground(dataUrl) {
   const url = URL.createObjectURL(cutout);
   const img = new Image();
   await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+  // Capped for the same reason as the others. The cutout is composited for
+  // DISPLAY; the untouched original still lives in origDataUrl.
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const longest = Math.max(w, h) || 1;
+  const scale = longest > WORK_MAX_EDGE ? WORK_MAX_EDGE / longest : 1;
   const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+  canvas.width  = Math.max(1, Math.round(w * scale));
+  canvas.height = Math.max(1, Math.round(h * scale));
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   URL.revokeObjectURL(url);
-  return canvas.toDataURL('image/jpeg', 0.92);
+  const out = canvas.toDataURL('image/jpeg', 0.92);
+  canvas.width = canvas.height = 1;
+  return out;
 }
 
 async function applyBgBlack() {
