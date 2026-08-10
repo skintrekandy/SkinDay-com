@@ -85,47 +85,6 @@ async function fetchDevicesFor(supabase, clinicIds) {
   }
 }
 
-// ⭐⭐ GENERATION FAMILIES. Splitting PicoSure Pro, Thermage FLX and Ultherapy
-// Prime into their own rows gave patients the exact names they search for, but
-// left the filter showing them as unrelated siblings — "PicoSure 182" and
-// "PicoSure Pro 73" with no family total anywhere.
-//
-// `device_reference.platform` already carries the grouping and needed no schema
-// change. ⚠️ BUT IT HOLDS TWO DIFFERENT RELATIONSHIPS: 'PicoSure' and 'Elite'
-// group GENERATIONS of one machine, while 'JOULE / mJOULE' and 'InMode' group
-// unrelated devices sharing a console — BBL and diVa are not versions of each
-// other. Nesting on platform blindly would file diVa under a "JOULE" heading no
-// patient has ever heard of.
-//
-// THE TEST: nest only when the platform name IS one of the models in the group.
-// A generation family is named after its flagship (PicoSure, Thermage, Fraxel,
-// Icon, M22); a shared console is not (JOULE, InMode, Cutera, Gentle, Era).
-let FAMILY_CACHE = null;
-async function loadFamilies(supabase) {
-  if (FAMILY_CACHE) return FAMILY_CACHE;
-  const out = { parentOf: {}, isParent: {} };
-  try {
-    const { data } = await supabase
-      .from('device_reference')
-      .select('model, platform')
-      .eq('active', true);
-    const rows = data || [];
-    const norm = v => String(v == null ? '' : v).toLowerCase().replace(/[^a-z0-9]+/g, '');
-    const modelSet = new Set(rows.map(r => norm(r.model)));
-    rows.forEach(r => {
-      if (!r.platform) return;
-      const p = norm(r.platform);
-      if (!modelSet.has(p)) return;            // shared console, not a family
-      if (norm(r.model) === p) out.isParent[r.model] = true;
-      else out.parentOf[r.model] = r.platform;
-    });
-  } catch (e) {
-    console.error('family load failed (non-fatal):', e.message);
-  }
-  FAMILY_CACHE = out;
-  return out;
-}
-
 // Resolve ?device= / ?devicecat= / ?devicegroup= to the set of clinic ids that
 // own it. Returns null when no device filter is active.
 //
@@ -238,42 +197,15 @@ exports.handler = async (event) => {
       const raw = data || { models: [], categories: [], groups: [] };
       const catMeta = (c) => (meta || {})[c] || {};
 
-      const fam = await loadFamilies(supabase);
       const modelsOut = (raw.models || []).map(m => ({
         model: m.model, category: m.category, clinics: m.clinics,
-        slug: slugifyModel(m.model),
-        // parent_model is set on a CHILD generation; family_clinics is the
-        // combined total, carried on the parent so the panel can show
-        // "PicoSure 255" with the two generations beneath it.
-        parent_model: fam.parentOf[m.model] || null,
-        is_family_parent: !!fam.isParent[m.model]
+        slug: slugifyModel(m.model)
       }));
-
-      // Family totals: parent count plus every child's, computed once here so
-      // the browser never has to add up counts it might get wrong.
-      const familyTotal = {};
-      modelsOut.forEach(m => {
-        const key = m.parent_model || (m.is_family_parent ? m.model : null);
-        if (key) familyTotal[key] = (familyTotal[key] || 0) + (m.clinics || 0);
-      });
-      modelsOut.forEach(m => {
-        if (m.is_family_parent) m.family_clinics = familyTotal[m.model] || m.clinics || 0;
-      });
 
       const modelsByCategory = {};
       modelsOut
         .slice()
-        // Order by FAMILY weight so a child never floats away from its parent,
-        // then parent first, then children by their own count.
-        .sort((a, b) => {
-          const fa = (a.parent_model || a.model), fb = (b.parent_model || b.model);
-          const wa = familyTotal[fa] != null ? familyTotal[fa] : (a.clinics || 0);
-          const wb = familyTotal[fb] != null ? familyTotal[fb] : (b.clinics || 0);
-          if (wb !== wa) return wb - wa;
-          if (fa !== fb) return fa.localeCompare(fb);
-          if (!!a.parent_model !== !!b.parent_model) return a.parent_model ? 1 : -1;
-          return (b.clinics || 0) - (a.clinics || 0);
-        })
+        .sort((a, b) => (b.clinics || 0) - (a.clinics || 0))
         .forEach(m => {
           (modelsByCategory[m.category] = modelsByCategory[m.category] || []).push(m);
         });
