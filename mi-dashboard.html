@@ -1311,15 +1311,27 @@
     // wrong discounts the whole screen. The 404-of-650 denominator sits in the
     // same breath as the claim so the share figures below can be defended.
     var mine = (ME&&ME.display_name) ? esc(ME.display_name) : null;
+    // ⭐ A DISTRIBUTOR DOES NOT MAKE THE MACHINE. "283 clinics run Xcite Tech" is
+    // wrong twice over: no clinic runs a distributor, and Xcite's own customers
+    // would say they run a Sofwave. The honest phrasing names the relationship
+    // instead — and for a distributor the competitive line is about what they
+    // carry, not who made it.
+    var isDist = !!(ME && ME.owner_type === 'distributor');
+    var ownLine = mine
+      ? (isDist ? ' run equipment distributed by ' + mine : ' run ' + mine)
+      : ' run your equipment';
+    var otherLine = isDist
+      ? ' more run equipment you do not distribute.'
+      : ' more run other manufacturers only.';
     // ⭐ FIXED 2026-08-06 (server-side): mi_coverage now takes p_city and
     // p_neighbourhood and applies the same scope predicate as mi_kpis, including
     // the device_reference.active requirement. So every number on this line is
     // at the SAME grain as the headline and the comparison is sound again — the
     // client-side suppression that stood in for the fix is gone.
     el('hero').innerHTML='<div class="big">'+(k.with_ours!=null?num(k.with_ours):'—')+
-      ' <span class="unit">clinics in '+esc(where)+(mine?' run '+mine:' run your equipment')+'</span></div>'+
+      ' <span class="unit">clinics in '+esc(where)+ownLine+'</span></div>'+
       (otherIdentified!=null
-        ? '<div class="sub"><span class="share">'+num(otherIdentified)+'</span> more run other manufacturers only.</div>'
+        ? '<div class="sub"><span class="share">'+num(otherIdentified)+'</span>'+otherLine+'</div>'
         : '')+
       (cov.verified!=null
         ? '<div class="cov"><b>'+num(cov.verified)+'</b> of <b>'+(cov.clinics!=null?num(cov.clinics):'—')+'</b> clinics in '+
