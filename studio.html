@@ -574,7 +574,11 @@
     <div style="margin-top:16px;margin-bottom:12px;">
       <div class="step-num" style="margin-bottom:10px;" data-en="Export format" data-zh="匯出格式">Export format</div>
       <div class="export-formats">
-        <button class="btn-dl btn-dl-single" onclick="downloadFormat('original')"><span data-en="Original" data-zh="原始圖片">Original</span></button>
+        <!-- ⚠️ This button used to read "Original", which did NOT mean the
+             untouched composite — it meant whatever Export format was chosen
+             further up the page. The label is now written from that select at
+             render time, so it always names the ratio actually being downloaded. -->
+        <button class="btn-dl btn-dl-single" id="dlChosen" onclick="downloadFormat('original')"><span id="dlChosenLabel" data-en="Download" data-zh="下載">Download</span></button>
         <button class="btn-dl" onclick="downloadFormat('square')"><span data-en="Square 1:1" data-zh="正方形 1:1">Square 1:1</span><span data-en="Instagram post" data-zh="Instagram 貼文">Instagram post</span></button>
         <button class="btn-dl" onclick="downloadFormat('story')"><span data-en="Story 9:16" data-zh="限時動態 9:16">Story 9:16</span><span data-en="Instagram story" data-zh="Instagram 限時動態">Instagram story</span></button>
       </div>
@@ -657,6 +661,7 @@ function setLang(lang){
   applyLang();
 }
 function applyLang(){
+  try { refreshDownloadLabel(); } catch(e) {}
   var isZh = currentLang === 'zh';
   document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
   document.querySelectorAll('[data-en][data-zh]').forEach(function(el){
@@ -2173,7 +2178,12 @@ async function generate() {
     return {canvas: c, w: pw, h: panelH};
   });
 
-  // Normalize exposure (apply to all but first panel)
+  // ⚠️ EXPOSURE NORMALISATION IS DIFFERENT AND IS *MEANT* TO BE ASYMMETRIC: it
+  // matches the later panels' brightness to the first so lighting differences
+  // between two sessions do not read as a result. That is legitimate, but it
+  // scales RGB by up to ±38%, and for PIGMENTATION, ERYTHEMA or VASCULAR work
+  // the brightness difference can BE the clinical result. Left as an option,
+  // and it is the one to reach for first if an outcome ever looks overstated.
   if (norm) {
     const refBright = avgBright(panels[0].canvas.getContext('2d'), panels[0].w, panels[0].h);
     panels.slice(1).forEach(p => {
@@ -2189,8 +2199,13 @@ async function generate() {
     });
   }
 
-  // Enhancement on all panels except first
-  panels.slice(1).forEach(p => {
+  // ⛔⛔⛔ THIS WAS `panels.slice(1)` — the AFTER panel was denoised and sharpened
+  // and the BEFORE was not. Every composite Studio has ever produced made part
+  // of the result PROCESSING rather than treatment. For clinical before/afters
+  // that is not a cosmetic issue: it is the thing that discredits the tool the
+  // first time a dermatologist looks closely.
+  // Whatever enhancement is applied must be applied to EVERY panel identically.
+  panels.forEach(p => {
     applyEnhancement(p.canvas.getContext('2d'), p.w, p.h, enhance);
   });
 
@@ -2307,6 +2322,24 @@ function letterboxComposite(master, fmt) {
 // ============================================================
 // DOWNLOAD
 // ============================================================
+// Keeps the first download button honest: it names the export ratio currently
+// selected, so nobody has to remember what they picked earlier.
+const DL_RATIO_LABEL = {
+  square:   { en: 'Download 1:1',  zh: '下載 1:1' },
+  portrait: { en: 'Download 4:5',  zh: '下載 4:5' },
+  story:    { en: 'Download 9:16', zh: '下載 9:16' },
+  free:     { en: 'Download at crop ratio', zh: '下載（依裁切比例）' }
+};
+function refreshDownloadLabel() {
+  const sel = document.getElementById('exportFormat');
+  const span = document.getElementById('dlChosenLabel');
+  if (!sel || !span) return;
+  const l = DL_RATIO_LABEL[sel.value] || DL_RATIO_LABEL.portrait;
+  span.setAttribute('data-en', l.en);
+  span.setAttribute('data-zh', l.zh);
+  span.textContent = (currentLang === 'zh') ? l.zh : l.en;
+}
+
 function downloadFormat(format) {
   // Always render from the full-resolution master so a download is never limited
   // to the old 1080 short side. "Original" keeps the format currently previewed;
@@ -2364,11 +2397,19 @@ function clearLogo() {
 // ============================================================
 // SETTINGS PERSISTENCE
 // ============================================================
+// ⭐⭐ THREE KINDS OF SETTING, AND THEY DO NOT BELONG TOGETHER:
+//   BRAND       clinic, injector, logo, watermark      — stable, save it
+//   PREFERENCE  layout, subject, export ratio, clarity — stable, save it
+//   CASE        treatment, dates, consent              — THIS PATIENT ONLY
+// `treatment` was being written into the brand profile, so pressing "Save brand
+// profile" quietly stored the last patient's treatment name and reapplied it to
+// every case afterwards. A clinician would have to notice and clear it, and the
+// failure is silent — a Botox case labelled "Morpheus8" because that is what
+// was on screen the day they saved.
 function saveSettings() {
   const s = {
     clinic:    document.getElementById('clinicName').value.trim(),
     injector:  document.getElementById('injectorName').value.trim(),
-    treatment: document.getElementById('treatmentLabel').value.trim(),
     wmPos:     S.wmPos,
     format:    document.getElementById('exportFormat').value,
     norm:      document.getElementById('norm').value,
@@ -2389,7 +2430,9 @@ function loadSettings() {
     const s = JSON.parse(raw);
     if (s.clinic)    document.getElementById('clinicName').value = s.clinic;
     if (s.injector)  document.getElementById('injectorName').value = s.injector;
-    if (s.treatment) document.getElementById('treatmentLabel').value = s.treatment;
+    // ⚠️ `treatment` deliberately NOT restored. Older saved profiles may still
+    // contain one from before this split; ignoring it here is what clears it.
+    // It is dropped from storage the next time the profile is saved.
     if (s.format)    document.getElementById('exportFormat').value = s.format;
     if (s.norm)      document.getElementById('norm').value = s.norm;
     if (s.enhance)   document.getElementById('enhance').value = s.enhance;
@@ -2416,6 +2459,23 @@ function newCase() {
   rebuildUploadGrid();
   hideCropSection();
   document.getElementById('treatmentLabel').value = '';
+
+  // ⭐ CASE SETTINGS RESET, BRAND SETTINGS DO NOT. Treatment, dates and consent
+  // belong to this patient; clinic, injector, logo and watermark belong to the
+  // clinic and are deliberately kept.
+  const consentBox = document.getElementById('consentCheck');
+  const gen = document.getElementById('genBtn');
+  if (consentBox) consentBox.checked = false;
+  if (gen) gen.disabled = true;
+  // ⚠️ Dates are THREE selects per slot (m/d/y), not one field. The slot data is
+  // already cleared above; these reset what the clinician sees.
+  S.slots.forEach((sl, i) => {
+    ['m','d','y'].forEach(part => {
+      const el = document.getElementById(`date-${part}-${i}`);
+      if (el) el.selectedIndex = 0;
+    });
+  });
+
   setSt(t('uploadBegin'), 'idle');
   setProg(0);
   checkBgControlsVisibility();
@@ -2429,6 +2489,9 @@ document.addEventListener('DOMContentLoaded', () => {
   applyLang();
   rebuildUploadGrid();
   loadSettings();
+  refreshDownloadLabel();
+  const fmtSel = document.getElementById('exportFormat');
+  if (fmtSel) fmtSel.addEventListener('change', refreshDownloadLabel);
   // Restore logo
   try {
     const savedLogo = localStorage.getItem('skinday_logo');
@@ -2444,22 +2507,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } catch(e) {}
 
-  // Consent
+  // ⛔⛔ CONSENT BELONGS TO THE PATIENT, NOT THE BROWSER SESSION.
+  // This used to persist in sessionStorage, so one tick covered every patient
+  // until the tab closed — a clinician could produce a dozen cases having
+  // confirmed consent once. Nothing is stored now, and newCase() clears it, so
+  // the confirmation is made per case. Deliberately a small inconvenience.
   const consent = document.getElementById('consentCheck');
   const genBtn = document.getElementById('genBtn');
   if (consent && genBtn) {
-    try {
-      if (sessionStorage.getItem('skinday_consent') === '1') {
-        consent.checked = true; genBtn.disabled = false;
-      }
-    } catch(e) {}
-    consent.addEventListener('change', () => {
-      genBtn.disabled = !consent.checked;
-      try {
-        if (consent.checked) sessionStorage.setItem('skinday_consent','1');
-        else sessionStorage.removeItem('skinday_consent');
-      } catch(e) {}
-    });
+    consent.checked = false;
+    genBtn.disabled = true;
+    // Clear any tick left behind by the previous build.
+    try { sessionStorage.removeItem('skinday_consent'); } catch(e) {}
+    consent.addEventListener('change', () => { genBtn.disabled = !consent.checked; });
   }
 });
 </script>
