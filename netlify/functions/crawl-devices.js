@@ -2403,17 +2403,23 @@ async function candidateStats(supabase, body) {
   try {
     const PEND_CAP = 20000;
     const { data: pend, error: pendErr } = await supabase
-      .from('clinic_device_candidates').select('device_id, host').eq('status', 'pending').limit(PEND_CAP);
+      .from('clinic_device_candidates').select('device_id, host, clinic_id').eq('status', 'pending').limit(PEND_CAP);
     if (pendErr) throw pendErr;
     let rows = pend || [];
     pendingTruncated = rows.length >= PEND_CAP;
+    // ⛔⛔ THIS USED TO SCOPE BY THE CANDIDATE'S HOST → crawl_device_queue.country,
+    // while the review LIST scopes by the CLINIC's country. Two definitions of
+    // "in canada" on one screen: the counter read 601 against a list of 496, and
+    // it is also why a New York clinic surfaced in the Canada list. A candidate
+    // whose host has no queue row, or whose queue row disagrees with the clinic,
+    // fell on different sides of the two.
+    // Now both scope by the CLINIC — which is what the word means to the person
+    // reading it, and what the list already did.
     if (country && rows.length) {
-      const hosts = [...new Set(rows.map(r => r.host).filter(Boolean))];
-      const qrows = await selectIn(supabase, 'crawl_device_queue', 'host, country', 'host', hosts);
-      const countryByHost = new Map(qrows.map(r => [r.host, String(r.country || '').toLowerCase()]));
-      // A host with no queue row cannot be attributed, so it is left out rather
-      // than guessed at. Hand-added devices are the only way that happens.
-      rows = rows.filter(r => countryByHost.get(r.host) === country);
+      const clinicIds = [...new Set(rows.map(r => r.clinic_id).filter(Boolean))];
+      const crows = await selectIn(supabase, 'clinics', 'id, country', 'id', clinicIds);
+      const countryById = new Map(crows.map(r => [String(r.id), String(r.country || '').toLowerCase()]));
+      rows = rows.filter(r => countryById.get(String(r.clinic_id)) === country);
     }
     pendingScoped = rows.length;
     const tally = new Map();
