@@ -248,10 +248,22 @@ exports.handler = async (event) => {
   // every call and it keeps the countdown honest if the date is changed while
   // someone is signed in.
   let trial = null;
+  // ⭐⭐ MULTI-COUNTRY, WITHOUT MAKING A DROPDOWN INTO A PERMISSION.
+  // The standing rule is that country is a property of the TENANT so a browser
+  // cannot ask for another country's data by editing a payload. That rule
+  // holds: `countries` on mi_tenants is an ALLOW-LIST, the request may only
+  // CHOOSE from it, and anything outside it falls back to the tenant's own
+  // country. NULL/empty means single-country, so every existing tenant is
+  // unaffected by this code existing.
+  let allowedCountries = null;
   if (me.tenant_id) {
     const { data: t } = await supabase.from('mi_tenants')
-      .select('plan, sub_status, trial_ends_at, seat_limit')
+      .select('plan, sub_status, trial_ends_at, seat_limit, countries')
       .eq('id', me.tenant_id).maybeSingle();
+    // ⭐ THE COUNTRY ALLOW-LIST. Read here so it costs no extra query.
+    if (t && Array.isArray(t.countries) && t.countries.length) {
+      allowedCountries = t.countries.map(c => String(c).toLowerCase());
+    }
     if (t && t.trial_ends_at) {
       const ms = new Date(t.trial_ends_at).getTime() - Date.now();
       trial = {
@@ -277,7 +289,9 @@ exports.handler = async (event) => {
     role: me.role,
     province: me.province || null,
     territories: me.territories || null,
-    country: (me.country || 'canada').toLowerCase()
+    country: (me.country || 'canada').toLowerCase(),
+    // The page renders a switcher only when this holds more than one.
+    countries: allowedCountries && allowedCountries.length > 1 ? allowedCountries : null
   };
   const isAdmin = me.role === 'admin';
 
@@ -296,9 +310,14 @@ exports.handler = async (event) => {
     ? lockedRegions
     : (askedRegion ? [askedRegion] : null);
   const inRegions = { p_regions: regions };
-  // ⭐ COUNTRY IS NEVER TAKEN FROM THE REQUEST. It is a property of the tenant,
-  // so a browser cannot ask for another country's data by editing a payload.
-  const country = (me.country || 'canada').toLowerCase();
+  // ⭐ COUNTRY IS STILL NEVER TAKEN FROM THE REQUEST UNVALIDATED. A tenant with
+  // an allow-list may CHOOSE from it; anyone else, and any value outside the
+  // list, gets the tenant's own country. The check is here and not in the page.
+  const homeCountry = (me.country || 'canada').toLowerCase();
+  const askedCountry = String(body.country || '').trim().toLowerCase();
+  const country = (allowedCountries && askedCountry && allowedCountries.includes(askedCountry))
+    ? askedCountry
+    : homeCountry;
   const inCountry = { p_country: country, p_regions: regions };
   const city = nz(body.city);
   const neighbourhood = nz(body.neighbourhood);
