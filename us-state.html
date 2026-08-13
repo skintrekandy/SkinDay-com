@@ -305,6 +305,26 @@
     .tech-model:hover { background: var(--warm); color: var(--deep); }
     .tech-model .n { font-size: 0.66rem; color: var(--dim, var(--muted)); }
     .tech-model.sel { color: var(--rose); font-weight: 600; }
+    /* ⭐ GENERATION FAMILIES. Keyed on device_reference.parent_device_id, which
+       means ONE thing: this device is a later generation of that device.
+       ⛔ DO NOT rebuild this on `platform` — that column ALSO groups separate
+       machines sharing a console name (FlexSure/TempSure, CoolTone/
+       CoolSculpting, Titan/Pelleve), which is a different relationship. */
+    .tech-family {
+      display: flex; align-items: baseline; gap: 0.4rem; width: 100%;
+      padding: 0.22rem 0.8rem 0.22rem 2.1rem;
+      background: none; border: none; cursor: pointer;
+      font-family: inherit; font-size: 0.78rem; color: var(--muted);
+      text-align: left;
+    }
+    .tech-family:hover { background: var(--warm); color: var(--deep); }
+    .tech-family .n { font-size: 0.66rem; color: var(--dim, var(--muted)); }
+    .tech-family.sel { color: var(--rose); font-weight: 600; }
+    .tech-model.gen { padding-left: 3.2rem; }
+    .tech-model.gen::before {
+      content: '\2514'; margin-right: 0.4rem; color: var(--dim, var(--muted));
+      font-size: 0.7rem; line-height: 1;
+    }
 
     .tech-any {
       width: 100%; padding: 0.45rem 0.8rem; text-align: left;
@@ -1255,9 +1275,25 @@ function renderTechPanel() {
         || g.label.toLowerCase().includes(term)
         || shownModels.length > 0;
       if (!catMatches) return '';
-      const modelRows = (term ? shownModels : models).map(m => {
+      // Three lines per family: a header carrying the family total, then the
+      // base model and the generation indented beneath it. Every count comes
+      // from the API, so what is on screen adds up.
+      // The header selects the PARENT's slug in the existing ?device= param —
+      // no new filter state — and the server expands it to both generations.
+      const shownSet = term ? shownModels : models;
+      const shownNames = new Set(shownSet.map(m => m.model));
+      const modelRows = shownSet.map(m => {
         matches++;
-        return `<button type="button" class="tech-model ${currentDevice === m.slug ? 'sel' : ''}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)} <span class="n">${m.clinics}</span></button>`;
+        const isGen = !!m.parent_model;
+        const hasFamily = !isGen && m.family_clinics != null && m.family_clinics > m.clinics;
+        const rows = [];
+        if (hasFamily) {
+          rows.push(`<button type="button" class="tech-family${currentDevice === m.slug ? ' sel' : ''}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)} <span class="n">${m.family_clinics}</span></button>`);
+        }
+        const gen = isGen || (hasFamily && shownNames.has(m.model));
+        const cls = 'tech-model' + (gen ? ' gen' : '') + (currentDevice === m.slug ? ' sel' : '');
+        rows.push(`<button type="button" class="${cls}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)} <span class="n">${m.clinics}</span></button>`);
+        return rows.join('');
       }).join('');
       return `<button type="button" class="tech-sub ${currentDeviceCat === c.category ? 'sel' : ''}" onclick="applyDevice('cat:${c.category}')">${devEsc(c.label)} <span class="n">${c.clinics}</span></button>${modelRows}`;
     }).join('');
