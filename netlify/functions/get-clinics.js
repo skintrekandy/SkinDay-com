@@ -120,8 +120,20 @@ async function resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGro
 
     let deviceIds = (devs || []).map(d => d.id);
     if (deviceSlug) {
+      // ⭐ A PARENT SLUG SELECTS THE WHOLE FAMILY. Choosing "PicoSure" from the
+      // family header returns clinics with either generation; choosing
+      // "PicoSure Pro" returns only that one.
+      let famMap = {};
+      try {
+        const { data: fam } = await supabase.rpc('device_families');
+        if (fam && typeof fam === 'object') famMap = fam;
+      } catch (e) { /* non-fatal: falls back to an exact model match */ }
+      const wanted = new Set([deviceSlug]);
+      Object.entries(famMap).forEach(([child, parent]) => {
+        if (slugifyModel(parent) === deviceSlug) wanted.add(slugifyModel(child));
+      });
       deviceIds = (devs || [])
-        .filter(d => slugifyModel(d.model) === deviceSlug)
+        .filter(d => wanted.has(slugifyModel(d.model)))
         .map(d => d.id);
     }
     // An EMPTY set must stay an empty SET, never null — otherwise "clinics with
@@ -197,15 +209,54 @@ exports.handler = async (event) => {
       const raw = data || { models: [], categories: [], groups: [] };
       const catMeta = (c) => (meta || {})[c] || {};
 
+      // ⭐ GENERATION FAMILIES, FROM A SEPARATE THREE-ROW RPC.
+      // device_reference.parent_device_id means ONE thing: this device is a
+      // later generation of that device (PicoSure Pro -> PicoSure).
+      // ⛔ It is fetched SEPARATELY on purpose. Folding it into device_facets
+      // cost a self-join across ~33k rows and blew the anon role's statement
+      // timeout, emptying the whole dropdown. device_families() reads
+      // device_reference alone and is instant.
+      // ⛔ Do NOT rebuild this on `platform` — that column also groups separate
+      // machines sharing a console name (FlexSure/TempSure, CoolTone/
+      // CoolSculpting), which is not the same relationship.
+      let familyMap = {};
+      try {
+        const { data: fam } = await supabase.rpc('device_families');
+        if (fam && typeof fam === 'object') familyMap = fam;
+      } catch (e) { console.error('device_families failed (non-fatal):', e.message); }
+
       const modelsOut = (raw.models || []).map(m => ({
         model: m.model, category: m.category, clinics: m.clinics,
-        slug: slugifyModel(m.model)
+        slug: slugifyModel(m.model),
+        parent_model: familyMap[m.model] || null
       }));
+
+      // ⚠️ Summing the generations is exact ONLY while no clinic owns both.
+      // Verified for Canada; re-check for California before trusting it:
+      //   a clinic holding a PicoSure AND a PicoSure Pro would be counted twice.
+      const familyTotals = {};
+      modelsOut.forEach(m => {
+        const fam = m.parent_model || m.model;
+        familyTotals[fam] = (familyTotals[fam] || 0) + (m.clinics || 0);
+      });
+      modelsOut.forEach(m => {
+        if (!m.parent_model) m.family_clinics = familyTotals[m.model] || m.clinics;
+      });
 
       const modelsByCategory = {};
       modelsOut
         .slice()
-        .sort((a, b) => (b.clinics || 0) - (a.clinics || 0))
+        // Rank by FAMILY total so a generation never floats away from its
+        // parent, then parent first, then children by their own count.
+        .sort((a, b) => {
+          const fa = a.parent_model || a.model, fb = b.parent_model || b.model;
+          const wa = familyTotals[fa] != null ? familyTotals[fa] : (a.clinics || 0);
+          const wb = familyTotals[fb] != null ? familyTotals[fb] : (b.clinics || 0);
+          if (wb !== wa) return wb - wa;
+          if (fa !== fb) return fa.localeCompare(fb);
+          if (!!a.parent_model !== !!b.parent_model) return a.parent_model ? 1 : -1;
+          return (b.clinics || 0) - (a.clinics || 0);
+        })
         .forEach(m => {
           (modelsByCategory[m.category] = modelsByCategory[m.category] || []).push(m);
         });
