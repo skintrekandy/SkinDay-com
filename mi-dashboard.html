@@ -436,6 +436,13 @@
   <main>
     <div class="geobar" id="geobar">
       <span class="mono">Territory</span>
+      <!-- ⭐ COUNTRY SWITCHER. Hidden unless the tenant's allow-list holds more
+           than one — so Kyle, Christos and every single-country tenant never see
+           it. It is a CONVENIENCE ONLY: the server validates the value against
+           mi_tenants.countries and falls back to the tenant's own country, so
+           editing this cannot reach data the tenant is not entitled to. -->
+      <select id="selCountry" style="display:none"></select>
+      <span class="sep" id="sepCountry" style="display:none">&#8250;</span>
       <select id="selProvince"><option value="">All territories</option></select>
       <span class="sep" id="sepHood" style="display:none">&#8250;</span>
       <select id="selHood" style="display:none"><option value="">All areas</option></select>
@@ -734,6 +741,9 @@
   'use strict';
   var API='/.netlify/functions/mi-dashboard';
   var KEY=null, geo={province:'',city:'',neighbourhood:''};
+  // Chosen country. Empty means "the tenant's own", which is what the server
+  // uses when it is empty or not in the allow-list.
+  var COUNTRY='';
 
   // ⭐ COUNTRY VOCABULARY. The tenant carries a country; the page only carries
   // the WORDS for it. "province" stays the wire name everywhere (the RPCs
@@ -774,7 +784,7 @@
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function el(id){ return document.getElementById(id); }
   function api(action, extra){
-    var body=Object.assign({action:action,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
+    var body=Object.assign({action:action,country:COUNTRY,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
     return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY},body:JSON.stringify(body)})
       .then(function(r){ if(r.status===401) throw {unauth:true}; return r.json().then(function(j){ if(!r.ok) throw j; return j; }); });
   }
@@ -822,8 +832,24 @@
 
   // Branding, role and territory all arrive from the API. Nothing about a
   // customer is written into this page.
+  var COUNTRY_NAMES={ canada:'Canada', usa:'United States' };
+  // Populate the country switcher from the tenant's allow-list. Absent or
+  // single-entry means it stays hidden, which is every tenant but SkinDay
+  // internal today.
+  function renderCountries(t){
+    var sel=el('selCountry'), sep=el('sepCountry');
+    var list=(t && Array.isArray(t.countries)) ? t.countries : null;
+    if(!list || list.length<2){ sel.style.display='none'; sep.style.display='none'; return; }
+    if(!COUNTRY) COUNTRY=(t.country||list[0]).toLowerCase();
+    sel.innerHTML=list.map(function(c){
+      return '<option value="'+esc(c)+'"'+(c===COUNTRY?' selected':'')+'>'+esc(COUNTRY_NAMES[c]||c)+'</option>';
+    }).join('');
+    sel.style.display=''; sep.style.display='';
+  }
+
   function applyIdentity(t){
     ME=t;
+    renderCountries(t);
     el('mfrBadge').textContent=t.display_name||'';
     el('whoami').textContent=[t.user_name,t.role].filter(Boolean).join(' \u00b7 ');
     if(t.accent_hex && /^#[0-9A-Fa-f]{6}$/.test(t.accent_hex)){
@@ -1248,6 +1274,30 @@
     onGeoChange();
   });
   el('selHood').addEventListener('change',function(){ geo.neighbourhood=this.value; onGeoChange(); });
+  // ⚠️ SWITCHING COUNTRY MUST CLEAR THE TERRITORY. 'on' is meaningless in the
+  // USA and 'ca' means California there and nothing in Canada, so carrying a
+  // province across the switch would silently return an empty dashboard.
+  el('selCountry').addEventListener('change',function(){
+    COUNTRY=this.value;
+    geo={province:'',city:'',neighbourhood:''};
+    el('selHood').style.display='none';
+    el('sepHood').style.display='none';
+    el('geoReset').style.display='none';
+    // ⚠️ THREE THINGS MUST FOLLOW A COUNTRY SWITCH, not one.
+    //  1. setCountry() — or the page keeps saying "province" in the USA.
+    //  2. the REGION LIST must be refetched: it is filled once at sign-in from
+    //     res.geo, so without this the US shows Canadian provinces.
+    //  3. the territory is cleared — 'on' means nothing in the USA and 'ca'
+    //     means California there and nothing in Canada.
+    setCountry(COUNTRY);
+    el('selProvince').innerHTML='<option value="">'+esc(CTY.all)+'</option>';
+    api('overview',{}).then(function(res){
+      fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
+      COVERAGE=res.coverage||null;
+      onGeoChange();
+    }).catch(function(){ onGeoChange(); });
+  });
+
   el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; this.style.display='none'; onGeoChange(); });
   function onGeoChange(){
     loaded.accounts=false; loaded.list=false; loaded.feed=false;
