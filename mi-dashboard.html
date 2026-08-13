@@ -762,7 +762,14 @@
   var ME=null;
   var catCache=[], savedIds={};
   // devices with a real generation pair -> ordered newer-first spellings for display grouping
-  var GENSPLIT={ 'PicoSure':true, 'Elite':true };
+  // ⛔ GENSPLIT WAS A HARD-CODED PAIR LIST — { PicoSure:true, Elite:true } — and
+  // the newer generation's LABEL was hard-coded too. Both went stale the moment
+  // PicoSure Pro became its own device: gen_newer read 0 while the generation
+  // ALSO appeared as a separate row, the same machine listed twice.
+  // mi_portfolio now derives the split from device_reference.parent_device_id
+  // and returns gen_newer_label, so the display needs no device list at all.
+  // Elite is deliberately ONE family (no parent_device_id children) — the
+  // market focus is Clarity II, not the Elite generations.
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function el(id){ return document.getElementById(id); }
@@ -1353,11 +1360,12 @@
       var devs=g.devices.map(function(d){
         var row='<div class="dev"><span class="dn">'+esc(d.model)+(d.focus?'<span class="focus">Focus</span>':'')+'</span>'+
           '<span class="spacer"></span><span class="num">'+(d.installs||0)+'<span class="l">clinics</span></span></div>';
-        // generation sub-rows ONLY for the two real-pair devices, plain numbers
-        if (GENSPLIT[d.model] && ((d.gen_newer||0)+(d.gen_base||0))>0){
-          var newerLabel = d.model==='PicoSure' ? 'PicoSure Pro' : 'Elite iQ / Elite+';
+        // Generation sub-rows appear whenever the device HAS a newer generation
+        // in device_reference — no device list, no hard-coded label. The parent
+        // line already shows the family total, so these two add up to it.
+        if ((d.gen_newer||0) > 0 && d.gen_newer_label){
           row += '<div class="genrows">'+
-            '<div class="genrow"><span class="gm">'+newerLabel+'</span><span class="spacer"></span><span class="gc">'+(d.gen_newer||0)+'</span></div>'+
+            '<div class="genrow"><span class="gm">'+esc(d.gen_newer_label)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_newer||0)+'</span></div>'+
             '<div class="genrow"><span class="gm">'+esc(d.model)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_base||0)+'</span></div>'+
           '</div>';
         }
