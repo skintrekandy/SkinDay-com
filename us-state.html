@@ -889,7 +889,7 @@
   </div>
 
   <div class="filter-wrap">
-    <div class="filter-group">
+    <div class="filter-group" id="techGroup">
     <span class="filter-label">Technology</span>
     <div class="tech-picker" id="techPicker">
       <button type="button" class="tech-btn" id="techBtn" onclick="toggleTechPanel()" aria-haspopup="listbox" aria-expanded="false">
@@ -1216,9 +1216,23 @@ function devSlug(model) {
 
 async function loadDeviceFacets() {
   try {
-    const res = await fetch('/api/get-clinics?mode=device-facets&country=' + COUNTRY);
+    // ⭐⭐ STATE MUST BE SENT. The counts in this panel come from device_facets
+    // while the RESULTS come from buildApiUrl(), which filters on state — so
+    // without it the two disagree and the dropdown quotes a number the list can
+    // never return. Same rule as Canada: the dropdown number always matches the
+    // filter number.
+    const res = await fetch('/api/get-clinics?mode=device-facets&country=' + COUNTRY
+      + '&state=' + encodeURIComponent(STATE));
     if (!res.ok) return;
     deviceFacets = await res.json();
+    // ⭐ No devices read in this state yet: hide the control entirely rather
+    // than offer a dropdown where every option returns nothing. Hides the label
+    // with it, and leaves the rest of the filter bar untouched.
+    if (!deviceFacets.clinics_with_devices) {
+      const grp = document.getElementById('techGroup');
+      if (grp) grp.style.display = 'none';
+      return;
+    }
     renderTechPanel();
     syncTechButton();
   } catch (e) {
