@@ -1142,6 +1142,12 @@ const STATE_METROS = {
   ],
   'new-york': [
     ['new-york-city', 'New York City'],
+    ['long-island', 'Long Island'],
+    ['westchester-hudson-valley', 'Westchester & Hudson Valley'],
+    ['capital-region', 'Capital Region'],
+    ['western-new-york', 'Western New York'],
+    ['rochester-finger-lakes', 'Rochester & Finger Lakes'],
+    ['central-new-york', 'Central New York'],
   ],
 };
 const STATE_LABEL = { 'california': 'California', 'new-york': 'New York' }[STATE] || 'California';
@@ -1158,7 +1164,13 @@ const METRO_LABELS = {
   'sacramento': 'Sacramento', 'inland-empire': 'Inland Empire',
   'central-valley': 'Central Valley', 'central-coast': 'Central Coast',
   'palm-springs': 'Palm Springs',
-  'new-york-city': 'New York City'
+  'new-york-city': 'New York City',
+  'long-island': 'Long Island',
+  'westchester-hudson-valley': 'Westchester & Hudson Valley',
+  'capital-region': 'Capital Region',
+  'western-new-york': 'Western New York',
+  'rochester-finger-lakes': 'Rochester & Finger Lakes',
+  'central-new-york': 'Central New York'
 };
 const METRO_CENTER = {
   '':              { lat: 39.0,    lng: -98.0,     zoom: 4 },
@@ -1175,7 +1187,19 @@ const METRO_CENTER = {
   'central-valley': { lat: 36.8000, lng: -119.9000, zoom: 7 },
   'central-coast':  { lat: 35.4000, lng: -120.7000, zoom: 7 },
   'palm-springs':   { lat: 33.8303, lng: -116.5453, zoom: 10 },
-  'new-york-city': { lat: 40.7128, lng: -74.0060,  zoom: 11 }
+  'new-york-city': { lat: 40.7128, lng: -74.0060,  zoom: 11 },
+  // Long Island runs Great Neck to Montauk and the Hudson Valley runs Yonkers
+  // to Kingston — both are long corridors rather than a city, the same shape as
+  // Central Valley and Central Coast above. Centring tight on Hicksville or
+  // White Plains would drop half the clinics out of the opening view.
+  'long-island':               { lat: 40.8300, lng: -73.2000, zoom: 9 },
+  'westchester-hudson-valley': { lat: 41.2000, lng: -73.8500, zoom: 9 },
+  'capital-region':            { lat: 42.7000, lng: -73.8000, zoom: 10 },
+  'western-new-york':          { lat: 42.9000, lng: -78.8000, zoom: 10 },
+  'rochester-finger-lakes':    { lat: 43.0000, lng: -77.5000, zoom: 9 },
+  // Central New York spans Syracuse, Utica, Binghamton and Watertown — the
+  // widest of the seven, so it gets the widest zoom.
+  'central-new-york':          { lat: 43.0000, lng: -75.7000, zoom: 8 }
 };
 
 let currentFilter = 'all';
