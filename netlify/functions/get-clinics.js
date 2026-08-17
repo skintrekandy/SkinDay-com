@@ -185,10 +185,23 @@ exports.handler = async (event) => {
     // clinic_devices row into this function to count in JS — that shape hit
     // PostgREST's row cap and silently truncated the counts.
     if (params.mode === 'device-facets') {
+      // ⭐⭐ THE TERRITORY AXIS IS PER-COUNTRY, and this is what makes the
+      // dropdown number match the filter number. Canada keeps its geography in
+      // clinics.province; US rows keep theirs in clinics.state. device_facets'
+      // p_province resolves to the right column from p_country, so the caller
+      // just sends whichever one the page has.
+      // ⛔ WITHOUT THIS every US state page showed the WHOLE-COUNTRY count while
+      // its list was filtered to one state — /us/new-york offered "Morpheus8
+      // 728" (California + New York) against New York's own much smaller number.
+      const facetTerritory = (country === 'usa'
+        ? (params.state || params.province || '')
+        : (params.province || '')
+      ).trim() || null;
+
       const [{ data, error }, meta] = await Promise.all([
         supabase.rpc('device_facets', {
           p_country: country,
-          p_province: params.province || null
+          p_province: facetTerritory
         }),
         loadCategoryMeta(supabase)
       ]);
