@@ -1500,7 +1500,7 @@ async function crawlHost(row, matcher) {
     // ⚠️ THE FIRST ERROR, NOT THE LAST. A 403 on the apex followed by a 404 on a
     // www host that does not exist was being filed as a dead domain, so real
     // blocks were invisible in the error breakdown.
-    return { status: 'error', pagesTried, lastError: firstError || lastError, matches: [], unknowns: [] };
+    return { status: 'error', pagesTried, pagesReadUrls: [], lastError: firstError || lastError, matches: [], unknowns: [] };
   }
 
   const sm = await sitemapUrls(host.replace(/^www\./, ''));
@@ -1597,6 +1597,12 @@ async function crawlHost(row, matcher) {
   return {
     status: status,
     pagesTried,
+    // ⭐⭐ THE PAGE SET. `pagesTried` is a COUNT of attempts and cannot say
+    // whether two runs looked at the same thing. Without the URLs, "device absent
+    // this run" is indistinguishable from "we read different pages this run",
+    // which is the single ambiguity that dissolved every previous diff. Only
+    // pages that actually came back are listed, post-redirect.
+    pagesReadUrls: pages.map(p => p.url),
     lastError,
     techUrl: techUrl || null,
     thinOnly: thinOnly,
@@ -2012,6 +2018,7 @@ async function doCrawl(supabase, body) {
           host: row.host,
           status: out.status,
           pages_read: out.pagesTried,
+          pages_read_urls: out.pagesReadUrls || [],
           devices_found: out.matches.length,
           last_error: out.lastError || null
         }, { onConflict: 'run_id,host', ignoreDuplicates: false });
