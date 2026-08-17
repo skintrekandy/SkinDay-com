@@ -830,7 +830,7 @@
         <div class="stat-label">state</div>
       </div>
       <div>
-        <div class="stat-num">4.7★</div>
+        <div class="stat-num" id="heroAvgRating">4.7★</div>
         <div class="stat-label">Avg rating</div>
       </div>
     </div>
@@ -993,6 +993,7 @@
     <div class="footer-links">
       <h4>Clinic tools</h4>
       <a href="https://skinday.com/visualize" style="color:var(--gold);">Visualize</a>
+      <a href="https://skinday.com/visualize-pro" style="color:var(--gold);">Visualize Pro</a>
       <a href="https://skinday.com/studio" style="color:var(--gold);">Studio</a>
     </div>
     <div class="footer-links">
@@ -2667,11 +2668,33 @@ function unhighlightPinById(cid) {
   await initAuth();
   await updateShortlistUI();
 
-  // Live clinic count
+  // Live clinic count + average rating
+  const statFilter = '&approved=eq.true&country=eq.usa&state=eq.' + STATE
+                   + (currentMetro ? '&metro=eq.' + currentMetro : '');
   try {
-    const res = await fetch(SB_URL + '/rest/v1/clinics?select=id&approved=eq.true&country=eq.usa&state=eq.' + STATE + (currentMetro ? '&metro=eq.' + currentMetro : '') + '', { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Prefer': 'count=exact', 'Range': '0-0' } });
+    const res = await fetch(SB_URL + '/rest/v1/clinics?select=id' + statFilter, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY, 'Prefer': 'count=exact', 'Range': '0-0' } });
     const count = parseInt((res.headers.get('content-range')||'').split('/')[1]||'0', 10);
-    if (count) { const el = document.getElementById('heroClinicCount'); if (el) el.textContent = count.toLocaleString('en-US'); }
+    // ⭐ ALWAYS A "+". The directory is a floor, not a census — clinics open, and
+    // the grid never returns every one of them. "8,462+" is honest where a bare
+    // 8,462 claims a completeness we do not have.
+    if (count) { const el = document.getElementById('heroClinicCount'); if (el) el.textContent = count.toLocaleString('en-US') + '+'; }
+  } catch(e) {}
+
+  // ⭐ THE AVERAGE RATING IS COMPUTED, NOT HARDCODED. It was a static 4.7 that
+  // stayed 4.7 for every state and every metro tab. Nulls are excluded so the
+  // ~29% of rows without a rating cannot drag it down.
+  // ⚠️ Falls back silently to the markup's static value if the aggregate is
+  // rejected — better a stale number than a blank stat block.
+  try {
+    const r = await fetch(SB_URL + '/rest/v1/clinics?select=rating.avg()&rating=not.is.null' + statFilter, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer '+SB_KEY } });
+    if (r.ok) {
+      const j = await r.json();
+      const avg = j && j[0] ? (j[0].avg ?? j[0]['rating.avg']) : null;
+      if (avg != null && isFinite(Number(avg))) {
+        const el = document.getElementById('heroAvgRating');
+        if (el) el.textContent = Number(avg).toFixed(1) + '★';
+      }
+    }
   } catch(e) {}
 })();
 </script>
