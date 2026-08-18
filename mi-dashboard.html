@@ -8,6 +8,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
+    /* Truncation notice on the Accounts list. Deliberately not muted grey — it
+       is a correctness warning, not a hint. */
+    .trunc-note{
+      margin:.35rem 0 .1rem; padding:.4rem .6rem;
+      font-size:.78rem; line-height:1.35;
+      color:#b45309;
+      background:rgba(180,83,9,.07);
+      border-left:2px solid #b45309;
+      border-radius:3px;
+    }
   :root {
     --bg:#FBFCFD; --surface:#FFFFFF; --surface-2:#F7F9FB;
     --ink:#14181D; --ink-2:#3A424C; --muted:#697079; --faint:#9AA1AA;
@@ -505,6 +515,10 @@
         <button class="linkish" id="acctReset" type="button" style="display:none">Reset filters</button>
         <span class="count" id="acctCount"></span>
       </div>
+      <!-- ⭐ Its own line, not appended to the count. A rep scanning a list will
+           not notice "· showing first 200" at the end of a sentence, and acting
+           on a truncated list is the expensive mistake this screen can cause. -->
+      <div id="acctTrunc" class="trunc-note" style="display:none"></div>
       <div class="toolbar" id="acctAdv" hidden>
         <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
         <select id="acctDevice"><option value="">Runs any device</option></select>
@@ -1724,7 +1738,14 @@
     var body={category:el('acctCategory').value,segment:el('acctSegment').value,
               filter_manufacturer:el('acctMfr').value,filter_distributor:el('acctDist').value,
               device:el('acctDevice').value,exclude_manufacturer:el('acctExclude').value,
-              min_reviews:el('acctMinRev').value,sort:sort,limit:200};
+    // ⭐ 500, NOT 200. A rep building a call list off a filtered view had no way
+    // to know the list was cut — Christos found 200 shown against 300+ available,
+    // and Kyle is running an email campaign off exactly this screen. The server
+    // has always allowed up to 500 (mi-dashboard.js caps there); the client
+    // simply never asked for more.
+    // ⚠️ 500 is still a cap. When it is hit, the notice below says so loudly
+    // rather than leaving a truncated list looking complete.
+              min_reviews:el('acctMinRev').value,sort:sort,limit:500};
     if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
     api('accounts',body).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
   }
@@ -1989,16 +2010,28 @@
     } else if(total==null){
       // total_matches arrives only once the SQL is updated. Until then the old
       // wording, rather than a number that would be wrong.
-      txt = rows.length + (rows.length===200 ? '+ shown' : ' identified accounts');
+      txt = rows.length + (rows.length>=500 ? '+ shown' : ' identified accounts');
     } else if(activeFilters() && BASE_TOTAL!=null && BASE_TOTAL>total){
       txt = total.toLocaleString()+' of '+BASE_TOTAL.toLocaleString()+' clinics'+
-            ' \u00b7 '+(BASE_TOTAL-total).toLocaleString()+' filtered out'+
-            (rows.length<total ? ' \u00b7 showing first '+rows.length : '');
+            ' \u00b7 '+(BASE_TOTAL-total).toLocaleString()+' filtered out';
     } else {
-      txt = total.toLocaleString()+' clinics'+
-            (rows.length<total ? ' \u00b7 showing first '+rows.length : '');
+      txt = total.toLocaleString()+' clinics';
     }
     el('acctCount').textContent=txt;
+
+    // ⛔ A TRUNCATED LIST MUST NEVER LOOK COMPLETE. This is the failure that
+    // matters most on this screen: a rep exports or works through what is shown
+    // and never learns the rest existed. Said in its own line, with what to do
+    // about it, not tucked on the end of a count.
+    var cut = (total != null && rows.length < total);
+    var warn = el('acctTrunc');
+    if (warn) {
+      warn.style.display = cut ? '' : 'none';
+      warn.textContent = cut
+        ? 'Showing the first ' + rows.length.toLocaleString() + ' of ' +
+          total.toLocaleString() + '. Narrow by city or add a filter to see the rest.'
+        : '';
+    }
     el('acctReset').style.display = activeFilters() ? '' : 'none';
 
     if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
