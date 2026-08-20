@@ -2874,6 +2874,9 @@ async function dcRequeue() {
                  + 'published is deleted.')) return;
     const r = await dcCall({ action: 'requeue', country: country });
     if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
+    // A requeue means a fresh sweep of the country, so the interrupted run must
+    // not be offered back — resuming into it would mix two sweeps under one id.
+    dcForgetRun(country);
     dcLog('requeued ' + ((r.data && r.data.requeued) || 0) + ' hosts · ' + label
           + ' — press Start crawl to run them', 'var(--muted)');
   } catch (e) {
@@ -2943,12 +2946,64 @@ async function dcApproveAll() {
   }
 }
 
+// ⭐⭐⭐ RESUME AN INTERRUPTED RUN INSTEAD OF OPENING A NEW ONE.
+// The server creates a fresh run row whenever it receives a null run_id, so
+// every restart used to fragment one crawl across several run ids — the
+// month-over-month diff then has to be written across a PAIR of ids on one
+// side, and hosts read under the abandoned id silently drop out of it.
+// A national crawl is long enough that restarts are normal, so the run id is
+// remembered here and offered back. Cleared when the queue drains (the run is
+// genuinely finished) and when hosts are requeued (a fresh crawl is intended).
+function dcRunKey(country) { return 'dc-open-run:' + (country || 'all'); }
+
+function dcRememberRun(country, runId) {
+  try {
+    localStorage.setItem(dcRunKey(country),
+      JSON.stringify({ runId: runId, at: Date.now() }));
+  } catch (e) { /* private mode — resume is a convenience, not load-bearing */ }
+}
+
+function dcForgetRun(country) {
+  try { localStorage.removeItem(dcRunKey(country)); } catch (e) {}
+}
+
+// Only offers runs from the last 36h. An older one is almost certainly a
+// previous month's crawl, and resuming into it would date this month's
+// findings to that run.
+function dcOpenRun(country) {
+  try {
+    const raw = localStorage.getItem(dcRunKey(country));
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    if (!v || !v.runId) return null;
+    if (Date.now() - (v.at || 0) > 36 * 60 * 60 * 1000) { dcForgetRun(country); return null; }
+    return v.runId;
+  } catch (e) { return null; }
+}
+
 async function dcStart(retry) {
   if (dcRunning) return;
   const country = dcCountry();
   dcRunning = true;
   dcTotals = { hosts: 0, devices: 0, empty: 0, errors: 0, render: 0 };
+
+  // Resume the interrupted run unless the operator says otherwise. Cancel
+  // starts a new one, which is the right choice for a fresh monthly crawl.
   dcRunId = null;
+  const openRun = dcOpenRun(country);
+  if (openRun) {
+    if (confirm('Run ' + openRun + ' for ' + (country || 'every country')
+                + ' never finished.\n\nContinue it? Everything read so far stays '
+                + 'in that run, which keeps the crawl comparable to previous ones.'
+                + '\n\nCancel starts a brand new run instead.')) {
+      dcRunId = openRun;
+      dcLog('resuming run ' + openRun, 'var(--muted)');
+    } else {
+      dcForgetRun(country);
+      dcLog('starting a new run instead of continuing ' + openRun, 'var(--gold)');
+    }
+  }
+
   dcButtons(true);
   dcLog((retry === true ? 'retrying hosts that failed' : 'starting') +
         ' · ' + (country || 'every country') + '…', 'var(--muted)');
@@ -2957,7 +3012,14 @@ async function dcStart(retry) {
   // page when a function is killed, which arrives here as "Unexpected token '<'".
   // That is transient: back off and carry on, give up only after several in a row.
   let consecutiveFailures = 0;
-  const MAX_CONSECUTIVE_FAILURES = 5;
+  // ⭐⭐ THESE NUMBERS ARE THE DIFFERENCE BETWEEN ONE RUN AND FOUR. The old
+  // ladder was 2s/4s/6s/8s then stop — 20 seconds total, which is far less time
+  // than a killed Netlify function needs to come back. A national crawl died
+  // mid-run three times because of it, and every restart opens a NEW run row,
+  // which fragments the month-over-month comparison across run ids.
+  // Now: 2,4,8,16,32,60,60… capped at 60s, 12 attempts ≈ 7 minutes of trying.
+  const MAX_CONSECUTIVE_FAILURES = 12;
+  const MAX_BACKOFF_MS = 60000;
 
   while (dcRunning) {
     let data;
@@ -2972,7 +3034,7 @@ async function dcStart(retry) {
               + esc(String((e && e.message) || e)), 'var(--red)');
         break;
       }
-      const waitMs = 2000 * consecutiveFailures;
+      const waitMs = Math.min(2000 * Math.pow(2, consecutiveFailures - 1), MAX_BACKOFF_MS);
       dcLog('hiccup (' + consecutiveFailures + '/' + MAX_CONSECUTIVE_FAILURES + '): '
             + esc(String((e && e.message) || e))
             + ' · retrying in ' + (waitMs / 1000) + 's', 'var(--gold)');
@@ -2982,7 +3044,12 @@ async function dcStart(retry) {
 
     consecutiveFailures = 0;
     retry = false;                     // requeue once, not on every loop
-    if (data.run_id) dcRunId = data.run_id;
+    if (data.run_id && data.run_id !== dcRunId) {
+      dcRunId = data.run_id;
+      dcRememberRun(country, dcRunId);
+    } else if (data.run_id) {
+      dcRememberRun(country, dcRunId);   // refresh the timestamp on a long run
+    }
 
     for (const p of (data.processed || [])) {
       dcTotals.hosts++;
@@ -3025,7 +3092,11 @@ async function dcStart(retry) {
       dcTotals.errors + ' failed · ' +
       ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
 
-    if (data.done) { dcLog('queue empty for ' + (country || 'every country') + '. done.', 'var(--muted)'); break; }
+    if (data.done) {
+      dcForgetRun(country);
+      dcLog('queue empty for ' + (country || 'every country') + '. done.', 'var(--muted)');
+      break;
+    }
     await new Promise(r => setTimeout(r, 400));
   }
 
