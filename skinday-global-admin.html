@@ -1050,7 +1050,13 @@
             <option value="hongkong">Hong Kong</option>
             <option value="">Every country</option>
           </select>
-          <span style="font-size:.78rem;color:var(--muted);">The queue holds every country. Choosing one here scopes the crawl, the retry and the counts, so a US run can never drain Canada's queue.</span>
+          <select class="form-input" id="dc-state" style="max-width:200px;display:none;" onchange="dcCountryChanged()">
+            <option value="">Every state</option>
+            <option value="new-york">New York</option>
+            <option value="california">California</option>
+            <option value="florida">Florida</option>
+          </select>
+          <span style="font-size:.78rem;color:var(--muted);">The queue holds every country. Choosing one here scopes the crawl, the retry and the counts, so a US run can never drain Canada's queue. The US is ~14,400 hosts, far too many for one sitting, so pick a state as well.</span>
         </div>
 
         <div class="form-section-label" style="margin-top:1rem;">Run</div>
@@ -2663,6 +2669,20 @@ function dcCountry() {
   return el ? el.value : 'usa';
 }
 
+// ⭐ State only means anything for the USA. Canada and Taiwan queue rows have
+// no `states` value, so sending one there would match nothing at all.
+function dcState() {
+  if (dcCountry() !== 'usa') return '';
+  const el = document.getElementById('dc-state');
+  return el ? el.value : '';
+}
+
+function dcScopeLabel() {
+  const st = dcState();
+  if (st) return st.replace(/-/g, ' ');
+  return dcCountry() || 'every country';
+}
+
 function dcEnter() {
   if (dcEntered) { dcLoadStats(); return; }
   dcEntered = true;
@@ -2672,6 +2692,8 @@ function dcEnter() {
 
 function dcCountryChanged() {
   // Country scopes the queue counts and the candidate list, so both reload.
+  const sel = document.getElementById('dc-state');
+  if (sel) sel.style.display = (dcCountry() === 'usa') ? '' : 'none';
   dcLoadStats();
   dcLoadCandidates();
 }
@@ -2861,23 +2883,24 @@ async function dcSync() {
 async function dcRequeue() {
   if (dcRunning) { alert('Stop the crawl before requeueing.'); return; }
   const country = dcCountry();
-  const label = country || 'every country';
   const btn = document.getElementById('dc-requeue');
   if (btn) btn.disabled = true;
   try {
-    const pre = await dcCall({ action: 'requeue', country: country, preview: true });
+    const state = dcState();
+    const scope = dcScopeLabel();
+    const pre = await dcCall({ action: 'requeue', country: country, state: state, preview: true });
     if (!pre.ok) throw new Error((pre.data && pre.data.error) || 'request failed');
     const n = (pre.data && pre.data.would_requeue) || 0;
-    if (!n) { alert('Nothing to requeue for ' + label + '.'); return; }
-    if (!confirm('Put ' + n + ' hosts in ' + label + ' back to pending?\n\n'
+    if (!n) { alert('Nothing to requeue for ' + scope + '.'); return; }
+    if (!confirm('Put ' + n + ' hosts in ' + scope + ' back to pending?\n\n'
                  + 'The next crawl will read all of them again. Nothing already '
                  + 'published is deleted.')) return;
-    const r = await dcCall({ action: 'requeue', country: country });
+    const r = await dcCall({ action: 'requeue', country: country, state: state });
     if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
     // A requeue means a fresh sweep of the country, so the interrupted run must
     // not be offered back — resuming into it would mix two sweeps under one id.
-    dcForgetRun(country);
-    dcLog('requeued ' + ((r.data && r.data.requeued) || 0) + ' hosts · ' + label
+    dcForgetRun(country, state);
+    dcLog('requeued ' + ((r.data && r.data.requeued) || 0) + ' hosts · ' + scope
           + ' — press Start crawl to run them', 'var(--muted)');
   } catch (e) {
     alert('Requeue failed: ' + String((e && e.message) || e));
@@ -2954,29 +2977,33 @@ async function dcApproveAll() {
 // A national crawl is long enough that restarts are normal, so the run id is
 // remembered here and offered back. Cleared when the queue drains (the run is
 // genuinely finished) and when hosts are requeued (a fresh crawl is intended).
-function dcRunKey(country) { return 'dc-open-run:' + (country || 'all'); }
+// Keyed on country AND state: New York and California are separate crawls and
+// must never resume into each other's run.
+function dcRunKey(country, state) {
+  return 'dc-open-run:' + (country || 'all') + ':' + (state || 'all');
+}
 
-function dcRememberRun(country, runId) {
+function dcRememberRun(country, state, runId) {
   try {
-    localStorage.setItem(dcRunKey(country),
+    localStorage.setItem(dcRunKey(country, state),
       JSON.stringify({ runId: runId, at: Date.now() }));
   } catch (e) { /* private mode — resume is a convenience, not load-bearing */ }
 }
 
-function dcForgetRun(country) {
-  try { localStorage.removeItem(dcRunKey(country)); } catch (e) {}
+function dcForgetRun(country, state) {
+  try { localStorage.removeItem(dcRunKey(country, state)); } catch (e) {}
 }
 
 // Only offers runs from the last 36h. An older one is almost certainly a
 // previous month's crawl, and resuming into it would date this month's
 // findings to that run.
-function dcOpenRun(country) {
+function dcOpenRun(country, state) {
   try {
-    const raw = localStorage.getItem(dcRunKey(country));
+    const raw = localStorage.getItem(dcRunKey(country, state));
     if (!raw) return null;
     const v = JSON.parse(raw);
     if (!v || !v.runId) return null;
-    if (Date.now() - (v.at || 0) > 36 * 60 * 60 * 1000) { dcForgetRun(country); return null; }
+    if (Date.now() - (v.at || 0) > 36 * 60 * 60 * 1000) { dcForgetRun(country, state); return null; }
     return v.runId;
   } catch (e) { return null; }
 }
@@ -2984,29 +3011,31 @@ function dcOpenRun(country) {
 async function dcStart(retry) {
   if (dcRunning) return;
   const country = dcCountry();
+  const state = dcState();
+  const scope = dcScopeLabel();
   dcRunning = true;
   dcTotals = { hosts: 0, devices: 0, empty: 0, errors: 0, render: 0 };
 
   // Resume the interrupted run unless the operator says otherwise. Cancel
   // starts a new one, which is the right choice for a fresh monthly crawl.
   dcRunId = null;
-  const openRun = dcOpenRun(country);
+  const openRun = dcOpenRun(country, state);
   if (openRun) {
-    if (confirm('Run ' + openRun + ' for ' + (country || 'every country')
+    if (confirm('Run ' + openRun + ' for ' + scope
                 + ' never finished.\n\nContinue it? Everything read so far stays '
                 + 'in that run, which keeps the crawl comparable to previous ones.'
                 + '\n\nCancel starts a brand new run instead.')) {
       dcRunId = openRun;
       dcLog('resuming run ' + openRun, 'var(--muted)');
     } else {
-      dcForgetRun(country);
+      dcForgetRun(country, state);
       dcLog('starting a new run instead of continuing ' + openRun, 'var(--gold)');
     }
   }
 
   dcButtons(true);
   dcLog((retry === true ? 'retrying hosts that failed' : 'starting') +
-        ' · ' + (country || 'every country') + '…', 'var(--muted)');
+        ' · ' + scope + '…', 'var(--muted)');
 
   // ⭐ A SINGLE BAD RESPONSE MUST NOT END THE RUN. Netlify returns an HTML error
   // page when a function is killed, which arrives here as "Unexpected token '<'".
@@ -3024,7 +3053,7 @@ async function dcStart(retry) {
   while (dcRunning) {
     let data;
     try {
-      const r = await dcCall({ action: 'crawl', batch: 3, retry: retry === true, run_id: dcRunId, country: country });
+      const r = await dcCall({ action: 'crawl', batch: 3, retry: retry === true, run_id: dcRunId, country: country, state: state });
       data = r.data;
       if (!r.ok) throw new Error((data && data.error) || 'request failed');
     } catch (e) {
@@ -3046,9 +3075,9 @@ async function dcStart(retry) {
     retry = false;                     // requeue once, not on every loop
     if (data.run_id && data.run_id !== dcRunId) {
       dcRunId = data.run_id;
-      dcRememberRun(country, dcRunId);
+      dcRememberRun(country, state, dcRunId);
     } else if (data.run_id) {
-      dcRememberRun(country, dcRunId);   // refresh the timestamp on a long run
+      dcRememberRun(country, state, dcRunId);   // refresh the timestamp on a long run
     }
 
     for (const p of (data.processed || [])) {
@@ -3093,8 +3122,8 @@ async function dcStart(retry) {
       ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
 
     if (data.done) {
-      dcForgetRun(country);
-      dcLog('queue empty for ' + (country || 'every country') + '. done.', 'var(--muted)');
+      dcForgetRun(country, state);
+      dcLog('queue empty for ' + scope + '. done.', 'var(--muted)');
       break;
     }
     await new Promise(r => setTimeout(r, 400));
@@ -3182,7 +3211,7 @@ function dcCandMsg(text, colour) {
 
 async function dcLoadStats() {
   const country = dcCountry();
-  const { ok, data } = await dcCall({ action: 'candidate-stats', country: country });
+  const { ok, data } = await dcCall({ action: 'candidate-stats', country: country, state: dcState() });
   if (!ok || !data || !data.counts) return;
 
   // ⛔ THE OLD LINE MIXED TWO SCOPES INTO ONE SENTENCE and ended it with "in
