@@ -240,6 +240,13 @@
 # /us              -> state selector (us.html)
 # /us/california   -> state directory (us-state.html, reads state from URL)
 # /us/new-york     -> same template
+# /us/florida      -> same template
+#
+# Each live state needs its own 200 rewrite here. It must be a REWRITE
+# (200), never a 301: the page reads its state from the URL path, so a
+# redirect to /us-state.html would arrive with no state and render an
+# empty California. A new state added to us.html without a line here
+# falls through to the /us/* catch-all below and 404s.
 [[redirects]]
   from   = "/us/california"
   to     = "/us-state.html"
@@ -248,6 +255,12 @@
 
 [[redirects]]
   from   = "/us/new-york"
+  to     = "/us-state.html"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from   = "/us/florida"
   to     = "/us-state.html"
   status = 200
   force  = true
