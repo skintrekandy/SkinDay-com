@@ -758,7 +758,7 @@
       <div class="sec-label">My list</div>
       <div class="routebar" id="routebar" style="display:none">
         <div class="rrow">
-          <input class="rstart" id="rStart" placeholder="Start from — postcode or address" autocomplete="off">
+          <input class="rstart" id="rStart" placeholder="Start from — address or city" autocomplete="off">
           <button class="btn" id="rHere">Use my location</button>
           <button class="btn go" id="rGo">Plan route</button>
           <button class="btn" id="rOpen" style="display:none">Open in Maps</button>
@@ -2198,14 +2198,51 @@
     window.__routeOrder=null;
   }
 
-  function geocode(q){
-    // Nominatim is free and needs no key. One call per plan, not per keystroke.
-    return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q))
-      .then(function(r){ return r.json(); })
+  // \u26a0\ufe0f CANADIAN POSTCODES MOSTLY DO NOT RESOLVE. Canada Post data is not open,
+  // so OSM has very few postcodes tagged and a bare "L4B 1A1" returns nothing at
+  // all - in any spacing or case. That is a data gap in OSM, not a bug here, and
+  // no amount of retrying the same string fixes it. So we widen instead: the
+  // structured postcode field, then free text with the country named, then the
+  // FSA (first three characters), which OSM does often carry as an area and is
+  // accurate to a few km - close enough to ORDER a day's stops.
+  function nomFetch(params){
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&'+params)
+      .then(function(r){ return r.ok ? r.json() : []; })
       .then(function(j){
-        if(!j || !j.length) throw new Error('Could not find that address');
+        if(!j || !j.length) return null;
         return { lat:parseFloat(j[0].lat), lng:parseFloat(j[0].lon) };
-      });
+      })
+      .catch(function(){ return null; });
+  }
+
+  function geocode(q){
+    var cc = (COUNTRY==='usa') ? 'us' : (COUNTRY==='canada' ? 'ca' : '');
+    var cname = COUNTRY_NAMES[COUNTRY] || '';
+    var ccp = cc ? '&countrycodes='+cc : '';
+    // A postcode-shaped string gets the structured field; anything else is an address.
+    var looksPostal = /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/.test(q.trim())
+                   || /^\d{5}(-\d{4})?$/.test(q.trim());
+    var attempts = [];
+    if(looksPostal){
+      attempts.push('postalcode='+encodeURIComponent(q.trim())+ccp);
+      attempts.push('q='+encodeURIComponent(q.trim()+(cname?', '+cname:''))+ccp);
+      var fsa=q.trim().replace(/[ -]/g,'').slice(0,3);
+      if(/^[A-Za-z]\d[A-Za-z]$/.test(fsa)){
+        attempts.push('q='+encodeURIComponent(fsa+(cname?', '+cname:''))+ccp);
+      }
+    } else {
+      attempts.push('q='+encodeURIComponent(q.trim()+(cname?', '+cname:''))+ccp);
+      attempts.push('q='+encodeURIComponent(q.trim()));
+    }
+    // Sequential, stopping at the first hit, so a good query costs one request.
+    return attempts.reduce(function(chain, params){
+      return chain.then(function(found){ return found || nomFetch(params); });
+    }, Promise.resolve(null)).then(function(found){
+      if(found) return found;
+      throw new Error(looksPostal
+        ? 'That postcode is not in the open map data \u2014 most Canadian postcodes are missing. Try a street address or a city, or press Use my location.'
+        : 'Could not find that address. Try adding the city, or press Use my location.');
+    });
   }
 
   function planRoute(){
