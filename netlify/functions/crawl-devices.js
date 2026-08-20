@@ -1680,6 +1680,14 @@ async function doCrawl(supabase, body) {
   // Empty means every country, which is the old behaviour.
   const country = (body.country || '').trim().toLowerCase();
 
+  // ⭐⭐ STATE SCOPING. The US directory is ~14,400 hosts across three states —
+  // nearly three times Canada — so an all-USA run is a multi-day job that forces
+  // every state onto one schedule. `states` is an ARRAY because a chain's site
+  // serves branches in several states; matching with `contains` means such a
+  // host is reachable from EVERY state it touches rather than filed under one.
+  // Empty means the whole country, which is the old behaviour.
+  const state = (body.state || '').trim().toLowerCase();
+
   // ⭐ SINGLE-HOST MODE. Crawl one named host immediately, whatever its queue
   // status, and report what happened.
   //
@@ -1694,6 +1702,7 @@ async function doCrawl(supabase, body) {
       .update({ status: 'pending', last_error: null })
       .in('status', ['error', 'running']);
     if (country) rq = rq.eq('country', country);
+    if (state) rq = rq.contains('states', [state]);
     await rq;
   }
 
@@ -1720,6 +1729,7 @@ async function doCrawl(supabase, body) {
     // copy and attributes it to 52 unrelated clinics.
     claimQuery = claimQuery.eq('status', 'pending').eq('excluded', false);
     if (country) claimQuery = claimQuery.eq('country', country);
+    if (state) claimQuery = claimQuery.contains('states', [state]);
     claimQuery = claimQuery.order('id', { ascending: true }).limit(batch);
   }
 
@@ -2081,6 +2091,7 @@ async function doCrawl(supabase, body) {
     .eq('status', 'pending')
     .eq('excluded', false);
   if (country) remQ = remQ.eq('country', country);
+  if (state) remQ = remQ.contains('states', [state]);
   const { count: remaining } = await remQ;
 
   if (runId) {
@@ -2269,23 +2280,29 @@ async function manualDevices(supabase, body) {
 // must never quietly re-admit them.
 async function requeueAll(supabase, body) {
   const country = body.country || null;
+  // ⚠️ MUST honour the state too. Requeue is country-wide by default, so
+  // without this a New York re-crawl puts all ~14,400 US hosts back to pending
+  // and the next Start reads California and Florida as well.
+  const state = ((body && body.state) || '').trim().toLowerCase();
 
   let countQ = supabase.from('crawl_device_queue')
     .select('id', { count: 'exact', head: true })
     .eq('excluded', false);
   if (country) countQ = countQ.eq('country', country);
+  if (state) countQ = countQ.contains('states', [state]);
   const { count } = await countQ;
 
-  if (body.preview) return { preview: true, country: country, would_requeue: count || 0 };
+  if (body.preview) return { preview: true, country: country, state: state || null, would_requeue: count || 0 };
 
   let rq = supabase.from('crawl_device_queue')
     .update({ status: 'pending', last_error: null, attempts: 0 })
     .eq('excluded', false);
   if (country) rq = rq.eq('country', country);
+  if (state) rq = rq.contains('states', [state]);
   const { error } = await rq;
   if (error) throw error;
 
-  return { requeued: count || 0, country: country };
+  return { requeued: count || 0, country: country, state: state || null };
 }
 
 // ---------------------------------------------------------------------------
@@ -2372,11 +2389,13 @@ async function candidateStats(supabase, body) {
   };
   // Queue counts are country-scoped; candidate counts are not, because
   // clinic_device_candidates has no country column. The tab labels them.
+  const state = ((body && body.state) || '').trim().toLowerCase();
   const qc = async (status) => {
     let q = supabase.from('crawl_device_queue')
       .select('id', { count: 'exact', head: true })
       .eq('status', status).eq('excluded', false);
     if (country) q = q.eq('country', country);
+    if (state) q = q.contains('states', [state]);
     const { count } = await q;
     return count || 0;
   };
