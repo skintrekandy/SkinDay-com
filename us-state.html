@@ -1150,11 +1150,36 @@ const STATE_METROS = {
     ['rochester-finger-lakes', 'Rochester & Finger Lakes'],
     ['central-new-york', 'Central New York'],
   ],
+  // ⭐ SIXTEEN COLLECTION MARKETS, ordered by approved clinic volume. Deliberately
+  // granular: Naples is a different aesthetics ecosystem from Fort Myers, and
+  // Sarasota would have been swallowed by Tampa Bay. Markets can be aggregated
+  // later; a combined market cannot be unscrambled after import.
+  'florida': [
+    ['miami-dade', 'Miami-Dade'],
+    ['tampa-bay', 'Tampa Bay'],
+    ['broward', 'Broward'],
+    ['palm-beach', 'Palm Beach'],
+    ['orlando', 'Orlando'],
+    ['sarasota-bradenton', 'Sarasota & Bradenton'],
+    ['jacksonville', 'Jacksonville'],
+    ['fort-myers-cape-coral', 'Fort Myers & Cape Coral'],
+    ['naples-marco-island', 'Naples & Marco Island'],
+    ['space-coast', 'Space Coast'],
+    ['daytona-volusia', 'Daytona & Volusia'],
+    ['treasure-coast', 'Treasure Coast'],
+    ['destin-fort-walton', 'Destin & Fort Walton'],
+    ['pensacola', 'Pensacola'],
+    ['gainesville', 'Gainesville'],
+    ['tallahassee', 'Tallahassee'],
+  ],
 };
-const STATE_LABEL = { 'california': 'California', 'new-york': 'New York' }[STATE] || 'California';
+const STATE_LABEL = { 'california': 'California', 'new-york': 'New York', 'florida': 'Florida' }[STATE] || 'California';
 const STATE_CENTER = {
   'california': { lat: 36.7, lng: -119.4, zoom: 6 },
   'new-york':   { lat: 42.9, lng: -75.5,  zoom: 7 },
+  // Florida is a long peninsula plus a panhandle — a statewide view has to reach
+  // from Key West to Pensacola, so it sits a zoom level wider than New York.
+  'florida':    { lat: 28.3, lng: -83.0,  zoom: 6 },
 }[STATE] || { lat: 36.7, lng: -119.4, zoom: 6 };
 
 let currentMetro = '';  // '' = all metros in this state
@@ -1171,7 +1196,15 @@ const METRO_LABELS = {
   'capital-region': 'Capital Region',
   'western-new-york': 'Western New York',
   'rochester-finger-lakes': 'Rochester & Finger Lakes',
-  'central-new-york': 'Central New York'
+  'central-new-york': 'Central New York',
+  'miami-dade': 'Miami-Dade', 'broward': 'Broward', 'palm-beach': 'Palm Beach',
+  'tampa-bay': 'Tampa Bay', 'sarasota-bradenton': 'Sarasota & Bradenton',
+  'fort-myers-cape-coral': 'Fort Myers & Cape Coral',
+  'naples-marco-island': 'Naples & Marco Island', 'orlando': 'Orlando',
+  'space-coast': 'Space Coast', 'daytona-volusia': 'Daytona & Volusia',
+  'treasure-coast': 'Treasure Coast', 'jacksonville': 'Jacksonville',
+  'gainesville': 'Gainesville', 'tallahassee': 'Tallahassee',
+  'pensacola': 'Pensacola', 'destin-fort-walton': 'Destin & Fort Walton'
 };
 const METRO_CENTER = {
   '':              { lat: 39.0,    lng: -98.0,     zoom: 4 },
@@ -1198,6 +1231,26 @@ const METRO_CENTER = {
   'capital-region':            { lat: 42.7000, lng: -73.8000, zoom: 10 },
   'western-new-york':          { lat: 42.9000, lng: -78.8000, zoom: 10 },
   'rochester-finger-lakes':    { lat: 43.0000, lng: -77.5000, zoom: 9 },
+  // FLORIDA. The three South Florida counties are dense and stay tight at 11.
+  'miami-dade':            { lat: 25.7617, lng: -80.1918, zoom: 11 },
+  'broward':               { lat: 26.1224, lng: -80.1373, zoom: 11 },
+  'palm-beach':            { lat: 26.5000, lng: -80.1000, zoom: 10 },
+  'tampa-bay':             { lat: 27.9506, lng: -82.4572, zoom: 10 },
+  'orlando':               { lat: 28.5383, lng: -81.3792, zoom: 10 },
+  'jacksonville':          { lat: 30.3322, lng: -81.6557, zoom: 10 },
+  'sarasota-bradenton':    { lat: 27.3364, lng: -82.5307, zoom: 10 },
+  'fort-myers-cape-coral': { lat: 26.6406, lng: -81.8723, zoom: 10 },
+  'naples-marco-island':   { lat: 26.1420, lng: -81.7948, zoom: 10 },
+  // These four are coastal corridors rather than cities — the same shape as
+  // Central Valley and Long Island above, so they get a wider zoom. Space Coast
+  // runs Titusville to Vero Beach; the Panhandle pair span whole counties.
+  'space-coast':           { lat: 28.2000, lng: -80.7000, zoom: 9 },
+  'daytona-volusia':       { lat: 29.2000, lng: -81.1000, zoom: 9 },
+  'treasure-coast':        { lat: 27.2000, lng: -80.3000, zoom: 9 },
+  'destin-fort-walton':    { lat: 30.4000, lng: -86.3000, zoom: 9 },
+  'pensacola':             { lat: 30.4213, lng: -87.2169, zoom: 10 },
+  'gainesville':           { lat: 29.6516, lng: -82.3248, zoom: 10 },
+  'tallahassee':           { lat: 30.4383, lng: -84.2807, zoom: 10 },
   // Central New York spans Syracuse, Utica, Binghamton and Watertown — the
   // widest of the seven, so it gets the widest zoom.
   'central-new-york':          { lat: 43.0000, lng: -75.7000, zoom: 8 }
