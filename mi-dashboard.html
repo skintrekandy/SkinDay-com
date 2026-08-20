@@ -343,6 +343,17 @@
   .note-edit { width:100%; margin-top:12px; padding:10px 13px; border:1px solid var(--line); border-radius:var(--radius-sm); font:inherit; font-size:13px; resize:vertical; min-height:40px; background:var(--surface-2); }
   .note-edit:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); background:var(--surface); }
   .note-saved { font-family:var(--font-mono); font-size:10px; color:var(--accent-strong); }
+  /* Route planner. A rep uses this standing in a car park before the first call,
+     so the controls are thumb-sized and the result is a plain numbered order. */
+  .routebar { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .routebar .rrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .routebar input.rstart { font:inherit; font-size:.92rem; color:var(--ink); padding:9px 12px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); flex:1 1 240px; min-width:0; }
+  .routebar input.rstart:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .routebar .rhint { font-size:12px; color:var(--muted); margin-top:9px; }
+  .routebar .rsum { font-family:var(--font-mono); font-size:12px; color:var(--accent-strong); margin-top:9px; }
+  .acct .rstop { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 6px; margin-right:8px; border-radius:11px; background:var(--accent); color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:600; }
+  .acct .rpick { margin-right:9px; width:17px; height:17px; accent-color:var(--accent); cursor:pointer; vertical-align:middle; }
+  @media (max-width:640px){ .routebar input.rstart { flex:1 1 100%; } .routebar .rrow .btn { flex:1 1 46%; } }
 
   .empty { text-align:center; color:var(--faint); font-size:14px; padding:56px 20px; }
   .spin { display:inline-block; width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite; vertical-align:middle; }
@@ -745,6 +756,17 @@
 
     <section class="panel" id="panel-list">
       <div class="sec-label">My list</div>
+      <div class="routebar" id="routebar" style="display:none">
+        <div class="rrow">
+          <input class="rstart" id="rStart" placeholder="Start from — postcode or address" autocomplete="off">
+          <button class="btn" id="rHere">Use my location</button>
+          <button class="btn go" id="rGo">Plan route</button>
+          <button class="btn" id="rOpen" style="display:none">Open in Maps</button>
+          <button class="btn" id="rClear" style="display:none">Clear</button>
+        </div>
+        <div class="rhint">Tick the accounts you plan to visit, then plan the route. Straight-line distance, so a bridge or a one-way system can shuffle the order slightly.</div>
+        <div class="rsum" id="rSum" style="display:none"></div>
+      </div>
       <div id="savedList"><div class="empty">Saved clinics appear here. Add them from Accounts.</div></div>
     </section>
   </main>
@@ -833,7 +855,7 @@
         renderCategoryShare(res.category_share||[]); catCache=res.categories||[]; seedCategorySelects();
         api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
       }
-      loadFilterOptions(); loadSavedIds();
+      loadFilterOptions(); loadSavedIds(); bindRoute();
     }).catch(function(e){
       KEY=null;
       // ⚠️ Only forget the token when the server REJECTED it. A network blip must
@@ -2103,6 +2125,157 @@
   // The badge counts what is in the current territory, so it agrees with the
   // list underneath it rather than with the whole country.
   function updateListCount(){ var n=Object.keys(savedIds).length; var c=el('listCount'); c.textContent=n; c.style.display=n?'':'none'; }
+  // ---- Route planner -------------------------------------------------------
+  // A rep plans 6-10 calls a day, which is small enough that a good-enough
+  // ordering is instant: nearest-neighbour for a first pass, then 2-opt to undo
+  // the crossings nearest-neighbour always leaves behind. No routing API, so no
+  // per-request cost and nothing new to fail. The trade is straight-line
+  // distance instead of drive time: at city scale the ORDER is almost always
+  // the same, and where it differs it is a river or a motorway junction, which
+  // the rep will spot faster than we could model it.
+  var routeStart=null;
+
+  function haversine(a,b){
+    var R=6371, toRad=function(d){ return d*Math.PI/180; };
+    var dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+    var s1=Math.sin(dLat/2), s2=Math.sin(dLng/2);
+    var h=s1*s1 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*s2*s2;
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+  }
+
+  function routeLength(start, order){
+    if(!order.length) return 0;
+    var total=haversine(start, order[0]);
+    for(var i=1;i<order.length;i++) total+=haversine(order[i-1], order[i]);
+    return total;
+  }
+
+  function optimise(start, stops){
+    // Nearest neighbour from the start point.
+    var left=stops.slice(), order=[], cur=start;
+    while(left.length){
+      var best=0, bestD=haversine(cur,left[0]);
+      for(var i=1;i<left.length;i++){
+        var d=haversine(cur,left[i]);
+        if(d<bestD){ bestD=d; best=i; }
+      }
+      cur=left[best]; order.push(cur); left.splice(best,1);
+    }
+    // 2-opt: reverse any segment that shortens the whole trip. Capped so a
+    // pathological list can never hang the tab.
+    var improved=true, guard=0;
+    while(improved && guard<60){
+      improved=false; guard++;
+      for(var a=0;a<order.length-1;a++){
+        for(var b2=a+1;b2<order.length;b2++){
+          var cand=order.slice(0,a).concat(order.slice(a,b2+1).reverse(), order.slice(b2+1));
+          if(routeLength(start,cand) < routeLength(start,order)-0.0001){ order=cand; improved=true; }
+        }
+      }
+    }
+    return order;
+  }
+
+  function pickedStops(){
+    var out=[];
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.rpick:checked'),function(cb){
+      var card=cb.closest('.acct'); if(!card) return;
+      var lat=parseFloat(card.getAttribute('data-lat')), lng=parseFloat(card.getAttribute('data-lng'));
+      if(isNaN(lat)||isNaN(lng)) return;
+      var nm=card.querySelector('.aname');
+      out.push({ cid:cb.getAttribute('data-cid'), lat:lat, lng:lng, card:card, name:nm?nm.textContent:'' });
+    });
+    return out;
+  }
+
+  function routeReset(){
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.rstop'),function(b){
+      b.style.display='none'; b.textContent='';
+    });
+    el('rSum').style.display='none';
+    el('rOpen').style.display='none';
+    el('rClear').style.display='none';
+    window.__routeOrder=null;
+  }
+
+  function geocode(q){
+    // Nominatim is free and needs no key. One call per plan, not per keystroke.
+    return fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if(!j || !j.length) throw new Error('Could not find that address');
+        return { lat:parseFloat(j[0].lat), lng:parseFloat(j[0].lon) };
+      });
+  }
+
+  function planRoute(){
+    var stops=pickedStops();
+    if(stops.length<2){ alert('Tick at least two accounts to plan a route.'); return; }
+    var q=(el('rStart').value||'').trim();
+    var go=el('rGo'); go.disabled=true; go.textContent='Planning…';
+
+    var startP = routeStart ? Promise.resolve(routeStart)
+               : (q ? geocode(q) : Promise.reject(new Error('Enter a starting point, or use your location.')));
+
+    startP.then(function(start){
+      routeStart=start;
+      var order=optimise(start, stops);
+      // Renumber in place, then move the cards so reading order IS visit order.
+      var host=el('savedList');
+      order.forEach(function(stop,i){
+        var badge=stop.card.querySelector('.rstop');
+        if(badge){ badge.textContent=String(i+1); badge.style.display=''; }
+        host.appendChild(stop.card);
+      });
+      var km=routeLength(start,order);
+      el('rSum').textContent=order.length+' stops \u00b7 '+km.toFixed(1)+' km as the crow flies';
+      el('rSum').style.display='';
+      el('rOpen').style.display='';
+      el('rClear').style.display='';
+      window.__routeOrder={ start:start, order:order };
+    }).catch(function(e){
+      alert(e && e.message ? e.message : 'Could not plan that route.');
+    }).then(function(){
+      go.disabled=false; go.textContent='Plan route';
+    });
+  }
+
+  function openInMaps(){
+    var r=window.__routeOrder; if(!r) return;
+    // Google Maps takes the whole trip: origin, the last stop as destination,
+    // everything between as ordered waypoints. Turn-by-turn is their job.
+    var pts=r.order.map(function(s){ return s.lat+','+s.lng; });
+    var dest=pts.pop();
+    var url='https://www.google.com/maps/dir/?api=1'
+          + '&origin='+encodeURIComponent(r.start.lat+','+r.start.lng)
+          + '&destination='+encodeURIComponent(dest)
+          + (pts.length ? '&waypoints='+encodeURIComponent(pts.join('|')) : '')
+          + '&travelmode=driving';
+    window.open(url,'_blank');
+  }
+
+  function bindRoute(){
+    el('rGo').addEventListener('click', planRoute);
+    el('rOpen').addEventListener('click', openInMaps);
+    el('rClear').addEventListener('click', function(){
+      Array.prototype.forEach.call(el('savedList').querySelectorAll('.rpick'),function(cb){ cb.checked=false; });
+      routeReset();
+    });
+    el('rStart').addEventListener('input', function(){ routeStart=null; routeReset(); });
+    el('rHere').addEventListener('click', function(){
+      if(!navigator.geolocation){ alert('This browser will not share a location.'); return; }
+      var btn=this; btn.disabled=true; btn.textContent='Locating…';
+      navigator.geolocation.getCurrentPosition(function(pos){
+        routeStart={ lat:pos.coords.latitude, lng:pos.coords.longitude };
+        el('rStart').value='My location';
+        btn.disabled=false; btn.textContent='Use my location';
+      }, function(){
+        btn.disabled=false; btn.textContent='Use my location';
+        alert('Could not read your location. Type a postcode instead.');
+      }, { enableHighAccuracy:false, timeout:8000 });
+    });
+  }
+
   function loadSaved(){ loaded.list=true; el('savedList').innerHTML='<div class="empty"><span class="spin"></span></div>'; api('list_saved',{}).then(function(res){ renderSaved(res.saved||[]); }).catch(handleErr); }
   function whenTxt(iso){
     if(!iso) return '';
@@ -2126,7 +2299,14 @@
   }
   function renderSaved(rows){
     savedIds={}; rows.forEach(function(r){ if(r.is_mine) savedIds[r.clinic_id]=true; }); updateListCount();
-    if(!rows.length){ el('savedList').innerHTML='<div class="empty">No saved clinics yet. Add them from Accounts.</div>'; return; }
+    if(!rows.length){
+      el('savedList').innerHTML='<div class="empty">No saved clinics yet. Add them from Accounts.</div>';
+      el('routebar').style.display='none';
+      return;
+    }
+    // Two stops is the smallest journey worth ordering.
+    el('routebar').style.display = (rows.filter(function(r){ return r.lat!=null && r.lng!=null; }).length >= 2) ? '' : 'none';
+    routeReset();
     el('savedList').innerHTML=rows.map(function(a){
       var when=a.note_updated_at||a.saved_at;
       var meta=[a.neighbourhood,(a.province||'').toUpperCase()].filter(Boolean).join(', ')+
@@ -2144,8 +2324,14 @@
           (when?'<span class="cmeta" style="margin-left:auto">note '+esc(whenTxt(when))+'</span>':'')+'</div>'
         : (a.note ? '<div class="note-ro">'+esc(a.note)+'<div class="cmeta">'+esc(a.saved_by||'')+
                     (when?' &middot; '+esc(whenTxt(when)):'')+'</div></div>' : '');
-      return '<div class="acct" data-cid="'+esc(a.clinic_id)+'">'+
-        '<div class="head"><span class="aname">'+esc(a.name)+'</span><span class="ameta">'+meta+'</span></div>'+
+      // Coordinates ride on the node so the planner never has to re-fetch.
+      var geo = (a.lat!=null && a.lng!=null)
+        ? ' data-lat="'+esc(String(a.lat))+'" data-lng="'+esc(String(a.lng))+'"' : '';
+      var pick = (a.lat!=null && a.lng!=null)
+        ? '<input type="checkbox" class="rpick" data-cid="'+esc(a.clinic_id)+'">' : '';
+      return '<div class="acct" data-cid="'+esc(a.clinic_id)+'"'+geo+'>'+
+        '<div class="head">'+pick+'<span class="rstop" style="display:none"></span>'+
+        '<span class="aname">'+esc(a.name)+'</span><span class="ameta">'+meta+'</span></div>'+
         contactsHtml(a)+platesHtml(a.devices)+noteBlock+commentsHtml(a)+
       '</div>';
     }).join('');
