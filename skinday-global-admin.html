@@ -2685,6 +2685,11 @@ function dcScopeLabel() {
 }
 
 function dcEnter() {
+  // ⚠️ The state select is hidden by default and revealed by the country
+  // select's onchange — but USA is the DEFAULT selection, so that event never
+  // fires and the dropdown stayed invisible. Set visibility on entry too.
+  const sel = document.getElementById('dc-state');
+  if (sel) sel.style.display = (dcCountry() === 'usa') ? '' : 'none';
   if (dcEntered) { dcLoadStats(); return; }
   dcEntered = true;
   dcLoadStats();
