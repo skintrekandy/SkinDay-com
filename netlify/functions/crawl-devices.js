@@ -2703,6 +2703,14 @@ async function resolveFlag(supabase, body) {
 // by default, reviewable on their own afterwards.
 async function approveAll(supabase, body) {
   const country = ((body && body.country) || '').trim().toLowerCase();
+  const state = ((body && body.state) || '').trim().toLowerCase();
+  // \u2b50\u2b50\u2b50 SINGLE-LOCATION ONLY. One corporate page on a chain site grants its
+  // device to EVERY branch on that host: schweigerderm.com is 170 clinics and
+  // 1,875 pending rows off one website, and no group runs identical equipment
+  // at 170 sites. A rep sells to the group's head office anyway, so a per-branch
+  // claim is both wrong and useless. Until group-level ownership exists, chains
+  // are held back and only hosts with a single clinic are published in bulk.
+  const singleOnly = body.single_clinic_only === true;
   const batch = Math.min(Math.max(parseInt(body.batch, 10) || 400, 1), 800);
   const holdGeneric = body.hold_generic !== false;      // default ON
   const PEND_CAP = 20000;
@@ -2722,11 +2730,34 @@ async function approveAll(supabase, body) {
   // Country comes from the crawl queue's host map, since candidates carry no
   // country column. A host with no queue row cannot be attributed and is left
   // out rather than guessed at.
-  if (country && rows.length) {
+  let heldChain = 0;
+  if ((country || state || singleOnly) && rows.length) {
     const hosts = [...new Set(rows.map(r => r.host).filter(Boolean))];
-    const qrows = await selectIn(supabase, 'crawl_device_queue', 'host, country', 'host', hosts);
-    const countryByHost = new Map(qrows.map(r => [r.host, String(r.country || '').toLowerCase()]));
-    rows = rows.filter(r => countryByHost.get(r.host) === country);
+    const qrows = await selectIn(supabase, 'crawl_device_queue',
+                                 'host, country, states, clinic_ids', 'host', hosts);
+    const byHost = new Map(qrows.map(r => [r.host, r]));
+    if (country) {
+      rows = rows.filter(r => {
+        const q = byHost.get(r.host);
+        return q && String(q.country || '').toLowerCase() === country;
+      });
+    }
+    if (state) {
+      rows = rows.filter(r => {
+        const q = byHost.get(r.host);
+        return q && Array.isArray(q.states) && q.states.indexOf(state) !== -1;
+      });
+    }
+    if (singleOnly) {
+      const before = rows.length;
+      rows = rows.filter(r => {
+        const q = byHost.get(r.host);
+        // A host with no queue row cannot be sized, so it is held rather than
+        // assumed to be a single clinic.
+        return q && Array.isArray(q.clinic_ids) && q.clinic_ids.length <= 1;
+      });
+      heldChain = before - rows.length;
+    }
   }
 
   // ⭐ CHANGED 2026-08-06: this used to drop EVERY row on a generic-named device,
@@ -2753,14 +2784,16 @@ async function approveAll(supabase, body) {
       country: country || 'every country',
       would_approve: rows.length,
       held_generic: heldGeneric,        // now: held because matched_text IS the bare model name
+      held_chain: heldChain,            // held because the host serves several clinics
       held_reason: 'bare model name on a device whose name is also an ordinary word',
+      state: state || null,
       batch: batch,
       calls_needed: Math.ceil(rows.length / batch)
     };
   }
 
   const slice = rows.slice(0, batch);
-  if (!slice.length) return { approved: 0, remaining: 0, held_generic: heldGeneric, done: true };
+  if (!slice.length) return { approved: 0, remaining: 0, held_generic: heldGeneric, held_chain: heldChain, done: true };
 
   const res = await decide(supabase, { ids: slice.map(r => r.id) }, true);
   const remaining = Math.max(0, rows.length - slice.length);
@@ -2769,6 +2802,7 @@ async function approveAll(supabase, body) {
     new_events: res.new_events || 0,
     errors: res.errors || [],
     held_generic: heldGeneric,
+    held_chain: heldChain,
     remaining: remaining,
     done: remaining === 0
   };
