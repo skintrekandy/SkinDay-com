@@ -747,6 +747,9 @@
     <button class="nav-tab" data-tab="taiwan" onclick="switchTab('taiwan')">
       &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="websites" onclick="switchTab('websites')">
+      &#9788; Websites
+    </button>
     <button class="nav-tab" data-tab="data" onclick="switchTab('data')">
       &#9635; Data <span class="tab-count zero" id="data-count">0</span>
     </button>
@@ -899,51 +902,6 @@
             <button class="tw-inline-btn" onclick="twSearchDoctors()" style="padding:.5rem 1.2rem;">Search</button>
             <button class="tw-inline-btn" onclick="twEditDoctor(null)" style="padding:.5rem 1.2rem;">Add doctor</button>
           </div>
-          <!-- WEBSITE CRAWL -->
-          <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
-            <div class="form-section-label" style="margin-top:0;">Crawl clinic websites for doctors</div>
-            <div class="tw-hint" style="margin-bottom:.75rem;">
-              Works through the 707 single-site clinic domains, a few at a time. Reads names and titles from each
-              clinic's own team page — no API key and no per-page cost. Names go <strong>live immediately</strong>:
-              a clinic listing its own doctors publicly is public information, and we are republishing it rather than
-              vouching for it. Corrections come from clinics and doctors contacting us.
-              Chains and social-only sites are excluded from the queue. Leave the tab open while it runs; press Stop any time.
-            </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-              <button class="tw-inline-btn" id="tw-crawl-start" onclick="twCrawlStart()" style="padding:.5rem 1.2rem;">Start crawl</button>
-              <button class="tw-inline-btn" id="tw-crawl-stop" onclick="twCrawlStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
-              <button class="tw-inline-btn" onclick="twCrawlStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
-              <span id="tw-crawl-progress" style="font-size:.82rem;color:var(--muted);"></span>
-            </div>
-            <div id="tw-crawl-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
-          </div>
-
-          <!-- CONTACT CRAWL (Facebook / Instagram / LINE) -->
-          <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
-            <div class="form-section-label" style="margin-top:0;">Crawl clinic websites for contacts</div>
-            <div class="tw-hint" style="margin-bottom:.75rem;">
-              Reads each clinic's own site for its official <strong>Facebook page, Instagram profile and LINE
-              account</strong>, a few domains at a time. Covers the 701 single-site domains from the doctor crawl
-              <strong>plus the chain domains</strong>, which were only ever excluded because a doctor cannot be
-              attributed to a branch. Contacts found on a chain's site are applied to every branch on that domain.
-              Tracked on its own status, so the doctor run's history is untouched, chains stay invisible to the doctor
-              crawl, and either pass can be re-run independently.
-              A link on a clinic's own site IS that clinic's official account, which is why nothing is ever taken from
-              search results or beauty aggregators. LINE is often written as bare text rather than a link
-              (<em>官方LINE：@abc123</em>), so text is read as well as links.
-              <strong>Existing contacts are never overwritten</strong>: only an empty field is filled. A handle that
-              turns up on 3 or more other clinics is treated as a shared plugin and rejected.
-              Leave the tab open while it runs; press Stop any time.
-            </div>
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-              <button class="tw-inline-btn" id="tw-social-start" onclick="twSocialStart()" style="padding:.5rem 1.2rem;">Start contact crawl</button>
-              <button class="tw-inline-btn" id="tw-social-stop" onclick="twSocialStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
-              <button class="tw-inline-btn" onclick="twSocialStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
-              <span id="tw-social-progress" style="font-size:.82rem;color:var(--muted);"></span>
-            </div>
-            <div id="tw-social-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
-          </div>
-
           <div id="tw-doctor-results"></div>
           <div id="tw-doctor-detail" style="display:none;margin-top:1.5rem;"></div>
         </div>
@@ -970,6 +928,98 @@
             <div class="tw-hint">Certified clinics that are not in the SkinDay list. Each one is an outreach target: they have a verified device badge waiting the moment they are listed.</div>
             <div id="tw-solta-queue" style="margin-top:1rem;"></div>
           </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="websites-panel" style="display:none">
+      <div class="add-clinic-form" style="max-width:1100px;">
+        <div class="form-title">Clinic websites</div>
+        <div class="form-subtitle">Reads each clinic's OWN site for the people it publishes and the social accounts it links. No API key and no per-page cost &mdash; both are parsers. A link or a name on a clinic's own site is that clinic's own claim, which is why nothing is ever taken from search results or aggregators.</div>
+
+        <!-- ⭐ COUNTRY IS THE FIRST CONTROL, NOT AN AFTERTHOUGHT. These crawls
+             used to live inside the Taiwan panel and claimed from crawl_queue
+             with no country filter at all — harmless while the queue held only
+             Taiwan, and a live hazard the moment North American hosts are
+             seeded. Same shape of bug that swept New York into the California
+             device crawl. -->
+        <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.25rem;">
+          <div>
+            <label class="form-section-label" style="margin-top:0;" for="wc-country">Country</label>
+            <select class="form-input" id="wc-country" style="max-width:220px;" onchange="wcCountryChanged()">
+              <option value="taiwan">Taiwan</option>
+              <option value="hongkong">Hong Kong</option>
+              <option value="usa">USA</option>
+              <option value="canada">Canada</option>
+            </select>
+          </div>
+          <div id="wc-state-wrap" style="display:none;">
+            <label class="form-section-label" style="margin-top:0;" for="wc-state">State</label>
+            <select class="form-input" id="wc-state" style="max-width:220px;">
+              <option value="">Every state</option>
+              <option value="california">California</option>
+              <option value="new-york">New York</option>
+              <option value="florida">Florida</option>
+            </select>
+          </div>
+          <span id="wc-note" style="font-size:.78rem;color:var(--muted);max-width:520px;"></span>
+        </div>
+
+        <!-- DOCTORS / PROVIDERS -->
+        <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
+          <div class="form-section-label" style="margin-top:0;">Crawl websites for doctors</div>
+          <div class="tw-hint" style="margin-bottom:.75rem;">
+            Reads each clinic's team page for the providers it lists. Names go <strong>live immediately</strong>: a
+            clinic listing its own doctors publicly is public information, and we republish it rather than vouch for
+            it. Corrections come from clinics and doctors contacting us.
+            <br><br>
+            <strong>Two different parsers, chosen by country.</strong> Chinese anchors on the title
+            (&#29579;&#23567;&#26126;&#37291;&#24107;); English anchors on the credential (Rachel Careccia, MD).
+            They share no parsing code, so Taiwan runs <code>crawl-doctors</code> and North America runs
+            <code>crawl-doctors-na</code>. The switch is automatic.
+            <br><br>
+            In North America this is a <strong>coverage tool, not a cold start</strong>: the directory screen already
+            produced ~4,400 US providers from Google listings, 2,606 of them linked to a clinic. What this adds is the
+            associates with no listing of their own, plus job titles. A host returning only names already on file is
+            agreement, not failure.
+            Leave the tab open while it runs; press Stop any time.
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="tw-inline-btn" id="tw-crawl-start" onclick="twCrawlStart()" style="padding:.5rem 1.2rem;">Start crawl</button>
+            <button class="tw-inline-btn" id="tw-crawl-stop" onclick="twCrawlStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
+            <button class="tw-inline-btn" onclick="twCrawlStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
+            <span id="tw-crawl-progress" style="font-size:.82rem;color:var(--muted);"></span>
+          </div>
+          <div id="tw-crawl-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
+        </div>
+
+        <!-- SOCIALS / CONTACTS -->
+        <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
+          <div class="form-section-label" style="margin-top:0;">Crawl websites for contacts</div>
+          <div class="tw-hint" style="margin-bottom:.75rem;">
+            Reads each clinic's own site for its official social accounts, a few domains at a time. Covers chain
+            domains as well as single sites &mdash; chains were only ever excluded from the doctor crawl because a
+            doctor cannot be attributed to a branch, and a chain's Facebook page can. Contacts found on a chain's site
+            are applied to every branch on that domain.
+            <br><br>
+            <strong>One parser, channels chosen by country.</strong> Facebook and Instagram are read everywhere.
+            <strong>LINE</strong> is read in Taiwan and Hong Kong only, and is often bare text rather than a link
+            (<em>&#23448;&#26041;LINE&#65306;@abc123</em>), so text is read as well as links.
+            <strong>TikTok</strong> is read in the USA and Canada only.
+            <br><br>
+            <strong>Existing contacts are never overwritten</strong> &mdash; only an empty field is filled. A handle
+            appearing on 3 or more other clinics is treated as a shared plugin or an agency account and rejected.
+            Tracked on its own status, so the doctor run's history is untouched and either pass can be re-run.
+            Leave the tab open while it runs; press Stop any time.
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button class="tw-inline-btn" id="tw-social-start" onclick="twSocialStart()" style="padding:.5rem 1.2rem;">Start contact crawl</button>
+            <button class="tw-inline-btn" id="tw-social-stop" onclick="twSocialStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
+            <button class="tw-inline-btn" onclick="twSocialStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
+            <span id="tw-social-progress" style="font-size:.82rem;color:var(--muted);"></span>
+          </div>
+          <div id="tw-social-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
         </div>
 
       </div>
@@ -1113,10 +1163,6 @@
           <button class="btn-ghost" onclick="dcSelectAll(false)">Clear</button>
           <button class="btn-approve" onclick="dcApproveSelected()">Approve selected</button>
           <button class="btn-approve" id="dc-approve-all" onclick="dcApproveAll()">Approve everything</button>
-          <label style="display:inline-flex;align-items:center;gap:7px;font-size:.8rem;color:var(--muted);margin-left:4px;">
-            <input type="checkbox" id="dc-single-only" checked style="width:15px;height:15px;">
-            single-location clinics only
-          </label>
           <button class="btn-reject" onclick="dcRejectSelected()">Reject selected</button>
           <span id="dc-cand-msg" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
@@ -1320,6 +1366,8 @@ function switchTab(tab){
   if (signupsP) signupsP.style.display = (tab === 'signups') ? 'block' : 'none';
   var taiwanP = document.getElementById('taiwan-panel');
   if (taiwanP) taiwanP.style.display = (tab === 'taiwan') ? 'block' : 'none';
+  var webP = document.getElementById('websites-panel');
+  if (webP) webP.style.display = (tab === 'websites') ? 'block' : 'none';
   var dataP = document.getElementById('data-panel');
   if (dataP) dataP.style.display = (tab === 'data') ? 'block' : 'none';
   var devP = document.getElementById('devices-panel');
@@ -1335,6 +1383,7 @@ function switchTab(tab){
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
   if (tab === 'taiwan') twEnter();
+  if (tab === 'websites') wcEnter();
   if (tab === 'data') dtCheck();
 }
 
@@ -1970,6 +2019,36 @@ async function twUnlinkDoctor(linkId){
 
 // ── DOCTORS ─────────────────────────────────────────────────
 
+// ─── WEBSITES PANEL: country selection ────────────────────────
+// ⭐⭐ EVERY CRAWL ON THIS PANEL IS SCOPED BY THIS SELECT. Both functions used
+// to claim from crawl_queue unfiltered; the only thing keeping them Taiwan-only
+// was that the queue held nothing else. crawl_queue now carries a country and
+// both endpoints take one.
+function wcCountry(){
+  var el = document.getElementById('wc-country');
+  return el ? el.value : 'taiwan';
+}
+function wcState(){
+  var el = document.getElementById('wc-state');
+  return (wcIsNA() && el) ? el.value : '';
+}
+function wcIsNA(){
+  var c = wcCountry();
+  return c === 'usa' || c === 'canada';
+}
+function wcCountryChanged(){
+  var na = wcIsNA();
+  var wrap = document.getElementById('wc-state-wrap');
+  if (wrap) wrap.style.display = na ? '' : 'none';
+  var note = document.getElementById('wc-note');
+  if (note) {
+    note.textContent = na
+      ? 'North America uses the English credential parser and reads TikTok instead of LINE. The US is ~30,000 hosts — pick a state, or this will not finish in one sitting.'
+      : 'Taiwan and Hong Kong use the Chinese title parser and read LINE. Chains are excluded from the doctor queue but included for contacts.';
+  }
+}
+function wcEnter(){ wcCountryChanged(); }
+
 // ─── WEBSITE CRAWL ────────────────────────────────────────────
 // Calls crawl-doctors a few domains at a time and loops. Small batches so each
 // request finishes well inside the function timeout, and so a bad extraction is
@@ -2007,10 +2086,15 @@ async function twCrawlStart(retry){
   while (twCrawlRunning) {
     let data;
     try {
-      const res = await fetch('/.netlify/functions/crawl-doctors', {
+      // ⛔ THE TWO PARSERS ARE NOT INTERCHANGEABLE. crawl-doctors.js is Chinese
+      // and crawl-doctors-na.js is English; running either on the other's hosts
+      // writes nonsense into `doctors`. The endpoint follows the country select,
+      // and the NA function additionally REFUSES a taiwan/hongkong country.
+      const fn = wcIsNA() ? 'crawl-doctors-na' : 'crawl-doctors';
+      const res = await fetch('/.netlify/functions/' + fn, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-        body: JSON.stringify({ batch: 5, retry: retry === true })
+        body: JSON.stringify({ batch: 5, retry: retry === true, country: wcCountry(), state: wcState() })
       });
       data = await res.json();
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2095,7 +2179,7 @@ async function twSocialStart(retry){
       const res = await fetch('/.netlify/functions/crawl-socials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-        body: JSON.stringify({ batch: 5, retry: retry === true })
+        body: JSON.stringify({ batch: 5, retry: retry === true, country: wcCountry() })
       });
       data = await res.json();
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
@@ -2111,6 +2195,7 @@ async function twSocialStart(retry){
         if (p.line) bits.push('LINE ' + p.line);
         if (p.facebook) bits.push(p.facebook);
         if (p.instagram) bits.push(p.instagram);
+        if (p.tiktok) bits.push(p.tiktok);
         var where = p.clinics_on_domain > 1
           ? '  [' + p.branches + ' of ' + p.clinics_on_domain + ' branches]' : '';
         twSocialLog(p.domain + '  +' + p.found + ' (' + (p.fields || '') + ')' + where + '  ' + bits.join('  ·  '));
@@ -2933,42 +3018,32 @@ async function dcRequeue() {
 async function dcApproveAll() {
   if (dcRunning) { alert('Stop the crawl before approving in bulk.'); return; }
   const country = dcCountry();
+  const label = country || 'every country';
   const btn = document.getElementById('dc-approve-all');
   const deviceSel = document.getElementById('dc-cand-device');
   const deviceId = deviceSel && deviceSel.value ? deviceSel.value : '';
   if (btn) btn.disabled = true;
   try {
-    const singleEl = document.getElementById('dc-single-only');
-    const singleOnly = singleEl ? singleEl.checked : true;
-    const state = dcState();
-    const scope = dcScopeLabel();
-    const pre = await dcCall({ action: 'approve-all', country: country, state: state,
-                               single_clinic_only: singleOnly,
+    const pre = await dcCall({ action: 'approve-all', country: country,
                                device_id: deviceId, preview: true });
     if (!pre.ok) throw new Error((pre.data && pre.data.error) || 'request failed');
     const n = (pre.data && pre.data.would_approve) || 0;
     const held = (pre.data && pre.data.held_generic) || 0;
-    const chain = (pre.data && pre.data.held_chain) || 0;
     if (!n) {
-      alert('Nothing to approve for ' + scope + '.'
-            + (held ? '\n\n' + held + ' held back as generic-name devices.' : '')
-            + (chain ? '\n\n' + chain + ' held back on multi-location hosts.' : ''));
+      alert('Nothing to approve for ' + label + '.'
+            + (held ? '\n\n' + held + ' held back as generic-name devices.' : ''));
       return;
     }
-    if (!confirm('Publish ' + n + ' devices in ' + scope + '?\n\n'
+    if (!confirm('Publish ' + n + ' devices in ' + label + '?\n\n'
                  + (held ? held + ' rows held back because the device name is also an '
                          + 'ordinary word. Review those separately.\n\n' : '')
-                 + (chain ? chain + ' rows held back on multi-location hosts \u2014 one '
-                          + 'corporate page would otherwise claim the device for every '
-                          + 'branch. Those need group-level ownership.\n\n' : '')
                  + 'Each newly published device writes an entry to the change feed '
                  + 'that manufacturers see. Nothing is deleted and install dates on '
                  + 'devices already published are preserved.')) return;
 
     let approved = 0, events = 0, guard = 0;
     for (;;) {
-      const r = await dcCall({ action: 'approve-all', country: country, state: state,
-                              single_clinic_only: singleOnly, device_id: deviceId });
+      const r = await dcCall({ action: 'approve-all', country: country, device_id: deviceId });
       if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
       const d = r.data || {};
       approved += d.approved || 0;
@@ -2979,8 +3054,7 @@ async function dcApproveAll() {
       if (++guard > 60) { dcLog('bulk approve stopped after 60 batches, run it again to continue', 'var(--red)'); break; }
     }
     dcCandMsg('approved ' + approved + ' · ' + events + ' change-feed entries', 'var(--green)');
-    dcLog('bulk approve · ' + scope + ' · ' + approved + ' published · ' + events + ' new events'
-          + (chain ? ' · ' + chain + ' chain rows held' : ''), 'var(--muted)');
+    dcLog('bulk approve · ' + label + ' · ' + approved + ' published · ' + events + ' new events', 'var(--muted)');
     await dcLoadStats();
     await dcLoadCandidates();
   } catch (e) {
