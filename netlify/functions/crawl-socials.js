@@ -1,8 +1,16 @@
 // netlify/functions/crawl-socials.js
 //
 // Reads a clinic's OWN website for its official Facebook page, Instagram
-// profile and LINE account. NO API KEY AND NO PER-PAGE COST: the extraction is
-// a parser, exactly like crawl-doctors.js.
+// profile, and the messaging channel that matters in its market. NO API KEY AND
+// NO PER-PAGE COST: the extraction is a parser, exactly like crawl-doctors.js.
+//
+// ⭐ ONE FILE, COUNTRY-SWITCHED — not forked per market. Facebook and Instagram
+// parsing is identical everywhere: host matching, the vendor-handle denylist,
+// asset-tail rejection, path normalisation. None of it cares what language the
+// site is in. Only the CHANNEL SET differs, so that is the only thing that
+// varies by country (see CHANNELS below). Forking would mean maintaining the
+// same Facebook regex twice, which is exactly how get-clinics.js drifted into
+// two copies that now need every change made in both.
 //
 // Why only the clinic's own site. A social link on a clinic's own homepage IS
 // that clinic's official account, by definition. Handles taken from search
@@ -43,6 +51,26 @@ const MAX_SHARED_CLINICS = 3;
 // later by a better one. Set this to false to find chain LINE accounts and
 // deliberately NOT land them; the log still names every one it saw.
 const CHAIN_LINE_TO_ALL_BRANCHES = true;
+
+// ── WHICH CHANNELS EXIST IN WHICH MARKET ────────────────────────────────────
+// LINE is Taiwan and Hong Kong; nobody in Florida has one. TikTok is the
+// reverse — material for US and Canadian medspas, absent from the TW dataset.
+// Facebook and Instagram are everywhere.
+//
+// ⭐ A CHAIN'S INSTAGRAM IS GENUINELY SHARED ACROSS BRANCHES in North America
+// (LaserAway's 74 California locations run one account), so the chain fan-out
+// that CHAIN_LINE_TO_ALL_BRANCHES governs stays ON for fb/ig. It is only LINE
+// where branch-specific accounts made it arguable.
+const CHANNELS = {
+  taiwan:   ['facebook', 'instagram', 'line'],
+  hongkong: ['facebook', 'instagram', 'line'],
+  usa:      ['facebook', 'instagram', 'tiktok'],
+  canada:   ['facebook', 'instagram', 'tiktok']
+};
+const DEFAULT_CHANNELS = ['facebook', 'instagram'];
+function channelsFor(country) {
+  return CHANNELS[String(country || '').toLowerCase()] || DEFAULT_CHANNELS;
+}
 
 const SB = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -163,6 +191,29 @@ function igCanon(raw) {
   return 'https://www.instagram.com/' + path.replace(/\/+$/, '');
 }
 
+// ── TIKTOK ──────────────────────────────────────────────────────────────────
+// Same shape as Instagram: the account IS the first path segment, prefixed @.
+// Rejects the shapes that are not an account — /video/, /tag/, /music/, /search
+// — because a clinic linking to one of its own posts is not a handle.
+const TT_HOSTS = /(^|\.)(tiktok\.com|vm\.tiktok\.com|vt\.tiktok\.com)$/;
+const TT_REJECT = /^(video|tag|music|search|discover|foryou|explore|embed|share|t)$/i;
+function ttCanon(raw) {
+  let u; try { u = new URL(raw); } catch { return ''; }
+  if (!TT_HOSTS.test(u.hostname.toLowerCase())) return '';
+  const path = u.pathname.replace(/^\/+|\/+$/g, '');
+  if (!path) return '';                                // tiktok.com identifies nobody
+  const seg = firstSeg(path);
+  if (!seg) return '';
+  // vm./vt. links are short redirects — the slug is not the handle, so they are
+  // deliberately dropped rather than stored as one. Same reasoning as lin.ee.
+  if (/^(vm|vt)\.tiktok\.com$/i.test(u.hostname)) return '';
+  const handle = seg.startsWith('@') ? seg.slice(1) : seg;
+  if (!handle || TT_REJECT.test(handle)) return '';
+  if (VENDOR_HANDLE.has(handle.toLowerCase())) return '';
+  if (ASSET_TAIL.test(path)) return '';
+  return 'https://www.tiktok.com/@' + handle;
+}
+
 // ── LINE ────────────────────────────────────────────────────────────────────
 // The hard one, because a LINE account is very often NOT a URL at all.
 // EXACT host whitelist, not a suffix match. The first pass landed
@@ -273,24 +324,33 @@ function shortestPath(list) {
     || (a.length - b.length))[0] || '';
 }
 
-function extractSocials(html, baseUrl, text) {
+function extractSocials(html, baseUrl, text, country) {
+  const on = new Set(channelsFor(country));
   const abs = [];
   for (const h of hrefs(html)) {
     if (!h || h.startsWith('#') || /^(mailto|tel|javascript):/i.test(h)) continue;
     try { abs.push(new URL(repairEncoding(h), baseUrl).href); } catch { /* ignore */ }
   }
 
-  const fb = [...new Set(abs.map(fbCanon).filter(Boolean))];
-  const ig = [...new Set(abs.map(igCanon).filter(Boolean))];
+  const fb = on.has('facebook')  ? [...new Set(abs.map(fbCanon).filter(Boolean))] : [];
+  const ig = on.has('instagram') ? [...new Set(abs.map(igCanon).filter(Boolean))] : [];
+  const tt = on.has('tiktok')    ? [...new Set(abs.map(ttCanon).filter(Boolean))] : [];
 
-  const lineHits = abs.map(lineFromUrl).filter(Boolean);
-  // A url that spells out an @id is worth more than a bare short code.
-  lineHits.sort((a, b) => (b.line_id ? 1 : 0) - (a.line_id ? 1 : 0));
-  const line = lineHits[0] || lineFromText(text) || null;
+  // ⛔ LINE IS NOT PARSED OUTSIDE ITS MARKETS. Not merely unused — skipped, so
+  // a US page linking to line.me for some unrelated reason cannot land a
+  // contact nobody will ever use.
+  let line = null;
+  if (on.has('line')) {
+    const lineHits = abs.map(lineFromUrl).filter(Boolean);
+    // A url that spells out an @id is worth more than a bare short code.
+    lineHits.sort((a, b) => (b.line_id ? 1 : 0) - (a.line_id ? 1 : 0));
+    line = lineHits[0] || lineFromText(text) || null;
+  }
 
   return {
     facebook_url: shortestPath(fb),
     instagram_url: shortestPath(ig),
+    tiktok_url: shortestPath(tt),
     line_url: line ? line.line_url : '',
     line_id: line ? line.line_id : ''
   };
@@ -381,8 +441,9 @@ function findContactUrl(html, baseUrl) {
 // A chain's page legitimately appears on all of its own branches, so the
 // branches themselves must be excluded from the count or the second branch
 // would look like evidence of a shared plugin.
-async function isShared(column, value, excludeIds) {
-  let q = `clinics?select=id&country=eq.taiwan&${column}=eq.` + encodeURIComponent(value);
+async function isShared(column, value, excludeIds, country) {
+  let q = `clinics?select=id&country=eq.${encodeURIComponent(country)}&${column}=eq.`
+        + encodeURIComponent(value);
   if (excludeIds.length) q += `&id=not.in.(${excludeIds.map(encodeURIComponent).join(',')})`;
   const rows = await sb(q + `&limit=${MAX_SHARED_CLINICS + 1}`);
   return (rows || []).length >= MAX_SHARED_CLINICS;
@@ -393,13 +454,15 @@ async function isShared(column, value, excludeIds) {
 // do a substring match here, and substring-matching a hostname is precisely the
 // bug that once killed beautybox.com.tw for containing "x.com", so the host is
 // re-checked EXACTLY in JS before any row is accepted as a branch.
-async function siblingsFor(domain, clinicId) {
-  const cols = 'id,name,website,facebook_url,instagram_url,line_url,line_id';
-  const rows = await sb(`clinics?select=${cols}&country=eq.taiwan&website=ilike.`
+async function siblingsFor(domain, clinicId, country) {
+  const cols = 'id,name,website,facebook_url,instagram_url,tiktok_url,line_url,line_id';
+  // ⛔ SCOPED TO THE ROW'S COUNTRY, never a hardcoded one. A domain can carry
+  // clinics in more than one country, and the queue is now multi-country.
+  const rows = await sb(`clinics?select=${cols}&country=eq.${encodeURIComponent(country)}&website=ilike.`
     + encodeURIComponent('*' + domain + '*') + '&limit=200') || [];
   const sibs = rows.filter(r => bareHost(r.website) === domain);
   if (!sibs.some(r => String(r.id) === String(clinicId))) {
-    const own = await sb(`clinics?select=${cols}&country=eq.taiwan`
+    const own = await sb(`clinics?select=${cols}&country=eq.${encodeURIComponent(country)}`
       + `&id=eq.${encodeURIComponent(clinicId)}`);
     if (own && own.length) sibs.push(own[0]);
   }
@@ -408,8 +471,9 @@ async function siblingsFor(domain, clinicId) {
 
 // ── Landing. Fills NULL columns only, never overwrites. ─────────────────────
 async function land(found, row) {
-  const targets = await siblingsFor(row.domain, row.clinic_id);
-  if (!targets.length) return { landed: 0, branches: 0, skipped: ['no taiwan clinic on this domain'] };
+  const country = String(row.country || 'taiwan').toLowerCase();
+  const targets = await siblingsFor(row.domain, row.clinic_id, country);
+  if (!targets.length) return { landed: 0, branches: 0, skipped: [`no ${country} clinic on this domain`] };
 
   const ids = targets.map(t => String(t.id));
   const isChain = targets.length > 1;
@@ -417,19 +481,23 @@ async function land(found, row) {
   const allow = {};
 
   if (found.facebook_url) {
-    if (await isShared('facebook_url', found.facebook_url, ids)) skipped.push('facebook shared');
+    if (await isShared('facebook_url', found.facebook_url, ids, country)) skipped.push('facebook shared');
     else allow.facebook_url = found.facebook_url;
   }
   if (found.instagram_url) {
-    if (await isShared('instagram_url', found.instagram_url, ids)) skipped.push('instagram shared');
+    if (await isShared('instagram_url', found.instagram_url, ids, country)) skipped.push('instagram shared');
     else allow.instagram_url = found.instagram_url;
+  }
+  if (found.tiktok_url) {
+    if (await isShared('tiktok_url', found.tiktok_url, ids, country)) skipped.push('tiktok shared');
+    else allow.tiktok_url = found.tiktok_url;
   }
   const lineBlocked = isChain && !CHAIN_LINE_TO_ALL_BRANCHES;
   if (lineBlocked && (found.line_url || found.line_id)) {
     skipped.push('chain LINE found but held back by CHAIN_LINE_TO_ALL_BRANCHES');
   } else {
     if (found.line_url) {
-      if (await isShared('line_url', found.line_url, ids)) skipped.push('line shared');
+      if (await isShared('line_url', found.line_url, ids, country)) skipped.push('line shared');
       else allow.line_url = found.line_url;
     }
     if (found.line_id && !skipped.includes('line shared')) allow.line_id = found.line_id;
@@ -443,7 +511,7 @@ async function land(found, row) {
     for (const k of Object.keys(allow)) if (!t[k]) patch[k] = allow[k];
     const keys = Object.keys(patch);
     if (!keys.length) continue;
-    await sb(`clinics?id=eq.${encodeURIComponent(t.id)}&country=eq.taiwan`, {
+    await sb(`clinics?id=eq.${encodeURIComponent(t.id)}&country=eq.${encodeURIComponent(country)}`, {
       method: 'PATCH', prefer: 'return=minimal', body: JSON.stringify(patch)
     });
     landed += keys.length;
@@ -460,10 +528,11 @@ async function crawlOne(row) {
   if (!home.ok) return { social_status: 'error', social_error: `home: ${home.error}` };
 
   const homeText = toText(home.html);
-  let found = extractSocials(home.html, home.finalUrl, homeText);
+  const country = String(row.country || 'taiwan').toLowerCase();
+  let found = extractSocials(home.html, home.finalUrl, homeText, country);
   let source = home.finalUrl;
 
-  const nothing = f => !f.facebook_url && !f.instagram_url && !f.line_url && !f.line_id;
+  const nothing = f => !f.facebook_url && !f.instagram_url && !f.tiktok_url && !f.line_url && !f.line_id;
 
   if (nothing(found)) {
     const contactUrl = findContactUrl(home.html, home.finalUrl);
@@ -471,7 +540,7 @@ async function crawlOne(row) {
       const page = await getPage(contactUrl);
       if (page.ok) {
         const t = toText(page.html);
-        const second = extractSocials(page.html, page.finalUrl, t);
+        const second = extractSocials(page.html, page.finalUrl, t, country);
         if (!nothing(second)) { found = second; source = page.finalUrl; }
       }
     }
@@ -528,12 +597,20 @@ exports.handler = async (event) => {
   try { body = JSON.parse(event.body || '{}'); } catch {}
   const batch = Math.min(Math.max(parseInt(body.batch, 10) || BATCH_DEFAULT, 1), 8);
   const retry = body.retry === true;
+  // ⭐⭐ COUNTRY SCOPES THE CLAIM. Without it this function takes whatever is
+  // pending in crawl_queue regardless of market — which was harmless while the
+  // queue held only Taiwan, and becomes a live hazard the moment North American
+  // hosts are seeded. Same shape of bug that swept New York into the California
+  // device crawl. Empty means every country, which is only safe deliberately.
+  const country = String(body.country || '').trim().toLowerCase();
+  const scope = country ? `&country=eq.${encodeURIComponent(country)}` : '';
 
   try {
     const want = retry ? 'in.(pending,error)' : 'eq.pending';
-    const claim = await sb(`crawl_queue?select=*&social_status=${want}&order=id.asc&limit=${batch}`);
+    const claim = await sb(`crawl_queue?select=*&social_status=${want}${scope}&order=id.asc&limit=${batch}`);
     if (!claim || !claim.length) {
-      return json(200, { done: true, processed: [], remaining: 0, note: 'social queue empty' });
+      return json(200, { done: true, processed: [], remaining: 0,
+                        note: `social queue empty${country ? ' for ' + country : ''}` });
     }
 
     const ids = claim.map(r => r.id);
@@ -568,15 +645,16 @@ exports.handler = async (event) => {
         clinics_on_domain: result.targetCount || 0,
         facebook: f.facebook_url || null,
         instagram: f.instagram_url || null,
+        tiktok: f.tiktok_url || null,
         line: f.line_url || f.line_id || null,
         source: result.source || null,
         error: result.social_error || null
       });
     }
 
-    const pending = await sb('crawl_queue?select=id&social_status=eq.pending',
+    const pending = await sb(`crawl_queue?select=id&social_status=eq.pending${scope}`,
       { prefer: 'count=exact' });
-    return json(200, { done: false, processed, remaining: (pending || []).length });
+    return json(200, { done: false, processed, remaining: (pending || []).length, country: country || 'all' });
   } catch (e) {
     return json(500, { error: String(e.message || e).slice(0, 500) });
   }
