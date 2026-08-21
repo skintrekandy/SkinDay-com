@@ -32,8 +32,11 @@
 // Environment variables, all three already set, nothing new needed:
 //   SUPABASE_URL · SUPABASE_SERVICE_ROLE_KEY · ADMIN_SECRET
 
-const BATCH_DEFAULT = 5;
-const FETCH_TIMEOUT_MS = 12000;
+// ⛔ Netlify kills a synchronous function at 10s (26s max). Taiwan's small fast
+// sites hid this; a US medspa on a heavy theme will not.
+const BATCH_DEFAULT = 3;
+const FETCH_TIMEOUT_MS = 6000;
+const RUN_BUDGET_MS = 18000;
 
 // If the same handle turns up on this many OTHER clinics, it is a shared
 // plugin, an aggregator or a marketing agency's own account, not this clinic's.
@@ -595,6 +598,16 @@ exports.handler = async (event) => {
 
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch {}
+  // ⭐ PING: proves auth, deployment and env without a network fetch or a queue
+  // claim — separates "unreachable" from "timing out doing real work".
+  if (body.mode === 'ping') {
+    return json(200, {
+      ok: true, fn: 'crawl-socials', node: process.version,
+      has_supabase_url: !!SB, has_service_key: !!SB_KEY,
+      batch_default: BATCH_DEFAULT, fetch_timeout_ms: FETCH_TIMEOUT_MS
+    });
+  }
+
   const batch = Math.min(Math.max(parseInt(body.batch, 10) || BATCH_DEFAULT, 1), 8);
   const retry = body.retry === true;
   // ⭐⭐ COUNTRY SCOPES THE CLAIM. Without it this function takes whatever is
@@ -620,7 +633,18 @@ exports.handler = async (event) => {
     });
 
     const processed = [];
+    const deadline = Date.now() + RUN_BUDGET_MS;
     for (const row of claim) {
+      // Out of budget: hand the row back rather than dying with it marked
+      // 'running', which is what strands rows and shows the browser a bare
+      // "Failed to fetch" with no status code to report.
+      if (Date.now() > deadline) {
+        await sb(`crawl_queue?id=eq.${row.id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: JSON.stringify({ social_status: 'pending' })
+        });
+        continue;
+      }
       let result;
       try { result = await crawlOne(row); }
       catch (e) { result = { social_status: 'error', social_error: String(e.message || e).slice(0, 400) }; }
