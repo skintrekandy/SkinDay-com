@@ -963,6 +963,7 @@
               <option value="florida">Florida</option>
             </select>
           </div>
+          <button class="tw-inline-btn" onclick="wcPing()" style="padding:.5rem 1.2rem;">Test connection</button>
           <span id="wc-note" style="font-size:.78rem;color:var(--muted);max-width:520px;"></span>
         </div>
 
@@ -2049,6 +2050,31 @@ function wcCountryChanged(){
 }
 function wcEnter(){ wcCountryChanged(); }
 
+// Hits both functions in ping mode: no network fetch, no queue claim. Tells you
+// whether the problem is reachability, auth, or the work itself.
+async function wcPing(){
+  var out = document.getElementById('wc-note');
+  var fns = [wcIsNA() ? 'crawl-doctors-na' : 'crawl-doctors', 'crawl-socials'];
+  var lines = [];
+  for (var i = 0; i < fns.length; i++) {
+    try {
+      var res = await fetch('/.netlify/functions/' + fns[i], {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+        body: JSON.stringify({ mode: 'ping', country: wcCountry() })
+      });
+      var raw = await res.text();
+      var d; try { d = JSON.parse(raw); } catch (_) { d = null; }
+      lines.push(d && d.ok
+        ? fns[i] + ': OK (node ' + d.node + ', db ' + (d.has_service_key ? 'yes' : 'NO KEY') + ')'
+        : fns[i] + ': HTTP ' + res.status + ' ' + raw.slice(0, 80));
+    } catch (e) {
+      lines.push(fns[i] + ': unreachable — ' + e.message);
+    }
+  }
+  if (out) out.textContent = lines.join('   |   ');
+}
+
 // ─── WEBSITE CRAWL ────────────────────────────────────────────
 // Calls crawl-doctors a few domains at a time and loops. Small batches so each
 // request finishes well inside the function timeout, and so a bad extraction is
@@ -2096,10 +2122,17 @@ async function twCrawlStart(retry){
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
         body: JSON.stringify({ batch: 5, retry: retry === true, country: wcCountry(), state: wcState() })
       });
-      data = await res.json();
+      // ⛔ TEXT FIRST, THEN PARSE. res.json() throws on an empty or HTML body,
+      // which turned a plain 400 into an unreadable "Failed to fetch" and made
+      // a guard rejection look exactly like a hang.
+      const raw = await res.text();
+      try { data = JSON.parse(raw); }
+      catch (_) { throw new Error('HTTP ' + res.status + ' — ' + (raw || 'empty response').slice(0, 200)); }
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     } catch (e) {
       twCrawlLog('Stopping: ' + e.message, 'bad');
+      twCrawlLog('If this says "Failed to fetch", the request never reached the '
+        + 'function — check Netlify Functions, or press Test connection above.', 'warn');
       break;
     }
 
@@ -2181,10 +2214,14 @@ async function twSocialStart(retry){
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
         body: JSON.stringify({ batch: 5, retry: retry === true, country: wcCountry() })
       });
-      data = await res.json();
+      const raw = await res.text();
+      try { data = JSON.parse(raw); }
+      catch (_) { throw new Error('HTTP ' + res.status + ' — ' + (raw || 'empty response').slice(0, 200)); }
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     } catch (e) {
       twSocialLog('Stopping: ' + e.message, 'bad');
+      twSocialLog('If this says "Failed to fetch", the request never reached the '
+        + 'function — check Netlify Functions, or press Test connection above.', 'warn');
       break;
     }
 
