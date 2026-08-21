@@ -33,8 +33,17 @@
 //   doctors.name_en text · doctors.credentials text · doctors.country text
 //   doctors.name_zh must be NULLABLE — it is NOT NULL for the Taiwan rows.
 
-const BATCH_DEFAULT = 5;
-const FETCH_TIMEOUT_MS = 12000;
+// ⛔ SIZED FOR NETLIFY'S SYNCHRONOUS FUNCTION LIMIT (10s default, 26s max).
+// The Taiwan file uses batch 5 at a 12s timeout — up to 120 SECONDS of work —
+// and only got away with it because Taiwanese clinic sites are small and fast.
+// A US medspa on a bloated theme is not. 3 hosts x 2 pages x 6s = 36s worst
+// case, and the per-host budget below caps it harder than that.
+const BATCH_DEFAULT = 3;
+const FETCH_TIMEOUT_MS = 6000;
+// Whole-run budget. When it is gone the function returns what it has instead of
+// being killed mid-flight, which is what leaves rows stuck in 'running' and the
+// browser showing a bare "Failed to fetch" with no status code.
+const RUN_BUDGET_MS = 18000;
 
 // A large US dermatology group genuinely lists 25+ providers on one page —
 // Schweiger and Advanced Dermatology both do — so this sits well above the
@@ -60,10 +69,6 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET;
 const CRED = String.raw`(?:M\.?D\.?|D\.?O\.?|D\.?D\.?S\.?|D\.?M\.?D\.?|PA-C|ARNP|APRN|` +
              String.raw`FNP-?C?|DNP|CRNA|D\.?P\.?M\.?|Ph\.?D\.?|MBBS|` +
              String.raw`FAAD|FACS|FACMS|FAACS|RN|LME|LE)`;
-
-// A trailing stack, not a single credential. "A. David Rahimi, MD" was caught in
-// California while "A. David Rahimi, MD FAAD" — the same person — was not.
-const CRED_STACK = new RegExp(`(?:,|\\s|-)\\s*${CRED}(?:[,\\s\\.]+${CRED})*`, 'i');
 
 // ── Words that mean this is a BUSINESS, not a person ────────────────────────
 // Checked against the captured name itself. "Miami Skin Institute, MD" is not a
@@ -196,7 +201,6 @@ const NAME_ONLY = new RegExp(`^${NAME_TOKEN}$`);
 // per line — "Our Providers\nRachel Careccia, MD" matched as a single four-word
 // name until this was fixed. Everything below works LINE BY LINE for the same
 // reason.
-const CRED_AT_START = new RegExp(`^,?\\s*(${CRED}(?:[,\\s\\.]+${CRED})*)\\b`, 'i');
 const DR_LINE = new RegExp(`\\bDr\\.?\\s+(${NAME_TOKEN}(?:[ \\t]+${NAME_TOKEN}){1,2})\\b`);
 
 function cleanName(raw) {
@@ -257,11 +261,18 @@ function extractProviders(text) {
     // credentials match INSIDE ordinary words: LE inside "Coral Gables", RN
     // inside "Fernández", DO inside "Doe" — which silently truncated names to
     // "Coral Gab" and "Luis Fe", and swallowed "Jane Doe, MD" entirely.
+    // ⛔ BOUNDARIES ARE LOAD-BEARING: without them these two-letter credentials
+    // match INSIDE ordinary words — LE in "Coral Gables", RN in "Fernández", DO
+    // in "Doe" — truncating names to "Coral Gab" and swallowing "Jane Doe, MD".
+    // ⚠️ Written as a CAPTURE GROUP rather than a lookbehind. Lookbehind needs
+    // Node 16+, and a regex that throws at module load takes the whole function
+    // down before the handler can report anything.
     const credRe = new RegExp(
-      `(?<![A-Za-zÀ-ÿ])(${CRED}(?:[,\\s\\.]+${CRED})*)(?![A-Za-zÀ-ÿ])`, 'gi');
+      `([^A-Za-zÀ-ÿ]|^)(${CRED}(?:[,\\s\\.]+${CRED})*)(?![A-Za-zÀ-ÿ])`, 'gi');
     let m, cursor = 0;
     while ((m = credRe.exec(line)) !== null) {
-      const before = line.slice(cursor, m.index);
+      // m[1] is the boundary character, m[2] the credential stack.
+      const before = line.slice(cursor, m.index + m[1].length);
       const name = nameBefore(before);
       cursor = m.index + m[0].length;
       if (!name) continue;
@@ -269,7 +280,7 @@ function extractProviders(text) {
       if (out.has(key)) continue;
       out.set(key, {
         name_en: name,
-        credentials: cleanName(m[1]).replace(/\s*,\s*/g, ', ').toUpperCase(),
+        credentials: cleanName(m[2]).replace(/\s*,\s*/g, ', ').toUpperCase(),
         title: roleNear(lines, i)
       });
     }
@@ -418,6 +429,21 @@ exports.handler = async (event) => {
 
   let body = {};
   try { body = JSON.parse(event.body || '{}'); } catch {}
+
+  // ⭐ PING: proves auth, deployment and env in one call, without a network
+  // fetch or a queue claim. When a run fails with a bare "Failed to fetch" and
+  // no status code, this separates "the function is unreachable" from "the
+  // function is timing out doing real work".
+  if (body.mode === 'ping') {
+    return json(200, {
+      ok: true, fn: 'crawl-doctors-na',
+      node: process.version,
+      has_supabase_url: !!SB, has_service_key: !!SB_KEY,
+      batch_default: BATCH_DEFAULT, fetch_timeout_ms: FETCH_TIMEOUT_MS,
+      run_budget_ms: RUN_BUDGET_MS
+    });
+  }
+
   const batch = Math.min(Math.max(parseInt(body.batch, 10) || BATCH_DEFAULT, 1), 8);
   const retry = body.retry === true;
 
@@ -455,7 +481,17 @@ exports.handler = async (event) => {
     });
 
     const processed = [];
+    const deadline = Date.now() + RUN_BUDGET_MS;
     for (const row of claim) {
+      // Out of budget: hand the row back as pending rather than dying with it
+      // marked 'running', which is unrecoverable without a manual reset.
+      if (Date.now() > deadline) {
+        await sb(`crawl_queue?id=eq.${row.id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: JSON.stringify({ status: 'pending' })
+        });
+        continue;
+      }
       let result;
       try { result = await crawlOne(row); }
       catch (e) { result = { status: 'error', last_error: String(e.message || e).slice(0, 400) }; }
