@@ -1153,7 +1153,17 @@ const TECH_HINTS = [
 ];
 const SERVICE_HINTS = [
   'services', 'treatments', 'all-treatments', 'our-treatments', 'procedures',
-  'what-we-do', 'menu', 'price', 'pricing', 'traitements', 'soins', 'tarifs'
+  'what-we-do', 'menu', 'price', 'pricing', 'traitements', 'soins', 'tarifs',
+  // ⭐⭐ Added 2026-08-23. DERMATOLOGY PRACTICES NAME THEIR AESTHETIC PAGE BY
+  // SPECIALTY, NOT BY COMMERCE, and none of the words above appear in it.
+  // AvantDerm's is /cosmetic-dermatology/ (it names a Cutera Titan under Skin
+  // Tightening); Lynde Dermatology's is /cosmetics. On both sites EVERY link
+  // scored -1, so the crawl stopped at pages_tried=1 and the host was recorded
+  // 'empty' — i.e. "we read the site and it has no devices", which was wrong.
+  // Scored against both real link sets: these rescue exactly the right page and
+  // nothing else. /medical-dermatology/ correctly stays unscored.
+  'cosmetic', 'cosmetics', 'aesthetic', 'aesthetics', 'esthetics', 'esthetique',
+  'medical-aesthetics'
 ];
 
 // ⚠️⚠️ ASSET FILES ARE NOT PAGES, and this cost dozens of clinics.
