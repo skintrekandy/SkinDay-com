@@ -956,7 +956,7 @@
           </div>
           <div id="wc-state-wrap" style="display:none;">
             <label class="form-section-label" style="margin-top:0;" for="wc-state">State</label>
-            <select class="form-input" id="wc-state" style="max-width:220px;">
+            <select class="form-input" id="wc-state" style="max-width:220px;" onchange="wcQueue('count')">
               <option value="">Every state</option>
               <option value="california">California</option>
               <option value="new-york">New York</option>
@@ -965,6 +965,17 @@
           </div>
           <button class="tw-inline-btn" onclick="wcPing()" style="padding:.5rem 1.2rem;">Test connection</button>
           <span id="wc-note" style="font-size:.78rem;color:var(--muted);max-width:520px;"></span>
+        </div>
+
+        <!-- ⭐ QUEUE HOUSEKEEPING AS BUTTONS, NOT SQL. Seeding is routine — every
+             new state needs it — and a 30-line paste each time is how a
+             destructive statement eventually lands next to an audit query. -->
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-.4rem 0 1.25rem;">
+          <button class="tw-inline-btn" onclick="wcQueue('seed')" style="padding:.5rem 1.2rem;">Seed queue</button>
+          <button class="tw-inline-btn" onclick="wcQueue('requeue')" style="padding:.5rem 1.2rem;">Requeue everything</button>
+          <button class="tw-inline-btn" onclick="wcQueue('unstick')" style="padding:.5rem 1.2rem;">Reset stuck</button>
+          <button class="tw-inline-btn" onclick="wcQueue('count')" style="padding:.5rem 1.2rem;">Refresh counts</button>
+          <span id="wc-queue-note" style="font-size:.78rem;color:var(--muted);flex:1 1 100%;"></span>
         </div>
 
         <!-- DOCTORS / PROVIDERS -->
@@ -2037,18 +2048,63 @@ function wcIsNA(){
   var c = wcCountry();
   return c === 'usa' || c === 'canada';
 }
-function wcCountryChanged(){
+function wcCountryChanged(refresh){
   var na = wcIsNA();
   var wrap = document.getElementById('wc-state-wrap');
   if (wrap) wrap.style.display = na ? '' : 'none';
   var note = document.getElementById('wc-note');
+  if (refresh !== false) { try { wcQueue('count'); } catch (_) {} }
   if (note) {
     note.textContent = na
       ? 'North America uses the English credential parser and reads TikTok instead of LINE. The US is ~30,000 hosts — pick a state, or this will not finish in one sitting.'
       : 'Taiwan and Hong Kong use the Chinese title parser and read LINE. Chains are excluded from the doctor queue but included for contacts.';
   }
 }
-function wcEnter(){ wcCountryChanged(); }
+function wcEnter(){ wcCountryChanged(); wcQueue('count'); }
+
+async function wcQueue(action){
+  var out = document.getElementById('wc-queue-note');
+  if (out) out.textContent = 'Working…';
+
+  // ⚠️ Requeue resets every already-crawled row in this country/state back to
+  // pending. Nothing is deleted and no clinic data is touched, but it is a big
+  // action and it should be deliberate.
+  if (action === 'requeue') {
+    var where = wcCountry() + (wcState() ? ' / ' + wcState() : ' (every state)');
+    if (!confirm('Requeue everything for ' + where + '?\n\nEvery already-crawled '
+      + 'domain goes back to pending so the next run does it again. Nothing is '
+      + 'deleted. Chain domains keep their chain-social-only ruling.')) {
+      if (out) out.textContent = '';
+      return;
+    }
+  }
+
+  try {
+    var res = await fetch('/.netlify/functions/crawl-queue-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ action: action, country: wcCountry(), state: wcState() })
+    });
+    var raw = await res.text();
+    var d; try { d = JSON.parse(raw); }
+    catch (_) { throw new Error('HTTP ' + res.status + ' — ' + (raw || 'empty response').slice(0, 200)); }
+    if (!res.ok) throw new Error(d.error || ('HTTP ' + res.status));
+
+    var c = d.counts || { doctors: {}, socials: {}, total: 0 };
+    var fmt = function(o){
+      return Object.keys(o).sort(function(a,b){ return o[b]-o[a]; })
+        .map(function(k){ return k + ' ' + o[k]; }).join(' · ') || 'nothing';
+    };
+    var lead = '';
+    if (action === 'seed')    lead = 'Added ' + d.inserted + ' domains. ';
+    if (action === 'requeue') lead = 'Requeued ' + d.touched + ' rows. ';
+    if (action === 'unstick') lead = 'Reset ' + d.reset + ' stuck rows. ';
+    if (out) out.textContent = lead + c.total + ' in queue — doctors: ' + fmt(c.doctors)
+                             + '   |   contacts: ' + fmt(c.socials);
+  } catch (e) {
+    if (out) out.textContent = 'Failed: ' + e.message;
+  }
+}
 
 // Hits both functions in ping mode: no network fetch, no queue claim. Tells you
 // whether the problem is reachability, auth, or the work itself.
@@ -2138,12 +2194,12 @@ async function twCrawlStart(retry){
 
     (data.processed || []).forEach(function(p){
       if (p.status === 'done') {
-        twCrawlTotals.done++; twCrawlTotals.doctors += p.doctors;
-        twCrawlLog(p.domain + '  ' + p.doctors + ' doctors: ' + (p.names || '') +
+        twCrawlTotals.done++; twCrawlTotals.doctors += (p.found || 0);
+        twCrawlLog(p.domain + '  ' + (p.found || 0) + ' doctors: ' + (p.names || '') +
                    '  (' + p.created + ' new, ' + p.linked + ' linked)');
       } else if (p.status === 'suspicious') {
         twCrawlTotals.render++;
-        twCrawlLog(p.domain + '  ' + p.doctors + ' names — not a team page, skipped', 'warn');
+        twCrawlLog(p.domain + '  ' + (p.found || 0) + ' names — not a team page, skipped', 'warn');
       } else if (p.status === 'needs_render' || p.status === 'empty') {
         twCrawlTotals.render++;
         twCrawlLog(p.domain + '  ' + (p.status === 'empty'
