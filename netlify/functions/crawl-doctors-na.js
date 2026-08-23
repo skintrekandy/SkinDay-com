@@ -73,7 +73,14 @@ const CRED = String.raw`(?:M\.?D\.?|D\.?O\.?|D\.?D\.?S\.?|D\.?M\.?D\.?|PA-C|ARNP
 // ── Words that mean this is a BUSINESS, not a person ────────────────────────
 // Checked against the captured name itself. "Miami Skin Institute, MD" is not a
 // doctor; "Coral Gables Dermatology" is not a doctor.
-const BUSINESS_WORD = /\b(derm\w*|center|centre|centro|clinic|clinica|cl[ií]nica|spa|medspa|aesthetic\w*|esthetic\w*|est[eé]tica|surgery|surgical|institute|instituto|group|associates|partners|practice|studio|salon|laser|skin|beauty|belleza|wellness|health|medical|medicine|plastic|cosmetic|care|pllc|llc|inc|corp|pa|pc)\b/i;
+const BUSINESS_WORD = /\b(derm\w*|center|centre|centro|clinic|clinica|cl[ií]nica|spa|medspa|aesthetic\w*|esthetic\w*|est[eé]tica|surgery|surgical|institute|instituto|group|associates|partners|practice|studio|salon|laser|skin|beauty|belleza|wellness|health|medical|medicine|plastic|cosmetic|care|pllc|llc|inc|corp|pa|pc|university|college|school|hospital|academy|foundation|therapy|massage|certified|board)\b/i;
+
+// ⛔ WORDS THAT PRECEDE A NAME AND ARE NOT PART OF IT. The first New York run
+// produced "Meet Kristina Christopher, FNP-C", "About Jennifer Geiger, MD" and
+// "NYC Dr. Richard Swift, MD" — the lead-in was captured because the name window
+// preferred the LONGEST plausible match. Stripped here, and the preference is
+// reversed below.
+const LEAD_IN = /^(?:(?:meet|about|our|the|dr|drs|doctor|welcome|introducing|nyc|ny|new york|contact|call|book|see|visit|with|by|from|team|staff|provider|providers)\b[\s.,:-]*)+/i;
 
 // Words that appear where a name should be, on pages that are not rosters.
 const NOT_A_NAME = /\b(privacy|policy|terms|copyright|reserved|appointment|schedule|consultation|financing|gallery|before|after|reviews?|testimonial|patient|contact|location|hours|insurance|careers|blog|news)\b/i;
@@ -179,7 +186,11 @@ function findTeamUrl(html, baseUrl) {
     let abs;
     try { abs = new URL(href, baseUrl).href; } catch { continue; }
     try { if (new URL(abs).hostname !== new URL(baseUrl).hostname) continue; } catch { continue; }
-    const hay = (decodeURIComponent(abs) + ' ' + label).toLowerCase();
+    // ⛔ decodeURIComponent THROWS on a stray '%' in a href ("URI malformed"),
+    // which killed an otherwise healthy host on the first run.
+    let decoded = abs;
+    try { decoded = decodeURIComponent(abs); } catch (_) {}
+    const hay = (decoded + ' ' + label).toLowerCase();
     let score = 0;
     for (const [word, w] of TEAM_HINTS) if (hay.includes(word)) score = Math.max(score, w);
     if (score) links.push({ abs, score });
@@ -203,6 +214,23 @@ const NAME_ONLY = new RegExp(`^${NAME_TOKEN}$`);
 // reason.
 const DR_LINE = new RegExp(`\\bDr\\.?\\s+(${NAME_TOKEN}(?:[ \\t]+${NAME_TOKEN}){1,2})\\b`);
 
+// ⭐⭐ ONE PERSON, ONE ROW. The first run created four rows for one surgeon —
+// "John Gerard Hunter", "Dr. John Hunter, MD, FACS", "John Hunter", "John G.
+// Hunter" — because dedupe compared raw strings. The key drops punctuation,
+// lowercases, and REMOVES SINGLE-LETTER MIDDLE INITIALS, so all four collapse
+// to "john hunter". First and last token only: that is the part a person keeps.
+function identityKey(name) {
+  const t = String(name || '')
+    .toLowerCase()
+    .replace(/[.,''’-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .filter(w => w.length > 1);            // drops "j", "g", initials
+  if (t.length < 2) return t.join(' ');
+  return t[0] + ' ' + t[t.length - 1];
+}
+
 function cleanName(raw) {
   return String(raw || '')
     .replace(/[ \t]+/g, ' ')
@@ -220,16 +248,24 @@ function plausibleName(name) {
   // ALL-CAPS runs are headings ("MEET OUR PROVIDERS"), not names.
   if (name === name.toUpperCase() && name.replace(/[^A-Z]/g, '').length > 4) return false;
   if (!parts.every(p => NAME_ONLY.test(p))) return false;
+  // ⛔ A BARE SINGLE LETTER IS NOT A NAME TOKEN. "Should I, DO" produced a
+  // doctor called "Should I" on the first run. An initial is written "G." — with
+  // the dot — so length 1 and no dot is rejected.
+  if (!parts.every(p => p.length >= 2 || p.endsWith('.'))) return false;
   // A name needs at least one token of real length; "A. B." is initials alone.
   return parts.some(p => p.replace(/\./g, '').length >= 2);
 }
 
-// ⭐ SHRINK TO FIT. Take the tokens immediately before the credential and try
-// the LONGEST window first, falling back to shorter ones. Without this a
-// rejected greedy match swallows a valid name: "Dermatologist Seth Forman, DO"
-// failed the business-word test and took Seth Forman down with it.
+// ⭐ SHRINK TO FIT. Strip lead-in words FIRST, then take the LONGEST plausible
+// window and fall back to shorter ones.
+// ⛔ ORDER MATTERS AND BOTH HALVES ARE LOAD-BEARING. Longest-first alone gave
+// "Meet Kristina Christopher" — the lead-in is three capitalised tokens and
+// passes every other test. Shortest-first alone gave "Gerard Hunter" for "John
+// Gerard Hunter" — it drops the FIRST name, not the lead-in. Stripping lead-ins
+// and then going longest-first gets both, and still lets "Dermatologist Seth
+// Forman, DO" fall back to the two-token window rather than being swallowed.
 function nameBefore(segment) {
-  const tokens = cleanName(segment).split(' ').filter(Boolean);
+  const tokens = cleanName(segment).replace(LEAD_IN, '').split(' ').filter(Boolean);
   for (let take = Math.min(4, tokens.length); take >= 2; take--) {
     const cand = tokens.slice(tokens.length - take).join(' ');
     if (plausibleName(cand)) return cand;
@@ -276,13 +312,17 @@ function extractProviders(text) {
       const name = nameBefore(before);
       cursor = m.index + m[0].length;
       if (!name) continue;
-      const key = name.toLowerCase();
-      if (out.has(key)) continue;
-      out.set(key, {
-        name_en: name,
-        credentials: cleanName(m[2]).replace(/\s*,\s*/g, ', ').toUpperCase(),
-        title: roleNear(lines, i)
-      });
+      const key = identityKey(name);
+      const creds = cleanName(m[2]).replace(/\s*,\s*/g, ', ').toUpperCase();
+      const prev = out.get(key);
+      if (prev) {
+        // Same person seen again: keep the fuller name and fill blank creds.
+        if (name.length > prev.name_en.length) prev.name_en = name;
+        if (!prev.credentials && creds) prev.credentials = creds;
+        if (!prev.title) prev.title = roleNear(lines, i);
+        continue;
+      }
+      out.set(key, { name_en: name, credentials: creds, title: roleNear(lines, i) });
     }
   }
 
@@ -291,9 +331,9 @@ function extractProviders(text) {
   for (let i = 0; i < lines.length; i++) {
     const m = DR_LINE.exec(lines[i]);
     if (!m) continue;
-    const name = cleanName(m[1]);
+    const name = cleanName(m[1]).replace(LEAD_IN, '');
     if (!plausibleName(name)) continue;
-    const key = name.toLowerCase();
+    const key = identityKey(name);
     if (out.has(key)) continue;
     out.set(key, { name_en: name, credentials: null, title: roleNear(lines, i) });
   }
@@ -305,7 +345,7 @@ function extractProviders(text) {
 async function isSharedPerson(name, country, excludeClinicId) {
   const rows = await sb(
     `doctors?select=id&country=eq.${encodeURIComponent(country)}` +
-    `&name_en=eq.${encodeURIComponent(name)}&limit=${MAX_SHARED_CLINICS + 1}`);
+    `&identity_key=eq.${encodeURIComponent(identityKey(name))}&limit=${MAX_SHARED_CLINICS + 1}`);
   if (!rows || rows.length <= 1) return false;
   const links = await sb(
     `clinic_doctors?select=clinic_id&doctor_id=in.(${rows.map(r => r.id).join(',')})&limit=50`);
@@ -331,9 +371,14 @@ async function land(providers, clinicId, country, sourceUrl) {
     // New York would collapse into one row here. Cross-clinic identity
     // resolution is a real problem and is NOT solved in this file — it is left
     // visible rather than papered over with a guess.
+    // ⭐ MATCH ON THE IDENTITY KEY, NOT THE RAW STRING. Within one page the
+    // parser already collapses variants; across pages and hosts this is what
+    // stops "John Hunter" and "John G. Hunter" becoming two rows. `identity_key`
+    // is stored so the match is an indexed equality rather than a scan.
+    const key = identityKey(name);
     const found = await sb(
-      `doctors?select=id,credentials&country=eq.${encodeURIComponent(country)}` +
-      `&name_en=eq.${encodeURIComponent(name)}&limit=1`);
+      `doctors?select=id,credentials,name_en&country=eq.${encodeURIComponent(country)}` +
+      `&identity_key=eq.${encodeURIComponent(key)}&limit=1`);
     let id = found && found.length ? found[0].id : null;
 
     if (!id) {
@@ -341,6 +386,7 @@ async function land(providers, clinicId, country, sourceUrl) {
         method: 'POST',
         body: JSON.stringify({
           name_en: name,
+          identity_key: key,
           credentials: p.credentials || null,
           country,
           source_url: sourceUrl,
@@ -352,12 +398,16 @@ async function land(providers, clinicId, country, sourceUrl) {
       });
       id = made && made[0] && made[0].id;
       if (id) created++;
-    } else if (p.credentials && !found[0].credentials) {
-      // Fill a blank, never overwrite. Same rule as the socials crawler.
-      await sb(`doctors?id=eq.${id}`, {
-        method: 'PATCH', prefer: 'return=minimal',
-        body: JSON.stringify({ credentials: p.credentials })
-      });
+    } else {
+      // Fill blanks, never overwrite. Same rule as the socials crawler. A fuller
+      // spelling of the same person is an improvement, not a conflict.
+      const patch = {};
+      if (p.credentials && !found[0].credentials) patch.credentials = p.credentials;
+      if (name.length > String(found[0].name_en || '').length) patch.name_en = name;
+      if (Object.keys(patch).length) {
+        await sb(`doctors?id=eq.${id}`, { method: 'PATCH', prefer: 'return=minimal',
+                                          body: JSON.stringify(patch) });
+      }
     }
     if (!id) continue;
 
