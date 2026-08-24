@@ -447,7 +447,7 @@
     </div>
     <div class="tabs">
       <button data-tab="portfolio" class="on">Overview</button>
-      <button data-tab="accounts">Accounts</button>
+      <button data-tab="accounts">Accounts <span class="listcount" id="newCount" style="display:none">0</span></button>
       <!-- Signal tab hidden for the Kyle pilot 2026-08-06; panel and loadFeed() left intact, restore by removing style -->
       <button data-tab="feed" style="display:none">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
@@ -514,6 +514,11 @@
           <option value="competitor">Running a competitor, none of yours</option>
           <option value="greenfield">No equipment identified</option>
           <option value="research">Not yet researched</option>
+          <!-- ⭐ Rolling 60 days on clinics.first_seen_at. "Newly listed", never
+               "newly opened": first_seen_at is when a clinic first appeared in
+               OUR scan, and the August batch is coverage catch-up — several were
+               verified as trading since 2023. -->
+          <option value="new">Newly listed</option>
         </select>
         <select id="acctCategory"><option value="">All categories</option></select>
         <select id="acctSort">
@@ -521,6 +526,7 @@
           <option value="rating">Best rated</option>
           <option value="devices">Most equipment</option>
           <option value="distance">Nearest to me</option>
+          <option value="newest">Most recently listed</option>
         </select>
         <button class="btn" id="acctMore" type="button" aria-expanded="false">More filters</button>
         <button class="linkish" id="acctReset" type="button" style="display:none">Reset filters</button>
@@ -1327,6 +1333,7 @@
     //     means California there and nothing in Canada.
     setCountry(COUNTRY);
     el('selProvince').innerHTML='<option value="">'+esc(CTY.all)+'</option>';
+    loadNewCount();
     api('overview',{}).then(function(res){
       fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
       COVERAGE=res.coverage||null;
@@ -1754,6 +1761,20 @@
     },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
   }
 
+  // ⭐⭐ MOVEMENT ON THE TAB ITSELF. A rep who has to open Accounts and pick a
+  // filter before seeing that anything changed will not discover it. Its own
+  // lightweight call (mi_new_count) rather than the 500-row accounts query, so
+  // the badge costs a scalar. Silent on failure: a missing badge is a smaller
+  // problem than an error banner over a working dashboard.
+  function loadNewCount(){
+    var b = el('newCount');
+    if(!b) return;
+    api('new_count',{}).then(function(res){
+      var n = Number(res && res.count) || 0;
+      if(n > 0){ b.textContent = '+' + n.toLocaleString(); b.style.display=''; }
+      else { b.style.display='none'; }
+    }).catch(function(){ b.style.display='none'; });
+  }
   function loadAccounts(){
     loaded.accounts=true; el('acctList').innerHTML='<div class="empty"><span class="spin"></span></div>';
     var sort=el('acctSort').value;
@@ -2089,6 +2110,18 @@
     }
     var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
               (a.n_devices?a.n_devices+' machines':'')].filter(Boolean).join(' &middot; ');
+    // ⭐ Date is shown, not just the word. A rep can then judge freshness without
+    // needing to know our scrape cadence, and the claim stays one we can defend:
+    // this is when WE first saw the listing, not when the clinic opened.
+    var fresh = '';
+    if(a.first_seen_at){
+      var d = new Date(a.first_seen_at + 'T00:00:00');
+      var days = Math.floor((Date.now() - d.getTime()) / 86400000);
+      if(days <= 60 && days >= 0){
+        fresh = '<span class="pill chain" title="First appeared in our scan on this date. Not necessarily a new business.">Newly listed &middot; '+
+                d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span>';
+      }
+    }
     // Multi-location brands often buy centrally, so a rep may be better off at
     // head office than at this address. We state the fact and leave the call to
     // them: nothing in the data says which location is head office.
@@ -2099,7 +2132,7 @@
     return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
       shot+
       '<div class="body">'+
-        '<div class="head"><span class="aname">'+esc(a.name)+'</span>'+chain+'</div>'+
+        '<div class="head"><span class="aname">'+esc(a.name)+'</span>'+fresh+chain+'</div>'+
         '<div class="ameta" style="margin:4px 0 2px">'+meta+'</div>'+
         contactsHtml(a)+platesHtml(a.devices||[])+
       '</div>'+
