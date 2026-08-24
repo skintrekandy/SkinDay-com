@@ -428,6 +428,19 @@ exports.handler = async (event) => {
         return json(200, { accounts: data || [] });
       }
 
+      // ⭐ Count behind the "+234" badge on the Accounts tab. Its own action so
+      // the badge does not have to run the 500-row accounts query. Same 60-day
+      // rule and same geography arguments as the 'new' segment in mi_accounts,
+      // so the number on the tab always equals the rows behind it.
+      case 'new_count': {
+        const { data, error } = await supabase.rpc('mi_new_count', {
+          p_country: country, p_regions: regions,
+          p_province: province, p_city: city, p_neighbourhood: neighbourhood
+        });
+        if (error) throw error;
+        return json(200, { count: Number(data) || 0 });
+      }
+
       // one call for everything above the fold, so a geography change is a
       // single request instead of four
       case 'overview': {
