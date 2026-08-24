@@ -39,11 +39,24 @@
 // A US medspa on a bloated theme is not. 3 hosts x 2 pages x 6s = 36s worst
 // case, and the per-host budget below caps it harder than that.
 const BATCH_DEFAULT = 3;
-const FETCH_TIMEOUT_MS = 6000;
+// ⭐ 6000 -> 5000 (2026-08-23). A host that has not sent a first byte in five
+// seconds is not going to; the extra second bought nothing and widened the
+// worst case below.
+const FETCH_TIMEOUT_MS = 5000;
 // Whole-run budget. When it is gone the function returns what it has instead of
 // being killed mid-flight, which is what leaves rows stuck in 'running' and the
 // browser showing a bare "Failed to fetch" with no status code.
-const RUN_BUDGET_MS = 18000;
+//
+// ⛔⛔ 18000 -> 12000 (2026-08-23). THE BUDGET IS ONLY CHECKED BETWEEN HOSTS, so
+// at 18s a host that STARTS at 17.9s still gets its full allowance — 2 pages x
+// 6s = 12s — and the invocation lands near 30s against Netlify's 26s ceiling.
+// That is the "HTTP 504 Inactivity Timeout" that kept stopping the New York run
+// mid-batch: not a crash, the gateway killing a call that ran too long. The
+// guard was there; the number was set too close to the limit for it to work.
+//   12000 + (2 x 5000) = 22s worst case, inside 26s with room to spare.
+// Costs a little throughput per invocation and more than repays it by not
+// dying and being restarted.
+const RUN_BUDGET_MS = 12000;
 
 // A large US dermatology group genuinely lists 25+ providers on one page —
 // Schweiger and Advanced Dermatology both do — so this sits well above the
