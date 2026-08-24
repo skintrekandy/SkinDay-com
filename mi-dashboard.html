@@ -1333,7 +1333,6 @@
     //     means California there and nothing in Canada.
     setCountry(COUNTRY);
     el('selProvince').innerHTML='<option value="">'+esc(CTY.all)+'</option>';
-    loadNewCount();
     api('overview',{}).then(function(res){
       fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
       COVERAGE=res.coverage||null;
@@ -1344,7 +1343,7 @@
   el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; this.style.display='none'; onGeoChange(); });
   function onGeoChange(){
     loaded.accounts=false; loaded.list=false; loaded.feed=false;
-    refreshPortfolio(); loadFilterOptions();
+    refreshPortfolio(); loadFilterOptions(); loadNewCount();
     if(el('panel-accounts').classList.contains('on')) loadAccounts();
     if(el('panel-list').classList.contains('on')) loadSaved();
   }
@@ -1712,7 +1711,7 @@
     ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
     el('acctSort').value='reviews';
     NEAR=null; el('acctNear').classList.remove('on'); nearNote('',false);
-    advLabel(); loadAccounts();
+    advLabel(); loadAccounts(); loadNewCount();
   });
 
   function advCount(){
