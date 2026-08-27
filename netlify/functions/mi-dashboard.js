@@ -396,8 +396,13 @@ exports.handler = async (event) => {
       // manufacturer + distributor option lists for the Accounts filters,
       // each with a clinic count, energy devices only
       case 'filter_options': {
+        // ⭐ p_category added 2026-08-27. Without it the device and manufacturer
+        // dropdowns showed the whole national list even with a category
+        // selected, so "RF Skin Tightening" still offered CoolSculpting and
+        // Fraxel. Null when no category is chosen, which is the old behaviour.
         const { data, error } = await supabase.rpc('mi_filter_options', { p_country: country, p_regions: regions, 
-          p_province: province, p_neighbourhood: neighbourhood, p_city: city
+          p_province: province, p_neighbourhood: neighbourhood, p_city: city,
+          p_category: category
         });
         if (error) throw error;
         return json(200, { options: data || { manufacturers: [], distributors: [], devices: [] } });
