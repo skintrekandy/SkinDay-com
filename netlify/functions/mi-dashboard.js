@@ -437,6 +437,18 @@ exports.handler = async (event) => {
         return json(200, { accounts: data || [] });
       }
 
+      // ⭐ Counts beside each option in the segment dropdown. Its own action so
+      // it can be re-fetched when the category changes without re-running the
+      // 500-row accounts query.
+      case 'segment_counts': {
+        const { data, error } = await supabase.rpc('mi_segment_counts', Object.assign({
+          p_country: country, p_regions: regions, p_province: province,
+          p_city: city, p_neighbourhood: neighbourhood, p_category: category
+        }, owner));
+        if (error) throw error;
+        return json(200, { counts: data || {} });
+      }
+
       // ⭐ Count behind the "+234" badge on the Accounts tab. Its own action so
       // the badge does not have to run the 500-row accounts query. Same 60-day
       // rule and same geography arguments as the 'new' segment in mi_accounts,
