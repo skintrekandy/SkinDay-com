@@ -1521,8 +1521,12 @@
     // Tightening" still offered Morpheus8, CoolSculpting, Lumecca and Fraxel,
     // and most category+device combinations a rep could assemble returned
     // nothing. Reported by Andy 2026-08-27.
-    var catSel = el('acctCategory');
-    api('filter_options',{ category: catSel ? catSel.value : '' }).then(function(res){
+    var catSel = el('acctCategory'), mfrSel = el('acctMfr'), distSel = el('acctDist');
+    api('filter_options',{
+      category: catSel ? catSel.value : '',
+      filter_manufacturer: mfrSel ? mfrSel.value : '',
+      filter_distributor: distSel ? distSel.value : ''
+    }).then(function(res){
       var o=res.options||{};
       // ⚠️ THESE STRINGS ARE THE ONES ON SCREEN. fillNamed rewrites the whole
       // select, so the labels written in the markup are replaced the moment the
@@ -1789,7 +1793,7 @@
       // selection that is not in the narrowed list, so this can leave the
       // device or manufacturer filter cleared — deliberately: an invisible
       // filter producing an empty result is worse than losing the selection.
-      if(id==='acctCategory'){
+      if(id==='acctCategory' || id==='acctMfr' || id==='acctDist'){
         loadFilterOptions();
       }
       loadAccounts();
