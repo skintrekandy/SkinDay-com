@@ -1516,7 +1516,13 @@
   }
 
   function loadFilterOptions(){
-    api('filter_options',{}).then(function(res){
+    // ⭐⭐ SEND THE CATEGORY. This used to post an empty body, so the device and
+    // manufacturer lists were always the whole national set: picking "RF Skin
+    // Tightening" still offered Morpheus8, CoolSculpting, Lumecca and Fraxel,
+    // and most category+device combinations a rep could assemble returned
+    // nothing. Reported by Andy 2026-08-27.
+    var catSel = el('acctCategory');
+    api('filter_options',{ category: catSel ? catSel.value : '' }).then(function(res){
       var o=res.options||{};
       // ⚠️ THESE STRINGS ARE THE ONES ON SCREEN. fillNamed rewrites the whole
       // select, so the labels written in the markup are replaced the moment the
@@ -1540,7 +1546,14 @@
     var cur=sel.value;
     sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+rows.map(function(r){
       return '<option value="'+esc(r.name)+'">'+esc(r.name)+' ('+r.clinics+')</option>'; }).join('');
-    if(cur) sel.value=cur;
+    // ⭐ Restore the previous choice ONLY if it still exists in the narrowed
+    // list. Switching from RF tightening to laser hair used to leave "Thermage"
+    // applied while no longer being visible in the dropdown — an empty result
+    // with no way to see why. Dropping it back to "any" is the honest state.
+    if(cur){
+      sel.value=cur;
+      if(sel.value!==cur) sel.value='';
+    }
   }
 
   function sharePct(o,c){ o=o||0; c=c||0; var t=o+c; return t?Math.round(o/t*100):0; }
@@ -1770,6 +1783,15 @@
       advLabel();
       // Asking for "nearest" without a fix is a dead end, so ask for the fix.
       if(id==='acctSort' && el('acctSort').value==='distance' && !NEAR){ getNear(); return; }
+      // ⭐⭐ REBUILD THE DROPDOWNS WHEN THE CATEGORY CHANGES. They were only
+      // rebuilt on a geography change, which is why the device list stayed
+      // national no matter which category was picked. fillNamed drops any
+      // selection that is not in the narrowed list, so this can leave the
+      // device or manufacturer filter cleared — deliberately: an invisible
+      // filter producing an empty result is worse than losing the selection.
+      if(id==='acctCategory'){
+        loadFilterOptions();
+      }
       loadAccounts();
     }); });
 
