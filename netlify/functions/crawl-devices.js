@@ -1153,17 +1153,7 @@ const TECH_HINTS = [
 ];
 const SERVICE_HINTS = [
   'services', 'treatments', 'all-treatments', 'our-treatments', 'procedures',
-  'what-we-do', 'menu', 'price', 'pricing', 'traitements', 'soins', 'tarifs',
-  // ⭐⭐ Added 2026-08-23. DERMATOLOGY PRACTICES NAME THEIR AESTHETIC PAGE BY
-  // SPECIALTY, NOT BY COMMERCE, and none of the words above appear in it.
-  // AvantDerm's is /cosmetic-dermatology/ (it names a Cutera Titan under Skin
-  // Tightening); Lynde Dermatology's is /cosmetics. On both sites EVERY link
-  // scored -1, so the crawl stopped at pages_tried=1 and the host was recorded
-  // 'empty' — i.e. "we read the site and it has no devices", which was wrong.
-  // Scored against both real link sets: these rescue exactly the right page and
-  // nothing else. /medical-dermatology/ correctly stays unscored.
-  'cosmetic', 'cosmetics', 'aesthetic', 'aesthetics', 'esthetics', 'esthetique',
-  'medical-aesthetics'
+  'what-we-do', 'menu', 'price', 'pricing', 'traitements', 'soins', 'tarifs'
 ];
 
 // ⚠️⚠️ ASSET FILES ARE NOT PAGES, and this cost dozens of clinics.
@@ -1761,6 +1751,36 @@ async function doCrawl(supabase, body) {
       await supabase.from('device_crawl_runs')
         .update({ finished_at: new Date().toISOString() }).eq('id', runId);
     }
+
+    // ⭐⭐ REFRESH mv_crawled_hosts. The MI dashboard reads "has this host been
+    // read?" from that materialized view rather than recomputing DISTINCT ON
+    // over 74,444 crawl_run_hosts rows on every page load (that cost ~1,400ms
+    // per call; the view made mi_accounts 4,559ms -> 850ms). The trade is that
+    // the view is only as current as its last refresh, and THIS is the moment
+    // it goes stale — a host crawled in this run keeps reading as "Not yet
+    // researched" instead of "No devices found" until the refresh runs.
+    //
+    // Wrong in the safe direction (it under-claims coverage rather than
+    // over-claiming), but it lands in a rep's worklist, so it is not left to
+    // anyone remembering to run it by hand.
+    //
+    // ⓘ Deliberately non-fatal: the crawl itself succeeded, and failing the
+    // whole run because a cache did not rebuild would be the worse outcome.
+    // The warning is LOUD because a silent failure here means the dashboard
+    // quietly serves stale segments.
+    try {
+      const { error: mvErr } = await supabase.rpc('refresh_crawled_hosts');
+      if (mvErr) {
+        console.warn('mv_crawled_hosts refresh FAILED after run ' + runId +
+                     ' — MI segments will be stale until it is refreshed: ' +
+                     mvErr.message);
+      }
+    } catch (e) {
+      console.warn('mv_crawled_hosts refresh THREW after run ' + runId +
+                   ' — MI segments will be stale until it is refreshed: ' +
+                   (e && e.message ? e.message : e));
+    }
+
     return { done: true, run_id: runId, processed: [], remaining: 0 };
   }
 
