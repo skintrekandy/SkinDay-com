@@ -215,6 +215,21 @@
   /* Multi-location was grey on grey and read as decoration. It is a commercial
      signal (buying may be central, head office may be the real call), so it gets
      its own colour and is never confused with a device chip. */
+  /* ⭐ ACTIVE FILTER CHIPS. With the advanced row collapsed, "More filters (1)"
+     said a filter existed but never which one — a rep saw a small count and had
+     no way to tell whether it was the filter or the territory. Each chip names
+     one applied filter and clears it on click. */
+  .fchips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+  .fchip { display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.02em;
+    background:#EAF3F1; border:1px solid #B9D8D2; color:#0E5C55;
+    border-radius:100px; padding:4px 6px 4px 10px; white-space:nowrap; }
+  .fchip b { font-weight:600; }
+  .fchip button { border:0; background:transparent; cursor:pointer; color:#0E5C55;
+    font-size:13px; line-height:1; padding:2px 4px; border-radius:100px; opacity:.65; }
+  .fchip button:hover { opacity:1; background:#D5E8E4; }
+  .fchip.clearall { background:transparent; border-color:transparent; color:#7A8B88; }
+
   .pill.chain { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
     background:#FBE9F1; border:1px solid #E9AFC9; color:#9C2F63; font-weight:600;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
@@ -567,13 +582,17 @@
            not notice "· showing first 200" at the end of a sentence, and acting
            on a truncated list is the expensive mistake this screen can cause. -->
       <div id="acctTrunc" class="trunc-note" style="display:none"></div>
+      <div id="acctChips" class="fchips" style="display:none"></div>
       <div class="toolbar" id="acctAdv" hidden>
         <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
         <select id="acctDevice"><option value="">Runs any device</option></select>
         <select id="acctExclude"><option value="">Missing nothing in particular</option></select>
         <select id="acctDist"><option value="">Any distributor</option></select>
+        <!-- ⭐ "Any size" removed 2026-08-27 (Andy: "it does not make sense").
+             The label promised clinic size and the options delivered review
+             counts, which is a proxy at best. Now says what it filters. -->
         <select id="acctMinRev">
-          <option value="">Any size</option>
+          <option value="">Any review count</option>
           <option value="50">50+ reviews</option>
           <option value="200">200+ reviews</option>
           <option value="500">500+ reviews</option>
@@ -1521,6 +1540,7 @@
     // Tightening" still offered Morpheus8, CoolSculpting, Lumecca and Fraxel,
     // and most category+device combinations a rep could assemble returned
     // nothing. Reported by Andy 2026-08-27.
+    loadSegmentCounts();
     var catSel = el('acctCategory'), mfrSel = el('acctMfr'), distSel = el('acctDist');
     api('filter_options',{
       category: catSel ? catSel.value : '',
@@ -1545,6 +1565,29 @@
         if(op.value) op.textContent='No '+op.value;
       });
     }).catch(function(){});
+  }
+  // ⭐⭐ COUNTS ON THE SEGMENT OPTIONS. The device and manufacturer dropdowns
+  // have carried counts for a while; the segment dropdown — the first control a
+  // rep touches — carried none, so the most consequential choice on the screen
+  // was the least informed. Labels are rewritten in place rather than rebuilt,
+  // so the selected option survives.
+  // ⓘ Silent on failure: an unlabelled dropdown still works, an error banner
+  // over a working screen does not help anyone.
+  var SEG_KEYS={'':'all',ours:'ours',competitor:'competitor',greenfield:'greenfield',
+                research:'research','new':'new'};
+  function loadSegmentCounts(){
+    var sel=el('acctSegment'); if(!sel) return;
+    api('segment_counts',{ category: el('acctCategory') ? el('acctCategory').value : '' })
+      .then(function(res){
+        var c=res && res.counts || {};
+        Array.prototype.forEach.call(sel.options,function(op){
+          var base = op.getAttribute('data-base') || op.textContent;
+          op.setAttribute('data-base', base);
+          var k = SEG_KEYS[op.value];
+          var n = (k && c[k]!=null) ? Number(c[k]) : null;
+          op.textContent = (n===null) ? base : base+' ('+n.toLocaleString()+')';
+        });
+      }).catch(function(){});
   }
   function fillNamed(sel,rows,allLabel){
     var cur=sel.value;
@@ -1780,7 +1823,54 @@
     b.textContent = n ? 'More filters ('+n+')' : 'More filters';
     b.classList.toggle('on', n>0);
     el('acctReset').style.display = activeFilters() ? '' : 'none';
+    renderChips();
   }
+
+  // ⭐⭐ ONE CHIP PER APPLIED FILTER. Reads the selects rather than keeping its
+  // own state, so it cannot drift from what is actually being queried — which
+  // matters because a chip that lies about the filter is worse than no chip.
+  // Sort is excluded on purpose: it orders, it does not narrow, and putting it
+  // here would suggest removing it changes the result set.
+  var CHIP_LABELS = {
+    acctSegment:'Segment', acctCategory:'Category', acctMfr:'Manufacturer',
+    acctDevice:'Device', acctExclude:'Missing', acctDist:'Distributor',
+    acctMinRev:'Reviews'
+  };
+  function renderChips(){
+    var wrap = el('acctChips');
+    if(!wrap) return;
+    var parts = [];
+    Object.keys(CHIP_LABELS).forEach(function(id){
+      var s = el(id);
+      if(!s || !s.value) return;
+      // The option's own text, so the chip says what the rep read on screen
+      // rather than the raw value ("competitor" vs "Running a competitor").
+      var txt = s.options[s.selectedIndex] ? s.options[s.selectedIndex].textContent : s.value;
+      // Counts belong in the dropdown, not on the chip — "InMode (173)" reads
+      // as though the chip itself is a result.
+      txt = txt.replace(/\s*\(\d[\d,]*\)\s*$/, '');
+      parts.push('<span class="fchip"><b>'+esc(CHIP_LABELS[id])+':</b> '+esc(txt)+
+                 '<button type="button" data-clear="'+id+'" aria-label="Remove filter">&times;</button></span>');
+    });
+    if(!parts.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+    if(parts.length>1){
+      parts.push('<span class="fchip clearall"><button type="button" data-clear="__all">Clear all</button></span>');
+    }
+    wrap.innerHTML = parts.join('');
+    wrap.style.display='';
+  }
+  el('acctChips').addEventListener('click',function(e){
+    var btn = e.target.closest('button[data-clear]');
+    if(!btn) return;
+    var id = btn.getAttribute('data-clear');
+    if(id==='__all'){ ACCT_FILTERS.forEach(function(f){ if(el(f)) el(f).value=''; }); }
+    else if(el(id)){ el(id).value=''; }
+    advLabel();
+    // Clearing a category or manufacturer widens what the other dropdowns may
+    // offer, so rebuild them rather than leaving a narrowed list behind.
+    if(id==='__all' || id==='acctCategory' || id==='acctMfr' || id==='acctDist') loadFilterOptions();
+    loadAccounts();
+  });
 
   ['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev','acctSort']
     .forEach(function(id){ el(id).addEventListener('change',function(){
