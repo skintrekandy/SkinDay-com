@@ -1936,22 +1936,46 @@
     var body={category:el('acctCategory').value,segment:el('acctSegment').value,
               filter_manufacturer:el('acctMfr').value,filter_distributor:el('acctDist').value,
               device:el('acctDevice').value,exclude_manufacturer:el('acctExclude').value,
-    // ⭐ 500, NOT 200. A rep building a call list off a filtered view had no way
-    // to know the list was cut — Christos found 200 shown against 300+ available,
-    // and Kyle is running an email campaign off exactly this screen. The server
-    // has always allowed up to 500 (mi-dashboard.js caps there); the client
-    // simply never asked for more.
-    // ⚠️ 500 is still a cap. When it is hit, the notice below says so loudly
-    // rather than leaving a truncated list looking complete.
+    // ⛔ A CAP HERE MEANS A REP WORKS A PARTIAL LIST WITHOUT KNOWING. Christos
+    // found 200 shown against 300+ available; Kyle runs email campaigns off this
+    // screen. So the territory is fetched WHOLE, in pages.
               min_reviews:el('acctMinRev').value,sort:sort,
-              // ⭐ 500 -> 20000 (2026-08-27). The cap was never protecting the
-              // database: all 6,999 Canadian accounts come back in 446ms. It was
-              // protecting the browser from rendering thousands of cards — which
-              // is now handled by rendering in pages below, so the fetch can
-              // bring the whole territory and nothing is unreachable.
-              limit:20000};
+              limit:ACCT_FETCH_PAGE};
     if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
-    api('accounts',body).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
+    fetchAllAccounts(body);
+  }
+  // ⭐⭐ PAGED FETCH. Lambda caps a response at 6MB and rows are ~1.1KB, so a
+  // single request tops out around 5,000 accounts — fine for a Canadian
+  // province, not for California (8,558), Florida (7,770) or New York (6,242),
+  // each of which is one territory a single rep owns. Successive offsets are
+  // requested until total_matches is satisfied, then rendered in one pass.
+  // ⓘ Ordering is deterministic (mi_accounts breaks ties on id), so a row cannot
+  // appear on two pages or fall between them.
+  var ACCT_FETCH_PAGE = 3000, ACCT_MAX_PAGES = 12, ACCT_SEQ = 0;
+  function fetchAllAccounts(body){
+    var seq = ++ACCT_SEQ, all = [], page = 0;
+    function step(){
+      var b = Object.assign({}, body, { offset: page * ACCT_FETCH_PAGE });
+      api('accounts', b).then(function(res){
+        // A filter changed while this was in flight — drop it rather than
+        // painting a list the rep is no longer asking for.
+        if(seq !== ACCT_SEQ) return;
+        var rows = res.accounts || [];
+        all = all.concat(rows);
+        var total = rows.length && rows[0].total_matches != null
+          ? Number(rows[0].total_matches) : all.length;
+        page++;
+        if(all.length < total && rows.length === ACCT_FETCH_PAGE && page < ACCT_MAX_PAGES){
+          // Paint what has arrived so the rep is not staring at a spinner while
+          // a large territory finishes.
+          renderAccounts(all);
+          step();
+          return;
+        }
+        renderAccounts(all);
+      }).catch(handleErr);
+    }
+    step();
   }
   // ---- New: what changed, and where the wind is blowing --------------------
   ['feedDays','feedScope'].forEach(function(id){ el(id).addEventListener('change',loadFeed); });
