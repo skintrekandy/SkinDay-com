@@ -416,10 +416,16 @@ exports.handler = async (event) => {
       // segment: ours | competitor | greenfield | research
       case 'accounts': {
         const segment = nz(body.segment);
-        // ⭐ Ceiling 500 -> 20000 (2026-08-27). Measured: all 6,999 Canadian
-        // accounts return in 446ms and 7.6MB. The old cap made a rep's list
-        // silently partial; the client now renders in pages instead.
-        const limit = Math.min(Math.max(parseInt(body.limit, 10) || 200, 1), 20000);
+        // ⛔ PAGE SIZE, not a territory cap. The reason is not the database.
+        // Postgres returns all 6,999 Canadian rows in 446ms. But this function
+        // runs on Lambda, which hard-caps a RESPONSE at 6MB, and the rows are
+        // ~1.1KB each: Ontario (3,692 = 3.7MB) is fine, all-Canada (6,999 =
+        // 7.6MB) blew the limit and the tab showed "Could not load: Something
+        // went wrong" with no clue why.
+        // 3000 x 1.1KB ≈ 3.3MB per response, a wide margin under 6MB.
+        // The client requests successive offsets until it has the territory, so
+        // nothing is truncated — California's 8,558 rows arrive as three pages.
+        const limit = Math.min(Math.max(parseInt(body.limit, 10) || 200, 1), 3000);
         const { data, error } = await supabase.rpc('mi_accounts', Object.assign({ p_country: country, p_regions: regions, 
           p_province: province, p_city: city, p_neighbourhood: neighbourhood,
           p_category: category, p_segment: segment, p_limit: limit,
@@ -431,6 +437,8 @@ exports.handler = async (event) => {
           p_device: nz(body.device),
           p_min_reviews: body.min_reviews ? parseInt(body.min_reviews, 10) : null,
           p_sort: nz(body.sort) || 'reviews',
+          // ⭐ Page offset. The client loops until it has the whole territory.
+          p_offset: Math.max(parseInt(body.offset, 10) || 0, 0),
           // Only trusted as a pair. A lone coordinate would silently produce a
           // distance from the prime meridian rather than an error.
           p_near_lat: (body.near_lat != null && body.near_lng != null) ? Number(body.near_lat) : null,
