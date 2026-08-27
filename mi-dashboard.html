@@ -368,7 +368,38 @@
 </head>
 <body>
 
+<script>
+  /* Runs before the gate paints. Only reads a flag — no auth decision is made
+     here; tryKey() still validates against the server and reveals the sign-in
+     card if the token is rejected. */
+  (function(){
+    try{
+      var h = location.hash || '';
+      var resuming = !!localStorage.getItem('mi_session')
+                     && h.indexOf('t=') === -1
+                     && h.indexOf('r=') === -1
+                     && h.indexOf('k=') === -1;
+      if(resuming) document.documentElement.setAttribute('data-resuming','1');
+    }catch(e){}
+  })();
+</script>
+<style>
+  html[data-resuming] #gateSignin{ display:none !important; }
+  html[data-resuming] #gateResume{ display:block !important; }
+</style>
+
 <div id="gate">
+  <!-- ⭐⭐ SHOWN INSTEAD OF THE SIGN-IN CARD WHILE A SAVED SESSION IS CHECKED.
+       Without it the page painted the sign-in form, THEN fired the overview
+       request, THEN swapped to the app on response — so a returning user saw
+       app, sign-in, app in about a second and reasonably read it as being
+       logged out and back in. Nothing was wrong with the auth; the gate was
+       simply the default paint. The Canadian overview got slower tonight
+       (5,000 clinics -> 7,000), which is why it became obvious. -->
+  <div class="gate-card" id="gateResume" style="display:none">
+    <div class="brand">SkinDay <b>Market Intelligence</b></div>
+    <div class="sub" id="resumeMsg">Signing you in&hellip;</div>
+  </div>
   <div class="gate-card" id="gateSignin">
     <div class="brand">SkinDay <b>Market Intelligence</b></div>
     <div class="sub">The aesthetic device landscape.</div>
@@ -848,6 +879,9 @@
     return api('overview',{}).then(function(res){
       rememberSession(k);
       applyIdentity(res.tenant||{});
+      document.documentElement.removeAttribute('data-resuming');
+      var rz0=el('gateResume'); if(rz0) rz0.style.display='none';
+      el('gateSignin').style.display='';
       el('gate').style.display='none'; el('app').style.display='block';
       fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
       COVERAGE=res.coverage||null;
@@ -868,6 +902,12 @@
       // not sign someone out — that is the failure a rep hits in a basement car
       // park, and being logged out for it would be worse than a retry.
       if(e&&e.unauth) forgetSession();
+      // ⭐ The resume attempt failed, so the sign-in card becomes the right
+      // thing to show. This is the ONLY path that reveals it on a returning
+      // visit, which is what stops the app/sign-in/app flash.
+      document.documentElement.removeAttribute('data-resuming');
+      var rz=el('gateResume'); if(rz) rz.style.display='none';
+      el('gateSignin').style.display='';
       el('gateErr').textContent=e&&e.unauth?'Your session has expired. Please sign in again.':'Could not connect. Try again.';
     });
   }
