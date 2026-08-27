@@ -402,7 +402,11 @@ exports.handler = async (event) => {
         // Fraxel. Null when no category is chosen, which is the old behaviour.
         const { data, error } = await supabase.rpc('mi_filter_options', { p_country: country, p_regions: regions, 
           p_province: province, p_neighbourhood: neighbourhood, p_city: city,
-          p_category: category
+          p_category: category,
+          // Narrow the DEVICE list only. The manufacturer and distributor lists
+          // stay category-wide so the rep can always change their mind.
+          p_manufacturer: nz(body.filter_manufacturer),
+          p_distributor: nz(body.filter_distributor)
         });
         if (error) throw error;
         return json(200, { options: data || { manufacturers: [], distributors: [], devices: [] } });
