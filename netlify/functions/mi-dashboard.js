@@ -416,7 +416,10 @@ exports.handler = async (event) => {
       // segment: ours | competitor | greenfield | research
       case 'accounts': {
         const segment = nz(body.segment);
-        const limit = Math.min(Math.max(parseInt(body.limit, 10) || 200, 1), 500);
+        // ⭐ Ceiling 500 -> 20000 (2026-08-27). Measured: all 6,999 Canadian
+        // accounts return in 446ms and 7.6MB. The old cap made a rep's list
+        // silently partial; the client now renders in pages instead.
+        const limit = Math.min(Math.max(parseInt(body.limit, 10) || 200, 1), 20000);
         const { data, error } = await supabase.rpc('mi_accounts', Object.assign({ p_country: country, p_regions: regions, 
           p_province: province, p_city: city, p_neighbourhood: neighbourhood,
           p_category: category, p_segment: segment, p_limit: limit,
