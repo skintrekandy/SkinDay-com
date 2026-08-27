@@ -1943,7 +1943,13 @@
     // simply never asked for more.
     // ⚠️ 500 is still a cap. When it is hit, the notice below says so loudly
     // rather than leaving a truncated list looking complete.
-              min_reviews:el('acctMinRev').value,sort:sort,limit:500};
+              min_reviews:el('acctMinRev').value,sort:sort,
+              // ⭐ 500 -> 20000 (2026-08-27). The cap was never protecting the
+              // database: all 6,999 Canadian accounts come back in 446ms. It was
+              // protecting the browser from rendering thousands of cards — which
+              // is now handled by rendering in pages below, so the fetch can
+              // bring the whole territory and nothing is unreachable.
+              limit:20000};
     if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
     api('accounts',body).then(function(res){ renderAccounts(res.accounts||[]); }).catch(handleErr);
   }
@@ -2221,6 +2227,10 @@
     // matters most on this screen: a rep exports or works through what is shown
     // and never learns the rest existed. Said in its own line, with what to do
     // about it, not tucked on the end of a count.
+    // ⓘ With the cap removed this should never fire — every matching row is now
+    // fetched. Kept because it is the one warning on this screen that must never
+    // be missing: if a future limit is reintroduced anywhere, a rep must still
+    // be told the list is partial rather than silently working a subset.
     var cut = (total != null && rows.length < total);
     var warn = el('acctTrunc');
     if (warn) {
@@ -2233,8 +2243,31 @@
     el('acctReset').style.display = activeFilters() ? '' : 'none';
 
     if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
-    el('acctList').innerHTML='<div class="acctgrid">'+rows.map(function(a){ return acctCard(a); }).join('')+'</div>';
+
+    // ⭐⭐ RENDER IN PAGES. The whole territory is now fetched (7,000 rows for
+    // Canada), but building 7,000 cards in one pass locks up a phone for
+    // seconds. 200 at a time, more on request — the data is all here, so this
+    // costs nothing but DOM.
+    ACCT_ROWS = rows; ACCT_SHOWN = 0;
+    el('acctList').innerHTML='<div class="acctgrid"></div>';
+    appendAccountPage();
+  }
+  var ACCT_ROWS=[], ACCT_SHOWN=0, ACCT_PAGE=200;
+  function appendAccountPage(){
+    var grid = el('acctList').querySelector('.acctgrid');
+    if(!grid) return;
+    var slice = ACCT_ROWS.slice(ACCT_SHOWN, ACCT_SHOWN+ACCT_PAGE);
+    grid.insertAdjacentHTML('beforeend', slice.map(function(a){ return acctCard(a); }).join(''));
+    ACCT_SHOWN += slice.length;
     wireSaveButtons(el('acctList')); bindEvidence(el('acctList')); bindFlags(el('acctList'));
+    var old = el('acctMoreBtn'); if(old) old.remove();
+    if(ACCT_SHOWN < ACCT_ROWS.length){
+      var left = ACCT_ROWS.length - ACCT_SHOWN;
+      el('acctList').insertAdjacentHTML('beforeend',
+        '<div style="text-align:center;margin:18px 0"><button class="btn" id="acctMoreBtn" type="button">Show '+
+        Math.min(ACCT_PAGE,left).toLocaleString()+' more \u00b7 '+left.toLocaleString()+' remaining</button></div>');
+      el('acctMoreBtn').addEventListener('click', appendAccountPage);
+    }
   }
   function starsHtml(r){
     if(r==null) return '';
