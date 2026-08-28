@@ -96,14 +96,24 @@ const CRED = String.raw`(?:M\.?D\.?|D\.?O\.?|D\.?D\.?S\.?|D\.?M\.?D\.?|PA-C|ARNP
 // ── Words that mean this is a BUSINESS, not a person ────────────────────────
 // Checked against the captured name itself. "Miami Skin Institute, MD" is not a
 // doctor; "Coral Gables Dermatology" is not a doctor.
-const BUSINESS_WORD = /\b(derm\w*|center|centre|centro|clinic|clinica|cl[ií]nica|spa|medspa|aesthetic\w*|esthetic\w*|est[eé]tica|surgery|surgical|institute|instituto|group|associates|partners|practice|studio|salon|laser|skin|beauty|belleza|wellness|health|medical|medicine|plastic|cosmetic|care|pllc|llc|inc|corp|pa|pc|university|college|school|hospital|academy|foundation|therapy|massage|certified|board)\b/i;
+const BUSINESS_WORD = /\b(derm\w*|center|centre|centro|clinic|clinica|cl[ií]nica|spa|medspa|aesthetic\w*|esthetic\w*|est[eé]tica|surgery|surgical|institute|instituto|group|associates|partners|practice|studio|salon|laser|skin|beauty|belleza|wellness|health|medical|medicine|plastic|cosmetic|care|pllc|llc|inc|corp|pa|pc|university|college|school|hospital|academy|foundation|therapy|massage|certified|board|facials?|treatments?|products?|gift|cards?|shop|collection|alumier|obagi|zo\\s|skinceuticals|neocutis|vivier|dermalogica|hydrafacial)\b/i;
 
 // ⛔ WORDS THAT PRECEDE A NAME AND ARE NOT PART OF IT. The first New York run
 // produced "Meet Kristina Christopher, FNP-C", "About Jennifer Geiger, MD" and
 // "NYC Dr. Richard Swift, MD" — the lead-in was captured because the name window
 // preferred the LONGEST plausible match. Stripped here, and the preference is
 // reversed below.
-const LEAD_IN = /^(?:(?:meet|about|our|the|dr|drs|doctor|welcome|introducing|nyc|ny|new york|contact|call|book|see|visit|with|by|from|team|staff|provider|providers)\b[\s.,:-]*)+/i;
+const LEAD_IN = /^(?:(?:meet|about|our|the|dr|drs|doctor|welcome|introducing|discover|explore|shop|learn|read|nyc|ny|new york|contact|call|book|see|visit|with|by|from|team|staff|provider|providers)\b[\s.,:-]*)+/i;
+
+// ⛔ A NAME MAY NOT CROSS A SENTENCE BOUNDARY. The first Canadian run produced
+// "Mallhi. With", "Lozinski. Ensuring" and "Andrew Dargie. Nicole" — the name
+// window ran past a full stop and swallowed the first word of the next
+// sentence. Cutting at ". " fixes all three, but the exception matters:
+// "Charles H. Scudamore" is one person and its period is an INITIAL. So the cut
+// applies only when the period does NOT follow a single capital letter.
+function cutAtSentence(name) {
+  return String(name).replace(/(?<![\s\b][A-Z])\.\s+.*$/, '').trim();
+}
 
 // Words that appear where a name should be, on pages that are not rosters.
 const NOT_A_NAME = /\b(privacy|policy|terms|copyright|reserved|appointment|schedule|consultation|financing|gallery|before|after|reviews?|testimonial|patient|contact|location|hours|insurance|careers|blog|news)\b/i;
@@ -113,7 +123,12 @@ const NOT_A_NAME = /\b(privacy|policy|terms|copyright|reserved|appointment|sched
 // uses ("Jane Smith, ND") they match inside sentences and initials. Applied only
 // to the short ones, so "Jane Smith MD" — written without a comma, which is
 // common — still parses.
-const SHORT_CRED = /^(?:ND|MN|LE|NP|RN)$/i;
+const SHORT_CRED = /^(?:ND|MN|LE|NP|RN|DO)$/i;
+// ⛔ "DO" IS THE WORST OFFENDER AND IS HERE BECAUSE OF REAL OUTPUT. The first
+// Canadian run produced "Gift Cards, DO" (221° Laser Clinic) and "What We, DO"
+// (413 Medical Aesthetics) — both from the ordinary verb in "what we do" and
+// "gift cards do not expire". Nearly every clinic page contains that phrase, so
+// unanchored DO is a guaranteed false-positive generator.
 
 // ── Role / title, captured separately from the credential ───────────────────
 // A rep cares whether the person is the medical director or the aesthetician,
@@ -295,7 +310,7 @@ function plausibleName(name) {
 // and then going longest-first gets both, and still lets "Dermatologist Seth
 // Forman, DO" fall back to the two-token window rather than being swallowed.
 function nameBefore(segment) {
-  const tokens = cleanName(segment).replace(LEAD_IN, '').split(' ').filter(Boolean);
+  const tokens = cutAtSentence(cleanName(segment).replace(LEAD_IN, '')).split(' ').filter(Boolean);
   for (let take = Math.min(4, tokens.length); take >= 2; take--) {
     const cand = tokens.slice(tokens.length - take).join(' ');
     if (plausibleName(cand)) return cand;
@@ -361,7 +376,7 @@ function extractProviders(text) {
   for (let i = 0; i < lines.length; i++) {
     const m = DR_LINE.exec(lines[i]);
     if (!m) continue;
-    const name = cleanName(m[1]).replace(LEAD_IN, '');
+    const name = cutAtSentence(cleanName(m[1]).replace(LEAD_IN, ''));
     if (!plausibleName(name)) continue;
     const key = identityKey(name);
     if (out.has(key)) continue;
