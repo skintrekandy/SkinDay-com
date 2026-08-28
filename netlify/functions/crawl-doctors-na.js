@@ -39,24 +39,11 @@
 // A US medspa on a bloated theme is not. 3 hosts x 2 pages x 6s = 36s worst
 // case, and the per-host budget below caps it harder than that.
 const BATCH_DEFAULT = 3;
-// ⭐ 6000 -> 5000 (2026-08-23). A host that has not sent a first byte in five
-// seconds is not going to; the extra second bought nothing and widened the
-// worst case below.
-const FETCH_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 6000;
 // Whole-run budget. When it is gone the function returns what it has instead of
 // being killed mid-flight, which is what leaves rows stuck in 'running' and the
 // browser showing a bare "Failed to fetch" with no status code.
-//
-// ⛔⛔ 18000 -> 12000 (2026-08-23). THE BUDGET IS ONLY CHECKED BETWEEN HOSTS, so
-// at 18s a host that STARTS at 17.9s still gets its full allowance — 2 pages x
-// 6s = 12s — and the invocation lands near 30s against Netlify's 26s ceiling.
-// That is the "HTTP 504 Inactivity Timeout" that kept stopping the New York run
-// mid-batch: not a crash, the gateway killing a call that ran too long. The
-// guard was there; the number was set too close to the limit for it to work.
-//   12000 + (2 x 5000) = 22s worst case, inside 26s with room to spare.
-// Costs a little throughput per invocation and more than repays it by not
-// dying and being restarted.
-const RUN_BUDGET_MS = 12000;
+const RUN_BUDGET_MS = 18000;
 
 // A large US dermatology group genuinely lists 25+ providers on one page —
 // Schweiger and Advanced Dermatology both do — so this sits well above the
@@ -79,9 +66,32 @@ const ADMIN_SECRET = process.env.ADMIN_SECRET;
 // P.A." is a COMPANY. Only PA-C, the certified physician assistant, is a person.
 // This exact ambiguity moved 101 rows between buckets during the M20 Florida
 // classification; here it would invent a doctor named "Advanced Dermatology".
+// ⭐⭐ CANADIAN CREDENTIALS ADDED 2026-08-27. Every one below was taken from the
+// DESIGNATION field clinics themselves typed into the Practitioners screen — 526
+// real entries — not from a list I assembled. That matters: CCFP, FRCPC and
+// FRCSC are among the most common credentials on a Canadian physician's page and
+// NONE of them were here, so the US regex would have read a Canadian roster and
+// found only the MDs and RNs.
+//   CCFP / FCFP  College of Family Physicians
+//   FRCPC / FRCSC / DRCPSC / MDCM / CSPQ   Canadian specialist and Quebec titles
+//   NP(F) / RPN / LPN / BScN / MN / DNP    the nurse titles that actually inject
+//   ND    naturopathic doctor — injects in several provinces
+// ⛔ "IMG" IS DELIBERATELY NOT HERE. Andy uses it himself and clinics type it,
+// but on a web page "img" is the image tag, the alt text, the filename and half
+// the CSS classes. As a credential regex it would invent practitioners out of
+// markup. It stays a designation a human can type, never one a parser infers.
+// ⛔ "P.A." IS NOT ON THIS LIST AND MUST NEVER BE. In Florida a professional
+// association is written exactly like a credential — "Advanced Dermatology,
+// P.A." is a COMPANY. Only PA-C, the certified physician assistant, is a person.
+// This exact ambiguity moved 101 rows between buckets during the M20 Florida
+// classification; here it would invent a doctor named "Advanced Dermatology".
 const CRED = String.raw`(?:M\.?D\.?|D\.?O\.?|D\.?D\.?S\.?|D\.?M\.?D\.?|PA-C|ARNP|APRN|` +
              String.raw`FNP-?C?|DNP|CRNA|D\.?P\.?M\.?|Ph\.?D\.?|MBBS|` +
-             String.raw`FAAD|FACS|FACMS|FAACS|RN|LME|LE)`;
+             String.raw`FAAD|FACS|FACMS|FAACS|RN|LME|LE|` +
+             // Canadian additions
+             String.raw`CCFP|FCFP|FRCPC|FRCSC|DRCPSC|MDCM|CSPQ|` +
+             String.raw`NP\(F\)|NP-?C?|RPN|LPN|BScN|BSCN|MScN|MN|MSN|` +
+             String.raw`CANS|CNCC\(C\)|CPN\(c\)|ND)`;
 
 // ── Words that mean this is a BUSINESS, not a person ────────────────────────
 // Checked against the captured name itself. "Miami Skin Institute, MD" is not a
@@ -97,6 +107,13 @@ const LEAD_IN = /^(?:(?:meet|about|our|the|dr|drs|doctor|welcome|introducing|nyc
 
 // Words that appear where a name should be, on pages that are not rosters.
 const NOT_A_NAME = /\b(privacy|policy|terms|copyright|reserved|appointment|schedule|consultation|financing|gallery|before|after|reviews?|testimonial|patient|contact|location|hours|insurance|careers|blog|news)\b/i;
+
+// ⚠️ TWO-LETTER CREDENTIALS NEED A COMMA. "ND", "MN" and "LE" are ordinary
+// letter pairs; without requiring the comma-space form that a roster actually
+// uses ("Jane Smith, ND") they match inside sentences and initials. Applied only
+// to the short ones, so "Jane Smith MD" — written without a comma, which is
+// common — still parses.
+const SHORT_CRED = /^(?:ND|MN|LE|NP|RN)$/i;
 
 // ── Role / title, captured separately from the credential ───────────────────
 // A rep cares whether the person is the medical director or the aesthetician,
@@ -388,6 +405,45 @@ async function land(providers, clinicId, country, sourceUrl) {
     // parser already collapses variants; across pages and hosts this is what
     // stops "John Hunter" and "John G. Hunter" becoming two rows. `identity_key`
     // is stored so the match is an indexed equality rather than a scan.
+    // ⭐⭐⭐ CANADA WRITES TO `practitioners`, NOT `doctors`.
+    // The Canadian public profile renders from `practitioners` (clinic_id, name,
+    // designation, display_order) — that is the table the admin Practitioners
+    // screen fills and the one clinics see. `doctors`/`clinic_doctors` holds
+    // ZERO Canadian rows, so writing there would build a second dataset nothing
+    // displays. The US keeps using `doctors` because that is where its 8,497
+    // rows already are.
+    //
+    // ⛔ THE MANUAL ROWS ARE UNTOUCHABLE. 526 practitioners across 342 clinics
+    // were typed by Andy or by the clinic itself (Cynthia entered her own "Head
+    // of RN" through the portal). A name a clinic declared about itself beats
+    // anything read off a web page, so:
+    //   · a clinic that already has ANY practitioner row is skipped entirely —
+    //     not merged, not appended. A half-crawled half-declared roster is
+    //     worse than either alone, and the clinic cannot tell which is which.
+    //   · crawled rows are written with source='crawl' and their source_url, so
+    //     the two are always separable later.
+    // ⚠️ REQUIRES the two columns first:
+    //     alter table practitioners add column if not exists source text default 'manual';
+    //     alter table practitioners add column if not exists source_url text;
+    if (country === 'canada') {
+      const existing = await sb(
+        `practitioners?select=id,source&clinic_id=eq.${encodeURIComponent(clinicId)}&limit=1`);
+      if (existing && existing.length) { skipped++; continue; }
+      await sb('practitioners', {
+        method: 'POST', prefer: 'return=minimal',
+        body: JSON.stringify({
+          clinic_id: clinicId,
+          name,
+          designation: p.credentials || null,
+          display_order: created,
+          source: 'crawl',
+          source_url: sourceUrl
+        })
+      });
+      created++;
+      continue;
+    }
+
     const key = identityKey(name);
     const found = await sb(
       `doctors?select=id,credentials,name_en&country=eq.${encodeURIComponent(country)}` +
