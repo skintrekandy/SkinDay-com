@@ -377,6 +377,23 @@ exports.handler = async (event) => {
         return json(200, { leaderboard: data || [] });
       }
 
+      // ⭐⭐ LANDSCAPE — the whole active energy device list, for learning the
+      // market rather than working it. Directors told Andy they use MI to train
+      // new reps, so this is the surface that answers "what IS a Morpheus8".
+      // ⚠️ Returns devices with ZERO local installs too: the competitor a new
+      // rep has not met yet is precisely what they need to read about.
+      // ⓘ Counts come from the same scope CTE as mi_leaderboard, verified equal
+      // to the Clinics tab for both standalone devices and generation families,
+      // so the click-through never lands on a different number.
+      case 'landscape': {
+        const { data, error } = await supabase.rpc('mi_landscape', Object.assign({
+          p_country: country, p_regions: regions,
+          p_province: province, p_neighbourhood: neighbourhood
+        }, owner));
+        if (error) throw error;
+        return json(200, { landscape: data || [] });
+      }
+
       // Per-category competitive field, as SHARE OF IDENTIFIED INSTALLATIONS.
       // ⚠️ This is a DIFFERENT metric from `leaderboard`, which is share of
       // CLINICS and overlaps (one clinic owning two makers counts in both, so
@@ -484,8 +501,12 @@ exports.handler = async (event) => {
             p_province: province, p_city: city, p_neighbourhood: neighbourhood
           }, owner)),
           supabase.rpc('mi_geo', { p_country: country, p_regions: regions,  p_province: province, p_city: city }),
+          // ⭐ 25, not 3. The page shows the top three by default but must ALWAYS
+          // be able to show the tenant's own row — a rep for the #7 manufacturer
+          // opening a competitive view that omits their own company is the worst
+          // possible first impression. Composed client-side so no SQL changed.
           supabase.rpc('mi_leaderboard', Object.assign({ p_country: country, p_regions: regions, 
-            p_province: province, p_neighbourhood: neighbourhood, p_limit: 3
+            p_province: province, p_neighbourhood: neighbourhood, p_limit: 25
           }, owner)),
           supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood }),
           supabase.rpc('mi_category_share', Object.assign({ p_country: country, p_regions: regions, 
