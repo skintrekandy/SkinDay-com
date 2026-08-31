@@ -168,18 +168,32 @@
      Deliberately NOT the same metric as #board (share of clinics), which
      overlaps and therefore stays a bar. Never merge the two headings. */
   /* ---- Landscape ------------------------------------------------------- */
-  .lshead { display:flex; align-items:baseline; gap:12px; padding:11px 6px; margin:0;
+  /* ⭐ THE WHOLE ROW IS THE CONTROL. The chevron alone was carrying the
+     affordance; now the row has a hover fill, a pointer, and more height than
+     the device rows beneath it so the hierarchy is obvious at a glance. */
+  .lshead { display:flex; align-items:center; gap:11px; padding:15px 10px; margin:0;
     border-bottom:1px solid var(--line-2); width:100%; text-align:left;
-    background:none; border-left:0; border-right:0; border-top:0; font:inherit; cursor:pointer; }
+    background:none; border-left:0; border-right:0; border-top:0; font:inherit;
+    cursor:pointer; border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
+  .lshead:hover { background:var(--surface-2); }
   .lshead:hover .lsname { color:var(--accent-strong); }
-  .lscar { font-size:15px; line-height:1; color:var(--faint); transition:transform .12s ease;
-    display:inline-block; }
+  .lscar { font-size:19px; line-height:1; color:var(--muted); transition:transform .12s ease;
+    display:inline-block; width:12px; }
+  /* Open state carries a heavier rule and a tinted head, so an expanded
+     category cannot be mistaken for a closed one further down. */
   .lsgroup.open .lscar { transform:rotate(90deg); color:var(--accent-strong); }
+  .lsgroup.open .lshead { background:var(--surface-2); border-bottom:2px solid var(--line); }
+  .lsgroup.open .lsname { font-weight:600; }
+  .lsmine { font-size:11px; font-weight:600; color:var(--accent-strong);
+    background:var(--accent-soft); border:1px solid var(--accent); border-radius:100px;
+    padding:2px 9px; white-space:nowrap; }
+  .lspos { font-family:var(--font-mono); font-size:10px; letter-spacing:.05em;
+    color:var(--muted); white-space:nowrap; }
   .lsgroup { margin:0; }
   .lsgroup.open { margin-bottom:18px; }
   .lshead .lsname { font-size:17px; font-weight:600; letter-spacing:-.01em; }
   .lshead .lscount { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
-  .lsrow { display:flex; align-items:center; gap:14px; padding:10px 6px; border-bottom:1px solid var(--line-2); }
+  .lsrow { display:flex; align-items:center; gap:14px; padding:11px 10px; border-bottom:1px solid var(--line-2); }
   .lsrow:last-child { border-bottom:0; }
   .lsrow.ours { border-left:2px solid var(--accent); background:var(--accent-soft); padding-left:10px; }
   .lsrow .lm { font-size:14.5px; font-weight:500; }
@@ -187,8 +201,10 @@
   .lsrow .lsp { flex:1; }
   .lsrow .lgen { font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase;
     color:var(--faint); border:1px solid var(--line-2); border-radius:100px; padding:2px 7px; }
+  /* Quieter than the header pill on purpose: the tinted row and the teal left
+     edge already say "ours", so the label only has to confirm it. */
   .lsrow .lyou { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase;
-    color:var(--accent-strong); border:1px solid var(--accent); border-radius:100px; padding:2px 7px; }
+    color:var(--muted); border:1px solid var(--line-2); border-radius:100px; padding:2px 7px; }
   .lsrow .lnum { font-family:var(--font-mono); font-size:12px; color:var(--ink-2); text-align:right; min-width:110px; }
   .lsrow .lnum .ln2 { display:block; font-size:9.5px; color:var(--faint); }
   .lsrow .lgo { font-size:12px; color:var(--accent-strong); background:none; border:0; cursor:pointer; white-space:nowrap; }
@@ -1959,6 +1975,20 @@
       });
       var mine=g.rows.filter(function(r){ return r.is_ours; }).length;
       var open = searching || !!LS_OPEN[k];
+      // ⚠️ RANK IS BORROWED FROM THE OVERVIEW, NEVER RECOMPUTED HERE. Ranking
+      // manufacturers from these rows would mean summing each maker's devices,
+      // which double-counts a clinic running two of them — the same error that
+      // made Candela rank differently on two tabs. CAT_ROWS holds the real
+      // share-of-installations rank for the same territory; if the Overview has
+      // not been rendered yet the line is simply omitted.
+      var pos='';
+      for(var ci=0; ci<CAT_ROWS.length; ci++){
+        if(CAT_ROWS[ci].category===k && CAT_ROWS[ci].mine){
+          var rr=parseInt(CAT_ROWS[ci].mine.rn,10)||0;
+          if(rr && rr<900) pos='<span class="lspos">#'+rr+' position</span>';
+          break;
+        }
+      }
       var devs = !open ? '' : g.rows.map(function(r){
         // ⚠️ A generation is its OWN row, never folded into the parent: the
         // parent count excludes its children, so adding them would double.
@@ -1971,12 +2001,16 @@
           '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
         '</div>';
       }).join('');
+      // ⭐ The collapsed row carries enough to scan the whole landscape without
+      // opening anything: how big the category is, whether we play in it, and
+      // where we stand.
       return '<div class="lsgroup'+(open?' open':'')+'">'+
-        '<button class="lshead lstog" type="button" data-cat="'+esc(k)+'">'+
-          '<span class="lscar">&rsaquo;</span>'+
+        '<button class="lshead lstog" type="button" data-cat="'+esc(k)+'" aria-expanded="'+(open?'true':'false')+'">'+
+          '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
           '<span class="lsname">'+esc(g.label)+'</span>'+
-          '<span class="lscount">'+g.rows.length+' devices'+
-            (mine?' \u00b7 '+mine+' yours':'')+'</span>'+
+          '<span class="lsp"></span>'+
+          '<span class="lscount">'+g.rows.length+' devices</span>'+
+          (mine?'<span class="lsmine">'+mine+' yours</span>':'')+pos+
         '</button>'+devs+
       '</div>';
     }).join('');
