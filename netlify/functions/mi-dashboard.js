@@ -619,6 +619,22 @@ exports.handler = async (event) => {
         if (error) throw error;
         return json(200, { result: data });
       }
+      // ⭐ BULK SAVE — a filtered view dropped into My List in one action.
+      // Cindy Joo's request: she had built the view she wanted and there was no
+      // way to keep it. Ids come from rows the page already rendered, so no
+      // filter logic is duplicated server-side.
+      case 'save_accounts_bulk': {
+        const ids = Array.isArray(body.clinic_ids) ? body.clinic_ids.map(String) : [];
+        if (!ids.length) return json(400, { error: 'clinic_ids required' });
+        const { data, error } = await supabase.rpc('mi_save_accounts_bulk', Object.assign({
+          p_clinic_ids: ids
+        }, scope));
+        // ⛔ SURFACE THE SERVER'S OWN MESSAGE. The cap and the missing-tenant
+        // guard both raise, and a swallowed error here would look like a save
+        // that silently did nothing.
+        if (error) return json(400, { error: error.message });
+        return json(200, { result: data });
+      }
       case 'set_note': {
         if (!body.clinic_id) return json(400, { error: 'clinic_id required' });
         const { data, error } = await supabase.rpc('mi_set_note', Object.assign({
