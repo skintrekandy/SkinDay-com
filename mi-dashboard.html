@@ -114,45 +114,55 @@
   .cinput:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .linkish { background:none; border:0; padding:0; cursor:pointer; font-family:var(--font-mono); font-size:10.5px; color:var(--accent-strong); }
 
-  .cov { margin-top:16px; padding-top:14px; border-top:1px solid var(--line-2); font-family:var(--font-mono); font-size:11.5px; letter-spacing:.03em; color:var(--muted); }
+  /* Mono is for dates and count labels. A whole sentence in it read as a
+     system message rather than a fact about the market. */
+  .cov { margin-top:14px; padding-top:12px; border-top:1px solid var(--line-2); font-size:12.5px; color:var(--muted); }
+  .cov b { font-weight:600; color:var(--ink-2); }
   .cov b { color:var(--ink-2); font-weight:500; }
 
   main { max-width:1120px; margin:0 auto; padding:32px 28px 90px; }
   .panel { display:none; } .panel.on { display:block; }
 
-  .geobar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
+  .geobar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
   .geobar select { font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 34px 10px 14px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 11px center; background-size:14px; }
   .geobar select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .geobar .sep { color:var(--faint); }
   .geobar .reset { background:none; border:0; color:var(--accent-strong); font:inherit; font-size:13px; cursor:pointer; }
 
-  .hero { margin-bottom:40px; }
+  .hero { margin-bottom:30px; }
   .hero .big { font-size:52px; font-weight:600; letter-spacing:-.025em; line-height:1; }
-  .hero .big .unit { font-size:22px; font-weight:500; color:var(--muted); letter-spacing:0; }
-  .hero .sub { font-size:15.5px; color:var(--muted); margin-top:12px; max-width:64ch; }
+  /* ⭐ The sentence drops to its own line and darkens. Inline and grey it was
+     competing with the number for the same glance; stacked, the number leads
+     and the sentence explains it. */
+  .hero .big .unit { display:block; font-size:19px; font-weight:500; color:var(--ink-2); letter-spacing:0; margin-top:8px; }
+  .hero .sub { font-size:14.5px; color:var(--ink-2); margin-top:10px; max-width:64ch; }
   .hero .share { color:var(--accent-strong); font-weight:600; }
 
-  .sec-label { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin:36px 0 18px; }
+  /* Was --faint, which read as disabled rather than quiet. */
+  .sec-label { font-family:var(--font-mono); font-size:11px; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:28px 0 14px; }
   .sec-label:first-child { margin-top:0; }
 
-  .cat { margin-bottom:36px; }
+  .cat { margin-bottom:28px; }
   .cat-head { display:flex; align-items:baseline; gap:12px; margin-bottom:8px; padding-bottom:10px; border-bottom:1px solid var(--line-2); }
   .cat-head .name { font-size:19px; font-weight:600; letter-spacing:-.01em; }
-  .cat-head .grp { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); }
+  .cat-head .grp { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
   .cat-head .count { margin-left:auto; font-size:14px; color:var(--muted); }
   .cat-head .count b { color:var(--ink); font-weight:600; }
-  .dev { display:flex; align-items:center; gap:18px; padding:16px 4px; border-bottom:1px solid var(--line-2); }
+  .dev { display:flex; align-items:center; gap:18px; padding:12px 4px; border-bottom:1px solid var(--line-2); }
   .dev:last-child { border-bottom:0; }
-  .dev .dn { font-size:16px; font-weight:500; }
+  /* Subordinate to the category heading above it, which is 19px/600. */
+  .dev .dn { font-size:15px; font-weight:500; color:var(--ink-2); }
   .dev .focus { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); border:1px solid var(--accent); border-radius:100px; padding:2px 8px; margin-left:10px; }
   .dev .spacer { flex:1; }
-  .dev .num { font-size:26px; font-weight:600; letter-spacing:-.02em; min-width:52px; text-align:right; }
+  .dev .num { font-size:21px; font-weight:600; letter-spacing:-.02em; min-width:52px; text-align:right; }
   .dev .num .l { display:block; font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); font-weight:400; margin-top:2px; }
-  .genrows { margin:2px 0 10px; padding:6px 14px; background:var(--surface-2); border-radius:var(--radius-sm); }
-  .genrow { display:flex; align-items:center; padding:7px 0; border-bottom:1px solid var(--line-2); }
+  /* Was a filled grey box, which read as a form field. Two indented rows on a
+     hairline say "part of the row above" without the container. */
+  .genrows { margin:0 0 8px; padding:0 0 0 18px; border-left:2px solid var(--line-2); }
+  .genrow { display:flex; align-items:center; padding:6px 0; border-bottom:1px solid var(--line-2); }
   .genrow:last-child { border-bottom:0; }
-  .genrow .gm { font-size:14px; color:var(--ink-2); } .genrow .spacer { flex:1; }
-  .genrow .gc { font-family:var(--font-mono); font-size:14px; font-weight:500; }
+  .genrow .gm { font-size:13.5px; color:var(--muted); } .genrow .spacer { flex:1; }
+  .genrow .gc { font-size:13.5px; font-weight:500; color:var(--ink-2); }
 
   /* category competitive donuts — share of identified INSTALLATIONS.
      Deliberately NOT the same metric as #board (share of clinics), which
@@ -179,6 +189,32 @@
   .dnote { font-size:12px; color:var(--faint); margin-top:14px; line-height:1.5; }
 
   /* category competitive list */
+  /* ---- market position rows ------------------------------------------
+     ⭐ The leaderboard used to borrow the .dev row (16px padding, a 26px
+     figure), which made three manufacturers occupy a screenful and left the
+     percentage stranded at the right edge. These rows are ~60px and carry a
+     neutral track so the comparison is instant.
+     ⭐⭐ Only the tenant's bar takes the accent. No competitor gets brand
+     colour inside the portal — the same rule the donuts follow. */
+  .mrow { display:flex; align-items:center; gap:16px; padding:11px 12px 11px 10px;
+    border-bottom:1px solid var(--line-2); border-left:2px solid transparent; }
+  .mrow:last-child { border-bottom:0; }
+  .mrow .mname { font-size:15px; font-weight:500; min-width:160px; }
+  .mrow .you { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--accent-strong); border:1px solid var(--accent);
+    border-radius:100px; padding:2px 7px; margin-left:9px; }
+  .mrow .mtrack { flex:1; height:6px; border-radius:3px; background:var(--line-2); overflow:hidden; min-width:60px; }
+  .mrow .mfill { height:100%; background:#C7CCD2; border-radius:3px; }
+  .mrow .mpct { min-width:96px; text-align:right; font-size:16px; font-weight:600; letter-spacing:-.01em; }
+  .mrow .mpct .ml { display:block; font-family:var(--font-mono); font-size:9px; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--faint); font-weight:400; margin-top:2px; }
+  /* ⭐ A 2px teal edge and the faintest wash — enough for the eye to find "us"
+     without turning the row into a highlight. */
+  .mrow.ours { border-left-color:var(--accent); background:var(--accent-soft); }
+  .mrow.ours .mfill { background:var(--accent); }
+  .mrow.ours .mpct { color:var(--accent-strong); }
+  @media (max-width:640px){ .mrow .mtrack { display:none; } .mrow .mname { min-width:0; } }
+
   .crow { display:flex; align-items:center; gap:16px; padding:16px 4px; border-bottom:1px solid var(--line-2); cursor:pointer; }
   .crow:hover { background:var(--surface-2); }
   .crow .cn { font-size:15.5px; font-weight:500; min-width:170px; }
@@ -201,10 +237,15 @@
      control a rep reaches for without first deciding what kind of filter they
      want. Sized to sit on one line with Near me on a laptop, full width on a
      phone. */
-  .toolbar .srch { flex:1 1 250px; max-width:360px; display:flex; }
-  .toolbar .srch input { width:100%; font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 14px 10px 34px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3ccircle cx='11' cy='11' r='7'/%3e%3cpath d='M20 20l-3.6-3.6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:left 11px center; background-size:14px; }
-  .toolbar .srch input::placeholder { color:var(--faint); }
-  .toolbar .srch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  /* ⚠️ SCOPED TO .srch, NOT .toolbar .srch. These rules used to live under
+     .toolbar; when the find bar replaced it the input silently fell back to a
+     browser default — no width, no padding, no magnifier, and Chrome's blue
+     focus ring. That single mis-scope was behind the tiny search box, the
+     stranded Near me button and the foreign blue outline. */
+  .srch { display:flex; }
+  .srch input { width:100%; font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 14px 10px 34px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3ccircle cx='11' cy='11' r='7'/%3e%3cpath d='M20 20l-3.6-3.6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:left 11px center; background-size:14px; }
+  .srch input::placeholder { color:var(--faint); }
+  .srch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
 
   .acct { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:12px; box-shadow:var(--shadow); }
   /* Field-rep card. The rep is on a phone, standing outside a clinic, so the
@@ -222,7 +263,11 @@
   .acct.card .shotpills { position:absolute; left:10px; top:10px; display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100% - 20px); }
   .acct.card .dist { position:absolute; left:10px; bottom:10px; background:rgba(20,24,29,.82); color:#fff; font-family:var(--font-mono); font-size:10.5px; padding:4px 8px; border-radius:20px; }
   .acct.card .body { padding:16px 18px 4px; }
-  .acct.card .actions { padding:0 18px 16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  /* ⭐ margin-top:auto — the tallest card in a row used to leave the short
+     ones with a block of empty white under their buttons. Now every row of
+     cards has its actions on one baseline. */
+  .acct.card .body { flex:1 1 auto; }
+  .acct.card .actions { margin-top:auto; padding:14px 18px 16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .acct .stars { color:var(--gold); font-size:12px; letter-spacing:.5px; }
   /* Multi-location was grey on grey and read as decoration. It is a commercial
      signal (buying may be central, head office may be the real call), so it gets
@@ -236,20 +281,23 @@
   /* ⭐ ONE QUERY AREA. Territory, search, filters and results were four blocks
      with similar gaps, which is what made them read as stacked toolbars.
      Now: territory 20px, search 12px, filters 24px, results. */
-  .findbar { margin:0 0 24px; }
+  .findbar { margin:0 0 18px; }
   .fb-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
   .fb-row + .fb-row { margin-top:10px; }
   /* ⭐ Search owns the first row with Near me and nothing else, so it reads as
      the way in rather than as one more filter. */
-  .fb-row .srch { flex:1 1 420px; max-width:none; }
-  .fb-sub { margin-top:12px; }
-  .quick + .fb-sub { margin-top:12px; }
+  /* The most prominent control on the screen, with Near me immediately
+     beside it rather than pushed to the far edge. */
+  .fb-row .srch { flex:1 1 460px; min-width:320px; max-width:520px; }
+  .fb-row .srch input { font-size:1rem; padding:13px 16px 13px 40px; background-size:16px; background-position:left 13px center; }
+  .fb-row > .btn.near { flex:0 0 auto; padding:13px 18px; }
+  .fb-sub { margin-top:10px; }
   .fb-sub select { font-family:var(--font-ui); font-size:.88rem; color:var(--ink-2); padding:8px 30px 8px 12px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:13px; }
   .fb-sub select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .fb-sub .count { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
   .fb-sub .btn { padding:8px 12px; font-size:.88rem; }
 
-  .quick { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .quick { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
   .quick button { font:inherit; font-size:.88rem; padding:8px 14px; cursor:pointer;
     color:var(--ink-2); background:var(--surface); border:1px solid var(--line);
     border-radius:999px; }
@@ -377,10 +425,10 @@
     .acct.card .shot { height:112px; }
     .acct.card .actions .btn { flex:1 1 auto; text-align:center; padding:11px 12px; }
     .toolbar select, .toolbar .btn { flex:1 1 46%; }
-    .toolbar .srch { flex:1 1 100%; max-width:none; order:-1; }
+    .srch { flex:1 1 100%; max-width:none; }
   }
   .acct .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
-  .acct .aname { font-size:17.5px; font-weight:600; line-height:1.25; letter-spacing:-.01em; }
+  .acct .aname { font-size:17px; font-weight:600; line-height:1.25; letter-spacing:-.01em; }
   .acct .ameta { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
   .acct .ascore { margin-left:auto; text-align:right; padding-left:16px; }
   .acct .ascore .s { font-size:26px; font-weight:600; color:var(--accent-strong); line-height:1; letter-spacing:-.02em; }
@@ -399,7 +447,7 @@
   /* ⭐ Hanken, not mono. The mono face was making an equipment INVENTORY read
      as a database dump. Mono is kept for true metadata — territory, dates,
      counts — and taken off anything that is ordinary information. */
-  .mfr .mn { font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2); line-height:1.7; }
+  .mfr .mn { font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--ink-2); line-height:1.7; }
   .mfr .mn .ct { display:inline-block; font-weight:500; font-size:10px; color:var(--muted); background:var(--surface-2); border:1px solid var(--line-2); border-radius:100px; padding:0 5px; margin-left:5px; letter-spacing:0; }
   .mfr.ours .mn { color:var(--accent-strong); font-weight:700; }
   .mfr.ours .mn .ct { color:var(--accent-strong); background:var(--accent-soft); border-color:var(--accent); }
@@ -434,8 +482,14 @@
   .btn { font:inherit; font-size:13px; font-weight:500; padding:8px 15px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
   .btn:hover { border-color:var(--accent); color:var(--accent-strong); }
   /* ⭐ The browser's default focus ring was the one blue thing on a teal page. */
-  .btn:focus-visible, .quick button:focus-visible, .plate:focus-visible, .flagbtn:focus-visible {
-    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .btn:focus-visible, .quick button:focus-visible, .plate:focus-visible, .flagbtn:focus-visible,
+  .tabs button:focus-visible, .dcard:focus-visible, .crow:focus-visible {
+    outline:2px solid var(--accent); outline-offset:2px; border-radius:var(--radius-sm); }
+  /* ⭐⭐ A MOUSE CLICK SHOULD LEAVE NOTHING BEHIND. The blue rectangle on the
+     Overview tab was the browser's default ring, which fires on click as well
+     as on keyboard. Keyboard focus keeps a teal ring above; pointer focus gets
+     nothing. */
+  :focus:not(:focus-visible) { outline:none; }
   .btn.on { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); font-weight:600; }
   .btn.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
   .btn.mini { padding:6px 11px; font-size:12px; }
@@ -444,14 +498,35 @@
   .note-saved { font-family:var(--font-mono); font-size:10px; color:var(--accent-strong); }
   /* Route planner. A rep uses this standing in a car park before the first call,
      so the controls are thumb-sized and the result is a plain numbered order. */
-  .routebar { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px; margin-bottom:16px; box-shadow:var(--shadow); }
+  /* Lighter than a card: this is a control strip, not a record. */
+  .routebar { background:var(--surface-2); border:1px solid var(--line-2); border-radius:var(--radius); padding:14px 16px; margin-bottom:16px; }
+  .routebar .rhead { display:flex; align-items:baseline; gap:10px; margin-bottom:11px; }
+  .routebar .rtitle { font-size:15px; font-weight:600; }
+  .routebar .rcount { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
   .routebar .rrow { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
   .routebar input.rstart { font:inherit; font-size:.92rem; color:var(--ink); padding:9px 12px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); flex:1 1 240px; min-width:0; }
   .routebar input.rstart:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
-  .routebar .rhint { font-size:12px; color:var(--muted); margin-top:9px; }
+  .routebar .rhint { font-size:11.5px; color:var(--faint); margin-top:8px; }
   .routebar .rsum { font-family:var(--font-mono); font-size:12px; color:var(--accent-strong); margin-top:9px; }
   .acct .rstop { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:0 6px; margin-right:8px; border-radius:11px; background:var(--accent); color:#fff; font-family:var(--font-mono); font-size:11px; font-weight:600; }
-  .acct .rpick { margin-right:9px; width:17px; height:17px; accent-color:var(--accent); cursor:pointer; vertical-align:middle; }
+  .acct .rpick { width:17px; height:17px; accent-color:var(--accent); cursor:pointer; vertical-align:middle; }
+  /* ⭐ A bare checkbox said nothing about why it was there. */
+  .visit { display:inline-flex; align-items:center; gap:8px; cursor:pointer; font-size:12.5px;
+    color:var(--muted); border:1px solid var(--line-2); background:var(--surface-2);
+    border-radius:100px; padding:5px 12px 5px 9px; margin-bottom:10px; }
+  .visit:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .visit.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent-strong); font-weight:600; }
+  .sv .svacts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .sv .svacts .spacer { flex:1; }
+  .sv .dots { font:inherit; font-size:15px; line-height:1; color:var(--faint); background:none; border:0;
+    cursor:pointer; padding:6px 8px; border-radius:var(--radius-sm); }
+  .sv .dots:hover { color:var(--ink-2); background:var(--surface-2); }
+  .sv .svdetail { margin-top:14px; padding-top:14px; border-top:1px solid var(--line-2); }
+  .sv .nlab { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:7px; }
+  .sv .addnote { font:inherit; font-size:13px; color:var(--accent-strong); background:none; border:0;
+    padding:0; cursor:pointer; }
+  .sv .addnote:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:640px){ .routebar input.rstart { flex:1 1 100%; } .routebar .rrow .btn { flex:1 1 46%; } }
 
   .empty { text-align:center; color:var(--faint); font-size:14px; padding:56px 20px; }
@@ -933,7 +1008,10 @@
 
     <section class="panel" id="panel-list">
       <div class="sec-label">My list</div>
+      <!-- ⭐ The route panel names the job and counts the selection, so the
+           checkboxes below explain themselves instead of needing a sentence. -->
       <div class="routebar" id="routebar" style="display:none">
+        <div class="rhead"><span class="rtitle">Today's route</span><span class="rcount" id="rCount">nothing selected yet</span></div>
         <div class="rrow">
           <input class="rstart" id="rStart" placeholder="Start from — address or city" autocomplete="off">
           <button class="btn" id="rHere">Use my location</button>
@@ -941,7 +1019,7 @@
           <button class="btn" id="rOpen" style="display:none">Open in Maps</button>
           <button class="btn" id="rClear" style="display:none">Clear</button>
         </div>
-        <div class="rhint">Tick the accounts you plan to visit, then plan the route. Straight-line distance, so a bridge or a one-way system can shuffle the order slightly.</div>
+        <div class="rhint">Ordered by straight-line distance, so a bridge or a one-way system can shuffle it slightly.</div>
         <div class="rsum" id="rSum" style="display:none"></div>
       </div>
       <div id="savedList"><div class="empty">Saved clinics appear here. Add them from Clinics.</div></div>
@@ -1654,9 +1732,18 @@
   }
   function renderBoard(rows){
     if(!rows||!rows.length){ el('board').innerHTML=''; return; }
-    el('board').innerHTML='<div class="sec-label">Share of identified accounts</div><div class="cat">'+rows.map(function(r){
-      return '<div class="dev"><span class="dn">'+esc(r.manufacturer)+(r.is_ours?'<span class="focus">You</span>':'')+'</span>'+
-        '<span class="spacer"></span><span class="num">'+r.pct+'%<span class="l">'+r.clinics+' clinics</span></span></div>';
+    // ⭐ Bars are scaled to the LEADER, not to 100. These shares overlap (a
+    // clinic owning a Morpheus8 and a PicoSure counts under both), so the track
+    // is a comparison between the rows shown, never a slice of a whole. Scaling
+    // to 100 would draw three stubs and say nothing.
+    var top = rows.reduce(function(m,r){ return Math.max(m, Number(r.pct)||0); }, 0) || 1;
+    el('board').innerHTML='<div class="sec-label">Market position</div><div class="cat">'+rows.map(function(r){
+      var w = Math.max(2, Math.round((Number(r.pct)||0) / top * 100));
+      return '<div class="mrow'+(r.is_ours?' ours':'')+'">'+
+        '<span class="mname">'+esc(r.manufacturer)+(r.is_ours?'<span class="you">You</span>':'')+'</span>'+
+        '<span class="mtrack"><span class="mfill" style="width:'+w+'%"></span></span>'+
+        '<span class="mpct">'+r.pct+'%<span class="ml">'+num(r.clinics)+' clinics</span></span>'+
+      '</div>';
     }).join('')+'</div>';
   }
 
@@ -2541,21 +2628,23 @@
       // Measured against what was FETCHED, not total_matches: those are the only
       // rows search can see, and claiming otherwise would overstate the sweep.
       txt = shown.length
-        ? shown.length.toLocaleString()+' of '+rows.length.toLocaleString()+' clinics match'
+        ? shown.length.toLocaleString()+' of '+rows.length.toLocaleString()+' results match'
         : 'no match in this territory';
     } else if(rows.length===0){
       txt = (activeFilters() && BASE_TOTAL!=null)
-        ? '0 of '+BASE_TOTAL.toLocaleString()+' clinics \u00b7 all filtered out'
-        : 'no clinics';
+        ? '0 of '+BASE_TOTAL.toLocaleString()+' results \u00b7 all filtered out'
+        : 'no results';
     } else if(total==null){
       // total_matches arrives only once the SQL is updated. Until then the old
       // wording, rather than a number that would be wrong.
       txt = rows.length + (rows.length>=500 ? '+ shown' : ' identified accounts');
     } else if(activeFilters() && BASE_TOTAL!=null && BASE_TOTAL>total){
-      txt = total.toLocaleString()+' of '+BASE_TOTAL.toLocaleString()+' clinics'+
+      txt = total.toLocaleString()+' of '+BASE_TOTAL.toLocaleString()+' results'+
             ' \u00b7 '+(BASE_TOTAL-total).toLocaleString()+' filtered out';
     } else {
-      txt = total.toLocaleString()+' clinics';
+      // ⭐ "results", not "clinics": this number moves with the filters, and
+      // "546 clinics" read as a fixed fact about the territory.
+      txt = total.toLocaleString()+' results';
     }
     el('acctCount').textContent=txt;
 
@@ -2930,7 +3019,14 @@
     el('rGo').addEventListener('click', planRoute);
     el('rOpen').addEventListener('click', openInMaps);
     el('rClear').addEventListener('click', function(){
-      Array.prototype.forEach.call(el('savedList').querySelectorAll('.rpick'),function(cb){ cb.checked=false; });
+      Array.prototype.forEach.call(el('savedList').querySelectorAll('.rpick'),function(cb){
+        cb.checked=false;
+        // The pill carries its own state, so unchecking must reset the label too
+        // or a cleared route leaves "In today's route" behind on every card.
+        var lab=cb.closest('.visit');
+        if(lab){ lab.classList.remove('on'); lab.querySelector('span').textContent='Visit today'; }
+      });
+      updateRouteCount();
       routeReset();
     });
     el('rStart').addEventListener('input', function(){ routeStart=null; routeReset(); });
@@ -2965,14 +3061,19 @@
         ((c.mine||(ME&&ME.role==='admin'))?' <button class="linkish delcmt" data-id="'+c.id+'">delete</button>':'')+
         '</div><div class="cbody">'+esc(c.body)+'</div></div>';
     }).join('');
-    return '<div class="thread">'+list+
+    return '<div class="thread"><div class="nlab">Team activity</div>'+list+
       '<div class="cadd"><textarea class="cinput" data-cid="'+esc(a.clinic_id)+'" rows="2" placeholder="Add a comment for the team..."></textarea>'+
       '<button class="quiet addcmt" data-cid="'+esc(a.clinic_id)+'">Comment</button></div></div>';
   }
+  // ⭐⭐⭐ MY LIST IS A DAY PLANNER, NOT A RECORD EDITOR. Every saved clinic used
+  // to render its note box and comment box open, so three clinics filled several
+  // screens and the actual job — pick who to visit, plan the route — was buried
+  // under empty textareas. Everything below the action row is now collapsed, and
+  // a note that exists is shown as TEXT rather than as a filled-in form field.
   function renderSaved(rows){
     savedIds={}; rows.forEach(function(r){ if(r.is_mine) savedIds[r.clinic_id]=true; }); updateListCount();
     if(!rows.length){
-      el('savedList').innerHTML='<div class="empty">No saved clinics yet. Add them from Accounts.</div>';
+      el('savedList').innerHTML='<div class="empty">Saved clinics appear here. Add them from Clinics.</div>';
       el('routebar').style.display='none';
       return;
     }
@@ -2987,34 +3088,93 @@
       // A note belongs to whoever wrote it. Anyone else reads it and comments below.
       // Admins moderate the whole board, including notes they did not write.
       var canEdit = a.can_edit || (ME && ME.role === 'admin');
-      var noteBlock = canEdit
-        ? '<textarea class="note-edit" data-cid="'+esc(a.clinic_id)+'" placeholder="Add a note (call outcome, contact name, next step)...">'+esc(a.note||'')+'</textarea>'+
-          (a.is_mine?'':'<div class="cmeta">note by '+esc(a.saved_by||'')+'</div>')+
-          '<div class="actions"><button class="btn mini savenote" data-cid="'+esc(a.clinic_id)+'">Save note</button>'+
-          '<span class="note-saved" data-cid="'+esc(a.clinic_id)+'" style="display:none">saved</span>'+
-          '<button class="btn mini removebtn" data-cid="'+esc(a.clinic_id)+'">Remove</button>'+
-          (when?'<span class="cmeta" style="margin-left:auto">note '+esc(whenTxt(when))+'</span>':'')+'</div>'
-        : (a.note ? '<div class="note-ro">'+esc(a.note)+'<div class="cmeta">'+esc(a.saved_by||'')+
-                    (when?' &middot; '+esc(whenTxt(when)):'')+'</div></div>' : '');
+      var cid = esc(a.clinic_id);
+
+      // ⭐ AN EXISTING NOTE READS AS TEXT. The textarea appears only when they
+      // choose to write, so a list of five clinics is five notes, not five forms.
+      var noteBlock;
+      if(canEdit){
+        noteBlock = '<div class="nblock">'+
+          '<div class="nlab">My note'+(a.is_mine?'':' \u00b7 by '+esc(a.saved_by||''))+'</div>'+
+          (a.note
+            ? '<div class="note-ro" data-cid="'+cid+'">'+esc(a.note)+
+              (when?'<div class="cmeta">'+esc(whenTxt(when))+'</div>':'')+'</div>'+
+              '<button class="addnote editnote" data-cid="'+cid+'">Edit note</button>'
+            : '<button class="addnote editnote" data-cid="'+cid+'">+ Add a note</button>')+
+          '<div class="noteedit" data-cid="'+cid+'" hidden>'+
+            '<textarea class="note-edit" data-cid="'+cid+'" placeholder="Call outcome, contact person, next step...">'+esc(a.note||'')+'</textarea>'+
+            '<div class="actions"><button class="btn mini savenote" data-cid="'+cid+'">Save note</button>'+
+            '<span class="note-saved" data-cid="'+cid+'" style="display:none">saved</span></div>'+
+          '</div></div>';
+      } else {
+        noteBlock = a.note
+          ? '<div class="nblock"><div class="nlab">Note by '+esc(a.saved_by||'')+'</div>'+
+            '<div class="note-ro">'+esc(a.note)+(when?'<div class="cmeta">'+esc(whenTxt(when))+'</div>':'')+'</div></div>'
+          : '';
+      }
+
       // Coordinates ride on the node so the planner never has to re-fetch.
       var geo = (a.lat!=null && a.lng!=null)
         ? ' data-lat="'+esc(String(a.lat))+'" data-lng="'+esc(String(a.lng))+'"' : '';
       var pick = (a.lat!=null && a.lng!=null)
-        ? '<input type="checkbox" class="rpick" data-cid="'+esc(a.clinic_id)+'">' : '';
-      return '<div class="acct" data-cid="'+esc(a.clinic_id)+'"'+geo+'>'+
-        '<div class="head">'+pick+'<span class="rstop" style="display:none"></span>'+
-        '<span class="aname">'+esc(a.name)+'</span><span class="ameta">'+meta+'</span></div>'+
-        contactsHtml(a)+platesHtml(a.devices)+noteBlock+commentsHtml(a)+
+        ? '<label class="visit"><input type="checkbox" class="rpick" data-cid="'+cid+'"><span>Visit today</span></label>'
+        : '';
+
+      // The toggle counts what is behind it, so a clinic with history looks
+      // different from one without before it is opened.
+      var nCmt = (a.comments||[]).length;
+      var badge = (a.note?1:0) + nCmt;
+      var togLabel = badge ? 'Notes &amp; activity ('+badge+')' : 'Notes &amp; activity';
+
+      return '<div class="acct sv" data-cid="'+cid+'"'+geo+'>'+
+        pick+
+        '<div class="head"><span class="rstop" style="display:none"></span>'+
+        '<span class="aname">'+esc(a.name)+'</span></div>'+
+        '<div class="ameta" style="margin:4px 0 2px">'+meta+'</div>'+
+        contactsHtml(a)+platesHtml(a.devices)+
+        '<div class="svacts">'+
+          '<a class="btn mini go" href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
+          (a.phone?'<a class="btn mini" href="tel:'+esc(a.phone)+'">Call</a>':'')+
+          '<button class="btn mini detailtog" data-cid="'+cid+'">'+togLabel+' &rsaquo;</button>'+
+          '<span class="spacer"></span>'+
+          (canEdit?'<button class="dots removebtn" data-cid="'+cid+'" title="Remove from my list">&times;</button>':'')+
+        '</div>'+
+        '<div class="svdetail" data-cid="'+cid+'" hidden>'+noteBlock+commentsHtml(a)+'</div>'+
       '</div>';
     }).join('');
     bindEvidence(el('savedList'));
+
+    // ---- collapse / expand ----
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.detailtog'),function(btn){
+      btn.addEventListener('click',function(){
+        var cid=btn.getAttribute('data-cid');
+        var d=el('savedList').querySelector('.svdetail[data-cid="'+cid+'"]');
+        if(!d) return;
+        d.hidden=!d.hidden;
+        btn.innerHTML = btn.innerHTML.replace(d.hidden?'\u2039':'\u203a', d.hidden?'\u203a':'\u2039');
+        btn.classList.toggle('on', !d.hidden);
+      });
+    });
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.editnote'),function(btn){
+      btn.addEventListener('click',function(){
+        var cid=btn.getAttribute('data-cid');
+        var box=el('savedList').querySelector('.noteedit[data-cid="'+cid+'"]');
+        var ro=el('savedList').querySelector('.note-ro[data-cid="'+cid+'"]');
+        if(!box) return;
+        box.hidden=false; btn.style.display='none'; if(ro) ro.style.display='none';
+        var ta=box.querySelector('textarea'); if(ta) ta.focus();
+      });
+    });
+
     Array.prototype.forEach.call(el('savedList').querySelectorAll('.savenote'),function(btn){
       btn.addEventListener('click',function(){ var cid=btn.getAttribute('data-cid');
         var ta=el('savedList').querySelector('textarea.note-edit[data-cid="'+cid+'"]');
         api('set_note',{clinic_id:cid,note:ta.value}).then(function(res){
           var s2=el('savedList').querySelector('.note-saved[data-cid="'+cid+'"]');
-          if(res.result&&res.result.ok===false){ s2.textContent='not yours'; }
-          s2.style.display=''; setTimeout(function(){ s2.style.display='none'; s2.textContent='saved'; },1500);
+          if(res.result&&res.result.ok===false){ s2.textContent='not yours'; s2.style.display=''; return; }
+          // Reload so the note comes back as TEXT rather than leaving an open
+          // editor behind — the same reason the save used to call loadSaved().
+          loadSaved();
         }).catch(handleErr); });
     });
     Array.prototype.forEach.call(el('savedList').querySelectorAll('.removebtn'),function(btn){
@@ -3031,6 +3191,21 @@
       btn.addEventListener('click',function(){
         api('delete_comment',{comment_id:btn.getAttribute('data-id')}).then(loadSaved).catch(handleErr); });
     });
+    // The tick is what the route is built from, so the count lives beside the
+    // button that uses it.
+    Array.prototype.forEach.call(el('savedList').querySelectorAll('.rpick'),function(cb){
+      cb.addEventListener('change',function(){
+        var lab=cb.closest('.visit');
+        if(lab){ lab.classList.toggle('on', cb.checked); lab.querySelector('span').textContent = cb.checked ? 'In today\'s route' : 'Visit today'; }
+        updateRouteCount();
+      });
+    });
+    updateRouteCount();
+  }
+  function updateRouteCount(){
+    var c=el('rCount'); if(!c) return;
+    var n=el('savedList').querySelectorAll('.rpick:checked').length;
+    c.textContent = n ? n+(n===1?' clinic selected':' clinics selected') : 'nothing selected yet';
   }
 
   function handleErr(e){
