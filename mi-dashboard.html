@@ -197,6 +197,15 @@
   .toolbar select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .toolbar .count { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
 
+  /* ⭐ SEARCH. Given real estate ahead of the dropdowns because it is the one
+     control a rep reaches for without first deciding what kind of filter they
+     want. Sized to sit on one line with Near me on a laptop, full width on a
+     phone. */
+  .toolbar .srch { flex:1 1 250px; max-width:360px; display:flex; }
+  .toolbar .srch input { width:100%; font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 14px 10px 34px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3ccircle cx='11' cy='11' r='7'/%3e%3cpath d='M20 20l-3.6-3.6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:left 11px center; background-size:14px; }
+  .toolbar .srch input::placeholder { color:var(--faint); }
+  .toolbar .srch input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
   .acct { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:20px 22px; margin-bottom:12px; box-shadow:var(--shadow); }
   /* Field-rep card. The rep is on a phone, standing outside a clinic, so the
      photo is for RECOGNISING the building and the action row is thumb-sized.
@@ -220,6 +229,12 @@
      no way to tell whether it was the filter or the territory. Each chip names
      one applied filter and clears it on click. */
   .fchips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+  .saveview { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; padding:11px 14px;
+    border:1px solid var(--line); background:var(--surface-2); border-radius:var(--radius-sm); }
+  .saveview .sv-txt { font-size:.9rem; color:var(--ink-2); }
+  .saveview .sv-note { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .saveview .btn { padding:8px 13px; }
+  .saveview .sv-ok { font-size:.9rem; color:var(--accent-strong); font-weight:600; }
   .fchip { display:inline-flex; align-items:center; gap:6px;
     font-family:var(--font-mono); font-size:11px; letter-spacing:.02em;
     background:#EAF3F1; border:1px solid #B9D8D2; color:#0E5C55;
@@ -309,6 +324,7 @@
     .acct.card .shot { height:112px; }
     .acct.card .actions .btn { flex:1 1 auto; text-align:center; padding:11px 12px; }
     .toolbar select, .toolbar .btn { flex:1 1 46%; }
+    .toolbar .srch { flex:1 1 100%; max-width:none; order:-1; }
   }
   .acct .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
   .acct .aname { font-size:16.5px; font-weight:600; }
@@ -492,8 +508,12 @@
       </div>
     </div>
     <div class="tabs">
-      <button data-tab="portfolio" class="on">Overview</button>
-      <button data-tab="accounts">Accounts <span class="listcount" id="newCount" style="display:none">0</span></button>
+      <!-- ⭐⭐ ACCOUNTS LEADS, FOR EVERY ROLE. The first screen is the one a rep
+           can act on: search a clinic, filter a territory, plan a visit. The
+           Overview is what makes the case for the product, but it is not what
+           anyone opens the product to do. Andy's call, 2026-08-30. -->
+      <button data-tab="accounts" class="on">Clinics <span class="listcount" id="newCount" style="display:none">0</span></button>
+      <button data-tab="portfolio">Overview</button>
       <!-- Signal tab hidden for the Kyle pilot 2026-08-06; panel and loadFeed() left intact, restore by removing style -->
       <button data-tab="feed" style="display:none">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
@@ -517,7 +537,7 @@
       <span class="mono" id="geoLocked" style="display:none"></span>
     </div>
 
-    <section class="panel on" id="panel-portfolio">
+    <section class="panel" id="panel-portfolio">
       <div class="hero" id="hero"><div class="empty"><span class="spin"></span></div></div>
       <div id="board"></div>
       <div class="sec-label">Identified accounts by category</div>
@@ -547,12 +567,14 @@
       <div id="feedList"><div class="empty"><span class="spin"></span></div></div>
     </section>
 
-    <section class="panel" id="panel-accounts">
+    <section class="panel on" id="panel-accounts">
       <!-- Primary row: what a rep decides every time. Everything else is behind
            More filters. The old single row put nine dropdowns on screen before
            the rep had seen a clinic, which read as a control panel rather than a
            worklist. -->
       <div class="toolbar">
+        <div class="srch"><input id="acctSearch" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search clinic, city or device"></div>
         <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
         <select id="acctSegment">
           <option value="">All clinics</option>
@@ -583,6 +605,9 @@
            on a truncated list is the expensive mistake this screen can cause. -->
       <div id="acctTrunc" class="trunc-note" style="display:none"></div>
       <div id="acctChips" class="fchips" style="display:none"></div>
+      <!-- ⭐ SAVE THIS VIEW. Appears only once the rep has narrowed to something,
+           because "save all 7,000 clinics" is a misclick, not a worklist. -->
+      <div id="acctSaveView" class="saveview" style="display:none"></div>
       <div class="toolbar" id="acctAdv" hidden>
         <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
         <select id="acctDevice"><option value="">Runs any device</option></select>
@@ -599,7 +624,7 @@
         </select>
       </div>
       <div id="acctNearNote" class="cmeta" style="display:none;margin:-4px 0 10px"></div>
-      <div id="acctList"><div class="empty">Choose a filter to load accounts.</div></div>
+      <div id="acctList"><div class="empty"><span class="spin"></span></div></div>
     </section>
 
     <!-- SETTINGS. Reached from the header, not the tab bar: the tabs are the
@@ -823,7 +848,7 @@
         <div class="rhint">Tick the accounts you plan to visit, then plan the route. Straight-line distance, so a bridge or a one-way system can shuffle the order slightly.</div>
         <div class="rsum" id="rSum" style="display:none"></div>
       </div>
-      <div id="savedList"><div class="empty">Saved clinics appear here. Add them from Accounts.</div></div>
+      <div id="savedList"><div class="empty">Saved clinics appear here. Add them from Clinics.</div></div>
     </section>
   </main>
 </div>
@@ -915,6 +940,11 @@
         api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
       }
       loadFilterOptions(); loadSavedIds(); bindRoute();
+      // ⭐ Accounts is the landing tab, so its rows must be fetched at sign-in
+      // rather than on first click. The overview call above is the identity
+      // call and cannot be skipped; this runs alongside it, and the paged
+      // fetch paints as each page lands rather than holding a spinner.
+      loadAccounts(); loadNewCount();
     }).catch(function(e){
       KEY=null;
       // ⚠️ Only forget the token when the server REJECTED it. A network blip must
@@ -1798,6 +1828,47 @@
     });
   })();
   var ACCT_FILTERS=['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev'];
+
+  // ⭐⭐ SEARCH IS CLIENT-SIDE ON PURPOSE. fetchAllAccounts already pulls the
+  // WHOLE territory into memory before rendering, so typing filters rows that
+  // are already here: no request, no spinner, results while the rep types.
+  // ⚠️ The consequence, and it is the honest one: search NARROWS THE CURRENT
+  // TERRITORY, it does not search the country. A rep scoped to Ontario who
+  // types "Vancouver" gets nothing, and the empty state says which territory
+  // was searched rather than implying the clinic does not exist.
+  var SEARCH_Q='', SEARCH_W=[], SEARCH_T=null;
+  // Name, area, and every device and manufacturer on the card — the four things
+  // a rep has in their head when they reach for the box. Built once per row and
+  // cached on the row: a 7,000-clinic territory is re-filtered on every
+  // keystroke, and rebuilding the string each time is what would make it lag.
+  function hay(a){
+    if(a.__hay) return a.__hay;
+    var s=[a.name||'', a.neighbourhood||''];
+    (a.devices||[]).forEach(function(d){ s.push(d.model||''); s.push(d.manufacturer||''); });
+    return (a.__hay = s.join(' | ').toLowerCase());
+  }
+  // Every word must appear somewhere, in any order, as a substring. So
+  // "london artistry" finds Artistry in London, and "pico" reaches PicoWay
+  // without the rep spelling the model out.
+  function matchesSearch(a){
+    var h=hay(a);
+    for(var i=0;i<SEARCH_W.length;i++){ if(h.indexOf(SEARCH_W[i])===-1) return false; }
+    return true;
+  }
+  function setSearch(v){
+    SEARCH_Q=(v||'').trim();
+    SEARCH_W=SEARCH_Q.toLowerCase().split(/\s+/).filter(Boolean);
+  }
+  function territoryLabel(){
+    return geo.neighbourhood ? regionLabel(geo.neighbourhood)
+         : (geo.province ? regionLabel(geo.province) : CTY.country);
+  }
+  el('acctSearch').addEventListener('input',function(){
+    var v=this.value;
+    // Debounced so a fast typist filters once, not once per letter.
+    clearTimeout(SEARCH_T);
+    SEARCH_T=setTimeout(function(){ setSearch(v); renderChips(); paintAccounts(); },120);
+  });
   // Territory total, captured from an unfiltered load. It is the denominator for
   // "34 of 412", and it is remembered per territory because changing territory
   // changes the population, not the filter.
@@ -1810,6 +1881,7 @@
   el('acctReset').addEventListener('click',function(){
     ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
     el('acctSort').value='reviews';
+    el('acctSearch').value=''; setSearch('');
     NEAR=null; el('acctNear').classList.remove('on'); nearNote('',false);
     advLabel(); loadAccounts(); loadNewCount();
   });
@@ -1822,7 +1894,7 @@
     var n=advCount(), b=el('acctMore');
     b.textContent = n ? 'More filters ('+n+')' : 'More filters';
     b.classList.toggle('on', n>0);
-    el('acctReset').style.display = activeFilters() ? '' : 'none';
+    el('acctReset').style.display = (activeFilters()||SEARCH_W.length) ? '' : 'none';
     renderChips();
   }
 
@@ -1840,6 +1912,12 @@
     var wrap = el('acctChips');
     if(!wrap) return;
     var parts = [];
+    // Search gets a chip like any other narrowing, and leads because it is the
+    // one the rep typed rather than picked.
+    if(SEARCH_W.length){
+      parts.push('<span class="fchip"><b>Search:</b> '+esc(SEARCH_Q)+
+                 '<button type="button" data-clear="__search" aria-label="Clear search">&times;</button></span>');
+    }
     Object.keys(CHIP_LABELS).forEach(function(id){
       var s = el(id);
       if(!s || !s.value) return;
@@ -1863,7 +1941,15 @@
     var btn = e.target.closest('button[data-clear]');
     if(!btn) return;
     var id = btn.getAttribute('data-clear');
-    if(id==='__all'){ ACCT_FILTERS.forEach(function(f){ if(el(f)) el(f).value=''; }); }
+    // Clearing the search needs no refetch — the rows are already here — so it
+    // repaints and stops rather than falling through to loadAccounts().
+    if(id==='__search'){
+      el('acctSearch').value=''; setSearch(''); renderChips(); paintAccounts(); return;
+    }
+    if(id==='__all'){
+      ACCT_FILTERS.forEach(function(f){ if(el(f)) el(f).value=''; });
+      el('acctSearch').value=''; setSearch('');
+    }
     else if(el(id)){ el(id).value=''; }
     advLabel();
     // Clearing a category or manufacturer widens what the other dropdowns may
@@ -2222,16 +2308,35 @@
   });
 
   function renderAccounts(rows){
+    ACCT_ALL = rows;
     var total = rows.length && rows[0].total_matches != null
       ? Number(rows[0].total_matches) : null;
     var key=geoKey();
     if(key!==BASE_KEY){ BASE_TOTAL=null; BASE_KEY=key; }
     // An unfiltered load establishes the territory population. Everything after
-    // it is measured against that.
+    // it is measured against that. ⓘ Search is deliberately NOT counted as a
+    // filter here: it narrows what was fetched, it does not change what the
+    // server returned, so it must not disturb the baseline.
     if(!activeFilters() && total!=null) BASE_TOTAL=total;
+    paintAccounts();
+  }
+  // ⭐ Draws from ACCT_ALL rather than taking rows. renderAccounts calls it after
+  // a fetch; the search box calls it directly — which is why typing costs
+  // nothing and why the two can never disagree about what is on screen.
+  function paintAccounts(){
+    var rows = ACCT_ALL || [];
+    var total = rows.length && rows[0].total_matches != null
+      ? Number(rows[0].total_matches) : null;
+    var shown = SEARCH_W.length ? rows.filter(matchesSearch) : rows;
 
     var txt;
-    if(rows.length===0){
+    if(SEARCH_W.length){
+      // Measured against what was FETCHED, not total_matches: those are the only
+      // rows search can see, and claiming otherwise would overstate the sweep.
+      txt = shown.length
+        ? shown.length.toLocaleString()+' of '+rows.length.toLocaleString()+' clinics match'
+        : 'no match in this territory';
+    } else if(rows.length===0){
       txt = (activeFilters() && BASE_TOTAL!=null)
         ? '0 of '+BASE_TOTAL.toLocaleString()+' clinics \u00b7 all filtered out'
         : 'no clinics';
@@ -2251,10 +2356,9 @@
     // matters most on this screen: a rep exports or works through what is shown
     // and never learns the rest existed. Said in its own line, with what to do
     // about it, not tucked on the end of a count.
-    // ⓘ With the cap removed this should never fire — every matching row is now
-    // fetched. Kept because it is the one warning on this screen that must never
-    // be missing: if a future limit is reintroduced anywhere, a rep must still
-    // be told the list is partial rather than silently working a subset.
+    // ⓘ Measured on the FETCHED set, never the searched one — a search showing
+    // 3 of 900 is a search, not a truncation, and warning there would train the
+    // rep to ignore the one message that must always be believed.
     var cut = (total != null && rows.length < total);
     var warn = el('acctTrunc');
     if (warn) {
@@ -2264,19 +2368,29 @@
           total.toLocaleString() + '. Narrow by city or add a filter to see the rest.'
         : '';
     }
-    el('acctReset').style.display = activeFilters() ? '' : 'none';
+    el('acctReset').style.display = (activeFilters()||SEARCH_W.length) ? '' : 'none';
+    renderSaveView(shown);
 
-    if(!rows.length){ el('acctList').innerHTML='<div class="empty">No accounts match this filter.</div>'; return; }
+    if(!shown.length){
+      // ⭐ An empty search names the territory it searched. Otherwise a rep
+      // scoped to Ontario reads "no results" for a Vancouver clinic as us not
+      // having it, and that is the wrong lesson to teach about the data.
+      el('acctList').innerHTML = SEARCH_W.length
+        ? '<div class="empty">Nothing in '+esc(territoryLabel())+' matches \u201c'+esc(SEARCH_Q)+
+          '\u201d.<br>Search covers clinic name, area, device and manufacturer.</div>'
+        : '<div class="empty">No accounts match this filter.</div>';
+      return;
+    }
 
     // ⭐⭐ RENDER IN PAGES. The whole territory is now fetched (7,000 rows for
     // Canada), but building 7,000 cards in one pass locks up a phone for
     // seconds. 200 at a time, more on request — the data is all here, so this
     // costs nothing but DOM.
-    ACCT_ROWS = rows; ACCT_SHOWN = 0;
+    ACCT_ROWS = shown; ACCT_SHOWN = 0;
     el('acctList').innerHTML='<div class="acctgrid"></div>';
     appendAccountPage();
   }
-  var ACCT_ROWS=[], ACCT_SHOWN=0, ACCT_PAGE=200;
+  var ACCT_ALL=[], ACCT_ROWS=[], ACCT_SHOWN=0, ACCT_PAGE=200;
   function appendAccountPage(){
     var grid = el('acctList').querySelector('.acctgrid');
     if(!grid) return;
@@ -2356,6 +2470,66 @@
       '</div>'+
     '</div>';
   }
+  // ---- Save this view -------------------------------------------------------
+  // ⭐⭐ CINDY JOO'S REQUEST (2026-08-17): she had filtered to the view she
+  // wanted and could not keep it. This drops every clinic on screen into My List
+  // as ordinary saved rows, so notes, comments, the route planner and the
+  // manager view all work on them with no further build.
+  // ⚠️ SNAPSHOT, NOT A LIVING VIEW. What is saved is these clinics, now. It does
+  // not keep tracking the filter, and it must not: a list that silently changes
+  // under a rep can re-add a clinic they already visited and drop one they are
+  // mid-conversation with.
+  var SAVEVIEW_MAX = 500;
+  function renderSaveView(shown){
+    var bar = el('acctSaveView'); if(!bar) return;
+    var narrowed = activeFilters() || SEARCH_W.length;
+    // Nothing to save, or nothing chosen yet. The whole territory unfiltered is
+    // not a worklist.
+    if(!narrowed || !shown.length){ bar.style.display='none'; bar.innerHTML=''; return; }
+    var n = shown.length;
+    bar.style.display='';
+    if(n > SAVEVIEW_MAX){
+      bar.innerHTML = '<span class="sv-txt">'+n.toLocaleString()+' clinics in this view.</span>'+
+        '<span class="sv-note">Narrow to '+SAVEVIEW_MAX+' or fewer to save it as a list.</span>';
+      return;
+    }
+    bar.innerHTML = '<span class="sv-txt">Working through these '+n.toLocaleString()+'?</span>'+
+      '<button class="btn" type="button" id="svGo">Save all '+n.toLocaleString()+' to my list</button>';
+    el('svGo').addEventListener('click',function(){ confirmSaveView(shown); });
+  }
+  // ⭐ TWO STEPS, NO MODAL. Adding 300 accounts is not undoable in one action, so
+  // the count is stated again and the rep has to mean it. Inline rather than a
+  // dialog because the rep is on a phone.
+  function confirmSaveView(shown){
+    var bar = el('acctSaveView');
+    var fresh = shown.filter(function(a){ return !savedIds[a.clinic_id]; }).length;
+    var dupe  = shown.length - fresh;
+    bar.innerHTML = '<span class="sv-txt">Add '+fresh.toLocaleString()+' to My List?</span>'+
+      (dupe ? '<span class="sv-note">'+dupe.toLocaleString()+' already saved \u2014 notes untouched.</span>' : '')+
+      '<button class="btn" type="button" id="svYes">Add them</button>'+
+      '<button class="linkish" type="button" id="svNo">Cancel</button>';
+    el('svNo').addEventListener('click',function(){ renderSaveView(shown); });
+    el('svYes').addEventListener('click',function(){
+      var btn=this; btn.disabled=true; btn.textContent='Adding\u2026';
+      var ids = shown.map(function(a){ return a.clinic_id; });
+      api('save_accounts_bulk',{clinic_ids:ids}).then(function(res){
+        var r = res.result || {};
+        ids.forEach(function(id){ savedIds[id]=true; });
+        updateListCount(); loaded.list=false;
+        // Repaint so every card on screen shows its Saved state.
+        paintAccounts();
+        var bar2 = el('acctSaveView');
+        bar2.style.display='';
+        bar2.innerHTML = '<span class="sv-ok">\u2713 '+Number(r.added||0).toLocaleString()+' added to My List</span>'+
+          (r.already ? '<span class="sv-note">'+Number(r.already).toLocaleString()+' were already there</span>' : '');
+      }).catch(function(e){
+        // The cap and the tenant guard both come back as real messages.
+        el('acctSaveView').innerHTML =
+          '<span class="sv-txt">'+esc((e&&e.error)?e.error:'Could not save that list.')+'</span>';
+      });
+    });
+  }
+
   function wireSaveButtons(container){
     Array.prototype.forEach.call(container.querySelectorAll('.savebtn'),function(btn){
       btn.addEventListener('click',function(){
