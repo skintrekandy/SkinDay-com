@@ -214,6 +214,20 @@
     .lsrow .lnum { min-width:0; text-align:left; }
   }
 
+  .lscat { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--faint); padding:10px 10px 4px; }
+  .lsrow.lssub { padding-left:40px; background:var(--surface); }
+  /* A company head is subordinate to its section head: indented, lighter type,
+     and it never takes the tinted open-state fill that marks a section. */
+  .lshead.lssubhead { padding-left:26px; }
+  .lshead.lssubhead .lsname { font-size:15px; }
+  .lsgroup.lsnest.open > .lshead { background:none; border-bottom:1px solid var(--line-2); }
+  .lsgroup.lsnest.open > .lshead .lsname { font-weight:600; }
+  .lscat { padding-left:40px; }
+  .lsempty { padding:12px 26px; font-size:13px; color:var(--muted); }
+  .lshead.ours { border-left:2px solid var(--accent); background:var(--accent-soft); }
+  .lshead .lgo { margin-left:14px; }
+
   .catfilter { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
   .catfilter button { font:inherit; font-size:12.5px; padding:6px 13px; cursor:pointer;
     color:var(--muted); background:var(--surface); border:1px solid var(--line-2); border-radius:100px; }
@@ -1933,19 +1947,24 @@
         : '<div class="empty">Nothing matches that. Search covers device, manufacturer, distributor and category.</div>';
     }
     Array.prototype.forEach.call(box.querySelectorAll('.lstog'),function(b){
-      b.addEventListener('click',function(){
-        var k=b.getAttribute('data-cat');
+      b.addEventListener('click',function(e){
+        // "View accounts" lives inside the header button, so a click on it must
+        // not also toggle the accordion.
+        if(e.target.closest('.lgo')) return;
+        var k=b.getAttribute('data-cat')||b.getAttribute('data-co');
         if(LS_OPEN[k]) delete LS_OPEN[k]; else LS_OPEN[k]=1;
         paintLandscape();
       });
     });
     Array.prototype.forEach.call(box.querySelectorAll('.lgo'),function(b){
-      b.addEventListener('click',function(e){
-        e.stopPropagation();
+      function go(e){
+        e.stopPropagation(); e.preventDefault();
         lsGoTo({ device:b.getAttribute('data-device')||'',
                  mfr:b.getAttribute('data-mfr')||'',
                  dist:b.getAttribute('data-dist')||'' });
-      });
+      }
+      b.addEventListener('click',go);
+      b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') go(e); });
     });
   }
   function lsByCategory(rows){
@@ -2031,31 +2050,91 @@
     // ⛔ NEVER LABEL ANY FIGURE HERE "INSTALLS". We cannot see units: a clinic
     // running four GentleMax Pros is indistinguishable from one running a single
     // machine, so no count on this screen is an install count.
+    var searching = LS_W.length > 0;
+    // ⭐⭐ THE SECTIONS COLLAPSE TOO. Companies used to open with 45 manufacturer
+    // rows on screen — the same wall Technologies had before its categories
+    // folded. Now the tab opens as two rows, and both views behave identically.
     function section(title, kind){
       var list=rows.filter(function(c){ return c.kind===kind; });
       if(!list.length) return '';
-      return '<div class="lsgroup"><div class="lshead"><span class="lsname">'+esc(title)+'</span>'+
-        '<span class="lscount">'+list.length+'</span></div>'+
-        list.map(function(c){
-          var nd=Number(c.devices)||0, nc=Number(c.categories)||0;
-          var here=Number(c.clinics)||0, natl=Number(c.clinics_country)||0;
-          return '<div class="lsrow'+(c.is_ours?' ours':'')+'">'+
-            '<span class="lm">'+esc(c.name)+'</span>'+
-            '<span class="lmk">'+nd+(nd===1?' device':' devices')+
-              ' &middot; '+nc+(nc===1?' category':' categories')+'</span>'+
-            (c.is_ours?'<span class="lyou">Yours</span>':'')+
+      var skey='sec:'+kind;
+      var sopen = searching || !!LS_OPEN[skey];
+      var ours=list.filter(function(c){ return c.is_ours; }).length;
+      var body = !sopen ? '' : list.map(function(c){
+        var nd=Number(c.devices)||0, nc=Number(c.categories)||0;
+        var here=Number(c.clinics)||0, natl=Number(c.clinics_country)||0;
+        var key=kind+':'+c.name;
+        var open = searching || !!LS_OPEN[key];
+        // ⭐ THE PORTFOLIO IS THE POINT. "Candela" tells a new rep nothing;
+        // "GentleMax Pro, PicoWay, Nordlys, Frax" is the mental model they need
+        // before a visit. Built from the device rows already on the page, so no
+        // extra request and no second source of truth.
+        var devs = !open ? '' : lsPortfolio(c.name, kind);
+        return '<div class="lsgroup lsnest'+(open?' open':'')+'">'+
+          '<button class="lshead lssubhead lstog'+(c.is_ours?' ours':'')+'" type="button" '+
+            'data-co="'+esc(key)+'" aria-expanded="'+(open?'true':'false')+'">'+
+            '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
+            '<span class="lsname">'+esc(c.name)+'</span>'+
+            (c.is_ours?'<span class="lsmine">Yours</span>':'')+
             '<span class="lsp"></span>'+
+            '<span class="lscount">'+nd+(nd===1?' device':' devices')+
+              ' \u00b7 '+nc+(nc===1?' category':' categories')+'</span>'+
             '<span class="lnum">'+num(here)+' clinics'+
               (natl!==here?'<span class="ln2">'+num(natl)+' in '+esc(CTY.country)+'</span>':'')+
             '</span>'+
-            '<button class="lgo" type="button" '+
-              (kind==='manufacturer'?'data-mfr="':'data-dist="')+esc(c.name)+'">View accounts &rarr;</button>'+
-          '</div>';
-        }).join('')+'</div>';
+            '<span class="lgo" role="button" tabindex="0" '+
+              (kind==='manufacturer'?'data-mfr="':'data-dist="')+esc(c.name)+'">View accounts &rarr;</span>'+
+          '</button>'+devs+
+        '</div>';
+      }).join('');
+      return '<div class="lsgroup'+(sopen?' open':'')+'">'+
+        '<button class="lshead lstog" type="button" data-co="'+esc(skey)+'" '+
+          'aria-expanded="'+(sopen?'true':'false')+'">'+
+          '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
+          '<span class="lsname">'+esc(title)+'</span>'+
+          '<span class="lsp"></span>'+
+          '<span class="lscount">'+list.length+'</span>'+
+          (ours?'<span class="lsmine">Yours</span>':'')+
+        '</button>'+body+
+      '</div>';
     }
     // "Direct (manufacturer)" is a sentinel on 127 of 178 rows meaning there is
     // no distributor. Excluded in SQL so it can never appear as a company.
     return section('Manufacturers','manufacturer') + section('Distributors','distributor');
+  }
+  // A company's devices, grouped by category so the shape of the portfolio is
+  // readable rather than a flat alphabetical list.
+  function lsPortfolio(name, kind){
+    var mine=(LS_ROWS||[]).filter(function(r){
+      return kind==='manufacturer'
+        ? r.manufacturer===name
+        : (r.distributor===name && r.distributor!=='Direct (manufacturer)');
+    });
+    if(!mine.length) return '<div class="lsempty">No devices on file.</div>';
+    var by={}, order=[];
+    mine.forEach(function(r){
+      var k=r.category||'other';
+      if(!by[k]){ by[k]=[]; order.push(k); }
+      by[k].push(r);
+    });
+    order.sort(function(a,b){ return by[b].length-by[a].length; });
+    return order.map(function(k){
+      by[k].sort(function(a,b){ return (Number(b.clinics)||0)-(Number(a.clinics)||0); });
+      return '<div class="lscat">'+esc(CAT_LABEL[k]||k)+'</div>'+
+        by[k].map(function(r){
+          // ⚠️ Per-device counts are distinct clinics and are correct as shown.
+          // They must never be added together to describe the company — that is
+          // the double-count the header figure exists to avoid.
+          var gen = r.parent_device_id ? '<span class="lgen">Generation</span>' : '';
+          return '<div class="lsrow lssub">'+
+            '<span class="lm">'+esc(r.model)+'</span>'+gen+
+            (kind==='distributor'?'<span class="lmk">'+esc(r.manufacturer)+'</span>':'')+
+            '<span class="lsp"></span>'+
+            '<span class="lnum">'+num(Number(r.clinics)||0)+' clinics</span>'+
+            '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
+          '</div>';
+        }).join('');
+    }).join('');
   }
 
   el('lsMode').addEventListener('click',function(e){
