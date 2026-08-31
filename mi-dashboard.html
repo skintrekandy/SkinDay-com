@@ -167,6 +167,36 @@
   /* category competitive donuts — share of identified INSTALLATIONS.
      Deliberately NOT the same metric as #board (share of clinics), which
      overlaps and therefore stays a bar. Never merge the two headings. */
+  /* ---- Landscape ------------------------------------------------------- */
+  .lsgroup { margin:0 0 26px; }
+  .lshead { display:flex; align-items:baseline; gap:12px; padding-bottom:9px; margin-bottom:4px;
+    border-bottom:1px solid var(--line-2); }
+  .lshead .lsname { font-size:17px; font-weight:600; letter-spacing:-.01em; }
+  .lshead .lscount { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .lsrow { display:flex; align-items:center; gap:14px; padding:10px 6px; border-bottom:1px solid var(--line-2); }
+  .lsrow:last-child { border-bottom:0; }
+  .lsrow.ours { border-left:2px solid var(--accent); background:var(--accent-soft); padding-left:10px; }
+  .lsrow .lm { font-size:14.5px; font-weight:500; }
+  .lsrow .lmk { font-size:12.5px; color:var(--muted); }
+  .lsrow .lsp { flex:1; }
+  .lsrow .lgen { font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--faint); border:1px solid var(--line-2); border-radius:100px; padding:2px 7px; }
+  .lsrow .lyou { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent-strong); border:1px solid var(--accent); border-radius:100px; padding:2px 7px; }
+  .lsrow .lnum { font-family:var(--font-mono); font-size:12px; color:var(--ink-2); text-align:right; min-width:110px; }
+  .lsrow .lnum .ln2 { display:block; font-size:9.5px; color:var(--faint); }
+  .lsrow .lgo { font-size:12px; color:var(--accent-strong); background:none; border:0; cursor:pointer; white-space:nowrap; }
+  .lsrow .lgo:hover { text-decoration:underline; text-underline-offset:3px; }
+  @media (max-width:640px){
+    .lsrow { flex-wrap:wrap; gap:6px; }
+    .lsrow .lnum { min-width:0; text-align:left; }
+  }
+
+  .catfilter { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 16px; }
+  .catfilter button { font:inherit; font-size:12.5px; padding:6px 13px; cursor:pointer;
+    color:var(--muted); background:var(--surface); border:1px solid var(--line-2); border-radius:100px; }
+  .catfilter button:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .catfilter button.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
   .dgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
   .dcard { border:1px solid var(--line-2); border-radius:var(--radius-sm); padding:18px 16px 14px; cursor:pointer; transition:border-color .15s ease, background .15s ease; }
   .dcard:hover { border-color:var(--accent); background:var(--surface-2); }
@@ -199,6 +229,8 @@
   .mrow { display:flex; align-items:center; gap:16px; padding:11px 12px 11px 10px;
     border-bottom:1px solid var(--line-2); border-left:2px solid transparent; }
   .mrow:last-child { border-bottom:0; }
+  .mrow .mrank { font-family:var(--font-mono); font-size:11px; color:var(--faint); min-width:18px; }
+  .mrow.ours .mrank { color:var(--accent-strong); font-weight:600; }
   .mrow .mname { font-size:15px; font-weight:500; min-width:160px; }
   .mrow .you { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.08em;
     text-transform:uppercase; color:var(--accent-strong); border:1px solid var(--accent);
@@ -213,6 +245,12 @@
   .mrow.ours { border-left-color:var(--accent); background:var(--accent-soft); }
   .mrow.ours .mfill { background:var(--accent); }
   .mrow.ours .mpct { color:var(--accent-strong); }
+  /* The break between the leaders and a tenant sitting further down. Without it
+     the fourth row reads as rank 4. */
+  .mgap { font-size:15px; color:var(--faint); text-align:center; line-height:1; padding:3px 0; }
+  .boardmore { font:inherit; font-size:12.5px; color:var(--accent-strong); background:none; border:0;
+    padding:10px 0 0; cursor:pointer; }
+  .boardmore:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:640px){ .mrow .mtrack { display:none; } .mrow .mname { min-width:0; } }
 
   .crow { display:flex; align-items:center; gap:16px; padding:16px 4px; border-bottom:1px solid var(--line-2); cursor:pointer; }
@@ -657,6 +695,7 @@
            anyone opens the product to do. Andy's call, 2026-08-30. -->
       <button data-tab="accounts" class="on">Clinics <span class="listcount" id="newCount" style="display:none">0</span></button>
       <button data-tab="portfolio">Overview</button>
+      <button data-tab="landscape">Landscape</button>
       <!-- Signal tab hidden for the Kyle pilot 2026-08-06; panel and loadFeed() left intact, restore by removing style -->
       <button data-tab="feed" style="display:none">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
@@ -687,6 +726,22 @@
       <div id="portfolioList"><div class="empty"><span class="spin"></span></div></div>
       <div class="sec-label">Competitive field by category</div>
       <div id="catlist"><div class="empty"><span class="spin"></span></div></div>
+    </section>
+
+    <!-- ⭐⭐ LANDSCAPE. Directors said they use MI to train new reps, so this is
+         the "learn the market" surface: every device in the category, who makes
+         it, who distributes it here, and how common it is. Named Landscape, not
+         Learn — an experienced rep still opens it before a visit. -->
+    <section class="panel" id="panel-landscape">
+      <div class="fb-row">
+        <div class="srch"><input id="lsSearch" type="search" autocomplete="off" spellcheck="false"
+             placeholder="Search device, manufacturer or technology"></div>
+      </div>
+      <div class="quick" id="lsMode">
+        <button type="button" data-lm="tech" class="on">Technologies</button>
+        <button type="button" data-lm="co">Companies</button>
+      </div>
+      <div id="lsBody"><div class="empty"><span class="spin"></span></div></div>
     </section>
 
     <section class="panel" id="panel-feed">
@@ -1058,7 +1113,7 @@
     var note = document.getElementById('invTerritoryNote');
     if (note) note.textContent = 'A rep with a territory only ever sees that ' + CTY.region + '.';
   }
-  var loaded={accounts:false,list:false,feed:false};
+  var loaded={accounts:false,list:false,feed:false,landscape:false};
   var COVERAGE=null;
   var ME=null;
   var catCache=[], savedIds={};
@@ -1500,6 +1555,7 @@
       var tab=b.getAttribute('data-tab'); el('panel-'+tab).classList.add('on');
       if(tab==='accounts'&&!loaded.accounts&&!ACCT_GATED) loadAccounts();
       if(tab==='feed'&&!loaded.feed) loadFeed();
+      if(tab==='landscape'&&!loaded.landscape) loadLandscape();
       if(tab==='list') loadSaved();
     });
   });
@@ -1603,11 +1659,12 @@
 
   el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; this.style.display='none'; onGeoChange(); });
   function onGeoChange(){
-    loaded.accounts=false; loaded.list=false; loaded.feed=false;
+    loaded.accounts=false; loaded.list=false; loaded.feed=false; loaded.landscape=false;
     refreshPortfolio(); loadFilterOptions(); loadNewCount();
     // ⭐ A NEW TERRITORY RE-GATES. Switching province used to start fetching the
     // whole of the new one immediately; now the count updates and the rep asks.
     if(el('panel-accounts').classList.contains('on')) gateAccounts();
+    if(el('panel-landscape').classList.contains('on')) loadLandscape();
     if(el('panel-list').classList.contains('on')) loadSaved();
   }
 
@@ -1730,22 +1787,218 @@
         '<span class="grp">'+esc(g.group_label||'')+'</span><span class="count"><b>'+g.total+'</b> installs</span></div>'+devs+'</div>';
     }).join('');
   }
+  // ⭐⭐⭐ TOP THREE PLUS YOU, ALWAYS. The leaderboard used to request three rows
+  // and stop, so a rep for the #7 manufacturer opened a competitive panel with
+  // their own company missing from it. Their row is now pinned underneath the
+  // leaders however far down it sits, and the full field is one tap away.
+  // ⚠️ These shares OVERLAP — a clinic owning a Morpheus8 and a PicoSure counts
+  // under both — so this stays a ranked list and must never become a pie. The
+  // donuts below measure a different thing (installations, mutually exclusive).
+  var BOARD_ROWS=[], BOARD_OPEN=false;
   function renderBoard(rows){
     if(!rows||!rows.length){ el('board').innerHTML=''; return; }
-    // ⭐ Bars are scaled to the LEADER, not to 100. These shares overlap (a
-    // clinic owning a Morpheus8 and a PicoSure counts under both), so the track
-    // is a comparison between the rows shown, never a slice of a whole. Scaling
-    // to 100 would draw three stubs and say nothing.
-    var top = rows.reduce(function(m,r){ return Math.max(m, Number(r.pct)||0); }, 0) || 1;
-    el('board').innerHTML='<div class="sec-label">Market position</div><div class="cat">'+rows.map(function(r){
-      var w = Math.max(2, Math.round((Number(r.pct)||0) / top * 100));
-      return '<div class="mrow'+(r.is_ours?' ours':'')+'">'+
+    BOARD_ROWS=rows.map(function(r,i){ return { r:r, rank:Number(r.rank)||i+1 }; });
+    paintBoard();
+  }
+  function paintBoard(){
+    var all=BOARD_ROWS, n=all.length;
+    var top=all.slice(0,3);
+    var mineIdx=-1;
+    all.forEach(function(x,i){ if(x.r.is_ours) mineIdx=i; });
+
+    var shown, gapAfter=-1;
+    if(BOARD_OPEN){ shown=all; }
+    else if(mineIdx>-1 && mineIdx>2){ shown=top.concat([all[mineIdx]]); gapAfter=2; }
+    else { shown=top; }
+
+    // Bars are scaled to the LEADER, not to 100: the shares overlap, so the
+    // track compares the rows against each other, never against a whole.
+    var top1=all.reduce(function(m,x){ return Math.max(m, Number(x.r.pct)||0); },0)||1;
+
+    var html='<div class="sec-label">Market position</div><div class="cat"><div class="mtable">';
+    shown.forEach(function(x,i){
+      if(i===gapAfter+1 && gapAfter>-1) html+='<div class="mgap">&#8942;</div>';
+      var r=x.r, w=Math.max(2, Math.round((Number(r.pct)||0)/top1*100));
+      html+='<div class="mrow'+(r.is_ours?' ours':'')+'">'+
+        '<span class="mrank">'+x.rank+'</span>'+
         '<span class="mname">'+esc(r.manufacturer)+(r.is_ours?'<span class="you">You</span>':'')+'</span>'+
         '<span class="mtrack"><span class="mfill" style="width:'+w+'%"></span></span>'+
         '<span class="mpct">'+r.pct+'%<span class="ml">'+num(r.clinics)+' clinics</span></span>'+
       '</div>';
-    }).join('')+'</div>';
+    });
+    html+='</div>';
+    if(n>3){
+      html+='<button type="button" class="boardmore" id="boardMore">'+
+        (BOARD_OPEN ? 'Show top three' : 'View all '+n+' manufacturers')+'</button>';
+    }
+    html+='</div>';
+    el('board').innerHTML=html;
+    var b=el('boardMore');
+    if(b) b.addEventListener('click',function(){ BOARD_OPEN=!BOARD_OPEN; paintBoard(); });
   }
+
+  // ---- Landscape ------------------------------------------------------------
+  // ⚠️ NEUTRAL BY DESIGN. This surface says what a device IS, who makes it, who
+  // distributes it here and how common it is. It never says one is better than
+  // another: the tenant's own sales organisation teaches selling against a
+  // Morpheus8, and the moment SkinDay editorialises for whoever is logged in it
+  // stops being an independent layer and becomes their brochure.
+  // ⓘ No technology descriptions yet — device_reference has nowhere to put them.
+  // Structure ships now; Andy fills the copy for the devices reps actually meet.
+  var LS_ROWS=null, LS_MODE='tech', LS_Q='', LS_W=[], LS_T=null;
+  function loadLandscape(){
+    loaded.landscape=true;
+    el('lsBody').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    api('landscape',{}).then(function(res){
+      LS_ROWS=res.landscape||[];
+      paintLandscape();
+    }).catch(handleErr);
+  }
+  function lsHay(r){
+    if(r.__hay) return r.__hay;
+    return (r.__hay=[r.model||'',r.manufacturer||'',r.distributor||'',r.platform||'',
+                     CAT_LABEL[r.category]||r.category||''].join(' | ').toLowerCase());
+  }
+  function lsMatch(r){
+    var h=lsHay(r);
+    for(var i=0;i<LS_W.length;i++){ if(h.indexOf(LS_W[i])===-1) return false; }
+    return true;
+  }
+  // "View clinics" hands off to the Clinics tab with the device filter set. The
+  // counts were checked equal on both paths, for standalone devices and for
+  // generation families, before this was wired up.
+  function lsGoTo(opts){
+    ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
+    el('acctSearch').value=''; setSearch('');
+    if(opts.device) el('acctDevice').value=opts.device;
+    if(opts.mfr)    el('acctMfr').value=opts.mfr;
+    if(opts.dist)   el('acctDist').value=opts.dist;
+    syncQuick(); advLabel();
+    document.querySelector('.tabs button[data-tab="accounts"]').click();
+    loadAccounts();
+  }
+  function lsNum(r){
+    // Territory first, because that is the number the rep can act on. The
+    // national figure sits under it so a device absent from this patch still
+    // reads as a real product rather than an empty row.
+    var t=Number(r.clinics)||0, n=Number(r.clinics_country)||0;
+    return '<span class="lnum">'+num(t)+' here'+
+      (n!==t?'<span class="ln2">'+num(n)+' in '+esc(CTY.country)+'</span>':'')+'</span>';
+  }
+  function paintLandscape(){
+    var box=el('lsBody');
+    if(!LS_ROWS){ return; }
+    var rows=LS_W.length ? LS_ROWS.filter(lsMatch) : LS_ROWS;
+    if(!rows.length){
+      box.innerHTML='<div class="empty">Nothing matches that. Search covers device, manufacturer, distributor and category.</div>';
+      return;
+    }
+    box.innerHTML = LS_MODE==='tech' ? lsByCategory(rows) : lsByCompany(rows);
+    Array.prototype.forEach.call(box.querySelectorAll('.lgo'),function(b){
+      b.addEventListener('click',function(e){
+        e.stopPropagation();
+        lsGoTo({ device:b.getAttribute('data-device')||'',
+                 mfr:b.getAttribute('data-mfr')||'',
+                 dist:b.getAttribute('data-dist')||'' });
+      });
+    });
+  }
+  function lsByCategory(rows){
+    var by={}, order=[];
+    rows.forEach(function(r){
+      var k=r.category||'other';
+      if(!by[k]){ by[k]={label:CAT_LABEL[k]||k, rows:[]}; order.push(k); }
+      by[k].rows.push(r);
+    });
+    // Categories the tenant competes in first: a rep learns their own field
+    // before the ones they have nothing in.
+    order.sort(function(a,b){
+      var oa=by[a].rows.some(function(r){return r.is_ours;})?0:1;
+      var ob=by[b].rows.some(function(r){return r.is_ours;})?0:1;
+      return oa-ob || by[b].rows.length-by[a].rows.length;
+    });
+    return order.map(function(k){
+      var g=by[k];
+      // Yours first inside the category, then by how common the device is.
+      g.rows.sort(function(a,b){
+        return (b.is_ours?1:0)-(a.is_ours?1:0) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
+      });
+      return '<div class="lsgroup">'+
+        '<div class="lshead"><span class="lsname">'+esc(g.label)+'</span>'+
+        '<span class="lscount">'+g.rows.length+' devices</span></div>'+
+        g.rows.map(function(r){
+          // ⚠️ A generation is its OWN row, never folded into the parent: the
+          // parent count excludes its children, so adding them would double.
+          var gen = r.parent_device_id ? '<span class="lgen">Generation</span>' : '';
+          return '<div class="lsrow'+(r.is_ours?' ours':'')+'">'+
+            '<span class="lm">'+esc(r.model)+'</span>'+
+            '<span class="lmk">'+esc(r.manufacturer)+
+              (r.distributor?' &middot; via '+esc(r.distributor):'')+'</span>'+
+            gen+(r.is_ours?'<span class="lyou">Yours</span>':'')+
+            '<span class="lsp"></span>'+lsNum(r)+
+            '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+    }).join('');
+  }
+  function lsByCompany(rows){
+    // One entry per company. A distributor is a SEPARATE entry from the maker,
+    // never merged: no clinic runs a distributor, and conflating the two is the
+    // error this product has already made once.
+    function build(kind){
+      var by={};
+      rows.forEach(function(r){
+        var nm = kind==='mfr' ? r.manufacturer : r.distributor;
+        if(!nm) return;
+        if(!by[nm]) by[nm]={name:nm, rows:[], cats:{}, here:0, ours:false};
+        by[nm].rows.push(r); by[nm].cats[r.category]=1;
+        by[nm].here += Number(r.clinics)||0;
+        if(r.is_ours) by[nm].ours=true;
+      });
+      return Object.keys(by).map(function(k){ return by[k]; })
+        .sort(function(a,b){ return (b.ours?1:0)-(a.ours?1:0) || b.here-a.here; });
+    }
+    function section(title, list, kind){
+      if(!list.length) return '';
+      return '<div class="lsgroup"><div class="lshead"><span class="lsname">'+esc(title)+'</span>'+
+        '<span class="lscount">'+list.length+'</span></div>'+
+        list.map(function(c){
+          var nCat=Object.keys(c.cats).length;
+          return '<div class="lsrow'+(c.ours?' ours':'')+'">'+
+            '<span class="lm">'+esc(c.name)+'</span>'+
+            '<span class="lmk">'+c.rows.length+(c.rows.length===1?' device':' devices')+
+              ' &middot; '+nCat+(nCat===1?' category':' categories')+'</span>'+
+            (c.ours?'<span class="lyou">Yours</span>':'')+
+            '<span class="lsp"></span>'+
+            // ⚠️ Installs SUMMED across devices, so one clinic running two of a
+            // maker's machines counts twice. Labelled "installs", never
+            // "clinics" — the leaderboard figure is the distinct-clinic one.
+            '<span class="lnum">'+num(c.here)+' installs</span>'+
+            '<button class="lgo" type="button" '+
+              (kind==='mfr'?'data-mfr="':'data-dist="')+esc(c.name)+'">View accounts &rarr;</button>'+
+          '</div>';
+        }).join('')+'</div>';
+    }
+    return section('Manufacturers', build('mfr'), 'mfr') +
+           section('Distributors',  build('dist'), 'dist');
+  }
+  el('lsMode').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-lm]'); if(!b) return;
+    LS_MODE=b.getAttribute('data-lm');
+    Array.prototype.forEach.call(el('lsMode').querySelectorAll('button'),function(x){
+      x.classList.toggle('on', x===b);
+    });
+    paintLandscape();
+  });
+  el('lsSearch').addEventListener('input',function(){
+    var v=this.value;
+    clearTimeout(LS_T);
+    LS_T=setTimeout(function(){
+      LS_Q=v.trim(); LS_W=LS_Q.toLowerCase().split(/\s+/).filter(Boolean);
+      paintLandscape();
+    },120);
+  });
 
   function loadFilterOptions(){
     // ⭐⭐ SEND THE CATEGORY. This used to post an empty body, so the device and
@@ -1824,34 +2077,71 @@
   // overlaps. A clinic with two InMode machines counts twice here and once
   // there, so the two panels will never reconcile — keep the labels apart.
   var CAT_LABEL={};
+  // ⭐⭐ SORTED BY OUR RANK, AND FILTERED. Sixteen equally weighted donuts in
+  // taxonomy order is a wall: after two rows the eye stops reading. Ordered by
+  // where the tenant actually stands, the same grid tells a story — #1 here,
+  // #3 there, absent over there — and the categories they do not compete in sit
+  // behind a filter instead of taking a third of the screen every visit.
+  var CAT_ROWS=[], CAT_VIEW='compete';
   function renderCategoryShare(rows){
     var box=el('catlist');
     if(!rows||!rows.length){ box.innerHTML='<div class="empty">No category data.</div>'; return; }
     var byCat={}, order=[];
     rows.forEach(function(r){
-      if(!byCat[r.category]){ byCat[r.category]={ label:r.category_label||r.category, group:r.group_label||'', total:r.total_installs||0, slices:[] }; order.push(r.category); }
+      if(!byCat[r.category]){ byCat[r.category]={ category:r.category, label:r.category_label||r.category, group:r.group_label||'', total:r.total_installs||0, slices:[] }; order.push(r.category); }
       byCat[r.category].slices.push(r);
       CAT_LABEL[r.category]=r.category_label||r.category;
     });
-    box.innerHTML='<div class="dgrid">'+order.map(function(cat){
-      var c=byCat[cat];
-      var mine=null;
+    CAT_ROWS=order.map(function(cat){
+      var c=byCat[cat], mine=null;
       c.slices.forEach(function(s){ if(s.is_ours) mine=s; });
-      return '<div class="dcard" data-cat="'+esc(cat)+'">'+
-        '<div class="dhead"><span class="dtitle">'+esc(c.label)+'</span>'+rankPill(mine)+'</div>'+
-        '<div class="dsub">'+esc(c.group)+'</div>'+
-        '<div class="dring">'+donutSvg(c.slices, mine)+'<div class="dlegend">'+
-          c.slices.map(function(s){
-            return '<div class="dl'+(s.is_ours?' you':'')+'">'+
-              '<span class="sw" style="background:'+sliceColor(s)+'"></span>'+
-              '<span class="dn"><b>'+esc(s.manufacturer)+'</b></span>'+
-              '<span class="dp">'+fmtPct(s.pct)+'%</span></div>';
-          }).join('')+
-        '</div></div>'+
-      '</div>';
-    }).join('')+'</div>'+
-    '<div class="dnote">Share of identified installations within each category, across clinics with equipment identified. Each machine counts once, so slices total 100%. This is not the same measure as share of identified accounts above, where a clinic running several manufacturers counts under each.</div>';
+      var rank = mine ? (parseInt(mine.rn,10)||0) : 0;
+      c.mine=mine;
+      // Present but unranked sorts after a real rank, absent sorts last.
+      c.sortKey = mine ? (rank>0 && rank<900 ? rank : 500) : 9999;
+      c.present = !!mine;
+      return c;
+    }).sort(function(a,b){ return a.sortKey-b.sortKey || b.total-a.total; });
+    paintCategoryShare();
+  }
+  function paintCategoryShare(){
+    var box=el('catlist');
+    var nHere=CAT_ROWS.filter(function(c){ return c.present; }).length;
+    var nAway=CAT_ROWS.length-nHere;
+    var list = CAT_VIEW==='compete' ? CAT_ROWS.filter(function(c){ return c.present; })
+             : CAT_VIEW==='away'    ? CAT_ROWS.filter(function(c){ return !c.present; })
+             : CAT_ROWS;
+    var tabs='<div class="catfilter">'+
+      [['compete','Where you compete ('+nHere+')'],
+       ['all','All ('+CAT_ROWS.length+')'],
+       ['away','Not present ('+nAway+')']]
+      .map(function(t){
+        return '<button type="button" data-cv="'+t[0]+'"'+(CAT_VIEW===t[0]?' class="on"':'')+'>'+esc(t[1])+'</button>';
+      }).join('')+'</div>';
 
+    var grid = list.length
+      ? '<div class="dgrid">'+list.map(function(c){
+          return '<div class="dcard" data-cat="'+esc(c.category)+'">'+
+            '<div class="dhead"><span class="dtitle">'+esc(c.label)+'</span>'+rankPill(c.mine)+'</div>'+
+            '<div class="dsub">'+esc(c.group)+'</div>'+
+            '<div class="dring">'+donutSvg(c.slices, c.mine)+'<div class="dlegend">'+
+              c.slices.map(function(s){
+                return '<div class="dl'+(s.is_ours?' you':'')+'">'+
+                  '<span class="sw" style="background:'+sliceColor(s)+'"></span>'+
+                  '<span class="dn"><b>'+esc(s.manufacturer)+'</b></span>'+
+                  '<span class="dp">'+fmtPct(s.pct)+'%</span></div>';
+              }).join('')+
+            '</div></div>'+
+          '</div>';
+        }).join('')+'</div>'
+      : '<div class="empty">Nothing in this view.</div>';
+
+    box.innerHTML = tabs + grid +
+      '<div class="dnote">Share of identified installations within each category, across clinics with equipment identified. Each machine counts once, so slices total 100%. This is not the same measure as market position above, where a clinic running several manufacturers counts under each.</div>';
+
+    Array.prototype.forEach.call(box.querySelectorAll('.catfilter button'),function(b){
+      b.addEventListener('click',function(){ CAT_VIEW=b.getAttribute('data-cv'); paintCategoryShare(); });
+    });
     Array.prototype.forEach.call(box.querySelectorAll('.dcard'),function(card){
       card.addEventListener('click',function(){
         el('acctCategory').value=card.getAttribute('data-cat');
@@ -1887,11 +2177,15 @@
         ' stroke-dashoffset="'+(-off).toFixed(2)+'"></circle>';
       off+=len; return a;
     }).join('');
-    var mid=mine?fmtPct(mine.pct)+'%':'—';
+    var mid=mine?fmtPct(mine.pct)+'%':'\u2014';
+    // ⭐ Rank, not the word "yours". The teal legend row already says which one
+    // is theirs; "#4" is the thing a rep reads off it.
+    var r = mine ? (parseInt(mine.rn,10)||0) : 0;
+    var sub = !mine ? 'NOT PRESENT' : (r && r<900 ? '#'+r : 'UNRANKED');
     return '<svg width="92" height="92" viewBox="-46 -46 92 92" role="img" aria-label="share of installations">'+
       '<g transform="rotate(-90)">'+arcs+'</g>'+
       '<text class="dmid" x="0" y="2" text-anchor="middle" dominant-baseline="middle">'+mid+'</text>'+
-      '<text class="dmids" x="0" y="15" text-anchor="middle">YOURS</text>'+
+      '<text class="dmids" x="0" y="15" text-anchor="middle">'+sub+'</text>'+
     '</svg>';
   }
   function seedCategorySelects(){
