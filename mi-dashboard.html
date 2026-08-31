@@ -120,7 +120,7 @@
   main { max-width:1120px; margin:0 auto; padding:32px 28px 90px; }
   .panel { display:none; } .panel.on { display:block; }
 
-  .geobar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:32px; }
+  .geobar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
   .geobar select { font-family:var(--font-ui); font-size:.92rem; color:var(--ink); padding:10px 34px 10px 14px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 11px center; background-size:14px; }
   .geobar select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .geobar .sep { color:var(--faint); }
@@ -213,10 +213,13 @@
      strip mall is worse than a clean tile, and it was the source of the "pale
      cards" complaint on the patient directory. */
   .acct.card { padding:0; overflow:hidden; display:flex; flex-direction:column; }
-  .acct.card .shot { position:relative; height:132px; background:var(--surface-2); border-bottom:1px solid var(--line-2); }
+  .acct.card .shot { position:relative; height:118px; background:var(--surface-2); border-bottom:1px solid var(--line-2); }
   .acct.card .shot img { width:100%; height:100%; object-fit:cover; display:block; }
   .acct.card .shot.none { display:flex; align-items:center; justify-content:center; }
   .acct.card .shot.none span { display:block !important; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); padding:0 14px; text-align:center; }
+  /* Status and characteristic sit ON the photo so the content area can open
+     with the clinic name and nothing else. */
+  .acct.card .shotpills { position:absolute; left:10px; top:10px; display:flex; gap:6px; flex-wrap:wrap; max-width:calc(100% - 20px); }
   .acct.card .dist { position:absolute; left:10px; bottom:10px; background:rgba(20,24,29,.82); color:#fff; font-family:var(--font-mono); font-size:10.5px; padding:4px 8px; border-radius:20px; }
   .acct.card .body { padding:16px 18px 4px; }
   .acct.card .actions { padding:0 18px 16px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
@@ -229,6 +232,46 @@
      no way to tell whether it was the filter or the territory. Each chip names
      one applied filter and clears it on click. */
   .fchips { display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; }
+  /* ---- find bar ---------------------------------------------------------- */
+  /* ⭐ ONE QUERY AREA. Territory, search, filters and results were four blocks
+     with similar gaps, which is what made them read as stacked toolbars.
+     Now: territory 20px, search 12px, filters 24px, results. */
+  .findbar { margin:0 0 24px; }
+  .fb-row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .fb-row + .fb-row { margin-top:10px; }
+  /* ⭐ Search owns the first row with Near me and nothing else, so it reads as
+     the way in rather than as one more filter. */
+  .fb-row .srch { flex:1 1 420px; max-width:none; }
+  .fb-sub { margin-top:12px; }
+  .quick + .fb-sub { margin-top:12px; }
+  .fb-sub select { font-family:var(--font-ui); font-size:.88rem; color:var(--ink-2); padding:8px 30px 8px 12px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:13px; }
+  .fb-sub select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .fb-sub .count { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  .fb-sub .btn { padding:8px 12px; font-size:.88rem; }
+
+  .quick { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .quick button { font:inherit; font-size:.88rem; padding:8px 14px; cursor:pointer;
+    color:var(--ink-2); background:var(--surface); border:1px solid var(--line);
+    border-radius:999px; }
+  .quick button:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .quick button.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+
+  .adv { border:1px solid var(--line); background:var(--surface-2); border-radius:var(--radius-sm); padding:16px 18px; margin:0 0 14px; }
+  .adv-head { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:12px; }
+  .adv-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; }
+  .adv-grid select { width:100%; font-family:var(--font-ui); font-size:.9rem; color:var(--ink); padding:9px 30px 9px 12px; border:1px solid var(--line); background:var(--surface); border-radius:var(--radius-sm); -webkit-appearance:none; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:13px; }
+  .adv-grid select:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .adv-foot { margin-top:14px; }
+
+  .showbar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 18px; }
+  .showbar .btn.go { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; padding:12px 22px; font-size:.95rem; }
+  .showbar .btn.go:hover { background:var(--accent-strong); }
+  .showbar .sb-note { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  @media (max-width:640px){
+    .fb-row .srch { flex:1 1 100%; }
+    .fb-sub select, .fb-sub .btn { flex:1 1 46%; }
+    .showbar .btn.go { flex:1 1 100%; text-align:center; }
+  }
   .saveview { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:0 0 14px; padding:11px 14px;
     border:1px solid var(--line); background:var(--surface-2); border-radius:var(--radius-sm); }
   .saveview .sv-txt { font-size:.9rem; color:var(--ink-2); }
@@ -245,8 +288,14 @@
   .fchip button:hover { opacity:1; background:#D5E8E4; }
   .fchip.clearall { background:transparent; border-color:transparent; color:#7A8B88; }
 
+  /* ⭐ TWO DIFFERENT THINGS, TWO TREATMENTS. "Newly listed" is a STATUS and
+     earns the status colour; "13 locations" is an account characteristic and
+     was borrowing the same urgency for no reason. */
   .pill.chain { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
     background:#FBE9F1; border:1px solid #E9AFC9; color:#9C2F63; font-weight:600;
+    border-radius:100px; padding:3px 9px; white-space:nowrap; }
+  .pill.locs { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
+    background:var(--surface-2); border:1px solid var(--line-2); color:var(--muted); font-weight:500;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
 
   /* Industry pulse: what is being added most, ranked. Deliberately a list and
@@ -277,8 +326,10 @@
   .fev .when { font-family:var(--font-mono); font-size:11px; color:var(--faint); white-space:nowrap; padding-top:2px; }
   .fev .what { flex:1; min-width:0; }
   .fev .acts { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
-  .flagbtn { font-size:12px; border:1px solid var(--line); background:none; color:var(--muted); border-radius:7px; padding:7px 10px; cursor:pointer; }
-  .flagbtn:hover { border-color:var(--accent); color:var(--accent-strong); }
+  /* ⭐ Operationally important, irrelevant to 99% of visits. A quiet link at
+     the end of the row rather than a fourth button competing with Directions. */
+  .flagbtn { font-size:11.5px; border:0; background:none; color:var(--faint); border-radius:7px; padding:7px 4px; cursor:pointer; margin-left:auto; text-decoration:underline; text-underline-offset:3px; }
+  .flagbtn:hover { color:var(--accent-strong); }
   .flagsheet { position:fixed; inset:0; background:rgba(28,23,20,.42); z-index:200;
     display:flex; align-items:flex-end; justify-content:center; padding:0; }
   .flagsheet .fs-in { background:var(--surface); width:100%; max-width:460px;
@@ -299,7 +350,7 @@
   .flagsheet .fs-msg { font-size:13px; color:var(--red); min-height:16px; margin-top:8px; }
   @media (min-width:641px){ .flagsheet { align-items:center; }
     .flagsheet .fs-in { border-radius:16px; } }
-  .flagbtn.done { border-color:#E9AFC9; color:#9C2F63; background:#FBE9F1; }
+  .flagbtn.done { color:#9C2F63; text-decoration:none; }
   @media (max-width:640px){ .fev { flex-direction:column; gap:6px; } }
   .top-in { position:relative; }
   .menu { position:absolute; right:0; top:calc(100% + 8px); z-index:40; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); box-shadow:var(--shadow); min-width:210px; padding:8px; }
@@ -318,7 +369,9 @@
   .btn.near:hover { background:var(--accent-soft); }
   .btn.near.on { background:var(--accent); border-color:var(--accent); color:#fff; }
   .btn.near.on:hover { background:var(--accent-strong); color:#fff; }
-  .acctgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; }
+  /* auto-fit rather than auto-fill: empty tracks collapse, so three cards use
+     the full content width instead of leaving a column of air on the right. */
+  .acctgrid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:17px; }
   @media (max-width:640px){
     .acctgrid { grid-template-columns:1fr; gap:10px; }
     .acct.card .shot { height:112px; }
@@ -327,7 +380,7 @@
     .toolbar .srch { flex:1 1 100%; max-width:none; order:-1; }
   }
   .acct .head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
-  .acct .aname { font-size:16.5px; font-weight:600; }
+  .acct .aname { font-size:17.5px; font-weight:600; line-height:1.25; letter-spacing:-.01em; }
   .acct .ameta { font-family:var(--font-mono); font-size:11px; color:var(--muted); }
   .acct .ascore { margin-left:auto; text-align:right; padding-left:16px; }
   .acct .ascore .s { font-size:26px; font-weight:600; color:var(--accent-strong); line-height:1; letter-spacing:-.02em; }
@@ -343,14 +396,25 @@
      carried no information a label cannot carry better, so the dots are gone. */
   .mfrs { margin-top:14px; display:flex; flex-direction:column; gap:9px; }
   .mfr { display:grid; grid-template-columns:150px 1fr; gap:12px; align-items:baseline; }
-  .mfr .mn { font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); line-height:1.75; }
+  /* ⭐ Hanken, not mono. The mono face was making an equipment INVENTORY read
+     as a database dump. Mono is kept for true metadata — territory, dates,
+     counts — and taken off anything that is ordinary information. */
+  .mfr .mn { font-size:11px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-2); line-height:1.7; }
   .mfr .mn .ct { display:inline-block; font-weight:500; font-size:10px; color:var(--muted); background:var(--surface-2); border:1px solid var(--line-2); border-radius:100px; padding:0 5px; margin-left:5px; letter-spacing:0; }
   .mfr.ours .mn { color:var(--accent-strong); font-weight:700; }
   .mfr.ours .mn .ct { color:var(--accent-strong); background:var(--accent-soft); border-color:var(--accent); }
   .mfr .md { display:flex; gap:6px; flex-wrap:wrap; }
+  .mfr-rest { display:none; }
+  .mfrs.open .mfr-rest { display:flex; flex-direction:column; gap:9px; margin-top:9px; }
+  .mfrmore { font:inherit; font-size:11.5px; font-weight:500; color:var(--accent-strong);
+    background:none; border:0; padding:6px 0 0; cursor:pointer; }
+  .mfrmore:hover { text-decoration:underline; text-underline-offset:3px; }
   @media (max-width:640px){ .mfr { grid-template-columns:1fr; gap:3px; } }
-  .plate { display:inline-flex; align-items:center; font-family:var(--font-mono); font-size:11px; padding:4px 10px; border-radius:6px; border:1px solid var(--line-2); color:var(--ink-2); background:var(--surface); cursor:pointer; }
-  .plate:hover { border-color:var(--accent); color:var(--accent-strong); }
+  /* ⭐ TAGS, NOT BUTTONS. The outlined white chip read as a control; a soft
+     grey fill with no border reads as information. It is still clickable for
+     evidence, which the hover makes clear on the way in. */
+  .plate { display:inline-flex; align-items:center; font-size:12.5px; padding:4px 11px; border-radius:6px; border:1px solid transparent; color:var(--ink-2); background:var(--surface-2); cursor:pointer; }
+  .plate:hover { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
   .plate.ours { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); font-weight:500; }
   .plate.on { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   /* Evidence panel. Every claim on this page came from somewhere; this is where
@@ -369,6 +433,10 @@
   .actions { display:flex; gap:9px; margin-top:15px; align-items:center; }
   .btn { font:inherit; font-size:13px; font-weight:500; padding:8px 15px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; }
   .btn:hover { border-color:var(--accent); color:var(--accent-strong); }
+  /* ⭐ The browser's default focus ring was the one blue thing on a teal page. */
+  .btn:focus-visible, .quick button:focus-visible, .plate:focus-visible, .flagbtn:focus-visible {
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .btn.on { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); font-weight:600; }
   .btn.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent-strong); }
   .btn.mini { padding:6px 11px; font-size:12px; }
   .note-edit { width:100%; margin-top:12px; padding:10px 13px; border:1px solid var(--line); border-radius:var(--radius-sm); font:inherit; font-size:13px; resize:vertical; min-height:40px; background:var(--surface-2); }
@@ -568,15 +636,29 @@
     </section>
 
     <section class="panel on" id="panel-accounts">
-      <!-- Primary row: what a rep decides every time. Everything else is behind
-           More filters. The old single row put nine dropdowns on screen before
-           the rep had seen a clinic, which read as a control panel rather than a
-           worklist. -->
-      <div class="toolbar">
-        <div class="srch"><input id="acctSearch" type="search" autocomplete="off" spellcheck="false"
-             placeholder="Search clinic, city or device"></div>
-        <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
-        <select id="acctSegment">
+      <!-- ⭐⭐⭐ THE FIND BAR, rebuilt 2026-08-30. The old version put nine
+           controls of equal weight above the list and then loaded the whole
+           territory before the rep had asked for anything. Now it reads as a
+           sequence: where am I, what kind of clinic, show me. -->
+      <div class="findbar">
+        <div class="fb-row">
+          <div class="srch"><input id="acctSearch" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Search clinic, city or device"></div>
+          <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
+        </div>
+        <!-- ⭐ ONE TAP INSTEAD OF A DROPDOWN. These ARE the segment control: the
+             select below is kept in the DOM, hidden, so every filter, chip and
+             query path still reads one source of truth and nothing downstream
+             had to change. -->
+        <div class="quick" id="acctQuick">
+          <button type="button" data-seg="">All clinics</button>
+          <button type="button" data-seg="competitor">Running a competitor</button>
+          <button type="button" data-seg="ours">Already running yours</button>
+          <button type="button" data-seg="new">Newly listed</button>
+          <button type="button" data-seg="greenfield">No equipment identified</button>
+          <button type="button" data-seg="research">Not yet researched</button>
+        </div>
+        <select id="acctSegment" hidden>
           <option value="">All clinics</option>
           <option value="ours">Already running your devices</option>
           <option value="competitor">Running a competitor, none of yours</option>
@@ -588,41 +670,55 @@
                verified as trading since 2023. -->
           <option value="new">Newly listed</option>
         </select>
-        <select id="acctCategory"><option value="">All categories</option></select>
-        <select id="acctSort">
-          <option value="reviews">Most reviews</option>
-          <option value="rating">Best rated</option>
-          <option value="devices">Most equipment</option>
-          <option value="distance">Nearest to me</option>
-          <option value="newest">Most recently listed</option>
-        </select>
-        <button class="btn" id="acctMore" type="button" aria-expanded="false">More filters</button>
-        <button class="linkish" id="acctReset" type="button" style="display:none">Reset filters</button>
-        <span class="count" id="acctCount"></span>
+        <div class="fb-row fb-sub">
+          <select id="acctCategory"><option value="">All categories</option></select>
+          <select id="acctSort">
+            <option value="reviews">Most reviews</option>
+            <option value="rating">Best rated</option>
+            <option value="devices">Most equipment</option>
+            <option value="distance">Nearest to me</option>
+            <option value="newest">Most recently listed</option>
+          </select>
+          <button class="btn" id="acctMore" type="button" aria-expanded="false">More filters</button>
+          <button class="linkish" id="acctReset" type="button" style="display:none">Reset filters</button>
+          <span class="count" id="acctCount"></span>
+        </div>
+      </div>
+      <!-- ⭐ ADVANCED FILTERS sit in their own panel, not as a third toolbar row.
+           They close on Apply and leave their chips behind, so the default state
+           stays two lines. -->
+      <div class="adv" id="acctAdv" hidden>
+        <div class="adv-head">Advanced filters</div>
+        <div class="adv-grid">
+          <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
+          <select id="acctDevice"><option value="">Runs any device</option></select>
+          <select id="acctExclude"><option value="">Missing nothing in particular</option></select>
+          <select id="acctDist"><option value="">Any distributor</option></select>
+          <!-- ⭐ "Any size" removed 2026-08-27 (Andy: "it does not make sense").
+               The label promised clinic size and the options delivered review
+               counts, which is a proxy at best. Now says what it filters. -->
+          <select id="acctMinRev">
+            <option value="">Any review count</option>
+            <option value="50">50+ reviews</option>
+            <option value="200">200+ reviews</option>
+            <option value="500">500+ reviews</option>
+          </select>
+        </div>
+        <div class="adv-foot"><button class="btn" id="acctApply" type="button">Apply filters</button></div>
       </div>
       <!-- ⭐ Its own line, not appended to the count. A rep scanning a list will
            not notice "· showing first 200" at the end of a sentence, and acting
            on a truncated list is the expensive mistake this screen can cause. -->
       <div id="acctTrunc" class="trunc-note" style="display:none"></div>
       <div id="acctChips" class="fchips" style="display:none"></div>
+      <!-- ⭐⭐ NOTHING LOADS UNTIL ASKED. A rep arriving in a territory used to
+           wait while thousands of clinics they had not asked for were fetched.
+           The delay now follows an explicit tap, which is the difference between
+           a slow app and a working one. -->
+      <div id="acctShow" class="showbar" style="display:none"></div>
       <!-- ⭐ SAVE THIS VIEW. Appears only once the rep has narrowed to something,
            because "save all 7,000 clinics" is a misclick, not a worklist. -->
       <div id="acctSaveView" class="saveview" style="display:none"></div>
-      <div class="toolbar" id="acctAdv" hidden>
-        <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
-        <select id="acctDevice"><option value="">Runs any device</option></select>
-        <select id="acctExclude"><option value="">Missing nothing in particular</option></select>
-        <select id="acctDist"><option value="">Any distributor</option></select>
-        <!-- ⭐ "Any size" removed 2026-08-27 (Andy: "it does not make sense").
-             The label promised clinic size and the options delivered review
-             counts, which is a proxy at best. Now says what it filters. -->
-        <select id="acctMinRev">
-          <option value="">Any review count</option>
-          <option value="50">50+ reviews</option>
-          <option value="200">200+ reviews</option>
-          <option value="500">500+ reviews</option>
-        </select>
-      </div>
       <div id="acctNearNote" class="cmeta" style="display:none;margin:-4px 0 10px"></div>
       <div id="acctList"><div class="empty"><span class="spin"></span></div></div>
     </section>
@@ -940,11 +1036,9 @@
         api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
       }
       loadFilterOptions(); loadSavedIds(); bindRoute();
-      // ⭐ Accounts is the landing tab, so its rows must be fetched at sign-in
-      // rather than on first click. The overview call above is the identity
-      // call and cannot be skipped; this runs alongside it, and the paged
-      // fetch paints as each page lands rather than holding a spinner.
-      loadAccounts(); loadNewCount();
+      // ⭐ Clinics is the landing tab, so the find bar and its count are ready
+      // at sign-in — but the list itself waits for the rep to press Show.
+      syncQuick(); gateAccounts(); loadNewCount();
     }).catch(function(e){
       KEY=null;
       // ⚠️ Only forget the token when the server REJECTED it. A network blip must
@@ -1326,7 +1420,7 @@
       Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(p){ p.classList.remove('on'); });
       b.classList.add('on');
       var tab=b.getAttribute('data-tab'); el('panel-'+tab).classList.add('on');
-      if(tab==='accounts'&&!loaded.accounts) loadAccounts();
+      if(tab==='accounts'&&!loaded.accounts&&!ACCT_GATED) loadAccounts();
       if(tab==='feed'&&!loaded.feed) loadFeed();
       if(tab==='list') loadSaved();
     });
@@ -1433,7 +1527,9 @@
   function onGeoChange(){
     loaded.accounts=false; loaded.list=false; loaded.feed=false;
     refreshPortfolio(); loadFilterOptions(); loadNewCount();
-    if(el('panel-accounts').classList.contains('on')) loadAccounts();
+    // ⭐ A NEW TERRITORY RE-GATES. Switching province used to start fetching the
+    // whole of the new one immediately; now the count updates and the rep asks.
+    if(el('panel-accounts').classList.contains('on')) gateAccounts();
     if(el('panel-list').classList.contains('on')) loadSaved();
   }
 
@@ -1674,6 +1770,7 @@
         el('acctCategory').value=card.getAttribute('data-cat');
         el('acctSegment').value='competitor';
         document.querySelector('.tabs button[data-tab="accounts"]').click();
+        syncQuick();
         loadAccounts();
       });
     });
@@ -1752,7 +1849,7 @@
       if(A.devs.length!==B.devs.length) return B.devs.length-A.devs.length;
       return A.name<B.name?-1:1;
     });
-    return '<div class="mfrs">'+order.map(function(m){
+    function rowHtml(m){
       var g=groups[m];
       return '<div class="mfr'+(g.ours?' ours':'')+'">'+
         '<div class="mn">'+esc(g.name)+(g.devs.length>1?' <span class="ct">'+g.devs.length+'</span>':'')+'</div>'+
@@ -1764,8 +1861,35 @@
                    }))+'">'+esc(d.model)+'</span>';
         }).join('')+'</div>'+
       '</div>';
-    }).join('')+'</div><div class="evslot"></div>';
+    }
+    // ⭐⭐ COLLAPSE PAST FOUR MAKERS. An 11-machine clinic made a card three times
+    // the height of a 2-machine one, and a rep scanning twenty accounts is helped
+    // more by consistent cards than by seeing everything at once.
+    // ⚠️ NOTHING IS DROPPED — the rest are in the DOM, one tap away, and the
+    // ordering already puts the tenant's own group first, so what stays visible
+    // is the part that decides whether to visit.
+    var SHOW_MFRS = 4;
+    var head = order.slice(0, SHOW_MFRS).map(rowHtml).join('');
+    var rest = order.slice(SHOW_MFRS);
+    var restHtml = '';
+    if(rest.length){
+      var hidden = rest.reduce(function(n,m){ return n + groups[m].devs.length; }, 0);
+      restHtml = '<div class="mfr-rest">'+rest.map(rowHtml).join('')+'</div>'+
+        '<button type="button" class="mfrmore">+ '+hidden+' more '+
+        (hidden===1?'machine':'machines')+'</button>';
+    }
+    return '<div class="mfrs">'+head+restHtml+'</div><div class="evslot"></div>';
   }
+  // Delegated: cards are rebuilt constantly and every rebuild would otherwise
+  // need re-binding. One listener for both tabs.
+  document.addEventListener('click',function(e){
+    var b=e.target.closest && e.target.closest('.mfrmore');
+    if(!b) return;
+    var wrap=b.closest('.mfrs'); if(!wrap) return;
+    if(!b.getAttribute('data-label')) b.setAttribute('data-label', b.textContent);
+    var open=wrap.classList.toggle('open');
+    b.textContent = open ? 'Show less' : b.getAttribute('data-label');
+  });
   // One panel per card, replaced on each click, so a rep never ends up with six
   // open boxes. Clicking the same plate again closes it.
   function bindEvidence(root){
@@ -1826,8 +1950,76 @@
       p.hidden=!p.hidden; b.setAttribute('aria-expanded', p.hidden?'false':'true');
       advLabel();
     });
+    // ⭐ Apply closes the panel and leaves the chips behind, so the default
+    // state is two lines rather than three. The selects already fire their own
+    // change handlers, so this only has to collapse and refresh.
+    var ap=el('acctApply');
+    if(ap) ap.addEventListener('click',function(){
+      p.hidden=true; b.setAttribute('aria-expanded','false'); advLabel();
+      if(ACCT_GATED) refreshShowBar(); else loadAccounts();
+    });
   })();
   var ACCT_FILTERS=['acctCategory','acctSegment','acctMfr','acctDist','acctDevice','acctExclude','acctMinRev'];
+
+  // ---- quick segment chips --------------------------------------------------
+  // They drive the hidden acctSegment select rather than holding their own
+  // state, so every existing filter, chip and query path keeps one source of
+  // truth and none of them needed changing.
+  function syncQuick(){
+    var v=el('acctSegment').value||'';
+    Array.prototype.forEach.call(el('acctQuick').querySelectorAll('button'),function(b){
+      b.classList.toggle('on', (b.getAttribute('data-seg')||'')===v);
+    });
+  }
+  el('acctQuick').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-seg]'); if(!b) return;
+    el('acctSegment').value=b.getAttribute('data-seg')||'';
+    syncQuick(); advLabel();
+    if(ACCT_GATED) refreshShowBar(); else loadAccounts();
+  });
+
+  // ---- the gate -------------------------------------------------------------
+  // ⭐⭐⭐ ARRIVING IS NOT ASKING. A rep landing in a territory no longer waits
+  // while thousands of clinics they have not chosen are fetched. They see the
+  // controls, a live count, and a button. The wait then follows an explicit tap,
+  // which is the whole difference between a slow app and a working one.
+  // ⓘ THE GATE IS FIRST-LOAD ONLY. Once they have pressed Show, changing a
+  // filter reloads straight away — making them press it every time would be its
+  // own kind of tedious.
+  var ACCT_GATED=true, SHOW_SEQ=0;
+  function gateAccounts(){
+    ACCT_GATED=true; loaded.accounts=false;
+    ACCT_ALL=[]; ACCT_ROWS=[]; ACCT_SHOWN=0;
+    el('acctList').innerHTML='';
+    el('acctCount').textContent='';
+    el('acctTrunc').style.display='none';
+    el('acctSaveView').style.display='none';
+    refreshShowBar();
+  }
+  // Counts without loading: the same query with limit 1, read off total_matches.
+  // One row over the wire instead of the territory.
+  function refreshShowBar(){
+    var bar=el('acctShow'); if(!bar) return;
+    bar.style.display='';
+    var seq=++SHOW_SEQ;
+    bar.innerHTML='<button class="btn go" id="acctShowBtn" type="button">Show clinics</button>'+
+                  '<span class="sb-note">Counting\u2026</span>';
+    el('acctShowBtn').addEventListener('click',function(){ el('acctShow').style.display='none'; loadAccounts(); });
+    api('accounts', Object.assign(accountsQuery(), {limit:1, offset:0})).then(function(res){
+      if(seq!==SHOW_SEQ) return;
+      var rows=res.accounts||[];
+      var n = rows.length && rows[0].total_matches!=null ? Number(rows[0].total_matches) : rows.length;
+      var b=el('acctShowBtn'); if(!b) return;
+      b.textContent = n ? 'Show '+n.toLocaleString()+(n===1?' clinic':' clinics') : 'No clinics match';
+      b.disabled = !n;
+      var note=el('acctShow').querySelector('.sb-note');
+      if(note) note.textContent = n ? 'in '+territoryLabel() : 'Try a wider filter, or another territory.';
+    }).catch(function(){
+      if(seq!==SHOW_SEQ) return;
+      var note=el('acctShow').querySelector('.sb-note');
+      if(note) note.textContent='';
+    });
+  }
 
   // ⭐⭐ SEARCH IS CLIENT-SIDE ON PURPOSE. fetchAllAccounts already pulls the
   // WHOLE territory into memory before rendering, so typing filters rows that
@@ -1881,9 +2073,11 @@
   el('acctReset').addEventListener('click',function(){
     ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
     el('acctSort').value='reviews';
-    el('acctSearch').value=''; setSearch('');
+    el('acctSearch').value=''; setSearch(''); syncQuick();
     NEAR=null; el('acctNear').classList.remove('on'); nearNote('',false);
-    advLabel(); loadAccounts(); loadNewCount();
+    advLabel();
+    if(ACCT_GATED) refreshShowBar(); else loadAccounts();
+    loadNewCount();
   });
 
   function advCount(){
@@ -1903,8 +2097,11 @@
   // matters because a chip that lies about the filter is worse than no chip.
   // Sort is excluded on purpose: it orders, it does not narrow, and putting it
   // here would suggest removing it changes the result set.
+  // ⓘ acctSegment is absent on purpose: the quick chips above already show
+  // which segment is on, and a second chip saying the same thing reads as two
+  // filters.
   var CHIP_LABELS = {
-    acctSegment:'Segment', acctCategory:'Category', acctMfr:'Manufacturer',
+    acctCategory:'Category', acctMfr:'Manufacturer',
     acctDevice:'Device', acctExclude:'Missing', acctDist:'Distributor',
     acctMinRev:'Reviews'
   };
@@ -1948,7 +2145,7 @@
     }
     if(id==='__all'){
       ACCT_FILTERS.forEach(function(f){ if(el(f)) el(f).value=''; });
-      el('acctSearch').value=''; setSearch('');
+      el('acctSearch').value=''; setSearch(''); syncQuick();
     }
     else if(el(id)){ el(id).value=''; }
     advLabel();
@@ -1972,7 +2169,8 @@
       if(id==='acctCategory' || id==='acctMfr' || id==='acctDist'){
         loadFilterOptions();
       }
-      loadAccounts();
+      // Before the first Show, a filter change re-counts rather than loading.
+      if(ACCT_GATED) refreshShowBar(); else loadAccounts();
     }); });
 
   // The rep's own position. Held in memory only: never sent anywhere except as
@@ -2016,19 +2214,28 @@
       else { b.style.display='none'; }
     }).catch(function(){ b.style.display='none'; });
   }
-  function loadAccounts(){
-    loaded.accounts=true; el('acctList').innerHTML='<div class="empty"><span class="spin"></span></div>';
+  // The query the screen is currently asking for, without paging. Shared by the
+  // count behind the Show button and by the real load, so the number on the
+  // button can never describe a different query from the one that runs.
+  function accountsQuery(){
     var sort=el('acctSort').value;
     var body={category:el('acctCategory').value,segment:el('acctSegment').value,
               filter_manufacturer:el('acctMfr').value,filter_distributor:el('acctDist').value,
               device:el('acctDevice').value,exclude_manufacturer:el('acctExclude').value,
+              min_reviews:el('acctMinRev').value,sort:sort};
+    if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
+    return body;
+  }
+  function loadAccounts(){
+    ACCT_GATED=false;
+    var sb=el('acctShow'); if(sb) sb.style.display='none';
+    loaded.accounts=true; el('acctList').innerHTML='<div class="empty"><span class="spin"></span></div>';
     // ⛔ A CAP HERE MEANS A REP WORKS A PARTIAL LIST WITHOUT KNOWING. Christos
     // found 200 shown against 300+ available; Kyle runs email campaigns off this
-    // screen. So the territory is fetched WHOLE, in pages.
-              min_reviews:el('acctMinRev').value,sort:sort,
-              limit:ACCT_FETCH_PAGE};
-    if(sort==='distance'&&NEAR){ body.near_lat=NEAR.lat; body.near_lng=NEAR.lng; }
-    fetchAllAccounts(body);
+    // screen. So the territory is still fetched WHOLE — but in SMALLER pages, so
+    // the first cards paint in a fraction of the time and the rest arrive
+    // behind them.
+    fetchAllAccounts(Object.assign(accountsQuery(), {limit:ACCT_FETCH_PAGE}));
   }
   // ⭐⭐ PAGED FETCH. Lambda caps a response at 6MB and rows are ~1.1KB, so a
   // single request tops out around 5,000 accounts — fine for a Canadian
@@ -2037,7 +2244,7 @@
   // requested until total_matches is satisfied, then rendered in one pass.
   // ⓘ Ordering is deterministic (mi_accounts breaks ties on id), so a row cannot
   // appear on two pages or fall between them.
-  var ACCT_FETCH_PAGE = 3000, ACCT_MAX_PAGES = 12, ACCT_SEQ = 0;
+  var ACCT_FETCH_PAGE = 600, ACCT_MAX_PAGES = 40, ACCT_SEQ = 0;
   function fetchAllAccounts(body){
     var seq = ++ACCT_SEQ, all = [], page = 0;
     function step(){
@@ -2428,14 +2635,7 @@
     // fallback when a place has no real photograph, and it is not worth showing.
     var src=String(a.photo_source||'').toLowerCase();
     var usable=a.photo && src.indexOf('street')===-1 && String(a.photo).indexOf('streetviewpixels')===-1;
-    var shot=usable
-      ? '<div class="shot"><img src="'+esc(a.photo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'none\')"><span style="display:none">'+esc(a.name)+'</span></div>'
-      : '<div class="shot none"><span>'+esc(a.name)+'</span></div>';
-    if(a.distance_km!=null){
-      shot=shot.replace('</div>','<div class="dist">'+Number(a.distance_km).toFixed(1)+' km away</div></div>');
-    }
-    var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
-              (a.n_devices?a.n_devices+' machines':'')].filter(Boolean).join(' &middot; ');
+
     // ⭐ Date is shown, not just the word. A rep can then judge freshness without
     // needing to know our scrape cadence, and the claim stays one we can defend:
     // this is when WE first saw the listing, not when the clinic opened.
@@ -2451,15 +2651,31 @@
     // Multi-location brands often buy centrally, so a rep may be better off at
     // head office than at this address. We state the fact and leave the call to
     // them: nothing in the data says which location is head office.
+    // ⓘ Neutral, not the status colour — this is a characteristic, not news.
     var chain = a.group_locations
-      ? '<span class="pill chain" title="This brand has '+a.group_locations+
+      ? '<span class="pill locs" title="This brand has '+a.group_locations+
         ' locations. Purchasing may be handled centrally.">'+a.group_locations+' locations</span>'
       : '';
+
+    // ⭐⭐ BADGES SIT ON THE PHOTO. Beside the clinic name they made the busiest
+    // part of the card the title line; the content area now opens with the name
+    // and nothing competing with it.
+    var pills = (fresh||chain) ? '<div class="shotpills">'+fresh+chain+'</div>' : '';
+    var dist  = (a.distance_km!=null)
+      ? '<div class="dist">'+Number(a.distance_km).toFixed(1)+' km away</div>' : '';
+    var inner = usable
+      ? '<img src="'+esc(a.photo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'none\')"><span style="display:none">'+esc(a.name)+'</span>'
+      : '<span>'+esc(a.name)+'</span>';
+    var shot = '<div class="shot'+(usable?'':' none')+'">'+inner+pills+dist+'</div>';
+
+    var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
+              (a.n_devices?a.n_devices+' machines':'')].filter(Boolean).join(' &middot; ');
+
     return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
       shot+
       '<div class="body">'+
-        '<div class="head"><span class="aname">'+esc(a.name)+'</span>'+fresh+chain+'</div>'+
-        '<div class="ameta" style="margin:4px 0 2px">'+meta+'</div>'+
+        '<div class="head"><span class="aname">'+esc(a.name)+'</span></div>'+
+        '<div class="ameta" style="margin:5px 0 2px">'+meta+'</div>'+
         contactsHtml(a)+platesHtml(a.devices||[])+
       '</div>'+
       '<div class="actions">'+
