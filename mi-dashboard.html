@@ -168,9 +168,15 @@
      Deliberately NOT the same metric as #board (share of clinics), which
      overlaps and therefore stays a bar. Never merge the two headings. */
   /* ---- Landscape ------------------------------------------------------- */
-  .lsgroup { margin:0 0 26px; }
-  .lshead { display:flex; align-items:baseline; gap:12px; padding-bottom:9px; margin-bottom:4px;
-    border-bottom:1px solid var(--line-2); }
+  .lshead { display:flex; align-items:baseline; gap:12px; padding:11px 6px; margin:0;
+    border-bottom:1px solid var(--line-2); width:100%; text-align:left;
+    background:none; border-left:0; border-right:0; border-top:0; font:inherit; cursor:pointer; }
+  .lshead:hover .lsname { color:var(--accent-strong); }
+  .lscar { font-size:15px; line-height:1; color:var(--faint); transition:transform .12s ease;
+    display:inline-block; }
+  .lsgroup.open .lscar { transform:rotate(90deg); color:var(--accent-strong); }
+  .lsgroup { margin:0; }
+  .lsgroup.open { margin-bottom:18px; }
   .lshead .lsname { font-size:17px; font-weight:600; letter-spacing:-.01em; }
   .lshead .lscount { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
   .lsrow { display:flex; align-items:center; gap:14px; padding:10px 6px; border-bottom:1px solid var(--line-2); }
@@ -1845,12 +1851,16 @@
   // stops being an independent layer and becomes their brochure.
   // ⓘ No technology descriptions yet — device_reference has nowhere to put them.
   // Structure ships now; Andy fills the copy for the devices reps actually meet.
-  var LS_ROWS=null, LS_MODE='tech', LS_Q='', LS_W=[], LS_T=null;
+  var LS_ROWS=null, LS_CO=[], LS_MODE='tech', LS_Q='', LS_W=[], LS_T=null;
+  // Which categories are open. Empty by default — the tab opens as a menu of
+  // the market, not a wall of 178 devices.
+  var LS_OPEN={};
   function loadLandscape(){
     loaded.landscape=true;
     el('lsBody').innerHTML='<div class="empty"><span class="spin"></span></div>';
     api('landscape',{}).then(function(res){
       LS_ROWS=res.landscape||[];
+      LS_CO=res.companies||[];
       paintLandscape();
     }).catch(handleErr);
   }
@@ -1858,6 +1868,11 @@
     if(r.__hay) return r.__hay;
     return (r.__hay=[r.model||'',r.manufacturer||'',r.distributor||'',r.platform||'',
                      CAT_LABEL[r.category]||r.category||''].join(' | ').toLowerCase());
+  }
+  function lsMatchName(n){
+    var h=String(n||'').toLowerCase();
+    for(var i=0;i<LS_W.length;i++){ if(h.indexOf(LS_W[i])===-1) return false; }
+    return true;
   }
   function lsMatch(r){
     var h=lsHay(r);
@@ -1882,18 +1897,32 @@
     // national figure sits under it so a device absent from this patch still
     // reads as a real product rather than an empty row.
     var t=Number(r.clinics)||0, n=Number(r.clinics_country)||0;
-    return '<span class="lnum">'+num(t)+' here'+
+    // ⛔ "clinics", never "installs" — see the note in lsByCompany. This counts
+    // clinics KNOWN TO RUN the device, not machines in the field.
+    return '<span class="lnum">'+num(t)+' clinics'+
       (n!==t?'<span class="ln2">'+num(n)+' in '+esc(CTY.country)+'</span>':'')+'</span>';
   }
   function paintLandscape(){
     var box=el('lsBody');
     if(!LS_ROWS){ return; }
-    var rows=LS_W.length ? LS_ROWS.filter(lsMatch) : LS_ROWS;
-    if(!rows.length){
-      box.innerHTML='<div class="empty">Nothing matches that. Search covers device, manufacturer, distributor and category.</div>';
-      return;
+    if(LS_MODE==='co'){
+      var co=LS_W.length
+        ? LS_CO.filter(function(c){ return lsMatchName(c.name); })
+        : LS_CO;
+      box.innerHTML = co.length ? lsByCompany(co)
+        : '<div class="empty">No manufacturer or distributor matches that.</div>';
+    } else {
+      var rows=LS_W.length ? LS_ROWS.filter(lsMatch) : LS_ROWS;
+      box.innerHTML = rows.length ? lsByCategory(rows)
+        : '<div class="empty">Nothing matches that. Search covers device, manufacturer, distributor and category.</div>';
     }
-    box.innerHTML = LS_MODE==='tech' ? lsByCategory(rows) : lsByCompany(rows);
+    Array.prototype.forEach.call(box.querySelectorAll('.lstog'),function(b){
+      b.addEventListener('click',function(){
+        var k=b.getAttribute('data-cat');
+        if(LS_OPEN[k]) delete LS_OPEN[k]; else LS_OPEN[k]=1;
+        paintLandscape();
+      });
+    });
     Array.prototype.forEach.call(box.querySelectorAll('.lgo'),function(b){
       b.addEventListener('click',function(e){
         e.stopPropagation();
@@ -1917,72 +1946,84 @@
       var ob=by[b].rows.some(function(r){return r.is_ours;})?0:1;
       return oa-ob || by[b].rows.length-by[a].rows.length;
     });
+    // ⭐⭐ CATEGORIES COLLAPSED BY DEFAULT. 178 devices in one scroll is the same
+    // wall the donut grid had: the eye stops after two screens. The category
+    // list is the map; the devices are what you open once you know where you are.
+    // ⓘ A SEARCH AUTO-OPENS EVERYTHING — someone typing "pico" wants the device,
+    // not a folder to click.
+    var searching = LS_W.length > 0;
     return order.map(function(k){
       var g=by[k];
-      // Yours first inside the category, then by how common the device is.
       g.rows.sort(function(a,b){
         return (b.is_ours?1:0)-(a.is_ours?1:0) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
       });
-      return '<div class="lsgroup">'+
-        '<div class="lshead"><span class="lsname">'+esc(g.label)+'</span>'+
-        '<span class="lscount">'+g.rows.length+' devices</span></div>'+
-        g.rows.map(function(r){
-          // ⚠️ A generation is its OWN row, never folded into the parent: the
-          // parent count excludes its children, so adding them would double.
-          var gen = r.parent_device_id ? '<span class="lgen">Generation</span>' : '';
-          return '<div class="lsrow'+(r.is_ours?' ours':'')+'">'+
-            '<span class="lm">'+esc(r.model)+'</span>'+
-            '<span class="lmk">'+esc(r.manufacturer)+
-              (r.distributor?' &middot; via '+esc(r.distributor):'')+'</span>'+
-            gen+(r.is_ours?'<span class="lyou">Yours</span>':'')+
-            '<span class="lsp"></span>'+lsNum(r)+
-            '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
-          '</div>';
-        }).join('')+
+      var mine=g.rows.filter(function(r){ return r.is_ours; }).length;
+      var open = searching || !!LS_OPEN[k];
+      var devs = !open ? '' : g.rows.map(function(r){
+        // ⚠️ A generation is its OWN row, never folded into the parent: the
+        // parent count excludes its children, so adding them would double.
+        var gen = r.parent_device_id ? '<span class="lgen">Generation</span>' : '';
+        return '<div class="lsrow'+(r.is_ours?' ours':'')+'">'+
+          '<span class="lm">'+esc(r.model)+'</span>'+
+          '<span class="lmk">'+esc(r.manufacturer)+distTxt(r)+'</span>'+
+          gen+(r.is_ours?'<span class="lyou">Yours</span>':'')+
+          '<span class="lsp"></span>'+lsNum(r)+
+          '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
+        '</div>';
+      }).join('');
+      return '<div class="lsgroup'+(open?' open':'')+'">'+
+        '<button class="lshead lstog" type="button" data-cat="'+esc(k)+'">'+
+          '<span class="lscar">&rsaquo;</span>'+
+          '<span class="lsname">'+esc(g.label)+'</span>'+
+          '<span class="lscount">'+g.rows.length+' devices'+
+            (mine?' \u00b7 '+mine+' yours':'')+'</span>'+
+        '</button>'+devs+
       '</div>';
     }).join('');
   }
+  // "Direct (manufacturer)" is a sentinel meaning there is no distributor. It is
+  // excluded from the Companies list in SQL; it must not show on a device row
+  // either, where "via Direct (manufacturer)" reads as a company name.
+  function distTxt(r){
+    return (r.distributor && r.distributor !== 'Direct (manufacturer)')
+      ? ' &middot; via '+esc(r.distributor) : '';
+  }
   function lsByCompany(rows){
-    // One entry per company. A distributor is a SEPARATE entry from the maker,
-    // never merged: no clinic runs a distributor, and conflating the two is the
-    // error this product has already made once.
-    function build(kind){
-      var by={};
-      rows.forEach(function(r){
-        var nm = kind==='mfr' ? r.manufacturer : r.distributor;
-        if(!nm) return;
-        if(!by[nm]) by[nm]={name:nm, rows:[], cats:{}, here:0, ours:false};
-        by[nm].rows.push(r); by[nm].cats[r.category]=1;
-        by[nm].here += Number(r.clinics)||0;
-        if(r.is_ours) by[nm].ours=true;
-      });
-      return Object.keys(by).map(function(k){ return by[k]; })
-        .sort(function(a,b){ return (b.ours?1:0)-(a.ours?1:0) || b.here-a.here; });
-    }
-    function section(title, list, kind){
+    // ⚠️ ONE DEFINITION OF "CLINICS" EVERYWHERE IN THE PRODUCT. These counts are
+    // DISTINCT clinics from mi_landscape_companies, verified identical to the
+    // Overview leaderboard for every manufacturer. The earlier version summed
+    // each device's clinic count, which double-counted a clinic running two of a
+    // maker's machines and made Candela rank differently on two tabs.
+    // ⛔ NEVER LABEL ANY FIGURE HERE "INSTALLS". We cannot see units: a clinic
+    // running four GentleMax Pros is indistinguishable from one running a single
+    // machine, so no count on this screen is an install count.
+    function section(title, kind){
+      var list=rows.filter(function(c){ return c.kind===kind; });
       if(!list.length) return '';
       return '<div class="lsgroup"><div class="lshead"><span class="lsname">'+esc(title)+'</span>'+
         '<span class="lscount">'+list.length+'</span></div>'+
         list.map(function(c){
-          var nCat=Object.keys(c.cats).length;
-          return '<div class="lsrow'+(c.ours?' ours':'')+'">'+
+          var nd=Number(c.devices)||0, nc=Number(c.categories)||0;
+          var here=Number(c.clinics)||0, natl=Number(c.clinics_country)||0;
+          return '<div class="lsrow'+(c.is_ours?' ours':'')+'">'+
             '<span class="lm">'+esc(c.name)+'</span>'+
-            '<span class="lmk">'+c.rows.length+(c.rows.length===1?' device':' devices')+
-              ' &middot; '+nCat+(nCat===1?' category':' categories')+'</span>'+
-            (c.ours?'<span class="lyou">Yours</span>':'')+
+            '<span class="lmk">'+nd+(nd===1?' device':' devices')+
+              ' &middot; '+nc+(nc===1?' category':' categories')+'</span>'+
+            (c.is_ours?'<span class="lyou">Yours</span>':'')+
             '<span class="lsp"></span>'+
-            // ⚠️ Installs SUMMED across devices, so one clinic running two of a
-            // maker's machines counts twice. Labelled "installs", never
-            // "clinics" — the leaderboard figure is the distinct-clinic one.
-            '<span class="lnum">'+num(c.here)+' installs</span>'+
+            '<span class="lnum">'+num(here)+' clinics'+
+              (natl!==here?'<span class="ln2">'+num(natl)+' in '+esc(CTY.country)+'</span>':'')+
+            '</span>'+
             '<button class="lgo" type="button" '+
-              (kind==='mfr'?'data-mfr="':'data-dist="')+esc(c.name)+'">View accounts &rarr;</button>'+
+              (kind==='manufacturer'?'data-mfr="':'data-dist="')+esc(c.name)+'">View accounts &rarr;</button>'+
           '</div>';
         }).join('')+'</div>';
     }
-    return section('Manufacturers', build('mfr'), 'mfr') +
-           section('Distributors',  build('dist'), 'dist');
+    // "Direct (manufacturer)" is a sentinel on 127 of 178 rows meaning there is
+    // no distributor. Excluded in SQL so it can never appear as a company.
+    return section('Manufacturers','manufacturer') + section('Distributors','distributor');
   }
+
   el('lsMode').addEventListener('click',function(e){
     var b=e.target.closest('button[data-lm]'); if(!b) return;
     LS_MODE=b.getAttribute('data-lm');
