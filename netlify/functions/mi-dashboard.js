@@ -391,7 +391,19 @@ exports.handler = async (event) => {
           p_province: province, p_neighbourhood: neighbourhood
         }, owner));
         if (error) throw error;
-        return json(200, { landscape: data || [] });
+        // ⭐⭐ COMPANIES COME FROM THEIR OWN RPC, NOT FROM SUMMING THE DEVICE
+        // ROWS. Summing gave a clinic running two Candela machines a count of
+        // two, which is neither a clinic count nor an install count — we cannot
+        // see UNITS at all, only that a clinic mentions a device, so a clinic
+        // with four GentleMax Pros looks identical to one with a single machine.
+        // Distinct clinics is the only figure this data supports, and it is
+        // verified equal to mi_leaderboard for every manufacturer.
+        const co = await supabase.rpc('mi_landscape_companies', Object.assign({
+          p_country: country, p_regions: regions,
+          p_province: province, p_neighbourhood: neighbourhood
+        }, owner));
+        if (co.error) throw co.error;
+        return json(200, { landscape: data || [], companies: co.data || [] });
       }
 
       // Per-category competitive field, as SHARE OF IDENTIFIED INSTALLATIONS.
