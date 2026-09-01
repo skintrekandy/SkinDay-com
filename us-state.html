@@ -2061,7 +2061,9 @@ window.openClinicModal = async function(id) {
 
     // Report link
     `<div style="text-align:center;border-top:1px solid var(--border);padding-top:1rem;">`,
-    `<button onclick="reportTaiwanClinic('${c.id}', this)" style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px;">Report an error</button>`,
+    `<div id="cm-report-wrap-${c.id}">`,
+    `<button onclick="openReportForm('${c.id}')" style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px;">Report an error</button>`,
+    `</div>`,
     `</div>`,
 
     `</div>`
@@ -2079,16 +2081,73 @@ window.openClinicModal = async function(id) {
   document.body.style.overflow = 'hidden';
 };
 
-window.reportTaiwanClinic = function(id, btn) {
+// ─── REPORT AN ERROR ──────────────────────────────────────────
+// ⚠️ WHAT THIS REPLACED, so nobody restores it: a function named
+// reportTaiwanClinic, copied from taiwan.html, which POSTed cross-domain to
+// https://skinday.ca/api/submit-claim, appended " (Taiwan)" to the name of
+// every US clinic, and sent no clinic_id and empty owner fields. submit-claim
+// requires all of those, so every report was rejected 400. The response was
+// never read, so the visitor was thanked regardless. Not one report was ever
+// recorded. Reports now go to their own endpoint and their own table, and the
+// response decides what the visitor is told.
+
+window.openReportForm = function(id) {
+  const wrap = document.getElementById('cm-report-wrap-' + id);
+  if (!wrap) return;
+  const inputStyle = "width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;color:var(--deep);font-family:'DM Sans',sans-serif;font-size:0.82rem;padding:0.5rem 0.7rem;outline:none;";
+  const btnStyle = "background:none;border:none;font-size:0.8rem;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;text-underline-offset:2px;";
+  wrap.innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:0.6rem;">' +
+      '<input type="text" id="cm-report-note-' + id + '" maxlength="200" autocomplete="off" ' +
+        'placeholder="What is wrong? e.g. permanently closed, wrong phone" style="' + inputStyle + '" />' +
+      '<div style="display:flex;gap:1rem;justify-content:center;">' +
+        '<button onclick="submitReport(\'' + id + '\')" style="' + btnStyle + 'color:var(--rose);">Send report</button>' +
+        '<button onclick="cancelReportForm(\'' + id + '\')" style="' + btnStyle + 'color:var(--muted);">Cancel</button>' +
+      '</div>' +
+    '</div>';
+  const noteEl = document.getElementById('cm-report-note-' + id);
+  if (noteEl) noteEl.focus();
+};
+
+window.cancelReportForm = function(id) {
+  const wrap = document.getElementById('cm-report-wrap-' + id);
+  if (!wrap) return;
+  wrap.innerHTML = '<button onclick="openReportForm(\'' + id + '\')" ' +
+    'style="background:none;border:none;color:var(--muted);font-size:0.8rem;cursor:pointer;' +
+    'font-family:\'DM Sans\',sans-serif;text-decoration:underline;text-underline-offset:2px;">Report an error</button>';
+};
+
+window.submitReport = async function(id) {
+  const wrap = document.getElementById('cm-report-wrap-' + id);
+  const noteEl = document.getElementById('cm-report-note-' + id);
+  const note = noteEl ? noteEl.value.trim() : '';
   const c = findClinic(String(id));
-  const name = c ? c.name : '';
+
+  let ok = false;
   try {
-    fetch('https://skinday.ca/api/submit-claim', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'report', clinic_name: name + ' (Taiwan)', owner_email: '', owner_name: '', owner_role: 'Report' })
+    const res = await fetch('/api/submit-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'error',
+        clinic_id: String(id),
+        clinic_name: c ? c.name : '',
+        country: 'usa',
+        source_url: window.location.href,
+        note: note
+      })
     });
-  } catch(e) {}
-  if (btn) { btn.textContent = 'Report received, thank you.'; btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'default'; }
+    ok = res.ok;
+  } catch (e) {
+    ok = false;
+  }
+
+  if (!wrap) return;
+  // The response is now read. Saying thank you for a request that failed is
+  // what the old version did, and it hid the bug for months.
+  wrap.innerHTML = ok
+    ? '<div style="font-size:0.8rem;color:var(--muted);">Thank you. We will take a look.</div>'
+    : '<div style="font-size:0.8rem;color:var(--muted);">We could not send that just now. Please try again later.</div>';
 };
 
 // ─── VISIT SIGNALS ────────────────────────────────────────────
@@ -2171,7 +2230,35 @@ async function submitMissingClinic() {
   const btn = document.getElementById('missing-submit-btn');
   if (!name || !email) { showToast('Please enter the clinic name and email.'); return; }
   btn.disabled = true; btn.textContent = 'Submitting..';
-  try { await fetch('https://skinday.ca/api/submit-claim', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'missing', clinic_name: name, owner_email: email, clinic_neighbourhood: hood + ' (Taiwan)', owner_name: '', owner_role: 'Owner' }) }); } catch(e) {}
+
+  // Was a cross-domain POST to skinday.ca/api/submit-claim that tagged the
+  // locality "(Taiwan)" and sent an empty owner_name, so it was rejected 400
+  // every time while still showing the success panel.
+  let ok = false;
+  try {
+    const res = await fetch('/api/submit-report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: 'missing',
+        clinic_name: name,
+        reporter_email: email,
+        locality: hood,
+        country: 'usa',
+        source_url: window.location.href
+      })
+    });
+    ok = res.ok;
+  } catch (e) {
+    ok = false;
+  }
+
+  if (!ok) {
+    btn.disabled = false; btn.textContent = 'Submit';
+    showToast('Could not send that just now. Please try again.');
+    return;
+  }
+
   document.getElementById('missing-modal-form').style.display = 'none';
   document.getElementById('missing-modal-success').style.display = 'block';
 }
