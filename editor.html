@@ -1,0 +1,4181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SkinDay — Clinic Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #faf8f5;
+      --warm-white: #fffef9;
+      --blush: #f2ddd5;
+      --rose: #c9736a;
+      --rose-deep: #a85a52;
+      --rose-light: #e8a89f;
+      --bark: #3d2c28;
+      --bark-mid: #6b4c44;
+      --bark-light: #9e7a72;
+      --sage: #8fa882;
+      --gold: #c9a96e;
+      --border: #e8ddd8;
+      --shadow: rgba(61, 44, 40, 0.08);
+      --shadow-md: rgba(61, 44, 40, 0.14);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--bark);
+      min-height: 100vh;
+    }
+
+    /* ─── LOGIN SCREEN ─── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--cream);
+      padding: 24px;
+    }
+
+    .login-card {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 52px 48px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 4px 40px var(--shadow);
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .login-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: var(--bark);
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+
+    .login-logo span {
+      color: var(--rose);
+    }
+
+    .login-tagline {
+      font-size: 13px;
+      color: var(--bark-light);
+      font-weight: 400;
+      margin-bottom: 36px;
+    }
+
+    .login-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--bark-mid);
+      margin-bottom: 8px;
+    }
+
+    .login-input {
+      width: 100%;
+      padding: 13px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--bark);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 20px;
+    }
+
+    .login-input:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(201,115,106,0.12);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--rose);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .login-btn:hover { background: var(--rose-deep); }
+    .login-btn:active { transform: scale(0.98); }
+
+    .login-error {
+      background: #fde8e6;
+      border: 1px solid #f5b8b3;
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-size: 13px;
+      color: var(--rose-deep);
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .login-forgot {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--bark-light);
+    }
+
+    .login-forgot a {
+      color: var(--rose);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ─── PORTAL SHELL ─── */
+    #portal-screen {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--warm-white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-top-row { display: none; }
+    .header-bottom-row { display: none; }
+
+    .header-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      color: var(--bark);
+      letter-spacing: -0.3px;
+    }
+
+    .header-logo span { color: var(--rose); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .clinic-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 6px 14px 6px 8px;
+    }
+
+    .clinic-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--blush);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--rose-deep);
+    }
+
+    .clinic-name-small {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--bark);
+    }
+
+    .logout-btn {
+      font-size: 13px;
+      color: var(--bark-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .logout-btn:hover { color: var(--rose); }
+    /* ─── LOCATION SWITCHER ─── */
+    .location-switcher {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 6px 12px 6px 14px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .location-switcher:hover { border-color: var(--rose-light); }
+    .location-switcher-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--bark);
+      white-space: nowrap;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .location-switcher-arrow {
+      font-size: 10px;
+      color: var(--bark-light);
+      flex-shrink: 0;
+    }
+    .location-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 32px var(--shadow-md);
+      min-width: 300px;
+      max-width: 380px;
+      z-index: 200;
+      overflow: hidden;
+      animation: fadeUp 0.2s ease;
+    }
+    .location-dropdown-header {
+      padding: 10px 14px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--bark-light);
+      border-bottom: 1px solid var(--border);
+    }
+    .location-dropdown-item {
+      padding: 11px 14px;
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--bark);
+      cursor: pointer;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      line-height: 1.4;
+    }
+    .location-dropdown-item:last-child { border-bottom: none; }
+    .location-dropdown-item:hover { background: var(--cream); }
+    .location-dropdown-item.active {
+      background: #fdf5f3;
+      color: var(--rose);
+      font-weight: 500;
+    }
+    .location-dropdown-item.active::after {
+      content: '✓';
+      font-size: 12px;
+      color: var(--rose);
+    }
+    .location-switcher-wrap {
+      position: relative;
+    }
+
+    /* ─── SAVE BAR ─── */
+    .save-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--bark);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 200;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .save-bar.visible { transform: translateY(0); }
+
+    .save-bar-msg {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .save-bar-msg strong { color: white; }
+
+    .save-bar-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-discard {
+      padding: 10px 20px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: transparent;
+      color: rgba(255,255,255,0.7);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-discard:hover {
+      border-color: rgba(255,255,255,0.5);
+      color: white;
+    }
+
+    .btn-save {
+      padding: 10px 24px;
+      background: var(--rose);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-save:hover { background: var(--rose-deep); }
+
+    /* ─── MAIN LAYOUT ─── */
+    .portal-main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 32px 120px;
+      width: 100%;
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--bark);
+      margin-bottom: 6px;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--bark-light);
+      margin-bottom: 40px;
+    }
+
+    /* ─── TABS ─── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1.5px solid var(--border);
+      margin-bottom: 36px;
+    }
+
+    .tab-btn {
+      padding: 10px 18px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--bark-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -1.5px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab-btn:hover { color: var(--bark); }
+
+    .tab-btn.active {
+      color: var(--rose);
+      border-bottom-color: var(--rose);
+    }
+
+    .tab-pane { display: none; animation: fadeIn 0.25s ease; }
+    .tab-pane.active { display: block; }
+
+    /* ─── M28 CLINIC IDENTITY ─── */
+    .identity-intro {
+      font-family: 'Playfair Display', serif;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--bark-mid);
+      font-style: italic;
+      margin-bottom: 28px;
+      padding: 18px 22px;
+      background: rgba(201, 169, 110, 0.06);
+      border-left: 2.5px solid var(--gold);
+      border-radius: 4px;
+    }
+
+    .identity-card {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    .identity-card.expertise-card {
+      padding: 36px 36px 32px;
+    }
+
+    .identity-card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--bark);
+      margin-bottom: 6px;
+    }
+
+    .identity-card.expertise-card .identity-card-title {
+      font-size: 22px;
+    }
+
+    .identity-card-desc {
+      font-size: 13px;
+      color: var(--bark-light);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .identity-counter {
+      font-size: 12px;
+      color: var(--bark-light);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .identity-counter .count-num {
+      color: var(--rose);
+      font-weight: 600;
+    }
+
+    .identity-counter.full .count-num {
+      color: var(--bark);
+    }
+
+    .chips-area {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 0;
+      margin-bottom: 14px;
+    }
+
+    .chips-area:empty {
+      display: none;
+    }
+
+    .identity-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px 8px 14px;
+      background: rgba(201, 115, 106, 0.08);
+      border: 1px solid rgba(201, 115, 106, 0.25);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--bark);
+      font-weight: 500;
+      animation: chipIn 0.2s ease;
+    }
+
+    .expertise-card .identity-chip {
+      font-size: 14px;
+      padding: 10px 14px 10px 16px;
+    }
+
+    .identity-chip .chip-remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: rgba(201, 115, 106, 0.18);
+      color: var(--rose-deep);
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      border: none;
+      padding: 0;
+      transition: background 0.15s;
+    }
+
+    .identity-chip .chip-remove:hover {
+      background: rgba(201, 115, 106, 0.32);
+    }
+
+    .identity-chip .chip-other-label {
+      font-size: 11px;
+      color: var(--bark-light);
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-left: 4px;
+    }
+
+    @keyframes chipIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    /* ─── PILL PICKER (M28) ─── */
+    .pill-picker {
+      position: relative;
+    }
+
+    .pill-picker-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.18s, box-shadow 0.18s;
+    }
+
+    .pill-picker-input-wrap:hover {
+      border-color: var(--rose-light);
+    }
+
+    .pill-picker-input-wrap.focused {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(201, 115, 106, 0.10);
+    }
+
+    .pill-picker-input-wrap.locked {
+      background: var(--cream);
+      opacity: 0.7;
+    }
+
+    .pill-picker-icon {
+      width: 18px;
+      height: 18px;
+      margin-left: 14px;
+      color: var(--bark-light);
+      flex-shrink: 0;
+      pointer-events: none;
+    }
+
+    .pill-picker-input {
+      flex: 1;
+      padding: 13px 14px 13px 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14.5px;
+      color: var(--bark);
+      background: transparent;
+      border: none;
+      outline: none;
+      min-width: 0;
+    }
+
+    .pill-picker-input::placeholder {
+      color: var(--bark-light);
+      font-style: italic;
+      font-weight: 300;
+    }
+
+    .pill-picker-input:disabled {
+      cursor: not-allowed;
+    }
+
+    .pill-picker-clear {
+      display: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: rgba(158, 122, 114, 0.12);
+      color: var(--bark-light);
+      border: none;
+      cursor: pointer;
+      margin-right: 10px;
+      font-size: 13px;
+      line-height: 1;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+
+    .pill-picker-clear.visible {
+      display: inline-flex;
+    }
+
+    .pill-picker-clear:hover {
+      background: rgba(158, 122, 114, 0.22);
+    }
+
+    .pill-picker-lock-msg {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      color: var(--bark-mid);
+      background: rgba(201, 169, 110, 0.08);
+      border: 1px solid rgba(201, 169, 110, 0.25);
+      border-radius: 8px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .pill-picker-lock-msg.visible {
+      display: flex;
+    }
+
+    .pill-picker-lock-msg::before {
+      content: '✓';
+      color: var(--gold);
+      font-weight: 600;
+    }
+
+    .pill-picker-panel {
+      margin-top: 12px;
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 18px 14px;
+      max-height: 420px;
+      overflow-y: auto;
+      animation: panelIn 0.22s ease;
+    }
+
+    @keyframes panelIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pill-picker-panel.locked {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    .pill-picker-group {
+      margin-bottom: 18px;
+    }
+
+    .pill-picker-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .pill-picker-group-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--bark-mid);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pill-picker-group-label.suggested {
+      color: var(--gold);
+      border-bottom-color: rgba(201, 169, 110, 0.35);
+    }
+
+    .pill-picker-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+    }
+
+    .pill-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      color: var(--bark);
+      background: var(--cream);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 400;
+    }
+
+    .pill-option:hover {
+      background: rgba(201, 115, 106, 0.08);
+      border-color: rgba(201, 115, 106, 0.30);
+      color: var(--bark);
+    }
+
+    .pill-option.keyboard-active {
+      background: rgba(201, 115, 106, 0.10);
+      border-color: var(--rose);
+      box-shadow: 0 0 0 2px rgba(201, 115, 106, 0.15);
+    }
+
+    .pill-option .pill-plus {
+      color: var(--bark-light);
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 300;
+    }
+
+    .pill-option:hover .pill-plus,
+    .pill-option.keyboard-active .pill-plus {
+      color: var(--rose);
+    }
+
+    /* Suggested pills get a slightly warmer treatment */
+    .pill-picker-group.suggested-group .pill-option {
+      background: rgba(201, 169, 110, 0.07);
+      border-color: rgba(201, 169, 110, 0.28);
+    }
+
+    .pill-picker-group.suggested-group .pill-option:hover {
+      background: rgba(201, 115, 106, 0.10);
+      border-color: rgba(201, 115, 106, 0.32);
+    }
+
+    .pill-picker-empty {
+      padding: 20px 8px 12px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--bark-light);
+      font-style: italic;
+    }
+
+    .pill-picker-empty-examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-top: 10px;
+    }
+
+    .pill-picker-empty-examples .pill-option {
+      cursor: default;
+      opacity: 0.6;
+    }
+
+    .pill-picker-empty-examples .pill-option:hover {
+      background: var(--cream);
+      border-color: var(--border);
+      color: var(--bark);
+    }
+
+    .pill-picker-suggest-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--bark-light);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px 0;
+      font-family: 'DM Sans', sans-serif;
+      transition: color 0.15s;
+    }
+
+    .pill-picker-suggest-link:hover {
+      color: var(--rose);
+    }
+
+    .pill-picker-suggest-link::before {
+      content: '+';
+      font-size: 14px;
+      font-weight: 300;
+    }
+
+    /* Suggest-other inline form */
+    .identity-other-input-wrap {
+      margin-top: 10px;
+      padding: 14px;
+      background: rgba(201, 169, 110, 0.05);
+      border: 1px dashed rgba(201, 169, 110, 0.35);
+      border-radius: 10px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .identity-other-input-wrap label {
+      display: block;
+      font-size: 12px;
+      color: var(--bark-mid);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .identity-other-input {
+      width: 100%;
+      padding: 9px 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--bark);
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .identity-other-input:focus {
+      outline: none;
+      border-color: var(--rose);
+    }
+
+    .identity-other-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .identity-other-btn {
+      padding: 7px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 7px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .identity-other-btn.add {
+      background: var(--rose);
+      color: white;
+    }
+
+    .identity-other-btn.add:hover {
+      background: var(--rose-deep);
+    }
+
+    .identity-other-btn.cancel {
+      background: transparent;
+      color: var(--bark-light);
+      border-color: var(--border);
+    }
+
+    .identity-other-btn.cancel:hover {
+      color: var(--bark);
+    }
+
+    .identity-helper {
+      font-size: 12px;
+      color: var(--bark-light);
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    /* ─── Mobile rules for pill picker ─── */
+    @media (max-width: 720px) {
+      .identity-card,
+      .identity-card.expertise-card {
+        padding: 22px 18px;
+      }
+      .pill-picker-panel {
+        padding: 16px 14px 12px;
+        max-height: 60vh;
+      }
+      .pill-option {
+        padding: 10px 14px;
+        font-size: 14px;
+        min-height: 40px;
+      }
+      .pill-picker-input {
+        padding: 15px 14px 15px 10px;
+        font-size: 16px; /* prevent iOS zoom */
+        min-height: 44px;
+      }
+      .pill-picker-icon {
+        width: 16px;
+        height: 16px;
+      }
+      .identity-chip {
+        font-size: 13px;
+      }
+      .identity-chip .chip-remove {
+        width: 22px;
+        height: 22px;
+        font-size: 16px;
+      }
+    }
+    /* ─── /M28 ─── */
+
+    /* ─── CARDS ─── */
+    .card {
+      background: var(--warm-white);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--bark);
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--bark-light);
+      margin-bottom: 24px;
+    }
+
+    /* ─── FORM FIELDS ─── */
+    .field-group {
+      margin-bottom: 20px;
+    }
+
+    .field-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--bark-mid);
+      margin-bottom: 8px;
+    }
+
+    .field-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--bark);
+      background: var(--cream);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .field-input:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(201,115,106,0.1);
+    }
+
+    .field-hint {
+      font-size: 12px;
+      color: var(--bark-light);
+      margin-top: 6px;
+    }
+
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ─── PRICE FIELD ─── */
+    .price-wrap {
+      position: relative;
+    }
+
+    .price-prefix {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 15px;
+      color: var(--bark-mid);
+      font-weight: 500;
+      pointer-events: none;
+    }
+
+    .price-wrap .field-input {
+      padding-left: 28px;
+    }
+
+    /* ─── TOGGLE ─── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .toggle-row:last-child { border-bottom: none; }
+
+    .toggle-label {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--bark);
+    }
+
+    .toggle-desc {
+      font-size: 13px;
+      color: var(--bark-light);
+      margin-top: 2px;
+    }
+
+    .toggle {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: var(--border);
+      border-radius: 24px;
+      cursor: pointer;
+      transition: background 0.25s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      left: 3px;
+      top: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.25s;
+      box-shadow: 0 1px 4px var(--shadow-md);
+    }
+
+    .toggle input:checked + .toggle-slider { background: var(--rose); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+    /* ─── PROMO TEXTAREA ─── */
+    .field-textarea {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--bark);
+      background: var(--cream);
+      outline: none;
+      resize: vertical;
+      min-height: 90px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .field-textarea:focus {
+      border-color: var(--rose);
+      box-shadow: 0 0 0 3px rgba(201,115,106,0.1);
+    }
+
+    /* ─── HOURS TABLE ─── */
+    .hours-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 1fr 80px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hours-row:last-child { border-bottom: none; }
+
+    .hours-day {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--bark);
+    }
+
+    .hours-input {
+      padding: 9px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--bark);
+      background: var(--cream);
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+
+    .hours-input:focus { border-color: var(--rose); }
+
+    .hours-closed {
+      font-size: 13px;
+      color: var(--bark-light);
+      text-align: center;
+    }
+
+    .hours-closed label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      justify-content: center;
+    }
+
+    .hours-closed input[type="checkbox"] {
+      accent-color: var(--rose);
+      width: 15px;
+      height: 15px;
+    }
+
+    /* ─── LOGO ─── */
+    .logo-upload-area {
+      display: flex; align-items: center; gap: 20px;
+      padding: 16px; background: var(--warm);
+      border: 1px solid var(--border); border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    .logo-preview {
+      width: 64px; height: 64px; border-radius: 8px;
+      object-fit: contain; border: 1px solid var(--border);
+      background: #fff; flex-shrink: 0;
+    }
+    .logo-preview-placeholder {
+      width: 64px; height: 64px; border-radius: 8px;
+      background: var(--cream); border: 1px dashed var(--border);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: var(--bark-light); font-size: 22px;
+    }
+    .logo-upload-btn {
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 14px;
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+      color: var(--bark); cursor: pointer; transition: all 0.15s;
+    }
+    .logo-upload-btn:hover { border-color: var(--rose); color: var(--rose); }
+    .logo-remove-btn {
+      background: none; border: none; font-size: 0.78rem;
+      color: var(--bark-light); cursor: pointer; padding: 0;
+      transition: color 0.15s; margin-left: 4px;
+    }
+    .logo-remove-btn:hover { color: var(--rose); }
+
+    /* ─── PHOTOS ─── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .photo-slot {
+      aspect-ratio: 4/3;
+      border-radius: 12px;
+      border: 1.5px dashed var(--border);
+      background: var(--cream);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .photo-slot:hover {
+      border-color: var(--rose-light);
+      background: #fdf5f3;
+    }
+
+    .photo-slot img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+    }
+
+    .photo-slot-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(61,44,40,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      border-radius: 12px;
+    }
+
+    .photo-slot:hover .photo-slot-overlay { opacity: 1; }
+
+    .photo-slot-icon {
+      font-size: 28px;
+      color: var(--bark-light);
+      margin-bottom: 6px;
+    }
+
+    .photo-slot-label {
+      font-size: 12px;
+      color: var(--bark-light);
+      font-weight: 500;
+    }
+
+    .photo-remove {
+      background: white;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--rose-deep);
+      cursor: pointer;
+    }
+
+    .photo-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      background: var(--cream);
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--bark-mid);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .photo-add-btn:hover {
+      border-color: var(--rose-light);
+      color: var(--rose);
+      background: #fdf5f3;
+    }
+
+    /* ─── STATUS PILL ─── */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .status-pill.verified {
+      background: #eef6eb;
+      color: var(--sage);
+    }
+
+    .status-pill.verified::before {
+      content: '✓';
+      font-size: 11px;
+    }
+
+    /* ─── TOAST ─── */
+    .toast {
+      position: fixed;
+      top: 80px;
+      right: 24px;
+      background: var(--bark);
+      color: white;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 8px 32px var(--shadow-md);
+      z-index: 999;
+      transform: translateX(120%);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .toast.show { transform: translateX(0); }
+    .toast.success { background: var(--sage); }
+    .toast.error { background: var(--rose-deep); }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 600px) {
+      /* Layout */
+      .portal-main { padding: 20px 16px 120px; }
+      .card { padding: 20px 16px; }
+      .field-row { grid-template-columns: 1fr; }
+      .photo-grid { grid-template-columns: 1fr 1fr; }
+      .save-bar { padding: 12px 16px; }
+      .login-card { padding: 32px 24px; }
+
+      /* Header — two rows */
+      header {
+        padding: 0;
+        height: auto;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+      }
+      .header-top-row {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 16px;
+        height: 50px;
+        border-bottom: 1px solid var(--border);
+      }
+      .header-bottom-row {
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 16px;
+        gap: 12px;
+      }
+      .header-right { display: none; }
+      .header-logo { font-size: 17px; }
+
+      /* Tabs — scroll horizontally */
+      .tab-nav {
+        gap: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        margin-bottom: 20px;
+        padding-bottom: 0;
+      }
+      .tab-nav::-webkit-scrollbar { display: none; }
+      .tab-btn {
+        padding: 10px 14px;
+        font-size: 13px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+
+      /* Hours */
+      .hours-row { grid-template-columns: 70px 1fr 1fr 50px; gap: 6px; }
+
+      /* Price inputs — smaller text to fit */
+      #portal-price-rows select,
+      #portal-price-rows input[type="number"] {
+        font-size: 13px !important;
+        padding: 0.48rem 0.4rem !important;
+      }
+
+      /* Save bar */
+      .save-bar-msg { font-size: 12px; }
+      .btn-discard, .btn-save { padding: 9px 14px; font-size: 13px; }
+    }
+    /* ─── PHOTO DRAG LIST ─── */
+    .photo-drag-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px;
+      background: var(--warm-white); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 8px;
+      cursor: default; transition: box-shadow 0.15s, opacity 0.15s;
+      user-select: none;
+    }
+    .photo-drag-item.dragging { opacity: 0.4; }
+    .photo-drag-item.drag-over { box-shadow: 0 0 0 2px var(--rose); }
+    .photo-drag-handle {
+      color: var(--bark-light); font-size: 16px; cursor: grab; flex-shrink: 0;
+    }
+    .photo-drag-handle:active { cursor: grabbing; }
+    .photo-drag-thumb {
+      width: 52px; height: 52px; border-radius: 6px;
+      object-fit: cover; flex-shrink: 0; border: 1px solid var(--border);
+    }
+    .photo-drag-name {
+      flex: 1; font-size: 13px; color: var(--bark-mid);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .photo-drag-badge {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--rose);
+      background: rgba(201,115,106,0.10); border-radius: 4px;
+      padding: 2px 6px; flex-shrink: 0;
+    }
+    .photo-drag-remove {
+      background: none; border: none; font-size: 0.82rem;
+      color: var(--bark-light); cursor: pointer; padding: 4px;
+      transition: color 0.15s; flex-shrink: 0;
+    }
+    .photo-drag-remove:hover { color: var(--rose); }
+    .photo-hero-btn {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+      color: var(--bark-light); padding: 3px 8px; cursor: pointer;
+      white-space: nowrap; transition: all 0.15s; flex-shrink: 0;
+    }
+    .photo-hero-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .photo-hero-btn.is-hero {
+      background: rgba(201,169,110,0.12); border-color: var(--gold);
+      color: var(--gold); font-weight: 600;
+    }
+
+    /* ─── /PHOTO DRAG LIST ─── */
+
+    /* ─── PRACTITIONERS ─── */
+    .practitioner-row {
+      display: grid;
+      grid-template-columns: 24px 1fr 1fr 36px;
+      gap: 10px;
+      align-items: end;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .practitioner-row:last-child { border-bottom: none; }
+    .practitioner-drag {
+      color: var(--bark-light);
+      cursor: grab;
+      font-size: 15px;
+      text-align: center;
+      user-select: none;
+    }
+    .practitioner-drag:active { cursor: grabbing; }
+    .practitioner-primary-badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--rose);
+      background: rgba(201,115,106,0.10);
+      border-radius: 4px;
+      padding: 2px 6px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+  </style>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+</head>
+<body>
+
+<!-- ─── LOGIN ─── -->
+<div id="login-screen">
+  <a href="/index.html" style="position:fixed;top:20px;left:24px;font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;z-index:10;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">← Back to directory</a>
+  <div class="login-card">
+    <div class="login-logo">Skin<span>Day</span></div>
+    <div class="login-tagline">Clinic Owner Portal</div>
+
+    <div class="login-error" id="login-error">Incorrect email or password. Please try again.</div>
+
+    <label class="login-label" for="login-email">Email</label>
+    <input class="login-input" type="email" id="login-email" placeholder="you@yourclinic.com" autocomplete="email" />
+
+    <label class="login-label" for="login-password">Password</label>
+    <input class="login-input" type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+
+    <div class="login-forgot">
+      <a href="#" onclick="showForgot()">Forgot your password?</a>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PASSWORD SETUP ─── -->
+<div id="setup-screen" style="display:none;min-height:100vh;align-items:center;justify-content:center;background:var(--cream);padding:24px;">
+  <div class="login-card">
+    <div class="login-logo">Skin<span>Day</span></div>
+    <div class="login-tagline">Set your password</div>
+
+    <p style="font-size:14px;color:var(--bark-light);margin-bottom:24px;line-height:1.6;">
+      Welcome! Choose a password to access your clinic portal going forward.
+    </p>
+
+    <div class="login-error" id="setup-error">Passwords do not match.</div>
+
+    <label class="login-label" for="setup-password">New password</label>
+    <input class="login-input" type="password" id="setup-password" placeholder="At least 8 characters" autocomplete="new-password" />
+
+    <label class="login-label" for="setup-confirm">Confirm password</label>
+    <input class="login-input" type="password" id="setup-confirm" placeholder="Repeat your password" autocomplete="new-password" />
+
+    <button class="login-btn" id="setup-btn" onclick="doSetupPassword()">Set Password & Continue</button>
+  </div>
+</div>
+
+<!-- ─── PORTAL ─── -->
+<div id="portal-screen">
+  <header>
+    <!-- Mobile row 1: Logo only -->
+    <div class="header-top-row" style="display:none;">
+      <div class="header-logo">Skin<span>Day</span> <span style="font-family:'DM Sans',sans-serif;font-size:12px;color:var(--bark-light);font-weight:400;margin-left:5px;">/ Portal</span></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="clinic-avatar" style="width:28px;height:28px;font-size:11px;border-radius:50%;background:var(--blush);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--rose-deep);" id="clinic-avatar-mobile">ST</div>
+        <span style="font-size:13px;font-weight:500;color:var(--bark);" id="clinic-name-mobile">Skin Trek</span>
+      </div>
+    </div>
+    <!-- Mobile row 2: Actions -->
+    <div class="header-bottom-row" style="display:none;">
+      <a href="/index.html" style="font-size:12px;font-weight:500;color:var(--bark-light);text-decoration:none;">← Directory</a>
+      <div style="display:flex;gap:16px;align-items:center;">
+        <a href="/contact.html" style="font-size:12px;color:var(--bark-light);text-decoration:none;">Need help?</a>
+        <button onclick="doLogout()" style="font-size:12px;color:var(--bark-light);background:none;border:none;cursor:pointer;padding:0;font-family:inherit;">Sign out</button>
+      </div>
+    </div>
+    <!-- Desktop header (hidden on mobile via .header-right display:none) -->
+    <div class="header-logo" style="display:none;" id="header-logo-desktop">Skin<span>Day</span> <span style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--bark-light);font-weight:400;margin-left:6px;">/ Clinic Portal</span></div>
+    <div class="header-right">
+      <div class="header-logo">Skin<span>Day</span> <span style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--bark-light);font-weight:400;margin-left:6px;">/ Clinic Portal</span></div>
+      <a href="/index.html" style="font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">← Back to directory</a>
+      <!-- Single-location badge (default) -->
+      <div class="clinic-badge" id="header-clinic-badge">
+        <div class="clinic-avatar" id="clinic-avatar">ST</div>
+        <div class="clinic-name-small" id="clinic-name-small">Skin Trek</div>
+      </div>
+      <!-- Chain location switcher (shown for multi-location accounts) -->
+      <div class="location-switcher-wrap" id="location-switcher-wrap" style="display:none;">
+        <div class="location-switcher" id="location-switcher-btn" onclick="toggleLocationDropdown()">
+          <span class="location-switcher-label" id="location-switcher-label">Select location</span>
+          <span class="location-switcher-arrow">▾</span>
+        </div>
+        <div class="location-dropdown" id="location-dropdown" style="display:none;">
+          <div class="location-dropdown-header">Your locations</div>
+          <div id="location-dropdown-items"></div>
+        </div>
+      </div>
+      <a href="/contact.html" style="font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">Need help?</a>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </header>
+
+  <div class="portal-main">
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+      <div class="page-title" id="portal-clinic-name">Skin Trek</div>
+      <span class="status-pill verified">Verified</span>
+    </div>
+    <div id="portal-location-subtitle" style="font-size:14px;color:var(--bark-light);margin-bottom:4px;display:none;"></div>
+    <div class="page-subtitle">Manage your listing on SkinDay — changes go live immediately.</div>
+
+    <!-- Tabs -->
+    <nav class="tab-nav">
+      <button class="tab-btn active" onclick="switchTab('pricing', this)">Pricing & Promos</button>
+      <button class="tab-btn" onclick="switchTab('identity', this)">Clinic Identity</button>
+      <button class="tab-btn" onclick="switchTab('contact', this)">Contact & Links</button>
+      <button class="tab-btn" onclick="switchTab('details', this)">Clinic Details</button>
+      <button class="tab-btn" onclick="switchTab('hours', this)">Hours</button>
+      <button class="tab-btn" onclick="switchTab('photos', this)">Photos</button>
+      <button class="tab-btn" onclick="switchTab('practitioners', this)">Practitioners</button>
+      <button class="tab-btn" onclick="switchTab('devices', this)">Devices</button>
+    </nav>
+
+    <!-- ─── TAB: PRICING ─── -->
+    <div class="tab-pane active" id="tab-pricing">
+      <div class="card">
+        <div class="card-title">Neurotoxin Pricing</div>
+        <div class="card-desc">Add your prices by brand and injector type. Patients see a "from $X" price on your card and a full breakdown on your profile.</div>
+
+        <!-- Existing prices from DB -->
+        <div id="portal-existing-prices" style="display:none;margin-bottom:1.25rem;">
+          <div class="field-label" style="margin-bottom:0.5rem;">Current prices on your listing</div>
+          <div id="portal-existing-list"></div>
+        </div>
+
+        <!-- Price rows -->
+        <div class="field-label" style="margin-bottom:0.5rem;">Add / update prices</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr minmax(90px,1fr) 28px;gap:6px;margin-bottom:0.4rem;">
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;">Brand</div>
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;">Injector type</div>
+          <div style="font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;">Price / unit</div>
+          <div></div>
+        </div>
+        <div id="portal-price-rows"></div>
+        <button type="button" onclick="portalAddPriceRow()" style="margin-top:0.5rem;background:rgba(200,114,90,0.06);border:1px dashed rgba(200,114,90,0.3);border-radius:8px;color:var(--rose);cursor:pointer;font-size:0.82rem;padding:0.45rem 0.9rem;width:100%;max-width:460px;transition:all 0.15s;" onmouseover="this.style.background='rgba(200,114,90,0.1)'" onmouseout="this.style.background='rgba(200,114,90,0.06)'">+ Add row</button>
+
+        <div class="field-hint" style="margin-top:0.75rem;">Leave blank any rows you don't want to publish. Prices are shown as "from $X" on your card and a full breakdown on your profile page.</div>
+        <div id="price-last-updated" style="display:none;font-size:0.78rem;color:var(--muted);margin-top:6px;"></div>
+
+        <!-- Apply to all locations — only shown for chain accounts -->
+        <div id="apply-all-wrap" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" id="apply-all-locations" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span style="font-size:0.88rem;color:var(--bark);">Apply these prices & credentials to <strong>all my locations</strong></span>
+          </label>
+          <div id="apply-all-locations-list" style="margin-top:8px;font-size:0.78rem;color:var(--bark-light);padding-left:26px;"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Promotions</div>
+        <div class="card-desc">Highlight a limited-time deal or offer on your listing.</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">Active Promotion</div>
+            <div class="toggle-desc">Show a promo badge on your listing</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="field-promo" onchange="togglePromoText(); markDirty();" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div id="promo-text-wrap" style="margin-top:20px;display:none;">
+          <label class="field-label">Promo description</label>
+          <textarea class="field-textarea" id="field-promo-text" placeholder="e.g. 20% off first visit — mention SkinDay at booking" oninput="markDirty()"></textarea>
+          <div class="field-hint">Keep it short and scannable — 1–2 sentences max.</div>
+        </div>
+
+        <div class="toggle-row" style="margin-top:16px;">
+          <div>
+            <div class="toggle-label">Complimentary Consultation</div>
+            <div class="toggle-desc">Show a “Free Consult” badge on your listing</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="field-consult-free" onchange="markDirty()" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: CLINIC IDENTITY (M28) ─── -->
+    <div class="tab-pane" id="tab-identity">
+      <div class="identity-intro">
+        Tell patients what you're most known for, and what they come to you to solve. We use this to match patients to your clinic — not to rank or score you.
+      </div>
+
+      <!-- ─── EXPERTISE CARD ─── -->
+      <div class="identity-card expertise-card">
+        <div class="identity-card-title">Your signature strengths</div>
+        <div class="identity-card-desc">Every clinic does many things well. But every clinic has a few signature areas — the work you're proudest of, the cases that come back to you. Choose up to 3.</div>
+
+        <div class="identity-counter" id="expertise-counter">
+          <span class="count-num">0</span> of 3 selected
+        </div>
+
+        <div class="chips-area" id="expertise-chips"></div>
+
+        <div class="pill-picker" id="expertise-picker">
+          <div class="pill-picker-input-wrap" id="expertise-input-wrap">
+            <svg class="pill-picker-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M14 14L17.5 17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input
+              type="text"
+              class="pill-picker-input"
+              id="expertise-input"
+              placeholder="Search or browse below…"
+              autocomplete="off"
+              spellcheck="false" />
+            <button type="button" class="pill-picker-clear" id="expertise-clear" aria-label="Clear search">×</button>
+          </div>
+
+          <div class="pill-picker-lock-msg" id="expertise-lock-msg">
+            Maximum selected — remove one to add another.
+          </div>
+
+          <div class="pill-picker-panel" id="expertise-panel"></div>
+
+          <button type="button" class="pill-picker-suggest-link" onclick="identityShowOtherForm('expertise')">
+            Can't find a fit? Suggest a specialty
+          </button>
+
+          <div id="expertise-other-wrap" style="display:none;"></div>
+        </div>
+
+        <div class="identity-helper">Suggested specialties are reviewed before they're added to the platform.</div>
+      </div>
+
+      <!-- ─── CONCERNS CARD ─── -->
+      <div class="identity-card">
+        <div class="identity-card-title">What patients seek you out for</div>
+        <div class="identity-card-desc">We know you can treat far more than three concerns. Pick the three where patients leave saying "I'm so glad I came here." Patients search by goal, not by product — describe what they come to <em>solve.</em></div>
+
+        <div class="identity-counter" id="concerns-counter">
+          <span class="count-num">0</span> of 3 selected
+        </div>
+
+        <div class="chips-area" id="concerns-chips"></div>
+
+        <div class="pill-picker" id="concerns-picker">
+          <div class="pill-picker-input-wrap" id="concerns-input-wrap">
+            <svg class="pill-picker-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M14 14L17.5 17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input
+              type="text"
+              class="pill-picker-input"
+              id="concerns-input"
+              placeholder="Search or browse below…"
+              autocomplete="off"
+              spellcheck="false" />
+            <button type="button" class="pill-picker-clear" id="concerns-clear" aria-label="Clear search">×</button>
+          </div>
+
+          <div class="pill-picker-lock-msg" id="concerns-lock-msg">
+            Maximum selected — remove one to add another.
+          </div>
+
+          <div class="pill-picker-panel" id="concerns-panel"></div>
+
+          <button type="button" class="pill-picker-suggest-link" onclick="identityShowOtherForm('concerns')">
+            Can't find a fit? Suggest a concern
+          </button>
+
+          <div id="concerns-other-wrap" style="display:none;"></div>
+        </div>
+
+        <div class="identity-helper">Suggested concerns are reviewed before they're added to the platform.</div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: CONTACT ─── -->
+    <div class="tab-pane" id="tab-contact">
+      <div class="card">
+        <div class="card-title">Contact Information</div>
+        <div class="card-desc">How visitors can reach your clinic.</div>
+        <div class="field-row">
+          <div class="field-group">
+            <label class="field-label">Phone number</label>
+            <input class="field-input" type="tel" id="field-phone" placeholder="(416) 555-0100" oninput="markDirty()" />
+          </div>
+          <div class="field-group">
+            <label class="field-label">Contact email <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--bark-light);">(optional)</span></label>
+            <input class="field-input" type="email" id="field-email" placeholder="hello@yourclinic.com" oninput="markDirty()" />
+            <div class="field-hint">Shown as an Email button on your clinic profile — use a general inquiry address, not a personal one.</div>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Website URL</label>
+          <input class="field-input" type="url" id="field-website" placeholder="https://yourclinic.com" oninput="markDirty()" />
+        </div>
+        <div class="field-group">
+          <label class="field-label">Booking link <span style="font-weight:400;text-transform:none;letter-spacing:0;font-size:12px;color:var(--bark-light);">(optional)</span></label>
+          <input class="field-input" type="url" id="field-booking" placeholder="https://jane.app/yourclinic" oninput="markDirty()" />
+          <div class="field-hint">Direct link for online booking — shown as a CTA button on your listing.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: CLINIC DETAILS ─── -->
+    <div class="tab-pane" id="tab-details">
+      <div class="card">
+        <div class="card-title">Injector Credentials</div>
+        <div class="card-desc">What credentials does your injector hold? Select all that apply.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-physician" value="physician" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span><strong>Physician (MD)</strong> — Canadian licensed</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-np" value="np" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span><strong>Nurse Practitioner (NP)</strong></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-rn" value="rn" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span><strong>Cosmetic Nurse (RN / RPN / LPN)</strong></span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-img" value="img" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span><strong>International Medical Graduate (IMG)</strong> — foreign-trained physician</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-nd" value="nd" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span><strong>Naturopathic Doctor (ND)</strong></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Languages Spoken</div>
+        <div class="card-desc">Which languages does your clinic serve? Select all that apply.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-english" value="english" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            English
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-mandarin" value="mandarin" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Mandarin
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-cantonese" value="cantonese" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Cantonese
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-farsi" value="farsi" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Farsi
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-french" value="french" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            French
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-korean" value="korean" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Korean
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-hindi" value="hindi" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Hindi
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-arabic" value="arabic" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Arabic
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-punjabi" value="punjabi" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Punjabi
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="lang-portuguese" value="portuguese" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Portuguese
+          </label>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">Treatment Categories</div>
+        <div class="card-desc">What does your clinic offer? These appear as quick tags on your listing so patients can tell at a glance. Select all that apply.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-injectables" value="injectables" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Injectables
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-lasers_ipl" value="lasers_ipl" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Lasers/IPL
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-rf_hifu" value="rf_hifu" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            RF/HIFU
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-facials" value="facials" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Skin &amp; Facials
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-body" value="body" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Body Contouring
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-plastic_surgery" value="plastic_surgery" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            Plastic Surgery
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cat-iv_drips" value="iv_drips" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            IV Drips
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: HOURS ─── -->
+    <div class="tab-pane" id="tab-hours">
+      <div class="card">
+        <div class="card-title">Business Hours</div>
+        <div class="card-desc">Set your weekly schedule. Toggle "Closed" for days you're not open.</div>
+        <div id="hours-table"></div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: PHOTOS ─── -->
+    <div class="tab-pane" id="tab-photos">
+      <!-- Location context banner — only shown for chain accounts -->
+      <div id="photos-location-banner" style="display:none;background:rgba(201,169,110,0.10);border:1px solid var(--gold);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--bark);">
+        📍 Editing photos for: <strong id="photos-location-name"></strong>
+      </div>
+      <!-- LOGO CARD -->
+      <div class="card" style="margin-bottom:16px;">
+        <div class="card-title">Clinic Logo</div>
+        <div class="card-desc">Upload your clinic logo — displayed beside your clinic name on directory cards and your profile page.</div>
+        <div class="logo-upload-area">
+          <div id="logo-preview-wrap">
+            <div class="logo-preview-placeholder" id="logo-placeholder">🏥</div>
+          </div>
+          <div>
+            <button class="logo-upload-btn" onclick="document.getElementById('logo-upload-input').click()">Upload Logo</button>
+            <button class="logo-remove-btn" id="logo-remove-btn" onclick="removeLogo()" style="display:none;">✕ Remove</button>
+            <div class="field-hint" style="margin-top:8px;">PNG or JPG, max 2MB. Square or landscape works best.</div>
+          </div>
+        </div>
+        <input type="file" id="logo-upload-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;" onchange="handleLogoUpload(event)" />
+      </div>
+      <!-- PHOTOS CARD -->
+      <div class="card">
+        <div class="card-title">Clinic Photos</div>
+        <div class="card-desc">Upload up to 6 photos. Drag to reorder — the first photo becomes your cover image on your profile page.</div>
+        <div id="photo-drag-list" style="margin-bottom:16px;"></div>
+        <input type="file" id="photo-upload-input" accept="image/*" style="display:none;" onchange="handlePhotoUpload(event)" />
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+          <button class="photo-add-btn" onclick="document.getElementById('photo-upload-input').click()">
+            <span style="font-size:18px;">＋</span> Add Photo
+          </button>
+          <button id="photo-order-save-btn" onclick="savePhotoOrder()" style="display:none;padding:10px 18px;background:var(--rose);border:none;border-radius:8px;color:white;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='var(--rose-deep)'" onmouseout="this.style.background='var(--rose)'">Save Order</button>
+        </div>
+        <div class="field-hint" style="margin-top:12px;">JPG or PNG, max 5MB each. Drag ☰ to reorder. First photo is your hero image.</div>
+      </div>
+    </div>
+  </div>
+
+    <!-- ─── TAB: PRACTITIONERS ─── -->
+    <div class="tab-pane" id="tab-practitioners">
+      <div class="card">
+        <div class="card-title">Lead Practitioners</div>
+        <div class="card-desc">Add the injectors at your clinic. The first practitioner listed is shown on your card. Self-reported — no verification required.</div>
+
+        <div id="practitioner-rows"></div>
+
+        <button type="button" onclick="practitionerAddRow()" style="margin-top:12px;background:rgba(200,114,90,0.06);border:1px dashed rgba(200,114,90,0.3);border-radius:8px;color:var(--rose);cursor:pointer;font-size:0.82rem;padding:0.45rem 0.9rem;width:100%;max-width:560px;transition:all 0.15s;font-family:'DM Sans',sans-serif;" onmouseover="this.style.background='rgba(200,114,90,0.1)'" onmouseout="this.style.background='rgba(200,114,90,0.06)'">+ Add practitioner</button>
+
+        <div class="field-hint" style="margin-top:12px;">Drag ☰ to reorder. The top practitioner's name and designation appear under your clinic name on SkinDay.</div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: DEVICES (M23) ─── -->
+    <div class="tab-pane" id="tab-devices">
+      <div class="identity-intro">
+        The equipment you run is one of the things patients search by. Confirm what you have, remove anything we got wrong, and add what we missed.
+      </div>
+
+      <div class="identity-card">
+        <div class="identity-card-title">Your equipment</div>
+        <div class="identity-card-desc" id="device-card-desc">Search by model name. Only devices on our reference list can be added, so spelling and manufacturer stay consistent across the directory.</div>
+
+        <div class="identity-counter" id="device-counter">
+          <span class="count-num">0</span> selected
+        </div>
+
+        <div class="chips-area" id="device-chips"></div>
+
+        <div class="pill-picker" id="device-picker">
+          <div class="pill-picker-input-wrap" id="device-input-wrap">
+            <svg class="pill-picker-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M14 14L17.5 17.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input
+              type="text"
+              class="pill-picker-input"
+              id="device-input"
+              placeholder="Search by model, e.g. Morpheus8…"
+              autocomplete="off"
+              spellcheck="false" />
+            <button type="button" class="pill-picker-clear" id="device-clear" aria-label="Clear search">×</button>
+          </div>
+
+          <div class="pill-picker-panel" id="device-panel"></div>
+        </div>
+
+        <div class="identity-helper" id="device-helper">
+          Don't see your machine? Email hello@skinday.ca with the model name and we'll add it to the reference list.
+        </div>
+      </div>
+
+      <div class="identity-card">
+        <div class="identity-card-title">What publishing does</div>
+        <div class="identity-card-desc">
+          Once you save this list, it becomes the equipment shown on your SkinDay profile, replacing anything we found by reading your website. If you leave something off, it stops showing. You can come back and change it any time.
+        </div>
+        <div class="field-hint" id="device-published-state" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
+  <!-- Save Bar -->
+  <div class="save-bar" id="save-bar">
+    <div class="save-bar-msg"><strong>Unsaved changes</strong> — your edits haven't been published yet.</div>
+    <div class="save-bar-actions">
+      <button class="btn-discard" onclick="discardChanges()">Discard</button>
+      <button class="btn-save" onclick="saveChanges()">Save & Publish</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- M30: /clinics-data.js was deprecated in M15. Chain location names now
+     come from a Supabase fetch in populateChainLocationNames(). The script
+     tag has been removed; if you re-add it in the future, also remove the
+     fetch logic or you'll have two sources of truth competing. -->
+<script>
+  // ─── SUPABASE CONFIG ───
+  // Replace with your actual values
+  const SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+
+  // ─── STATE ───
+  let currentClinic = null;
+  let originalData = {};
+  let isDirty = false;
+  let photos = []; // { url, file? }
+  let logoState = { url: null, file: null, removed: false }; // current logo
+  let allClinicIds = [];    // populated for chain accounts
+  let allClinicNames = {};  // id → name map for switcher labels
+
+  // ─── HOURS CONFIG ───
+  const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  const defaultHours = { open: '09:00', close: '17:00', closed: false };
+
+  // ─── LOGIN ───
+  async function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn = document.getElementById('login-btn');
+    const err = document.getElementById('login-error');
+
+    if (!email || !password) {
+      showLoginError('Please enter your email and password.');
+      return;
+    }
+
+    btn.textContent = 'Signing in…';
+    btn.disabled = true;
+    err.style.display = 'none';
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showLoginError(data.error_description || 'Login failed. Please try again.');
+        return;
+      }
+
+      // Store session
+      sessionStorage.setItem('sd_token', data.access_token);
+      sessionStorage.setItem('sd_user_email', email);
+
+      // Fetch clinic linked to this user
+      await loadClinicForUser(data.access_token, email);
+
+    } catch (e) {
+      showLoginError('Network error — please try again.');
+    } finally {
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+    }
+  }
+
+  function showLoginError(msg) {
+    const err = document.getElementById('login-error');
+    err.textContent = msg;
+    err.style.display = 'block';
+    document.getElementById('login-btn').textContent = 'Sign In';
+    document.getElementById('login-btn').disabled = false;
+  }
+
+  async function loadClinicForUser(token, email) {
+    try {
+      const res = await fetch('/api/save-clinic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'get-clinic' })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showLoginError(data.error || 'No approved clinic found for this account. Contact hello@skinday.ca.');
+        return;
+      }
+
+      currentClinic = data.clinic;
+
+      // Chain support: get all clinic IDs from user metadata
+      allClinicIds = data.clinic_ids || [currentClinic.id];
+
+      // M30: build name+neighbourhood map. Old code relied on a global `clinics`
+      // array from /clinics-data.js (deprecated in M15), which silently fell
+      // back to "Location {id}" labels everywhere. Now we fetch live from
+      // Supabase. If the fetch fails we still degrade to "Location {id}"
+      // rather than blocking login.
+      allClinicNames = {};
+      await populateChainLocationNames(allClinicIds, data.clinic_names);
+
+      // Patch currentClinic.name/neighbourhood from the fetched map if the
+      // server returned null. The map was just populated above.
+      if (!currentClinic.name) {
+        const fromMap = allClinicNames[String(currentClinic.id)];
+        if (fromMap) {
+          // Map entries look like "Name — Neighbourhood". Best-effort split.
+          const dashIdx = fromMap.indexOf(' — ');
+          if (dashIdx > -1) {
+            currentClinic.name = fromMap.slice(0, dashIdx);
+            currentClinic.neighbourhood = fromMap.slice(dashIdx + 3);
+          } else {
+            currentClinic.name = fromMap;
+          }
+        }
+      }
+
+      showPortal();
+    } catch (e) {
+      showLoginError('Network error — please try again.');
+    }
+  }
+
+  // ─── SWITCH LOCATION (chain accounts) ───
+  async function switchLocation(clinicId) {
+    if (isDirty) {
+      if (!confirm('You have unsaved changes. Switch location anyway?')) return;
+    }
+    closeLocationDropdown();
+
+    const token = sessionStorage.getItem('sd_token');
+    try {
+      const res = await fetch('/api/save-clinic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action: 'get-clinic', clinicId })
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        showToast('Could not load that location. Try again.', 'error');
+        return;
+      }
+
+      currentClinic = data.clinic;
+      // M30: if server returned null name, recover from allClinicNames map
+      // which was populated at login. Avoids the dead /clinics-data.js
+      // lookup that silently failed for weeks.
+      if (!currentClinic.name) {
+        const fromMap = allClinicNames[String(currentClinic.id)];
+        if (fromMap && !fromMap.startsWith('Unknown clinic')) {
+          const dashIdx = fromMap.indexOf(' — ');
+          if (dashIdx > -1) {
+            currentClinic.name          = fromMap.slice(0, dashIdx);
+            currentClinic.neighbourhood = fromMap.slice(dashIdx + 3);
+          } else {
+            currentClinic.name = fromMap;
+          }
+        }
+      }
+      isDirty = false;
+      document.getElementById('save-bar').classList.remove('visible');
+      updatePortalForCurrentClinic();
+      showToast('Switched to ' + currentClinic.name, 'success');
+    } catch (e) {
+      showToast('Network error — please try again.', 'error');
+    }
+  }
+
+  function toggleLocationDropdown() {
+    const dd = document.getElementById('location-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  }
+
+  function closeLocationDropdown() {
+    document.getElementById('location-dropdown').style.display = 'none';
+  }
+
+  // Close dropdown on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#location-switcher-wrap')) closeLocationDropdown();
+  });
+
+  // M30: Fetch clinic names + neighbourhoods for all chain locations from
+  // Supabase. Replaces the dead /clinics-data.js lookup. Server's login
+  // response may include a fallback name map in `clinic_names`; we use it
+  // only for IDs the fetch misses. Failures surface as "Unknown clinic ({id})"
+  // rather than the previous "Location {id}" — the old wording looked
+  // intentional and masked the failure for weeks. Make broken things look
+  // broken.
+  async function populateChainLocationNames(ids, serverFallbackNames) {
+    const fallbacks = serverFallbackNames || {};
+
+    // Seed every ID first so the UI is never blank, even on slow networks.
+    // Visible-failure wording: if neither the fetch nor the server fallback
+    // populates this entry, the user (and we) see something obviously wrong.
+    ids.forEach(id => {
+      allClinicNames[String(id)] = fallbacks[String(id)] || `Unknown clinic (${id})`;
+    });
+
+    if (!ids || ids.length === 0) return;
+
+    try {
+      // PostgREST `in.(id1,id2,...)` filter — IDs are TEXT so each must be
+      // a quoted string. Encoding handles any URL-unsafe chars in IDs.
+      const idList = ids.map(id => `"${String(id).replace(/"/g, '\\"')}"`).join(',');
+      const url = `${SUPABASE_URL}/rest/v1/clinics?id=in.(${encodeURIComponent(idList)})&select=id,name,neighbourhood`;
+      const token = sessionStorage.getItem('sd_token');
+      const res = await fetch(url, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        console.warn('[chain names] fetch returned', res.status, '— falling back to seeded values');
+        return;
+      }
+      const rows = await res.json();
+      if (!Array.isArray(rows)) {
+        console.warn('[chain names] unexpected response shape', rows);
+        return;
+      }
+      rows.forEach(row => {
+        if (!row || !row.id) return;
+        const key = String(row.id);
+        if (row.name && row.neighbourhood) {
+          allClinicNames[key] = `${row.name} — ${row.neighbourhood}`;
+        } else if (row.name) {
+          // Empty neighbourhood — fall back to just the name. Avoids
+          // "Skin Trek — " with a trailing dash that looks broken.
+          allClinicNames[key] = row.name;
+        }
+        // else leave the seeded "Unknown clinic ({id})" in place so the
+        // failure is visible.
+      });
+      console.log('[chain names] loaded', rows.length, 'of', ids.length, 'locations:', allClinicNames);
+    } catch (err) {
+      console.warn('[chain names] fetch failed', err);
+      // Seeded values remain in place — visible-failure wording is intentional.
+    }
+  }
+
+  function buildLocationSwitcher() {
+    const isChain = allClinicIds.length > 1;
+    document.getElementById('header-clinic-badge').style.display   = isChain ? 'none' : 'flex';
+    document.getElementById('location-switcher-wrap').style.display = isChain ? 'block' : 'none';
+    if (!isChain) return;
+
+    const itemsEl = document.getElementById('location-dropdown-items');
+    itemsEl.innerHTML = allClinicIds.map(id => {
+      const name = allClinicNames[String(id)] || allClinicNames[id] || currentClinic.name || `Unknown clinic (${id})`;
+      const isActive = String(id) === String(currentClinic.id);
+      return `<div class="location-dropdown-item${isActive ? ' active' : ''}" onclick="switchLocation('${id}')">${name}</div>`;
+    }).join('');
+
+    // Update header label
+    document.getElementById('location-switcher-label').textContent = currentClinic.name || 'Select location';
+
+    // Show/hide apply-all toggle and populate location list
+    const applyWrap = document.getElementById('apply-all-wrap');
+    if (applyWrap) {
+      applyWrap.style.display = isChain ? 'block' : 'none';
+      const listEl = document.getElementById('apply-all-locations-list');
+      if (listEl && isChain) {
+        const otherNames = allClinicIds
+          .filter(id => String(id) !== String(currentClinic.id))
+          .map(id => allClinicNames[String(id)] || `Unknown clinic (${id})`);
+        listEl.textContent = otherNames.length
+          ? 'Will also update: ' + otherNames.join(', ')
+          : '';
+      }
+    }
+  }
+
+  function showPortal() {
+    document.getElementById('login-screen').style.display = 'none';
+    const portal = document.getElementById('portal-screen');
+    portal.style.display = 'flex';
+
+    // M25: load taxonomy in background; populateFields handles missing data gracefully
+    identityLoadTaxonomy().then(() => {
+      // Re-render identity once taxonomy lands, in case populateFields ran first
+      if (typeof currentClinic !== 'undefined' && currentClinic) {
+        identityPopulateFromClinic(currentClinic);
+      }
+    });
+
+    buildLocationSwitcher();
+    updatePortalForCurrentClinic();
+  }
+
+  function updatePortalForCurrentClinic() {
+    const name = currentClinic.name || 'Your Clinic';
+    const hood = currentClinic.neighbourhood || null;
+
+    document.getElementById('portal-clinic-name').textContent = name;
+    document.getElementById('clinic-name-small').textContent  = name;
+    const _mAvatar = document.getElementById('clinic-avatar-mobile');
+    const _mName = document.getElementById('clinic-name-mobile');
+    if (_mAvatar) _mAvatar.textContent = name.substring(0,2).toUpperCase();
+    if (_mName) _mName.textContent = name;
+    document.getElementById('clinic-avatar').textContent = name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+
+    // Show neighbourhood as location subtitle under the clinic name
+    const subtitleEl = document.getElementById('portal-location-subtitle');
+    if (subtitleEl) {
+      subtitleEl.textContent = hood ? '📍 ' + hood : '';
+      subtitleEl.style.display = hood ? 'block' : 'none';
+    }
+
+    // Update switcher label — show "Name — Neighbourhood" for chains
+    const labelEl = document.getElementById('location-switcher-label');
+    if (labelEl) {
+      labelEl.textContent = allClinicIds.length > 1 && hood
+        ? `${name} — ${hood}`
+        : name;
+    }
+
+    // Rebuild dropdown to reflect active location
+    if (allClinicIds.length > 1) buildLocationSwitcher();
+
+    // Show location context banner in Photos tab for chain accounts
+    const photosBanner = document.getElementById('photos-location-banner');
+    const photosLocationName = document.getElementById('photos-location-name');
+    if (photosBanner && photosLocationName) {
+      if (allClinicIds.length > 1) {
+        photosLocationName.textContent = hood ? `${name} — ${hood}` : name;
+        photosBanner.style.display = 'block';
+      } else {
+        photosBanner.style.display = 'none';
+      }
+    }
+
+    // Hard reset photo state on location switch — prevents stale photos
+    // from a previous location persisting visually or in memory
+    photos = [];
+    buildPhotoGrid(); // render empty grid immediately
+    const photoAddBtn = document.querySelector('.photo-add-btn');
+    if (photoAddBtn) photoAddBtn.disabled = true; // disable until new location loads
+    populateFields(); // this re-enables upload after async photo load completes
+    buildHoursTable();
+    buildPhotoGrid();
+    practitionerLoad(currentClinic.id);
+    deviceLoadForClinic(currentClinic.id);
+  }
+
+  function populateFields() {
+    const c = currentClinic;
+
+    // Supabase may return array columns as JSON strings — parse them
+    ['injector_credentials', 'languages'].forEach(field => {
+      if (typeof c[field] === 'string') {
+        try { c[field] = JSON.parse(c[field]); } catch(e) { c[field] = []; }
+      }
+      if (!Array.isArray(c[field])) c[field] = [];
+    });
+    // categories is a native text[]; guard for string/null too
+    if (typeof c.categories === 'string') {
+      try { c.categories = JSON.parse(c.categories); } catch(e) { c.categories = []; }
+    }
+    if (!Array.isArray(c.categories)) c.categories = [];
+
+    // Load prices from clinic_prices via get-clinics data
+    portalLoadPrices(c);
+
+    setVal('field-phone', c.phone || '');
+    setVal('field-email', c.email || '');
+    setVal('field-website', c.website || '');
+    setVal('field-booking', c.booking_url || '');
+    setVal('field-promo-text', c.promo_text || '');
+
+    const promoCheck = document.getElementById('field-promo');
+    promoCheck.checked = !!c.promo;
+    const consultCheck = document.getElementById('field-consult-free');
+    if (consultCheck) consultCheck.checked = !!c.consult_free;
+    togglePromoText();
+
+    // Photos: fetch from Storage to get real filenames for ordering
+    photos = [];
+    logoState = { url: c.logo_url || null, file: null, removed: false };
+    renderLogoPreview();
+
+    // Async fetch photo list from Storage
+    // Freeze clinic context at load time — protects against location switch mid-upload
+    const frozenClinicId = String(c.id);
+    const frozenClinicName = c.name || '';
+    const frozenClinicHood = c.neighbourhood || '';
+    (async function loadPhotos() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/storage/v1/object/list/clinic-photos`, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${sessionStorage.getItem('sd_token')}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prefix: `clinic-${frozenClinicId}/`, limit: 20 })
+        });
+        const files = res.ok ? await res.json() : [];
+        if (!Array.isArray(files)) return;
+        // Fetch order from clinic_photos table to sort correctly
+        const orderRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/clinic_photos?clinic_id=eq.${encodeURIComponent(frozenClinicId)}&select=filename,display_order,is_hero&order=display_order.asc`,
+          { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${sessionStorage.getItem('sd_token')}` } }
+        );
+        const orderRows = orderRes.ok ? await orderRes.json() : [];
+        const orderMap = {};
+        const heroMap = {};
+        if (Array.isArray(orderRows)) orderRows.forEach(r => {
+          orderMap[r.filename] = r.display_order;
+          heroMap[r.filename]  = r.is_hero === true;
+        });
+
+        const storageFiles = files
+          .filter(f => f.name && !f.name.endsWith('/'))
+          .map(f => ({
+            filename: f.name,
+            url: `${SUPABASE_URL}/storage/v1/object/public/clinic-photos/clinic-${frozenClinicId}/${encodeURIComponent(f.name)}`,
+            order: orderMap[f.name] !== undefined ? orderMap[f.name] : 999
+          }))
+          .sort((a, b) => a.order - b.order);
+
+        // Abort render if clinic switched while photos were loading
+        if (String(currentClinic.id) !== frozenClinicId) return;
+
+        photos = storageFiles.map(f => ({ url: f.url, filename: f.filename, is_hero: heroMap[f.filename] || false }));
+        buildPhotoGrid();
+        // Re-enable upload button now that correct location photos are loaded
+        const photoAddBtn = document.querySelector('.photo-add-btn');
+        if (photoAddBtn) photoAddBtn.disabled = false;
+        buildPhotoGrid();
+        showOrderSaveBtn(false);
+      } catch(e) {
+        // Silently fail — empty photo list shown
+      }
+    })();
+
+    // Injector credentials checkboxes
+    const allCreds = ['physician','np','rn','img'];
+    const savedCreds = Array.isArray(c.injector_credentials) ? c.injector_credentials : [];
+    allCreds.forEach(v => {
+      const el = document.getElementById('cred-' + v);
+      if (el) el.checked = savedCreds.includes(v);
+    });
+
+    // Languages checkboxes
+    const allLangs = ['english','mandarin','cantonese','farsi','french','korean','hindi','arabic','punjabi','portuguese'];
+    const savedLangs = Array.isArray(c.languages) ? c.languages : [];
+    allLangs.forEach(v => {
+      const el = document.getElementById('lang-' + v);
+      if (el) el.checked = savedLangs.includes(v);
+    });
+
+    // Treatment category checkboxes
+    const allCats = ['injectables','lasers_ipl','rf_hifu','facials','body','plastic_surgery','iv_drips'];
+    const savedCats = Array.isArray(c.categories) ? c.categories : [];
+    allCats.forEach(v => {
+      const el = document.getElementById('cat-' + v);
+      if (el) el.checked = savedCats.includes(v);
+    });
+
+    // M25: populate Clinic Identity tab
+    identityPopulateFromClinic(c);
+
+    // Store originals for discard
+    originalData = {
+      prices: portalGetPriceRows(),
+      phone: c.phone || '',
+      email: c.email || '',
+      website: c.website || '',
+      booking_url: c.booking_url || '',
+      promo: !!c.promo,
+      promo_text: c.promo_text || '',
+      consult_free: !!c.consult_free,
+      hours: JSON.parse(JSON.stringify(c.hours || {})),
+      photos: [...photos],
+      injector_credentials: [...savedCreds],
+      languages: [...savedLangs],
+      categories: [...savedCats],
+      // M25: snapshot identity for discard-changes
+      expertise: JSON.parse(JSON.stringify(identityState.expertise)),
+      concerns:  JSON.parse(JSON.stringify(identityState.concerns))
+    };
+  }
+
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+
+  // ─── HOURS ───
+  function buildHoursTable() {
+    const table = document.getElementById('hours-table');
+    const saved = currentClinic.hours || {};
+    table.innerHTML = '';
+
+    DAYS.forEach(day => {
+      const h = saved[day] || defaultHours;
+      const row = document.createElement('div');
+      row.className = 'hours-row';
+      row.id = `hours-${day}`;
+      row.innerHTML = `
+        <div class="hours-day">${day}</div>
+        <input class="hours-input" type="time" id="open-${day}" value="${h.closed ? '' : h.open || '09:00'}" ${h.closed ? 'disabled' : ''} oninput="markDirty()" />
+        <input class="hours-input" type="time" id="close-${day}" value="${h.closed ? '' : h.close || '17:00'}" ${h.closed ? 'disabled' : ''} oninput="markDirty()" />
+        <div class="hours-closed">
+          <label>
+            <input type="checkbox" id="closed-${day}" ${h.closed ? 'checked' : ''} onchange="toggleDay('${day}'); markDirty();" />
+            Closed
+          </label>
+        </div>
+      `;
+      table.appendChild(row);
+    });
+  }
+
+  function toggleDay(day) {
+    const isClosed = document.getElementById(`closed-${day}`).checked;
+    document.getElementById(`open-${day}`).disabled = isClosed;
+    document.getElementById(`close-${day}`).disabled = isClosed;
+    if (isClosed) {
+      document.getElementById(`open-${day}`).value = '';
+      document.getElementById(`close-${day}`).value = '';
+    } else {
+      document.getElementById(`open-${day}`).value = '09:00';
+      document.getElementById(`close-${day}`).value = '17:00';
+    }
+  }
+
+  function collectHours() {
+    const hours = {};
+    DAYS.forEach(day => {
+      hours[day] = {
+        closed: document.getElementById(`closed-${day}`).checked,
+        open: document.getElementById(`open-${day}`).value,
+        close: document.getElementById(`close-${day}`).value
+      };
+    });
+    return hours;
+  }
+
+  // ─── PHOTOS ───
+  // ─── PHOTO DRAG-LIST ─────────────────────────────────────────
+  // photos[] = [{ url, filename, file? }]
+  // filename is the bare Storage filename (no path prefix) — used for save-photo-order
+
+  let photoDragSrc = null;
+
+  function buildPhotoGrid() {
+    const list = document.getElementById('photo-drag-list');
+    list.innerHTML = '';
+    if (!photos.length) return;
+
+    photos.forEach((p, i) => {
+      const item = document.createElement('div');
+      item.className = 'photo-drag-item';
+      item.draggable = true;
+      item.dataset.idx = i;
+      const isHero = p.is_hero === true;
+      item.innerHTML = `
+        <span class="photo-drag-handle" title="Drag to reorder">☰</span>
+        <img class="photo-drag-thumb" src="${p.url}" alt="Photo ${i+1}" onerror="this.style.opacity='0.3'" />
+        <span class="photo-drag-name">${p.filename || 'New photo'}</span>
+        ${isHero ? '<span class="photo-drag-badge">Cover</span>' : ''}
+        <button class="photo-hero-btn${isHero ? ' is-hero' : ''}" onclick="setCoverPhoto(${i});event.stopPropagation();" title="Use as cover image">${isHero ? '★ Cover' : '☆ Set as Cover'}</button>
+        <button class="photo-drag-remove" onclick="removePhoto(${i});event.stopPropagation();" title="Remove">✕</button>`;
+
+      item.addEventListener('dragstart', e => {
+        photoDragSrc = i;
+        item.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+        list.querySelectorAll('.photo-drag-item').forEach(el => el.classList.remove('drag-over'));
+      });
+      item.addEventListener('dragover', e => {
+        e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+        list.querySelectorAll('.photo-drag-item').forEach(el => el.classList.remove('drag-over'));
+        item.classList.add('drag-over');
+      });
+      item.addEventListener('drop', e => {
+        e.preventDefault();
+        item.classList.remove('drag-over');
+        const targetIdx = parseInt(item.dataset.idx);
+        if (photoDragSrc === null || photoDragSrc === targetIdx) return;
+        const moved = photos.splice(photoDragSrc, 1)[0];
+        photos.splice(targetIdx, 0, moved);
+        photoDragSrc = null;
+        buildPhotoGrid();
+        showOrderSaveBtn(true);
+      });
+
+      list.appendChild(item);
+    });
+  }
+
+  // Mark one photo as cover, clear all others, then save immediately
+  async function setCoverPhoto(idx) {
+    if (!photos[idx] || photos[idx].file) {
+      showToast('Upload the photo first before setting it as cover.', 'error');
+      return;
+    }
+    // Toggle off if already hero
+    const wasHero = photos[idx].is_hero === true;
+    photos.forEach((p, i) => { p.is_hero = !wasHero && i === idx; });
+    buildPhotoGrid();
+    await savePhotoOrder();
+  }
+
+  function showOrderSaveBtn(show) {
+    const btn = document.getElementById('photo-order-save-btn');
+    if (btn) btn.style.display = show ? 'inline-flex' : 'none';
+  }
+
+  async function savePhotoOrder() {
+    const token = sessionStorage.getItem('sd_token');
+    // Freeze clinic ID at save time — protects against location switch mid-operation
+    const saveClinicId = String(currentClinic.id);
+    const btn = document.getElementById('photo-order-save-btn');
+    if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+    try {
+      const filenames = photos
+        .filter(p => !p.file && p.filename)
+        .map(p => p.filename);
+      const heroPhoto = photos.find(p => p.is_hero && !p.file && p.filename);
+      const heroFilename = heroPhoto ? heroPhoto.filename : null;
+      const res = await fetch('/api/save-clinic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ action: 'save-photo-order', clinicId: saveClinicId, filenames, heroFilename })
+      });
+      if (!res.ok) throw new Error('Save failed');
+      showToast('Photo order saved ✓', 'success');
+      showOrderSaveBtn(false);
+    } catch(e) {
+      showToast('Failed to save order — try again.', 'error');
+    } finally {
+      if (btn) { btn.textContent = 'Save Order'; btn.disabled = false; }
+    }
+  }
+
+  function handlePhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (photos.length >= 6) { showToast('Maximum 6 photos allowed.', 'error'); return; }
+
+    const url = URL.createObjectURL(file);
+    photos.push({ url, filename: file.name, file });
+    buildPhotoGrid();
+    markDirty();
+    e.target.value = '';
+  }
+
+  // ─── LOGO HANDLERS ───
+  function handleLogoUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { showToast('Logo must be under 2MB.', 'error'); return; }
+    const url = URL.createObjectURL(file);
+    logoState = { url, file, removed: false };
+    renderLogoPreview();
+    markDirty();
+    e.target.value = '';
+  }
+
+  function removeLogo() {
+    logoState = { url: null, file: null, removed: true };
+    renderLogoPreview();
+    markDirty();
+  }
+
+  function renderLogoPreview() {
+    const wrap = document.getElementById('logo-preview-wrap');
+    const removeBtn = document.getElementById('logo-remove-btn');
+    if (logoState.url) {
+      wrap.innerHTML = `<img class="logo-preview" src="${logoState.url}" alt="Clinic logo" />`;
+      removeBtn.style.display = 'inline';
+    } else {
+      wrap.innerHTML = `<div class="logo-preview-placeholder" id="logo-placeholder">🏥</div>`;
+      removeBtn.style.display = 'none';
+    }
+  }
+
+  async function uploadLogo(token) {
+    if (!logoState.file) return logoState.removed ? null : logoState.url;
+    // Freeze clinic ID at upload time
+    const logoClinicId = String(currentClinic.id);
+    const ext = logoState.file.name.split('.').pop();
+    const filename = `clinic-${logoClinicId}/logo.${ext}`;
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/clinic-logos/${filename}`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': logoState.file.type,
+        'x-upsert': 'true'
+      },
+      body: logoState.file
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.error('Logo upload failed:', res.status, err);
+      throw new Error('Logo upload failed — please try again.');
+    }
+    return `${SUPABASE_URL}/storage/v1/object/public/clinic-logos/${filename}?t=${Date.now()}`;
+  }
+
+  function removePhoto(idx) {
+    photos.splice(idx, 1);
+    buildPhotoGrid();
+    markDirty();
+  }
+
+  // ─── PROMO TOGGLE ───
+  function togglePromoText() {
+    const on = document.getElementById('field-promo').checked;
+    document.getElementById('promo-text-wrap').style.display = on ? 'block' : 'none';
+  }
+
+  // ─── TABS ───
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    btn.classList.add('active');
+
+    // Identity tab: ensure taxonomy is loaded and pickers are populated.
+    // Handles the race where taxonomy fetch completes after initial render.
+    if (tab === 'identity') {
+      identityLoadTaxonomy().then(() => {
+        identityInitPicker('expertise');
+        identityInitPicker('concerns');
+        identityRender('expertise');
+        identityRender('concerns');
+      });
+    }
+
+    // M23 Devices tab: the reference list is large enough that it is fetched
+    // on first visit rather than at login, so most clinics never pay for it.
+    if (tab === 'devices') {
+      deviceLoadReference().then(() => {
+        deviceInitPicker();
+        deviceRender();
+      });
+    }
+  }
+
+  // ─── DIRTY STATE ───
+  function markDirty() {
+    isDirty = true;
+    document.getElementById('save-bar').classList.add('visible');
+  }
+
+  function discardChanges() {
+    // Restore original data
+    const c = originalData;
+    portalLoadPrices(c);
+    setVal('field-phone', c.phone);
+    setVal('field-email', c.email || '');
+    setVal('field-website', c.website);
+    setVal('field-booking', c.booking_url);
+    setVal('field-promo-text', c.promo_text);
+    document.getElementById('field-promo').checked = c.promo;
+    const cfc = document.getElementById('field-consult-free');
+    if (cfc) cfc.checked = !!c.consult_free;
+    togglePromoText();
+    photos = [...c.photos];
+    buildPhotoGrid();
+    currentClinic.hours = JSON.parse(JSON.stringify(c.hours));
+    buildHoursTable();
+
+    // Restore credentials
+    ['physician','np','rn','img'].forEach(v => {
+      const el = document.getElementById('cred-' + v);
+      if (el) el.checked = (c.injector_credentials || []).includes(v);
+    });
+    // Restore languages
+    ['english','mandarin','cantonese','farsi','french','korean','hindi','arabic','punjabi','portuguese'].forEach(v => {
+      const el = document.getElementById('lang-' + v);
+      if (el) el.checked = (c.languages || []).includes(v);
+    });
+    // Restore treatment categories
+    ['injectables','lasers_ipl','rf_hifu','facials','body','plastic_surgery','iv_drips'].forEach(v => {
+      const el = document.getElementById('cat-' + v);
+      if (el) el.checked = (c.categories || []).includes(v);
+    });
+
+    // Restore practitioners
+    practitioners = practitionerOriginal.map(p => ({ ...p }));
+    practitionerRender();
+
+    // M28: restore identity from snapshot
+    identityState.expertise = JSON.parse(JSON.stringify(identityOriginal.expertise));
+    identityState.concerns  = JSON.parse(JSON.stringify(identityOriginal.concerns));
+    // Close any open suggest-a-specialty forms
+    const expOther = document.getElementById('expertise-other-wrap');
+    const conOther = document.getElementById('concerns-other-wrap');
+    if (expOther) { expOther.innerHTML = ''; expOther.style.display = 'none'; }
+    if (conOther) { conOther.innerHTML = ''; conOther.style.display = 'none'; }
+    // M28: clear pill-picker search state
+    ['expertise', 'concerns'].forEach(cat => {
+      identityUI[cat].query = '';
+      const input = document.getElementById(cat + '-input');
+      const clearBtn = document.getElementById(cat + '-clear');
+      if (input) input.value = '';
+      if (clearBtn) clearBtn.classList.remove('visible');
+    });
+    identityRender('expertise');
+    identityRender('concerns');
+
+    // M23: restore the equipment selection from its snapshot
+    deviceSelected = [...deviceOriginal];
+    deviceDirty = false;
+    deviceQuery = '';
+    const devInput = document.getElementById('device-input');
+    const devClear = document.getElementById('device-clear');
+    if (devInput) devInput.value = '';
+    if (devClear) devClear.classList.remove('visible');
+    deviceRender();
+
+    isDirty = false;
+    document.getElementById('save-bar').classList.remove('visible');
+  }
+
+  // ─── M28 CLINIC IDENTITY PILL PICKER ───
+  // Loaded from /data/taxonomy/*.json on portal init.
+  // Each taxonomy item: { slug, display, group, search_terms[], suggested }
+  let identityTaxonomy = { expertise: [], concerns: [] };
+  // Current selection state. Each entry: { value, is_other, other_text }
+  let identityState = { expertise: [], concerns: [] };
+  // Originals captured at load time, used by the discard-changes flow.
+  let identityOriginal = { expertise: [], concerns: [] };
+  // Per-category UI state
+  let identityUI = {
+    expertise: { query: '', keyboardIdx: -1, initialized: false },
+    concerns:  { query: '', keyboardIdx: -1, initialized: false }
+  };
+
+  // Group display order — controls the order groups appear in the panel
+  const GROUP_ORDER = {
+    expertise: [
+      'Conservative & Natural',
+      'Sculpted & Glamour',
+      'Skin & Laser',
+      'Facial Rejuvenation',
+      'Injectables & Technique',
+      'Special Populations',
+      'Wellness & Body'
+    ],
+    concerns: [
+      'Skin',
+      'Face',
+      'Hair & Body',
+      'Appearance Goals'
+    ]
+  };
+
+  let taxonomyPromise = null;
+
+  async function identityLoadTaxonomy() {
+    if (taxonomyPromise) return taxonomyPromise;
+    taxonomyPromise = Promise.all([
+      fetch('/data/taxonomy/expertise.json').then(r => r.json()),
+      fetch('/data/taxonomy/concerns.json').then(r => r.json())
+    ]).then(([expJson, conJson]) => {
+      // Files are plain arrays, not { items: [] }
+      identityTaxonomy.expertise = Array.isArray(expJson) ? expJson : (expJson.items || []);
+      identityTaxonomy.concerns  = Array.isArray(conJson) ? conJson : (conJson.items || []);
+    }).catch(e => {
+      console.error('Failed to load taxonomy', e);
+      taxonomyPromise = null; // allow retry on next tab visit
+    });
+    return taxonomyPromise;
+  }
+
+  // Look up a display label for a given slug in a category. Falls back to slug
+  // text so legacy slugs (pre-M28 taxonomy refactor) still render readably.
+  function identityDisplayFor(category, slug) {
+    const item = (identityTaxonomy[category] || []).find(i => i.slug === slug);
+    return item ? item.display : slug;
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // ── Search / filter ──
+  // Matches against display name AND search_terms array. Case-insensitive substring.
+  function identityFilterItems(category, query) {
+    const all = identityTaxonomy[category] || [];
+    const q = (query || '').trim().toLowerCase();
+    if (!q) return all;
+    return all.filter(item => {
+      if ((item.display || '').toLowerCase().includes(q)) return true;
+      const terms = item.search_terms || [];
+      return terms.some(t => (t || '').toLowerCase().includes(q));
+    });
+  }
+
+  // Group an item list by .group, preserving GROUP_ORDER ordering, then preserving
+  // source-file order within each group. Returns [{ label, items: [] }, ...]
+  function identityGroupItems(category, items) {
+    const order = GROUP_ORDER[category] || [];
+    const buckets = new Map();
+    order.forEach(g => buckets.set(g, []));
+    // Add a bucket for any unknown group (defensive against taxonomy drift)
+    items.forEach(item => {
+      const g = item.group || 'Other';
+      if (!buckets.has(g)) buckets.set(g, []);
+      buckets.get(g).push(item);
+    });
+    const result = [];
+    buckets.forEach((bucketItems, label) => {
+      if (bucketItems.length > 0) result.push({ label, items: bucketItems });
+    });
+    return result;
+  }
+
+  // ── Rendering ──
+  function identityRender(category) {
+    identityRenderChipsAndCounter(category);
+    identityRenderPanel(category);
+    identityUpdateLockState(category);
+  }
+
+  function identityRenderChipsAndCounter(category) {
+    const state = identityState[category];
+    const chipsEl = document.getElementById(category + '-chips');
+    const counterEl = document.getElementById(category + '-counter');
+    if (!chipsEl || !counterEl) return;
+
+    chipsEl.innerHTML = '';
+    state.forEach((entry, idx) => {
+      const chip = document.createElement('span');
+      chip.className = 'identity-chip';
+      const labelText = entry.is_other
+        ? entry.other_text
+        : identityDisplayFor(category, entry.value);
+      chip.innerHTML =
+        `<span>${escapeHtml(labelText)}</span>` +
+        (entry.is_other ? `<span class="chip-other-label">Suggested</span>` : '') +
+        `<button type="button" class="chip-remove" aria-label="Remove" onclick="identityRemoveChip('${category}', ${idx})">×</button>`;
+      chipsEl.appendChild(chip);
+    });
+
+    const num = state.length;
+    counterEl.querySelector('.count-num').textContent = num;
+    counterEl.classList.toggle('full', num >= 3);
+  }
+
+  function identityRenderPanel(category) {
+    const panel = document.getElementById(category + '-panel');
+    if (!panel) return;
+
+    const state = identityState[category];
+    const selectedSlugs = new Set(state.map(e => e.value));
+    const query = identityUI[category].query;
+    const filtered = identityFilterItems(category, query)
+      .filter(item => !selectedSlugs.has(item.slug));
+
+    // Empty state — no matches
+    if (filtered.length === 0) {
+      if (query) {
+        panel.innerHTML = `
+          <div class="pill-picker-empty">
+            No matches for "<strong>${escapeHtml(query)}</strong>". Try a different word, or suggest a specialty below.
+          </div>`;
+      } else {
+        // Should rarely happen (only if all 3 are selected — handled by lock state),
+        // but render a friendly fallback anyway.
+        panel.innerHTML = `<div class="pill-picker-empty">No more options to add.</div>`;
+      }
+      identityUI[category].keyboardIdx = -1;
+      return;
+    }
+
+    // Suggested section (only when no active query — suggestions are a starting point,
+    // not a filtered subset). Order-controlled by source-file order in JSON.
+    let html = '';
+    if (!query) {
+      const suggested = filtered.filter(item => item.suggested);
+      if (suggested.length > 0) {
+        html += `
+          <div class="pill-picker-group suggested-group">
+            <div class="pill-picker-group-label suggested">Suggested for you</div>
+            <div class="pill-picker-options">
+              ${suggested.map(item => identityPillHtml(category, item)).join('')}
+            </div>
+          </div>`;
+      }
+    }
+
+    // Grouped sections
+    const grouped = identityGroupItems(category, filtered);
+    grouped.forEach(group => {
+      html += `
+        <div class="pill-picker-group">
+          <div class="pill-picker-group-label">${escapeHtml(group.label)}</div>
+          <div class="pill-picker-options">
+            ${group.items.map(item => identityPillHtml(category, item)).join('')}
+          </div>
+        </div>`;
+    });
+
+    panel.innerHTML = html;
+
+    // Reset keyboard navigation cursor whenever the visible list changes
+    identityUI[category].keyboardIdx = -1;
+  }
+
+  function identityPillHtml(category, item) {
+    return `<button type="button" class="pill-option" data-category="${category}" data-slug="${escapeHtml(item.slug)}" onclick="identityAddSlug('${category}', '${escapeHtml(item.slug)}')">${escapeHtml(item.display)}<span class="pill-plus">+</span></button>`;
+  }
+
+  function identityUpdateLockState(category) {
+    const num = identityState[category].length;
+    const inputWrap = document.getElementById(category + '-input-wrap');
+    const input = document.getElementById(category + '-input');
+    const panel = document.getElementById(category + '-panel');
+    const lockMsg = document.getElementById(category + '-lock-msg');
+    const otherWrap = document.getElementById(category + '-other-wrap');
+
+    const locked = num >= 3;
+    const otherOpen = otherWrap && otherWrap.style.display !== 'none';
+
+    if (inputWrap) inputWrap.classList.toggle('locked', locked || otherOpen);
+    if (panel) panel.classList.toggle('locked', locked || otherOpen);
+    if (lockMsg) lockMsg.classList.toggle('visible', locked && !otherOpen);
+    if (input) {
+      input.disabled = locked || otherOpen;
+      if (locked && input.value) {
+        // Don't fully clear the user's search if they had one — but disable interaction
+      }
+    }
+  }
+
+  // ── Selection ──
+  function identityAddSlug(category, slug) {
+    if (!slug) return;
+    if (identityState[category].length >= 3) return;
+    // Guard against double-add
+    if (identityState[category].some(e => e.value === slug)) return;
+
+    identityState[category].push({ value: slug, is_other: false, other_text: null });
+
+    // Clear the query so the user sees a fresh panel after each pick.
+    // Conventional behaviour for multi-select pill pickers.
+    identityUI[category].query = '';
+    const input = document.getElementById(category + '-input');
+    const clearBtn = document.getElementById(category + '-clear');
+    if (input) input.value = '';
+    if (clearBtn) clearBtn.classList.remove('visible');
+
+    identityRender(category);
+    markDirty();
+  }
+
+  function identityRemoveChip(category, idx) {
+    identityState[category].splice(idx, 1);
+    identityRender(category);
+    markDirty();
+  }
+
+  // ── Suggest-a-specialty (formerly "Other") ──
+  function identityShowOtherForm(category) {
+    if (identityState[category].length >= 3) return;
+    const wrap = document.getElementById(category + '-other-wrap');
+    if (!wrap) return;
+    const placeholderText = category === 'expertise'
+      ? 'e.g. Cosmetic acupuncture'
+      : 'e.g. Hair shedding postpartum';
+    const labelText = category === 'expertise'
+      ? 'Describe the specialty in a few words'
+      : 'Describe the concern in a few words';
+    wrap.innerHTML = `
+      <div class="identity-other-input-wrap">
+        <label>${labelText}</label>
+        <input type="text" class="identity-other-input" id="${category}-other-input" maxlength="80" placeholder="${placeholderText}" />
+        <div class="identity-other-actions">
+          <button type="button" class="identity-other-btn add" onclick="identityConfirmOther('${category}')">Submit</button>
+          <button type="button" class="identity-other-btn cancel" onclick="identityCancelOther('${category}')">Cancel</button>
+        </div>
+      </div>
+    `;
+    wrap.style.display = 'block';
+    identityUpdateLockState(category);
+    setTimeout(() => {
+      const input = document.getElementById(category + '-other-input');
+      if (input) input.focus();
+    }, 50);
+  }
+
+  function identityConfirmOther(category) {
+    const input = document.getElementById(category + '-other-input');
+    const text = (input?.value || '').trim();
+    if (!text) {
+      input?.focus();
+      return;
+    }
+    if (identityState[category].length >= 3) {
+      identityCancelOther(category);
+      return;
+    }
+    identityState[category].push({ value: 'other', is_other: true, other_text: text });
+    identityCancelOther(category);
+    identityRender(category);
+    markDirty();
+  }
+
+  function identityCancelOther(category) {
+    const wrap = document.getElementById(category + '-other-wrap');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    wrap.style.display = 'none';
+    identityUpdateLockState(category);
+  }
+
+  // ── Initialize input event wiring (idempotent — runs once per category) ──
+  function identityInitPicker(category) {
+    if (identityUI[category].initialized) return;
+    const input = document.getElementById(category + '-input');
+    const inputWrap = document.getElementById(category + '-input-wrap');
+    const clearBtn = document.getElementById(category + '-clear');
+    if (!input || !inputWrap) return;
+
+    input.addEventListener('input', (e) => {
+      const v = e.target.value;
+      identityUI[category].query = v;
+      if (clearBtn) clearBtn.classList.toggle('visible', v.length > 0);
+      identityRenderPanel(category);
+    });
+
+    input.addEventListener('focus', () => inputWrap.classList.add('focused'));
+    input.addEventListener('blur', () => inputWrap.classList.remove('focused'));
+
+    input.addEventListener('keydown', (e) => identityHandleKeydown(category, e));
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        input.value = '';
+        identityUI[category].query = '';
+        clearBtn.classList.remove('visible');
+        identityRenderPanel(category);
+        input.focus();
+      });
+    }
+
+    identityUI[category].initialized = true;
+  }
+
+  function identityHandleKeydown(category, e) {
+    const panel = document.getElementById(category + '-panel');
+    if (!panel) return;
+    const options = Array.from(panel.querySelectorAll('.pill-option'));
+    if (options.length === 0) return;
+
+    const ui = identityUI[category];
+
+    if (e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
+      e.preventDefault();
+      ui.keyboardIdx = Math.min(ui.keyboardIdx + 1, options.length - 1);
+      identityHighlight(options, ui.keyboardIdx);
+    } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
+      e.preventDefault();
+      ui.keyboardIdx = Math.max(ui.keyboardIdx - 1, 0);
+      identityHighlight(options, ui.keyboardIdx);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      // If keyboard cursor is active, pick that; otherwise pick the first option
+      const idx = ui.keyboardIdx >= 0 ? ui.keyboardIdx : 0;
+      const target = options[idx];
+      if (target) {
+        const slug = target.getAttribute('data-slug');
+        identityAddSlug(category, slug);
+      }
+    } else if (e.key === 'Escape') {
+      const input = document.getElementById(category + '-input');
+      const clearBtn = document.getElementById(category + '-clear');
+      if (input && input.value) {
+        input.value = '';
+        ui.query = '';
+        if (clearBtn) clearBtn.classList.remove('visible');
+        identityRenderPanel(category);
+      } else if (input) {
+        input.blur();
+      }
+    }
+  }
+
+  function identityHighlight(options, idx) {
+    options.forEach((el, i) => el.classList.toggle('keyboard-active', i === idx));
+    if (idx >= 0 && options[idx]) {
+      options[idx].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  // Populate from currentClinic.expertise / .concerns (called inside populateFields)
+  function identityPopulateFromClinic(c) {
+    const exp = Array.isArray(c.expertise) ? c.expertise : [];
+    const con = Array.isArray(c.concerns)  ? c.concerns  : [];
+
+    identityState.expertise = exp.map(r => ({
+      value: r.value,
+      is_other: !!r.is_other,
+      other_text: r.is_other ? (r.other_text || '') : null
+    }));
+    identityState.concerns = con.map(r => ({
+      value: r.value,
+      is_other: !!r.is_other,
+      other_text: r.is_other ? (r.other_text || '') : null
+    }));
+
+    // Snapshot for discard
+    identityOriginal.expertise = JSON.parse(JSON.stringify(identityState.expertise));
+    identityOriginal.concerns  = JSON.parse(JSON.stringify(identityState.concerns));
+
+    // Reset UI state
+    identityUI.expertise.query = '';
+    identityUI.concerns.query = '';
+    ['expertise', 'concerns'].forEach(cat => {
+      const input = document.getElementById(cat + '-input');
+      const clearBtn = document.getElementById(cat + '-clear');
+      if (input) input.value = '';
+      if (clearBtn) clearBtn.classList.remove('visible');
+    });
+
+    // Close any open suggest-other forms (from a previous clinic)
+    const expOther = document.getElementById('expertise-other-wrap');
+    const conOther = document.getElementById('concerns-other-wrap');
+    if (expOther) { expOther.innerHTML = ''; expOther.style.display = 'none'; }
+    if (conOther) { conOther.innerHTML = ''; conOther.style.display = 'none'; }
+
+    // Wire input events (idempotent)
+    identityInitPicker('expertise');
+    identityInitPicker('concerns');
+
+    identityRender('expertise');
+    identityRender('concerns');
+  }
+
+  // Build save payload — sent inside the existing saveChanges() payload.
+  // Shape unchanged from M25 to preserve API compatibility.
+  function identityGetPayload() {
+    return {
+      expertise: identityState.expertise.map(e => ({
+        value: e.value,
+        is_other: e.is_other,
+        other_text: e.is_other ? e.other_text : null
+      })),
+      concerns: identityState.concerns.map(e => ({
+        value: e.value,
+        is_other: e.is_other,
+        other_text: e.is_other ? e.other_text : null
+      }))
+    };
+  }
+  // ─── /M28 ───
+
+  // ─── SAVE ───
+  async function saveChanges() {
+    const token = sessionStorage.getItem('sd_token');
+    const btn = document.querySelector('.btn-save');
+    btn.textContent = 'Saving…';
+    btn.disabled = true;
+
+    try {
+      // Upload any new photos to Supabase Storage
+      const uploadedResults = await uploadNewPhotos(token);
+      // Sync filenames back into photos[] so order save has correct filenames
+      uploadedResults.forEach((r, i) => {
+        if (photos[i]) { photos[i].url = r.url; photos[i].filename = r.filename; photos[i].file = undefined; }
+      });
+      const allPhotoUrls = uploadedResults
+        .map(r => r.url)
+        .filter(url => url && !url.startsWith('blob:'));
+
+      // Upload logo if changed
+      const logoUrl = await uploadLogo(token);
+
+      const payload = {
+        prices: portalGetPriceRows(),
+        price_source: 'clinic',
+        price_date: new Date().toISOString().split('T')[0],
+        phone: document.getElementById('field-phone').value.trim(),
+        email: document.getElementById('field-email').value.trim(),
+        website: document.getElementById('field-website').value.trim(),
+        booking_url: document.getElementById('field-booking').value.trim(),
+        promo: document.getElementById('field-promo').checked,
+        promo_text: document.getElementById('field-promo-text').value.trim(),
+        consult_free: document.getElementById('field-consult-free')?.checked || false,
+        hours: collectHours(),
+        photos: allPhotoUrls,
+        logo_url: logoUrl,
+        injector_credentials: ['physician','np','rn','img','nd'].filter(v => document.getElementById('cred-' + v)?.checked),
+        languages: ['english','mandarin','cantonese','farsi','french','korean','hindi','arabic','punjabi','portuguese'].filter(v => document.getElementById('lang-' + v)?.checked),
+        categories: ['injectables','lasers_ipl','rf_hifu','facials','body','plastic_surgery','iv_drips'].filter(v => document.getElementById('cat-' + v)?.checked),
+        // M25: include identity arrays for the current clinic
+        ...identityGetPayload()
+      };
+
+      // Determine which clinic IDs to save to
+      const applyAll = document.getElementById('apply-all-locations')?.checked;
+      const saveIds = applyAll && allClinicIds.length > 1
+        ? allClinicIds
+        : [currentClinic.id];
+
+      // For non-primary locations, only push prices + credentials (not hours/photos which are per-location)
+      const sharedPayload = {
+        prices: payload.prices,
+        price_source: payload.price_source,
+        price_date: payload.price_date,
+        injector_credentials: payload.injector_credentials,
+        languages: payload.languages,
+        categories: payload.categories
+      };
+
+      // Save to all target locations
+      for (const saveId of saveIds) {
+        const savePayload = String(saveId) === String(currentClinic.id)
+          ? payload                // full payload for current location
+          : sharedPayload;         // prices + credentials only for others
+
+        const res = await fetch('/api/save-clinic', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ action: 'save-clinic', clinicId: saveId, payload: savePayload })
+        });
+        if (!res.ok) throw new Error(`Save failed for clinic ${saveId}`);
+      }
+
+      // ── Core save succeeded — show success now ────────────────
+      Object.assign(currentClinic, payload);
+      originalData = { ...payload, photos: photos.map(p => ({ url: p.url })), injector_credentials: [...payload.injector_credentials], languages: [...payload.languages], categories: [...payload.categories] };
+      identityOriginal.expertise = JSON.parse(JSON.stringify(identityState.expertise));
+      identityOriginal.concerns  = JSON.parse(JSON.stringify(identityState.concerns));
+      isDirty = false;
+      document.getElementById('save-bar').classList.remove('visible');
+      const applyAllEl = document.getElementById('apply-all-locations');
+      if (applyAllEl) applyAllEl.checked = false;
+      const toastMsg = saveIds.length > 1
+        ? `Changes saved to ${saveIds.length} locations ✓`
+        : 'Changes saved and published! ✓';
+      showToast(toastMsg, 'success');
+
+      // ── M23: publish the equipment list, ONLY if the clinic edited it ──
+      // Deliberately NOT part of the payload above. /api/save-devices sets
+      // clinics.devices_published_at, which changes how this clinic's equipment
+      // is read everywhere on the platform. That has to follow a real edit on
+      // the Devices tab, never a save of an unrelated field, or a clinic that
+      // only changed its phone number would silently publish a list it has
+      // never looked at.
+      if (deviceDirty) {
+        try {
+          await deviceSave(currentClinic.id, token);
+        } catch (e) {
+          console.error('Device save error:', e);
+          showToast('Your details saved, but the equipment list did not. Open the Devices tab and save again.', 'error');
+        }
+      }
+
+      // ── Non-critical saves — failures logged but don't override success toast ──
+      try {
+        await practitionerSave(currentClinic.id, token);
+        practitionerOriginal = practitioners.filter(p => p.name.trim()).map((p, i) => ({ ...p, display_order: i }));
+      } catch(e) { console.error('Practitioner save error (non-fatal):', e); }
+
+      try {
+        const photoClinicId = String(currentClinic.id);
+        const orderedFilenames = photos.filter(p => !p.file && p.filename).map(p => p.filename);
+        if (orderedFilenames.length > 0) {
+          const heroPhoto = photos.find(p => p.is_hero && !p.file && p.filename);
+          const heroFilename = heroPhoto ? heroPhoto.filename : null;
+          await fetch('/api/save-clinic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ action: 'save-photo-order', clinicId: photoClinicId, filenames: orderedFilenames, heroFilename })
+          });
+          showOrderSaveBtn(false);
+        }
+      } catch(e) { console.error('Photo order save error (non-fatal):', e); }
+
+    } catch (e) {
+      console.error('Save error:', e);
+      showToast('Error saving — please try again.', 'error');
+    } finally {
+      btn.textContent = 'Save & Publish';
+      btn.disabled = false;
+    }
+  }
+
+  async function uploadNewPhotos(token) {
+    // Freeze clinic ID at the start of the upload batch.
+    // If the user switches location mid-upload, we abort rather than
+    // write photos to the wrong clinic.
+    const uploadClinicId = String(currentClinic.id);
+    return Promise.all(photos.map(async (p) => {
+      if (!p.file) return { url: p.url, filename: p.filename }; // already uploaded
+      // Write protection: abort if clinic switched during upload
+      if (String(currentClinic.id) !== uploadClinicId) {
+        console.warn('Location switched mid-upload — aborting write for', p.file.name);
+        return { url: p.url, filename: p.filename };
+      }
+      const timestamp = Date.now();
+      const safeName = p.file.name.toLowerCase().replace(/\s+/g, '-').replace(/[()]/g, '');
+      const storageFilename = `clinic-${uploadClinicId}/${timestamp}-${safeName}`;
+      const bareFilename = `${timestamp}-${safeName}`;
+      const res = await fetch(`${SUPABASE_URL}/storage/v1/object/clinic-photos/${storageFilename}`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': p.file.type
+        },
+        body: p.file
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '');
+        console.error('Photo upload failed:', res.status, errText);
+        throw new Error(`Photo upload failed for "${p.file.name}" — please try again.`);
+      }
+      const url = `${SUPABASE_URL}/storage/v1/object/public/clinic-photos/${storageFilename}`;
+      return { url, filename: bareFilename };
+    }));
+  }
+
+  // ─── LOGOUT ───
+  function doLogout() {
+    sessionStorage.removeItem('sd_token');
+    sessionStorage.removeItem('sd_user_email');
+    currentClinic = null;
+    allClinicIds = [];
+    allClinicNames = {};
+    isDirty = false;
+    document.getElementById('portal-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-error').style.display = 'none';
+    document.getElementById('save-bar').classList.remove('visible');
+  }
+
+  // ─── FORGOT PASSWORD ───
+  async function showForgot() {
+    const email = document.getElementById('login-email').value.trim();
+    if (!email) {
+      showLoginError('Enter your email address first, then click Forgot Password.');
+      return;
+    }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY },
+        body: JSON.stringify({
+          email,
+          redirect_to: window.location.origin + '/editor.html'
+        })
+      });
+      const responseText = await res.text();
+      console.log('Recover response:', res.status, responseText);
+      if (res.ok) {
+        showToast('Reset email sent — check your inbox.', 'success');
+      } else {
+        let errMsg = 'Failed to send reset email. Try again.';
+        try {
+          const d = JSON.parse(responseText);
+          errMsg = d.message || d.error_description || d.msg || JSON.stringify(d);
+        } catch { errMsg = responseText || errMsg; }
+        showLoginError('Error ' + res.status + ': ' + errMsg);
+      }
+    } catch (e) {
+      showLoginError('Network error — please try again.');
+    }
+  }
+
+  // ─── PRACTITIONERS ───────────────────────────────────────────
+  let practitioners = [];      // [{ id?, name, designation, display_order }]
+  let practitionerOriginal = [];
+  let dragSrcIdx = null;
+
+  async function practitionerLoad(clinicId) {
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/practitioners?clinic_id=eq.${encodeURIComponent(clinicId)}&order=display_order.asc`,
+        { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${sessionStorage.getItem('sd_token')}` } }
+      );
+      const rows = await res.json();
+      practitioners = Array.isArray(rows) ? rows.map(r => ({ id: r.id, name: r.name || '', designation: r.designation || '', display_order: r.display_order })) : [];
+    } catch(e) {
+      practitioners = [];
+    }
+    practitionerOriginal = practitioners.map(p => ({ ...p }));
+    practitionerRender();
+  }
+
+  function practitionerRender() {
+    const container = document.getElementById('practitioner-rows');
+    if (!container) return;
+    container.innerHTML = '';
+    if (practitioners.length === 0) {
+      container.innerHTML = '<div style="font-size:13px;color:var(--bark-light);padding:12px 0;">No practitioners added yet.</div>';
+      return;
+    }
+    const inpStyle = 'background:var(--cream);border:1.5px solid var(--border);border-radius:8px;color:var(--bark);font-family:\'DM Sans\',sans-serif;font-size:0.88rem;padding:0.5rem 0.75rem;outline:none;width:100%;transition:border-color 0.2s;';
+    practitioners.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'practitioner-row';
+      row.dataset.idx = i;
+      row.draggable = true;
+      row.innerHTML = `
+        <div class="practitioner-drag" title="Drag to reorder">☰</div>
+        <div>
+          ${i === 0 ? '<span class="practitioner-primary-badge">Primary</span>' : ''}
+          <input type="text" placeholder="Name" value="${escHtml(p.name)}"
+            style="${inpStyle}${i === 0 ? 'border-color:var(--rose-light);' : ''}"
+            oninput="practitioners[${i}].name=this.value;markDirty();" />
+        </div>
+        <input type="text" placeholder="Designation (e.g. MD, RN, NP)" value="${escHtml(p.designation)}"
+          style="${inpStyle}"
+          oninput="practitioners[${i}].designation=this.value;markDirty();" />
+        <button type="button" onclick="practitionerRemove(${i})"
+          style="background:none;border:none;color:var(--bark-light);cursor:pointer;font-size:1.1rem;padding:0;line-height:1;transition:color 0.15s;"
+          onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">✕</button>`;
+
+      // Drag-and-drop
+      row.addEventListener('dragstart', e => { dragSrcIdx = i; row.style.opacity = '0.4'; e.dataTransfer.effectAllowed = 'move'; });
+      row.addEventListener('dragend', () => { row.style.opacity = '1'; dragSrcIdx = null; });
+      row.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; row.style.background = 'rgba(201,115,106,0.05)'; });
+      row.addEventListener('dragleave', () => { row.style.background = ''; });
+      row.addEventListener('drop', e => {
+        e.preventDefault();
+        row.style.background = '';
+        if (dragSrcIdx === null || dragSrcIdx === i) return;
+        const moved = practitioners.splice(dragSrcIdx, 1)[0];
+        practitioners.splice(i, 0, moved);
+        practitioners.forEach((p, idx) => p.display_order = idx);
+        markDirty();
+        practitionerRender();
+      });
+
+      container.appendChild(row);
+    });
+  }
+
+  function practitionerAddRow() {
+    practitioners.push({ name: '', designation: '', display_order: practitioners.length });
+    markDirty();
+    practitionerRender();
+    // Focus the new name input
+    const rows = document.querySelectorAll('.practitioner-row');
+    if (rows.length) rows[rows.length - 1].querySelector('input[type="text"]')?.focus();
+  }
+
+  function practitionerRemove(idx) {
+    practitioners.splice(idx, 1);
+    practitioners.forEach((p, i) => p.display_order = i);
+    markDirty();
+    practitionerRender();
+  }
+
+  async function practitionerSave(clinicId, token) {
+    // Delete all existing rows for this clinic, then insert fresh
+    // (simplest reliable approach for a small list)
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/practitioners?clinic_id=eq.${encodeURIComponent(clinicId)}`,
+      { method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Prefer': 'return=minimal' } }
+    );
+    const toInsert = practitioners
+      .filter(p => p.name.trim())
+      .map((p, i) => ({ clinic_id: String(clinicId), name: p.name.trim(), designation: p.designation.trim(), display_order: i }));
+    if (toInsert.length === 0) return;
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/practitioners`,
+      {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(toInsert)
+      }
+    );
+  }
+
+  // ─── M23 DEVICES ─────────────────────────────────────────────
+  // The clinic's own equipment list. Reuses the M28 pill-picker markup and
+  // CSS, with two differences: it is UNCAPPED (expertise allows 3), and it
+  // arrives PRE-FILLED from whatever the crawler found, so a clinic confirms
+  // a list rather than typing one from nothing.
+  //
+  // ⚠️ READS are plain PostgREST, like practitionerLoad. The SAVE is not:
+  // it goes through /api/save-devices, because publishing sets
+  // clinics.devices_published_at and must never be a browser-side write.
+  //
+  // ⚠️ DO NOT copy practitionerSave's delete-all-then-insert pattern here.
+  // clinic_devices holds crawl rows with first_seen dates, source urls and
+  // matched_text behind them. Nothing in this file may delete one.
+
+  let deviceReference   = [];   // [{ id, model, manufacturer, category }]
+  let deviceRows        = [];   // this clinic's existing clinic_devices rows
+  let deviceSelected    = [];   // device ids currently ticked
+  let deviceOriginal    = [];   // snapshot for discard
+  let deviceDirty       = false;
+  let deviceQuery       = '';
+  let devicePickerWired = false;
+  let deviceRefPromise  = null;
+  const deviceCatLabel  = {};   // category slug -> display label
+  const deviceCatGroup  = {};   // category slug -> parent group label
+  const deviceCatSort   = {};   // category slug -> sort order
+
+  function deviceHeaders() {
+    const tok = sessionStorage.getItem('sd_token');
+    return { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${tok || SUPABASE_KEY}` };
+  }
+
+  // Fetch the reference list once, on first visit to the tab. It is a few
+  // hundred rows, so most clinics never pay for it at login.
+  async function deviceLoadReference() {
+    if (deviceRefPromise) return deviceRefPromise;
+    deviceRefPromise = (async () => {
+      const h = deviceHeaders();
+      const sel = 'select=id,model,manufacturer,category&order=model.asc&limit=2000';
+
+      // `active` hides rows retired by a generation merge. If that column is
+      // ever renamed the request 400s, and an empty picker is a worse failure
+      // than showing a couple of merged duplicates, so fall back to the
+      // unfiltered list rather than to nothing.
+      let rows = [];
+      let res = await fetch(`${SUPABASE_URL}/rest/v1/device_reference?${sel}&active=is.true`, { headers: h });
+      if (!res.ok) {
+        res = await fetch(`${SUPABASE_URL}/rest/v1/device_reference?${sel}`, { headers: h });
+      }
+      rows = await res.json();
+      deviceReference = Array.isArray(rows) ? rows : [];
+
+      // Category labels are cosmetic. A failure here groups by raw slug,
+      // which is ugly but still usable, so it must not block the picker.
+      try {
+        const cRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/device_categories?select=category,label_en,group_label,sort_order&limit=200`,
+          { headers: h }
+        );
+        const cats = await cRes.json();
+        if (Array.isArray(cats)) {
+          cats.forEach(c => {
+            deviceCatLabel[c.category] = c.label_en || c.category;
+            deviceCatGroup[c.category] = c.group_label || '';
+            deviceCatSort[c.category]  = (c.sort_order === null || c.sort_order === undefined) ? 999 : c.sort_order;
+          });
+        }
+      } catch (e) {
+        console.error('Device category labels unavailable:', e);
+      }
+    })().catch(e => {
+      console.error('Failed to load device reference:', e);
+      deviceReference = [];
+      deviceRefPromise = null; // allow a retry on the next tab visit
+    });
+    return deviceRefPromise;
+  }
+
+  // Load this clinic's rows and decide the starting selection.
+  async function deviceLoadForClinic(clinicId) {
+    deviceRows = [];
+    deviceSelected = [];
+    deviceOriginal = [];
+    deviceDirty = false;
+
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/clinic_devices?clinic_id=eq.${encodeURIComponent(clinicId)}&select=device_id,declared_at,source,status&limit=500`,
+        { headers: deviceHeaders() }
+      );
+      const rows = await res.json();
+      deviceRows = Array.isArray(rows) ? rows : [];
+    } catch (e) {
+      console.error('Failed to load clinic devices:', e);
+      deviceRows = [];
+    }
+
+    // ⭐ THE PREFILL RULE.
+    // Published before: the declared rows ARE the list, and anything without
+    // declared_at was deliberately left off last time, so it stays off.
+    // Never published: start from everything we hold, so the clinic confirms
+    // and corrects instead of starting at zero.
+    const published = !!(currentClinic && currentClinic.devices_published_at);
+    const base = published ? deviceRows.filter(r => r.declared_at) : deviceRows;
+
+    deviceSelected = base.map(r => Number(r.device_id));
+    deviceOriginal = [...deviceSelected];
+    deviceRender();
+  }
+
+  function deviceById(id) {
+    return deviceReference.find(d => Number(d.id) === Number(id));
+  }
+
+  function deviceRowFor(id) {
+    return deviceRows.find(r => Number(r.device_id) === Number(id));
+  }
+
+  function deviceLabel(id) {
+    const d = deviceById(id);
+    return d ? d.model : `Device #${id}`;
+  }
+
+  function deviceFiltered() {
+    const q = (deviceQuery || '').trim().toLowerCase();
+    const selected = new Set(deviceSelected.map(Number));
+    return deviceReference.filter(d => {
+      if (selected.has(Number(d.id))) return false;
+      if (!q) return true;
+      return (d.model || '').toLowerCase().includes(q)
+          || (d.manufacturer || '').toLowerCase().includes(q);
+    });
+  }
+
+  function deviceGrouped(items) {
+    const buckets = new Map();
+    items.forEach(d => {
+      const cat = d.category || 'other';
+      if (!buckets.has(cat)) buckets.set(cat, []);
+      buckets.get(cat).push(d);
+    });
+    return [...buckets.entries()]
+      .map(([cat, list]) => ({
+        cat,
+        label: deviceCatLabel[cat] || cat,
+        group: deviceCatGroup[cat] || '',
+        sort: deviceCatSort[cat] === undefined ? 999 : deviceCatSort[cat],
+        items: list
+      }))
+      .sort((a, b) => (a.sort - b.sort) || a.label.localeCompare(b.label));
+  }
+
+  function deviceRender() {
+    deviceRenderChips();
+    deviceRenderPanel();
+    deviceRenderPublishedState();
+  }
+
+  function deviceRenderChips() {
+    const chipsEl = document.getElementById('device-chips');
+    const counterEl = document.getElementById('device-counter');
+    if (!chipsEl || !counterEl) return;
+
+    chipsEl.innerHTML = '';
+    deviceSelected.forEach(id => {
+      const d = deviceById(id);
+      const row = deviceRowFor(id);
+      const chip = document.createElement('span');
+      chip.className = 'identity-chip';
+
+      // Tell the clinic where a pre-filled entry came from. Without this the
+      // list looks like something they typed and forgot, and they cannot tell
+      // a crawl guess from their own earlier answer.
+      let provenance = '';
+      if (row && !row.declared_at && row.source === 'website') provenance = 'From your website';
+      else if (row && !row.declared_at && row.source === 'manufacturer') provenance = 'From the manufacturer';
+
+      chip.innerHTML =
+        `<span>${escapeHtml(deviceLabel(id))}</span>` +
+        (d && d.manufacturer ? `<span class="chip-other-label">${escapeHtml(d.manufacturer)}</span>` : '') +
+        (provenance ? `<span class="chip-other-label">${escapeHtml(provenance)}</span>` : '') +
+        `<button type="button" class="chip-remove" aria-label="Remove" onclick="deviceRemove(${Number(id)})">×</button>`;
+      chipsEl.appendChild(chip);
+    });
+
+    counterEl.querySelector('.count-num').textContent = deviceSelected.length;
+  }
+
+  function deviceRenderPanel() {
+    const panel = document.getElementById('device-panel');
+    if (!panel) return;
+
+    if (deviceReference.length === 0) {
+      panel.innerHTML = `<div class="pill-picker-empty">Loading the device list…</div>`;
+      return;
+    }
+
+    const filtered = deviceFiltered();
+    if (filtered.length === 0) {
+      panel.innerHTML = deviceQuery
+        ? `<div class="pill-picker-empty">No device matches "<strong>${escapeHtml(deviceQuery)}</strong>". If we're missing your machine, email hello@skinday.ca and we'll add it.</div>`
+        : `<div class="pill-picker-empty">Everything on our list is already selected.</div>`;
+      return;
+    }
+
+    let html = '';
+    deviceGrouped(filtered).forEach(group => {
+      html += `
+        <div class="pill-picker-group">
+          <div class="pill-picker-group-label">${escapeHtml(group.label)}</div>
+          <div class="pill-picker-options">
+            ${group.items.map(d =>
+              `<button type="button" class="pill-option" onclick="deviceAdd(${Number(d.id)})">${escapeHtml(d.model)}<span class="pill-plus">+</span></button>`
+            ).join('')}
+          </div>
+        </div>`;
+    });
+    panel.innerHTML = html;
+  }
+
+  function deviceRenderPublishedState() {
+    const el = document.getElementById('device-published-state');
+    if (!el) return;
+    const at = currentClinic && currentClinic.devices_published_at;
+    if (at) {
+      const d = new Date(at);
+      const when = isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      el.textContent = when
+        ? `You last published this list on ${when}.`
+        : 'You have published this list.';
+    } else {
+      el.textContent = deviceRows.length > 0
+        ? 'Not published yet. The list above is what we found by reading your website, so please check it before saving.'
+        : 'Not published yet. Nothing has been added for your clinic, so start by searching for your machines.';
+    }
+  }
+
+  function deviceAdd(id) {
+    if (deviceSelected.some(x => Number(x) === Number(id))) return;
+    deviceSelected.push(Number(id));
+    deviceDirty = true;
+    markDirty();
+    // Clear the search so the next machine can be typed straight away. Adding
+    // equipment is a repeated action, unlike picking 3 specialties once.
+    deviceQuery = '';
+    const input = document.getElementById('device-input');
+    const clearBtn = document.getElementById('device-clear');
+    if (input) { input.value = ''; input.focus(); }
+    if (clearBtn) clearBtn.classList.remove('visible');
+    deviceRender();
+  }
+
+  function deviceRemove(id) {
+    deviceSelected = deviceSelected.filter(x => Number(x) !== Number(id));
+    deviceDirty = true;
+    markDirty();
+    deviceRender();
+  }
+
+  function deviceInitPicker() {
+    if (devicePickerWired) return;
+    const input = document.getElementById('device-input');
+    const clearBtn = document.getElementById('device-clear');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+      deviceQuery = input.value;
+      if (clearBtn) clearBtn.classList.toggle('visible', !!deviceQuery);
+      deviceRenderPanel();
+    });
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        deviceQuery = '';
+        input.value = '';
+        clearBtn.classList.remove('visible');
+        input.focus();
+        deviceRenderPanel();
+      });
+    }
+
+    devicePickerWired = true;
+  }
+
+  // Publish. Server side does the row work; this only sends ids.
+  async function deviceSave(clinicId, token) {
+    const res = await fetch('/api/save-devices', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify({ clinicId: String(clinicId), deviceIds: deviceSelected.map(Number) })
+    });
+
+    let data = {};
+    try { data = await res.json(); } catch (e) { data = {}; }
+    if (!res.ok || data.error) throw new Error(data.error || 'Device save failed');
+
+    // Mark published locally BEFORE re-reading, so the reload takes the
+    // published branch of the prefill rule rather than re-adding rows the
+    // clinic just removed.
+    if (currentClinic) currentClinic.devices_published_at = data.published_at || new Date().toISOString();
+    deviceDirty = false;
+    deviceOriginal = [...deviceSelected];
+
+    // Re-read from the server so the provenance labels stop saying "from your
+    // website" for rows the clinic has now confirmed.
+    await deviceLoadForClinic(clinicId);
+    return data;
+  }
+
+  function escHtml(str) {
+    return (str || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  // ─── ENTER KEY on login ───
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') {
+      doLogin();
+    }
+  });
+
+  // ─── PASSWORD SETUP (from approval email link) ───
+  // Supabase puts access_token + type=recovery in the URL hash after redirect
+  function parseHashParams() {
+    const hash = window.location.hash.substring(1);
+    return Object.fromEntries(hash.split('&').map(p => p.split('=')).filter(p => p.length === 2));
+  }
+
+  async function doSetupPassword() {
+    const pw  = document.getElementById('setup-password').value;
+    const pw2 = document.getElementById('setup-confirm').value;
+    const err = document.getElementById('setup-error');
+    const btn = document.getElementById('setup-btn');
+
+    err.style.display = 'none';
+
+    if (pw.length < 8) {
+      err.textContent = 'Password must be at least 8 characters.';
+      err.style.display = 'block'; return;
+    }
+    if (pw !== pw2) {
+      err.textContent = 'Passwords do not match.';
+      err.style.display = 'block'; return;
+    }
+
+    btn.textContent = 'Setting password…';
+    btn.disabled = true;
+
+    try {
+      // Use the recovery token from the URL hash to set the new password
+      const recoveryToken = sessionStorage.getItem('sd_recovery_token');
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${recoveryToken}`
+        },
+        body: JSON.stringify({ password: pw })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        err.textContent = data.message || 'Failed to set password. Try again.';
+        err.style.display = 'block'; return;
+      }
+
+      // Password set — now get a proper session
+      sessionStorage.setItem('sd_token', recoveryToken);
+      sessionStorage.setItem('sd_user_email', data.email);
+      sessionStorage.removeItem('sd_recovery_token');
+
+      // Clear hash from URL
+      history.replaceState(null, '', window.location.pathname);
+
+      // Load portal
+      document.getElementById('setup-screen').style.display = 'none';
+      await loadClinicForUser(recoveryToken, data.email);
+
+    } catch (e) {
+      err.textContent = 'Network error — please try again.';
+      err.style.display = 'block';
+    } finally {
+      btn.textContent = 'Set Password & Continue';
+      btn.disabled = false;
+    }
+  }
+
+  // ─── AUTO-RESTORE SESSION + HASH DETECTION ───
+  window.addEventListener('load', async () => {
+    // Check hash params (older Supabase implicit flow)
+    const hashParams = parseHashParams();
+
+    // Check query params (newer Supabase PKCE flow)
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+
+    if (hashParams.access_token && (hashParams.type === 'recovery' || !hashParams.type)) {
+      // Implicit flow — token in hash (type may or may not be present)
+      console.log('Recovery token found in hash, type:', hashParams.type);
+      sessionStorage.setItem('sd_recovery_token', hashParams.access_token);
+      history.replaceState(null, '', window.location.pathname); // clean URL
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('setup-screen').style.display = 'flex';
+      return;
+    }
+
+    if (code) {
+      // Newer PKCE flow — exchange code for session token
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=pkce`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY
+          },
+          body: JSON.stringify({ auth_code: code })
+        });
+        const data = await res.json();
+        console.log('PKCE exchange response:', JSON.stringify(data));
+        if (data.access_token) {
+          sessionStorage.setItem('sd_recovery_token', data.access_token);
+          history.replaceState(null, '', window.location.pathname);
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('setup-screen').style.display = 'flex';
+          return;
+        }
+        // Supabase may return token_type + access_token differently
+        if (data.error) {
+          console.error('PKCE exchange error:', data.error, data.error_description);
+        }
+      } catch (e) {
+        console.error('Code exchange failed:', e);
+      }
+    }
+
+    // Normal session restore
+    const token = sessionStorage.getItem('sd_token');
+    const email = sessionStorage.getItem('sd_user_email');
+    if (token && email) loadClinicForUser(token, email);
+  });
+
+  // Enter key on setup screen
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('setup-screen').style.display === 'flex') {
+      doSetupPassword();
+    }
+  });
+
+  // ── PORTAL PRICE ROWS ────────────────────────────────────────
+  let portalRowCount = 0;
+
+  function portalAddPriceRow(toxin, injectorType, price) {
+    const rowId = ++portalRowCount;
+    const row = document.createElement('div');
+    row.id = `portal-row-${rowId}`;
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr minmax(90px,1fr) 28px;gap:6px;margin-bottom:0.5rem;align-items:center;width:100%;box-sizing:border-box;';
+    const inpStyle = 'background:var(--warm);border:1px solid var(--border);border-radius:8px;color:var(--deep);font-family:inherit;font-size:0.9rem;padding:0.55rem 0.75rem;outline:none;width:100%;';
+    row.innerHTML = `
+      <select style="${inpStyle};cursor:pointer;" onchange="markDirty()">
+        <option value="botox"${toxin==='botox'?' selected':''}>Botox</option>
+        <option value="dysport"${toxin==='dysport'?' selected':''}>Dysport</option>
+        <option value="xeomin"${toxin==='xeomin'?' selected':''}>Xeomin</option>
+        <option value="nuceiva"${toxin==='nuceiva'?' selected':''}>Nuceiva</option>
+        <option value="letybo"${toxin==='letybo'?' selected':''}>Letybo</option>
+      </select>
+      <select style="${inpStyle};cursor:pointer;" onchange="markDirty()">
+        <option value=""${!injectorType?' selected':''}>Any injector</option>
+        <option value="physician"${injectorType==='physician'?' selected':''}>MD / Physician</option>
+        <option value="np"${injectorType==='np'?' selected':''}>Nurse Practitioner (NP)</option>
+        <option value="rn"${injectorType==='rn'?' selected':''}>Cosmetic Nurse (RN/RPN/LPN)</option>
+        <option value="img"${injectorType==='img'?' selected':''}>International Medical Graduate (IMG)</option>
+        <option value="nd"${injectorType==='nd'?' selected':''}>Naturopathic Doctor (ND)</option>
+      </select>
+      <input type="number" min="1" max="99" step="0.50" placeholder="$ 0.00" value="${price||''}" oninput="markDirty()" style="background:var(--warm);border:1px solid var(--border);border-radius:8px;color:var(--deep);font-family:inherit;font-size:0.9rem;padding:0.52rem 0.6rem;outline:none;width:100%;box-sizing:border-box;-moz-appearance:textfield;" />
+      <button type="button" onclick="document.getElementById('portal-row-${rowId}').remove();markDirty();" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0;line-height:1;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--muted)'">✕</button>`;
+    document.getElementById('portal-price-rows').appendChild(row);
+    row.querySelectorAll('select, input').forEach(el => el.addEventListener('change', markDirty));
+  }
+
+  function portalGetPriceRows() {
+    const rows = [];
+    document.querySelectorAll('#portal-price-rows > div').forEach(row => {
+      const selects = row.querySelectorAll('select');
+      const input = row.querySelector('input[type="number"]');
+      const toxin = selects[0]?.value;
+      const injector_type = selects[1]?.value || '';
+      const price = parseFloat(input?.value);
+      if (toxin && price > 0) rows.push({ toxin, injector_type, price });
+    });
+    return rows;
+  }
+
+  async function deleteExistingPrice(clinicId, toxin, injectorType, rowIdx) {
+    const token = sessionStorage.getItem('sd_token');
+    const btn = document.querySelector(`#existing-price-row-${rowIdx} button`);
+    if (btn) { btn.textContent = '…'; btn.disabled = true; }
+    try {
+      const res = await fetch('/api/save-clinic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ action: 'delete-price', clinicId, toxin, injectorType })
+      });
+      if (!res.ok) throw new Error('Delete failed');
+      const row = document.getElementById(`existing-price-row-${rowIdx}`);
+      if (row) row.remove();
+      const priceRows = document.querySelectorAll('#portal-price-rows > div');
+      if (priceRows[rowIdx]) priceRows[rowIdx].remove();
+      const existingList = document.getElementById('portal-existing-list');
+      if (existingList && !existingList.children.length) {
+        document.getElementById('portal-existing-prices').style.display = 'none';
+      }
+      showToast('Price removed ✓', 'success');
+      markDirty();
+    } catch(e) {
+      showToast('Failed to delete price — try again.', 'error');
+      if (btn) { btn.textContent = '✕'; btn.disabled = false; }
+    }
+  }
+
+  function portalLoadPrices(clinic) {
+    document.getElementById('portal-price-rows').innerHTML = '';
+    portalRowCount = 0;
+    const existingEl = document.getElementById('portal-existing-prices');
+    const existingList = document.getElementById('portal-existing-list');
+    const credMap = { physician:'MD / Physician', np:'NP', rn:'RN / RPN', img:'IMG' };
+
+    if (clinic.prices && clinic.prices.length > 0) {
+      // Show existing prices with delete buttons
+      existingList.innerHTML = clinic.prices.map((p, i) => `
+        <div id="existing-price-row-${i}" style="display:flex;align-items:center;gap:1rem;padding:0.3rem 0;font-size:0.82rem;color:var(--muted);">
+          <span style="color:var(--deep);">${p.toxin.charAt(0).toUpperCase()+p.toxin.slice(1)}</span>
+          <span>${p.injector_type ? (credMap[p.injector_type]||p.injector_type) : 'Any injector'}</span>
+          <span style="color:var(--rose);font-family:'Cormorant Garamond',serif;font-size:1rem;">$${parseFloat(p.price).toFixed(2)}/unit</span>
+          <button onclick="deleteExistingPrice('${clinic.id}','${p.toxin}','${p.injector_type||''}',${i})" style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:2px 6px;border-radius:4px;transition:color 0.15s;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--muted)'" title="Delete this price">✕</button>
+        </div>`).join('');
+      existingEl.style.display = 'block';
+      clinic.prices.forEach(p => portalAddPriceRow(p.toxin, p.injector_type, p.price));
+    } else {
+      existingEl.style.display = 'none';
+      // Legacy single price fallback
+      if (clinic.price) {
+        portalAddPriceRow(clinic.toxin_type || 'botox', '', clinic.price);
+      } else {
+        portalAddPriceRow();
+      }
+    }
+
+    // Update last updated label
+    if (clinic.price_date) {
+      const d = new Date(clinic.price_date);
+      const label = d.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+      const el = document.getElementById('price-last-updated');
+      if (el) { el.textContent = `Price last updated: ${label}`; el.style.display = 'block'; }
+    }
+  }
+</script>
+</body>
+</html>
