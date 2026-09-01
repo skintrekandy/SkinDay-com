@@ -811,6 +811,7 @@
         <button class="signout" onclick="handleSignOut()">Sign out</button>
       </div>
     </div>
+    <a href="/editor.html" class="nav-cta" id="navPortalBtn">Clinic Portal</a>
   </div>
 </nav>
 
@@ -992,6 +993,8 @@
     </div>
     <div class="footer-links">
       <h4>Clinic tools</h4>
+      <a href="/claim.html">Claim your listing</a>
+      <a href="/editor.html">Clinic portal</a>
       <a href="https://skinday.com/visualize" style="color:var(--gold);">Visualize</a>
       <a href="https://skinday.com/visualize-pro" style="color:var(--gold);">Visualize Pro</a>
       <a href="https://skinday.com/studio" style="color:var(--gold);">Studio</a>
@@ -2043,6 +2046,17 @@ window.openClinicModal = async function(id) {
     (function(){
       const slug = c.slug || (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
       return slug ? `<div style="margin-bottom:1rem;"><a href="/clinic/${slug}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">View full profile →</a></div>` : '';
+    })(),
+
+    // Claim / portal link.
+    // The strongest place to ask for a claim is the modal, because on this
+    // directory most people tap a card and never reach the full profile page.
+    // Same lesson as the device chips: card, MODAL, profile.
+    (function(){
+      if (c.claimed) {
+        return `<div style="text-align:center;font-size:0.8rem;color:var(--muted);margin-bottom:0.9rem;">Managed by the clinic. <a href="/editor.html" style="color:var(--rose);text-decoration:none;border-bottom:1px solid var(--rose-bg);">Clinic sign in</a></div>`;
+      }
+      return `<div style="margin-bottom:1rem;"><a href="/claim.html?clinic=${encodeURIComponent(c.id)}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--rose);color:var(--rose);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">Is this your clinic? Claim it →</a></div>`;
     })(),
 
     // Report link
