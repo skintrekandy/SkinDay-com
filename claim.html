@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claim Your Clinic — SkinDay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --cream:   #FAF7F2;
+    --warm:    #F4EDE4;
+    --deep:    #1C1714;
+    --rose:    #C8725A;
+    --rose-m:  #D4896E;
+    --rose-bg: #F5E8E3;
+    --gold:    #C9A96E;
+    --muted:   #8A7B72;
+    --dim:     #B5A89F;
+    --border:  #EAE2D8;
+    --green:   #3D7A55;
+    /* Present in index.html but absent here, so the two files were not a
+       complete match. Added for parity — unused today, available if this page
+       gains a hero or a deep panel. */
+    --deep2:   #241E1A;
+    --hero-border: rgba(201,169,110,0.25);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+
+  body {
+    background: var(--cream);
+    color: var(--deep);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    min-height: 100vh;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: var(--deep);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 64px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  /* Matches index.html exactly. This had drifted: "Day" was rendering in
+     --rose-m instead of --gold, at a heavier weight and tighter tracking, so
+     the claim page carried an older version of the wordmark than the rest of
+     the site. */
+  .nav-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 400;
+    color: var(--cream);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-back {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--dim);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .nav-back:hover { color: var(--cream); }
+  .nav-back::before { content: '← '; }
+
+  /* ── HERO ── */
+  .hero {
+    background: var(--deep);
+    padding: 128px 40px 80px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(200,114,90,0.12) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 5vw, 3.6rem);
+    font-weight: 400;
+    color: var(--cream);
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+  .hero h1 em { font-style: italic; color: var(--rose-m); }
+  .hero-sub {
+    font-size: 1rem;
+    color: var(--dim);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* ── STEPS INDICATOR ── */
+  .steps-bar {
+    background: var(--deep);
+    padding: 0 40px 40px;
+    display: flex;
+    justify-content: center;
+  }
+  .steps {
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .step-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--muted);
+  }
+  .step-num.active {
+    background: var(--rose);
+    border-color: var(--rose);
+    color: white;
+  }
+  .step-num.done {
+    background: var(--green);
+    border-color: var(--green);
+    color: white;
+  }
+  .step-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+    transition: color 0.3s;
+  }
+  .step-label.active { color: var(--cream); }
+  .step-connector {
+    width: 48px; height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 0 16px;
+  }
+  .step-connector.done { background: var(--green); }
+
+  /* ── MAIN CONTENT AREA ── */
+  .content {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    display: none;
+    animation: fadeUp 0.35s ease;
+  }
+  .panel.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 500;
+    color: var(--deep);
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .field {
+    margin-bottom: 20px;
+  }
+  .field label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--deep);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    appearance: none;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--rose-m);
+    box-shadow: 0 0 0 3px rgba(200,114,90,0.1);
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .field-hint {
+    font-size: 0.78rem;
+    color: var(--dim);
+    margin-top: 6px;
+  }
+  .field-prefix {
+    position: relative;
+  }
+  .field-prefix span {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.95rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .field-prefix input { padding-left: 28px; }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* ── SEARCH RESULTS ── */
+  .search-input-wrap {
+    position: relative;
+  }
+  .search-results {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0; right: 0;
+    margin-top: 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow-y: auto;
+    max-height: 420px;
+    background: white;
+    z-index: 50;
+    box-shadow: 0 8px 24px rgba(28,23,20,0.12);
+  }
+  .search-results.visible { display: block; }
+  .result-item {
+    padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-item:hover { background: var(--warm); }
+  .result-name {
+    font-weight: 500;
+    font-size: 0.92rem;
+    color: var(--deep);
+  }
+  .result-hood {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .result-select {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--rose);
+  }
+  .no-results {
+    padding: 16px;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  /* ── SELECTED CLINIC CARD ── */
+  .selected-clinic {
+    display: none;
+    background: var(--rose-bg);
+    border: 1px solid rgba(200,114,90,0.25);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 12px;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .selected-clinic.visible { display: flex; }
+  .selected-clinic-info .name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--deep);
+  }
+  .selected-clinic-info .hood {
+    font-size: 0.78rem;
+    color: var(--rose);
+    margin-top: 2px;
+  }
+  .selected-change {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    transition: color 0.2s;
+  }
+  .selected-change:hover { color: var(--deep); }
+
+  /* ── BUTTONS ── */
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 32px;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    width: 100%;
+  }
+  .btn-primary:hover { background: var(--rose-m); transform: translateY(-1px); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled {
+    background: var(--dim);
+    cursor: not-allowed;
+    transform: none;
+  }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--muted); color: var(--deep); }
+
+  .btn-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+  .btn-row .btn-secondary { flex: 0 0 auto; }
+  .btn-row .btn-primary { flex: 1; }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 28px 0;
+  }
+
+  /* ── PERKS LIST ── */
+  .perks {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .perks li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.88rem;
+    color: var(--deep);
+    line-height: 1.5;
+  }
+  .perks li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── PHOTO UPLOAD ── */
+  .photo-upload {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 32px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+  .photo-upload:hover {
+    border-color: var(--rose-m);
+    background: var(--rose-bg);
+  }
+  .photo-upload input[type="file"] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+  }
+  .photo-upload-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .photo-upload-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--deep);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .photo-upload-hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .photo-preview-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .photo-thumb {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: var(--warm);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    position: relative;
+  }
+  .photo-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .photo-thumb-remove {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 20px; height: 20px;
+    background: rgba(28,23,20,0.7);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 0.65rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s;
+  }
+  .photo-thumb-remove:hover { background: rgba(200,114,90,0.9); }
+
+  /* ── CARD PREVIEW ── */
+  .preview-wrapper {
+    background: var(--warm);
+    border-radius: 14px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+  .preview-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .clinic-card-preview {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    max-width: 300px;
+    margin: 0 auto;
+    transition: all 0.3s;
+  }
+  .clinic-card-preview .cc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .clinic-card-preview .cc-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--deep);
+    line-height: 1.2;
+  }
+  .clinic-card-preview .cc-hood {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .price-badge {
+    background: var(--rose-bg);
+    border: 1px solid rgba(200,114,90,0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .price-badge .amount {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--rose);
+  }
+  .price-badge .per {
+    font-size: 0.68rem;
+    color: var(--muted);
+    display: block;
+  }
+  .price-badge.no-price {
+    background: var(--warm);
+    border-color: var(--border);
+  }
+  .price-badge.no-price .amount {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: var(--dim);
+  }
+  .cc-rating {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+  .cc-stars { color: var(--gold); font-size: 0.78rem; }
+  .cc-rating-num { font-weight: 600; font-size: 0.82rem; color: var(--deep); }
+  .cc-reviews { font-size: 0.75rem; color: var(--muted); }
+  .cc-links {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .cc-link-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: var(--cream);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: block;
+  }
+  .cc-link-btn:hover {
+    border-color: var(--rose-m);
+    color: var(--rose);
+  }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+
+  /* ── SUCCESS PANEL ── */
+  .success-hero {
+    text-align: center;
+    padding: 48px 24px;
+  }
+  .success-icon {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: rgba(61,122,85,0.12);
+    border: 1px solid rgba(61,122,85,0.25);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 1.8rem;
+  }
+  .success-hero h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2rem;
+    font-weight: 400;
+    color: var(--deep);
+    margin-bottom: 10px;
+  }
+  .success-hero p {
+    font-size: 0.92rem;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  /* ── TAG ── */
+  .founding-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(201,169,110,0.15), rgba(201,169,110,0.05));
+    border: 1px solid rgba(201,169,110,0.35);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+    margin-top: 16px;
+  }
+
+  /* ── EDITOR NAV ── */
+  .editor-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--warm);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+  .editor-tab {
+    flex: 1;
+    padding: 9px 16px;
+    border-radius: 7px;
+    border: none;
+    background: transparent;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .editor-tab.active {
+    background: white;
+    color: var(--deep);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .editor-tab:hover:not(.active) { color: var(--deep); }
+
+  .editor-section { display: none; }
+  .editor-section.active { display: block; }
+
+  /* ── STATUS PILL ── */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(61,122,85,0.1);
+    border: 1px solid rgba(61,122,85,0.2);
+    border-radius: 100px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--green);
+  }
+  .status-pill::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+
+  /* ── LOCATION TYPE SELECTOR ── */
+  .location-type-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .location-type-card {
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    text-align: center;
+    background: var(--cream);
+    user-select: none;
+  }
+  .location-type-card:hover {
+    border-color: var(--rose-m);
+    background: var(--rose-bg);
+  }
+  .location-type-card.selected {
+    border-color: var(--rose);
+    background: var(--rose-bg);
+    box-shadow: 0 0 0 3px rgba(200,114,90,0.12);
+  }
+  .location-type-card .ltc-icon {
+    font-size: 1.6rem;
+    display: block;
+    margin-bottom: 8px;
+  }
+  .location-type-card .ltc-label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--deep);
+    margin-bottom: 4px;
+  }
+  .location-type-card .ltc-desc {
+    font-size: 0.75rem;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .location-type-card.selected .ltc-label { color: var(--rose); }
+
+  /* ── CHAIN LOCATION LIST ── */
+  .chain-locations-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+    min-height: 0;
+  }
+  .chain-location-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--rose-bg);
+    border: 1px solid rgba(200,114,90,0.2);
+    border-radius: 10px;
+    padding: 12px 14px;
+    animation: fadeUp 0.25s ease;
+  }
+  .chain-location-item .cli-info .cli-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--deep);
+  }
+  .chain-location-item .cli-info .cli-hood {
+    font-size: 0.75rem;
+    color: var(--rose);
+    margin-top: 2px;
+  }
+  .chain-location-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+    flex-shrink: 0;
+  }
+  .chain-location-remove:hover {
+    color: var(--rose);
+    background: rgba(200,114,90,0.08);
+  }
+  .chain-empty-state {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.82rem;
+    color: var(--dim);
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+  .chain-count-hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .chain-count-hint strong { color: var(--deep); }
+
+  /* ── PROOF STRIP ── */
+  .proof-strip {
+    background: rgba(255,255,255,0.04);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    padding: 20px 40px;
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .proof-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 28px;
+    font-size: 0.8rem;
+    color: var(--dim);
+    letter-spacing: 0.03em;
+  }
+  .proof-item + .proof-item {
+    border-left: 1px solid rgba(255,255,255,0.08);
+  }
+  .proof-item strong {
+    color: var(--cream);
+    font-weight: 600;
+  }
+  .proof-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--rose);
+    flex-shrink: 0;
+  }
+
+  /* ── TRUST LINE ── */
+  .trust-line {
+    background: var(--deep);
+    text-align: center;
+    padding: 14px 40px 28px;
+    font-size: 0.82rem;
+    color: var(--gold);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── CAC SECTION ── */
+  .cac-section {
+    background: var(--cream);
+    padding: 64px 24px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .cac-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rose);
+    margin-bottom: 16px;
+    display: block;
+  }
+  .cac-headline {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    font-weight: 500;
+    color: var(--deep);
+    line-height: 1.15;
+    margin-bottom: 8px;
+    max-width: 540px;
+  }
+  .cac-subhead {
+    font-size: 0.88rem;
+    color: var(--muted);
+    margin-bottom: 40px;
+    line-height: 1.6;
+    max-width: 480px;
+  }
+  .cac-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: start;
+  }
+  /* Flow chart */
+  .cac-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .cac-flow-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--warm);
+  }
+  .cac-flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    gap: 12px;
+  }
+  .cac-flow-row:last-child { border-bottom: none; }
+  .cac-flow-desc {
+    font-size: 0.85rem;
+    color: var(--deep);
+    line-height: 1.35;
+  }
+  .cac-flow-hint {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .cac-flow-val {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--deep);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .cac-flow-val.positive { color: var(--green); }
+  .cac-flow-val.cost { color: var(--muted); }
+  .cac-flow-divider {
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--dim);
+    padding: 6px 0;
+    letter-spacing: 0.05em;
+    background: var(--warm);
+    border-bottom: 1px solid var(--border);
+  }
+  .cac-flow-total {
+    background: var(--deep);
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .cac-flow-total-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--cream);
+  }
+  .cac-flow-total-hint {
+    font-size: 0.72rem;
+    color: rgba(250,247,242,0.5);
+    margin-top: 2px;
+  }
+  .cac-flow-total-val {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--rose-m);
+  }
+  /* Right side */
+  .cac-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .cac-statement {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: var(--deep);
+    line-height: 1.2;
+  }
+  .cac-body {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .cac-callout {
+    background: var(--rose);
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: white;
+    line-height: 1.55;
+  }
+  @media (max-width: 640px) {
+    .proof-strip { padding: 16px 20px; gap: 8px; }
+    .proof-item { padding: 6px 12px; font-size: 0.75rem; }
+    .proof-item + .proof-item { border-left: none; border-top: 1px solid rgba(255,255,255,0.08); }
+    .cac-grid { grid-template-columns: 1fr; gap: 24px; }
+    .cac-section { padding: 48px 20px; }
+  }
+
+
+  @media (max-width: 600px) {
+    nav { padding: 0 20px; }
+    .hero { padding: 104px 24px 64px; }
+    .steps-bar { padding: 0 20px 32px; }
+    .step-connector { width: 24px; margin: 0 8px; }
+    .content { padding: 32px 16px 100px; }
+    .card { padding: 24px 20px; }
+    .field-row { grid-template-columns: 1fr; }
+    .photo-preview-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/favicon-16x16.png" type="image/png" sizes="16x16">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-s9ic7e_4fbKlTLHHXTR_P.js"></script>
+  <script>
+    window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+    plausible.init()
+  </script>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/index.html" class="nav-logo">Skin<span>Day</span></a>
+  <a href="/index.html" class="nav-back">Back to directory</a>
+  <a href="/contact.html" style="font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--cream)'" onmouseout="this.style.color='var(--dim)'">Need help?</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <span class="hero-eyebrow">For clinic owners · Free to claim</span>
+  <h1>The right patients are already<br>looking for you.<br><em>Help them find you.</em></h1>
+  <p class="hero-sub">Most clinics look identical online. As the medical aesthetic market matures, patients are doing more research before making decisions. When they find your clinic, what they see matters.</p>
+</section>
+
+<div class="steps-bar">
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-num active" id="step-num-1">1</div>
+      <span class="step-label active" id="step-label-1">Find your clinic</span>
+    </div>
+    <div class="step-connector" id="connector-1"></div>
+    <div class="step-item">
+      <div class="step-num" id="step-num-2">2</div>
+      <span class="step-label" id="step-label-2">Verify ownership</span>
+    </div>
+    <div class="step-connector" id="connector-2"></div>
+    <div class="step-item">
+      <div class="step-num" id="step-num-3">3</div>
+      <span class="step-label" id="step-label-3">Edit your profile</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="content">
+
+  <!-- ── PANEL 1: FIND CLINIC ── -->
+  <div class="panel active" id="panel-1">
+
+    <!-- Trust line -->
+    <div style="text-align:center; padding: 4px 0 20px; font-size:0.82rem; color:var(--muted); font-weight:500; letter-spacing:0.03em;">
+      Free to claim &nbsp;·&nbsp; No subscription &nbsp;·&nbsp; No commission on your bookings
+    </div>
+
+    <div class="card">
+      <div class="card-title">Find your clinic</div>
+      <div class="card-sub">Search by clinic name or neighbourhood to get started.</div>
+
+      <div class="field">
+        <label>Clinic name</label>
+        <div class="search-input-wrap">
+          <input type="text" id="clinic-search" placeholder="e.g. Glow Aesthetics, Skin Lab..." autocomplete="off">
+          <div class="search-results" id="search-results"></div>
+        </div>
+        <div class="selected-clinic" id="selected-clinic">
+          <div class="selected-clinic-info">
+            <div class="name" id="selected-name"></div>
+            <div class="hood" id="selected-hood"></div>
+          </div>
+          <button class="selected-change" onclick="clearClinic()">Change</button>
+        </div>
+        <div class="field-hint" id="clinic-count-hint">Start typing to find your clinic.</div>
+      </div>
+    </div>
+
+    <div class="card" id="card-what-you-get">
+      <div class="card-title">What you get</div>
+      <div class="card-sub">Claim your profile and control the narrative they see. Show your credentials, your team, and your approach on your terms.</div>
+      <ul class="perks">
+        <li>Stand out when ratings alone no longer differentiate clinics.</li>
+        <li>Attract patients who understand your pricing and positioning upfront.</li>
+        <li>Claimed profiles are complete and verified. Unclaimed profiles stay basic.</li>
+      </ul>
+      <div style="margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); font-size: 0.82rem; font-weight: 500; color: var(--muted); text-align: center; letter-spacing: 0.03em;">
+        Free to claim &nbsp;·&nbsp; No subscription &nbsp;·&nbsp; No commission on your bookings
+      </div>
+    </div>
+
+    <!-- Location type question — revealed after clinic selected -->
+    <div class="card" id="card-location-type" style="display:none;">
+      <div class="card-title">Single location or chain?</div>
+      <div class="card-sub">Just one clinic? Select single. Own multiple locations under the same brand? Select chain.</div>
+      <div class="location-type-cards">
+        <div class="location-type-card" id="ltc-single" onclick="selectLocationType('single')">
+          <span class="ltc-icon">&#127968;</span>
+          <div class="ltc-label">Single location</div>
+          <div class="ltc-desc">Just this one clinic</div>
+        </div>
+        <div class="location-type-card" id="ltc-chain" onclick="selectLocationType('chain')">
+          <span class="ltc-icon">&#127970;</span>
+          <div class="ltc-label">Chain / group</div>
+          <div class="ltc-desc">Multiple locations, same brand</div>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-step1-next" onclick="handleStep1Continue()" disabled>Continue &#8594;</button>
+    </div>
+  </div>
+
+  <!-- ── PANEL 1b: CHAIN LOCATION PICKER ── -->
+  <div class="panel" id="panel-1b">
+    <div class="card">
+      <div class="card-title">Add your locations</div>
+      <div class="card-sub">Search and add each location in your group. Add at least 2 to continue.</div>
+
+      <div class="chain-count-hint" id="chain-count-hint" style="display:none;">
+        <strong id="chain-count-num">0</strong> location(s) added &mdash; minimum 2 required
+      </div>
+
+      <div class="field">
+        <label>Search locations</label>
+        <div class="search-input-wrap">
+          <input type="text" id="chain-search" placeholder="e.g. Rejuuv Markham, Signature Thornhill&hellip;" autocomplete="off">
+          <div class="search-results" id="chain-search-results"></div>
+        </div>
+      </div>
+
+      <div class="chain-locations-list" id="chain-locations-list">
+        <div class="chain-empty-state" id="chain-empty-state">No locations added yet &mdash; search above to start.</div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="btn-row">
+        <button type="button" class="btn-secondary" onclick="goToPanel('panel-1')">&#8592; Back</button>
+        <button type="button" class="btn-primary" id="btn-chain-continue" onclick="goToPanel('panel-2')" disabled>Continue &#8594;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL 2: VERIFY OWNERSHIP ── -->
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="card-title">Verify ownership</div>
+      <div class="card-sub">We'll be in touch to confirm your listing. Takes less than a minute to submit.</div>
+
+      <form name="clinic-claim" method="POST" data-netlify="true" netlify-honeypot="bot-field" id="claim-form" onsubmit="handleClaimSubmit(event)">
+        <!-- Netlify hidden fields -->
+        <input type="hidden" name="form-name" value="clinic-claim">
+        <input type="hidden" name="clinic-id"   id="form-clinic-id">
+        <input type="hidden" name="clinic-name" id="form-clinic-name">
+        <input type="hidden" name="clinic-neighbourhood" id="form-clinic-neighbourhood">
+        <!-- Chain fields (populated when is_chain = true) -->
+        <input type="hidden" name="is-chain" id="form-is-chain" value="false">
+        <input type="hidden" name="chain-clinic-ids" id="form-chain-clinic-ids" value="">
+        <!-- Honeypot (hidden from humans) -->
+        <p style="display:none;"><label>Don't fill this out: <input name="bot-field"></label></p>
+
+        <div class="field">
+          <label>Your name</label>
+          <input type="text" name="owner-name" id="owner-name" placeholder="Full name" required>
+        </div>
+        <div class="field">
+          <label>Business email</label>
+          <input type="email" name="owner-email" id="owner-email" placeholder="you@yourclinic.com" required>
+          <div class="field-hint">Use the email address connected to your clinic — this is how we get in touch.</div>
+        </div>
+        <div class="field">
+          <label>Your role at the clinic</label>
+          <select name="owner-role" id="owner-role" required>
+            <option value="">Select your role</option>
+            <option>Owner / Founder</option>
+            <option>Clinic Manager</option>
+            <option>Marketing / Admin</option>
+            <option>Other</option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+        <div class="field-hint" style="margin-bottom: 20px;">By submitting, you confirm you have authority to manage this clinic's listing on SkinDay.</div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-secondary" onclick="goBackFromStep2()">← Back</button>
+          <button type="submit" class="btn-primary" id="btn-submit">Submit claim →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── PANEL 4: SUCCESS ── -->
+  <div class="panel" id="panel-4">
+    <div class="card">
+      <div class="success-hero">
+        <div class="success-icon">✓</div>
+        <h2>Profile claimed.</h2>
+        <p>We've received your request. Once we verify your clinic, you'll get an email with your portal access link. You'll be able to publish your pricing, add photos, and manage your listing immediately.</p>
+        <p style="margin-top: 12px; font-size: 0.82rem; color: var(--dim);">Usually within 1–2 business days.</p>
+      </div>
+      <div class="divider"></div>
+      <div style="text-align: center; padding: 0 0 8px;">
+        <a href="/index.html" class="btn-secondary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Back to directory</a>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- CAC ECONOMICS -->
+<div style="background: var(--cream); border-top: 1px solid var(--border);">
+  <div class="cac-section">
+    <span class="cac-eyebrow">The economics</span>
+    <div class="cac-headline">Most clinics lose money on the first visit.</div>
+    <div class="cac-subhead">Patient acquisition costs $200–$400 on average. The only way to recover that is if the patient returns. Here's why the first booking rarely breaks even.</div>
+    <div class="cac-grid">
+      <div>
+        <div class="cac-flow">
+          <div class="cac-flow-label">Example: Botox client, first visit</div>
+
+          <div class="cac-flow-row">
+            <div>
+              <div class="cac-flow-desc">Revenue from visit</div>
+              <div class="cac-flow-hint">Average Botox appointment</div>
+            </div>
+            <div class="cac-flow-val positive">+$350</div>
+          </div>
+
+          <div class="cac-flow-row">
+            <div>
+              <div class="cac-flow-desc">Product and overhead</div>
+              <div class="cac-flow-hint">Neurotoxin cost, space, staff time</div>
+            </div>
+            <div class="cac-flow-val cost">-$150</div>
+          </div>
+
+          <div class="cac-flow-divider">= $200 gross margin</div>
+
+          <div class="cac-flow-row">
+            <div>
+              <div class="cac-flow-desc">Cost to acquire this patient</div>
+              <div class="cac-flow-hint">Ads, referrals, time spent on inquiries</div>
+            </div>
+            <div class="cac-flow-val cost">-$300</div>
+          </div>
+
+          <div class="cac-flow-total">
+            <div>
+              <div class="cac-flow-total-label">First visit profit</div>
+              <div class="cac-flow-total-hint">Before they come back</div>
+            </div>
+            <div class="cac-flow-total-val">-$100</div>
+          </div>
+        </div>
+      </div>
+      <div class="cac-right">
+        <div class="cac-statement">The second visit is where the money is.</div>
+        <div class="cac-body">A patient who found the wrong clinic leaves after one visit. A patient who found the right clinic comes back every 3–4 months, for years.<br><br>The difference isn't your treatment. It's whether they felt they found the right fit from the start.</div>
+        <div class="cac-callout">SkinDay matches the right patients to the right clinics. Those patients come back.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── CLINIC DATA — fetched from Supabase ──
+  // ⚠️ claim.html had NO escaping helper. Clinic names come from Google and
+  // Outscraper, i.e. third-party text, and they are interpolated into innerHTML
+  // in the results lists, so they must be escaped. Same gap that was found in
+  // index.html during the M39 device chips work.
+  function escapeHtml(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  const SUPABASE_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZmxkbHF0eXhkeXdiemRqdWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIzNDAwMjgsImV4cCI6MjA4NzkxNjAyOH0.o582sXiUkB3j4FiHEA5rE3ABy_pdTeeK1PnNpNirHZA';
+
+  // ── COUNTRY SCOPE ──
+  // skinday.ca is Canada only. skinday.com serves the US directory plus Taiwan
+  // and Hong Kong, so the country cannot be baked into this page. It is
+  // resolved ONCE here: the host decides, and ?country= overrides for the
+  // directories that share a host. Change the rule here and nowhere else.
+  const SD_COUNTRY = (function () {
+    const override = new URLSearchParams(window.location.search).get('country');
+    if (override) return override.trim().toLowerCase();
+    if (/(^|\.)skinday\.ca$/i.test(window.location.hostname)) return 'canada';
+    return 'usa';
+  })();
+
+  const SD_COUNTRY_LABELS = {
+    canada: 'Canada',
+    usa: 'the United States',
+    taiwan: 'Taiwan',
+    hongkong: 'Hong Kong'
+  };
+  const SD_COUNTRY_LABEL = SD_COUNTRY_LABELS[SD_COUNTRY] || 'your area';
+
+  // ⚠️⚠️ THIS PAGE NO LONGER DOWNLOADS THE COUNTRY.
+  // It used to fetch every approved clinic at limit=10000 and filter in
+  // JavaScript. That held for Canada at 4,989 rows and fails silently for
+  // anything larger. The USA is already past 10,000 approved, so every clinic
+  // alphabetically after the cutoff would be invisible and unclaimable, which
+  // is precisely what happened to Serene Rejuvenation (Surrey BC, rank 12,731)
+  // until its owner emailed us. Raising the limit only moves the cliff.
+  //
+  // Search now runs in Postgres and returns 25 rows, so there is no cap to
+  // outgrow in any country, Canada included.
+
+  const CLINIC_FIELDS = 'id,name,neighbourhood,area,province,region,phone,website,place_id,maps_url,rating,reviews,claimed,approved';
+
+  function sdHeaders(extra) {
+    return Object.assign({ 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, extra || {});
+  }
+
+  // Commas, parentheses, quotes and backslashes are separators in PostgREST's
+  // filter grammar, so an unescaped one turns a search into a 400. Stripping
+  // beats quoting here: nobody looks up a clinic by its punctuation.
+  function sdSafeWord(w) {
+    return w.replace(/[,()"*\\]/g, '').trim();
+  }
+
+  // Every word must appear in the name OR the locality, which is what the old
+  // client-side filter did. Written as nested PostgREST logic so Postgres does
+  // the matching instead of the browser.
+  function sdBuildFilter(words) {
+    return 'and=(' + words.map(w =>
+      `or(name.ilike.*${encodeURIComponent(w)}*,neighbourhood.ilike.*${encodeURIComponent(w)}*)`
+    ).join(',') + ')';
+  }
+
+  function sdNormalise(c) {
+    return Object.assign({}, c, { id: Number(c.id) || c.id, price: null, promo: false, rank: 'low' });
+  }
+
+  // US rows do not carry `neighbourhood` the way Canadian ones do. Fall through
+  // the other locality columns rather than printing "undefined" beside a
+  // clinic's name, which is what the old template did unconditionally.
+  function sdPlace(c) {
+    return c.neighbourhood || c.area || c.region || c.province || '';
+  }
+
+  // One in-flight search at a time. Without this a fast typist can have an
+  // early, broader response land after a later, narrower one and overwrite it.
+  let sdSearchAbort = null;
+
+  async function sdSearchClinics(query, limit) {
+    const words = (query || '').trim().split(/\s+/).map(sdSafeWord).filter(Boolean);
+    if (words.length === 0) return [];
+
+    if (sdSearchAbort) sdSearchAbort.abort();
+    sdSearchAbort = new AbortController();
+
+    const url = `${SUPABASE_URL}/rest/v1/clinics?select=${CLINIC_FIELDS}`
+      + `&approved=eq.true&country=eq.${encodeURIComponent(SD_COUNTRY)}`
+      + `&${sdBuildFilter(words)}`
+      + `&order=name.asc&limit=${limit || 25}`;
+
+    const res = await fetch(url, { headers: sdHeaders(), signal: sdSearchAbort.signal });
+    if (!res.ok) throw new Error('Clinic search failed');
+    const data = await res.json();
+    return Array.isArray(data) ? data.map(sdNormalise) : [];
+  }
+
+  async function sdFetchClinicById(id) {
+    const url = `${SUPABASE_URL}/rest/v1/clinics?select=${CLINIC_FIELDS}`
+      + `&approved=eq.true&id=eq.${encodeURIComponent(id)}&limit=1`;
+    const res = await fetch(url, { headers: sdHeaders() });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return (Array.isArray(rows) && rows[0]) ? sdNormalise(rows[0]) : null;
+  }
+
+  // The old hint hard-coded "over 5,000 clinics across Canada", which was both
+  // country-specific and going stale. Read the real count instead; the static
+  // sentence in the markup stands if this fails.
+  (async function sdLoadCount() {
+    const el = document.getElementById('clinic-count-hint');
+    if (!el) return;
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/clinics?select=id&approved=eq.true&country=eq.${encodeURIComponent(SD_COUNTRY)}`,
+        { headers: sdHeaders({ 'Prefer': 'count=exact', 'Range-Unit': 'items', 'Range': '0-0' }) }
+      );
+      const total = parseInt((res.headers.get('content-range') || '').split('/')[1], 10);
+      if (!isNaN(total) && total > 0) {
+        const rounded = total >= 1000 ? (Math.floor(total / 1000) * 1000).toLocaleString() : total.toLocaleString();
+        el.textContent = `We have over ${rounded} clinics listed in ${SD_COUNTRY_LABEL}. Start typing to find yours.`;
+      }
+    } catch (e) {
+      // Leave the neutral static hint in place.
+    }
+  })();
+
+  let selectedClinic   = null;
+  let hasUnsavedChanges = false;
+  let selectedLocationType = null; // 'single' | 'chain'
+  let chainLocations   = []; // array of clinic objects for chain flow
+
+  // ── URL PARAM PRE-POPULATION ──
+  // History worth keeping: this was once setTimeout(..., 0), which fired before
+  // the clinic list had loaded, so anyone arriving from the "Claim Your Clinic"
+  // button on a profile found an empty search box and had to look up their own
+  // clinic by hand. It then awaited the full country download. It now fetches
+  // the single row by id, which cannot race and has no size ceiling.
+  (async function initFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('clinic');
+    if (!raw) return;
+    // Fetches the single row by id. The old version waited for the whole
+    // country to download and then searched it in memory, so a clinic past the
+    // 10,000 row cap could not be pre-populated even from its own profile link.
+    try {
+      const clinic = await sdFetchClinicById(raw);
+      if (clinic) selectClinic(clinic);
+    } catch (e) {
+      console.error('Could not pre-populate clinic from URL:', e);
+    }
+  })();
+
+  // ── SINGLE-CLINIC SEARCH ──
+  const searchInput = document.getElementById('clinic-search');
+  const resultsBox  = document.getElementById('search-results');
+
+  // Debounced so a query goes out per pause, not per keystroke.
+  let searchTimer = null;
+
+  searchInput.addEventListener('input', function() {
+    const q = this.value.trim();
+    if (q.length < 2) {
+      clearTimeout(searchTimer);
+      resultsBox.innerHTML = '';
+      resultsBox.classList.remove('visible');
+      return;
+    }
+
+    resultsBox.innerHTML = `<div class="no-results">Searching…</div>`;
+    resultsBox.classList.add('visible');
+
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(async () => {
+      let matches;
+      try {
+        matches = await sdSearchClinics(q, 25);
+      } catch (e) {
+        if (e.name === 'AbortError') return; // a newer keystroke took over
+        resultsBox.innerHTML = `<div class="no-results">Search is unavailable right now. Please try again.</div>`;
+        return;
+      }
+      // The box may have been emptied while this was in flight.
+      if (searchInput.value.trim().length < 2) return;
+
+      resultsBox.innerHTML = '';
+      if (matches.length === 0) {
+        resultsBox.innerHTML = `<div class="no-results">No clinic found — <a href="mailto:hello@skinday.ca" style="color:var(--rose);">contact us to add yours</a></div>`;
+      } else {
+        matches.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'result-item';
+          const place = sdPlace(c);
+          div.innerHTML = `
+            <div>
+              <div class="result-name">${escapeHtml(c.name)}</div>
+              ${place ? `<div class="result-hood">&#128205; ${escapeHtml(place)}</div>` : ''}
+            </div>
+            <span class="result-select">Select &#8594;</span>
+          `;
+          div.addEventListener('mousedown', (e) => { e.preventDefault(); selectClinic(c); });
+          resultsBox.appendChild(div);
+        });
+      }
+      resultsBox.classList.add('visible');
+    }, 220);
+  });
+
+  function selectClinic(c) {
+    selectedClinic = c;
+    searchInput.value = c.name;
+    resultsBox.classList.remove('visible');
+
+    document.getElementById('selected-name').textContent = c.name;
+    document.getElementById('selected-hood').textContent = sdPlace(c) ? '📍 ' + sdPlace(c) : '';
+    document.getElementById('selected-clinic').classList.add('visible');
+
+    // Show location type question, hide "What you get" perks card
+    document.getElementById('card-what-you-get').style.display = 'none';
+    document.getElementById('card-location-type').style.display = 'block';
+
+    // Reset location type selection
+    selectedLocationType = null;
+    document.getElementById('ltc-single').classList.remove('selected');
+    document.getElementById('ltc-chain').classList.remove('selected');
+    document.getElementById('btn-step1-next').disabled = true;
+
+    // Populate hidden form fields for single-location flow
+    document.getElementById('form-clinic-id').value            = c.id;
+    document.getElementById('form-clinic-name').value          = c.name;
+    document.getElementById('form-clinic-neighbourhood').value = sdPlace(c);
+  }
+
+  function clearClinic() {
+    selectedClinic = null;
+    selectedLocationType = null;
+    searchInput.value = '';
+    document.getElementById('selected-clinic').classList.remove('visible');
+    document.getElementById('card-what-you-get').style.display = 'block';
+    document.getElementById('card-location-type').style.display = 'none';
+    document.getElementById('form-clinic-id').value            = '';
+    document.getElementById('form-clinic-name').value          = '';
+    document.getElementById('form-clinic-neighbourhood').value = '';
+    searchInput.focus();
+  }
+
+  // ── LOCATION TYPE SELECTOR ──
+  function selectLocationType(type) {
+    selectedLocationType = type;
+    document.getElementById('ltc-single').classList.toggle('selected', type === 'single');
+    document.getElementById('ltc-chain').classList.toggle('selected',  type === 'chain');
+    document.getElementById('btn-step1-next').disabled = false;
+  }
+
+  function handleStep1Continue() {
+    if (!selectedLocationType) return;
+    if (selectedLocationType === 'single') {
+      // Standard single-location flow
+      document.getElementById('form-is-chain').value = 'false';
+      document.getElementById('form-chain-clinic-ids').value = '';
+      goToStep(2);
+    } else {
+      // Chain flow: pre-populate chain list with the already-selected clinic
+      chainLocations = [selectedClinic];
+      renderChainList();
+      goToPanel('panel-1b');
+    }
+  }
+
+  // ── CHAIN LOCATION SEARCH ──
+  const chainSearchInput  = document.getElementById('chain-search');
+  const chainResultsBox   = document.getElementById('chain-search-results');
+
+  let chainSearchTimer = null;
+
+  chainSearchInput.addEventListener('input', function() {
+    const q = this.value.trim();
+    if (q.length < 2) {
+      clearTimeout(chainSearchTimer);
+      chainResultsBox.innerHTML = '';
+      chainResultsBox.classList.remove('visible');
+      return;
+    }
+
+    chainResultsBox.innerHTML = `<div class="no-results">Searching…</div>`;
+    chainResultsBox.classList.add('visible');
+
+    clearTimeout(chainSearchTimer);
+    chainSearchTimer = setTimeout(async () => {
+      let rows;
+      try {
+        rows = await sdSearchClinics(q, 25);
+      } catch (e) {
+        if (e.name === 'AbortError') return;
+        chainResultsBox.innerHTML = `<div class="no-results">Search is unavailable right now. Please try again.</div>`;
+        return;
+      }
+      if (chainSearchInput.value.trim().length < 2) return;
+
+      // Locations already added are filtered out here rather than in the query,
+      // so the exclusion survives however the server orders its results.
+      const alreadyIds = new Set(chainLocations.map(c => String(c.id)));
+      const matches = rows.filter(c => !alreadyIds.has(String(c.id)));
+
+      chainResultsBox.innerHTML = '';
+      if (matches.length === 0) {
+        chainResultsBox.innerHTML = `<div class="no-results">No clinic found matching that name or location.</div>`;
+      } else {
+        matches.forEach(c => {
+          const div = document.createElement('div');
+          div.className = 'result-item';
+          const place = sdPlace(c);
+          div.innerHTML = `
+            <div>
+              <div class="result-name">${escapeHtml(c.name)}</div>
+              ${place ? `<div class="result-hood">&#128205; ${escapeHtml(place)}</div>` : ''}
+            </div>
+            <span class="result-select">+ Add</span>
+          `;
+          div.addEventListener('mousedown', (e) => { e.preventDefault(); addChainLocation(c); });
+          chainResultsBox.appendChild(div);
+        });
+      }
+      chainResultsBox.classList.add('visible');
+    }, 220);
+  });
+
+  function addChainLocation(c) {
+    if (chainLocations.find(x => x.id == c.id)) return; // already added
+    chainLocations.push(c);
+    chainSearchInput.value = '';
+    chainResultsBox.classList.remove('visible');
+    renderChainList();
+  }
+
+  function removeChainLocation(id) {
+    chainLocations = chainLocations.filter(c => c.id != id);
+    renderChainList();
+  }
+
+  function renderChainList() {
+    const list     = document.getElementById('chain-locations-list');
+    const contBtn  = document.getElementById('btn-chain-continue');
+    const count    = chainLocations.length;
+
+    // Show/update count hint only once locations start being added
+    const hint = document.getElementById('chain-count-hint');
+    if (count === 0) {
+      hint.style.display = 'none';
+    } else {
+      hint.style.display = 'block';
+      hint.innerHTML = count < 2
+        ? `<strong>${count}</strong> location added &mdash; add at least one more to continue`
+        : `<strong>${count}</strong> locations added &mdash; <span style="color:var(--green)">ready to continue</span>`;
+    }
+
+    // Clear existing items (but keep empty state el)
+    list.innerHTML = '';
+
+    if (count === 0) {
+      const emp = document.createElement('div');
+      emp.className = 'chain-empty-state';
+      emp.id = 'chain-empty-state';
+      emp.textContent = 'No locations added yet \u2014 search above to start.';
+      list.appendChild(emp);
+    } else {
+      chainLocations.forEach(c => {
+        const item = document.createElement('div');
+        item.className = 'chain-location-item';
+        item.innerHTML = `
+          <div class="cli-info">
+            <div class="cli-name">${escapeHtml(c.name)}</div>
+            ${sdPlace(c) ? `<div class="cli-hood">&#128205; ${escapeHtml(sdPlace(c))}</div>` : ''}
+          </div>
+          <button class="chain-location-remove" onclick="removeChainLocation('${c.id}')">Remove</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    contBtn.disabled = count < 2;
+
+    // Update hidden chain fields for submission
+    document.getElementById('form-is-chain').value         = 'true';
+    document.getElementById('form-chain-clinic-ids').value = JSON.stringify(chainLocations.map(c => c.id));
+
+    // Use first location as the "primary" clinic-id/name for the claim record
+    if (chainLocations.length > 0) {
+      const first = chainLocations[0];
+      document.getElementById('form-clinic-id').value            = first.id;
+      document.getElementById('form-clinic-name').value          = first.name;
+      document.getElementById('form-clinic-neighbourhood').value = sdPlace(first);
+    }
+  }
+
+  // Close chain results on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#chain-search') && !e.target.closest('#chain-search-results')) {
+      chainResultsBox.classList.remove('visible');
+    }
+  });
+
+  // Close single results on outside click
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#clinic-search') && !e.target.closest('#search-results')) {
+      resultsBox.classList.remove('visible');
+    }
+  });
+
+  // ── PANEL NAV (for non-step panels like 1b) ──
+  function goBackFromStep2() {
+    if (selectedLocationType === 'chain') {
+      goToPanel('panel-1b');
+    } else {
+      goToStep(1);
+    }
+  }
+
+  function goToPanel(panelId) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(panelId).classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── STEP NAV ──
+  function goToStep(n) {
+    const stepPanels = ['panel-1', 'panel-2', 'panel-3'];
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(stepPanels[n - 1]);
+    if (target) target.classList.add('active');
+    updateStepIndicator(n);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function updateStepIndicator(n) {
+    [1, 2, 3].forEach(i => {
+      const num   = document.getElementById('step-num-' + i);
+      const label = document.getElementById('step-label-' + i);
+      if (i < n) {
+        num.className   = 'step-num done';
+        num.textContent = '✓';
+        label.className = 'step-label';
+      } else if (i === n) {
+        num.className   = 'step-num active';
+        num.textContent = i;
+        label.className = 'step-label active';
+      } else {
+        num.className   = 'step-num';
+        num.textContent = i;
+        label.className = 'step-label';
+      }
+    });
+    [1, 2].forEach(i => {
+      document.getElementById('connector-' + i).className =
+        'step-connector' + (i < n ? ' done' : '');
+    });
+  }
+
+  // ── API FORM SUBMIT (M4: Supabase backend) ──
+  function handleClaimSubmit(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    const isChain   = document.getElementById('form-is-chain').value === 'true';
+    const chainIds  = document.getElementById('form-chain-clinic-ids').value;
+
+    const payload = {
+      clinic_id:            document.getElementById('form-clinic-id').value,
+      clinic_name:          document.getElementById('form-clinic-name').value,
+      clinic_neighbourhood: document.getElementById('form-clinic-neighbourhood').value,
+      owner_name:           document.getElementById('owner-name').value.trim(),
+      owner_email:          document.getElementById('owner-email').value.trim(),
+      owner_role:           document.getElementById('owner-role').value.trim(),
+      is_chain:             isChain,
+      chain_clinic_ids:     isChain ? JSON.parse(chainIds || '[]') : []
+    };
+
+    fetch('/api/submit-claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showSuccessPanel();
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Submit claim →';
+        alert(data.error || 'Something went wrong. Please try again.');
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = 'Submit claim →';
+      alert('Network error. Please check your connection and try again.');
+    });
+  }
+
+  function showSuccessPanel() {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-4').classList.add('active');
+    updateStepIndicator(3);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+</script>
+</body>
+</html>
