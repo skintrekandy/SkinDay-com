@@ -1461,9 +1461,13 @@ function clWhen(v) {
   });
 }
 
-async function clLoad() {
+async function clLoad(keepMessage) {
   document.getElementById('cl-loading').style.display = '';
-  document.getElementById('cl-error').style.display = 'none';
+  if (!keepMessage) {
+    const e0 = document.getElementById('cl-error');
+    e0.style.display = 'none';
+    e0.style.color = '';
+  }
   document.getElementById('cl-cards').innerHTML = '';
 
   try {
@@ -1481,7 +1485,11 @@ async function clLoad() {
     document.getElementById('cl-loading').style.display = 'none';
     const err = document.getElementById('cl-error');
     err.style.display = '';
-    err.textContent = 'Could not load claims: ' + (e.message || e);
+    const msg = String(e.message || e);
+    err.textContent = 'Could not load claims: ' + msg;
+    if (msg.indexOf('400') !== -1) {
+      err.textContent += '  -  a 400 here almost always means this copy of admin-action.js does not have the claims actions (list / approve / reject / revoke). The skinday.ca copy does. Compare the two.';
+    }
     return;
   }
 
@@ -1573,11 +1581,30 @@ async function clAct(action, claimId) {
   const note = noteEl ? noteEl.value.trim() : '';
 
   try {
-    await adminAction({ action: action, claim_id: claimId, admin_note: note || undefined });
-    // Reload rather than moving the card locally. The approve path fires a
-    // Postgres webhook that creates the auth user and emails the owner, so
-    // the truth is server side and worth re-reading.
-    await clLoad();
+    const res = await adminAction({ action: action, claim_id: claimId, admin_note: note || undefined });
+
+    // ⚠️ THE RESPONSE MUST BE READ, NOT DISCARDED. approve returns 200 even
+    // when the auth user, the password link or the email failed, because the
+    // clinic IS approved by then and reporting a total failure would invite a
+    // pointless re-run. The `warning` field is the ONLY place that failure is
+    // reported. Swallowing it means an owner never gets their portal link and
+    // nothing on screen says so.
+    if (res && res.warning) {
+      const err = document.getElementById('cl-error');
+      err.style.display = '';
+      err.textContent = 'Clinic approved, but the owner was NOT emailed: ' + res.warning
+        + '  -  check RESEND_API_KEY on skinday.com, and that the Resend account can send from hello@skinday.ca. Approve again to retry the email once fixed.';
+    } else if (res && res.resent) {
+      const err = document.getElementById('cl-error');
+      err.style.display = '';
+      err.style.color = 'var(--gold)';
+      err.textContent = 'Already approved. The portal email was re-sent.';
+    }
+
+    // Reload rather than moving the card locally: the approve path writes the
+    // clinic row, the chain locations and the claim, so the truth is server
+    // side and worth re-reading.
+    await clLoad(true);
   } catch (e) {
     if (card) card.querySelectorAll('button').forEach(b => b.disabled = false);
     const err = document.getElementById('cl-error');
@@ -1597,7 +1624,19 @@ async function adminAction(payload){
     body: JSON.stringify(payload)
   });
   if (res.status === 401) { throw new Error('Unauthorised (admin-action not deployed, or no admin secret set on .com)'); }
-  if (!res.ok) { throw new Error('Request failed (' + res.status + ')'); }
+  if (!res.ok) {
+    // ⚠️ This used to throw 'Request failed (400)' and DISCARD the body, which
+    // hides the one thing that identifies the problem: admin-action.js returns
+    // a JSON { error } naming the unknown action or missing field. Every tab
+    // using this helper was debugging blind.
+    let detail = '';
+    try {
+      const txt = await res.text();
+      try { detail = (JSON.parse(txt) || {}).error || txt; }
+      catch (e) { detail = txt; }
+    } catch (e) { detail = ''; }
+    throw new Error('Request failed (' + res.status + ')' + (detail ? ': ' + String(detail).slice(0, 300) : ''));
+  }
   return res.json();
 }
 
