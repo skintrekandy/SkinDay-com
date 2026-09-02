@@ -610,28 +610,88 @@ exports.handler = async (event) => {
       const portalUrl = await portalUrlForClinic(claim.clinic_id);
       const namesMap = await buildClinicNamesMap(allClinicIds, claim.clinic_name, claim.clinic_id);
 
+      const clinicMeta = {
+        clinic_id:    allClinicIds[0],
+        clinic_ids:   allClinicIds,
+        clinic_name:  claim.clinic_name,
+        is_chain:     claim.is_chain || false,
+        clinic_names: namesMap
+      };
+
       const authRes = await fetch(`${SUPA_URL}/auth/v1/admin/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
         body: JSON.stringify({
           email: claim.owner_email,
           email_confirm: true,
-          user_metadata: {
-            clinic_id:    allClinicIds[0],
-            clinic_ids:   allClinicIds,
-            clinic_name:  claim.clinic_name,
-            is_chain:     claim.is_chain || false,
-            clinic_names: namesMap
-          }
+          user_metadata: clinicMeta
         })
       });
       const authData = await authRes.json();
+
       if (!authRes.ok) {
-        const msg = authData.msg || authData.message || '';
-        if (!msg.toLowerCase().includes('already') && authData.code !== 'email_exists') {
+        const msg = (authData.msg || authData.message || '').toLowerCase();
+        const alreadyExists = msg.includes('already') || authData.code === 'email_exists';
+
+        if (!alreadyExists) {
           console.error('Auth user creation failed:', JSON.stringify(authData));
-          return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Auth user creation failed: ' + msg }) };
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Auth user creation failed: ' + (authData.msg || authData.message || 'unknown') }) };
         }
+
+        // ⚠️⚠️ THE BUG THIS FIXES, found 2026-09-02 on Essential Bella.
+        // The old code logged "already exists" and CONTINUED, which sent the
+        // password email but left the clinic ids unwritten: a POST to
+        // /admin/users creates, it never updates. So any owner who already had
+        // a SkinDay login (another clinic, Visualize Pro, Market Intelligence,
+        // or a Google sign-in) was approved, emailed, and then found no clinic
+        // in their portal. It fails silently and only shows up as "I got the
+        // email but there's nothing there".
+        //
+        // MERGE, do not overwrite. That account's existing metadata carries
+        // full_name, the Google provider claims, and clinic_ids for clinics
+        // they ALREADY own. Replacing the object would strip all of it and
+        // revoke their access to those other clinics.
+        const lookupRes = await fetch(
+          `${SUPA_URL}/auth/v1/admin/users?email=${encodeURIComponent(claim.owner_email)}`,
+          { headers: { 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` } }
+        );
+        const lookupData = await lookupRes.json();
+        const existing = lookupData && lookupData.users && lookupData.users[0];
+
+        if (!existing || !existing.id) {
+          console.error('Existing auth user not found for', claim.owner_email);
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Owner already has an account but it could not be read, so their clinic access was not granted.' }) };
+        }
+
+        const prior = existing.user_metadata || {};
+        const priorIds = Array.isArray(prior.clinic_ids) ? prior.clinic_ids.map(String) : [];
+        const mergedIds = priorIds.slice();
+        allClinicIds.forEach(id => { if (!mergedIds.includes(String(id))) mergedIds.push(String(id)); });
+
+        const patchRes = await fetch(`${SUPA_URL}/auth/v1/admin/users/${existing.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+          body: JSON.stringify({
+            user_metadata: Object.assign({}, prior, {
+              clinic_ids:   mergedIds,
+              // clinic_id is the landing location. Keep whichever they already
+              // had so an existing owner does not get moved to the new clinic
+              // on their next sign-in.
+              clinic_id:    prior.clinic_id || allClinicIds[0],
+              clinic_name:  prior.clinic_name || claim.clinic_name,
+              is_chain:     mergedIds.length > 1,
+              clinic_names: Object.assign({}, prior.clinic_names || {}, namesMap)
+            })
+          })
+        });
+
+        if (!patchRes.ok) {
+          const patchErr = await patchRes.text();
+          console.error('Auth metadata merge failed:', patchErr);
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Owner already has an account and granting them this clinic failed: ' + patchErr.slice(0, 200) }) };
+        }
+
+        console.log('Existing auth user ' + claim.owner_email + ' granted clinics ' + mergedIds.join(', '));
       }
 
       // ⚠️ redirect_to must be on Supabase's Redirect URLs allowlist. An
