@@ -745,7 +745,7 @@
       &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
     </button>
     <button class="nav-tab" data-tab="claims" onclick="switchTab('claims')">
-      Directory Claims
+      &#9998; Directory Claims <span class="tab-count zero" id="claims-count">0</span>
     </button>
     <button class="nav-tab" data-tab="taiwan" onclick="switchTab('taiwan')">
       &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
@@ -1490,6 +1490,11 @@ async function clLoad() {
     const el = document.getElementById('cl-count-' + s);
     if (el) el.textContent = clClaims[s].length;
   });
+  const navCount = document.getElementById('claims-count');
+  if (navCount) {
+    navCount.textContent = clClaims.pending.length;
+    navCount.classList.toggle('zero', clClaims.pending.length === 0);
+  }
   clRender();
 }
 
