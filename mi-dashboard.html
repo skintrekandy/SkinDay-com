@@ -751,6 +751,12 @@
       <select id="selProvince"><option value="">All territories</option></select>
       <span class="sep" id="sepHood" style="display:none">&#8250;</span>
       <select id="selHood" style="display:none"><option value="">All areas</option></select>
+      <!-- ⭐⭐ THIRD LEVEL, USA ONLY. Los Angeles is 2,830 clinics in one bucket;
+           the municipalities under it (Beverly Hills, Santa Monica, Pasadena,
+           Torrance) are how a rep actually plans a week. Canada stops at two
+           levels, as it always has. -->
+      <span class="sep" id="sepCity" style="display:none">&#8250;</span>
+      <select id="selCity" style="display:none"><option value="">All cities</option></select>
       <button class="reset" id="geoReset" style="display:none">Reset</button>
       <span class="mono" id="geoLocked" style="display:none"></span>
     </div>
@@ -1659,8 +1665,9 @@
     if(cur) sel.value=cur;
   }
   el('selProvince').addEventListener('change',function(){
-    geo.province=this.value; geo.neighbourhood='';
+    geo.province=this.value; geo.neighbourhood=''; geo.city='';
     el('selHood').style.display=geo.province?'':'none'; el('sepHood').style.display=geo.province?'':'none'; el('geoReset').style.display=geo.province?'':'none';
+    el('selCity').style.display='none'; el('sepCity').style.display='none';
     // regionLabel, not the fillSelect default: US metros are SLUGS
     // (los-angeles, central-valley) and titleCase deliberately keeps hyphens so
     // real hyphenated names like Winston-Salem survive. The state select on
@@ -1669,7 +1676,25 @@
     if(geo.province) api('geo',{}).then(function(res){ fillSelect(el('selHood'),res.geo||[],'All areas',regionLabel); });
     onGeoChange();
   });
-  el('selHood').addEventListener('change',function(){ geo.neighbourhood=this.value; onGeoChange(); });
+  // ⚠️ THE SAME CONTROL FEEDS A DIFFERENT PARAMETER PER COUNTRY. In the USA it
+  // is the METRO and goes to p_city; the municipality below it goes to
+  // p_neighbourhood. In Canada it is the neighbourhood and goes to
+  // p_neighbourhood, exactly as before. mi_tier2 was changed to match on
+  // 2026-09-01 — sending the metro as p_neighbourhood now matches nothing.
+  el('selHood').addEventListener('change',function(){
+    if(CTY.key==='usa'){
+      geo.city=this.value; geo.neighbourhood='';
+      var show = !!geo.city;
+      el('selCity').style.display = show?'':'none';
+      el('sepCity').style.display = show?'':'none';
+      el('selCity').innerHTML='<option value="">All cities</option>';
+      if(show) api('geo',{}).then(function(res){ fillSelect(el('selCity'),res.geo||[],'All cities',titleCase); });
+    } else {
+      geo.neighbourhood=this.value;
+    }
+    onGeoChange();
+  });
+  el('selCity').addEventListener('change',function(){ geo.neighbourhood=this.value; onGeoChange(); });
   // ⚠️ SWITCHING COUNTRY MUST CLEAR THE TERRITORY. 'on' is meaningless in the
   // USA and 'ca' means California there and nothing in Canada, so carrying a
   // province across the switch would silently return an empty dashboard.
@@ -1678,6 +1703,8 @@
     geo={province:'',city:'',neighbourhood:''};
     el('selHood').style.display='none';
     el('sepHood').style.display='none';
+    el('selCity').style.display='none';
+    el('sepCity').style.display='none';
     el('geoReset').style.display='none';
     // ⚠️ THREE THINGS MUST FOLLOW A COUNTRY SWITCH, not one.
     //  1. setCountry() — or the page keeps saying "province" in the USA.
@@ -1698,7 +1725,7 @@
     }).catch(function(){ onGeoChange(); });
   });
 
-  el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; this.style.display='none'; onGeoChange(); });
+  el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; el('selCity').style.display='none'; el('sepCity').style.display='none'; this.style.display='none'; onGeoChange(); });
   function onGeoChange(){
     loaded.accounts=false; loaded.list=false; loaded.feed=false; loaded.landscape=false;
     refreshPortfolio(); loadFilterOptions(); loadNewCount();
@@ -1759,7 +1786,8 @@
     // they must go through regionLabel like everything else or the sentence reads
     // "clinics in san-francisco".
     var where = geo.neighbourhood ? regionLabel(geo.neighbourhood)
-              : (geo.province ? regionLabel(geo.province) : CTY.country);
+              : (geo.city ? regionLabel(geo.city)
+              : (geo.province ? regionLabel(geo.province) : CTY.country));
     var cov = COVERAGE || {};
     var pending = (cov.clinics!=null && cov.verified!=null) ? (cov.clinics-cov.verified) : null;
     // ⭐⭐⭐ THE DENOMINATOR. `without_ours` counts every clinic in the country
@@ -2591,7 +2619,8 @@
   }
   function territoryLabel(){
     return geo.neighbourhood ? regionLabel(geo.neighbourhood)
-         : (geo.province ? regionLabel(geo.province) : CTY.country);
+         : (geo.city ? regionLabel(geo.city)
+         : (geo.province ? regionLabel(geo.province) : CTY.country));
   }
   el('acctSearch').addEventListener('input',function(){
     var v=this.value;
