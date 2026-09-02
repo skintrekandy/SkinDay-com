@@ -1483,7 +1483,7 @@
 
 <!-- ─── LOGIN ─── -->
 <div id="login-screen">
-  <a href="/index.html" style="position:fixed;top:20px;left:24px;font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;z-index:10;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">← Back to directory</a>
+  <a href="/index.html" class="dir-link" data-dir="1" style="position:fixed;top:20px;left:24px;font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;z-index:10;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">← Back to directory</a>
   <div class="login-card">
     <div class="login-logo">Skin<span>Day</span></div>
     <div class="login-tagline">Clinic Owner Portal</div>
@@ -1539,7 +1539,7 @@
     </div>
     <!-- Mobile row 2: Actions -->
     <div class="header-bottom-row" style="display:none;">
-      <a href="/index.html" style="font-size:12px;font-weight:500;color:var(--bark-light);text-decoration:none;">← Directory</a>
+      <a href="/index.html" class="dir-link" data-dir="2" style="font-size:12px;font-weight:500;color:var(--bark-light);text-decoration:none;">← Directory</a>
       <div style="display:flex;gap:16px;align-items:center;">
         <a href="/contact.html" style="font-size:12px;color:var(--bark-light);text-decoration:none;">Need help?</a>
         <button onclick="doLogout()" style="font-size:12px;color:var(--bark-light);background:none;border:none;cursor:pointer;padding:0;font-family:inherit;">Sign out</button>
@@ -1549,7 +1549,7 @@
     <div class="header-logo" style="display:none;" id="header-logo-desktop">Skin<span>Day</span> <span style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--bark-light);font-weight:400;margin-left:6px;">/ Clinic Portal</span></div>
     <div class="header-right">
       <div class="header-logo">Skin<span>Day</span> <span style="font-family:'DM Sans',sans-serif;font-size:14px;color:var(--bark-light);font-weight:400;margin-left:6px;">/ Clinic Portal</span></div>
-      <a href="/index.html" style="font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">← Back to directory</a>
+      <a href="/index.html" class="dir-link" data-dir="3" style="font-size:13px;font-weight:500;color:var(--bark-light);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--rose)'" onmouseout="this.style.color='var(--bark-light)'">← Back to directory</a>
       <!-- Single-location badge (default) -->
       <div class="clinic-badge" id="header-clinic-badge">
         <div class="clinic-avatar" id="clinic-avatar">ST</div>
@@ -2447,12 +2447,37 @@
 
   let CRED_VISIBLE = CRED_SETS.canada.show;
 
+  // ─── "BACK TO DIRECTORY" BY COUNTRY (M23) ────────────────────
+  // ⚠️ All three of these links were hardcoded to /index.html, which IS the
+  // directory on skinday.ca and the MARKETING HOMEPAGE on skinday.com. A US
+  // clinic clicking "Back to directory" from their own portal landed on a
+  // sales page. Same trap as the NT$ prices, the canonical and the report
+  // endpoints: a bare path that means a different thing per site.
+  const DIRECTORY_URLS = {
+    canada:   '/index.html',
+    usa:      '/us',
+    taiwan:   '/taiwan',
+    hongkong: '/hongkong'
+  };
+
+  function applyDirectoryLinks(country) {
+    let href = DIRECTORY_URLS[country] || '/';
+    // Send a US clinic back to ITS state directory, not the state picker. We
+    // know the state here because the clinic row is already loaded.
+    if (country === 'usa' && currentClinic && currentClinic.state) {
+      href = '/us/' + String(currentClinic.state).trim().toLowerCase();
+    }
+    document.querySelectorAll('a.dir-link').forEach(a => a.setAttribute('href', href));
+  }
+
   function applyCountryFeatures() {
     const country = String((currentClinic && currentClinic.country) || '').trim().toLowerCase();
     IDENTITY_ENABLED = (country === 'canada');
 
     // Canada gets its own set; everything else gets the US set for now. When
     // Taiwan or Hong Kong claim clinics, add a set rather than a branch.
+    applyDirectoryLinks(country);
+
     const set = CRED_SETS[country] || CRED_SETS.usa;
     CRED_VISIBLE = set.show;
 
@@ -4286,7 +4311,9 @@
     // Update last updated label
     if (clinic.price_date) {
       const d = new Date(clinic.price_date);
-      const label = d.toLocaleDateString('en-CA', { month: 'long', year: 'numeric' });
+      // Was 'en-CA' in a file that now serves both sites. undefined lets the
+      // reader's own browser locale decide, which is correct in either country.
+      const label = d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
       const el = document.getElementById('price-last-updated');
       if (el) { el.textContent = `Price last updated: ${label}`; el.style.display = 'block'; }
     }
