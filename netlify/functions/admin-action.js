@@ -1,17 +1,32 @@
 // netlify/functions/admin-action.js  (skinday.com global admin)
 //
-// TRIMMED build for the .com global admin: vote moderation ONLY.
-// The full .ca admin-action.js also handles directory operations (claims,
-// prices, add-clinic). The .com global admin is deliberately scoped to
-// Visualize cost/generation data plus vote moderation, and must NOT be able to
-// perform directory operations, so those actions are intentionally absent here.
-// (skinday.com and skinday.ca share one Supabase database, so these three
-// actions operate on the same clinic_visits rows either admin would see.)
+// Vote moderation, Visualize Pro sign-ups, and DIRECTORY CLAIMS.
+//
+// ⚠️ M23 REVERSAL, stated plainly because the old comment said the opposite.
+// This build used to exclude directory operations on purpose: .com was
+// Visualize, Taiwan and Hong Kong, and every directory claim was Canadian, so
+// the .ca admin was the only place claims needed to be worked.
+//
+// .com now hosts the US directory. US claims land in the SAME `claims` table,
+// so excluding claim actions here meant the only way to approve a US claim was
+// through the Canadian admin. The four claim actions below are therefore added
+// deliberately, not by oversight.
+//
+// PRICES and ADD-CLINIC remain absent. Those are Canadian directory editing
+// operations with no US equivalent yet, and the original scoping still holds
+// for them.
+//
+// (skinday.com and skinday.ca share one Supabase database, so every action
+// here operates on the same rows either admin would see.)
 //
 // Actions:
 //   list-flagged-votes   -> { votes: [ ...enriched ] }
 //   review-vote          { visit_id, decision:'approve'|'remove' } -> { success }
 //   review-votes-bulk    { visit_ids:[...], decision } -> { success, count }
+//   list                 { status } -> { claims: [...] }
+//   approve              { claim_id, admin_note } -> { success }
+//   reject               { claim_id, admin_note } -> { success }
+//   revoke               { claim_id, admin_note } -> { success }
 //
 // M36 moderation model:
 //   A vote counts publicly unless it is HIDDEN. `flagged` means "needs review"
@@ -31,6 +46,92 @@ const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ─────────────────────────────────────────────────────────────
+// CLAIM SUPPORT (M23), ported from the skinday.ca build.
+//
+// ⚠️ THE APPROVAL EMAIL IS SENT INLINE HERE, not by the approve-claim.js
+// webhook. The .ca build did it this way because self-HTTP calls between
+// Netlify functions proved unreliable, and that is the path that actually
+// works today. Keep them consistent: a change to the email or the portal link
+// has to be made in both, or one country silently keeps the old behaviour.
+// ─────────────────────────────────────────────────────────────
+
+// A US clinic must not be sent to the Canadian portal. Resolved from the
+// clinic's own country. Same table as the .ca build; the difference is that
+// .com actually has non-Canadian claims to serve.
+const SITE_BY_COUNTRY = {
+  canada:   'https://skinday.ca',
+  usa:      'https://skinday.com',
+  taiwan:   'https://skinday.com',
+  hongkong: 'https://skinday.com'
+};
+
+async function portalUrlForClinic(clinicId) {
+  try {
+    const { data } = await supabase
+      .from('clinics')
+      .select('country')
+      .eq('id', String(clinicId))
+      .maybeSingle();
+    const key = String((data && data.country) || '').trim().toLowerCase();
+    const site = SITE_BY_COUNTRY[key];
+    if (site) return site + '/editor.html';
+    console.error('No site mapped for country "' + key + '" on clinic ' + clinicId);
+  } catch (e) {
+    console.error('portalUrlForClinic lookup failed:', e.message);
+  }
+  return process.env.PORTAL_URL || 'https://skinday.ca/editor.html';
+}
+
+// Labels every location a chain owner can switch between in the portal.
+async function buildClinicNamesMap(clinicIds, primaryName, primaryId) {
+  const namesMap = {};
+  namesMap[String(primaryId)] = primaryName;
+  const others = clinicIds.filter(id => String(id) !== String(primaryId));
+  if (others.length > 0) {
+    const { data: otherClaims } = await supabase
+      .from('claims')
+      .select('clinic_id, clinic_name, clinic_neighbourhood')
+      .in('clinic_id', others);
+    (otherClaims || []).forEach(cl => {
+      namesMap[String(cl.clinic_id)] = cl.clinic_neighbourhood
+        ? (cl.clinic_name + ' - ' + cl.clinic_neighbourhood)
+        : cl.clinic_name;
+    });
+    others.forEach(id => {
+      if (!namesMap[String(id)]) namesMap[String(id)] = 'Location ' + id;
+    });
+  }
+  return namesMap;
+}
+
+function approvalEmailHtml(clinicName, setupLink, locationCount, portalUrl) {
+  const isChain = locationCount > 1;
+  const headline = isChain ? 'Your listings are live' : 'Your listing is live';
+  const bodyLine = isChain
+    ? 'Great news, <strong>' + clinicName + '</strong> and your other ' + (locationCount - 1) + ' location(s) have been approved on SkinDay.'
+    : 'Great news, <strong>' + clinicName + '</strong> has been approved on SkinDay.';
+  const portalLabel = String(portalUrl).replace(/^https?:\/\//, '');
+  return '<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>'
+    + 'body{margin:0;padding:0;background:#faf8f5;font-family:Georgia,sans-serif;}'
+    + '.wrap{max-width:520px;margin:40px auto;background:#fffef9;border:1px solid #e8ddd8;border-radius:16px;overflow:hidden;}'
+    + '.header{background:#3d2c28;padding:28px 36px;}.logo{font-size:24px;color:white;}.logo span{color:#e8a89f;}'
+    + '.body{padding:36px;}h1{font-size:22px;color:#3d2c28;margin:0 0 12px;font-weight:600;}'
+    + 'p{font-size:15px;color:#6b4c44;line-height:1.6;margin:0 0 16px;}'
+    + '.btn{display:inline-block;background:#c9736a;color:white;text-decoration:none;padding:14px 28px;border-radius:10px;font-size:15px;font-weight:600;margin:8px 0 24px;}'
+    + '.note{font-size:13px;color:#9e7a72;}'
+    + '.footer{background:#faf8f5;border-top:1px solid #e8ddd8;padding:20px 36px;font-size:12px;color:#9e7a72;}'
+    + '</style></head><body><div class="wrap">'
+    + '<div class="header"><div class="logo">Skin<span>Day</span></div></div>'
+    + '<div class="body"><h1>' + headline + '</h1><p>' + bodyLine + '</p>'
+    + '<p>Set up your password to access the Clinic Portal, where you can update your pricing, add promos, upload photos, list your equipment and manage your hours.</p>'
+    + '<a href="' + setupLink + '" class="btn">Set up your password</a>'
+    + '<p class="note">This link expires in 24 hours. If it expires, visit <a href="' + portalUrl + '" style="color:#c9736a;">' + portalLabel + '</a> and use "Forgot password."</p>'
+    + '</div>'
+    + '<div class="footer">Questions? Reply to this email or contact <a href="mailto:hello@skinday.ca" style="color:#c9736a;">hello@skinday.ca</a><br/>SkinDay</div>'
+    + '</div></body></html>';
+}
 
 exports.handler = async (event) => {
   const headers = {
@@ -318,12 +419,274 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: JSON.stringify({ ok: true, clinic_id: String(clinic_id) }) };
   }
 
-  // == UNKNOWN ACTION ───────────────────────────────────────────────────────────
-  // Directory actions (approve/reject claims, prices, add-clinic) are
-  // intentionally not available on the .com global admin.
+  // == LIST CLAIMS ============================================================
+  // Every country. `claims` has no country column, so this is the same queue
+  // the .ca admin shows, by design rather than by accident.
+  if (action === 'list') {
+    const status = body.status || 'pending';
+    const { data, error } = await supabase
+      .from('claims')
+      .select('*')
+      .eq('status', status)
+      .order('submitted_at', { ascending: false })
+      .limit(100);
+    if (error) {
+      console.error('list claims error:', error);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to list claims' }) };
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({ claims: data || [] }) };
+  }
+
+  // == REVOKE A CLAIM =========================================================
+  // Resets the clinic (all locations for a chain) to unclaimed and bans the
+  // auth user so they lose portal access.
+  if (action === 'revoke') {
+    const { claim_id, admin_note } = body;
+    if (!claim_id) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'claim_id required' }) };
+    }
+
+    const { data: revokeClaim, error: rClaimErr } = await supabase
+      .from('claims')
+      .select('clinic_id, owner_email, chain_clinic_ids, status')
+      .eq('id', claim_id)
+      .maybeSingle();
+
+    if (rClaimErr || !revokeClaim) {
+      return { statusCode: 404, headers, body: JSON.stringify({ error: 'Claim not found' }) };
+    }
+    if (revokeClaim.status === 'revoked') {
+      return { statusCode: 409, headers, body: JSON.stringify({ error: 'Claim is already revoked' }) };
+    }
+
+    let clinicIds = [String(revokeClaim.clinic_id)];
+    if (revokeClaim.chain_clinic_ids) {
+      try {
+        const chainIds = JSON.parse(revokeClaim.chain_clinic_ids).map(String);
+        if (chainIds.length > 0) clinicIds = chainIds;
+      } catch (e) { /* primary only */ }
+    }
+
+    const { error: resetErr } = await supabase
+      .from('clinics')
+      .update({ claimed: false, approved: false, claimed_email: null })
+      .in('id', clinicIds);
+
+    if (resetErr) {
+      console.error('revoke reset error:', resetErr);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to reset clinic(s)' }) };
+    }
+
+    const { error: rUpdateErr } = await supabase
+      .from('claims')
+      .update({ status: 'revoked', admin_note: admin_note || null, reviewed_at: new Date().toISOString() })
+      .eq('id', claim_id);
+    if (rUpdateErr) console.error('revoke claim update error:', rUpdateErr);
+
+    if (revokeClaim.owner_email) {
+      try {
+        const userRes = await fetch(
+          `${process.env.SUPABASE_URL}/auth/v1/admin/users?email=${encodeURIComponent(revokeClaim.owner_email)}`,
+          { headers: { 'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY, 'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}` } }
+        );
+        const userData = await userRes.json();
+        const authUser = userData && userData.users && userData.users[0];
+        if (authUser && authUser.id) {
+          await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users/${authUser.id}`, {
+            method: 'PUT',
+            headers: {
+              'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+              'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ban_duration: '87600h' })
+          });
+        }
+      } catch (e) {
+        // Non-fatal, the clinic is already reset.
+        console.error('Auth ban failed (non-fatal):', e.message);
+      }
+    }
+
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'revoked', claim_id, clinic_ids_reset: clinicIds }) };
+  }
+
+  // == APPROVE / REJECT A CLAIM ===============================================
+  if (action === 'approve' || action === 'reject') {
+    const { claim_id, admin_note } = body;
+    if (!claim_id) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'claim_id required' }) };
+    }
+
+    const { data: claim, error: claimErr } = await supabase
+      .from('claims')
+      .select('*')
+      .eq('id', claim_id)
+      .maybeSingle();
+
+    if (claimErr || !claim) {
+      return { statusCode: 404, headers, body: JSON.stringify({ error: 'Claim not found' }) };
+    }
+
+    // An already-approved claim can be approved again to RE-SEND the email,
+    // which is how a failed first send is recovered. Anything else is blocked.
+    let alreadyApproved = false;
+    if (claim.status === 'approved' && action === 'approve') {
+      alreadyApproved = true;
+    } else if (claim.status !== 'pending') {
+      return { statusCode: 409, headers, body: JSON.stringify({ error: 'Claim is already ' + claim.status }) };
+    }
+
+    const now = new Date().toISOString();
+
+    if (action === 'reject') {
+      const { error } = await supabase
+        .from('claims')
+        .update({ status: 'rejected', reviewed_at: now, admin_note: admin_note || null })
+        .eq('id', claim_id);
+      if (error) {
+        console.error('reject error:', error);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to reject claim' }) };
+      }
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'rejected', claim_id }) };
+    }
+
+    if (!alreadyApproved) {
+      const { error: upsertErr } = await supabase
+        .from('clinics')
+        .upsert({
+          id:            claim.clinic_id,
+          claimed:       true,
+          approved:      true,
+          claimed_email: claim.owner_email,
+          claimed_at:    claim.submitted_at,
+          approved_at:   now
+        }, { onConflict: 'id' });
+
+      if (upsertErr) {
+        console.error('approve upsert error:', upsertErr);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to approve claim' }) };
+      }
+
+      if (claim.is_chain && claim.chain_clinic_ids) {
+        try {
+          const allIds = JSON.parse(claim.chain_clinic_ids).map(String);
+          const otherIds = allIds.filter(id => id !== String(claim.clinic_id));
+          if (otherIds.length > 0) {
+            const { error: chainErr } = await supabase
+              .from('clinics')
+              .update({ claimed: true, approved: true, claimed_email: claim.owner_email })
+              .in('id', otherIds);
+            if (chainErr) console.error('Chain locations update error:', chainErr);
+          }
+        } catch (e) {
+          console.error('Chain clinic_ids parse error:', e.message);
+        }
+      }
+
+      const { error: claimUpdateErr } = await supabase
+        .from('claims')
+        .update({ status: 'approved', reviewed_at: now, admin_note: admin_note || null })
+        .eq('id', claim_id);
+      if (claimUpdateErr) console.error('claim update error:', claimUpdateErr);
+    }
+
+    // Auth user + email, inline. Every failure below returns 200 with a
+    // warning rather than a 500: the clinic IS approved at this point, and
+    // reporting the whole action as failed would invite a re-run that changes
+    // nothing. The warning surfaces in the admin so the send can be retried.
+    try {
+      const SUPA_URL = process.env.SUPABASE_URL;
+      const SUPA_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+      let allClinicIds = [String(claim.clinic_id)];
+      if (claim.is_chain && claim.chain_clinic_ids) {
+        try {
+          const parsed = JSON.parse(claim.chain_clinic_ids).map(String);
+          if (parsed.length > 0) allClinicIds = parsed;
+        } catch (e) { /* primary only */ }
+      }
+
+      const portalUrl = await portalUrlForClinic(claim.clinic_id);
+      const namesMap = await buildClinicNamesMap(allClinicIds, claim.clinic_name, claim.clinic_id);
+
+      const authRes = await fetch(`${SUPA_URL}/auth/v1/admin/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+        body: JSON.stringify({
+          email: claim.owner_email,
+          email_confirm: true,
+          user_metadata: {
+            clinic_id:    allClinicIds[0],
+            clinic_ids:   allClinicIds,
+            clinic_name:  claim.clinic_name,
+            is_chain:     claim.is_chain || false,
+            clinic_names: namesMap
+          }
+        })
+      });
+      const authData = await authRes.json();
+      if (!authRes.ok) {
+        const msg = authData.msg || authData.message || '';
+        if (!msg.toLowerCase().includes('already') && authData.code !== 'email_exists') {
+          console.error('Auth user creation failed:', JSON.stringify(authData));
+          return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Auth user creation failed: ' + msg }) };
+        }
+      }
+
+      // ⚠️ redirect_to must be on Supabase's Redirect URLs allowlist. An
+      // unlisted url does NOT error; Supabase quietly substitutes the project
+      // Site URL and the clinic lands on the wrong site with nothing logged.
+      const linkRes = await fetch(`${SUPA_URL}/auth/v1/admin/generate_link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPA_KEY, 'Authorization': `Bearer ${SUPA_KEY}` },
+        body: JSON.stringify({ type: 'recovery', email: claim.owner_email, redirect_to: portalUrl })
+      });
+      const linkData = await linkRes.json();
+      if (!linkRes.ok || !linkData.action_link) {
+        console.error('Link generation failed:', JSON.stringify(linkData));
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Link generation failed' }) };
+      }
+
+      const isChain = allClinicIds.length > 1;
+      const emailRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${process.env.RESEND_API_KEY}` },
+        body: JSON.stringify({
+          from: 'SkinDay <hello@skinday.ca>',
+          to: claim.owner_email,
+          subject: isChain
+            ? 'Your SkinDay listings are approved: ' + claim.clinic_name
+            : 'Your SkinDay listing is approved: ' + claim.clinic_name,
+          html: approvalEmailHtml(claim.clinic_name, linkData.action_link, allClinicIds.length, portalUrl)
+        })
+      });
+
+      if (!emailRes.ok) {
+        const emailErr = await emailRes.text();
+        console.error('Resend error:', emailErr);
+        return { statusCode: 200, headers, body: JSON.stringify({ success: true, action: 'approved', claim_id, warning: 'Email failed: ' + emailErr.slice(0, 200) }) };
+      }
+
+      console.log('Approved and emailed: ' + claim.clinic_name + ' -> ' + claim.owner_email + ' (portal ' + portalUrl + ')');
+
+    } catch (e) {
+      console.error('Approval email error (non-fatal):', e.message);
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ success: true, action: 'approved', claim_id, clinic_id: claim.clinic_id, resent: alreadyApproved })
+    };
+  }
+
+  // == UNKNOWN ACTION =========================================================
+  // Prices and add-clinic remain .ca only: they are Canadian directory editing
+  // operations with no US equivalent yet.
   return {
     statusCode: 400,
     headers,
-    body: JSON.stringify({ error: "Invalid action. Supported: list-flagged-votes, review-vote, review-votes-bulk, list-pending-clinics, approve-clinic, reject-clinic." })
+    body: JSON.stringify({ error: "Invalid action. Supported: list, approve, reject, revoke, list-flagged-votes, review-vote, review-votes-bulk, list-pending-clinics, approve-clinic, reject-clinic." })
   };
 };
