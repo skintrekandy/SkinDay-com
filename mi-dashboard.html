@@ -1692,8 +1692,6 @@
     // mi_category_share — purely to populate the state dropdown, so a rep
     // picking "United States" waited on the entire Overview before they could
     // choose a state. 'geo' returns just the region list.
-    // ⓘ COVERAGE is no longer set here; refreshPortfolio fetches it when the
-    // Overview is actually shown, which is the only place it is read.
     api('geo',{}).then(function(res){
       fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
       onGeoChange();
@@ -1713,9 +1711,7 @@
 
   // ⭐⭐ THE OVERVIEW IS NOT ALWAYS ON SCREEN. Clinics is the landing tab, so
   // every territory change was running the six-RPC Overview batch for a panel
-  // nobody was looking at — and blocking the dropdowns while it did. Now a
-  // change while the panel is hidden just marks it stale; the work happens when
-  // the rep opens the tab.
+  // nobody was looking at — and blocking the dropdowns while it did.
   var PORTFOLIO_STALE=false;
   function refreshPortfolio(){
     if(!el('panel-portfolio').classList.contains('on')){ PORTFOLIO_STALE=true; return; }
@@ -2548,27 +2544,19 @@
   }
   // Counts without loading: the same query with limit 1, read off total_matches.
   // One row over the wire instead of the territory.
+  // ⛔⛔ NO PRE-COUNT. This used to call mi_accounts with limit 1 to put a number
+  // on the button — but total_matches is a window count over the WHOLE result
+  // set, so limit 1 saved nothing: the count cost exactly as much as loading it.
+  // On Los Angeles (2,830 clinics) it hit the statement timeout on every filter
+  // change and left the button stuck on "Counting...".
+  // The real count still appears the moment the list lands. It is not worth a
+  // second full-cost query to show it a few seconds earlier.
   function refreshShowBar(){
     var bar=el('acctShow'); if(!bar) return;
     bar.style.display='';
-    var seq=++SHOW_SEQ;
     bar.innerHTML='<button class="btn go" id="acctShowBtn" type="button">Show clinics</button>'+
-                  '<span class="sb-note">Counting\u2026</span>';
+                  '<span class="sb-note">in '+esc(territoryLabel())+'</span>';
     el('acctShowBtn').addEventListener('click',function(){ el('acctShow').style.display='none'; loadAccounts(); });
-    api('accounts', Object.assign(accountsQuery(), {limit:1, offset:0})).then(function(res){
-      if(seq!==SHOW_SEQ) return;
-      var rows=res.accounts||[];
-      var n = rows.length && rows[0].total_matches!=null ? Number(rows[0].total_matches) : rows.length;
-      var b=el('acctShowBtn'); if(!b) return;
-      b.textContent = n ? 'Show '+n.toLocaleString()+(n===1?' clinic':' clinics') : 'No clinics match';
-      b.disabled = !n;
-      var note=el('acctShow').querySelector('.sb-note');
-      if(note) note.textContent = n ? 'in '+territoryLabel() : 'Try a wider filter, or another territory.';
-    }).catch(function(){
-      if(seq!==SHOW_SEQ) return;
-      var note=el('acctShow').querySelector('.sb-note');
-      if(note) note.textContent='';
-    });
   }
 
   // ⭐⭐ SEARCH IS CLIENT-SIDE ON PURPOSE. fetchAllAccounts already pulls the
