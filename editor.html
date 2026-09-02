@@ -1786,25 +1786,33 @@
         <div class="card-title">Injector Credentials</div>
         <div class="card-desc">What credentials does your injector hold? Select all that apply.</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+          <label id="cred-row-physician" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
             <input type="checkbox" id="cred-physician" value="physician" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
-            <span><strong>Physician (MD)</strong> — Canadian licensed</span>
+            <span id="cred-label-physician"><strong>Physician (MD)</strong></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+          <label id="cred-row-np" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
             <input type="checkbox" id="cred-np" value="np" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
-            <span><strong>Nurse Practitioner (NP)</strong></span>
+            <span id="cred-label-np"><strong>Nurse Practitioner (NP)</strong></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+          <label id="cred-row-pa" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-pa" value="pa" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span id="cred-label-pa"><strong>Physician Assistant (PA)</strong></span>
+          </label>
+          <label id="cred-row-rn" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
             <input type="checkbox" id="cred-rn" value="rn" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
-            <span><strong>Cosmetic Nurse (RN / RPN / LPN)</strong></span>
+            <span id="cred-label-rn"><strong>Registered Nurse (RN)</strong></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+          <label id="cred-row-dentist" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+            <input type="checkbox" id="cred-dentist" value="dentist" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
+            <span id="cred-label-dentist"><strong>Dentist (DDS or DMD)</strong></span>
+          </label>
+          <label id="cred-row-img" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
             <input type="checkbox" id="cred-img" value="img" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
-            <span><strong>International Medical Graduate (IMG)</strong> — foreign-trained physician</span>
+            <span id="cred-label-img"><strong>International Medical Graduate (IMG)</strong></span>
           </label>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
+          <label id="cred-row-nd" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.9rem;color:var(--bark);">
             <input type="checkbox" id="cred-nd" value="nd" onchange="markDirty()" style="width:16px;height:16px;accent-color:var(--rose);cursor:pointer;" />
-            <span><strong>Naturopathic Doctor (ND)</strong></span>
+            <span id="cred-label-nd"><strong>Naturopathic Doctor (ND)</strong></span>
           </label>
         </div>
       </div>
@@ -2390,10 +2398,85 @@
   // empty arrays and could clear data entered elsewhere.
   let IDENTITY_ENABLED = true;
 
+  // ─── INJECTOR CREDENTIALS BY COUNTRY (M23) ───────────────────
+  // Every slug that exists in any country. ONE list, used by save, populate
+  // and discard.
+  // ⚠️ Those three had drifted: the save wrote 'nd' but populate and discard
+  // both used ['physician','np','rn','img'], so a Canadian clinic that ticked
+  // Naturopathic Doctor saw it unchecked on reload and the next save silently
+  // dropped it. Keep them reading from here.
+  const CRED_SLUGS = ['physician', 'np', 'pa', 'rn', 'dentist', 'img', 'nd'];
+
+  // ⚠️ WHY THE LISTS DIFFER, so nobody "tidies" them back together.
+  //
+  // CANADA keeps IMG: an internationally trained physician working under
+  // medical delegation is a real category here. It is meaningless in the US,
+  // where the licence is what counts, not where the training happened.
+  //
+  // The US adds PA and DENTIST, both of which genuinely inject there, and
+  // splits the physician label to MD or DO because Doctor of Osteopathic
+  // Medicine is a full US physician licence with no Canadian equivalent.
+  //
+  // ⚠️⚠️ THE US RN OPTION IS RN ONLY. Canada's reads "RN / RPN / LPN". LVNs
+  // are explicitly barred from injectables in California even with a physician
+  // present, and letting an LVN or medical assistant inject is the most common
+  // scope violation the Medical Board cites. Bundling LPN into the US option
+  // would invite a clinic to declare a credential that cannot legally inject.
+  //
+  // ⓘ This is SELF-DECLARED, not verified, and the rules are state law. The
+  // list says what a clinic claims to hold, never that they may legally inject
+  // where they are. Keep the helper text neutral.
+  const CRED_SETS = {
+    canada: {
+      show: ['physician', 'np', 'rn', 'img', 'nd'],
+      labels: {
+        physician: '<strong>Physician (MD)</strong> - Canadian licensed',
+        rn:        '<strong>Cosmetic Nurse (RN / RPN / LPN)</strong>',
+        img:       '<strong>International Medical Graduate (IMG)</strong> - foreign-trained physician'
+      }
+    },
+    usa: {
+      show: ['physician', 'np', 'pa', 'rn', 'dentist', 'nd'],
+      labels: {
+        physician: '<strong>Physician (MD or DO)</strong>',
+        rn:        '<strong>Registered Nurse (RN)</strong>',
+        dentist:   '<strong>Dentist (DDS or DMD)</strong> - facial region in most states'
+      }
+    }
+  };
+
+  let CRED_VISIBLE = CRED_SETS.canada.show;
+
   function applyCountryFeatures() {
     const country = String((currentClinic && currentClinic.country) || '').trim().toLowerCase();
     IDENTITY_ENABLED = (country === 'canada');
 
+    // Canada gets its own set; everything else gets the US set for now. When
+    // Taiwan or Hong Kong claim clinics, add a set rather than a branch.
+    const set = CRED_SETS[country] || CRED_SETS.usa;
+    CRED_VISIBLE = set.show;
+
+    CRED_SLUGS.forEach(slug => {
+      const rowEl = document.getElementById('cred-row-' + slug);
+      const visible = set.show.includes(slug);
+      if (rowEl) rowEl.style.display = visible ? 'flex' : 'none';
+
+      // A hidden credential must also be UNTICKED, or a clinic that switches
+      // a chain location across countries would keep submitting a credential
+      // the new country's list does not offer.
+      if (!visible) {
+        const box = document.getElementById('cred-' + slug);
+        if (box) box.checked = false;
+      }
+
+      const labelEl = document.getElementById('cred-label-' + slug);
+      if (labelEl && set.labels && set.labels[slug]) labelEl.innerHTML = set.labels[slug];
+    });
+
+    applyIdentityGate();
+  }
+
+  function applyIdentityGate() {
     const btn  = document.getElementById('tab-btn-identity');
     const pane = document.getElementById('tab-identity');
     if (btn)  btn.style.display  = IDENTITY_ENABLED ? '' : 'none';
@@ -2499,7 +2582,7 @@
     })();
 
     // Injector credentials checkboxes
-    const allCreds = ['physician','np','rn','img'];
+    const allCreds = CRED_SLUGS;
     const savedCreds = Array.isArray(c.injector_credentials) ? c.injector_credentials : [];
     allCreds.forEach(v => {
       const el = document.getElementById('cred-' + v);
@@ -2834,7 +2917,7 @@
     buildHoursTable();
 
     // Restore credentials
-    ['physician','np','rn','img'].forEach(v => {
+    CRED_SLUGS.forEach(v => {
       const el = document.getElementById('cred-' + v);
       if (el) el.checked = (c.injector_credentials || []).includes(v);
     });
@@ -3357,7 +3440,7 @@
         hours: collectHours(),
         photos: allPhotoUrls,
         logo_url: logoUrl,
-        injector_credentials: ['physician','np','rn','img','nd'].filter(v => document.getElementById('cred-' + v)?.checked),
+        injector_credentials: CRED_SLUGS.filter(v => document.getElementById('cred-' + v)?.checked && CRED_VISIBLE.includes(v)),
         languages: ['english','mandarin','cantonese','farsi','french','korean','hindi','arabic','punjabi','portuguese'].filter(v => document.getElementById('lang-' + v)?.checked),
         categories: ['injectables','lasers_ipl','rf_hifu','facials','body','plastic_surgery','iv_drips'].filter(v => document.getElementById('cat-' + v)?.checked),
         // M25: include identity arrays for the current clinic
