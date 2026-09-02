@@ -1582,7 +1582,7 @@
     <!-- Tabs -->
     <nav class="tab-nav">
       <button class="tab-btn active" onclick="switchTab('pricing', this)">Pricing & Promos</button>
-      <button class="tab-btn" onclick="switchTab('identity', this)">Clinic Identity</button>
+      <button class="tab-btn" id="tab-btn-identity" onclick="switchTab('identity', this)">Clinic Identity</button>
       <button class="tab-btn" onclick="switchTab('contact', this)">Contact & Links</button>
       <button class="tab-btn" onclick="switchTab('details', this)">Clinic Details</button>
       <button class="tab-btn" onclick="switchTab('hours', this)">Hours</button>
@@ -2373,6 +2373,38 @@
     buildPhotoGrid();
     practitionerLoad(currentClinic.id);
     deviceLoadForClinic(currentClinic.id);
+    applyCountryFeatures();
+  }
+
+  // ─── COUNTRY FEATURE GATE (M23) ───────────────────────────────
+  // editor.html is ONE file serving skinday.ca and skinday.com, so a feature
+  // that should exist in one country and not the other is a BRANCH, never a
+  // fork. Forking is what left the two get-clinics.js copies unmaintainable.
+  //
+  // Clinic Identity (expertise + concerns, the M25/M28 taxonomy) is CANADA
+  // ONLY for now. Andy wants to try a different approach for the US, so US
+  // clinics should not be asked to fill in a taxonomy that may not survive.
+  //
+  // Hiding the tab also stops the save from writing the two fields: see
+  // IDENTITY_ENABLED in saveChanges. Without that, every US save would send
+  // empty arrays and could clear data entered elsewhere.
+  let IDENTITY_ENABLED = true;
+
+  function applyCountryFeatures() {
+    const country = String((currentClinic && currentClinic.country) || '').trim().toLowerCase();
+    IDENTITY_ENABLED = (country === 'canada');
+
+    const btn  = document.getElementById('tab-btn-identity');
+    const pane = document.getElementById('tab-identity');
+    if (btn)  btn.style.display  = IDENTITY_ENABLED ? '' : 'none';
+    if (pane && !IDENTITY_ENABLED) pane.style.display = 'none';
+
+    // If the hidden tab was the one showing (a chain owner switching from a
+    // Canadian location to a US one), fall back to the first visible tab.
+    if (!IDENTITY_ENABLED && pane && pane.classList.contains('active')) {
+      const firstBtn = document.querySelector('.tab-btn:not([style*="none"])');
+      if (firstBtn) firstBtn.click();
+    }
   }
 
   function populateFields() {
@@ -3329,7 +3361,7 @@
         languages: ['english','mandarin','cantonese','farsi','french','korean','hindi','arabic','punjabi','portuguese'].filter(v => document.getElementById('lang-' + v)?.checked),
         categories: ['injectables','lasers_ipl','rf_hifu','facials','body','plastic_surgery','iv_drips'].filter(v => document.getElementById('cat-' + v)?.checked),
         // M25: include identity arrays for the current clinic
-        ...identityGetPayload()
+        ...(IDENTITY_ENABLED ? identityGetPayload() : {})
       };
 
       // Determine which clinic IDs to save to
