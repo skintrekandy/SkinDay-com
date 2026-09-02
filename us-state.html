@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
@@ -7,14 +7,20 @@
   <title id="pageTitle">Cosmetic Clinics | SkinDay</title>
   <meta name="description" content="Explore and compare cosmetic clinics. Featuring  2,000+  clinics, with ratings, photos, details and treatments to help you choose with confidence." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://skinday.com/taiwan" />
+  <!-- ⚠️ og:url and canonical were BOTH "https://skinday.com/taiwan", copied from
+       taiwan.html. Every US state page was telling Google it was a duplicate of
+       the Taiwan directory. Set to /us statically and rewritten to the exact
+       state URL by cmSetCanonical() on load.
+       ⓘ A JS-set canonical is weaker than a served one. The real fix is SSR or
+       one static file per state, since /us/* is a plain 200 rewrite today. -->
+  <meta property="og:url" content="https://skinday.com/us" />
   <meta property="og:title" content="Browse cosmetic clinics by metro area on SkinDay." />
   <meta property="og:description" content="Compare cosmetic clinics by rating, photos and treatments." />
   <meta property="og:site_name" content="SkinDay" />
-  <link rel="canonical" href="https://skinday.com/taiwan" />
+  <link rel="canonical" href="https://skinday.com/us" id="canonicalLink" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -37,7 +43,7 @@
 
     html { scroll-behavior: smooth; overflow-x: hidden; }
     body {
-      font-family: 'DM Sans', 'Noto Serif TC', sans-serif;
+      font-family: 'DM Sans', sans-serif;
       background: var(--cream);
       color: var(--deep);
       -webkit-font-smoothing: antialiased;
@@ -140,7 +146,7 @@
       max-width: 560px; margin-bottom: 2.4rem; font-weight: 300;
     }
     .hero-sub-zh {
-      font-family: 'Noto Serif TC', serif;
+      font-family: 'Cormorant Garamond', serif;
       font-size: 0.9rem; color: var(--muted); line-height: 1.8;
       max-width: 480px; margin-top: -1.6rem; margin-bottom: 2rem;
     }
@@ -477,7 +483,7 @@
     }
     .card-header.has-logo { padding-top: 1.2rem; }
     .clinic-name {
-      font-family: 'Noto Serif TC', serif;
+      font-family: 'Cormorant Garamond', serif;
       font-size: 1rem; font-weight: 500; color: var(--deep);
       line-height: 1.3; margin-bottom: 0.3rem;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
@@ -499,6 +505,28 @@
     .trust-badge { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.03em; display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 3px; margin-top: 4px; }
     .trust-badge-clinic { background: rgba(61,122,85,0.1); color: var(--green); border: 1px solid rgba(61,122,85,0.2); }
     .trust-badge-inquiry { background: rgba(201,169,110,0.1); color: #8A6830; border: 1px solid rgba(201,169,110,0.25); }
+
+    /* ─── MODAL SECTIONS PORTED FROM skinday.ca (M23) ─── */
+    .cm-sec { margin-bottom: 1.35rem; }
+    .cm-sec-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.55rem; }
+    .cm-pill-row { display: flex; flex-wrap: wrap; gap: 5px; }
+    .cm-cat-chip { font-size: 0.7rem; padding: 3px 9px; border-radius: 20px; background: var(--warm); border: 1px solid var(--border); color: var(--deep); }
+    .cm-exp-pill { font-size: 0.74rem; padding: 4px 10px; border-radius: 20px; background: var(--rose); color: #fff; }
+    .cm-con-chip { font-size: 0.7rem; padding: 3px 9px; border-radius: 20px; background: var(--warm); border: 1px solid var(--border); color: var(--muted); }
+    .cm-lang-pill { font-size: 0.72rem; padding: 3px 9px; border-radius: 4px; background: var(--warm); border: 1px solid var(--border); color: var(--deep); }
+    .cm-prac-row { display: flex; align-items: center; gap: 10px; }
+    .cm-prac-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--warm); border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 600; color: var(--muted); flex-shrink: 0; }
+    .cm-prac-name { font-size: 0.88rem; color: var(--deep); }
+    .cm-prac-desig { font-size: 0.75rem; color: var(--muted); }
+    .cm-lead-tag { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rose); background: rgba(43,76,126,0.1); border-radius: 3px; padding: 1px 5px; margin-left: 6px; }
+    .cm-status-pill { display: inline-flex; align-items: center; gap: 5px; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.04em; padding: 3px 9px; border-radius: 20px; }
+    .cm-status-pill.claimed { color: var(--green); background: rgba(61,122,85,0.1); }
+    .cm-status-pill.unclaimed { color: var(--muted); background: var(--warm); }
+    .cm-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+    .cm-photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 10px; overflow: hidden; }
+    .cm-photo-grid img { width: 100%; height: 96px; object-fit: cover; display: block; }
+    .cm-header-logo { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--cream); object-fit: contain; flex-shrink: 0; }
+    .cm-promo-band { background: rgba(201,169,110,0.12); border: 1px solid rgba(201,169,110,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.82rem; color: var(--deep); }
 
     /* Visit row */
     .card-visit-row {
@@ -620,7 +648,7 @@
     .compare-table.cols-2 td { width: calc((100% - 100px) / 2); }
     .compare-table.cols-3 td { width: calc((100% - 100px) / 3); }
     .compare-col-header { background: var(--deep) !important; border-right: 1px solid rgba(255,255,255,0.06) !important; border-bottom: 1px solid rgba(201,169,110,0.15) !important; }
-    .compare-col-header .col-name { font-family: 'Noto Serif TC', serif; font-size: 1.05rem; font-weight: 500; color: var(--cream); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.2rem; line-height: 1.3; min-height: 2.6em; }
+    .compare-col-header .col-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 500; color: var(--cream); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 0.2rem; line-height: 1.3; min-height: 2.6em; }
     .compare-col-header .col-meta { font-size: 0.75rem; color: var(--muted); }
     .compare-price-big { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 400; color: var(--deep); line-height: 1; }
     .compare-price-unit { font-size: 0.78rem; color: var(--muted); margin-left: 0.2rem; }
@@ -746,7 +774,7 @@
     .map-card-logo { width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); background: var(--cream); flex-shrink: 0; }
     .map-card-logo-placeholder { width: 34px; height: 34px; border-radius: 6px; background: var(--warm); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); }
     .map-card-name-block { flex: 1; min-width: 0; }
-    .map-card-name { font-family: 'Noto Serif TC', serif; font-size: 0.95rem; font-weight: 500; color: var(--deep); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .map-card-name { font-family: 'Cormorant Garamond', serif; font-size: 0.95rem; font-weight: 500; color: var(--deep); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .map-card-meta { font-size: 0.68rem; color: var(--muted); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .map-card-rating-badge { flex-shrink: 0; text-align: center; padding-left: 0.4rem; }
     .map-card-rating-score { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; line-height: 1; color: var(--deep); }
@@ -1177,6 +1205,18 @@ const STATE_METROS = {
   ],
 };
 const STATE_LABEL = { 'california': 'California', 'new-york': 'New York', 'florida': 'Florida' }[STATE] || 'California';
+
+// Point the canonical and og:url at THIS state, not at the Taiwan page they
+// were copied from. Runs at parse time, before the grid fetch.
+(function cmSetCanonical() {
+  const url = 'https://skinday.com/us/' + STATE;
+  const link = document.getElementById('canonicalLink');
+  if (link) link.setAttribute('href', url);
+  const og = document.querySelector('meta[property="og:url"]');
+  if (og) og.setAttribute('content', url);
+  const ogt = document.querySelector('meta[property="og:title"]');
+  if (ogt) ogt.setAttribute('content', 'Cosmetic clinics in ' + STATE_LABEL + ' on SkinDay.');
+})();
 const STATE_CENTER = {
   'california': { lat: 36.7, lng: -119.4, zoom: 6 },
   'new-york':   { lat: 42.9, lng: -75.5,  zoom: 7 },
@@ -1616,7 +1656,7 @@ function renderStars(rating) {
 function formatPriceDate(d) {
   if (!d) return '';
   const dt = new Date(d);
-  return dt.toLocaleDateString('zh-TW', { year: 'numeric', month: 'short' });
+  return dt.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
 }
 
 // ─── RENDER CARDS ─────────────────────────────────────────────
@@ -1672,7 +1712,7 @@ function renderPageCards(clinicsData, append) {
           <div class="price-label">Botox per unit</div>
           <div class="price-main">
             <span class="price-from">from</span>
-            <span class="price-amount">NT$${c.price}</span>
+            <span class="price-amount">$${c.price}</span>
             <span class="price-unit">/ unit</span>
           </div>
           ${priceSourceLabel}
@@ -1720,7 +1760,7 @@ function renderPageCards(clinicsData, append) {
             <span class="stars">${renderStars(c.rating)}</span>
             <span class="rating-num">${c.rating != null ? c.rating : '-'}</span>
           </div>
-          <div class="review-count">${(c.reviews||0).toLocaleString('zh-TW')}  Google reviews</div>
+          <div class="review-count">${(c.reviews||0).toLocaleString('en-US')}  Google reviews</div>
           ${devChipRow}
         </div>
         ${priceBlockHTML}
@@ -1939,13 +1979,13 @@ function openCompareModal() {
   html += '<tr><th>Rating</th>';
   clinics.forEach(c => {
     const isTop = (parseFloat(c.rating)||0) === maxRating;
-    html += `<td${isTop?' class="compare-winner"':''}><span class="compare-stars">★</span> <span class="compare-rating-num">${c.rating||'-'}</span>${isTop?'<span class="compare-winner-tag">Top</span>':''}<div class="compare-reviews">${(c.reviews||0).toLocaleString('zh-TW')}  reviews</div></td>`;
+    html += `<td${isTop?' class="compare-winner"':''}><span class="compare-stars">★</span> <span class="compare-rating-num">${c.rating||'-'}</span>${isTop?'<span class="compare-winner-tag">Top</span>':''}<div class="compare-reviews">${(c.reviews||0).toLocaleString('en-US')}  reviews</div></td>`;
   });
   html += '</tr><tr><th>NTD Price</th>';
   clinics.forEach(c => {
     const isLowest = c.price && parseFloat(c.price) === minPrice;
     html += c.price
-      ? `<td${isLowest?' class="compare-winner"':''}><span class="compare-price-big">NT$${c.price}</span><span class="compare-price-unit">/unit</span>${isLowest?'<span class="compare-winner-tag">Best price</span>':''}</td>`
+      ? `<td${isLowest?' class="compare-winner"':''}><span class="compare-price-big">$${c.price}</span><span class="compare-price-unit">/unit</span>${isLowest?'<span class="compare-winner-tag">Best price</span>':''}</td>`
       : '<td><span class="compare-no-price">Not available</span></td>';
   });
   html += '</tr><tr><th>City</th>';
@@ -1973,49 +2013,178 @@ function findClinic(id) {
   return currentPageClinics.find(c => String(c.id) === sid) || clinicsIndex.find(c => String(c.id) === sid) || null;
 }
 
-// ─── OPEN CLINIC MODAL (reuse Canada's /api/get-clinics single fetch) ─────
-window.openClinicModal = async function(id) {
-  const c = findClinic(String(id));
-  if (!c) return;
+// ─── MODAL DATA HELPERS (M23) ─────────────────────────────────
+// The grid fetch returns card fields only, so most of what the modal shows
+// (credentials, languages, expertise, concerns, promo, booking_url, logo,
+// photos, price provenance) is simply absent from the cached object. Rather
+// than widen the API and hope the .com copy of get-clinics.js agrees, the
+// modal reads the full row itself. Same approach skinday.ca takes.
+const CM_SB_URL = SB_URL;
+const CM_SB_KEY = SB_KEY;
 
-  // Build Google Maps directions URL from place_id or coords
+function cmHeaders() {
+  return { 'apikey': CM_SB_KEY, 'Authorization': `Bearer ${CM_SB_KEY}` };
+}
+
+async function cmFetchFullRow(c) {
+  if (c.email !== undefined) return; // already the full row
+  const res = await fetch(`${CM_SB_URL}/rest/v1/clinics?select=*&id=eq.${encodeURIComponent(String(c.id))}&limit=1`, { headers: cmHeaders() });
+  if (!res.ok) return;
+  const rows = await res.json();
+  if (Array.isArray(rows) && rows[0]) Object.assign(c, normaliseClinic(rows[0]), { id: String(c.id) });
+}
+
+async function cmFetchPractitioners(c) {
+  const res = await fetch(`${CM_SB_URL}/rest/v1/practitioners?clinic_id=eq.${encodeURIComponent(String(c.id))}&order=display_order.asc`, { headers: cmHeaders() });
+  if (!res.ok) return;
+  const rows = await res.json();
+  if (Array.isArray(rows)) c.practitioners = rows;
+}
+
+// Expertise and concerns are stored on the clinic as slugs. The display names
+// live in the same two static files the clinic portal reads, so the directory
+// and the editor can never disagree about what a slug means.
+const cmTax = { expertise: [], concerns: [] };
+let cmTaxPromise = null;
+function cmLoadTaxonomy() {
+  if (cmTaxPromise) return cmTaxPromise;
+  cmTaxPromise = Promise.all([
+    fetch('/data/taxonomy/expertise.json').then(r => r.ok ? r.json() : []),
+    fetch('/data/taxonomy/concerns.json').then(r => r.ok ? r.json() : [])
+  ]).then(([e, c]) => {
+    cmTax.expertise = Array.isArray(e) ? e : (e.items || []);
+    cmTax.concerns  = Array.isArray(c) ? c : (c.items || []);
+  }).catch(() => { cmTaxPromise = null; });
+  return cmTaxPromise;
+}
+// Falls back to the raw slug so a legacy or unknown value still renders as
+// readable text rather than vanishing.
+function cmTaxLabel(kind, slug) {
+  const hit = (cmTax[kind] || []).find(i => i.slug === slug);
+  return hit ? hit.display : slug;
+}
+
+const CM_CAT_LABELS = {
+  injectables: 'Injectables', lasers_ipl: 'Lasers/IPL', rf_hifu: 'RF/HIFU',
+  facials: 'Skin & Facials', body: 'Body Contouring',
+  plastic_surgery: 'Plastic Surgery', iv_drips: 'IV Drips'
+};
+const CM_CAT_ORDER = ['injectables','lasers_ipl','rf_hifu','facials','body','plastic_surgery','iv_drips'];
+
+const CM_CRED_LABELS = {
+  physician: 'Physician', nurse_practitioner: 'Nurse Practitioner',
+  registered_nurse: 'Registered Nurse', dentist: 'Dentist',
+  physician_assistant: 'Physician Assistant', medical_aesthetician: 'Medical Aesthetician'
+};
+
+// Native script alongside the English name, as on skinday.ca. A patient
+// scanning for their own language finds it faster in its own script.
+const CM_LANG_LABELS = {
+  english: 'English', mandarin: '中文', cantonese: '粵語', spanish: 'Español',
+  french: 'Français', korean: '한국어', vietnamese: 'Tiếng Việt', tagalog: 'Tagalog',
+  hindi: 'हिन्दी', arabic: 'العربية', farsi: 'فارسی', punjabi: 'ਪੰਜਾਬੀ',
+  portuguese: 'Português', russian: 'Русский', japanese: '日本語'
+};
+
+// ─── OPEN CLINIC MODAL ────────────────────────────────────────
+// Renders immediately from the cached card object, then re-renders once the
+// full clinic row, the practitioner list and the taxonomy labels arrive. The
+// modal must feel instant, so nothing is awaited before the first paint.
+function cmBuildContent(c) {
   let directionsUrl = '';
   if (c.place_id) directionsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(c.name) + '&query_place_id=' + c.place_id;
   else if (c.lat && c.lng) directionsUrl = 'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng;
   const ratingUrl = directionsUrl || '#';
 
   const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
-  const reviews = (c.reviews || 0).toLocaleString('zh-TW');
+  const reviews = (c.reviews || 0).toLocaleString('en-US');
+  const isClaimed = !!c.claimed;
+
+  // Photos: a grid when the clinic has uploaded several, the single Google
+  // hero otherwise. Renders nothing at all when there is neither, rather than
+  // an empty state, which would read as a finding about the clinic.
+  const photoList = Array.isArray(c.photos) ? c.photos.filter(Boolean) : [];
+  const heroHTML = photoList.length > 1
+    ? `<div class="cm-photo-grid">${photoList.slice(0,4).map(p => `<img src="${devEsc(p)}" loading="lazy">`).join('')}</div>`
+    : (c.photo ? `<img src="${devEsc(c.photo)}" style="width:100%;height:200px;object-fit:cover;border-radius:16px 16px 0 0;" loading="lazy">` : '');
 
   const content = [
-    c.photo ? `<img src="${c.photo}" style="width:100%;height:200px;object-fit:cover;border-radius:16px 16px 0 0;" loading="lazy">` : '',
+    heroHTML,
     `<div style="padding:1.75rem;">`,
-    `<h2 style="font-family:'Noto Serif TC',serif;font-size:1.6rem;font-weight:500;margin-bottom:0.4rem;line-height:1.2;">${c.name}</h2>`,
-    `<p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">📍 ${hood}</p>`,
 
-    // Rating row links to Google Maps
+    // Name row, with the clinic's logo when they have uploaded one.
+    `<div style="display:flex;align-items:flex-start;gap:0.75rem;margin-bottom:0.4rem;">`,
+    c.logo ? `<img class="cm-header-logo" src="${devEsc(c.logo)}" alt="" loading="lazy">` : '',
+    `<h2 style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:500;line-height:1.2;flex:1;">${devEsc(c.name)}</h2>`,
+    `</div>`,
+
+    `<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:1rem;">`,
+    hood ? `<span style="font-size:0.88rem;color:var(--muted);">📍 ${devEsc(hood)}</span>` : '',
+    isClaimed
+      ? `<span class="cm-status-pill claimed"><span class="cm-status-dot"></span>Managed by clinic</span>`
+      : `<span class="cm-status-pill unclaimed"><span class="cm-status-dot"></span>Unclaimed</span>`,
+    `</div>`,
+
     `<a href="${ratingUrl}" ${directionsUrl ? 'target="_blank" rel="noopener"' : ''} style="display:inline-flex;align-items:center;gap:0.5rem;margin-bottom:1.25rem;text-decoration:none;">`,
-    `<span style="color:var(--gold);">★</span><strong style="color:var(--deep);">${c.rating || '-'}</strong>`,
-    `<span style="color:var(--muted);font-size:0.82rem;">(${reviews}  reviews)</span>`,
+    `<span style="color:var(--gold);">${renderStars(c.rating)}</span><strong style="color:var(--deep);">${c.rating || '-'}</strong>`,
+    `<span style="color:var(--muted);font-size:0.82rem;">(${reviews} reviews)</span>`,
     `</a>`,
 
-    c.price ? `<p style="margin-bottom:1.25rem;"><strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">NT$${c.price}</strong> <span style="font-size:0.78rem;color:var(--muted);">/unit</span></p>` : '',
+    // Promo
+    c.promo && c.promo_text
+      ? `<div class="cm-sec"><div class="cm-promo-band">${devEsc(c.promo_text)}</div></div>` : '',
 
-    // Primary action: Directions
+    // Price, now carrying the same provenance the card shows. A number with no
+    // source is the one thing a patient cannot judge.
+    (function(){
+      if (!c.price) return '';
+      const src = c.price_source === 'clinic'
+        ? `<span class="trust-badge trust-badge-clinic">Confirmed by clinic · ${formatPriceDate(c.price_date)}</span>`
+        : c.price_source === 'inquiry'
+        ? `<span class="trust-badge trust-badge-inquiry">Confirmed by inquiry · ${formatPriceDate(c.price_date)}</span>`
+        : '';
+      return `<div class="cm-sec"><div class="cm-sec-label">Botox per unit</div>`
+           + `<strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">$${c.price}</strong>`
+           + ` <span style="font-size:0.78rem;color:var(--muted);">/unit</span>`
+           + (src ? `<div>${src}</div>` : '')
+           + `</div>`;
+    })(),
+
     `<div style="margin-bottom:0.6rem;">`,
     directionsUrl
       ? `<a href="${directionsUrl}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--rose);color:#fff;padding:0.85rem;border-radius:10px;font-size:0.92rem;font-weight:500;text-decoration:none;font-family:'DM Sans',sans-serif;">📍 Directions</a>`
       : '',
     `</div>`,
 
-    // Secondary row: Call + Website
-    `<div style="display:grid;grid-template-columns:${c.phone && c.website ? '1fr 1fr' : '1fr'};gap:0.6rem;margin-bottom:1.5rem;">`,
-    c.phone ? `<a href="tel:${c.phone}" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">📞 Call</a>` : '',
-    c.website ? `<a href="${c.website}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">🌐 Website</a>` : '',
-    `</div>`,
+    // Book now, when the clinic has published a booking link.
+    c.booking_url
+      ? `<div style="margin-bottom:0.6rem;"><a href="${devEsc(c.booking_url)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--rose);color:var(--rose);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">Book now →</a></div>`
+      : '',
 
-    // Technology, grouped by category — the modal has room for the structure
-    // the card does not. Model bold, manufacturer beside it, tick if verified.
+    // Call / Website / Email
+    (function(){
+      const btns = [];
+      const style = "display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;";
+      if (c.phone)   btns.push(`<a href="tel:${devEsc(c.phone)}" style="${style}">📞 Call</a>`);
+      if (c.website) btns.push(`<a href="${devEsc(c.website)}" target="_blank" rel="noopener" style="${style}">🌐 Website</a>`);
+      if (c.email)   btns.push(`<a href="mailto:${devEsc(c.email)}" style="${style}">✉️ Email</a>`);
+      if (!btns.length) return '';
+      const cols = btns.length === 1 ? '1fr' : (btns.length === 2 ? '1fr 1fr' : '1fr 1fr 1fr');
+      return `<div style="display:grid;grid-template-columns:${cols};gap:0.6rem;margin-bottom:1.5rem;">${btns.join('')}</div>`;
+    })(),
+
+    // Treatment categories, the clinic's self-declared taxonomy.
+    (function(){
+      const cats = (Array.isArray(c.categories) ? c.categories : [])
+        .filter(v => CM_CAT_LABELS[v])
+        .sort((a,b) => CM_CAT_ORDER.indexOf(a) - CM_CAT_ORDER.indexOf(b));
+      if (!cats.length) return '';
+      return `<div class="cm-sec"><div class="cm-sec-label">Treatments offered</div>`
+           + `<div class="cm-pill-row">${cats.map(v => `<span class="cm-cat-chip">${devEsc(CM_CAT_LABELS[v])}</span>`).join('')}</div></div>`;
+    })(),
+
+    // Technology, grouped by category. The modal has room for the structure
+    // the card does not.
     (function(){
       const cmDevs = Array.isArray(c.devices) ? c.devices : [];
       if (!cmDevs.length) return '';
@@ -2035,29 +2204,75 @@ window.openClinicModal = async function(id) {
             }${d.status === 'verified' ? '<span class="vtag">\u2713</span>' : ''}</a>`
           ).join('')}</div>
         </div>`).join('');
-      return `<div style="margin-bottom:1.25rem;">`
+      return `<div class="cm-sec">`
            + `<div class="cm-devices-label">Technology</div>`
            + `<div class="cm-devices-list">${body}</div>`
            + `<div class="cm-dev-note">Listed from this clinic&rsquo;s own website. A check mark means the clinic confirmed it with us.</div>`
            + `</div>`;
     })(),
 
-    // View full profile link
+    // Practitioners. Filled by the async refresh; renders nothing until then.
+    (function(){
+      const ps = Array.isArray(c.practitioners) ? c.practitioners : [];
+      if (!ps.length) return '';
+      const initials = n => (n || '?').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      const rows = ps.map((p, i) => `
+        <div class="cm-prac-row" style="margin-bottom:${i < ps.length - 1 ? '10px' : '0'};">
+          <div class="cm-prac-avatar">${devEsc(initials(p.name))}</div>
+          <div>
+            <div class="cm-prac-name" style="font-weight:${i === 0 ? '500' : '400'};">${devEsc(p.name)}${i === 0 ? '<span class="cm-lead-tag">Lead</span>' : ''}</div>
+            ${p.designation ? `<div class="cm-prac-desig">${devEsc(p.designation)}</div>` : ''}
+          </div>
+        </div>`).join('');
+      return `<div class="cm-sec"><div class="cm-sec-label">Practitioners</div>${rows}</div>`;
+    })(),
+
+    // Who treats you, and in what language.
+    (function(){
+      const creds = Array.isArray(c.injector_credentials) ? c.injector_credentials : [];
+      const langs = Array.isArray(c.languages) ? c.languages : [];
+      if (!creds.length && !langs.length) return '';
+      let out = '';
+      if (creds.length) {
+        out += `<div class="cm-sec"><div class="cm-sec-label">Injector credentials</div>`
+             + `<div style="font-size:0.85rem;color:var(--deep);">${devEsc(creds.map(v => CM_CRED_LABELS[v] || v).join(' · '))}</div></div>`;
+      }
+      if (langs.length) {
+        out += `<div class="cm-sec"><div class="cm-sec-label">Languages spoken</div>`
+             + `<div class="cm-pill-row">${langs.map(v => `<span class="cm-lang-pill">${devEsc(CM_LANG_LABELS[v] || v)}</span>`).join('')}</div></div>`;
+      }
+      return out;
+    })(),
+
+    // Identity: what the clinic says it focuses on, and what it treats.
+    (function(){
+      const exp = Array.isArray(c.expertise) ? c.expertise : [];
+      const con = Array.isArray(c.concerns)  ? c.concerns  : [];
+      if (!exp.length && !con.length) return '';
+      const lbl = (kind, r) => r.is_other ? (r.other_text || '') : cmTaxLabel(kind, r.value);
+      let out = `<div class="cm-sec"><div class="cm-sec-label">What this clinic focuses on</div>`;
+      if (exp.length) {
+        out += `<div class="cm-pill-row">${exp.map(r => { const t = lbl('expertise', r); return t ? `<span class="cm-exp-pill">${devEsc(t)}</span>` : ''; }).join('')}</div>`;
+      }
+      if (con.length) {
+        out += `<div class="cm-sec-label" style="margin-top:0.7rem;">Concerns treated</div>`
+             + `<div class="cm-pill-row">${con.map(r => { const t = lbl('concerns', r); return t ? `<span class="cm-con-chip">${devEsc(t)}</span>` : ''; }).join('')}</div>`;
+      }
+      return out + `</div>`;
+    })(),
+
+    // View full profile
     (function(){
       const slug = c.slug || (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
       return slug ? `<div style="margin-bottom:1rem;"><a href="/clinic/${slug}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">View full profile →</a></div>` : '';
     })(),
 
-    // Claim / portal link.
-    // The strongest place to ask for a claim is the modal, because on this
-    // directory most people tap a card and never reach the full profile page.
-    // Same lesson as the device chips: card, MODAL, profile.
-    (function(){
-      if (c.claimed) {
-        return `<div style="text-align:center;font-size:0.8rem;color:var(--muted);margin-bottom:0.9rem;">Managed by the clinic. <a href="/editor.html" style="color:var(--rose);text-decoration:none;border-bottom:1px solid var(--rose-bg);">Clinic sign in</a></div>`;
-      }
-      return `<div style="margin-bottom:1rem;"><a href="/claim.html?clinic=${encodeURIComponent(c.id)}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--rose);color:var(--rose);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">Is this your clinic? Claim it →</a></div>`;
-    })(),
+    // Claim / portal link. The strongest place to ask for a claim is the
+    // modal, because on this directory most people tap a card and never reach
+    // the full profile page.
+    isClaimed
+      ? `<div style="text-align:center;font-size:0.8rem;color:var(--muted);margin-bottom:0.9rem;">Managed by the clinic. <a href="/editor.html" style="color:var(--rose);text-decoration:none;border-bottom:1px solid var(--rose-bg);">Clinic sign in</a></div>`
+      : `<div style="margin-bottom:1rem;"><a href="/claim.html?clinic=${encodeURIComponent(c.id)}" style="display:flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;border:1.5px solid var(--rose);color:var(--rose);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;">Is this your clinic? Claim it →</a></div>`,
 
     // Report link
     `<div style="text-align:center;border-top:1px solid var(--border);padding-top:1rem;">`,
@@ -2069,16 +2284,41 @@ window.openClinicModal = async function(id) {
     `</div>`
   ].join('');
 
+  return content;
+}
+
+window.openClinicModal = async function(id) {
+  const c = findClinic(String(id));
+  if (!c) return;
+
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;z-index:500;background:rgba(28,23,20,0.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem;';
   const modal = document.createElement('div');
   modal.style.cssText = 'background:var(--cream);border-radius:16px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;position:relative;animation:fadeUp 0.25s ease;';
-  modal.innerHTML = `<button onclick="this.closest('[data-overlay]').remove();document.body.style.overflow='';" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;">✕</button>${content}`;
+  const closeBtn = `<button onclick="this.closest('[data-overlay]').remove();document.body.style.overflow='';" style="position:absolute;top:1rem;right:1rem;background:rgba(0,0,0,0.3);border:none;color:#fff;width:30px;height:30px;border-radius:50%;font-size:1rem;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;">✕</button>`;
+
+  const paint = () => { modal.innerHTML = closeBtn + cmBuildContent(c); };
+  paint();
+
   overlay.dataset.overlay = '1';
   overlay.appendChild(modal);
   overlay.addEventListener('click', e => { if (e.target === overlay) { overlay.remove(); document.body.style.overflow = ''; } });
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+
+  // Enrich. allSettled so one missing table or file cannot blank the modal:
+  // whatever resolves gets shown, whatever fails is simply absent.
+  Promise.allSettled([
+    cmFetchFullRow(c),
+    cmFetchPractitioners(c),
+    cmLoadTaxonomy()
+  ]).then(() => {
+    // Skip the repaint if the visitor has already closed it, or has opened
+    // the report form, which a repaint would wipe mid-typing.
+    if (!overlay.isConnected) return;
+    if (modal.querySelector('#cm-report-note-' + c.id)) return;
+    paint();
+  });
 };
 
 // ─── REPORT AN ERROR ──────────────────────────────────────────
@@ -2402,7 +2642,7 @@ async function updateShortlistUI() {
       <div class="shortlist-item-info">
         <div class="shortlist-item-name">${c.name}</div>
         <div class="shortlist-item-meta">📍 ${getNeighbourhoodFull(c.neighbourhood) || c.region || ''} · ★${c.rating||'-'}</div>
-        ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">NT$${c.price}/unit</div>` : ''}
+        ${c.price ? `<div style="font-size:0.78rem;font-weight:500;margin-top:2px;">$${c.price}/unit</div>` : ''}
       </div>
       <button class="shortlist-item-remove" onclick="toggleSave('${c.id}', event)">✕</button>
     </div>`).join('') + (ids.length - clinics.length > 0 ? `<p style="font-size:0.78rem;color:var(--muted);padding:0.5rem 0;">${ids.length - clinics.length}  clinics not yet loaded.</p>` : '');
@@ -2647,7 +2887,7 @@ function renderDesktopList() {
   }
   const sorted = sortClinicsMap(pool, _mapSort);
   const headerCount = document.getElementById('mapListCount');
-  if (headerCount) headerCount.textContent = sorted.length.toLocaleString('zh-TW') + ' clinics';
+  if (headerCount) headerCount.textContent = sorted.length.toLocaleString('en-US') + ' clinics';
   const cardsEl = document.getElementById('mapListCards');
   if (cardsEl) cardsEl.innerHTML = sorted.length === 0
     ? '<div class="map-list-status">No clinics in this area. Try zooming out.</div>'
@@ -2664,7 +2904,7 @@ function renderCarousel() {
   const track = document.getElementById('mapCarouselTrack');
   const countC = document.getElementById('mapCarouselCount');
   if (track) {
-    if (countC) countC.textContent = inView.length.toLocaleString('zh-TW') + ' clinics';
+    if (countC) countC.textContent = inView.length.toLocaleString('en-US') + ' clinics';
     track.innerHTML = inView.length === 0
       ? '<div style="padding:1rem;font-size:0.82rem;color:var(--muted);">No clinics in this area</div>'
       : inView.map(c => buildMapCard(c, true)).join('');
@@ -2680,8 +2920,8 @@ function updateViewportCount() {
   const countEl = document.getElementById('mapResultCount');
   if (countEl) {
     countEl.textContent = inView.length < _allClinics.length
-      ? inView.length.toLocaleString('zh-TW') + '  in view'
-      : inView.length.toLocaleString('zh-TW') + ' clinics';
+      ? inView.length.toLocaleString('en-US') + '  in view'
+      : inView.length.toLocaleString('en-US') + ' clinics';
     countEl.style.display = 'block';
   }
 }
@@ -2692,9 +2932,9 @@ function buildMapCard(c, carousel) {
     ? `<img class="map-card-logo" src="${c.logo}" alt="">`
     : `<div class="map-card-logo-placeholder">${(c.name||'?').charAt(0)}</div>`;
   const rating = c.rating ? parseFloat(c.rating).toFixed(1) : '-';
-  const reviews = (c.reviews||0).toLocaleString('zh-TW');
+  const reviews = (c.reviews||0).toLocaleString('en-US');
   const priceHTML = c.price != null
-    ? `<div style="margin-bottom:0.3rem;"><span class="map-card-price">NT$${c.price}</span> <span class="map-card-price-unit">/ unit</span></div>`
+    ? `<div style="margin-bottom:0.3rem;"><span class="map-card-price">$${c.price}</span> <span class="map-card-price-unit">/ unit</span></div>`
     : '';
   const hood = getNeighbourhoodFull(c.neighbourhood) || c.region || '';
   const canHover = window.matchMedia('(hover: hover)').matches;
