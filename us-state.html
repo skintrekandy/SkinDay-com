@@ -526,6 +526,15 @@
     .cm-photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 10px; overflow: hidden; }
     .cm-photo-grid img { width: 100%; height: 96px; object-fit: cover; display: block; }
     .cm-header-logo { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--cream); object-fit: contain; flex-shrink: 0; }
+    .cm-vote-block { border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 0.9rem; background: var(--warm); }
+    .cm-vote-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.55rem; }
+    .cm-vote-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+    .cm-vote-btn { background: var(--cream); border: 1.5px solid var(--border); color: var(--muted); padding: 0.6rem 0.4rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; font-family: 'DM Sans', sans-serif; }
+    .cm-vote-btn:hover:not(:disabled) { border-color: var(--deep); color: var(--deep); }
+    .cm-vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .cm-vote-signal { margin-top: 0.5rem; }
+    .cm-vote-signal strong { color: var(--green); font-weight: 600; }
+    .cm-vote-confirm { margin-top: 0.5rem; font-size: 0.76rem; }
     .cm-promo-band { background: rgba(201,169,110,0.12); border: 1px solid rgba(201,169,110,0.3); border-radius: 8px; padding: 0.7rem 0.9rem; font-size: 0.82rem; color: var(--deep); }
 
     /* Visit row */
@@ -2013,6 +2022,76 @@ function findClinic(id) {
   return currentPageClinics.find(c => String(c.id) === sid) || clinicsIndex.find(c => String(c.id) === sid) || null;
 }
 
+// ─── WOULD-RETURN VOTE (ported from skinday.ca) ───────────────
+// Backed by /api/submit-visit and /api/get-visit-signal, which are country
+// neutral and deploy to .com unchanged. The three display phases are the
+// function's, not this file's: 0 votes shows nothing, 1-19 shows raw counts,
+// 20+ shows a percentage. Never invent a percentage from three votes.
+function cmRenderSignal(data) {
+  if (!data || !data.signal) return '';
+  const s = data.signal;
+  if (s.phase === 'counts') {
+    return `<span style="font-size:0.72rem;color:var(--muted);">${s.yes} / ${s.no}</span>`;
+  }
+  if (s.phase === 'pct' && s.pct !== null && s.pct !== undefined) {
+    return `<span style="font-size:0.72rem;color:var(--muted);"><strong>${s.pct}%</strong> · ${s.yes}/${s.no}</span>`;
+  }
+  return '';
+}
+
+async function cmFetchSignal(c) {
+  const res = await fetch(`/api/get-visit-signal?clinic_id=${encodeURIComponent(String(c.id))}`);
+  if (!res.ok) return;
+  c._voteSignal = await res.json();
+}
+
+// A vote needs a signed-in user, because one response per user per clinic is
+// enforced on the row. Anonymous voting would make the signal worthless.
+window.cmVote = async function(clinicId, val) {
+  const wrap = document.getElementById('cm-vote-inner-' + clinicId);
+  const say = (msg, colour) => {
+    if (wrap) wrap.innerHTML = `<div class="cm-vote-confirm" style="color:${colour};">${msg}</div>`;
+  };
+
+  let session = null;
+  try { session = (await _sb.auth.getSession()).data.session; } catch (e) { session = null; }
+
+  if (!session || !session.access_token) {
+    say('Please sign in to share your experience.', 'var(--rose)');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/submit-visit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinic_id: String(clinicId), would_return: val, access_token: session.access_token })
+    });
+
+    if (res.status === 409) {
+      say('You already shared your experience for this clinic.', 'var(--muted)');
+    } else if (res.status === 401) {
+      say('Please sign in to record your vote.', 'var(--rose)');
+    } else if (res.ok) {
+      say('\u2713 Thanks, your response is recorded', 'var(--green)');
+      // Re-read the signal so the number the voter just moved is the number
+      // they see. The endpoint caches for 10s, so it may lag by that much.
+      const c = findClinic(String(clinicId));
+      if (c) {
+        try {
+          await cmFetchSignal(c);
+          const sigEl = document.getElementById('cm-vote-signal-' + clinicId);
+          if (sigEl) sigEl.innerHTML = cmRenderSignal(c._voteSignal);
+        } catch (e) { /* the confirmation already showed */ }
+      }
+    } else {
+      say('Something went wrong. Please try again.', 'var(--rose)');
+    }
+  } catch (e) {
+    say('Something went wrong. Please try again.', 'var(--rose)');
+  }
+};
+
 // ─── MODAL DATA HELPERS (M23) ─────────────────────────────────
 // The grid fetch returns card fields only, so most of what the modal shows
 // (credentials, languages, expertise, concerns, promo, booking_url, logo,
@@ -2261,6 +2340,17 @@ function cmBuildContent(c) {
       return out + `</div>`;
     })(),
 
+    // Been here? The vote block. Signal loads with the other async data, so
+    // it is absent on first paint and appears on the repaint.
+    `<div class="cm-sec"><div class="cm-vote-block">`
+      + `<div class="cm-vote-label">Been here?</div>`
+      + `<div id="cm-vote-inner-${c.id}"><div class="cm-vote-buttons">`
+        + `<button class="cm-vote-btn" onclick="cmVote('${c.id}','yes')">👍 Would go back</button>`
+        + `<button class="cm-vote-btn" onclick="cmVote('${c.id}','no')">👎 Wouldn't go back</button>`
+      + `</div></div>`
+      + `<div class="cm-vote-signal" id="cm-vote-signal-${c.id}">${cmRenderSignal(c._voteSignal)}</div>`
+    + `</div></div>`,
+
     // View full profile
     (function(){
       const slug = c.slug || (c.name||'').toLowerCase().replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-').replace(/^-+|-+$/g,'').trim();
@@ -2311,12 +2401,14 @@ window.openClinicModal = async function(id) {
   Promise.allSettled([
     cmFetchFullRow(c),
     cmFetchPractitioners(c),
-    cmLoadTaxonomy()
+    cmLoadTaxonomy(),
+    cmFetchSignal(c)
   ]).then(() => {
     // Skip the repaint if the visitor has already closed it, or has opened
     // the report form, which a repaint would wipe mid-typing.
     if (!overlay.isConnected) return;
     if (modal.querySelector('#cm-report-note-' + c.id)) return;
+    if (modal.querySelector('.cm-vote-confirm')) return;
     paint();
   });
 };
