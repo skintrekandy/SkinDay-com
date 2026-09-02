@@ -744,6 +744,9 @@
     <button class="nav-tab" data-tab="signups" onclick="switchTab('signups')">
       &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="claims" onclick="switchTab('claims')">
+      Directory Claims
+    </button>
     <button class="nav-tab" data-tab="taiwan" onclick="switchTab('taiwan')">
       &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
     </button>
@@ -859,6 +862,35 @@
           <div style="text-align:right;margin-top:1rem;">
             <button onclick="loadSignups()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── DIRECTORY CLAIMS (M23) ────────────────────────────────────────
+         Clinic owners claiming an EXISTING directory listing. Distinct from
+         Clinic Sign-ups above, which is a new Visualize Pro account: that one
+         gates clinic_subscriptions.approved, this one approves a claims row
+         and hands the owner the portal.
+         Same admin-action.js actions the .ca admin uses: list / approve /
+         reject / revoke. -->
+    <div id="claims-panel" style="display:none">
+      <div class="add-clinic-form" style="max-width:1000px;">
+        <div class="form-title">Directory Claims</div>
+        <div class="form-subtitle">Owners claiming a listing that is already in the directory. Approving marks the clinic claimed, creates their login and emails them the portal link. This is the same queue as the skinday.ca admin, so claims from every country appear here.</div>
+
+        <div class="sub-tabs" id="cl-subtabs" style="display:flex;gap:.5rem;margin:1rem 0;flex-wrap:wrap;">
+          <button class="btn-reject cl-subtab" data-status="pending"  onclick="clSwitch('pending')">Pending <span id="cl-count-pending">0</span></button>
+          <button class="btn-reject cl-subtab" data-status="approved" onclick="clSwitch('approved')">Approved <span id="cl-count-approved">0</span></button>
+          <button class="btn-reject cl-subtab" data-status="rejected" onclick="clSwitch('rejected')">Rejected <span id="cl-count-rejected">0</span></button>
+          <button class="btn-reject cl-subtab" data-status="revoked"  onclick="clSwitch('revoked')">Revoked <span id="cl-count-revoked">0</span></button>
+        </div>
+
+        <div id="cl-loading" style="text-align:center;padding:40px 0;color:var(--muted);font-size:.9rem;">Loading...</div>
+        <div id="cl-error" style="display:none;color:var(--rose);padding:20px 0;font-size:.85rem;"></div>
+        <div id="cl-cards" class="claims-grid"></div>
+        <div style="text-align:right;margin-top:1rem;">
+          <button onclick="clLoad()" style="background:none;border:1px solid rgba(201,169,110,.3);color:var(--dim);padding:.4rem 1rem;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;">Refresh</button>
         </div>
       </div>
     </div>
@@ -1388,15 +1420,165 @@ function switchTab(tab){
   if (manP) manP.style.display = (tab === 'manual') ? 'block' : 'none';
   var rpP = document.getElementById('reports-panel');
   if (rpP) rpP.style.display = (tab === 'reports') ? 'block' : 'none';
+  var clP = document.getElementById('claims-panel');
+  if (clP) clP.style.display = (tab === 'claims') ? 'block' : 'none';
   if (tab === 'devices') dcEnter();
   if (tab === 'manual') mdEnter();
   if (tab === 'reports') rpLoad();
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
+  if (tab === 'claims') clLoad();
   if (tab === 'taiwan') twEnter();
   if (tab === 'websites') wcEnter();
   if (tab === 'data') dtCheck();
+}
+
+// ── DIRECTORY CLAIMS (M23) ──────────────────────────────────
+// Ported from skinday-admin.html so claims can be worked from the global
+// admin as well. Uses the SAME admin-action.js actions the .ca admin uses
+// (list / approve / reject / revoke), so there is one backend and one claims
+// queue, not a second implementation that could drift.
+//
+// ⚠️ REQUIRES admin-action.js ON skinday.com. The Flagged Votes tab already
+// calls it, so if that tab works, this will. If it 401s or 404s, the function
+// is not deployed here and the error line says so rather than showing an
+// empty queue, which would read as "no claims" instead of "not connected".
+let clClaims = { pending: [], approved: [], rejected: [], revoked: [] };
+let clTab = 'pending';
+
+function clEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function clWhen(v) {
+  if (!v) return '';
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+}
+
+async function clLoad() {
+  document.getElementById('cl-loading').style.display = '';
+  document.getElementById('cl-error').style.display = 'none';
+  document.getElementById('cl-cards').innerHTML = '';
+
+  try {
+    const results = await Promise.all([
+      adminAction({ action: 'list', status: 'pending'  }),
+      adminAction({ action: 'list', status: 'approved' }),
+      adminAction({ action: 'list', status: 'rejected' }),
+      adminAction({ action: 'list', status: 'revoked'  })
+    ]);
+    clClaims.pending  = (results[0] && results[0].claims) || [];
+    clClaims.approved = (results[1] && results[1].claims) || [];
+    clClaims.rejected = (results[2] && results[2].claims) || [];
+    clClaims.revoked  = (results[3] && results[3].claims) || [];
+  } catch (e) {
+    document.getElementById('cl-loading').style.display = 'none';
+    const err = document.getElementById('cl-error');
+    err.style.display = '';
+    err.textContent = 'Could not load claims: ' + (e.message || e);
+    return;
+  }
+
+  document.getElementById('cl-loading').style.display = 'none';
+  ['pending','approved','rejected','revoked'].forEach(s => {
+    const el = document.getElementById('cl-count-' + s);
+    if (el) el.textContent = clClaims[s].length;
+  });
+  clRender();
+}
+
+function clSwitch(status) {
+  clTab = status;
+  clRender();
+}
+
+function clRender() {
+  document.querySelectorAll('.cl-subtab').forEach(b => {
+    b.style.borderColor = b.dataset.status === clTab ? 'var(--gold)' : '';
+    b.style.color = b.dataset.status === clTab ? 'var(--gold)' : '';
+  });
+
+  const rows = clClaims[clTab] || [];
+  const box = document.getElementById('cl-cards');
+  if (!rows.length) {
+    box.innerHTML = '<div class="empty-state" style="padding:40px 0;text-align:center;color:var(--muted);font-size:.9rem;">No ' + clEsc(clTab) + ' claims.</div>';
+    return;
+  }
+  box.innerHTML = rows.map(clCard).join('');
+}
+
+function clCard(c) {
+  let chainCount = null;
+  if (c.is_chain && c.chain_clinic_ids) {
+    try { chainCount = JSON.parse(c.chain_clinic_ids).length; } catch (e) { chainCount = null; }
+  }
+  const chainTag = c.is_chain
+    ? '<span class="chain-tag">Chain · ' + (chainCount === null ? '?' : chainCount) + ' locations</span>'
+    : '';
+
+  const reviewed = clWhen(c.reviewed_at);
+  const note = c.admin_note ? '<span style="font-size:.8rem;color:var(--dim)">&ldquo;' + clEsc(c.admin_note) + '&rdquo;</span>' : '';
+
+  let actions;
+  if (clTab === 'pending') {
+    actions = '<div class="claim-actions">'
+      + '<input class="admin-note-input" id="cl-note-' + clEsc(c.id) + '" placeholder="Optional note..." type="text">'
+      + '<button class="btn-approve" onclick="clAct(\'approve\',\'' + clEsc(c.id) + '\')">Approve</button>'
+      + '<button class="btn-reject" onclick="clAct(\'reject\',\'' + clEsc(c.id) + '\')">Reject</button>'
+      + '</div>';
+  } else if (clTab === 'approved') {
+    actions = '<div class="claim-actions">' + note
+      + (reviewed ? '<span style="font-size:.8rem;color:var(--dim);margin-left:auto">' + clEsc(reviewed) + '</span>' : '')
+      + '<button class="btn-reject" onclick="clAct(\'revoke\',\'' + clEsc(c.id) + '\')" style="margin-left:.6rem;" title="Revoke approval and reset the clinic to unclaimed">Revoke</button>'
+      + '</div>';
+  } else {
+    actions = '<div class="claim-actions">' + note
+      + (reviewed ? '<span style="font-size:.8rem;color:var(--dim);margin-left:auto">' + clEsc(reviewed) + '</span>' : '')
+      + '</div>';
+  }
+
+  return '<div class="claim-card' + (clTab === 'pending' ? '' : ' reviewed') + '" id="cl-card-' + clEsc(c.id) + '">'
+    + '<div class="claim-header">'
+      + '<div><div class="claim-clinic-name">' + clEsc(c.clinic_name) + chainTag + '</div>'
+      + (c.clinic_neighbourhood ? '<div class="claim-neighbourhood">' + clEsc(c.clinic_neighbourhood) + '</div>' : '')
+      + '</div>'
+      + '<div class="claim-id">ID: ' + clEsc(c.clinic_id) + '</div>'
+    + '</div>'
+    + '<div class="claim-meta">'
+      + '<div class="meta-item"><div class="meta-label">Owner</div><div class="meta-value">' + clEsc(c.owner_name) + '</div></div>'
+      + '<div class="meta-item"><div class="meta-label">Email</div><div class="meta-value"><a href="mailto:' + clEsc(c.owner_email) + '">' + clEsc(c.owner_email) + '</a></div></div>'
+      + '<div class="meta-item"><div class="meta-label">Role</div><div class="meta-value">' + clEsc(c.owner_role) + '</div></div>'
+      + '<div class="meta-item"><div class="meta-label">Submitted</div><div class="meta-value">' + clEsc(clWhen(c.submitted_at)) + '</div></div>'
+    + '</div>'
+    + actions
+    + '</div>';
+}
+
+async function clAct(action, claimId) {
+  const card = document.getElementById('cl-card-' + claimId);
+  if (card) card.querySelectorAll('button').forEach(b => b.disabled = true);
+
+  const noteEl = document.getElementById('cl-note-' + claimId);
+  const note = noteEl ? noteEl.value.trim() : '';
+
+  try {
+    await adminAction({ action: action, claim_id: claimId, admin_note: note || undefined });
+    // Reload rather than moving the card locally. The approve path fires a
+    // Postgres webhook that creates the auth user and emails the owner, so
+    // the truth is server side and worth re-reading.
+    await clLoad();
+  } catch (e) {
+    if (card) card.querySelectorAll('button').forEach(b => b.disabled = false);
+    const err = document.getElementById('cl-error');
+    err.style.display = '';
+    err.textContent = 'Action failed: ' + (e.message || e);
+  }
 }
 
 // ── FLAGGED VOTES (M36 moderation via admin-action.js) ──────
