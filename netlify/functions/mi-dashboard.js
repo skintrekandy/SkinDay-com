@@ -378,13 +378,9 @@ exports.handler = async (event) => {
       }
 
       // ⭐⭐ LANDSCAPE — the whole active energy device list, for learning the
-      // market rather than working it. Directors told Andy they use MI to train
-      // new reps, so this is the surface that answers "what IS a Morpheus8".
-      // ⚠️ Returns devices with ZERO local installs too: the competitor a new
-      // rep has not met yet is precisely what they need to read about.
-      // ⓘ Counts come from the same scope CTE as mi_leaderboard, verified equal
-      // to the Clinics tab for both standalone devices and generation families,
-      // so the click-through never lands on a different number.
+      // market rather than working it. Returns devices with ZERO local installs
+      // too: the competitor a new rep has not met yet is what they need to read
+      // about. Counts use the same scope CTE as mi_leaderboard.
       case 'landscape': {
         const { data, error } = await supabase.rpc('mi_landscape', Object.assign({
           p_country: country, p_regions: regions,
@@ -394,10 +390,8 @@ exports.handler = async (event) => {
         // ⭐⭐ COMPANIES COME FROM THEIR OWN RPC, NOT FROM SUMMING THE DEVICE
         // ROWS. Summing gave a clinic running two Candela machines a count of
         // two, which is neither a clinic count nor an install count — we cannot
-        // see UNITS at all, only that a clinic mentions a device, so a clinic
-        // with four GentleMax Pros looks identical to one with a single machine.
-        // Distinct clinics is the only figure this data supports, and it is
-        // verified equal to mi_leaderboard for every manufacturer.
+        // see UNITS at all. Distinct clinics is the only figure this data
+        // supports, and it is verified equal to mi_leaderboard.
         const co = await supabase.rpc('mi_landscape_companies', Object.assign({
           p_country: country, p_regions: regions,
           p_province: province, p_neighbourhood: neighbourhood
@@ -516,7 +510,7 @@ exports.handler = async (event) => {
           // ⭐ 25, not 3. The page shows the top three by default but must ALWAYS
           // be able to show the tenant's own row — a rep for the #7 manufacturer
           // opening a competitive view that omits their own company is the worst
-          // possible first impression. Composed client-side so no SQL changed.
+          // possible first impression. Composed client-side.
           supabase.rpc('mi_leaderboard', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_neighbourhood: neighbourhood, p_limit: 25
           }, owner)),
@@ -654,8 +648,7 @@ exports.handler = async (event) => {
       }
       // ⭐ BULK SAVE — a filtered view dropped into My List in one action.
       // Cindy Joo's request: she had built the view she wanted and there was no
-      // way to keep it. Ids come from rows the page already rendered, so no
-      // filter logic is duplicated server-side.
+      // way to keep it. Ids come from rows the page already rendered.
       case 'save_accounts_bulk': {
         const ids = Array.isArray(body.clinic_ids) ? body.clinic_ids.map(String) : [];
         if (!ids.length) return json(400, { error: 'clinic_ids required' });
@@ -663,8 +656,8 @@ exports.handler = async (event) => {
           p_clinic_ids: ids
         }, scope));
         // ⛔ SURFACE THE SERVER'S OWN MESSAGE. The cap and the missing-tenant
-        // guard both raise, and a swallowed error here would look like a save
-        // that silently did nothing.
+        // guard both raise, and a swallowed error would look like a save that
+        // silently did nothing.
         if (error) return json(400, { error: error.message });
         return json(200, { result: data });
       }
