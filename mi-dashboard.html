@@ -1592,6 +1592,7 @@
       if(tab==='accounts'&&!loaded.accounts&&!ACCT_GATED) loadAccounts();
       if(tab==='feed'&&!loaded.feed) loadFeed();
       if(tab==='landscape'&&!loaded.landscape) loadLandscape();
+      if(tab==='portfolio'&&PORTFOLIO_STALE) refreshPortfolio();
       if(tab==='list') loadSaved();
     });
   });
@@ -1686,9 +1687,15 @@
     //     means California there and nothing in Canada.
     setCountry(COUNTRY);
     el('selProvince').innerHTML='<option value="">'+esc(CTY.all)+'</option>';
-    api('overview',{}).then(function(res){
+    // ⭐⭐⭐ ONE RPC, NOT SIX. This used to call 'overview', the BATCHED action —
+    // mi_kpis, mi_categories, mi_geo, mi_leaderboard, mi_coverage and
+    // mi_category_share — purely to populate the state dropdown, so a rep
+    // picking "United States" waited on the entire Overview before they could
+    // choose a state. 'geo' returns just the region list.
+    // ⓘ COVERAGE is no longer set here; refreshPortfolio fetches it when the
+    // Overview is actually shown, which is the only place it is read.
+    api('geo',{}).then(function(res){
       fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
-      COVERAGE=res.coverage||null;
       onGeoChange();
     }).catch(function(){ onGeoChange(); });
   });
@@ -1704,7 +1711,15 @@
     if(el('panel-list').classList.contains('on')) loadSaved();
   }
 
+  // ⭐⭐ THE OVERVIEW IS NOT ALWAYS ON SCREEN. Clinics is the landing tab, so
+  // every territory change was running the six-RPC Overview batch for a panel
+  // nobody was looking at — and blocking the dropdowns while it did. Now a
+  // change while the panel is hidden just marks it stale; the work happens when
+  // the rep opens the tab.
+  var PORTFOLIO_STALE=false;
   function refreshPortfolio(){
+    if(!el('panel-portfolio').classList.contains('on')){ PORTFOLIO_STALE=true; return; }
+    PORTFOLIO_STALE=false;
     // ⭐⭐ THE GATE SITS HERE, NOT ONLY ON THE HERO. Gating the headline alone
     // would leave the share board and the category donuts showing all-states
     // figures under a "choose a state" prompt — a worse lie than the original,
