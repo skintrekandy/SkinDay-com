@@ -1081,7 +1081,7 @@
 <!-- NAV -->
 <nav>
   <a href="/index.html" class="nav-logo">Skin<span>Day</span></a>
-  <a href="/index.html" class="nav-back">Back to directory</a>
+  <a href="/index.html" class="nav-back" id="dirLinkTop">Back to directory</a>
   <a href="/contact.html" style="font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;transition:color 0.2s;" onmouseover="this.style.color='var(--cream)'" onmouseout="this.style.color='var(--dim)'">Need help?</a>
 </nav>
 
@@ -1266,7 +1266,7 @@
       </div>
       <div class="divider"></div>
       <div style="text-align: center; padding: 0 0 8px;">
-        <a href="/index.html" class="btn-secondary" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Back to directory</a>
+        <a href="/index.html" class="btn-secondary" id="dirLinkDone" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none;">Back to directory</a>
       </div>
     </div>
   </div>
@@ -1355,6 +1355,35 @@
     return 'usa';
   })();
 
+  // ⚠️ "Back to directory" pointed at /index.html, which is the directory on
+  // skinday.ca but the MARKETING HOMEPAGE on skinday.com. Same trap as the
+  // rest of this file: a path that means one thing per site.
+  const SD_DIRECTORY_URLS = {
+    canada:   '/index.html',
+    usa:      '/us',
+    taiwan:   '/taiwan',
+    hongkong: '/hongkong'
+  };
+
+  function sdDirectoryUrl(clinic) {
+    const base = SD_DIRECTORY_URLS[SD_COUNTRY] || '/';
+    // A US clinic belongs to a state directory, not the state picker. An
+    // unrouted state falls through the /us/* catch-all back to /us, so an
+    // unexpected value degrades rather than 404s.
+    if (SD_COUNTRY === 'usa' && clinic && clinic.state) {
+      return '/us/' + String(clinic.state).trim().toLowerCase();
+    }
+    return base;
+  }
+
+  function sdApplyDirectoryLinks(clinic) {
+    const href = sdDirectoryUrl(clinic);
+    ['dirLinkTop', 'dirLinkDone'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.setAttribute('href', href);
+    });
+  }
+
   const SD_COUNTRY_LABELS = {
     canada: 'Canada',
     usa: 'the United States',
@@ -1374,7 +1403,7 @@
   // Search now runs in Postgres and returns 25 rows, so there is no cap to
   // outgrow in any country, Canada included.
 
-  const CLINIC_FIELDS = 'id,name,neighbourhood,area,province,region,phone,website,place_id,maps_url,rating,reviews,claimed,approved';
+  const CLINIC_FIELDS = 'id,name,neighbourhood,area,province,region,state,phone,website,place_id,maps_url,rating,reviews,claimed,approved';
 
   function sdHeaders(extra) {
     return Object.assign({ 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }, extra || {});
@@ -1441,6 +1470,8 @@
   // The old hint hard-coded "over 5,000 clinics across Canada", which was both
   // country-specific and going stale. Read the real count instead; the static
   // sentence in the markup stands if this fails.
+  sdApplyDirectoryLinks(null);
+
   (async function sdLoadCount() {
     const el = document.getElementById('clinic-count-hint');
     if (!el) return;
@@ -1544,6 +1575,10 @@
     selectedClinic = c;
     searchInput.value = c.name;
     resultsBox.classList.remove('visible');
+
+    // Now that we know which clinic, point the directory links at ITS state
+    // rather than the country landing page.
+    sdApplyDirectoryLinks(c);
 
     document.getElementById('selected-name').textContent = c.name;
     document.getElementById('selected-hood').textContent = sdPlace(c) ? '📍 ' + sdPlace(c) : '';
