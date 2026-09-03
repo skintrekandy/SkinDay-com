@@ -62,7 +62,17 @@ async function sendNotification(claim, country) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'SkinDay <onboarding@resend.dev>',
+        // ⚠⚠ WAS `onboarding@resend.dev`, Resend's SHARED SANDBOX SENDER, and it
+        // is why this notification silently stopped arriving. Two reasons, either
+        // of which is fatal on its own:
+        //   1. The .com Resend key is SCOPED TO skinday.ca. A key scoped to one
+        //      domain cannot send from resend.dev, so Resend returns 403 and no
+        //      message row is ever created, which is why nothing shows in the log.
+        //   2. resend.dev only delivers to the Resend account owner's own address,
+        //      so anything addressed elsewhere fails even on a full-access key.
+        // The approval email in admin-action.js always sent from hello@skinday.ca,
+        // which is why THAT one worked while this one did not.
+        from: 'SkinDay <hello@skinday.ca>',
         to:   process.env.ADMIN_EMAIL,
         subject: claim.is_chain
           ? `New chain claim (${JSON.parse(claim.chain_clinic_ids || '[]').length} locations) — ${claim.clinic_name}${countryTag}`
