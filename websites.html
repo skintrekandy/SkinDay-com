@@ -124,6 +124,7 @@ form button{margin-top:1.5rem;background:var(--gold);color:var(--deep);border:0;
   padding:1rem 2.2rem;font-family:inherit;font-size:.82rem;letter-spacing:.12em;
   text-transform:uppercase;font-weight:500;cursor:pointer}
 form button:hover{background:var(--cream)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 .fineprint{font-size:.82rem;color:#8E837B;margin-top:1.2rem}
 
 footer{background:var(--deep-2);color:#8E837B;padding:2.4rem 0;font-size:.85rem}
@@ -265,8 +266,10 @@ footer a{color:#B9AEA4}
       <p class="fineprint" data-en="No cost and no obligation. We work with a small number of clinics at a time, so every project starts with a conversation rather than a price list."
          data-zh="完全免費，也沒有任何義務。我們一次只服務少數幾間診所，因此每個專案都從一次對話開始，而不是一張報價單。">No cost and no obligation. We work with a small number of clinics at a time, so every project starts with a conversation rather than a price list.</p>
     </div>
-    <form name="website-review" method="POST" data-netlify="true">
+    <form name="website-review" method="POST" data-netlify="true"
+          data-netlify-honeypot="bot-field" action="/websites-thanks">
       <input type="hidden" name="form-name" value="website-review">
+      <p class="hp"><label>Leave this field empty <input name="bot-field" tabindex="-1" autocomplete="off"></label></p>
       <label data-en="Clinic name" data-zh="診所名稱">Clinic name</label>
       <input type="text" name="clinic" required>
       <label data-en="Your website" data-zh="您的網站">Your website</label>
