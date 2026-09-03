@@ -129,7 +129,7 @@ function approvalEmailHtml(clinicName, setupLink, locationCount, portalUrl) {
     + '<a href="' + setupLink + '" class="btn">Set up your password</a>'
     + '<p class="note">This link expires in 24 hours. If it expires, visit <a href="' + portalUrl + '" style="color:#c9736a;">' + portalLabel + '</a> and use "Forgot password."</p>'
     + '</div>'
-    + '<div class="footer">Questions? Reply to this email or contact <a href="mailto:hello@skinday.ca" style="color:#c9736a;">hello@skinday.ca</a><br/>SkinDay</div>'
+    + '<div class="footer">Questions? Reply to this email or contact <a href="mailto:hello@skinday.com" style="color:#c9736a;">hello@skinday.com</a><br/>SkinDay</div>'
     + '</div></body></html>';
 }
 
