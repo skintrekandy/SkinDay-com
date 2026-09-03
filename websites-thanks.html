@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thank you · SkinDay</title>
+<meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--deep:#1C1714;--deep-2:#2A2320;--cream:#FAF7F2;--gold:#C9A96E}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:var(--deep);color:var(--cream);padding:2rem;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+  font-size:16px;line-height:1.75}
+.card{max-width:640px}
+.brand{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin:0 0 1.4rem}
+h1{font-weight:500;font-size:clamp(1.9rem,5vw,2.7rem);line-height:1.18;margin:0 0 1.4rem;letter-spacing:-.01em}
+p{color:#B9AEA4;margin:0 0 1rem}
+ol{color:#B9AEA4;padding-left:1.2rem;margin:1.6rem 0 0}
+li{margin-bottom:.7rem}
+li strong{color:var(--cream);font-weight:500}
+.note{margin-top:2rem;padding-top:1.5rem;border-top:1px solid #3A322C;font-size:.9rem;color:#8E837B}
+a{color:var(--gold)}
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="brand" data-en="SkinDay" data-zh="SkinDay">SkinDay</p>
+  <h1 data-en="Thank you. We will take a look." data-zh="謝謝您，我們會開始檢視。">Thank you. We will take a look.</h1>
+  <p data-en="Your request is in. There is nothing else to do." data-zh="您的申請已送出，接下來不需要再做任何事。">Your request is in. There is nothing else to do.</p>
+  <ol>
+    <li data-en="We read your site the way an AI crawler does — without running any JavaScript, taking only what it can parse." data-zh="我們會以 AI 爬蟲的方式讀取您的網站，不執行 JavaScript，只取它能解析的內容。">We read your site the way an AI crawler does — without running any JavaScript, taking only what it can parse.</li>
+    <li data-en="We compare it against what other clinics near you publish, and find the questions none of them have answered." data-zh="接著與您附近其他診所已發布的內容比對，找出沒有人回答過的問題。">We compare it against what other clinics near you publish, and find the questions none of them have answered.</li>
+    <li data-en="You get the findings by email, usually within two business days. No pitch attached." data-zh="通常在兩個工作天內，我們會將結果寄給您。不會附上任何推銷。">You get the findings by email, usually within two business days. No pitch attached.</li>
+  </ol>
+  <p class="note"><a href="/websites" data-en="Back to GEO/AEO Websites" data-zh="回到 GEO/AEO 網站">Back to GEO/AEO Websites</a> · <a href="/" data-en="SkinDay home" data-zh="SkinDay 首頁">SkinDay home</a></p>
+</div>
+<script>
+var lang=(localStorage.getItem('sd-lang')==='zh')?'zh':'en';
+document.documentElement.lang=(lang==='zh')?'zh-Hant':'en';
+document.querySelectorAll('[data-en]').forEach(function(el){
+  var v=el.getAttribute(lang==='zh'?'data-zh':'data-en'); if(v) el.textContent=v;
+});
+</script>
+</body>
+</html>
