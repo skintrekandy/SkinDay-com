@@ -4,7 +4,8 @@ const { createClient } = require('@supabase/supabase-js');
 // ⚠️ M23: THIS FILE IS NOW DEPLOYED TO BOTH skinday.ca AND skinday.com,
 // byte for byte. There is nothing country-specific left in it: no country
 // filter, no province logic, and the only two site-specific strings were the
-// support address, now hello@skinday.ca on both.
+// support address, which now follows the request host: skinday.ca quotes
+// hello@skinday.ca and skinday.com quotes hello@skinday.com.
 //
 // KEEP IT THAT WAY. get-clinics.js was allowed to fork between the two sites
 // and the copies have drifted to the point where one change is two unrelated
@@ -213,7 +214,15 @@ async function fetchIdentity(supabase, clinicId) {
 }
 
 
+// Contact address follows the SITE THE REQUEST CAME TO, so each site's error
+// messages quote its own domain. Sender addresses are unaffected.
+function contactForHost(event) {
+  const host = String((event.headers || {}).host || (event.headers || {}).Host || '').toLowerCase();
+  return /(^|\.)skinday\.ca$/.test(host.split(':')[0]) ? 'hello@skinday.ca' : 'hello@skinday.com';
+}
+
 exports.handler = async (event) => {
+  const SITE_CONTACT = contactForHost(event);
   const headers = {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
@@ -276,7 +285,7 @@ exports.handler = async (event) => {
           return {
             statusCode: 404,
             headers,
-            body: JSON.stringify({ error: 'No clinic claim found for this account. Contact hello@skinday.ca.' })
+            body: JSON.stringify({ error: `No clinic claim found for this account. Contact ${SITE_CONTACT}.` })
           };
         }
 
@@ -308,7 +317,7 @@ exports.handler = async (event) => {
         return {
           statusCode: 404,
           headers,
-          body: JSON.stringify({ error: 'No approved clinic found for this account. Contact hello@skinday.ca.' })
+          body: JSON.stringify({ error: `No approved clinic found for this account. Contact ${SITE_CONTACT}.` })
         };
       }
 

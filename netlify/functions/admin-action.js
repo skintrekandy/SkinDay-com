@@ -67,6 +67,20 @@ const SITE_BY_COUNTRY = {
   hongkong: 'https://skinday.com'
 };
 
+// ⚠️ The CONTACT address follows the clinic's own site, so each site's contact
+// email matches its domain. The SENDER stays hello@skinday.ca on both: that is
+// the domain verified in Resend and the one the .com key is scoped to, and
+// verifying a second domain is deliberately not being paid for.
+//
+// ⚠️ Both approval paths serve BOTH countries. This function is .ca-only but is
+// fired by a webhook on every clinic; the .com admin's claims queue likewise
+// shows every country. So neither can hardcode a contact address.
+function contactFor(country) {
+  const key = String(country || '').trim().toLowerCase();
+  const site = SITE_BY_COUNTRY[key] || 'https://skinday.ca';
+  return 'hello@' + site.replace(/^https?:\/\//, '');
+}
+
 async function portalUrlForClinic(clinicId) {
   try {
     const { data } = await supabase
@@ -107,6 +121,7 @@ async function buildClinicNamesMap(clinicIds, primaryName, primaryId) {
 }
 
 function approvalEmailHtml(clinicName, setupLink, locationCount, portalUrl) {
+  const contact = 'hello@' + String(portalUrl).replace(/^https?:\/\//, '').split('/')[0];
   const isChain = locationCount > 1;
   const headline = isChain ? 'Your listings are live' : 'Your listing is live';
   const bodyLine = isChain
@@ -129,7 +144,7 @@ function approvalEmailHtml(clinicName, setupLink, locationCount, portalUrl) {
     + '<a href="' + setupLink + '" class="btn">Set up your password</a>'
     + '<p class="note">This link expires in 24 hours. If it expires, visit <a href="' + portalUrl + '" style="color:#c9736a;">' + portalLabel + '</a> and use "Forgot password."</p>'
     + '</div>'
-    + '<div class="footer">Questions? Reply to this email or contact <a href="mailto:hello@skinday.com" style="color:#c9736a;">hello@skinday.com</a><br/>SkinDay</div>'
+    + '<div class="footer">Questions? Reply to this email or contact <a href="mailto:' + contact + '" style="color:#c9736a;">' + contact + '</a><br/>SkinDay</div>'
     + '</div></body></html>';
 }
 
