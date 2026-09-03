@@ -1384,6 +1384,9 @@
     });
   }
 
+  // Contact address matches the site's own domain; the Resend sender stays .ca.
+  const SD_CONTACT = (SD_COUNTRY === 'canada') ? 'hello@skinday.ca' : 'hello@skinday.com';
+
   const SD_COUNTRY_LABELS = {
     canada: 'Canada',
     usa: 'the United States',
@@ -1550,7 +1553,7 @@
 
       resultsBox.innerHTML = '';
       if (matches.length === 0) {
-        resultsBox.innerHTML = `<div class="no-results">No clinic found — <a href="mailto:hello@skinday.ca" style="color:var(--rose);">contact us to add yours</a></div>`;
+        resultsBox.innerHTML = `<div class="no-results">No clinic found — <a href="mailto:${SD_CONTACT}" style="color:var(--rose);">contact us to add yours</a></div>`;
       } else {
         matches.forEach(c => {
           const div = document.createElement('div');

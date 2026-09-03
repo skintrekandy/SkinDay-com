@@ -1998,7 +1998,7 @@
         </div>
 
         <div class="identity-helper" id="device-helper">
-          Don't see your machine? Email hello@skinday.ca with the model name and we'll add it to the reference list.
+          Don't see your machine? Email <span class="site-contact">hello@skinday.ca</span> with the model name and we'll add it to the reference list.
         </div>
       </div>
 
@@ -2117,7 +2117,7 @@
       const data = await res.json();
 
       if (!res.ok || data.error) {
-        showLoginError(data.error || 'No approved clinic found for this account. Contact hello@skinday.ca.');
+        showLoginError(data.error || ('No approved clinic found for this account. Contact ' + SITE_CONTACT + '.'));
         return;
       }
 
@@ -2453,12 +2453,24 @@
   // clinic clicking "Back to directory" from their own portal landed on a
   // sales page. Same trap as the NT$ prices, the canonical and the report
   // endpoints: a bare path that means a different thing per site.
+  // Each site's contact address matches its own domain. Read from the HOST, not
+  // from the clinic's country, because the login error fires before any clinic
+  // has loaded. The Resend SENDER stays hello@skinday.ca on both sites.
+  const SITE_CONTACT = /(^|\.)skinday\.ca$/i.test(window.location.hostname)
+    ? 'hello@skinday.ca'
+    : 'hello@skinday.com';
+
   const DIRECTORY_URLS = {
     canada:   '/index.html',
     usa:      '/us',
     taiwan:   '/taiwan',
     hongkong: '/hongkong'
   };
+
+  // Any element tagged .site-contact shows the address for THIS site.
+  function applySiteContact() {
+    document.querySelectorAll('.site-contact').forEach(el => { el.textContent = SITE_CONTACT; });
+  }
 
   function applyDirectoryLinks(country) {
     let href = DIRECTORY_URLS[country] || '/';
@@ -2477,6 +2489,7 @@
     // Canada gets its own set; everything else gets the US set for now. When
     // Taiwan or Hong Kong claim clinics, add a set rather than a branch.
     applyDirectoryLinks(country);
+    applySiteContact();
 
     const set = CRED_SETS[country] || CRED_SETS.usa;
     CRED_VISIBLE = set.show;
@@ -3951,7 +3964,7 @@
     const filtered = deviceFiltered();
     if (filtered.length === 0) {
       panel.innerHTML = deviceQuery
-        ? `<div class="pill-picker-empty">No device matches "<strong>${escapeHtml(deviceQuery)}</strong>". If we're missing your machine, email hello@skinday.ca and we'll add it.</div>`
+        ? `<div class="pill-picker-empty">No device matches "<strong>${escapeHtml(deviceQuery)}</strong>". If we're missing your machine, email ${SITE_CONTACT} and we'll add it.</div>`
         : `<div class="pill-picker-empty">Everything on our list is already selected.</div>`;
       return;
     }
