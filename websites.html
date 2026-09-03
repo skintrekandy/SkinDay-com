@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GEO/AEO Websites for Clinics · SkinDay</title>
+<meta name="description" content="SkinDay builds clinic websites that AI search can answer with — grounded in a dataset of 63,916+ clinic-device relationships across 39,264+ clinics. Anyone can claim GEO/AEO. We built the dataset first.">
+<link rel="canonical" href="https://skinday.com/websites">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#1C1714; --deep-2:#2A2320; --cream:#FAF7F2; --cream-2:#F1EBE1;
+  --gold:#C9A96E; --gold-deep:#A9853F; --gold-bg:#F1E9D9;
+  --ink:#1C1714; --soft:#6E645C; --line:#E4DCD0; --white:#fff;
+  --sp:clamp(1.25rem,4vw,3.25rem); --maxw:1180px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI","Noto Sans TC",sans-serif;
+  font-weight:400;font-size:clamp(1rem,.96rem + .2vw,1.06rem);line-height:1.75;
+  -webkit-font-smoothing:antialiased}
+body.zh{font-style:normal}
+h1,h2,h3{font-weight:500;line-height:1.2;margin:0;letter-spacing:-.01em}
+em{font-style:normal;color:var(--gold-deep)}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 var(--sp)}
+:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.eyebrow{font-size:.7rem;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);margin:0}
+
+/* header */
+.top{border-bottom:1px solid var(--line);background:var(--cream)}
+.top .wrap{display:flex;align-items:center;gap:1.5rem;padding-top:1.1rem;padding-bottom:1.1rem}
+.brand{font-size:1.4rem;font-weight:500;letter-spacing:-.02em;margin-right:auto}
+.brand span{color:var(--gold-deep)}
+.lang-toggle{display:flex;border:1px solid var(--line);border-radius:100px;overflow:hidden}
+.lang-toggle button{background:none;border:0;padding:.4rem .9rem;cursor:pointer;
+  font-family:inherit;font-size:.78rem;color:var(--soft)}
+.lang-toggle button[aria-pressed="true"]{background:var(--deep);color:var(--cream)}
+
+/* hero */
+.hero{background:var(--deep);color:var(--cream);padding:clamp(3.5rem,8vw,6rem) 0}
+.hero h1{font-size:clamp(2rem,4.6vw,3.4rem);max-width:20ch;color:var(--cream)}
+.hero .lede{color:#B9AEA4;margin:1.6rem 0 0;max-width:56ch;font-size:clamp(1rem,1vw + .7rem,1.15rem)}
+.hero em{color:var(--gold)}
+.btn{display:inline-block;padding:1rem 2rem;border-radius:100px;font-size:.82rem;
+  letter-spacing:.12em;text-transform:uppercase;font-weight:500;transition:.15s}
+.btn-gold{background:var(--gold);color:var(--deep)}
+.btn-gold:hover{background:var(--cream);color:var(--deep)}
+.btn-line{border:1px solid rgba(250,247,242,.4);color:var(--cream)}
+.btn-line:hover{background:var(--cream);color:var(--deep)}
+.hero-actions{display:flex;gap:.8rem;flex-wrap:wrap;margin-top:2.4rem}
+
+/* stats */
+.stats{background:var(--deep-2);color:var(--cream)}
+.stats .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1rem,3vw,2.5rem);
+  padding-top:2.6rem;padding-bottom:2.6rem}
+.stat .n{font-size:clamp(2rem,4vw,2.9rem);font-weight:500;color:var(--gold);line-height:1}
+.stat .l{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:#B9AEA4;margin-top:.6rem}
+.stat .d{font-size:.85rem;color:#8E837B;margin-top:.5rem}
+
+section{padding:clamp(3.5rem,8vw,5.5rem) 0}
+.sec-head{max-width:56ch;margin-bottom:clamp(2rem,4.5vw,3rem)}
+.sec-head.center{text-align:center;margin-left:auto;margin-right:auto}
+.sec-head h2{font-size:clamp(1.7rem,3.6vw,2.6rem);margin-top:.9rem}
+.sec-head p{color:var(--soft);margin:1rem 0 0}
+
+/* demo */
+.demo{background:var(--white);border:1px solid var(--line);border-radius:18px;overflow:hidden;
+  box-shadow:0 16px 44px rgba(28,23,20,.06)}
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--cream-2)}
+.tabs button{flex:1;background:none;border:0;padding:1rem .8rem;cursor:pointer;
+  font-family:inherit;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--soft);border-bottom:2px solid transparent}
+.tabs button[aria-selected="true"]{background:var(--white);color:var(--gold-deep);border-bottom-color:var(--gold)}
+.panes{display:grid;grid-template-columns:1fr 1fr}
+.pane{padding:1.7rem 1.6rem}
+.pane:first-child{border-right:1px solid var(--line)}
+.pane h4{margin:0 0 1rem;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--soft);font-weight:500}
+.page-copy{font-size:.95rem;color:var(--ink);line-height:1.8;min-height:150px}
+.extract{font-family:ui-monospace,Menlo,monospace;font-size:.8rem;line-height:1.85;
+  white-space:pre-wrap;color:var(--deep);min-height:150px}
+.extract .ok{color:#3F7A4B}
+.extract .no{color:#A9524F}
+.verdict{border-top:1px solid var(--line);padding:1.1rem 1.6rem;font-size:.9rem;background:var(--cream-2)}
+
+/* three data points */
+.points{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1rem,2.4vw,1.8rem)}
+.point{background:var(--white);border:1px solid var(--line);border-radius:16px;padding:1.8rem 1.6rem;
+  box-shadow:0 12px 34px rgba(28,23,20,.05)}
+.point .num{width:2rem;height:2rem;border-radius:50%;background:var(--gold-bg);color:var(--gold-deep);
+  display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:500;margin-bottom:1rem}
+.point h3{font-size:1.2rem;margin-bottom:.5rem}
+.point p{font-size:.9rem;color:var(--soft);margin:0}
+
+/* two halves */
+.halves{display:grid;grid-template-columns:1fr 1fr;gap:clamp(1rem,2.4vw,1.8rem)}
+.half{border-radius:16px;padding:1.9rem 1.7rem}
+.half.light{background:var(--white);border:1px solid var(--line)}
+.half.dark{background:var(--deep);color:var(--cream)}
+.half .tag{font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;margin:0 0 .7rem}
+.half.light .tag{color:var(--gold-deep)} .half.dark .tag{color:var(--gold)}
+.half h3{font-size:1.4rem;margin-bottom:1rem}
+.half.dark h3{color:var(--cream)}
+.half ul{list-style:none;margin:0;padding:0}
+.half li{position:relative;padding-left:1.35rem;margin-bottom:.75rem;font-size:.92rem;color:var(--soft)}
+.half.dark li{color:#B9AEA4}
+.half li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;
+  border-radius:50%;background:var(--gold)}
+
+/* form */
+.cta{background:var(--deep);color:var(--cream)}
+.cta h2{font-size:clamp(1.7rem,3.6vw,2.5rem);color:var(--cream);max-width:22ch}
+.cta p{color:#B9AEA4;margin:1.2rem 0 0;max-width:50ch}
+.form-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(2rem,5vw,4rem);align-items:start}
+form label{display:block;margin:1rem 0 .35rem;font-size:.85rem;color:#C9BEB6}
+form input,form textarea{width:100%;padding:.8rem .95rem;border-radius:10px;border:1px solid #453B34;
+  background:var(--deep-2);color:var(--cream);font-family:inherit;font-size:.95rem}
+form textarea{min-height:88px;resize:vertical}
+form input::placeholder,form textarea::placeholder{color:#7A6E65}
+form button{margin-top:1.5rem;background:var(--gold);color:var(--deep);border:0;border-radius:100px;
+  padding:1rem 2.2rem;font-family:inherit;font-size:.82rem;letter-spacing:.12em;
+  text-transform:uppercase;font-weight:500;cursor:pointer}
+form button:hover{background:var(--cream)}
+.fineprint{font-size:.82rem;color:#8E837B;margin-top:1.2rem}
+
+footer{background:var(--deep-2);color:#8E837B;padding:2.4rem 0;font-size:.85rem}
+footer .wrap{display:flex;justify-content:space-between;gap:1.5rem;flex-wrap:wrap}
+footer a{color:#B9AEA4}
+
+@media (max-width:900px){
+  .points,.halves,.panes,.form-grid,.stats .wrap{grid-template-columns:1fr}
+  .pane:first-child{border-right:0;border-bottom:1px solid var(--line)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <a class="brand" href="/">Skin<span>Day</span></a>
+  <div class="lang-toggle" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN</button>
+    <button type="button" data-lang="zh" aria-pressed="false">繁中</button>
+  </div>
+</div></div>
+
+<div class="hero"><div class="wrap">
+  <p class="eyebrow" style="color:var(--gold)" data-en="GEO/AEO Websites" data-zh="GEO/AEO 網站">GEO/AEO Websites</p>
+  <h1 data-en="Anyone can claim GEO/AEO. We built the dataset first."
+      data-zh="人人都能說自己做 GEO/AEO。我們先建好了資料。">Anyone can claim GEO/AEO. We built the dataset first.</h1>
+  <p class="lede" data-en="SkinDay maps medical aesthetics across five markets. When we build your website, we already know what every clinic near you publishes — and which questions none of them have answered."
+     data-zh="SkinDay 已在五個市場完整記錄醫美產業。當我們為您建置網站時，我們已經知道您附近每一間診所發布了什麼內容，以及哪些問題至今沒有人回答。">SkinDay maps medical aesthetics across five markets. When we build your website, we already know what every clinic near you publishes — and which questions none of them have answered.</p>
+  <div class="hero-actions">
+    <a class="btn btn-gold" href="#review" data-en="See what AI reads on your site" data-zh="看看 AI 讀到您的網站什麼">See what AI reads on your site</a>
+    <a class="btn btn-line" href="#build" data-en="What we build" data-zh="我們建置什麼">What we build</a>
+  </div>
+</div></div>
+
+<div class="stats"><div class="wrap">
+  <div class="stat"><div class="n">63,916+</div>
+    <div class="l" data-en="Clinic-device relationships" data-zh="診所與儀器對應關係">Clinic-device relationships</div>
+    <div class="d" data-en="Which platform each clinic runs, read from their own websites." data-zh="每間診所實際使用哪些儀器，直接來自他們自己的網站。">Which platform each clinic runs, read from their own websites.</div></div>
+  <div class="stat"><div class="n">39,264+</div>
+    <div class="l" data-en="Clinics mapped" data-zh="已收錄診所">Clinics mapped</div>
+    <div class="d" data-en="Name, location, providers and treatment menu." data-zh="名稱、地點、醫療團隊與療程項目。">Name, location, providers and treatment menu.</div></div>
+  <div class="stat"><div class="n">5+</div>
+    <div class="l" data-en="Markets" data-zh="市場">Markets</div>
+    <div class="d" data-en="Canada, the United States and Asia, and growing." data-zh="加拿大、美國與亞洲，持續擴增中。">Canada, the United States and Asia, and growing.</div></div>
+</div></div>
+
+<section><div class="wrap">
+  <div class="sec-head center">
+    <p class="eyebrow" data-en="The shift" data-zh="正在發生的改變">The shift</p>
+    <h2 data-en="Patients stopped searching. They started asking."
+        data-zh="患者不再只是搜尋，而是直接發問。">Patients stopped searching. They started asking.</h2>
+    <p data-en="Your website was built to rank for “treatment plus city”. Increasingly, people open ChatGPT and ask which treatment is right for them — and an AI answers by quoting whoever published a real answer."
+       data-zh="您的網站是為了「療程 + 城市」這類搜尋而建的。但越來越多人直接打開 ChatGPT 詢問自己適合哪一種療程，而 AI 的回答，來自那個真正寫出答案的人。">Your website was built to rank for "treatment plus city". Increasingly, people open ChatGPT and ask which treatment is right for them — and an AI answers by quoting whoever published a real answer.</p>
+  </div>
+
+  <div class="demo">
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-t="0" data-en="A typical clinic page" data-zh="一般診所頁面">A typical clinic page</button>
+      <button role="tab" aria-selected="false" data-t="1" data-en="A page we build" data-zh="我們建置的頁面">A page we build</button>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <h4 data-en="What the page says" data-zh="頁面上寫的內容">What the page says</h4>
+        <div class="page-copy" id="copy"></div>
+      </div>
+      <div class="pane">
+        <h4 data-en="What a crawler takes away" data-zh="爬蟲實際取走的內容">What a crawler takes away</h4>
+        <div class="extract" id="extract"></div>
+      </div>
+    </div>
+    <div class="verdict" id="verdict"></div>
+  </div>
+</div></section>
+
+<section style="background:var(--cream-2)"><div class="wrap">
+  <div class="sec-head center">
+    <p class="eyebrow" data-en="Why the data matters" data-zh="資料為什麼重要">Why the data matters</p>
+    <h2 data-en="An agency starts with a blank page." data-zh="一般網頁公司，是從一張白紙開始。">An agency starts with a blank page.</h2>
+    <p data-en="We start with the market already mapped. That changes what gets written, and what gets left out."
+       data-zh="我們則是從一份已經完成的市場地圖開始。這決定了哪些內容值得寫，哪些不必寫。">We start with the market already mapped. That changes what gets written, and what gets left out.</p>
+  </div>
+  <div class="points">
+    <div class="point"><div class="num">1</div>
+      <h3 data-en="We know what your competitors publish" data-zh="我們知道同業寫了什麼">We know what your competitors publish</h3>
+      <p data-en="Every clinic near you, what they offer, and how they describe it. Writing into a gap beats writing into a crowd."
+         data-zh="您附近的每一間診所提供什麼療程、又是怎麼描述的。寫在沒人寫的地方，遠比擠進紅海有效。">Every clinic near you, what they offer, and how they describe it. Writing into a gap beats writing into a crowd.</p></div>
+    <div class="point"><div class="num">2</div>
+      <h3 data-en="We know which questions nobody has answered" data-zh="我們知道哪些問題沒人回答">We know which questions nobody has answered</h3>
+      <p data-en="The comparison a patient types at eleven at night, that not one clinic in your city has written a page about. That is where we start."
+         data-zh="患者深夜輸入的那些比較型問題，您所在城市裡卻沒有任何一間診所寫過。那正是我們的起點。">The comparison a patient types at eleven at night, that not one clinic in your city has written a page about. That is where we start.</p></div>
+    <div class="point"><div class="num">3</div>
+      <h3 data-en="We know what your own site is missing" data-zh="我們知道您的網站少了什麼">We know what your own site is missing</h3>
+      <p data-en="Clinics routinely own a platform for a year without it appearing anywhere on their website. We find those before we write a word."
+         data-zh="診所買了儀器一整年，網站上卻完全沒有提到，這種情況非常普遍。我們會在動筆之前就先找出來。">Clinics routinely own a platform for a year without it appearing anywhere on their website. We find those before we write a word.</p></div>
+  </div>
+</div></section>
+
+<section id="build"><div class="wrap">
+  <div class="sec-head center">
+    <p class="eyebrow" data-en="What we build" data-zh="我們建置什麼">What we build</p>
+    <h2 data-en="Two halves of one system" data-zh="一套系統，兩個部分">Two halves of one system</h2>
+    <p data-en="A website AI search can answer with, and the platform underneath that keeps it fed."
+       data-zh="一個 AI 搜尋能夠直接引用的網站，以及在背後持續餵養它的平台。">A website AI search can answer with, and the platform underneath that keeps it fed.</p>
+  </div>
+  <div class="halves">
+    <div class="half light">
+      <p class="tag" data-en="The website" data-zh="網站">The website</p>
+      <h3 data-en="Built for GEO and AEO" data-zh="為 GEO 與 AEO 而建">Built for GEO and AEO</h3>
+      <ul>
+        <li data-en="Structured pages ChatGPT, Gemini and Google's AI overview can quote as the answer" data-zh="結構化頁面，讓 ChatGPT、Gemini 與 Google AI 摘要能夠直接引用">Structured pages ChatGPT, Gemini and Google's AI overview can quote as the answer</li>
+        <li data-en="Comparison answers for the treatments you actually offer" data-zh="針對您實際提供的療程，寫出真正的比較與解答">Comparison answers for the treatments you actually offer</li>
+        <li data-en="Attributed to your own providers, and dated" data-zh="標註由您團隊的醫療人員審閱，並附上日期">Attributed to your own providers, and dated</li>
+        <li data-en="Your brand and your existing rankings, kept" data-zh="保留您的品牌調性，以及既有的搜尋排名">Your brand and your existing rankings, kept</li>
+      </ul>
+    </div>
+    <div class="half dark">
+      <p class="tag" data-en="The backend" data-zh="後台">The backend</p>
+      <h3>Visualize Pro</h3>
+      <ul>
+        <li data-en="Visualize — AI simulation in the consult room, on the patient's own photo, while they decide" data-zh="Visualize — 諮詢當下的 AI 模擬，直接呈現在患者本人的照片上">Visualize — AI simulation in the consult room, on the patient's own photo, while they decide</li>
+        <li data-en="Studio — before-and-after composition, and a case library you actually keep" data-zh="Studio — 術前術後圖組編排，以及真正留得下來的案例庫">Studio — before-and-after composition, and a case library you actually keep</li>
+        <li data-en="Website gallery automation — published cases flow onto the site with nobody maintaining it" data-zh="網站案例牆自動更新 — 已授權的案例自動上站，無需人工維護">Website gallery automation — published cases flow onto the site with nobody maintaining it</li>
+      </ul>
+    </div>
+  </div>
+  <p style="text-align:center;margin-top:2.2rem;font-size:1.05rem;color:var(--gold-deep);font-weight:500"
+     data-en="Most clinic websites decay the day they launch. This one gets better every time you treat a patient."
+     data-zh="多數診所網站從上線那天就開始老化。這一個，會在您每一次治療之後變得更好。">Most clinic websites decay the day they launch. This one gets better every time you treat a patient.</p>
+</div></section>
+
+<section id="review" class="cta"><div class="wrap">
+  <div class="form-grid">
+    <div>
+      <p class="eyebrow" style="color:var(--gold)" data-en="Free review" data-zh="免費檢視">Free review</p>
+      <h2 data-en="See what AI reads on your website." data-zh="看看 AI 從您的網站讀到什麼。">See what AI reads on your website.</h2>
+      <p data-en="Send us your address and we will run your site the way an AI crawler does, then send you what it extracts — what it finds, what it misses, and which questions in your city nobody has answered yet."
+         data-zh="留下您的網址，我們會以 AI 爬蟲的方式讀取您的網站，並把結果寄給您：它讀到了什麼、漏掉了什麼，以及您所在城市裡還沒有人回答的問題。">Send us your address and we will run your site the way an AI crawler does, then send you what it extracts — what it finds, what it misses, and which questions in your city nobody has answered yet.</p>
+      <p class="fineprint" data-en="No cost and no obligation. We work with a small number of clinics at a time, so every project starts with a conversation rather than a price list."
+         data-zh="完全免費，也沒有任何義務。我們一次只服務少數幾間診所，因此每個專案都從一次對話開始，而不是一張報價單。">No cost and no obligation. We work with a small number of clinics at a time, so every project starts with a conversation rather than a price list.</p>
+    </div>
+    <form name="website-review" method="POST" data-netlify="true">
+      <input type="hidden" name="form-name" value="website-review">
+      <label data-en="Clinic name" data-zh="診所名稱">Clinic name</label>
+      <input type="text" name="clinic" required>
+      <label data-en="Your website" data-zh="您的網站">Your website</label>
+      <input type="url" name="website" placeholder="https://" required>
+      <label data-en="Your name" data-zh="您的姓名">Your name</label>
+      <input type="text" name="name" required>
+      <label data-en="Email" data-zh="電子郵件">Email</label>
+      <input type="email" name="email" required>
+      <label data-en="Anything you would like us to look at? (optional)" data-zh="有什麼特別希望我們留意的？（選填）">Anything you would like us to look at? (optional)</label>
+      <textarea name="notes"></textarea>
+      <button type="submit" data-en="Request my review" data-zh="索取檢視報告">Request my review</button>
+    </form>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <span data-en="© 2026 SkinDay · GEO/AEO websites for cosmetic clinics and med spas" data-zh="© 2026 SkinDay · 為醫美診所打造的 GEO/AEO 網站">© 2026 SkinDay · GEO/AEO websites for cosmetic clinics and med spas</span>
+  <a href="/" data-en="Back to SkinDay" data-zh="回到 SkinDay">Back to SkinDay</a>
+</div></footer>
+
+<script>
+/* ---- demo content ---- */
+var DEMO=[
+ { copy:{ en:"Advanced non-surgical skin tightening using the latest technology. Our expert team delivers natural results with minimal downtime. Discover your best skin today — book your complimentary consultation.",
+          zh:"採用最新科技的非侵入式緊緻療程。我們的專業團隊為您帶來自然、恢復期短的效果。立即預約免費諮詢，找回最好的肌膚狀態。" },
+   ext:{ en:"clinic        <span class='no'>not declared</span>\nprovider      <span class='no'>not declared</span>\ntreatments    <span class='no'>none named</span>\nquestions     <span class='no'>none answered</span>\n\nusable quote  <span class='no'>none</span>",
+         zh:"診所資訊      <span class='no'>未宣告</span>\n醫療人員      <span class='no'>未宣告</span>\n療程項目      <span class='no'>未指名</span>\n問題解答      <span class='no'>無</span>\n\n可引用內容    <span class='no'>無</span>" },
+   verdict:{ en:"Everything a patient needs is there. Nothing a machine can use is.",
+             zh:"患者需要的資訊都在，但機器能用的，一樣也沒有。" } },
+ { copy:{ en:"Thermage, Ultherapy or Sofwave — which is right for me? All three tighten, but at different depths with different energy. Thermage uses radiofrequency across a broad, shallower plane and improves skin quality. Ultherapy focuses ultrasound at deeper points and does more for lift. Sofwave sits between them, with a shorter appointment.",
+          zh:"Thermage、Ultherapy 還是 Sofwave，哪一個適合我？三者都能緊緻，但作用深度與能量形式不同。Thermage 以射頻作用於較廣、較淺的層次，改善膚質；Ultherapy 以超音波聚焦於更深的定點，提拉效果更明顯；Sofwave 介於兩者之間，療程時間較短。" },
+   ext:{ en:"clinic        <span class='ok'>MedicalClinic, named, with address</span>\nprovider      <span class='ok'>named, credentialed, dated</span>\ntreatments    <span class='ok'>3 named platforms, compared</span>\nquestions     <span class='ok'>answered in full</span>\n\nusable quote  <span class='ok'>\"Thermage uses radiofrequency across a\n              broad, shallower plane… Ultherapy\n              focuses ultrasound at deeper points\n              and does more for lift.\"</span>",
+         zh:"診所資訊      <span class='ok'>MedicalClinic，含名稱與地址</span>\n醫療人員      <span class='ok'>具名、標示資歷與日期</span>\n療程項目      <span class='ok'>3 項具名儀器，並列比較</span>\n問題解答      <span class='ok'>完整回答</span>\n\n可引用內容    <span class='ok'>「Thermage 以射頻作用於較廣、較淺的\n              層次⋯⋯Ultherapy 聚焦於更深的定點，\n              提拉效果更明顯。」</span>" },
+   verdict:{ en:"A complete thought that survives being lifted out of the page. That is what gets quoted.",
+             zh:"一段抽出來仍然成立的完整說明。這才是會被引用的內容。" } }
+];
+var cur=0, lang=(localStorage.getItem('sd-lang')==='zh')?'zh':'en';
+
+function paintDemo(){
+  document.getElementById('copy').textContent = DEMO[cur].copy[lang];
+  document.getElementById('extract').innerHTML = DEMO[cur].ext[lang];
+  document.getElementById('verdict').textContent = DEMO[cur].verdict[lang];
+}
+document.querySelectorAll('.tabs button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('.tabs button').forEach(function(x){x.setAttribute('aria-selected','false');});
+    b.setAttribute('aria-selected','true');
+    cur=+b.dataset.t; paintDemo();
+  });
+});
+
+function applyLang(){
+  document.documentElement.lang = (lang==='zh') ? 'zh-Hant' : 'en';
+  document.body.classList.toggle('zh', lang==='zh');
+  document.querySelectorAll('[data-en]').forEach(function(el){
+    var v = el.getAttribute(lang==='zh' ? 'data-zh' : 'data-en');
+    if(v) el.textContent = v;
+  });
+  document.querySelectorAll('.lang-toggle button').forEach(function(b){
+    b.setAttribute('aria-pressed', b.dataset.lang===lang ? 'true':'false');
+  });
+  paintDemo();
+}
+document.querySelectorAll('.lang-toggle button').forEach(function(b){
+  b.addEventListener('click',function(){
+    lang=b.dataset.lang; localStorage.setItem('sd-lang',lang); applyLang();
+  });
+});
+applyLang();
+</script>
+</body>
+</html>
