@@ -1718,7 +1718,7 @@ function renderPageCards(clinicsData, append) {
 
     const priceBlockHTML = hasPrice
       ? `<div class="card-price">
-          <div class="price-label">Botox per unit</div>
+          <div class="price-label">${toxinLabel(c)} per unit</div>
           <div class="price-main">
             <span class="price-from">from</span>
             <span class="price-amount">$${c.price}</span>
@@ -2092,6 +2092,20 @@ window.cmVote = async function(clinicId, val) {
   }
 };
 
+// ⚠️ THE HEADLINE PRICE IS NOT ALWAYS BOTOX. syncClinicLowestPrice writes the
+// LOWEST price across every toxin into clinics.price, and records which one in
+// clinics.toxin_type. Two of the labels here said "Botox per unit" regardless,
+// so a clinic whose cheapest is Xeomin was having a Xeomin price presented as a
+// Botox price. That is the exact comparison a patient makes on this page.
+const TOXIN_LABELS = {
+  botox: 'Botox', dysport: 'Dysport', xeomin: 'Xeomin',
+  nuceiva: 'Jeuveau', jeuveau: 'Jeuveau', daxxify: 'Daxxify', letybo: 'Letybo'
+};
+function toxinLabel(c) {
+  const t = String((c && c.toxin_type) || '').trim().toLowerCase();
+  return TOXIN_LABELS[t] || 'Neurotoxin';
+}
+
 // ─── MODAL DATA HELPERS (M23) ─────────────────────────────────
 // The grid fetch returns card fields only, so most of what the modal shows
 // (credentials, languages, expertise, concerns, promo, booking_url, logo,
@@ -2222,7 +2236,7 @@ function cmBuildContent(c) {
         : c.price_source === 'inquiry'
         ? `<span class="trust-badge trust-badge-inquiry">Confirmed by inquiry · ${formatPriceDate(c.price_date)}</span>`
         : '';
-      return `<div class="cm-sec"><div class="cm-sec-label">Botox per unit</div>`
+      return `<div class="cm-sec"><div class="cm-sec-label">${devEsc(toxinLabel(c))} per unit</div>`
            + `<strong style="font-family:'Cormorant Garamond',serif;font-size:1.6rem;">$${c.price}</strong>`
            + ` <span style="font-size:0.78rem;color:var(--muted);">/unit</span>`
            + (src ? `<div>${src}</div>` : '')
