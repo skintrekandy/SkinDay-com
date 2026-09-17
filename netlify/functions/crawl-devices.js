@@ -1697,10 +1697,31 @@ async function doCrawl(supabase, body) {
   // fifteen seconds, not a week.
   const oneHost = (body.host || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, '');
 
+  // ⭐⭐ BIOSTIM MODE (M40 phase 1 — injectable biostimulators).
+  //
+  // The same crawler reading the same pages, with four deliberate differences:
+  //   1. the matcher is built from the `biostimulator` CATEGORY ONLY, so a
+  //      biostim pass cannot write equipment candidates;
+  //   2. the queue is claimed on `biostim_status`, so the device crawl's own
+  //      queue state, verdict history and month-over-month diff are untouched
+  //      and either pass can be re-run independently (the crawl-socials rule);
+  //   3. NOTHING auto-publishes — every row waits for a human, because for
+  //      injectables a brand name is the vocabulary of the category rather than
+  //      evidence of stock, which is the opposite of the device case;
+  //   4. no census rows, since unmatched tokens near a device word are an
+  //      equipment instrument and would only pollute that ranking.
+  const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
+  const BIOSTIM_CATEGORY = 'biostimulator';
+  const Q_STATUS = biostim ? 'biostim_status' : 'status';
+  const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
+
   if (body.retry === true) {
+    const reset = {};
+    reset[Q_STATUS] = 'pending';
+    reset[Q_ERROR] = null;
     let rq = supabase.from('crawl_device_queue')
-      .update({ status: 'pending', last_error: null })
-      .in('status', ['error', 'running']);
+      .update(reset)
+      .in(Q_STATUS, ['error', 'running']);
     if (country) rq = rq.eq('country', country);
     if (state) rq = rq.contains('states', [state]);
     await rq;
@@ -1709,10 +1730,18 @@ async function doCrawl(supabase, body) {
   // One run row per crawl session, so a month-over-month diff can be scoped.
   let runId = body.run_id || null;
   if (!runId) {
-    const { data } = await supabase.from('device_crawl_runs')
-      .insert({ label: body.label || null, matcher_version: MATCHER_VERSION })
+    const base = { label: body.label || null, matcher_version: MATCHER_VERSION };
+    let ins = await supabase.from('device_crawl_runs')
+      .insert(biostim ? Object.assign({ run_type: 'biostim' }, base) : base)
       .select('id').single();
-    runId = data ? data.id : null;
+    // If `run_type` carries a check constraint that does not know the word
+    // biostim, fall back to an unlabelled run rather than failing to crawl at
+    // all. The measurement guard below reads run_type, so the only cost is that
+    // this run looks ordinary to the next diff.
+    if (ins.error && biostim) {
+      ins = await supabase.from('device_crawl_runs').insert(base).select('id').single();
+    }
+    runId = ins.data ? ins.data.id : null;
   }
 
   let claimQuery = supabase
@@ -1727,7 +1756,7 @@ async function doCrawl(supabase, body) {
     // ⭐ `excluded` is now honoured. Aggregator, hotel and umbrella hosts are
     // seeded excluded so the crawler never reads a booking platform's marketing
     // copy and attributes it to 52 unrelated clinics.
-    claimQuery = claimQuery.eq('status', 'pending').eq('excluded', false);
+    claimQuery = claimQuery.eq(Q_STATUS, 'pending').eq('excluded', false);
     if (country) claimQuery = claimQuery.eq('country', country);
     if (state) claimQuery = claimQuery.contains('states', [state]);
     claimQuery = claimQuery.order('id', { ascending: true }).limit(batch);
@@ -1784,16 +1813,23 @@ async function doCrawl(supabase, body) {
     return { done: true, run_id: runId, processed: [], remaining: 0 };
   }
 
+  const runningMark = {};
+  runningMark[Q_STATUS] = 'running';
   await supabase.from('crawl_device_queue')
-    .update({ status: 'running' })
+    .update(runningMark)
     .in('id', claimable.map(r => r.id));
 
   // Read the reference list fresh every invocation, so correcting a row is a SQL
   // update and never a redeploy.
-  const { data: devices, error: refErr } = await supabase
+  let refQuery = supabase
     .from('device_reference')
     .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active')
     .eq('active', true);
+  // ⭐ The whole reason a biostim pass is safe to run over already-crawled
+  // hosts: it can only ever match these rows, so it cannot touch, refresh or
+  // contradict a single equipment candidate.
+  if (biostim) refQuery = refQuery.eq('category', BIOSTIM_CATEGORY);
+  const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
   const matcher = buildMatcher(devices || []);
 
@@ -1808,7 +1844,7 @@ async function doCrawl(supabase, body) {
   // of active reference rows. Change the code or add a device, and this run is
   // labelled a BACKFILL automatically: its new devices measure us, not the
   // market, and must stay out of the manufacturer change feed.
-  if (runId) {
+  if (runId && !biostim) {
     const { data: mine } = await supabase.from('device_crawl_runs')
       .select('reference_count').eq('id', runId).single();
     if (!mine || mine.reference_count === null) {
@@ -1816,6 +1852,10 @@ async function doCrawl(supabase, body) {
       const { data: prev } = await supabase.from('device_crawl_runs')
         .select('matcher_version, reference_count')
         .not('finished_at', 'is', null)
+        // ⭐ A biostim run reads three reference rows, so letting it count as
+        // "the previous finished run" would label the next real device crawl a
+        // backfill and quietly drop a month of the change feed.
+        .or('run_type.is.null,run_type.neq.biostim')
         .lt('id', runId)
         .order('id', { ascending: false })
         .limit(1);
@@ -1927,7 +1967,11 @@ async function doCrawl(supabase, body) {
       // threshold, that device stops auto-publishing FOR THE REST OF THE RUN and
       // the remainder queues. Damage is capped at the ceiling rather than the
       // size of the corpus. Raise or lower AUTO_APPROVE_CEILING as needed.
-      try {
+      // ⭐⭐ Biostim rows NEVER auto-publish, whatever the evidence tier says.
+      // "Sculptra" on a page is the category's vocabulary; a clinic can open an
+      // account with any manufacturer at any time, so the page proves what it
+      // advertises, not what it stocks. Every row goes to review.
+      if (!biostim) try {
         const strong = rows.filter(r =>
           (r.confidence === 'own_page' || r.confidence === 'exact'));
         if (strong.length) {
@@ -2021,7 +2065,7 @@ async function doCrawl(supabase, body) {
       }
     }
 
-    if (out.unknowns.length) {
+    if (out.unknowns.length && !biostim) {
       await supabase.from('device_unknown_tokens').insert(out.unknowns.map(u => ({
         token: u.token,
         token_norm: u.token_norm,
@@ -2032,17 +2076,24 @@ async function doCrawl(supabase, body) {
       })));
     }
 
-    await supabase.from('crawl_device_queue').update({
-      status: out.status,
-      tech_url: out.techUrl || null,
-      pages_tried: out.pagesTried,
-      devices_found: out.matches.length,
-      unknowns_seen: out.unknowns.length,
-      attempts: (row.attempts || 0) + 1,
-      last_error: out.lastError,
-      last_run_id: runId,
-      fetched_at: new Date().toISOString()
-    }).eq('id', row.id);
+    // ⚠️ In biostim mode this writes ONLY the three biostim columns. Writing
+    // devices_found or tech_url here would overwrite the device crawl's record
+    // of the host with a three-product count, which is exactly the kind of
+    // silent corruption that makes a run-vs-run diff unreadable.
+    const qUpdate = biostim
+      ? { biostim_status: out.status,
+          biostim_error: out.lastError,
+          biostim_fetched_at: new Date().toISOString() }
+      : { status: out.status,
+          tech_url: out.techUrl || null,
+          pages_tried: out.pagesTried,
+          devices_found: out.matches.length,
+          unknowns_seen: out.unknowns.length,
+          attempts: (row.attempts || 0) + 1,
+          last_error: out.lastError,
+          last_run_id: runId,
+          fetched_at: new Date().toISOString() };
+    await supabase.from('crawl_device_queue').update(qUpdate).eq('id', row.id);
 
     // ---- per-run host record --------------------------------------------
     // The queue row above is OVERWRITTEN every run, losing its verdict history.
@@ -2108,9 +2159,11 @@ async function doCrawl(supabase, body) {
 
   // Put anything the deadline cut short back in the queue.
   if (deferred.length) {
+    const release = {};
+    release[Q_STATUS] = 'pending';
     await supabase
       .from('crawl_device_queue')
-      .update({ status: 'pending' })
+      .update(release)
       .in('id', deferred);
     console.log('deadline reached, released ' + deferred.length + ' host(s) back to pending');
   }
@@ -2118,7 +2171,7 @@ async function doCrawl(supabase, body) {
   let remQ = supabase
     .from('crawl_device_queue')
     .select('id', { count: 'exact', head: true })
-    .eq('status', 'pending')
+    .eq(Q_STATUS, 'pending')
     .eq('excluded', false);
   if (country) remQ = remQ.eq('country', country);
   if (state) remQ = remQ.contains('states', [state]);
@@ -2309,6 +2362,11 @@ async function manualDevices(supabase, body) {
 // aggregator, hotel and umbrella hosts are excluded deliberately and a requeue
 // must never quietly re-admit them.
 async function requeueAll(supabase, body) {
+  // ⭐ A biostim requeue resets ONLY `biostim_status`, so re-running the
+  // biostimulator pass never puts the equipment crawl back to pending.
+  const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
+  const Q_STATUS = biostim ? 'biostim_status' : 'status';
+  const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
   const country = body.country || null;
   // ⚠️ MUST honour the state too. Requeue is country-wide by default, so
   // without this a New York re-crawl puts all ~14,400 US hosts back to pending
@@ -2324,8 +2382,12 @@ async function requeueAll(supabase, body) {
 
   if (body.preview) return { preview: true, country: country, state: state || null, would_requeue: count || 0 };
 
+  const reset = {};
+  reset[Q_STATUS] = 'pending';
+  reset[Q_ERROR] = null;
+  if (!biostim) reset.attempts = 0;
   let rq = supabase.from('crawl_device_queue')
-    .update({ status: 'pending', last_error: null, attempts: 0 })
+    .update(reset)
     .eq('excluded', false);
   if (country) rq = rq.eq('country', country);
   if (state) rq = rq.contains('states', [state]);
@@ -2420,10 +2482,14 @@ async function candidateStats(supabase, body) {
   // Queue counts are country-scoped; candidate counts are not, because
   // clinic_device_candidates has no country column. The tab labels them.
   const state = ((body && body.state) || '').trim().toLowerCase();
+  // ⭐ The biostim tab reads its own queue column through the same action, so
+  // its progress line counts the biostim pass rather than the device crawl.
+  const qStatusCol = String((body && body.mode) || '').trim().toLowerCase() === 'biostim'
+    ? 'biostim_status' : 'status';
   const qc = async (status) => {
     let q = supabase.from('crawl_device_queue')
       .select('id', { count: 'exact', head: true })
-      .eq('status', status).eq('excluded', false);
+      .eq(qStatusCol, status).eq('excluded', false);
     if (country) q = q.eq('country', country);
     if (state) q = q.contains('states', [state]);
     const { count } = await q;
