@@ -759,6 +759,9 @@
     <button class="nav-tab" data-tab="devices" onclick="switchTab('devices')">
       &#9881; Devices <span class="tab-count zero" id="dc-count">0</span>
     </button>
+    <button class="nav-tab" data-tab="biostim" onclick="switchTab('biostim')">
+      &#9679; Biostimulators <span class="tab-count zero" id="bs-count">0</span>
+    </button>
     <button class="nav-tab" data-tab="manual" onclick="switchTab('manual')">
       &#9998; Add devices
     </button>
@@ -1227,6 +1230,64 @@
     </div>
 
 
+    <div id="biostim-panel" style="display:none">
+
+      <div class="add-clinic-form">
+        <div class="form-title">Biostimulation crawl</div>
+        <div class="form-subtitle">Reads the same clinic pages as the device crawl, but matches only the injectable biostimulators &mdash; Sculptra, Radiesse and HArmonyCa. It keeps its own place in the queue, so it never disturbs the device crawl or its month-over-month comparison, and either can be re-run on its own. Nothing here publishes anything: every match waits for review, because a clinic can order from any manufacturer at any time, so a page shows what it advertises rather than what it stocks.</div>
+
+        <div class="form-section-label">Country</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <select class="form-input" id="bs-country" style="max-width:220px;" onchange="bsCountryChanged()">
+            <option value="canada">Canada</option>
+            <option value="usa">United States</option>
+            <option value="taiwan">Taiwan</option>
+            <option value="hongkong">Hong Kong</option>
+            <option value="">Every country</option>
+          </select>
+          <select class="form-input" id="bs-state" style="max-width:200px;display:none;" onchange="bsCountryChanged()">
+            <option value="">Every state</option>
+            <option value="new-york">New York</option>
+            <option value="california">California</option>
+            <option value="florida">Florida</option>
+          </select>
+          <span style="font-size:.78rem;color:var(--muted);">Which products exist is a country question: these three are the ones available in Canada. The reference list is shared, so a run in another country matches the same rows and finds only what those clinics actually name.</span>
+        </div>
+
+        <div class="form-section-label" style="margin-top:1rem;">Run</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn-primary" id="bs-start" onclick="bsStart()">Start crawl</button>
+          <button class="btn-ghost" id="bs-stop" onclick="bsStop()" style="display:none;">Stop</button>
+          <button class="btn-ghost" onclick="bsStart(true)">Retry failed</button>
+          <button class="btn-ghost" id="bs-requeue" onclick="bsRequeue()">Requeue everything</button>
+          <span id="bs-progress" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">
+          Hosts already read by the device crawl still need reading here, since the pages have to be fetched again to look for different names. Canada is roughly 5,600 hosts, so this is an overnight job rather than a coffee break. It only advances while this tab is open and awake, and it should not run alongside the device crawl.
+        </div>
+
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
+          <input class="form-input" id="bs-one-host" placeholder="skin-trek.com" style="max-width:260px;" onkeydown="if(event.key==='Enter')bsTestHost()" />
+          <button class="btn-ghost" onclick="bsTestHost()">Test this host</button>
+          <span style="font-size:.78rem;color:var(--muted);">Reads one site now and shows exactly what matched, whatever its queue status. Worth doing on a clinic you know injects Sculptra before leaving the full run to loop.</span>
+        </div>
+
+        <div id="bs-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
+      </div>
+
+      <div class="add-clinic-form" style="margin-top:1.4rem;">
+        <div class="form-title">What is waiting</div>
+        <div class="form-subtitle">Candidates per product for the country selected above. Reviewing and approving happens in the Devices tab, where the candidate list can be filtered to one product &mdash; the same review gate, rather than a second one that could drift from it.</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <button class="btn-ghost" onclick="bsLoadStats()">Refresh</button>
+          <span id="bs-stats" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div id="bs-tally"></div>
+      </div>
+
+    </div>
+
+
     <div id="reports-panel" style="display:none">
       <div class="add-clinic-form">
         <div class="form-title">Reported data issues</div>
@@ -1418,11 +1479,14 @@ function switchTab(tab){
   if (devP) devP.style.display = (tab === 'devices') ? 'block' : 'none';
   var manP = document.getElementById('manual-panel');
   if (manP) manP.style.display = (tab === 'manual') ? 'block' : 'none';
+  var bsP = document.getElementById('biostim-panel');
+  if (bsP) bsP.style.display = (tab === 'biostim') ? 'block' : 'none';
   var rpP = document.getElementById('reports-panel');
   if (rpP) rpP.style.display = (tab === 'reports') ? 'block' : 'none';
   var clP = document.getElementById('claims-panel');
   if (clP) clP.style.display = (tab === 'claims') ? 'block' : 'none';
   if (tab === 'devices') dcEnter();
+  if (tab === 'biostim') bsEnter();
   if (tab === 'manual') mdEnter();
   if (tab === 'reports') rpLoad();
   if (tab === 'costs' && !costsLoaded) loadCosts();
@@ -3546,6 +3610,313 @@ async function dcStart(retry) {
   dcRunning = false;
   dcButtons(false);
   dcLoadStats();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BIOSTIMULATION CRAWL (M40 phase 1)
+// ═══════════════════════════════════════════════════════════════════════════
+// The same function and the same review gate as the device crawl, with
+// `mode:'biostim'` on every call. That switches three things server-side: the
+// matcher is built from the biostimulator category alone, the queue is claimed
+// on its own column so the device crawl's state is untouched, and nothing
+// auto-publishes.
+//
+// ⭐ WHY THIS IS A SEPARATE TAB RATHER THAN A CHECKBOX ON THE DEVICE CRAWL:
+// the two runs have different review rules and must be startable and
+// re-runnable independently. A checkbox invites starting one while meaning the
+// other, and the cost of that mistake is a wasted overnight run.
+const BS_FN = '/.netlify/functions/crawl-devices';
+let bsRunning = false;
+let bsRunId   = null;
+let bsTotals  = { hosts: 0, found: 0, empty: 0, errors: 0 };
+let bsEntered = false;
+
+function bsCountry() {
+  const el = document.getElementById('bs-country');
+  return el ? el.value : 'canada';
+}
+
+// State only means anything for the USA; other countries' queue rows carry no
+// `states` value, so sending one there matches nothing at all.
+function bsState() {
+  if (bsCountry() !== 'usa') return '';
+  const el = document.getElementById('bs-state');
+  return el ? el.value : '';
+}
+
+function bsScopeLabel() {
+  const st = bsState();
+  if (st) return st.replace(/-/g, ' ');
+  return bsCountry() || 'every country';
+}
+
+function bsEnter() {
+  const sel = document.getElementById('bs-state');
+  if (sel) sel.style.display = (bsCountry() === 'usa') ? '' : 'none';
+  if (bsEntered) { bsLoadStats(); return; }
+  bsEntered = true;
+  bsLoadStats();
+}
+
+function bsCountryChanged() {
+  const sel = document.getElementById('bs-state');
+  if (sel) sel.style.display = (bsCountry() === 'usa') ? '' : 'none';
+  bsLoadStats();
+}
+
+async function bsCall(body) {
+  const res = await fetch(BS_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+    body: JSON.stringify(Object.assign({ mode: 'biostim' }, body))
+  });
+  const data = await res.json();
+  return { ok: res.ok, data: data };
+}
+
+function bsLog(html, colour) {
+  const box = document.getElementById('bs-log');
+  box.style.display = 'block';
+  const line = document.createElement('div');
+  if (colour) line.style.color = colour;
+  line.innerHTML = html;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+function bsButtons(running) {
+  document.getElementById('bs-start').style.display = running ? 'none' : '';
+  document.getElementById('bs-stop').style.display  = running ? '' : 'none';
+}
+
+function bsStop() {
+  bsRunning = false;
+  bsLog('stopping after this batch…', 'var(--muted)');
+}
+
+// A run this long gets interrupted, and every restart that opens a NEW run row
+// fragments the history, so the open run is remembered and offered back.
+function bsRunKey(country, state) {
+  return 'sd-biostim-run:' + (country || 'all') + ':' + (state || 'all');
+}
+
+function bsOpenRun(country, state) {
+  try {
+    const raw = localStorage.getItem(bsRunKey(country, state));
+    if (!raw) return null;
+    const v = JSON.parse(raw);
+    if (!v || !v.runId) return null;
+    if (Date.now() - (v.at || 0) > 36 * 60 * 60 * 1000) {
+      localStorage.removeItem(bsRunKey(country, state));
+      return null;
+    }
+    return v.runId;
+  } catch (e) { return null; }
+}
+
+function bsRememberRun(country, state, runId) {
+  try {
+    localStorage.setItem(bsRunKey(country, state),
+      JSON.stringify({ runId: runId, at: Date.now() }));
+  } catch (e) { /* private mode — resuming is a convenience, not load-bearing */ }
+}
+
+function bsForgetRun(country, state) {
+  try { localStorage.removeItem(bsRunKey(country, state)); } catch (e) {}
+}
+
+async function bsStart(retry) {
+  if (bsRunning) return;
+  if (typeof dcRunning !== 'undefined' && dcRunning) {
+    bsLog('the device crawl is running in this tab. Stop it first, or the two '
+          + 'passes compete for the same fetches.', 'var(--red)');
+    return;
+  }
+  const country = bsCountry();
+  const state = bsState();
+  const scope = bsScopeLabel();
+  bsRunning = true;
+  bsTotals = { hosts: 0, found: 0, empty: 0, errors: 0 };
+
+  bsRunId = null;
+  const openRun = bsOpenRun(country, state);
+  if (openRun) {
+    if (confirm('Biostimulation run ' + openRun + ' for ' + scope
+                + ' never finished.\n\nContinue it? Everything read so far stays '
+                + 'in that run.\n\nCancel starts a brand new run instead.')) {
+      bsRunId = openRun;
+      bsLog('resuming run ' + openRun, 'var(--muted)');
+    } else {
+      bsForgetRun(country, state);
+      bsLog('starting a new run instead of continuing ' + openRun, 'var(--gold)');
+    }
+  }
+
+  bsButtons(true);
+  bsLog((retry === true ? 'retrying hosts that failed' : 'starting') +
+        ' · ' + scope + ' · Sculptra, Radiesse, HArmonyCa…', 'var(--muted)');
+
+  // Netlify answers a killed function with an HTML error page, which arrives
+  // here as "Unexpected token '<'". That is transient: back off and carry on.
+  let consecutiveFailures = 0;
+  const MAX_CONSECUTIVE_FAILURES = 12;
+  const MAX_BACKOFF_MS = 60000;
+
+  while (bsRunning) {
+    let data;
+    try {
+      const r = await bsCall({ action: 'crawl', batch: 3, retry: retry === true,
+                               run_id: bsRunId, country: country, state: state });
+      data = r.data;
+      if (!r.ok) throw new Error((data && data.error) || 'request failed');
+    } catch (e) {
+      consecutiveFailures++;
+      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+        bsLog('stopping after ' + consecutiveFailures + ' consecutive failures: '
+              + esc(String((e && e.message) || e)), 'var(--red)');
+        break;
+      }
+      const waitMs = Math.min(2000 * Math.pow(2, consecutiveFailures - 1), MAX_BACKOFF_MS);
+      bsLog('hiccup (' + consecutiveFailures + '/' + MAX_CONSECUTIVE_FAILURES + '): '
+            + esc(String((e && e.message) || e))
+            + ' · retrying in ' + (waitMs / 1000) + 's', 'var(--gold)');
+      await new Promise(r2 => setTimeout(r2, waitMs));
+      continue;
+    }
+
+    consecutiveFailures = 0;
+    retry = false;
+    if (data.run_id) {
+      bsRunId = data.run_id;
+      bsRememberRun(country, state, bsRunId);
+    }
+
+    for (const p of (data.processed || [])) {
+      bsTotals.hosts++;
+      const host = esc(p.host);
+      if (p.status === 'done') {
+        bsTotals.found += (p.devices || []).length;
+        const list = (p.devices || [])
+          .map(d => esc(d.model) + ' ' + dcConfLabel(d.confidence)).join(', ');
+        bsLog('<strong>' + host + '</strong> · ' + list +
+              ' · across ' + p.clinics + ' clinic' + ((p.clinics === 1) ? '' : 's') +
+              (p.thin_only ? ' · <span style="color:var(--gold);">javascript only, read from its sitemap</span>' : ''),
+              'var(--green)');
+      } else if (p.status === 'empty') {
+        bsTotals.empty++;
+        bsLog(host + ' · nothing named', 'var(--muted)');
+      } else if (p.status === 'needs_render') {
+        bsTotals.empty++;
+        bsLog(host + ' · javascript only, and its sitemap did not help either', 'var(--gold)');
+      } else {
+        bsTotals.errors++;
+        bsLog(host + ' · ' + esc(p.error || p.status), 'var(--red)');
+      }
+    }
+
+    document.getElementById('bs-progress').textContent =
+      bsTotals.hosts + ' hosts · ' + bsTotals.found + ' matches · ' +
+      bsTotals.empty + ' nothing named · ' + bsTotals.errors + ' failed · ' +
+      ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
+
+    if (data.done) {
+      bsForgetRun(country, state);
+      bsLog('queue empty for ' + scope + '. done.', 'var(--muted)');
+      break;
+    }
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  bsRunning = false;
+  bsButtons(false);
+  bsLoadStats();
+}
+
+async function bsTestHost() {
+  const input = document.getElementById('bs-one-host');
+  const host = (input && input.value || '').trim();
+  if (!host) { bsLog('Enter a host first.', 'var(--red)'); return; }
+
+  bsLog('testing ' + esc(host) + ' …', 'var(--muted)');
+  const { ok, data } = await bsCall({ action: 'crawl', host: host });
+  if (!ok) { bsLog('failed: ' + esc((data && data.error) || 'request failed'), 'var(--red)'); return; }
+  if (data.note) { bsLog(esc(data.note), 'var(--gold)'); return; }
+
+  for (const p of (data.processed || [])) {
+    const d = p.diagnostic || {};
+    bsLog('<strong>' + esc(p.host) + '</strong> · verdict: ' + esc(p.status) +
+          ' · ' + (d.pages_read || 0) + ' page(s) read' +
+          (d.sitemap_urls ? ' · sitemap ' + d.sitemap_urls + ' urls' : ''),
+          (p.status === 'done') ? 'var(--green)' : 'var(--gold)');
+    for (const m of (d.matched || [])) bsLog('&nbsp;&nbsp;&nbsp;' + esc(m), 'var(--green)');
+    if (!(d.matched || []).length) {
+      bsLog('&nbsp;&nbsp;&nbsp;no biostimulator named on the pages that were read', 'var(--muted)');
+    }
+    if (d.error) bsLog('&nbsp;&nbsp;&nbsp;error: ' + esc(d.error), 'var(--red)');
+  }
+  bsLoadStats();
+}
+
+// ⚠️ Resets only the biostimulation pass. The device crawl's queue state, its
+// verdicts and its attempt counts are left exactly as they are.
+async function bsRequeue() {
+  const country = bsCountry();
+  const state = bsState();
+  const scope = bsScopeLabel();
+
+  const pre = await bsCall({ action: 'requeue', country: country, state: state, preview: true });
+  if (!pre.ok) { bsLog('could not check: ' + esc((pre.data && pre.data.error) || 'request failed'), 'var(--red)'); return; }
+  const n = (pre.data && pre.data.would_requeue) || 0;
+  if (!confirm('Read ' + n + ' host(s) in ' + scope + ' again for biostimulators?\n\n'
+               + 'This only resets the biostimulation pass. The device crawl is not '
+               + 'touched, and hosts excluded on purpose stay excluded.')) return;
+
+  const { ok, data } = await bsCall({ action: 'requeue', country: country, state: state });
+  if (!ok) { bsLog('requeue failed: ' + esc((data && data.error) || 'request failed'), 'var(--red)'); return; }
+  bsForgetRun(country, state);
+  bsLog((data.requeued || 0) + ' host(s) back in the queue for ' + scope + '.', 'var(--gold)');
+  bsLoadStats();
+}
+
+async function bsLoadStats() {
+  const country = bsCountry();
+  const { ok, data } = await bsCall({ action: 'candidate-stats', country: country, state: bsState() });
+  if (!ok || !data || !data.queue) return;
+
+  const where = country || 'every country';
+  document.getElementById('bs-stats').textContent =
+    data.queue.pending + ' hosts left to read in ' + where + ' · ' +
+    data.queue.done + ' read · ' + data.queue.empty + ' nothing named · ' +
+    data.queue.error + ' failed';
+
+  // ⭐ by_device is every pending candidate, equipment included, so it is
+  // filtered to the three biostimulators here. The count that matters for a
+  // manufacturer conversation is clinics per product, and each pending row is
+  // one clinic and product pair.
+  const WANT = ['sculptra', 'radiesse', 'harmonyca'];
+  const rows = (data.by_device || []).filter(function (d) {
+    return WANT.indexOf(String(d.model || '').toLowerCase().replace(/[^a-z]/g, '')) !== -1;
+  });
+
+  const tally = document.getElementById('bs-tally');
+  if (!rows.length) {
+    tally.innerHTML = '<div style="color:var(--muted);font-size:.82rem;">Nothing waiting yet for ' +
+      esc(where) + '. Matches appear here as the crawl runs.</div>';
+  } else {
+    tally.innerHTML = rows.map(function (d) {
+      return '<div style="display:flex;justify-content:space-between;gap:1rem;padding:.45rem 0;border-bottom:1px solid var(--border);font-size:.86rem;">'
+           + '<span><strong>' + esc(d.model) + '</strong> <span style="color:var(--muted);">'
+           + esc(d.manufacturer || '') + '</span></span>'
+           + '<span>' + d.pending + ' waiting</span></div>';
+    }).join('');
+  }
+
+  const el = document.getElementById('bs-count');
+  if (el) {
+    const total = rows.reduce(function (a, d) { return a + (d.pending || 0); }, 0);
+    el.textContent = total;
+    el.classList.toggle('zero', total === 0);
+  }
 }
 
 // ⭐ Crawl ONE host on demand and print the matcher's working. Ignores queue
