@@ -1967,11 +1967,14 @@ async function doCrawl(supabase, body) {
       // threshold, that device stops auto-publishing FOR THE REST OF THE RUN and
       // the remainder queues. Damage is capped at the ceiling rather than the
       // size of the corpus. Raise or lower AUTO_APPROVE_CEILING as needed.
-      // ⭐⭐ Biostim rows NEVER auto-publish, whatever the evidence tier says.
-      // "Sculptra" on a page is the category's vocabulary; a clinic can open an
-      // account with any manufacturer at any time, so the page proves what it
-      // advertises, not what it stocks. Every row goes to review.
-      if (!biostim) try {
+      // ⚠️ BIOSTIMULATORS AUTO-PUBLISH TOO, on exactly the same bar. An earlier
+      // version held every one of them back on the theory that a brand name is
+      // the category's vocabulary rather than evidence of stock. That was wrong
+      // twice over: these three are coined product names no clinic writes by
+      // accident, and the crawl came back overwhelmingly `own_page` — a clinic
+      // that built a page called /sculptra/ offers Sculptra. Holding ~1,800 rows
+      // for a human is not a review, it is a rubber stamp.
+      try {
         const strong = rows.filter(r =>
           (r.confidence === 'own_page' || r.confidence === 'exact'));
         if (strong.length) {
@@ -1995,7 +1998,15 @@ async function doCrawl(supabase, body) {
               .select('id', { count: 'exact', head: true })
               .eq('run_id', runId).eq('device_id', did);
             if (cErr) continue;                       // on doubt, leave it pending
-            if ((count || 0) <= AUTO_APPROVE_CEILING) okDevs.push(did);
+            // ⭐ NO CEILING IN BIOSTIM MODE. The ceiling catches a broken alias,
+            // whose signature is one device appearing on hundreds of clinics at
+            // once. For these three that IS the expected shape — Sculptra alone
+            // is on four figures of them — so a 150 ceiling would hold every row
+            // of every run and auto-publish would do nothing at all. The guard
+            // that still applies is the one that matters here: a name that is
+            // also an ordinary English word never auto-publishes, and none of
+            // these three is.
+            if (biostim || (count || 0) <= AUTO_APPROVE_CEILING) okDevs.push(did);
             else out.autoHeldCeiling = (out.autoHeldCeiling || 0) + 1;
           }
 
