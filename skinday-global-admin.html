@@ -1277,8 +1277,9 @@
 
       <div class="add-clinic-form" style="margin-top:1.4rem;">
         <div class="form-title">What is waiting</div>
-        <div class="form-subtitle">Candidates per product for the country selected above. Reviewing and approving happens in the Devices tab, where the candidate list can be filtered to one product &mdash; the same review gate, rather than a second one that could drift from it.</div>
+        <div class="form-subtitle">Candidates per product for the country selected above. New crawls publish these automatically; this button is for rows found before that was switched on. Publishing puts them on the directory and writes the change feed a manufacturer subscribes to.</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <button class="btn-approve" id="bs-publish" onclick="bsPublishAll()">Publish everything waiting</button>
           <button class="btn-ghost" onclick="bsLoadStats()">Refresh</button>
           <span id="bs-stats" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
@@ -3630,6 +3631,7 @@ let bsRunning = false;
 let bsRunId   = null;
 let bsTotals  = { hosts: 0, found: 0, empty: 0, errors: 0 };
 let bsEntered = false;
+let bsPending = [];   // the three products' pending counts, from candidate-stats
 
 function bsCountry() {
   const el = document.getElementById('bs-country');
@@ -3911,12 +3913,66 @@ async function bsLoadStats() {
     }).join('');
   }
 
+  // Held for the publish button, so it only ever touches these products and
+  // can never sweep the equipment queue the way an unscoped bulk approve would.
+  bsPending = rows;
+
+  const btn = document.getElementById('bs-publish');
+  if (btn) btn.style.display = rows.length ? '' : 'none';
+
   const el = document.getElementById('bs-count');
   if (el) {
     const total = rows.reduce(function (a, d) { return a + (d.pending || 0); }, 0);
     el.textContent = total;
     el.classList.toggle('zero', total === 0);
   }
+}
+
+// ⭐⭐ SCOPED TO THE BIOSTIMULATORS, ONE PRODUCT AT A TIME. The Devices tab's
+// bulk approve is all-or-nothing across everything pending, which is how a set
+// of rows deliberately held back for reading went live in one press months ago.
+// This loops the SAME server action once per product with its device_id set, so
+// nothing outside these three can be caught up in it.
+async function bsPublishAll() {
+  if (bsRunning) { alert('Stop the crawl before publishing.'); return; }
+  if (!bsPending.length) { bsLog('Nothing waiting to publish.', 'var(--muted)'); return; }
+
+  const country = bsCountry();
+  const scope = bsScopeLabel();
+  const total = bsPending.reduce(function (a, d) { return a + (d.pending || 0); }, 0);
+  const list = bsPending.map(function (d) { return d.model + ' ' + d.pending; }).join(' \u00b7 ');
+
+  if (!confirm('Publish ' + total + ' row(s) in ' + scope + '?\n\n' + list
+               + '\n\nThese go live on the directory and write the change feed. '
+               + 'Install dates on anything already published are preserved.')) return;
+
+  const btn = document.getElementById('bs-publish');
+  if (btn) btn.disabled = true;
+  bsLog('publishing ' + total + ' row(s) for ' + scope + '\u2026', 'var(--muted)');
+
+  let approved = 0, events = 0;
+  try {
+    for (const d of bsPending.slice()) {
+      // approve-all returns a page at a time, so each product is looped until
+      // it reports nothing left rather than assumed done after one call.
+      let guard = 0;
+      for (;;) {
+        const r = await bsCall({ action: 'approve-all', country: country,
+                                 device_id: d.device_id });
+        if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
+        const n = (r.data && r.data.approved) || 0;
+        approved += n;
+        events += (r.data && r.data.new_events) || 0;
+        if (!n || ++guard > 60) break;
+      }
+      bsLog('  ' + esc(d.model) + ' done', 'var(--green)');
+    }
+    bsLog(approved + ' published \u00b7 ' + events + ' change-feed entries.', 'var(--green)');
+  } catch (e) {
+    bsLog('publish failed: ' + esc(String((e && e.message) || e)), 'var(--red)');
+  }
+  if (btn) btn.disabled = false;
+  bsLoadStats();
 }
 
 // ⭐ Crawl ONE host on demand and print the matcher's working. Ignores queue
