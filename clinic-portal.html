@@ -111,6 +111,66 @@
     border:1px solid var(--accent-line); border-radius:100px;
     padding:4px 10px; white-space:nowrap; flex:none;
   }
+  /* ---- clinic switcher ----
+     One login can hold memberships at several clinics. The clinic name in the
+     header is the switcher: a plain label when there is one clinic, a menu when
+     there are more. */
+  .clinic-switch { position:relative; display:flex; align-items:center; min-width:0; }
+  header .clinic-switch > button.who {
+    display:flex; align-items:center; gap:8px; max-width:none;
+    background:none; border:0; border-bottom:2px solid transparent;
+    margin:0; padding:3px 4px; border-radius:8px; cursor:default;
+  }
+  header .clinic-switch > button.who:hover { color:var(--ink); border-bottom-color:transparent; }
+  .clinic-switch .cs-label {
+    display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:46vw;
+  }
+  .clinic-switch .cs-caret { display:none; }
+  .clinic-switch.multi > button.who { cursor:pointer; padding-right:9px; }
+  .clinic-switch.multi > button.who:hover { background:var(--accent-soft); }
+  .clinic-switch.multi > button.who:focus-visible { outline:2px solid var(--accent-ring); outline-offset:2px; }
+  .clinic-switch.multi .cs-caret {
+    display:block; flex:none; width:7px; height:7px; margin-top:-4px;
+    border-right:2px solid var(--faint); border-bottom:2px solid var(--faint);
+    transform:rotate(45deg); transition:transform .18s ease;
+  }
+  .clinic-switch.multi > button.who[aria-expanded="true"] .cs-caret {
+    transform:rotate(-135deg); margin-top:2px;
+  }
+  .clinic-menu {
+    position:absolute; top:calc(100% + 10px); left:0; z-index:70;
+    min-width:270px; max-width:min(380px,86vw); padding:6px;
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:0 22px 46px -22px rgba(20,26,33,.5), 0 2px 6px rgba(20,26,33,.06);
+    max-height:min(64vh,430px); overflow:auto;
+  }
+  .clinic-menu[hidden] { display:none; }
+  .clinic-menu .cm-head {
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.16em;
+    text-transform:uppercase; color:var(--faint); padding:8px 10px 7px;
+  }
+  .clinic-menu .cm-item {
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:none; border:0; border-radius:var(--radius-sm); cursor:pointer;
+    padding:9px 10px; font:inherit; font-size:15px; font-weight:500; color:var(--ink);
+  }
+  .clinic-menu .cm-item:hover { background:var(--surface-2); }
+  .clinic-menu .cm-item[aria-selected="true"] { background:var(--accent-soft); color:var(--accent-strong); }
+  .clinic-menu .cm-mark {
+    width:26px; height:26px; border-radius:7px; flex:none; overflow:hidden;
+    background:var(--accent); color:var(--accent-ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; line-height:1;
+  }
+  .clinic-menu .cm-mark img { width:100%; height:100%; object-fit:contain; background:var(--surface); }
+  .clinic-menu .cm-text { min-width:0; }
+  .clinic-menu .cm-name { display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .clinic-menu .cm-role {
+    display:block; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--faint); margin-top:3px;
+  }
+  .clinic-menu .cm-item[aria-selected="true"] .cm-role { color:var(--accent-strong); }
+
   header .spacer { flex:1; }
   header button {
     background:none; border:0; color:var(--muted);
@@ -527,6 +587,8 @@
   @media (max-width:700px){
     header { padding:12px 16px; gap:10px; }
     header .who { font-size:17px; max-width:36vw; }
+    .clinic-switch .cs-label { max-width:34vw; }
+    .clinic-menu { min-width:240px; }
     header button { font-size:13px; padding:8px 2px; }
     .pro-tag { font-size:9.5px; letter-spacing:.12em; padding:3px 8px; }
     .brandlock { gap:9px; }
@@ -612,7 +674,13 @@
   <span class="brandlock">
     <span class="brand-mono" id="clinicMono" style="display:none;"></span>
     <img id="clinicLogo" alt="" style="display:none;">
-    <span class="who" id="clinicName"></span>
+    <span class="clinic-switch" id="clinicSwitch">
+      <button type="button" class="who" id="clinicSwitchBtn" aria-expanded="false">
+        <span class="cs-label" id="clinicName"></span>
+        <span class="cs-caret" aria-hidden="true"></span>
+      </button>
+      <div class="clinic-menu" id="clinicMenu" role="listbox" hidden></div>
+    </span>
     <span class="pro-tag">Visualize Pro</span>
   </span>
   <span class="spacer"></span>
@@ -1222,6 +1290,18 @@ const sb = createClient(SUPABASE_URL, ANON_KEY);
 let clinicId = null;
 let clinicDisplayName = '';
 
+/* One login, several clinics. MEMBERSHIPS holds every active membership this
+   user has, carrying the clinic's own name and logo so the switcher can be drawn
+   without a query per clinic.
+
+   The portal was written for exactly one clinic, so the rule when switching is
+   that nothing per-clinic survives. Agreements, trial state and the pilot flag
+   all belong to the clinic rather than to the user, which is why switchClinic
+   tears the view down and loadClinic re-runs the whole load path instead of
+   swapping an id. */
+let MEMBERSHIPS = [];
+const LAST_CLINIC_KEY = 'sd-last-clinic';
+
 const $ = id => document.getElementById(id);
 const note = (id, msg, cls) => { const e = $(id); e.className = 'note ' + (cls || ''); e.textContent = msg || ''; };
 const token = async () => {
@@ -1557,6 +1637,176 @@ $('doSignUp').addEventListener('click', doSignUp);
 $('signOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 $('prSignOut').addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
 
+/* ---- clinic switcher ----------------------------------------------------
+
+   Draws MEMBERSHIPS into the header menu. With one clinic the name is just a
+   label, with no affordance suggesting there is somewhere else to go. */
+
+function renderClinicSwitcher() {
+  const wrap = $('clinicSwitch');
+  const btn = $('clinicSwitchBtn');
+  const menu = $('clinicMenu');
+  if (!wrap || !btn || !menu) return;
+
+  const multi = MEMBERSHIPS.length > 1;
+  wrap.classList.toggle('multi', multi);
+  closeClinicMenu();
+
+  if (!multi) {
+    btn.removeAttribute('aria-haspopup');
+    btn.setAttribute('tabindex', '-1');
+    menu.innerHTML = '';
+    return;
+  }
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.removeAttribute('tabindex');
+
+  menu.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'cm-head';
+  head.textContent = sdT('Your clinics', '您的診所');
+  menu.appendChild(head);
+
+  MEMBERSHIPS.forEach(m => {
+    const isCurrent = m.clinic_id === clinicId;
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'cm-item';
+    item.setAttribute('role', 'option');
+    item.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
+
+    const mark = document.createElement('span');
+    mark.className = 'cm-mark';
+    if (m.logo_url) {
+      const img = document.createElement('img');
+      img.alt = '';
+      // A logo that fails to load falls back to the initial, never an empty square.
+      img.onerror = () => { mark.innerHTML = ''; mark.textContent = initialOf(m.name); };
+      img.src = m.logo_url;
+      mark.appendChild(img);
+    } else {
+      mark.textContent = initialOf(m.name);
+    }
+
+    const text = document.createElement('span');
+    text.className = 'cm-text';
+    const nm = document.createElement('span');
+    nm.className = 'cm-name';
+    nm.textContent = m.name;
+    const role = document.createElement('span');
+    role.className = 'cm-role';
+    role.textContent = isCurrent ? sdT('Current', '目前所在') : (m.role || 'member');
+    text.appendChild(nm);
+    text.appendChild(role);
+
+    item.appendChild(mark);
+    item.appendChild(text);
+    item.addEventListener('click', () => {
+      closeClinicMenu();
+      if (!isCurrent) switchClinic(m.clinic_id);
+    });
+    menu.appendChild(item);
+  });
+}
+
+function openClinicMenu() {
+  const btn = $('clinicSwitchBtn'), menu = $('clinicMenu');
+  if (!btn || !menu || MEMBERSHIPS.length < 2) return;
+  menu.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeClinicMenu() {
+  const btn = $('clinicSwitchBtn'), menu = $('clinicMenu');
+  if (!btn || !menu) return;
+  menu.hidden = true;
+  btn.setAttribute('aria-expanded', 'false');
+}
+
+{
+  const _btn = $('clinicSwitchBtn');
+  if (_btn) {
+    _btn.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if (MEMBERSHIPS.length < 2) return;
+      const menu = $('clinicMenu');
+      if (menu && menu.hidden) openClinicMenu(); else closeClinicMenu();
+    });
+  }
+  document.addEventListener('click', ev => {
+    const wrap = $('clinicSwitch');
+    if (wrap && !wrap.contains(ev.target)) closeClinicMenu();
+  });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') closeClinicMenu(); });
+}
+
+/* Tear the open clinic off the screen before the next one loads. Anything left
+   behind would be shown under another clinic's name, which for patient
+   photographs is not a cosmetic problem. */
+function resetClinicView() {
+  settingsOpen = false;
+  mySettings = null;
+  brandLogoUrl = null;
+  _exportLogo = null;
+  const sp = $('panel-settings');
+  if (sp) sp.style.display = 'none';
+
+  // Hide the working surface rather than pre-selecting Studio. The next clinic
+  // may be one that opens on "under review" or on the agreements screen, and the
+  // previous clinic's tab strip must not be left sitting above it. openPortal
+  // brings these back when the clinic actually opens.
+  activePanel = 'studio';
+  document.querySelectorAll('#tabs .tab').forEach(x => x.classList.remove('active'));
+  const st = document.querySelector('#tabs .tab[data-panel="studio"]');
+  if (st) st.classList.add('active');
+  const tb = $('tabs');
+  if (tb) tb.style.display = 'none';
+  ['studio', 'visualize', 'library'].forEach(pn => {
+    const el = $('panel-' + pn);
+    if (el) el.style.display = 'none';
+  });
+
+  // The embedded tools carry the clinic in their URL. Blank them here and let
+  // openPortal point them at the new clinic, so no frame keeps rendering the
+  // old one while the switch is in flight.
+  ['studioFrame', 'visFrame'].forEach(id => {
+    const f = $(id);
+    if (!f) return;
+    try { f.src = 'about:blank'; } catch (e) {}
+    f.removeAttribute('data-clinic');
+  });
+  toolsStale.studio = false;
+  toolsStale.visualize = false;
+
+  Object.keys(libOpen).forEach(k => { delete libOpen[k]; });
+  Object.keys(simReady).forEach(k => { delete simReady[k]; });
+  simSavedTreatment = null;
+  if (searchTimer) { clearTimeout(searchTimer); searchTimer = null; }
+  ['libSearch'].forEach(id => { const el = $(id); if (el) el.value = ''; });
+  ['libGroups', 'libResults'].forEach(id => { const el = $(id); if (el) el.innerHTML = ''; });
+  const lsub = $('libSub');
+  if (lsub) lsub.textContent = '';
+
+  // Both banners describe the clinic that was open; the new load redraws them.
+  ['agreeBanner', 'trialBanner'].forEach(id => {
+    const el = $(id);
+    if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+  });
+}
+
+let _switching = false;
+async function switchClinic(cid) {
+  if (_switching || !cid || cid === clinicId) return;
+  if (!MEMBERSHIPS.some(m => m.clinic_id === cid)) return;
+  _switching = true;
+  try {
+    resetClinicView();
+    await loadClinic(cid);
+  } finally {
+    _switching = false;
+  }
+}
+
 async function start() {
   // Any of the three entry screens could be the one that got here. Hide them all,
   // so none can be left covering the portal.
@@ -1572,10 +1822,10 @@ async function start() {
   for (let attempt = 0; attempt < 2; attempt++) {
     const res = await sb
       .from('clinic_memberships')
-      .select('clinic_id, created_at')
+      .select('clinic_id, created_at, role')
       .eq('status', 'active')
       .is('revoked_at', null)
-      .limit(1);
+      .order('created_at', { ascending: true });
     if (!res.error) { rows = res.data || []; memErr = null; break; }
     memErr = res.error;
     if (attempt === 0) await new Promise(r => setTimeout(r, 350));
@@ -1611,11 +1861,92 @@ async function start() {
     note('suNote', 'Nearly there. Tell us about your clinic and you are in.');
     return;
   }
-  clinicId = rows[0].clinic_id;
+  MEMBERSHIPS = await buildMemberships(rows);
+  renderClinicSwitcher();
+  await loadClinic(pickStartingClinic());
+}
 
-  const { data: c } = await sb.from('clinics')
-    .select('name,logo_url').eq('id', clinicId).limit(1);
-  setClinicHeader(c && c[0]);
+/* Collapse the membership rows into one entry per clinic, then attach each
+   clinic's own name and logo in a single query rather than one per clinic.
+
+   A user can hold more than one membership row for the same clinic (re-invited
+   after a revoke), and the agreement grace window is measured from when they
+   joined, so the oldest row is the one to keep. */
+async function buildMemberships(rows) {
+  const byId = new Map();
+  (rows || []).forEach(r => {
+    if (!r || !r.clinic_id) return;
+    const prev = byId.get(r.clinic_id);
+    if (!prev) {
+      byId.set(r.clinic_id, { clinic_id: r.clinic_id, created_at: r.created_at || null, role: r.role || null });
+      return;
+    }
+    if (r.created_at && prev.created_at && new Date(r.created_at) < new Date(prev.created_at)) {
+      prev.created_at = r.created_at;
+    }
+    if (r.role === 'owner') prev.role = 'owner';
+  });
+
+  const list = Array.from(byId.values());
+  if (!list.length) return list;
+
+  try {
+    const { data: cs } = await sb.from('clinics')
+      .select('id,name,logo_url')
+      .in('id', list.map(m => m.clinic_id));
+    const meta = new Map((cs || []).map(c => [c.id, c]));
+    list.forEach(m => {
+      const c = meta.get(m.clinic_id);
+      m.name = (c && c.name) || ('Clinic ' + m.clinic_id);
+      m.logo_url = (c && c.logo_url) || null;
+    });
+  } catch (e) {
+    // A name we could not read is not a reason to lose the clinic.
+    list.forEach(m => { m.name = m.name || ('Clinic ' + m.clinic_id); m.logo_url = m.logo_url || null; });
+  }
+
+  list.sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  return list;
+}
+
+/* Reopen wherever they were last, so somebody who works in one clinic all week
+   is not asked to pick every morning. A remembered clinic they no longer belong
+   to is ignored rather than trusted. */
+function pickStartingClinic() {
+  let last = null;
+  try { last = localStorage.getItem(LAST_CLINIC_KEY); } catch (e) {}
+  if (last && MEMBERSHIPS.some(m => m.clinic_id === last)) return last;
+  return MEMBERSHIPS[0] && MEMBERSHIPS[0].clinic_id;
+}
+
+/* The whole per-clinic load path, from the id onwards. Switching clinics calls
+   this again rather than reassigning clinicId, because approval, trial state,
+   the pilot flag and the agreement deadline are all properties of the clinic. */
+async function loadClinic(cid) {
+  const mem = MEMBERSHIPS.find(m => m.clinic_id === cid) || MEMBERSHIPS[0];
+  if (!mem) return;
+
+  clinicId = mem.clinic_id;
+  try { localStorage.setItem(LAST_CLINIC_KEY, clinicId); } catch (e) {}
+
+  // Everything below is rebuilt for this clinic. Reset first, so a clinic whose
+  // query fails cannot inherit the previous clinic's answers.
+  myRole = mem.role || null;
+  AGREE_PENDING = 1;
+  AGREE_DEADLINE = null;
+  TRIAL_STATE = 'ok';
+  TRIAL_ENDS = null;
+  TRIAL_DAYS_LEFT = null;
+  IS_PILOT = false;
+
+  ['pendingReview', 'agreements'].forEach(id => {
+    const el = $(id); if (el) el.style.display = 'none';
+  });
+
+  // clinicId is set before the header, because the brand override is stored per
+  // clinic and resolveBrand reads it through brandKey().
+  setClinicHeader({ name: mem.name, logo_url: mem.logo_url });
+  renderClinicSwitcher();
 
   // Pro sign-up approval lives on clinic_subscriptions.approved (the Pro layer),
   // NOT on clinics (shared with the directory). An unapproved sign-up can sign in
@@ -1655,7 +1986,7 @@ async function start() {
   // handlers). But a clinic gets a 7-day grace window to explore first; only once it
   // lapses does the agreement screen become a hard gate.
   try {
-    const _cc = (rows && rows[0] && rows[0].created_at) ? new Date(rows[0].created_at).getTime() : Date.now();
+    const _cc = mem.created_at ? new Date(mem.created_at).getTime() : Date.now();
     AGREE_DEADLINE = _cc + 7 * 24 * 60 * 60 * 1000;
   } catch (e) { AGREE_DEADLINE = Date.now() + 7 * 24 * 60 * 60 * 1000; }
 
@@ -1959,10 +2290,19 @@ async function openPortal() {
   // /studio.html with no param, so it rendered its own consumer header on top of
   // the portal's. Giving it ?clinic= matches how Visualize is embedded, and lets
   // studio.html detect that it is inside the portal and hide that header.
-  if (!$('studioFrame').src) {
-    $('studioFrame').src = '/studio.html?clinic=' + encodeURIComponent(clinicId);
+  // Keyed on the clinic rather than on emptiness: reopening the portal for the
+  // same clinic must not wipe an in-progress composition, but arriving from a
+  // different clinic must reload the frame.
+  const _sf = $('studioFrame');
+  if (_sf && _sf.dataset.clinic !== clinicId) {
+    _sf.dataset.clinic = clinicId;
+    _sf.src = '/studio.html?clinic=' + encodeURIComponent(clinicId);
   }
-  $('visFrame').src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
+  const _vf = $('visFrame');
+  if (_vf) {
+    _vf.dataset.clinic = clinicId;
+    _vf.src = '/visualize.html?clinic=' + encodeURIComponent(clinicId);
+  }
 
   loadLibrary();
   renderAgreeBanner();
