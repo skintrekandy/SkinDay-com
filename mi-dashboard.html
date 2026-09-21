@@ -189,6 +189,15 @@
     padding:2px 9px; white-space:nowrap; }
   .lspos { font-family:var(--font-mono); font-size:10px; letter-spacing:.05em;
     color:var(--muted); white-space:nowrap; }
+  /* ⭐ MOVEMENT. Plain weighted text rather than a pill, because .lsmine is
+     already a pill in the accent colour and two pills side by side read as one
+     control. Rendered ONLY when non-zero — a column of "+0" makes the market
+     look dead and buries the handful of rows that actually moved. */
+  .lsmv { font-family:var(--font-mono); font-size:12px; font-weight:600;
+    color:var(--accent-strong); white-space:nowrap; }
+  .lsmv small { font-weight:400; font-size:10px; color:var(--muted); }
+  .lssum { font-family:var(--font-mono); font-size:11px; color:var(--muted);
+    padding:0 10px 14px; }
   .lsgroup { margin:0; }
   .lsgroup.open { margin-bottom:18px; }
   .lshead .lsname { font-size:17px; font-weight:600; letter-spacing:-.01em; }
@@ -783,6 +792,13 @@
         <button type="button" data-lm="tech" class="on">Technologies</button>
         <button type="button" data-lm="co">Companies</button>
       </div>
+      <!-- ⭐⭐ MOVEMENT. "Who is big" is a standing fact a rep learns once; "who
+           is winning right now" is why they come back. Same rows, two orders. -->
+      <div class="quick" id="lsSort">
+        <button type="button" data-ls="size" class="on">Most clinics</button>
+        <button type="button" data-ls="move">Most movement</button>
+      </div>
+      <div id="lsSum" class="lssum"></div>
       <div id="lsBody"><div class="empty"><span class="spin"></span></div></div>
     </section>
 
@@ -1921,6 +1937,21 @@
   // ⓘ No technology descriptions yet — device_reference has nowhere to put them.
   // Structure ships now; Andy fills the copy for the devices reps actually meet.
   var LS_ROWS=null, LS_CO=[], LS_MODE='tech', LS_Q='', LS_W=[], LS_T=null;
+  // 'size' = the standing market, 'move' = what changed in the last 30 days.
+  var LS_SORT='size';
+  function lsAdd(r){ return Number(r && r.added_30d) || 0; }
+  // ⚠️ WHAT THIS NUMBER IS AND IS NOT. It counts clinics ALREADY in the directory
+  // that began showing a device in the last 30 days — so it is a purchase signal,
+  // not a listing one. Clinics we added to the directory this month are excluded
+  // in SQL and live under "Newly listed" instead, and devices whose reference row
+  // was edited inside the window are excluded too, because re-matching after an
+  // alias change writes rows that are indistinguishable from a sale.
+  function lsMoveChip(added, newCo){
+    var a=Number(added)||0; if(!a) return '';
+    var n=Number(newCo);
+    return '<span class="lsmv">+'+num(a)+
+      (isFinite(n) && n>0 && n!==a ? ' <small>'+num(n)+' new</small>' : '')+'</span>';
+  }
   // Which categories are open. Empty by default — the tab opens as a menu of
   // the market, not a wall of 178 devices.
   var LS_OPEN={};
@@ -1971,9 +2002,22 @@
     return '<span class="lnum">'+num(t)+' clinics'+
       (n!==t?'<span class="ln2">'+num(n)+' in '+esc(CTY.country)+'</span>':'')+'</span>';
   }
+  // One line of scale above the list, so the numbers below have a denominator
+  // before anyone starts scanning. Silent when nothing moved, rather than
+  // announcing a zero.
+  function lsPaintSummary(){
+    var s=el('lsSum'); if(!s) return;
+    var adds=(LS_ROWS||[]).reduce(function(t,r){ return t+lsAdd(r); },0);
+    if(!adds){ s.textContent=''; return; }
+    var movers=(LS_ROWS||[]).filter(function(r){ return lsAdd(r)>0; }).length;
+    s.textContent='Last 30 days: +'+num(adds)+' device'+(adds===1?'':'s')+
+      ' at clinics already on file, across '+num(movers)+
+      ' model'+(movers===1?'':'s')+'.';
+  }
   function paintLandscape(){
     var box=el('lsBody');
     if(!LS_ROWS){ return; }
+    lsPaintSummary();
     if(LS_MODE==='co'){
       var co=LS_W.length
         ? LS_CO.filter(function(c){ return lsMatchName(c.name); })
@@ -2015,11 +2059,21 @@
     });
     // Categories the tenant competes in first: a rep learns their own field
     // before the ones they have nothing in.
+    function catMove(k){
+      return by[k].rows.reduce(function(s,r){ return s+lsAdd(r); },0);
+    }
+    if(LS_SORT==='move'){
+      // Movement order ignores "ours first" deliberately: the question being
+      // asked is what moved, and burying a category because we do not compete in
+      // it is how a rep misses a field someone else just took.
+      order.sort(function(a,b){ return catMove(b)-catMove(a) || by[b].rows.length-by[a].rows.length; });
+    } else {
     order.sort(function(a,b){
       var oa=by[a].rows.some(function(r){return r.is_ours;})?0:1;
       var ob=by[b].rows.some(function(r){return r.is_ours;})?0:1;
       return oa-ob || by[b].rows.length-by[a].rows.length;
     });
+    }
     // ⭐⭐ CATEGORIES COLLAPSED BY DEFAULT. 178 devices in one scroll is the same
     // wall the donut grid had: the eye stops after two screens. The category
     // list is the map; the devices are what you open once you know where you are.
@@ -2029,8 +2083,12 @@
     return order.map(function(k){
       var g=by[k];
       g.rows.sort(function(a,b){
+        if(LS_SORT==='move'){
+          return lsAdd(b)-lsAdd(a) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
+        }
         return (b.is_ours?1:0)-(a.is_ours?1:0) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
       });
+      var catMv=catMove(k);
       var mine=g.rows.filter(function(r){ return r.is_ours; }).length;
       var open = searching || !!LS_OPEN[k];
       // ⚠️ RANK IS BORROWED FROM THE OVERVIEW, NEVER RECOMPUTED HERE. Ranking
@@ -2055,7 +2113,7 @@
           '<span class="lm">'+esc(r.model)+'</span>'+
           '<span class="lmk">'+esc(r.manufacturer)+distTxt(r)+'</span>'+
           gen+(r.is_ours?'<span class="lyou">Yours</span>':'')+
-          '<span class="lsp"></span>'+lsNum(r)+
+          '<span class="lsp"></span>'+lsMoveChip(r.added_30d, null)+lsNum(r)+
           '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
         '</div>';
       }).join('');
@@ -2068,6 +2126,7 @@
           '<span class="lsname">'+esc(g.label)+'</span>'+
           '<span class="lsp"></span>'+
           '<span class="lscount">'+g.rows.length+' devices</span>'+
+          lsMoveChip(catMv, null)+
           (mine?'<span class="lsmine">'+mine+' yours</span>':'')+pos+
         '</button>'+devs+
       '</div>';
@@ -2099,6 +2158,14 @@
       var skey='sec:'+kind;
       var sopen = searching || !!LS_OPEN[skey];
       var ours=list.filter(function(c){ return c.is_ours; }).length;
+      if(LS_SORT==='move'){
+        list=list.slice().sort(function(a,b){
+          return (Number(b.added_30d)||0)-(Number(a.added_30d)||0)
+              || (Number(b.new_clinics_30d)||0)-(Number(a.new_clinics_30d)||0)
+              || (Number(b.clinics)||0)-(Number(a.clinics)||0);
+        });
+      }
+      var secMv=list.reduce(function(s,c){ return s+(Number(c.added_30d)||0); },0);
       var body = !sopen ? '' : list.map(function(c){
         var nd=Number(c.devices)||0, nc=Number(c.categories)||0;
         var here=Number(c.clinics)||0, natl=Number(c.clinics_country)||0;
@@ -2118,6 +2185,12 @@
             '<span class="lsp"></span>'+
             '<span class="lscount">'+nd+(nd===1?' device':' devices')+
               ' \u00b7 '+nc+(nc===1?' category':' categories')+'</span>'+
+            // ⭐ TWO NUMBERS, NOT ONE, and the gap between them is the story.
+            // Cynosure placing 47 machines while entering only 17 new clinics is
+            // selling deeper into accounts it already holds; Viol at 23 and 23 is
+            // 23 clinics that had nothing of theirs last month. A rep reads the
+            // difference instantly and it is the whole reason to look here.
+            lsMoveChip(c.added_30d, c.new_clinics_30d)+
             '<span class="lnum">'+num(here)+' clinics'+
               (natl!==here?'<span class="ln2">'+num(natl)+' in '+esc(CTY.country)+'</span>':'')+
             '</span>'+
@@ -2133,6 +2206,7 @@
           '<span class="lsname">'+esc(title)+'</span>'+
           '<span class="lsp"></span>'+
           '<span class="lscount">'+list.length+'</span>'+
+          lsMoveChip(secMv, null)+
           (ours?'<span class="lsmine">Yours</span>':'')+
         '</button>'+body+
       '</div>';
@@ -2180,6 +2254,14 @@
     var b=e.target.closest('button[data-lm]'); if(!b) return;
     LS_MODE=b.getAttribute('data-lm');
     Array.prototype.forEach.call(el('lsMode').querySelectorAll('button'),function(x){
+      x.classList.toggle('on', x===b);
+    });
+    paintLandscape();
+  });
+  el('lsSort').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-ls]'); if(!b) return;
+    LS_SORT=b.getAttribute('data-ls');
+    Array.prototype.forEach.call(el('lsSort').querySelectorAll('button'),function(x){
       x.classList.toggle('on', x===b);
     });
     paintLandscape();
