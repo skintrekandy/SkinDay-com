@@ -37,6 +37,27 @@ const MATCHER_VERSION = '2026-08-05-seo-landing-page';
 // which is the right trade against publishing thousands of wrong claims.
 const AUTO_APPROVE_CEILING = 150;
 
+// ⭐⭐ THE CEILING ONLY GUARDS DEVICES WE HAVE NOT SEEN BEFORE (2026-09-20).
+// Measured on the September Canada run: of 853 held rows, 851 sat on devices
+// with a large verified published base and TWO sat on thin ones. The ceiling was
+// costing an evening of review to protect against two rows, and Andy was
+// approving nearly all of it anyway — which makes it a rubber stamp, the exact
+// thing auto-approval exists to prevent.
+//
+// A broken alias is a NEW-DEVICE failure. DermaV was dangerous because it had
+// just been added and nobody had ever checked a row of it. Morpheus8 with 723
+// published clinics behind it is not going to turn out to be a cream.
+//
+// ⚠️ THE HOLE IN "established devices are safe", and why the second constant
+// exists: an established device can be given a BAD NEW ALIAS, and then its
+// history counts for nothing — every row matched on that alias is wrong while
+// the device still looks trustworthy. So the exemption also requires the
+// device_reference row to have been untouched for a while. Edit an alias and
+// that device goes back under the ceiling for the next 30 days, which is
+// exactly when you want it there.
+const ESTABLISHED_PUBLISHED_MIN = 50;
+const ESTABLISHED_QUIET_DAYS    = 30;
+
 // Set at the top of every doCrawl invocation. readPage refuses to start a new
 // fetch past this point, so the function returns a real JSON result instead of
 // being killed mid-flight and handing the client an HTML error page.
@@ -1705,9 +1726,11 @@ async function doCrawl(supabase, body) {
   //   2. the queue is claimed on `biostim_status`, so the device crawl's own
   //      queue state, verdict history and month-over-month diff are untouched
   //      and either pass can be re-run independently (the crawl-socials rule);
-  //   3. NOTHING auto-publishes — every row waits for a human, because for
-  //      injectables a brand name is the vocabulary of the category rather than
-  //      evidence of stock, which is the opposite of the device case;
+  //   3. the per-device auto-publish ceiling does not apply, because for these
+  //      three the "one device on hundreds of clinics" shape that the ceiling
+  //      exists to catch is the EXPECTED shape (see AUTO_APPROVE_CEILING);
+  //      ⚠️ this paragraph used to read "NOTHING auto-publishes", which has not
+  //      been true since the ceiling exemption went in — corrected 2026-09-20;
   //   4. no census rows, since unmatched tokens near a device word are an
   //      equipment instrument and would only pollute that ranking.
   const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
@@ -1828,7 +1851,19 @@ async function doCrawl(supabase, body) {
   // ⭐ The whole reason a biostim pass is safe to run over already-crawled
   // hosts: it can only ever match these rows, so it cannot touch, refresh or
   // contradict a single equipment candidate.
-  if (biostim) refQuery = refQuery.eq('category', BIOSTIM_CATEGORY);
+  //
+  // ⚠️⚠️ THE EXCLUSION HAS TO RUN BOTH WAYS, AND FOR A MONTH IT ONLY RAN ONE
+  // (found 2026-09-20). The biostim pass was scoped to its own category from
+  // day one, but the EQUIPMENT pass was never scoped away from it — so every
+  // device crawl also matched Sculptra, Radiesse and HArmonyCa and wrote them
+  // as equipment candidates. An injectable is a consumable a clinic buys by
+  // the vial, not a machine it owns, and the evidence bar is different: for a
+  // device a named brand on a services page is ownership, for an injectable it
+  // is just the vocabulary of the treatment. Matching them here published
+  // 139 Canadian clinics as equipped that carry no equipment at all.
+  refQuery = biostim
+    ? refQuery.eq('category',  BIOSTIM_CATEGORY)
+    : refQuery.neq('category', BIOSTIM_CATEGORY);
   const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
   const matcher = buildMatcher(devices || []);
@@ -1962,11 +1997,13 @@ async function doCrawl(supabase, body) {
       // real guard: Elite, Icon, Halo, Forma, Soprano, Clarity, xeo, Dermapen
       // are where bad aliases hide, and they still go to review every time.
       //
-      // ⚠️ THE CEILING IS THE SAFETY NET. A broken alias always looks the same:
-      // one device suddenly appearing on hundreds of clinics at once. Past the
-      // threshold, that device stops auto-publishing FOR THE REST OF THE RUN and
-      // the remainder queues. Damage is capped at the ceiling rather than the
-      // size of the corpus. Raise or lower AUTO_APPROVE_CEILING as needed.
+      // ⚠️ THE CEILING IS THE SAFETY NET, BUT ONLY FOR DEVICES THAT NEED ONE.
+      // A broken alias always looks the same: one device suddenly appearing on
+      // hundreds of clinics at once. Past the threshold, that device stops
+      // auto-publishing FOR THE REST OF THE RUN and the remainder queues.
+      // Devices with an established, long-untouched published base skip it
+      // entirely — see ESTABLISHED_PUBLISHED_MIN for the measurement that
+      // forced this and for the alias-edit hole the quiet-days rule closes.
       // ⚠️ BIOSTIMULATORS AUTO-PUBLISH TOO, on exactly the same bar. An earlier
       // version held every one of them back on the theory that a brand name is
       // the category's vocabulary rather than evidence of stock. That was wrong
@@ -1980,7 +2017,12 @@ async function doCrawl(supabase, body) {
         if (strong.length) {
           const devIds = [...new Set(strong.map(r => r.device_id))];
           const refs = await selectIn(supabase, 'device_reference',
-            'id, model, name_is_also_generic', 'id', devIds);
+            'id, model, name_is_also_generic, updated_at', 'id', devIds);
+          // A row edited recently goes back under the ceiling: its published
+          // history says nothing about an alias that was added yesterday.
+          const quietCutoff = Date.now() - ESTABLISHED_QUIET_DAYS * 86400000;
+          const recentlyEditedById = new Map(refs.map(d => [
+            d.id, d.updated_at ? Date.parse(d.updated_at) > quietCutoff : true]));
           // ⭐ CHANGED 2026-08-06: a generic-named device is no longer excluded
           // outright. It stays eligible, and the BARE-NAME test below decides
           // row by row. See isBareModelName() for why.
@@ -1990,6 +2032,20 @@ async function doCrawl(supabase, body) {
 
           const okDevs = [];
           for (const did of eligibleDevs) {
+            // ⭐ ESTABLISHED DEVICES SKIP THE CEILING. One head-count instead of
+            // the run count, so this is not an extra round trip.
+            if (!recentlyEditedById.get(did)) {
+              const { count: published, error: pErr } = await supabase
+                .from('clinic_devices')
+                .select('clinic_id', { count: 'exact', head: true })
+                .eq('device_id', did);
+              if (pErr) continue;                     // on doubt, leave it pending
+              if ((published || 0) >= ESTABLISHED_PUBLISHED_MIN) {
+                okDevs.push(did);
+                out.autoCeilingExempt = (out.autoCeilingExempt || 0) + 1;
+                continue;
+              }
+            }
             // Counted across the WHOLE RUN, not this batch, so the ceiling holds
             // across invocations. Candidates carry run_id, which is what makes
             // this measurable without any new state.
@@ -2162,6 +2218,7 @@ async function doCrawl(supabase, body) {
       auto_approved: out.autoApproved || 0,
       auto_held_bare_name: out.autoHeldBareName || 0,
       auto_held_ceiling: out.autoHeldCeiling || 0,
+      auto_ceiling_exempt: out.autoCeilingExempt || 0,
       devices: out.matches.map(m => ({ model: m.model, category: m.category, confidence: m.confidence })),
       unknowns: out.unknowns.map(u => u.token),
       error: out.lastError || null
