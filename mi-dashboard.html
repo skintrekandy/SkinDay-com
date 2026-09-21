@@ -196,8 +196,6 @@
   .lsmv { font-family:var(--font-mono); font-size:12px; font-weight:600;
     color:var(--accent-strong); white-space:nowrap; }
   .lsmv small { font-weight:400; font-size:10px; color:var(--muted); }
-  .lssum { font-family:var(--font-mono); font-size:11px; color:var(--muted);
-    padding:0 10px 14px; }
   .lsgroup { margin:0; }
   .lsgroup.open { margin-bottom:18px; }
   .lshead .lsname { font-size:17px; font-weight:600; letter-spacing:-.01em; }
@@ -793,12 +791,17 @@
         <button type="button" data-lm="co">Companies</button>
       </div>
       <!-- ⭐⭐ MOVEMENT. "Who is big" is a standing fact a rep learns once; "who
-           is winning right now" is why they come back. Same rows, two orders. -->
-      <div class="quick" id="lsSort">
-        <button type="button" data-ls="size" class="on">Most clinics</button>
-        <button type="button" data-ls="move">Most movement</button>
+           is winning right now" is why they come back. Same rows, two orders.
+           A select rather than pills: the quick row above already owns the pill
+           shape for Technologies/Companies, and two pill rows stacked read as
+           one confused control. -->
+      <div class="fb-row fb-sub">
+        <select id="lsSort">
+          <option value="size">Most clinics</option>
+          <option value="move">Most movement this month</option>
+        </select>
+        <span class="count" id="lsSum"></span>
       </div>
-      <div id="lsSum" class="lssum"></div>
       <div id="lsBody"><div class="empty"><span class="spin"></span></div></div>
     </section>
 
@@ -2010,9 +2013,8 @@
     var adds=(LS_ROWS||[]).reduce(function(t,r){ return t+lsAdd(r); },0);
     if(!adds){ s.textContent=''; return; }
     var movers=(LS_ROWS||[]).filter(function(r){ return lsAdd(r)>0; }).length;
-    s.textContent='Last 30 days: +'+num(adds)+' device'+(adds===1?'':'s')+
-      ' at clinics already on file, across '+num(movers)+
-      ' model'+(movers===1?'':'s')+'.';
+    s.textContent='+'+num(adds)+' in 30 days · '+num(movers)+
+      ' model'+(movers===1?'':'s');
   }
   function paintLandscape(){
     var box=el('lsBody');
@@ -2258,12 +2260,8 @@
     });
     paintLandscape();
   });
-  el('lsSort').addEventListener('click',function(e){
-    var b=e.target.closest('button[data-ls]'); if(!b) return;
-    LS_SORT=b.getAttribute('data-ls');
-    Array.prototype.forEach.call(el('lsSort').querySelectorAll('button'),function(x){
-      x.classList.toggle('on', x===b);
-    });
+  el('lsSort').addEventListener('change',function(){
+    LS_SORT=this.value||'size';
     paintLandscape();
   });
   el('lsSearch').addEventListener('input',function(){
