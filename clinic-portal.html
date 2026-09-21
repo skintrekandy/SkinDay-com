@@ -1890,20 +1890,47 @@ async function buildMemberships(rows) {
   const list = Array.from(byId.values());
   if (!list.length) return list;
 
+  // Names come from get_my_clinics first. It is security definer, so it can see
+  // a c_ Pro clinic row that RLS hides from a direct table read by the browser;
+  // reading the table directly returns directory rows only, which is how a Pro
+  // clinic ended up displayed as its own id.
   try {
-    const { data: cs } = await sb.from('clinics')
-      .select('id,name,logo_url')
-      .in('id', list.map(m => m.clinic_id));
-    const meta = new Map((cs || []).map(c => [c.id, c]));
-    list.forEach(m => {
-      const c = meta.get(m.clinic_id);
-      m.name = (c && c.name) || ('Clinic ' + m.clinic_id);
-      m.logo_url = (c && c.logo_url) || null;
-    });
-  } catch (e) {
-    // A name we could not read is not a reason to lose the clinic.
-    list.forEach(m => { m.name = m.name || ('Clinic ' + m.clinic_id); m.logo_url = m.logo_url || null; });
+    const { data: mine } = await sb.rpc('get_my_clinics');
+    if (Array.isArray(mine)) {
+      const meta = new Map(mine.map(r => [r.clinic_id, r]));
+      list.forEach(m => {
+        const r = meta.get(m.clinic_id);
+        if (!r) return;
+        if (r.name) m.name = r.name;
+        if (r.logo_url) m.logo_url = r.logo_url;
+        if (!m.role && r.role) m.role = r.role;
+      });
+    }
+  } catch (e) {}
+
+  // Anything the RPC did not cover still gets the old path, so an older database
+  // without the function keeps working.
+  const unresolved = list.filter(m => !m.name).map(m => m.clinic_id);
+  if (unresolved.length) {
+    try {
+      const { data: cs } = await sb.from('clinics')
+        .select('id,name,logo_url')
+        .in('id', unresolved);
+      const meta = new Map((cs || []).map(c => [c.id, c]));
+      list.forEach(m => {
+        if (m.name) return;
+        const c = meta.get(m.clinic_id);
+        if (c && c.name) m.name = c.name;
+        if (!m.logo_url && c && c.logo_url) m.logo_url = c.logo_url;
+      });
+    } catch (e) {}
   }
+
+  // A name we could not read is not a reason to lose the clinic.
+  list.forEach(m => {
+    m.name = m.name || ('Clinic ' + m.clinic_id);
+    m.logo_url = m.logo_url || null;
+  });
 
   list.sort((a, b) => String(a.name).localeCompare(String(b.name)));
   return list;
@@ -4741,7 +4768,7 @@ async function loadSettings() {
 
   $('setTitle').textContent = c.name;
   $('setSub').textContent =
-    [c.city, c.country].filter(Boolean).join(', ') +
+    [c.city, countryLabel(c.country)].filter(Boolean).join(', ') +
     (c.city || c.country ? '. ' : '') +
     'Your role: ' + roleLabel(data.my_role) + '.';
 
@@ -5191,6 +5218,18 @@ const ROLE_LABEL_MAP = {
   injector: 'Injector / Technician', consultant: 'Consultant', marketing: 'Marketing'
 };
 const roleLabel = r => ROLE_LABEL_MAP[r] || r;
+
+// Country is stored lowercase and unspaced ('usa', 'hongkong'). That is the
+// storage key, not something to show a clinic owner. Display only: the Settings
+// input keeps the raw value, because saving writes it straight back.
+const COUNTRY_LABEL_MAP = {
+  usa: 'USA', canada: 'Canada', taiwan: 'Taiwan', hongkong: 'Hong Kong'
+};
+function countryLabel(v) {
+  if (!v) return '';
+  const k = String(v).trim().toLowerCase();
+  return COUNTRY_LABEL_MAP[k] || (k.charAt(0).toUpperCase() + k.slice(1));
+}
 
 // What roles an actor may assign. Owners can grant the working roles and
 // admin; admins can grant the working roles but can never mint another admin.
