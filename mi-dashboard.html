@@ -193,8 +193,13 @@
      already a pill in the accent colour and two pills side by side read as one
      control. Rendered ONLY when non-zero — a column of "+0" makes the market
      look dead and buries the handful of rows that actually moved. */
+  /* ⓘ ONE TOKEN, because the right colour here is arguable. Red reads as "down"
+     in Western finance, and the same +24 is good news on your own row and bad
+     news on a competitor's — so whatever we pick asserts a verdict the number
+     does not carry. Change this one value to move every movement figure. */
+  :root { --movement: #b3261e; }
   .lsmv { font-family:var(--font-mono); font-size:12px; font-weight:600;
-    color:var(--accent-strong); white-space:nowrap; }
+    color:var(--movement); white-space:nowrap; }
   .lsmv small { font-weight:400; font-size:10px; color:var(--muted); }
   .lsgroup { margin:0; }
   .lsgroup.open { margin-bottom:18px; }
@@ -2091,7 +2096,6 @@
         return (b.is_ours?1:0)-(a.is_ours?1:0) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
       });
       var catMv=catMove(k);
-      var mine=g.rows.filter(function(r){ return r.is_ours; }).length;
       var open = searching || !!LS_OPEN[k];
       // ⚠️ RANK IS BORROWED FROM THE OVERVIEW, NEVER RECOMPUTED HERE. Ranking
       // manufacturers from these rows would mean summing each maker's devices,
@@ -2099,14 +2103,6 @@
       // made Candela rank differently on two tabs. CAT_ROWS holds the real
       // share-of-installations rank for the same territory; if the Overview has
       // not been rendered yet the line is simply omitted.
-      var pos='';
-      for(var ci=0; ci<CAT_ROWS.length; ci++){
-        if(CAT_ROWS[ci].category===k && CAT_ROWS[ci].mine){
-          var rr=parseInt(CAT_ROWS[ci].mine.rn,10)||0;
-          if(rr && rr<900) pos='<span class="lspos">#'+rr+' position</span>';
-          break;
-        }
-      }
       var devs = !open ? '' : g.rows.map(function(r){
         // ⚠️ A generation is its OWN row, never folded into the parent: the
         // parent count excludes its children, so adding them would double.
@@ -2119,9 +2115,13 @@
           '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
         '</div>';
       }).join('');
-      // ⭐ The collapsed row carries enough to scan the whole landscape without
-      // opening anything: how big the category is, whether we play in it, and
-      // where we stand.
+      // ⭐⭐ THE HEADER IS MARKET DATA ONLY — no "N yours", no "#3 position".
+      // Andy, 2026-09-22: "Landscape can be more general market data rather than
+      // company specific." Overview is the scoreboard and already carries rank
+      // and portfolio; repeating it here made one screen answer two questions.
+      // ⓘ The per-device "Yours" tag below STAYS. That is labelling, not
+      // scoring — without it a rep scanning twenty devices cannot tell which
+      // are theirs, which is orientation rather than a portfolio view.
       return '<div class="lsgroup'+(open?' open':'')+'">'+
         '<button class="lshead lstog" type="button" data-cat="'+esc(k)+'" aria-expanded="'+(open?'true':'false')+'">'+
           '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
@@ -2129,7 +2129,6 @@
           '<span class="lsp"></span>'+
           '<span class="lscount">'+g.rows.length+' devices</span>'+
           lsMoveChip(catMv, null)+
-          (mine?'<span class="lsmine">'+mine+' yours</span>':'')+pos+
         '</button>'+devs+
       '</div>';
     }).join('');
@@ -2159,7 +2158,6 @@
       if(!list.length) return '';
       var skey='sec:'+kind;
       var sopen = searching || !!LS_OPEN[skey];
-      var ours=list.filter(function(c){ return c.is_ours; }).length;
       if(LS_SORT==='move'){
         list=list.slice().sort(function(a,b){
           return (Number(b.added_30d)||0)-(Number(a.added_30d)||0)
@@ -2209,7 +2207,6 @@
           '<span class="lsp"></span>'+
           '<span class="lscount">'+list.length+'</span>'+
           lsMoveChip(secMv, null)+
-          (ours?'<span class="lsmine">Yours</span>':'')+
         '</button>'+body+
       '</div>';
     }
