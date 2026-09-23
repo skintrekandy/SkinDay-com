@@ -295,7 +295,7 @@ function renderFullPage(clinic, doctors, devices) {
 
   // Hero photo
   const heroHtml = photo
-    ? `<img src="${escapeHtml(photo)}" alt="${name}" style="width:100%;height:260px;object-fit:cover;display:block;background:#E8E0D6;" loading="eager" />`
+    ? `<img src="${escapeHtml(photo)}" alt="${name}" style="width:100%;height:260px;object-fit:cover;display:block;background:#E8E0D6;" loading="eager" fetchpriority="high" />`
     : `<div style="width:100%;height:180px;background:linear-gradient(135deg,#E8E0D6 0%,#D4C8BA 100%);display:flex;align-items:center;justify-content:center;">
         <svg width="48" height="48" fill="none" stroke="#bbb" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>`;
@@ -547,17 +547,19 @@ exports.handler = async (event) => {
       }
     }
 
-    // Fallback path: if the slug column is missing or not yet backfilled,
-    // fetch and match on the computed slug so no valid clinic ever 404s.
+    // Fallback path: a clinic whose slug was never backfilled can still be
+    // reached by its name-derived slug. ⭐ Only rows WITHOUT a stored slug are
+    // scanned. This used to read up to 10,000 clinics on every miss, and misses
+    // are mostly crawlers requesting dead URLs, which made a 404 the slowest
+    // response on the site. A clinic that HAS a slug was already checked above.
     if (!clinic) {
       const { data, error } = await supabase
         .from('clinics')
         .select(COLS_BASE)
         .in('country', COUNTRIES)
         .not('name', 'is', null)
-        .range(0, 9999);   // was 29999. This scan runs on EVERY miss, and a
-                           // crawler hitting stale urls repeats it, so keep it
-                           // comfortably above the real row count and no more.
+        .is('slug', null)
+        .range(0, 9999);
       if (error) {
         console.error('render-clinic-com: fallback fetch error', error.message);
         return { statusCode: 500, body: 'Database error' };
@@ -568,7 +570,11 @@ exports.handler = async (event) => {
     if (!clinic) {
       return {
         statusCode: 404,
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          // Crawlers retry dead URLs; answer the repeats from the CDN.
+          'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=3600'
+        },
         body: `<!DOCTYPE html><html><head><title>Clinic Not Found | SkinDay</title><meta name="robots" content="noindex" /></head><body style="font-family:sans-serif;padding:40px;"><h2>Clinic not found</h2><p><a href="/">Back to SkinDay</a></p></body></html>`
       };
     }
@@ -581,41 +587,47 @@ exports.handler = async (event) => {
     // Googlebot receives rather than appearing after hydration. Two hops rather
     // than a PostgREST embed, so this does not depend on a named foreign key.
     // Either query failing is a legitimate empty state, never a 500.
-    let doctors = [];
-    let devices = [];
-    try {
-      const { data: links } = await supabase
-        .from('clinic_doctors')
-        .select('doctor_id, title')
-        .eq('clinic_id', clinic.id);
-      if (links && links.length) {
+    // The two lookups run side by side rather than one after the other.
+    const loadDoctors = async () => {
+      try {
+        const { data: links } = await supabase
+          .from('clinic_doctors')
+          .select('doctor_id, title')
+          .eq('clinic_id', clinic.id);
+        if (!links || !links.length) return [];
         const ids = [...new Set(links.map(l => l.doctor_id))];
         const { data: docs } = await supabase
           .from('doctors')
           .select('id, name_zh')
           .in('id', ids);
         const byId = new Map((docs || []).map(d => [String(d.id), d]));
+        const out = [];
         links.forEach(l => {
           const d = byId.get(String(l.doctor_id));
           if (!d) return;
-          if (!doctors.some(x => String(x.id) === String(d.id))) {
-            doctors.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
+          if (!out.some(x => String(x.id) === String(d.id))) {
+            out.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
           }
         });
-        doctors = orderTeam(doctors, clinic.name);
+        return orderTeam(out, clinic.name);
+      } catch (e) {
+        console.warn('render-clinic-com: doctors lookup failed:', e.message);
+        return [];
       }
-    } catch (e) {
-      console.warn('render-clinic-com: doctors lookup failed:', e.message);
-    }
-    try {
-      const { data: techs } = await supabase
-        .from('clinic_technologies')
-        .select('technology')
-        .eq('clinic_id', clinic.id);
-      devices = [...new Set((techs || []).map(t => t.technology).filter(Boolean))];
-    } catch (e) {
-      console.warn('render-clinic-com: devices lookup failed:', e.message);
-    }
+    };
+    const loadDevices = async () => {
+      try {
+        const { data: techs } = await supabase
+          .from('clinic_technologies')
+          .select('technology')
+          .eq('clinic_id', clinic.id);
+        return [...new Set((techs || []).map(t => t.technology).filter(Boolean))];
+      } catch (e) {
+        console.warn('render-clinic-com: devices lookup failed:', e.message);
+        return [];
+      }
+    };
+    const [doctors, devices] = await Promise.all([loadDoctors(), loadDevices()]);
 
     const html = renderFullPage(clinic, doctors, devices);
     const indexable = clinicIsIndexable(clinic);
@@ -626,7 +638,14 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400'
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+        // ⭐ THIS is the header Netlify's CDN obeys for a function. Cache-Control
+        // alone reaches the browser but not the edge, so every request, crawler
+        // or human, was rebuilding the page from the database. Six hours fresh,
+        // then served stale for up to a week while it refreshes in the
+        // background. `durable` shares one copy across every edge location, so
+        // a page built for a visitor in Taipei is also ready for one in Toronto.
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=21600, stale-while-revalidate=604800'
       },
       body: html
     };
