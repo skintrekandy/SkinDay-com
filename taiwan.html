@@ -12,6 +12,10 @@
   <meta property="og:description" content="比較全台醫美診所的評分、照片與治療項目。" />
   <meta property="og:site_name" content="SkinDay" />
   <link rel="canonical" href="https://skinday.com/taiwan" />
+  <link rel="preconnect" href="https://vefldlqtyxdywbzdjuia.supabase.co" crossorigin />
+  <link rel="preconnect" href="https://vefldlqtyxdywbzdjuia.supabase.co" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="preload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" as="script" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -297,6 +301,7 @@
       background: var(--warm); border-top: 1px solid var(--border);
       border-bottom: 1px solid var(--border); padding-bottom: 72px; padding-top: 52px;
     }
+    .cards-grid.is-loading { min-height: 900px; }
     .cards-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.25rem; padding: 0 5%; max-width: 1280px; margin: 0 auto;
@@ -684,8 +689,6 @@
       .map-section.active { height: calc(100vh - 130px); max-height: 860px; min-height: 520px; }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc&loading=async" defer></script>
 </head>
 <body>
 
@@ -842,7 +845,7 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
       格狀
     </button>
-    <button class="view-toggle-btn" id="mapToggleBtn" onclick="switchView('map')" title="Map view">
+    <button class="view-toggle-btn" id="mapToggleBtn" onclick="switchView('map')" onpointerenter="warmGoogleMaps()" ontouchstart="warmGoogleMaps()" title="Map view">
       <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
       地圖
     </button>
@@ -868,7 +871,7 @@
     </select>
   </div>
 
-  <div class="cards-grid" id="cardsGrid">
+  <div class="cards-grid is-loading" id="cardsGrid">
   </div>
 
   <div class="load-more-wrap">
@@ -932,7 +935,7 @@
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
         格狀
       </button>
-      <button id="mapCompactMapBtn" class="active" onclick="switchView('map')">
+      <button id="mapCompactMapBtn" class="active" onclick="switchView('map')" onpointerenter="warmGoogleMaps()" ontouchstart="warmGoogleMaps()">
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
         地圖
       </button>
@@ -1099,6 +1102,7 @@
   <div class="sd-lightbox-counter" id="sdLightboxCounter"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ─── CONSTANTS ────────────────────────────────────────────────
 const SB_URL = 'https://vefldlqtyxdywbzdjuia.supabase.co';
@@ -1416,14 +1420,14 @@ function renderPageCards(clinicsData, append) {
     });
   }
 
-  const html = clinicsData.map(c => {
+  const html = clinicsData.map((c, _ci) => {
     const hasPrice = c.price !== null && c.price !== undefined;
     const hasPhoto = c.photo && c.photo !== '';
     const hasLogo = c.logo && c.logo !== '';
 
     const photoBanner = hasPhoto
       ? `<div class="card-photo-banner">
-          <img class="card-cover" src="${c.photo}" alt="${c.name}" loading="lazy" onerror="this.parentElement.classList.add('no-photo');this.remove()">
+          <img class="card-cover" src="${c.photo}" alt="${c.name}" ${(!append && _ci < 3) ? 'loading="eager"' + (_ci === 0 ? ' fetchpriority="high"' : '') : 'loading="lazy"'} decoding="async" onerror="this.parentElement.classList.add('no-photo');this.remove()">
           ${hasLogo ? `<div class="card-logo-badge"><img src="${c.logo}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
           <div class="card-corner-actions">
             <button class="btn-save-card" id="save-${c.id}" onclick="toggleSave('${c.id}', event)" title="收藏"><span class="heart-icon"></span></button>
@@ -2279,6 +2283,27 @@ let currentView = 'grid';
 const PIN_PATH = 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z';
 const LABEL_STYLE = { color: '#fff', fontSize: '10px', fontWeight: '700', fontFamily: 'DM Sans, sans-serif' };
 let PIN_IDLE, PIN_HOVER, PIN_ACTIVE;
+// Google Maps loads on first use of the map view, not on every page load.
+let _gmapsPromise = null;
+function ensureGoogleMaps() {
+  if (window.google && google.maps && google.maps.Map) return Promise.resolve();
+  if (_gmapsPromise) return _gmapsPromise;
+  _gmapsPromise = new Promise((resolve, reject) => {
+    window.__sdMapsReady = () => {
+      const lib = (google.maps.importLibrary)
+        ? Promise.all([google.maps.importLibrary('maps'), google.maps.importLibrary('marker')]).catch(() => {})
+        : Promise.resolve();
+      lib.then(() => resolve());
+    };
+    const sc = document.createElement('script');
+    sc.src = 'https://maps.googleapis.com/maps/api/js?key=AIzaSyAiUKLofb5BbJQab0CX4GtuHnLeE_jOwCc&loading=async&callback=__sdMapsReady';
+    sc.async = true;
+    sc.onerror = () => { _gmapsPromise = null; reject(new Error('maps')); };
+    document.head.appendChild(sc);
+  });
+  return _gmapsPromise;
+}
+function warmGoogleMaps() { ensureGoogleMaps().catch(() => {}); }
 function initPins() {
   if (PIN_IDLE) return;
   PIN_IDLE   = { path: PIN_PATH, fillColor: '#1C1714', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1.5, scale: 1,   labelOrigin: new google.maps.Point(0, -30) };
@@ -2348,10 +2373,13 @@ async function fetchMapClinics() {
 }
 
 async function initMap() {
-  initPins();
   const loadingEl = document.getElementById('mapLoading');
   if (loadingEl) loadingEl.classList.remove('hidden');
-  try { _allClinics = await fetchMapClinics(); } catch(e) { if (loadingEl) loadingEl.textContent = '載入失敗'; return; }
+  const clinicsP = fetchMapClinics();
+  clinicsP.catch(() => {});
+  try { await ensureGoogleMaps(); } catch(e) { if (loadingEl) loadingEl.textContent = '載入失敗'; return; }
+  initPins();
+  try { _allClinics = await clinicsP; } catch(e) { if (loadingEl) loadingEl.textContent = '載入失敗'; return; }
   if (!_map) {
     _map = new google.maps.Map(document.getElementById('google-map'), {
       zoom: 8, center: { lat: 23.5, lng: 121.0 },
@@ -2718,8 +2746,13 @@ function syncMapDeviceDropdown() {
   const grid = document.getElementById('cardsGrid');
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;letter-spacing:0.03em;">載入中…</div>';
 
-  const [indexRes, pageRes, , slugRes] = await Promise.allSettled([
-    fetch('/api/get-clinics?mode=index&country=taiwan').then(r => r.ok ? r.json() : []),
+  // The whole-country index only feeds the neighbourhood counts, so the first
+  // cards no longer wait for it.
+  fetch('/api/get-clinics?mode=index&country=taiwan').then(r => r.ok ? r.json() : [])
+    .then(v => { if (Array.isArray(v)) { clinicsIndex = v.map(normaliseClinic); updateNeighbourhoodCounts(); } })
+    .catch(() => {});
+
+  const [pageRes, , slugRes] = await Promise.allSettled([
     fetch(buildApiUrl(0)).then(r => r.ok ? r.json() : { clinics: [], total: 0, hasMore: false }),
     loadVerifiedDevices(),
     // Every profile link depends on clinics.slug, but /api/get-clinics does not
@@ -2734,10 +2767,6 @@ function syncMapDeviceDropdown() {
     for (const r of slugRes.value) if (r && r.slug) slugById[String(r.id)] = String(r.slug);
   }
 
-  if (indexRes.status === 'fulfilled' && Array.isArray(indexRes.value)) {
-    clinicsIndex = indexRes.value.map(normaliseClinic);
-    updateNeighbourhoodCounts();
-  }
 
   if (pageRes.status === 'fulfilled') {
     const data = pageRes.value;
@@ -2750,6 +2779,8 @@ function syncMapDeviceDropdown() {
   } else {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0;color:var(--muted);font-size:0.9rem;">載入失敗，請重新整理後再試。</div>';
   }
+
+  grid.classList.remove('is-loading');
 
   await initAuth();
   await updateShortlistUI();

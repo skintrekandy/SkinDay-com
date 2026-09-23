@@ -17,6 +17,8 @@
   <meta name="twitter:description" content="" id="tw-description" />
   <meta name="twitter:image" content="" id="tw-image" />
   <link rel="icon" href="/favicon.ico" />
+  <link rel="preconnect" href="https://vefldlqtyxdywbzdjuia.supabase.co" crossorigin />
+  <link rel="preconnect" href="https://vefldlqtyxdywbzdjuia.supabase.co" />
 
   <style>
     :root {
@@ -640,7 +642,7 @@
     let heroHtml = '';
     const heroSrc = photos.length > 0 ? photos[0] : (clinic.photo || '');
     if (heroSrc) {
-      heroHtml = '<img class="clinic-hero" src="' + escapeHtml(heroSrc) + '" alt="' + escapeHtml(clinic.name) + '" loading="eager" />';
+      heroHtml = '<img class="clinic-hero" src="' + escapeHtml(heroSrc) + '" alt="' + escapeHtml(clinic.name) + '" loading="eager" fetchpriority="high" decoding="async" />';
     } else {
       heroHtml = '<div class="clinic-hero-placeholder"><svg width="48" height="48" fill="none" stroke="#999" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>';
     }
@@ -830,11 +832,13 @@
       try { clinic.photos = JSON.parse(clinic.photos); } catch (e) { clinic.photos = []; }
     }
 
-    // Doctors: two hops rather than a PostgREST embed, so it does not depend on
-    // a named foreign key. An empty result is a legitimate state, not an error.
-    let doctors = [];
-    const links = await sbGet('clinic_doctors?select=doctor_id,title&clinic_id=eq.' + encodeURIComponent(clinic.id));
-    if (links && links.length) {
+    // Doctors and devices are fetched side by side rather than one after the
+    // other. Doctors: two hops rather than a PostgREST embed, so it does not
+    // depend on a named foreign key. An empty result is a legitimate state.
+    async function loadDoctors() {
+      const out = [];
+      const links = await sbGet('clinic_doctors?select=doctor_id,title&clinic_id=eq.' + encodeURIComponent(clinic.id));
+      if (!links || !links.length) return out;
       const ids = [];
       links.forEach(function (l) { if (ids.indexOf(l.doctor_id) === -1) ids.push(l.doctor_id); });
       const docs = await sbGet('doctors?select=id,name_zh&id=in.(' + ids.join(',') + ')');
@@ -843,18 +847,22 @@
       links.forEach(function (l) {
         const d = byId[String(l.doctor_id)];
         if (!d) return;
-        if (!doctors.some(function (x) { return String(x.id) === String(d.id); })) {
-          doctors.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
+        if (!out.some(function (x) { return String(x.id) === String(d.id); })) {
+          out.push({ id: d.id, name_zh: d.name_zh, title: l.title || '' });
         }
       });
-      doctors = orderTeam(doctors, clinic.name);
+      return orderTeam(out, clinic.name);
     }
-
-    const techRows = await sbGet('clinic_technologies?select=technology&clinic_id=eq.' + encodeURIComponent(clinic.id));
-    const devices = [];
-    (techRows || []).forEach(function (t) {
-      if (t.technology && devices.indexOf(t.technology) === -1) devices.push(t.technology);
-    });
+    async function loadDevices() {
+      const techRows = await sbGet('clinic_technologies?select=technology&clinic_id=eq.' + encodeURIComponent(clinic.id));
+      const out = [];
+      (techRows || []).forEach(function (t) {
+        if (t.technology && out.indexOf(t.technology) === -1) out.push(t.technology);
+      });
+      return out;
+    }
+    const both = await Promise.all([loadDoctors(), loadDevices()]);
+    const doctors = both[0], devices = both[1];
 
     renderClinic(clinic, doctors, devices);
   }
