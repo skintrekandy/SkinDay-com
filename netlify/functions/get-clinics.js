@@ -319,6 +319,7 @@ exports.handler = async (event) => {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=600',
+          'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=3600, stale-while-revalidate=86400',
         },
         body: JSON.stringify(out),
       };
@@ -345,6 +346,7 @@ exports.handler = async (event) => {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
           'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=120',
+          'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=1800, stale-while-revalidate=86400',
         },
         body: JSON.stringify(data),
       };
@@ -403,12 +405,14 @@ exports.handler = async (event) => {
     // fold the verified-device restriction into a JS Set and filter after
     // fetching, instead of chaining a second .in('id') here.
     const verifiedIdSet = verifiedIdList ? new Set(verifiedIdList) : null;
-    const deviceIdSet   = await resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGroup);
 
-    const buildBase = () => {
+    // ⭐ Only the dedicated count query asks Postgres for an exact count. The
+    // four bucket queries used to request one each and throw it away, which is
+    // four extra full COUNT(*) scans on every page of cards.
+    const buildBase = (withCount) => {
       let q = supabase
         .from('clinics')
-        .select(CARD_FIELDS, { count: 'exact' })
+        .select(CARD_FIELDS, withCount ? { count: 'exact' } : undefined)
         .eq('approved', true)
         .eq('country', country);
 
@@ -435,11 +439,16 @@ exports.handler = async (event) => {
     // Scope to currency matching the country (NTD for taiwan, CAD for canada).
     const currency = country === 'taiwan' ? 'NTD' : (country === 'usa' ? 'USD' : (country === 'hongkong' ? 'HKD' : 'CAD'));
 
-    const pricedIdsRes = await supabase
-      .from('clinic_prices')
-      .select('clinic_id')
-      .eq('currency', currency)
-      .range(0, 29999);
+    // The device filter and the priced-id list do not depend on each other,
+    // so they are fetched side by side.
+    const [deviceIdSet, pricedIdsRes] = await Promise.all([
+      resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGroup),
+      supabase
+        .from('clinic_prices')
+        .select('clinic_id')
+        .eq('currency', currency)
+        .range(0, 29999),
+    ]);
 
     if (pricedIdsRes.error) {
       console.error('Supabase error (priced ids):', pricedIdsRes.error);
@@ -466,7 +475,7 @@ exports.handler = async (event) => {
       hasPricedIds ? applySort(buildBase().eq('claimed', false).in('id', pricedIdList)).range(0, needed - 1)         : Promise.resolve(emptyPriced),
       applySort(buildBase().eq('claimed', true )).range(0, unpricedNeeded - 1),
       applySort(buildBase().eq('claimed', false)).range(0, unpricedNeeded - 1),
-      buildBase().select('id', { count: 'exact', head: true }).range(0, 0),
+      buildBase(true).select('id', { count: 'exact', head: true }).range(0, 0),
     ]);
 
     const fetchErr = pricedClaimedRes.error || pricedUnclaimedRes.error || claimedAllRes.error || unclaimedAllRes.error;
@@ -499,23 +508,25 @@ exports.handler = async (event) => {
 
     // ── FETCH clinic_prices FOR THIS PAGE ─────────────────────
     const clinicIds = pageSlice.map(c => String(c.id));
-    const devicesMap = await fetchDevicesFor(supabase, clinicIds);
+    // Devices and prices for this page are independent, so fetch them together.
     let pricesMap = {};
+    const [devicesMap, pricesRes] = await Promise.all([
+      fetchDevicesFor(supabase, clinicIds),
+      clinicIds.length > 0
+        ? supabase
+            .from('clinic_prices')
+            .select('clinic_id, toxin, price, injector_type, price_source, price_date, currency')
+            .in('clinic_id', clinicIds)
+            .eq('currency', currency)
+            .order('price', { ascending: true })
+        : Promise.resolve({ data: [] }),
+    ]);
 
-    if (clinicIds.length > 0) {
-      const pricesRes = await supabase
-        .from('clinic_prices')
-        .select('clinic_id, toxin, price, injector_type, price_source, price_date, currency')
-        .in('clinic_id', clinicIds)
-        .eq('currency', currency)
-        .order('price', { ascending: true });
-
-      if (pricesRes.data && pricesRes.data.length) {
-        pricesRes.data.forEach(p => {
-          if (!pricesMap[p.clinic_id]) pricesMap[p.clinic_id] = [];
-          pricesMap[p.clinic_id].push(p);
-        });
-      }
+    if (pricesRes.data && pricesRes.data.length) {
+      pricesRes.data.forEach(p => {
+        if (!pricesMap[p.clinic_id]) pricesMap[p.clinic_id] = [];
+        pricesMap[p.clinic_id].push(p);
+      });
     }
 
     // ── MERGE ─────────────────────────────────────────────────
@@ -563,6 +574,7 @@ exports.handler = async (event) => {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=60',
+        'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=600, stale-while-revalidate=3600',
         'Vary': 'Accept-Encoding',
       },
       body: JSON.stringify({
