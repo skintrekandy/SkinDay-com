@@ -325,6 +325,72 @@ exports.handler = async (event) => {
       };
     }
 
+    // ── MODE: manufacturer-verified devices (M25) ─────────────────────────
+    // Every clinic a manufacturer's own certified-clinic list names, for one
+    // country, plus the device list with its Chinese label (device_reference.
+    // name_zh). The Taiwan search bar and card badges are built from this, so a
+    // new list loaded into clinic_devices shows up with no page change.
+    // ⛔ Read in ORDERED 1,000-row PAGES. A single large .range() is silently
+    // cut by PostgREST's own row cap (the XERF / DermaV bug).
+    if (params.mode === 'verified-devices') {
+      const PAGE = 1000;
+      const pageAll = async (build) => {
+        const out = [];
+        for (let from = 0; from < 100000; from += PAGE) {
+          const { data, error } = await build().range(from, from + PAGE - 1);
+          if (error) throw new Error(error.message);
+          out.push(...(data || []));
+          if (!data || data.length < PAGE) break;
+        }
+        return out;
+      };
+      try {
+        const [clinicRows, devRows] = await Promise.all([
+          pageAll(() => supabase.from('clinics').select('id')
+            .eq('approved', true).eq('country', country).order('id', { ascending: true })),
+          pageAll(() => supabase.from('clinic_devices').select('clinic_id, device_id')
+            .eq('source', 'manufacturer').order('clinic_id', { ascending: true }).order('device_id', { ascending: true })),
+        ]);
+        const inCountry = new Set(clinicRows.map(r => String(r.id)));
+        const rows = devRows
+          .filter(r => inCountry.has(String(r.clinic_id)))
+          .map(r => [String(r.clinic_id), String(r.device_id)]);
+        const counts = {};
+        rows.forEach(([, d]) => { counts[d] = (counts[d] || 0) + 1; });
+        const ids = Object.keys(counts).map(Number);
+        let devices = [];
+        if (ids.length) {
+          const { data: refs, error: rErr } = await supabase.from('device_reference')
+            .select('id, model, name_zh, category, active').in('id', ids);
+          if (rErr) throw new Error(rErr.message);
+          devices = (refs || [])
+            .filter(d => d.active !== false)
+            .map(d => ({ id: String(d.id), model: d.model, label: d.name_zh || d.model,
+                         category: d.category, clinics: counts[String(d.id)] || 0 }))
+            .sort((a, b) => (b.clinics - a.clinics) || a.label.localeCompare(b.label));
+        }
+        const live = new Set(devices.map(d => d.id));
+        return {
+          statusCode: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=300',
+            'Netlify-CDN-Cache-Control': 'public, durable, s-maxage=1800, stale-while-revalidate=86400',
+          },
+          body: JSON.stringify({ devices, rows: rows.filter(r => live.has(r[1])) }),
+        };
+      } catch (e) {
+        // Never take the page down over the device list: it renders without it.
+        console.error('verified-devices failed (non-fatal):', e.message);
+        return {
+          statusCode: 200,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify({ devices: [], rows: [] }),
+        };
+      }
+    }
+
     if (params.mode === 'index') {
       const metroIdx = params.metro || '';
       const stateIdx = params.state || '';
@@ -376,7 +442,29 @@ exports.handler = async (event) => {
     // verified_device='__all__' means the union of every manufacturer-verified
     // device (the "原廠認證診所" option). A specific value filters to that device.
     let verifiedIdList = null;
-    if (verifiedDevice) {
+    // ⭐ M25: a numeric value is a device_reference id and '__all__' is every
+    // manufacturer-listed device; both read clinic_devices (source='manufacturer'),
+    // which now holds every Taiwan certified-clinic list. Any other value is the
+    // old clinic_technologies string, kept so a cached copy of the old page still works.
+    if (verifiedDevice && (verifiedDevice === '__all__' || /^\d+$/.test(verifiedDevice))) {
+      const PAGE = 1000;
+      const ids = new Set();
+      for (let from = 0; from < 100000; from += PAGE) {
+        let q = supabase.from('clinic_devices').select('clinic_id')
+          .eq('source', 'manufacturer')
+          .order('clinic_id', { ascending: true })
+          .order('device_id', { ascending: true });
+        if (verifiedDevice !== '__all__') q = q.eq('device_id', parseInt(verifiedDevice, 10));
+        const { data, error } = await q.range(from, from + PAGE - 1);
+        if (error) {
+          console.error('Supabase error (verified devices):', error);
+          return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
+        }
+        (data || []).forEach(r => ids.add(String(r.clinic_id)));
+        if (!data || data.length < PAGE) break;
+      }
+      verifiedIdList = [...ids];
+    } else if (verifiedDevice) {
       let vq = supabase
         .from('clinic_technologies')
         .select('clinic_id')
