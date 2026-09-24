@@ -23,6 +23,8 @@
 //   ?action=stats            — how many remain
 //   ?action=run&limit=25     — re-host one batch, returns remaining
 //   ?action=run&country=taiwan — restrict to one country
+//   &max_age_days=25         — only rows whose URL was obtained that recently,
+//                              by import OR by refresh (default 25)
 // Call run repeatedly until remaining hits 0. Netlify's sync function timeout
 // is short, hence batches rather than one long loop.
 
@@ -114,19 +116,40 @@ exports.handler = async (event) => {
   const T         = TARGETS[targetKey];
   const px        = Math.min(parseInt(q.px || String(T.defaultPx), 10) || T.defaultPx, 1600);
 
-  // ⭐ SKIP ROWS THAT HAVE NEVER BEEN REFRESHED. This is the fix for the night
-  // 1,062 never-refreshed New York rows sat AHEAD of California in the id order
-  // and the tool ground on their long-dead URLs for 212,959 requests without
-  // ever reaching the live ones. A row whose data was never refreshed is
-  // holding an original-import URL, which is months old and certainly dead.
-  // Default ON; pass fresh_only=0 to include them.
-  const freshOnly = q.fresh_only !== '0';
+  // ⭐ ONLY ATTEMPT URLS YOUNG ENOUGH TO STILL RESOLVE. Google's Places photo
+  // links are signed and time-limited; a June link was dead at about a month.
+  // So the question is never "has this row been refreshed", it is "how old is
+  // the URL sitting in it".
+  //
+  // ⚠️⚠️ THE BUG THIS REPLACES, FOUND ON CANADA 2026-09-24. The old test was
+  // `data_refreshed_at is not null`, written for New York, where never-refreshed
+  // did mean an original-import URL months old. It stopped being true the moment
+  // rows arrived by a route OTHER than the merge SQL: the 1,037 clinics imported
+  // from the September scrape were inserted from staging, so their
+  // data_refreshed_at is null even though their URLs were days old. The tool
+  // skipped every one of them and ground instead on 603 rows carrying a July
+  // refresh stamp — two months dead. The freshest photos in the database were
+  // the only ones it refused to look at.
+  //
+  // An IMPORT is as good a source of a fresh URL as a refresh, so both dates
+  // count and whichever is later wins. 25 days rather than 30 keeps a margin
+  // under the observed ~1 month lifetime.
+  // Pass max_age_days to widen or narrow it, or fresh_only=0 to drop the window
+  // entirely (kept for the old call shape; it will mostly fetch dead links).
+  const maxAgeDays = (q.fresh_only === '0')
+    ? null
+    : (parseInt(q.max_age_days || '25', 10) || 25);
+  const cutoff = maxAgeDays
+    ? new Date(Date.now() - maxAgeDays * 86400000).toISOString()
+    : null;
 
   const scope = (sel) => {
     sel = sel.like(T.col, '%googleusercontent.com%').is(T.stampCol, null);
-    if (country)   sel = sel.eq('country', country);
-    if (state)     sel = sel.eq('state', state);
-    if (freshOnly) sel = sel.not('data_refreshed_at', 'is', null);
+    if (country) sel = sel.eq('country', country);
+    if (state)   sel = sel.eq('state', state);
+    // One OR group, ANDed with everything above by PostgREST. A row qualifies on
+    // EITHER date, so a fresh import and a fresh refresh are treated alike.
+    if (cutoff)  sel = sel.or(`data_refreshed_at.gte.${cutoff},first_seen_at.gte.${cutoff}`);
     return sel;
   };
 
@@ -150,9 +173,13 @@ exports.handler = async (event) => {
   try {
     // ── STATS ──────────────────────────────────────────────────────────────
     if (action === 'stats') {
+      // `remaining` now means "rows we can actually copy right now", not "rows
+      // that hold a Google URL". Those were never the same number and reporting
+      // the larger one made the progress bar a fiction.
       return ok({ action, target: targetKey, label: T.label,
                   country: country || 'all', state: state || 'all',
-                  fresh_only: freshOnly,
+                  max_age_days: maxAgeDays,
+                  url_no_older_than: cutoff,
                   remaining: await countRemaining() });
     }
 
