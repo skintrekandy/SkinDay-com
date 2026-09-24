@@ -270,6 +270,7 @@
       border-radius: 4px; padding: 2px 7px;
       font-size: 0.66rem; white-space: nowrap;
     }
+    .card-device-more { background: transparent; border: 1px solid #E4CFD5; color: #8A3A4C; }
     /* Modal badge (Option B): one 原廠認證 header + device tags */
     .verified-device-box {
       border: 1px solid #E4CFD5; background: rgba(240,224,229,0.35);
@@ -1113,16 +1114,14 @@ const PAGE_SIZE = 24;
 // ─── MANUFACTURER VERIFIED DEVICES (M18) ──────────────────────
 // Clinics that Solta lists as certified for 鳳凰電波. The chip only appears
 // once there is data behind it, so patients never meet an empty filter.
-// Four manufacturer-verified devices patients can search. Order = display order
-// in the dropdown. `tech` is the exact clinic_technologies.technology string;
-// `label` is the short Chinese name shown to patients.
-const DEVICES = [
-  { tech: '鳳凰電波 Thermage FLX',      label: '鳳凰電波' },
-  { tech: '美國音波二代 Ultherapy Prime', label: '美國音波二代' },
-  { tech: '蜂巢皮秒 PicoSure',          label: '蜂巢皮秒' },
-  { tech: '超皮秒 PicoWay',            label: '超皮秒' },
-];
-const TECH_LABEL = Object.fromEntries(DEVICES.map(d => [d.tech, d.label]));
+// M25: the device list is no longer hardcoded. It comes from
+// /api/get-clinics?mode=verified-devices, i.e. every manufacturer certified-clinic
+// list loaded into clinic_devices, labelled with device_reference.name_zh.
+// Order = most clinics first. `tech` is the device id as a string (it is also the
+// value sent as verified_device); `label` is the Chinese name shown to patients.
+let DEVICES = [];
+let TECH_LABEL = {};
+const CARD_TAG_MAX = 4;         // card shows this many device tags, then "+N"; the modal shows all
 // Per-device Sets of clinic ids: { '鳳凰電波 Thermage FLX': Set, ... }. Populated
 // by loadVerifiedDevices(). deviceById maps a clinic id -> [tech,...] for badges.
 let verifiedByTech = {};
@@ -1491,7 +1490,10 @@ function renderPageCards(clinicsData, append) {
           ${(function(){
             const ds = clinicDevices(c.id);
             if (!ds.length) return '';
-            const tags = ds.map(t => `<span class="card-device-tag">${TECH_LABEL[t] || t}</span>`).join('');
+            const shown = ds.slice(0, CARD_TAG_MAX);
+            const more = ds.length - shown.length;
+            const tags = shown.map(t => `<span class="card-device-tag">${TECH_LABEL[t] || t}</span>`).join('')
+              + (more > 0 ? `<span class="card-device-tag card-device-more">+${more}</span>` : '');
             return `<div class="card-device-row"><span class="card-device-cert">✓ 原廠認證</span>${tags}</div>`;
           })()}
           <div class="card-doctor-row" data-clinic="${c.id}"></div>
@@ -2637,19 +2639,18 @@ function unhighlightPinById(cid) {
 // is silent on purpose: the directory still works, it just loses the chip.
 async function loadVerifiedDevices() {
   try {
-    const techs = DEVICES.map(d => d.tech);
-    const inList = '(' + techs.map(t => '"' + t.replace(/"/g,'\\"') + '"').join(',') + ')';
-    const url = SB_URL + '/rest/v1/clinic_technologies?select=clinic_id,technology'
-      + '&technology=in.' + encodeURIComponent(inList)
-      + '&evidence_type=eq.manufacturer_directory';
-    const res = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } });
+    const res = await fetch('/api/get-clinics?mode=verified-devices&country=' + COUNTRY);
     if (!res.ok) return;
-    const rows = await res.json();
+    const payload = await res.json();
+    DEVICES = (payload.devices || []).map(d => ({ tech: String(d.id), label: d.label || d.model }));
+    TECH_LABEL = Object.fromEntries(DEVICES.map(d => [d.tech, d.label]));
+    verifiedByTech = {}; deviceById = {};
     DEVICES.forEach(d => { verifiedByTech[d.tech] = new Set(); });
-    (rows || []).forEach(r => {
-      const id = String(r.clinic_id);
-      if (verifiedByTech[r.technology]) verifiedByTech[r.technology].add(id);
-      (deviceById[id] = deviceById[id] || []).push(r.technology);
+    (payload.rows || []).forEach(([cid, did]) => {
+      const id = String(cid), tech = String(did);
+      if (!verifiedByTech[tech]) return;
+      verifiedByTech[tech].add(id);
+      (deviceById[id] = deviceById[id] || []).push(tech);
     });
     // Keep each clinic's device list in canonical DEVICES order for tidy badges.
     Object.keys(deviceById).forEach(id => {
@@ -2704,7 +2705,7 @@ function buildDeviceDropdown() {
   if (typeof syncMapDeviceDropdown === 'function') syncMapDeviceDropdown();
 }
 
-// Union of clinic ids across all four devices (for the "all verified" option).
+// Union of clinic ids across every listed device (for the "all verified" option).
 function allVerifiedIds() {
   const s = new Set();
   Object.values(verifiedByTech).forEach(set => set.forEach(id => s.add(id)));
