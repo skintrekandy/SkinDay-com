@@ -2642,7 +2642,14 @@ async function loadVerifiedDevices() {
     const res = await fetch('/api/get-clinics?mode=verified-devices&country=' + COUNTRY);
     if (!res.ok) return;
     const payload = await res.json();
-    DEVICES = (payload.devices || []).map(d => ({ tech: String(d.id), label: d.label || d.model }));
+    // Dropdown shows "English Chinese" (Thermage FLX 鳳凰電波). A label with no Chinese
+    // in it (ONDA PRO) is already the English name, so it stands alone.
+    const hasCJK = s => /[\u3400-\u9fff]/.test(s || '');
+    DEVICES = (payload.devices || []).map(d => {
+      const label = d.label || d.model;
+      const menu = (hasCJK(label) && d.model) ? d.model + ' ' + label : label;
+      return { tech: String(d.id), label, menu };
+    });
     TECH_LABEL = Object.fromEntries(DEVICES.map(d => [d.tech, d.label]));
     verifiedByTech = {}; deviceById = {};
     DEVICES.forEach(d => { verifiedByTech[d.tech] = new Set(); });
@@ -2694,7 +2701,7 @@ function buildDeviceDropdown() {
     // Keep the option visible even at 0 within a neighbourhood, so the user sees
     // the device exists but has no verified clinic here — clearer than it vanishing.
     if ((verifiedByTech[d.tech] || new Set()).size > 0) {
-      opts.push('<option value="' + d.tech + '">' + d.label + '（' + n + '）</option>');
+      opts.push('<option value="' + d.tech + '">' + (d.menu || d.label) + '（' + n + '）</option>');
     }
   });
   sel.innerHTML = opts.join('');
