@@ -1209,6 +1209,8 @@ const NEIGHBOURHOOD_LABEL = {
   'miaoli-toufen':'頭份市','miaoli-zhunan':'竹南鎮',
   'keelung-zhongzheng':'中正區','keelung-qidu':'七堵區',
   'keelung-nuannuan':'暖暖區',
+  // M25 — districts added by the September 2026 scrape
+  'changhua-beidou':'北斗鎮','changhua-erlin':'二林鎮','changhua-fuxing':'福興鄉','changhua-hemei':'和美鎮','changhua-puxin':'埔心鄉','changhua-shengang':'伸港鄉','changhua-xihu':'溪湖鎮','chiayi-county-minxiong':'民雄鄉','chiayi-county-puzi':'朴子市','chiayi-county-xingang':'新港鄉','hsinchu-county-hukou':'湖口鄉','hsinchu-county-xinfeng':'新豐鄉','hsinchu-county-zhudong':'竹東鎮','kaohsiung-gangshan':'岡山區','kaohsiung-luzhu':'路竹區','kaohsiung-niaosong':'鳥松區','kaohsiung-qishan':'旗山區','kaohsiung-xiaogang':'小港區','kaohsiung-yanchao':'燕巢區','kaohsiung-yancheng':'鹽埕區','keelung-anle':'安樂區','keelung-xinyi':'信義區','keelung-zhongshan':'中山區','kinmen-jincheng':'金城鎮','miaoli-tongluo':'銅鑼鄉','nantou-caotun':'草屯鎮','nantou-puli':'埔里鎮','nantou-zhushan':'竹山鎮','new-taipei-sanxia':'三峽區','new-taipei-yingge':'鶯歌區','penghu-huxi':'湖西鄉','penghu-magong':'馬公市','pingtung-chaozhou':'潮州鎮','pingtung-donggang':'東港鎮','pingtung-ligang':'里港鄉','pingtung-neipu':'內埔鄉','pingtung-wandan':'萬丹鄉','taichung-dajia':'大甲區','taichung-daya':'大雅區','taichung-qingshui':'清水區','taichung-shalu':'沙鹿區','taichung-tanzi':'潭子區','taichung-wufeng':'霧峰區','taichung-wuqi':'梧棲區','tainan-guiren':'歸仁區','tainan-jiali':'佳里區','tainan-madou':'麻豆區','tainan-shanhua':'善化區','tainan-xinshi':'新市區','tainan-xinying':'新營區','taoyuan-bade':'八德區','taoyuan-guishan':'龜山區','taoyuan-longtan':'龍潭區','taoyuan-luzhu':'蘆竹區','taoyuan-xinwu':'新屋區','taoyuan-yangmei':'楊梅區','yilan-luodong':'羅東鎮','yilan-wujie':'五結鄉','yunlin-beigang':'北港鎮','yunlin-xiluo':'西螺鎮',
 };
 
 const SLUG_TO_CITY_ZH = {
@@ -1218,6 +1220,7 @@ const SLUG_TO_CITY_ZH = {
   'chiayi':'嘉義市','chiayi-county':'嘉義縣','yunlin':'雲林縣',
   'changhua':'彰化縣','miaoli':'苗栗縣','nantou':'南投縣',
   'pingtung':'屏東縣','hualien':'花蓮縣','taitung':'台東縣','yilan':'宜蘭縣',
+  'penghu':'澎湖縣','kinmen':'金門縣',
 };
 
 function getCityFromSlug(slug) {
@@ -1237,8 +1240,8 @@ function getNeighbourhoodFull(slug) {
 }
 
 const CITY_PREFIXES = ['taipei','new-taipei','taoyuan','taichung','tainan','kaohsiung',
-  'hsinchu','hsinchu-county','keelung','chiayi','chiayi-county','yunlin','changhua',
-  'miaoli','nantou','pingtung','hualien','taitung','yilan'];
+  'hsinchu-county','hsinchu','keelung','chiayi-county','chiayi','yunlin','changhua',
+  'miaoli','nantou','pingtung','hualien','taitung','yilan','penghu','kinmen'];
 
 function getNeighbourhoodLabel(slug) {
   if (!slug) return '';
