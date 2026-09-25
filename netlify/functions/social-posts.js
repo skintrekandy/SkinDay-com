@@ -488,12 +488,23 @@ async function collect(supabase, body) {
     }
   }
   let found = 0;
+  const newIds = [];
   for (let i = 0; i < mentions.length; i += 200) {
     const { data, error: mErr } = await supabase.from('social_device_mentions')
       .upsert(mentions.slice(i, i + 200), { onConflict: 'post_id,clinic_id,device_id', ignoreDuplicates: true })
       .select('id');
     if (mErr) throw new Error(mErr.message);
     found += (data || []).length;
+    (data || []).forEach(r => newIds.push(r.id));
+  }
+
+  // Published straight away (Andy, 2026-09-25): a clinic only posts about a
+  // device it has committed to, so a post on its own account is the evidence.
+  // decide() adds only clinic-device pairs not already on file, dated to the post.
+  let published = 0;
+  for (let i = 0; i < newIds.length; i += 500) {
+    const res = await decide(supabase, { ids: newIds.slice(i, i + 500) }, true);
+    published += res.new_devices || 0;
   }
 
   for (const [key, at] of lastPost) {
@@ -509,7 +520,7 @@ async function collect(supabase, body) {
   };
   if (done) { upd.status = 'collected'; upd.collected_at = new Date().toISOString(); }
   await supabase.from('social_crawl_runs').update(upd).eq('id', id);
-  return { done, read: list.length, posts_saved: saved.length, new_mentions: found, total: upd };
+  return { done, read: list.length, posts_saved: saved.length, new_mentions: found, new_devices_published: published, total: upd };
 }
 
 async function listMentions(supabase, body) {
