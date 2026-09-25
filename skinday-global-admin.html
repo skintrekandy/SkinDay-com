@@ -4639,24 +4639,28 @@ async function scLoadMentions() {
 
   if (!rows.length) { list.innerHTML = '<div class="empty-state">Nothing here.</div>'; return; }
   const reviewing = status === 'pending';
+  const perDevice = {};
+  rows.forEach(function(r){ perDevice[r.device_id] = (perDevice[r.device_id] || 0) + 1; });
+  const line = 'rgba(234,226,216,0.12)';
   let html = '', cur = null;
   rows.forEach(function(r){
     if (r.device_id !== cur) {
       if (cur !== null) html += '</div>';
       cur = r.device_id;
-      html += '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.9rem;overflow:hidden;">' +
-        '<div style="background:var(--warm);padding:.55rem .8rem;font-size:.82rem;"><strong>' + esc(r.model) + '</strong>' +
-        (r.name_zh ? ' ' + esc(r.name_zh) : '') + '</div>';
+      html += '<div style="border:1px solid ' + line + ';border-radius:10px;margin-bottom:.9rem;overflow:hidden;">' +
+        '<div style="background:rgba(201,169,110,0.14);color:var(--cream);padding:.6rem .8rem;font-size:.86rem;display:flex;justify-content:space-between;gap:.6rem;">' +
+        '<span><strong>' + esc(r.model) + '</strong>' + (r.name_zh ? ' ' + esc(r.name_zh) : '') + '</span>' +
+        '<span style="color:var(--gold);">' + perDevice[r.device_id] + '</span></div>';
     }
-    html += '<div style="padding:.7rem .8rem;border-top:1px solid var(--border);font-size:.84rem;">' +
+    html += '<div style="padding:.7rem .8rem;border-top:1px solid ' + line + ';font-size:.84rem;">' +
       '<div style="display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;">' +
         (reviewing ? '<input type="checkbox" class="sc-cb" value="' + esc(r.id) + '">' : '') +
-        '<strong>' + esc(r.clinic_name) + '</strong>' +
+        '<strong style="color:var(--cream);">' + esc(r.clinic_name) + '</strong>' +
         '<span style="color:var(--muted);">' + esc(r.platform) + ' · ' + esc(String(r.posted_at || '').slice(0, 10)) + '</span>' +
         (r.flag ? '<span style="color:var(--rose);font-size:.76rem;">comparison post</span>' : '') +
-        (r.post_url ? '<a href="' + esc(r.post_url) + '" target="_blank" rel="noopener" style="font-size:.78rem;">open post</a>' : '') +
+        (r.post_url ? '<a href="' + esc(r.post_url) + '" target="_blank" rel="noopener" style="font-size:.78rem;color:var(--gold);">open post</a>' : '') +
       '</div>' +
-      '<div style="color:var(--muted);margin-top:.3rem;font-size:.8rem;">' + esc(r.snippet || '') + '</div>' +
+      '<div style="color:rgba(234,226,216,0.72);margin-top:.3rem;font-size:.8rem;line-height:1.55;">' + esc(r.snippet || '') + '</div>' +
     '</div>';
   });
   if (cur !== null) html += '</div>';
