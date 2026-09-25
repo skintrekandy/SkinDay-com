@@ -32,6 +32,19 @@ const FETCH_TIMEOUT_MS = 12000;
 // missing one real team we can re-crawl.
 const MAX_PLAUSIBLE_TEAM = 15;
 
+// ⛔⛔ THIS PARSER IS CHINESE-ONLY, AND crawl_queue IS MULTI-COUNTRY NOW (M25,
+// 2026-09-24). The claim used to be `status=eq.pending` with no country, so once
+// the US and Canadian queues were added this function started walking into 3,351
+// Canadian rows: it would read English sites, find nothing, and mark them
+// 'empty' — which takes them away from crawl-doctors-na.js for good. Every claim
+// and count below is now scoped. Hong Kong shares the Chinese parser.
+const PARSER_COUNTRIES = ['taiwan', 'hongkong'];
+
+// Whole-run budget, same idea as crawl-doctors-na.js. When it is gone the rest
+// of the batch is handed back as 'pending' instead of the function being killed
+// with rows stuck at 'running'.
+const RUN_BUDGET_MS = 20000;
+
 const SB = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
@@ -55,6 +68,18 @@ const SURNAME = new Set(('趙錢孫李周吳鄭王馮陳褚衛蔣沈韓楊朱秦
 // survive: 范姜榮香 and 鄭黃中宇 both appear in the Merz data.
 const COMPOUND = new Set(['歐陽','司徒','司馬','上官','諸葛','范姜','張簡','夏侯','皇甫',
   '尉遲','公孫','慕容','宇文','長孫','鄭黃','張廖','陳吳','林張','黃陳']);
+
+// ⭐ SHAPE RULES, from the August cleanup (54 rows deleted, 2.7% of the table).
+// No Chinese personal name ENDS in an institution or specialty word — 安醫院,
+// 容診所, 顏中心, 管外科 and 國泰醫 were all tails of hospital or clinic names.
+// And no name STARTS with a country — 韓國新, 韓國德, 日本美 came from lines like
+// 韓國原廠認證. NOT_A_NAME only rejects exact matches, so these need patterns.
+const INSTITUTION_TAIL = /(醫院|診所|中心|專科|外科|內科|學會|醫學|美容|整形|醫美|醫|院|科|館|所|部|會|社|團)$/;
+const COUNTRY_HEAD = /^(韓國|日本|美國|德國|法國|英國|台灣|臺灣|中國|泰國|瑞士)/;
+function badShape(name) {
+  return !name || name.length < 2 || name.length > 4
+    || INSTITUTION_TAIL.test(name) || COUNTRY_HEAD.test(name);
+}
 
 // Strings that sit immediately before 醫師 but are not names.
 const NOT_A_NAME = new Set(['主治','專科','資深','特約','兼任','駐診','本院','我們','每位',
@@ -127,7 +152,7 @@ function extractDoctors(text) {
   const found = new Map();   // name -> most senior title seen
 
   const consider = (name, title) => {
-    if (!name || NOT_A_NAME.has(name)) return;
+    if (!name || NOT_A_NAME.has(name) || badShape(name)) return;
     const prev = found.get(name);
     if (!prev || TITLE_RANK[title] < TITLE_RANK[prev]) found.set(name, title);
   };
@@ -360,12 +385,19 @@ exports.handler = async (event) => {
   const batch = Math.min(Math.max(parseInt(body.batch, 10) || BATCH_DEFAULT, 1), 8);
   const retry = body.retry === true;   // re-run rows that previously errored
 
+  // Country defaults to Taiwan, and anything outside the Chinese-parser countries
+  // is refused rather than guessed.
+  const country = String(body.country || 'taiwan').trim().toLowerCase();
+  if (!PARSER_COUNTRIES.includes(country)) {
+    return json(400, { error: `${country} uses crawl-doctors-na.js — this parser is Chinese-only` });
+  }
+  const scope = `&country=eq.${encodeURIComponent(country)}`;
+
   try {
     const want = retry ? 'in.(pending,error)' : 'eq.pending';
-    const claim = await sb(`crawl_queue?select=*&status=${want}&order=id.asc&limit=${batch}`);
+    const claim = await sb(`crawl_queue?select=*&status=${want}${scope}&order=id.asc&limit=${batch}`);
     if (!claim || !claim.length) {
-      const left = await sb('crawl_queue?select=status', { prefer: 'count=exact' });
-      return json(200, { done: true, processed: [], remaining: 0, note: 'queue empty', total: (left || []).length });
+      return json(200, { done: true, processed: [], remaining: 0, note: `doctor queue empty for ${country}` });
     }
 
     const ids = claim.map(r => r.id);
@@ -375,7 +407,15 @@ exports.handler = async (event) => {
     });
 
     const processed = [];
+    const deadline = Date.now() + RUN_BUDGET_MS;
     for (const row of claim) {
+      if (Date.now() > deadline) {
+        await sb(`crawl_queue?id=eq.${row.id}`, {
+          method: 'PATCH', prefer: 'return=minimal',
+          body: JSON.stringify({ status: 'pending' })
+        });
+        continue;
+      }
       let result;
       try { result = await crawlOne(row); }
       catch (e) { result = { status: 'error', last_error: String(e.message || e).slice(0, 400) }; }
@@ -404,13 +444,17 @@ exports.handler = async (event) => {
       });
     }
 
-    const pending = await sb('crawl_queue?select=id&status=eq.pending', { prefer: 'count=exact' });
+    const pending = await sb(`crawl_queue?select=id&status=eq.pending${scope}`, { prefer: 'count=exact' });
     return json(200, {
       done: false,
       processed,
-      remaining: (pending || []).length
+      remaining: (pending || []).length,
+      country
     });
   } catch (e) {
     return json(500, { error: String(e.message || e).slice(0, 500) });
   }
 };
+
+// Exported for local checks only; Netlify ignores it.
+exports._test = { extractDoctors, badShape };
