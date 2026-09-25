@@ -615,8 +615,34 @@ exports.handler = async (event) => {
         return [];
       }
     };
+    // Certified devices come from clinic_devices (every manufacturer list loaded
+    // in M25), labelled "English 中文" from device_reference. The old
+    // clinic_technologies table only ever held four devices; it is read only
+    // when clinic_devices has nothing for this clinic.
     const loadDevices = async () => {
       try {
+        const { data: rows, error } = await supabase
+          .from('clinic_devices')
+          .select('device_id')
+          .eq('clinic_id', String(clinic.id))
+          .eq('source', 'manufacturer');
+        if (error) throw new Error(error.message);
+        const ids = [...new Set((rows || []).map(r => r.device_id))];
+        if (ids.length) {
+          const { data: refs, error: rErr } = await supabase
+            .from('device_reference')
+            .select('id, model, name_zh, active')
+            .in('id', ids);
+          if (rErr) throw new Error(rErr.message);
+          const hasCJK = x => /[\u3400-\u9fff]/.test(x || '');
+          return (refs || [])
+            .filter(d => d.active !== false)
+            .sort((x, y) => String(x.model).localeCompare(String(y.model)))
+            .map(d => {
+              const label = d.name_zh || d.model;
+              return (hasCJK(label) && d.model) ? d.model + ' ' + label : label;
+            });
+        }
         const { data: techs } = await supabase
           .from('clinic_technologies')
           .select('technology')
