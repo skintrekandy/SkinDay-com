@@ -762,14 +762,14 @@
     <button class="nav-tab" data-tab="biostim" onclick="switchTab('biostim')">
       &#9679; Biostimulators <span class="tab-count zero" id="bs-count">0</span>
     </button>
-    <button class="nav-tab" data-tab="inject" onclick="switchTab('inject')">
-      &#9678; Injectables <span class="tab-count zero" id="ij-count">0</span>
-    </button>
     <button class="nav-tab" data-tab="manual" onclick="switchTab('manual')">
       &#9998; Add devices
     </button>
     <button class="nav-tab" data-tab="reports" onclick="switchTab('reports')">
       &#9873; Reports <span class="tab-count zero" id="rp-count">0</span>
+    </button>
+    <button class="nav-tab" data-tab="social" onclick="switchTab('social')">
+      &#9788; Social <span class="tab-count zero" id="sc-count">0</span>
     </button>
   </nav>
 
@@ -972,106 +972,61 @@
     </div>
 
     <div id="websites-panel" style="display:none">
-      <div class="add-clinic-form" style="max-width:1100px;">
+      <div class="add-clinic-form">
         <div class="form-title">Clinic websites</div>
-        <div class="form-subtitle">Reads each clinic's OWN site for the people it publishes and the social accounts it links. No API key and no per-page cost &mdash; both are parsers. A link or a name on a clinic's own site is that clinic's own claim, which is why nothing is ever taken from search results or aggregators.</div>
+        <div class="form-subtitle">Reads each clinic's own website for the doctors it lists and the social accounts it links.</div>
 
-        <!-- ⭐ COUNTRY IS THE FIRST CONTROL, NOT AN AFTERTHOUGHT. These crawls
-             used to live inside the Taiwan panel and claimed from crawl_queue
-             with no country filter at all — harmless while the queue held only
-             Taiwan, and a live hazard the moment North American hosts are
-             seeded. Same shape of bug that swept New York into the California
-             device crawl. -->
-        <div style="display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.25rem;">
-          <div>
-            <label class="form-section-label" style="margin-top:0;" for="wc-country">Country</label>
-            <select class="form-input" id="wc-country" style="max-width:220px;" onchange="wcCountryChanged()">
-              <option value="taiwan">Taiwan</option>
-              <option value="hongkong">Hong Kong</option>
-              <option value="usa">USA</option>
-              <option value="canada">Canada</option>
-            </select>
-          </div>
-          <div id="wc-state-wrap" style="display:none;">
-            <label class="form-section-label" style="margin-top:0;" for="wc-state">State</label>
-            <select class="form-input" id="wc-state" style="max-width:220px;" onchange="wcQueue('count')">
+        <!-- Country first: these crawls claim from crawl_queue, which holds every country. -->
+        <div class="form-section-label">Country</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <select class="form-input" id="wc-country" style="max-width:220px;" onchange="wcCountryChanged()">
+            <option value="taiwan">Taiwan</option>
+            <option value="hongkong">Hong Kong</option>
+            <option value="usa">USA</option>
+            <option value="canada">Canada</option>
+          </select>
+          <span id="wc-state-wrap" style="display:none;">
+            <select class="form-input" id="wc-state" style="max-width:200px;" onchange="wcQueue('count')">
               <option value="">Every state</option>
               <option value="california">California</option>
               <option value="new-york">New York</option>
               <option value="florida">Florida</option>
             </select>
-          </div>
-          <button class="tw-inline-btn" onclick="wcPing()" style="padding:.5rem 1.2rem;">Test connection</button>
-          <span id="wc-note" style="font-size:.78rem;color:var(--muted);max-width:520px;"></span>
+          </span>
+          <button class="btn-ghost" onclick="wcPing()">Test connection</button>
+          <span id="wc-note" style="font-size:.78rem;color:var(--muted);"></span>
         </div>
 
-        <!-- ⭐ QUEUE HOUSEKEEPING AS BUTTONS, NOT SQL. Seeding is routine — every
-             new state needs it — and a 30-line paste each time is how a
-             destructive statement eventually lands next to an audit query. -->
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:-.4rem 0 1.25rem;">
-          <button class="tw-inline-btn" onclick="wcQueue('seed')" style="padding:.5rem 1.2rem;">Seed queue</button>
-          <button class="tw-inline-btn" onclick="wcQueue('requeue')" style="padding:.5rem 1.2rem;">Requeue everything</button>
-          <button class="tw-inline-btn" onclick="wcQueue('unstick')" style="padding:.5rem 1.2rem;">Reset stuck</button>
-          <button class="tw-inline-btn" onclick="wcQueue('count')" style="padding:.5rem 1.2rem;">Refresh counts</button>
-          <span id="wc-queue-note" style="font-size:.78rem;color:var(--muted);flex:1 1 100%;"></span>
+        <div class="form-section-label" style="margin-top:1rem;">Queue</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn-ghost" onclick="wcQueue('seed')">Seed queue</button>
+          <button class="btn-ghost" onclick="wcQueue('requeue')">Requeue everything</button>
+          <button class="btn-ghost" onclick="wcQueue('unstick')">Reset stuck</button>
+          <button class="btn-ghost" onclick="wcQueue('count')">Refresh counts</button>
         </div>
+        <div id="wc-queue-note" style="font-size:.78rem;color:var(--muted);margin-top:.4rem;"></div>
 
-        <!-- DOCTORS / PROVIDERS -->
-        <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
-          <div class="form-section-label" style="margin-top:0;">Crawl websites for doctors</div>
-          <div class="tw-hint" style="margin-bottom:.75rem;">
-            Reads each clinic's team page for the providers it lists. Names go <strong>live immediately</strong>: a
-            clinic listing its own doctors publicly is public information, and we republish it rather than vouch for
-            it. Corrections come from clinics and doctors contacting us.
-            <br><br>
-            <strong>Two different parsers, chosen by country.</strong> Chinese anchors on the title
-            (&#29579;&#23567;&#26126;&#37291;&#24107;); English anchors on the credential (Rachel Careccia, MD).
-            They share no parsing code, so Taiwan runs <code>crawl-doctors</code> and North America runs
-            <code>crawl-doctors-na</code>. The switch is automatic.
-            <br><br>
-            In North America this is a <strong>coverage tool, not a cold start</strong>: the directory screen already
-            produced ~4,400 US providers from Google listings, 2,606 of them linked to a clinic. What this adds is the
-            associates with no listing of their own, plus job titles. A host returning only names already on file is
-            agreement, not failure.
-            Leave the tab open while it runs; press Stop any time.
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <button class="tw-inline-btn" id="tw-crawl-start" onclick="twCrawlStart()" style="padding:.5rem 1.2rem;">Start crawl</button>
-            <button class="tw-inline-btn" id="tw-crawl-stop" onclick="twCrawlStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
-            <button class="tw-inline-btn" onclick="twCrawlStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
-            <span id="tw-crawl-progress" style="font-size:.82rem;color:var(--muted);"></span>
-          </div>
-          <div id="tw-crawl-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
+        <div class="form-section-label" style="margin-top:1.4rem;">Doctors</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn-primary" id="tw-crawl-start" onclick="twCrawlStart()" style="width:auto;padding:.6rem 1.4rem;">Start crawl</button>
+          <button class="btn-ghost" id="tw-crawl-stop" onclick="twCrawlStop()" style="display:none;">Stop</button>
+          <button class="btn-ghost" onclick="twCrawlStart(true)">Retry failed</button>
+          <span id="tw-crawl-progress" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">Names go live straight away. Chain websites are skipped, because a doctor cannot be tied to one branch.</div>
+        <div id="tw-crawl-log" style="display:none;margin-top:.8rem;max-height:40vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid rgba(234,226,216,0.12);padding-top:.7rem;line-height:1.6;"></div>
 
-        <!-- SOCIALS / CONTACTS -->
-        <div style="border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:1.25rem;background:var(--cream,#faf7f2);">
-          <div class="form-section-label" style="margin-top:0;">Crawl websites for contacts</div>
-          <div class="tw-hint" style="margin-bottom:.75rem;">
-            Reads each clinic's own site for its official social accounts, a few domains at a time. Covers chain
-            domains as well as single sites &mdash; chains were only ever excluded from the doctor crawl because a
-            doctor cannot be attributed to a branch, and a chain's Facebook page can. Contacts found on a chain's site
-            are applied to every branch on that domain.
-            <br><br>
-            <strong>One parser, channels chosen by country.</strong> Facebook and Instagram are read everywhere.
-            <strong>LINE</strong> is read in Taiwan and Hong Kong only, and is often bare text rather than a link
-            (<em>&#23448;&#26041;LINE&#65306;@abc123</em>), so text is read as well as links.
-            <strong>TikTok</strong> is read in the USA and Canada only.
-            <br><br>
-            <strong>Existing contacts are never overwritten</strong> &mdash; only an empty field is filled. A handle
-            appearing on 3 or more other clinics is treated as a shared plugin or an agency account and rejected.
-            Tracked on its own status, so the doctor run's history is untouched and either pass can be re-run.
-            Leave the tab open while it runs; press Stop any time.
-          </div>
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-            <button class="tw-inline-btn" id="tw-social-start" onclick="twSocialStart()" style="padding:.5rem 1.2rem;">Start contact crawl</button>
-            <button class="tw-inline-btn" id="tw-social-stop" onclick="twSocialStop()" style="padding:.5rem 1.2rem;display:none;">Stop</button>
-            <button class="tw-inline-btn" onclick="twSocialStart(true)" style="padding:.5rem 1.2rem;">Retry failed</button>
-            <span id="tw-social-progress" style="font-size:.82rem;color:var(--muted);"></span>
-          </div>
-          <div id="tw-social-log" style="display:none;margin-top:.85rem;max-height:260px;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.6rem;"></div>
+        <div class="form-section-label" style="margin-top:1.4rem;">Contacts</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn-primary" id="tw-social-start" onclick="twSocialStart()" style="width:auto;padding:.6rem 1.4rem;">Start contact crawl</button>
+          <button class="btn-ghost" id="tw-social-stop" onclick="twSocialStop()" style="display:none;">Stop</button>
+          <button class="btn-ghost" onclick="twSocialStart(true)">Retry failed</button>
+          <span id="tw-social-progress" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">Facebook and Instagram everywhere, LINE in Taiwan and Hong Kong, TikTok in North America. Only empty fields are filled.</div>
+        <div id="tw-social-log" style="display:none;margin-top:.8rem;max-height:40vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid rgba(234,226,216,0.12);padding-top:.7rem;line-height:1.6;"></div>
 
+        <div class="form-subtitle" style="margin-top:1rem;">Both crawls only advance while this tab is open, and either can be stopped at any time.</div>
       </div>
     </div>
 
@@ -1292,61 +1247,70 @@
     </div>
 
 
-    <div id="inject-panel" style="display:none">
-
+    <div id="social-panel" style="display:none">
       <div class="add-clinic-form">
-        <div class="form-title">Injectables crawl</div>
-        <div class="form-subtitle">Reads the same clinic sites again looking for any sign the clinic injects &mdash; neurotoxin, filler, biostimulator, skin booster, PRP, fat dissolving, threads. It matches treatment words rather than brands, so a clinic writing &ldquo;lip filler&rdquo; counts without naming a product. Terms live in the <code>injectable_reference</code> table and can be edited there without a redeploy.</div>
+        <div class="form-title">Social media crawl</div>
+        <div class="form-subtitle">Reads recent posts from clinics&rsquo; own Facebook pages and Instagram accounts and finds the devices they mention. Every mention waits here for approval. Approving publishes the device with <strong>source = social</strong>, dated to the day the post went up, and writes an &ldquo;added&rdquo; entry to the change feed.</div>
 
-        <div class="form-section-label">Country</div>
-        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
-          <select class="form-input" id="ij-country" style="max-width:220px;" onchange="ijCountryChanged()">
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 .8rem;">
+          <select class="form-input" id="sc-country" style="max-width:160px;" onchange="scLoadStats()">
+            <option value="taiwan" selected>Taiwan</option>
+            <option value="hongkong">Hong Kong</option>
             <option value="canada">Canada</option>
             <option value="usa">United States</option>
-            <option value="taiwan">Taiwan</option>
-            <option value="hongkong">Hong Kong</option>
           </select>
-          <select class="form-input" id="ij-state" style="max-width:200px;display:none;" onchange="ijCountryChanged()">
-            <option value="">Every state</option>
-            <option value="new-york">New York</option>
-            <option value="california">California</option>
-            <option value="florida">Florida</option>
-          </select>
+          <button class="btn-ghost" onclick="scLoadStats()">Refresh</button>
+          <span class="claim-submitted" id="sc-summary"></span>
         </div>
+        <div id="sc-token-warn" style="display:none;color:var(--rose);font-size:.84rem;margin-bottom:.8rem;">APIFY_TOKEN is not set in Netlify yet, so runs cannot start.</div>
 
-        <div class="form-section-label" style="margin-top:1rem;">Run</div>
+        <div class="form-section-label">1 &mdash; Start a run</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
-          <button class="btn-primary" id="ij-start" onclick="ijStart()">Start crawl</button>
-          <button class="btn-ghost" id="ij-stop" onclick="ijStop()" style="display:none;">Stop</button>
-          <button class="btn-ghost" onclick="ijStart(true)">Retry failed</button>
-          <button class="btn-ghost" id="ij-requeue" onclick="ijRequeue()">Requeue everything</button>
-          <span id="ij-progress" style="font-size:.82rem;color:var(--muted);"></span>
+          <select class="form-input" id="sc-platform" style="max-width:150px;" onchange="scCost()">
+            <option value="facebook" selected>Facebook</option>
+            <option value="instagram">Instagram</option>
+          </select>
+          <label style="font-size:.82rem;color:var(--muted);">Pages</label>
+          <input class="form-input" id="sc-pages" type="number" min="1" max="1000" value="100" style="max-width:90px;" oninput="scCost()" />
+          <label style="font-size:.82rem;color:var(--muted);">Posts per page</label>
+          <input class="form-input" id="sc-per" type="number" min="1" max="50" value="20" style="max-width:80px;" oninput="scCost()" />
+          <label style="font-size:.82rem;color:var(--muted);">Posts from the last</label>
+          <select class="form-input" id="sc-newer" style="max-width:130px;">
+            <option value="1 month">1 month</option>
+            <option value="3 months" selected>3 months</option>
+            <option value="6 months">6 months</option>
+          </select>
+          <button class="btn-primary" id="sc-start" onclick="scStart()">Start</button>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">
-          Results go straight into the table, no review step. Only advances while this tab is open, and should not run alongside the device or biostimulator crawls.
-        </div>
+        <div id="sc-cost" style="font-size:.8rem;color:var(--muted);margin:.45rem 0 1rem;"></div>
 
-        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
-          <input class="form-input" id="ij-one-host" placeholder="skin-trek.com" style="max-width:260px;" onkeydown="if(event.key==='Enter')ijTestHost()" />
-          <button class="btn-ghost" onclick="ijTestHost()">Test this host</button>
-          <span style="font-size:.78rem;color:var(--muted);">Reads one site now and prints which words matched. Worth trying a clinic you know injects and one you know only runs devices.</span>
-        </div>
+        <div class="form-section-label">2 &mdash; Runs</div>
+        <div id="sc-runs"><div class="empty-state">Loading&hellip;</div></div>
+        <div id="sc-run-msg" style="font-size:.82rem;color:var(--muted);margin:.4rem 0 1rem;"></div>
 
-        <div id="ij-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
-      </div>
-
-      <div class="add-clinic-form" style="margin-top:1.4rem;">
-        <div class="form-title">What has been found</div>
-        <div class="form-subtitle">Clinics per category for the country above, and the split that matters &mdash; injectables, devices only, and the ones whose sites could not be read at all.</div>
+        <div class="form-section-label">3 &mdash; Review mentions</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
-          <button class="btn-ghost" onclick="ijLoadStats()">Refresh</button>
-          <span id="ij-stats" style="font-size:.82rem;color:var(--muted);"></span>
+          <select class="form-input" id="sc-status" style="max-width:170px;" onchange="scLoadMentions()">
+            <option value="pending" selected>Needs review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <select class="form-input" id="sc-device" style="max-width:280px;" onchange="scLoadMentions()">
+            <option value="">Every device</option>
+          </select>
+          <button class="btn-ghost" onclick="scLoadMentions()">Refresh</button>
         </div>
-        <div id="ij-tally"></div>
+        <div id="sc-actions" style="display:none;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <button class="btn-ghost" onclick="scSelectAll(true)">Select all</button>
+          <button class="btn-ghost" onclick="scSelectAll(false)">Clear</button>
+          <button class="btn-approve" onclick="scDecide(true)">Approve selected</button>
+          <button class="btn-approve" id="sc-approve-all" onclick="scApproveAll()">Approve everything not flagged</button>
+          <button class="btn-reject" onclick="scDecide(false)">Reject selected</button>
+          <span id="sc-msg" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div id="sc-list"></div>
       </div>
-
     </div>
-
 
     <div id="reports-panel" style="display:none">
       <div class="add-clinic-form">
@@ -1541,17 +1505,17 @@ function switchTab(tab){
   if (manP) manP.style.display = (tab === 'manual') ? 'block' : 'none';
   var bsP = document.getElementById('biostim-panel');
   if (bsP) bsP.style.display = (tab === 'biostim') ? 'block' : 'none';
-  var ijP = document.getElementById('inject-panel');
-  if (ijP) ijP.style.display = (tab === 'inject') ? 'block' : 'none';
+  var scP = document.getElementById('social-panel');
+  if (scP) scP.style.display = (tab === 'social') ? 'block' : 'none';
   var rpP = document.getElementById('reports-panel');
   if (rpP) rpP.style.display = (tab === 'reports') ? 'block' : 'none';
   var clP = document.getElementById('claims-panel');
   if (clP) clP.style.display = (tab === 'claims') ? 'block' : 'none';
   if (tab === 'devices') dcEnter();
   if (tab === 'biostim') bsEnter();
-  if (tab === 'inject') ijEnter();
   if (tab === 'manual') mdEnter();
   if (tab === 'reports') rpLoad();
+  if (tab === 'social') scEnter();
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
@@ -2494,7 +2458,7 @@ let twCrawlTotals = { done: 0, doctors: 0, empty: 0, render: 0, error: 0 };
 function twCrawlLog(line, tone){
   const box = document.getElementById('tw-crawl-log');
   box.style.display = 'block';
-  const colour = tone === 'bad' ? '#b04a4a' : (tone === 'warn' ? '#8a6d3b' : 'inherit');
+  const colour = tone === 'bad' ? 'var(--red)' : (tone === 'warn' ? 'var(--gold)' : 'inherit');
   const div = document.createElement('div');
   div.style.color = colour;
   div.style.padding = '2px 0';
@@ -2591,7 +2555,7 @@ let twSocialTotals = { done: 0, fields: 0, empty: 0, render: 0, shared: 0, error
 function twSocialLog(line, tone){
   const box = document.getElementById('tw-social-log');
   box.style.display = 'block';
-  const colour = tone === 'bad' ? '#b04a4a' : (tone === 'warn' ? '#8a6d3b' : 'inherit');
+  const colour = tone === 'bad' ? 'var(--red)' : (tone === 'warn' ? 'var(--gold)' : 'inherit');
   const div = document.createElement('div');
   div.style.color = colour;
   div.style.padding = '2px 0';
@@ -3676,232 +3640,6 @@ async function dcStart(retry) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// INJECTABLES CRAWL (M40 phase 2)
-// ═══════════════════════════════════════════════════════════════════════════
-// Same function, mode:'inject'. Server-side that swaps the reference list for
-// the term table, claims its own queue column, and writes clinic_injectables.
-//
-// The number this exists to produce is not "how many clinics inject" but its
-// inverse — clinics with equipment and no injectables, which is the greenfield
-// list. That makes an unreadable site the dangerous case, so the tally below
-// keeps "could not read" as its own line rather than folding it into "no".
-const IJ_FN = '/.netlify/functions/crawl-devices';
-let ijRunning = false;
-let ijRunId   = null;
-let ijTotals  = { hosts: 0, found: 0, empty: 0, errors: 0 };
-let ijEntered = false;
-
-function ijCountry() {
-  const el = document.getElementById('ij-country');
-  return el ? el.value : 'canada';
-}
-function ijState() {
-  if (ijCountry() !== 'usa') return '';
-  const el = document.getElementById('ij-state');
-  return el ? el.value : '';
-}
-function ijScopeLabel() {
-  const st = ijState();
-  return st ? st.replace(/-/g, ' ') : (ijCountry() || 'every country');
-}
-
-function ijEnter() {
-  const sel = document.getElementById('ij-state');
-  if (sel) sel.style.display = (ijCountry() === 'usa') ? '' : 'none';
-  if (ijEntered) { ijLoadStats(); return; }
-  ijEntered = true;
-  ijLoadStats();
-}
-
-function ijCountryChanged() {
-  const sel = document.getElementById('ij-state');
-  if (sel) sel.style.display = (ijCountry() === 'usa') ? '' : 'none';
-  ijLoadStats();
-}
-
-async function ijCall(body) {
-  const res = await fetch(IJ_FN, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-    body: JSON.stringify(Object.assign({ mode: 'inject' }, body))
-  });
-  return { ok: res.ok, data: await res.json() };
-}
-
-function ijLog(html, colour) {
-  const box = document.getElementById('ij-log');
-  box.style.display = 'block';
-  const line = document.createElement('div');
-  if (colour) line.style.color = colour;
-  line.innerHTML = html;
-  box.appendChild(line);
-  box.scrollTop = box.scrollHeight;
-}
-
-function ijButtons(running) {
-  document.getElementById('ij-start').style.display = running ? 'none' : '';
-  document.getElementById('ij-stop').style.display  = running ? '' : 'none';
-}
-
-function ijStop() { ijRunning = false; ijLog('stopping after this batch\u2026', 'var(--muted)'); }
-
-function ijRunKey(c, st) { return 'sd-inject-run:' + (c || 'all') + ':' + (st || 'all'); }
-function ijOpenRun(c, st) {
-  try {
-    const raw = localStorage.getItem(ijRunKey(c, st));
-    if (!raw) return null;
-    const v = JSON.parse(raw);
-    if (!v || !v.runId) return null;
-    if (Date.now() - (v.at || 0) > 36 * 60 * 60 * 1000) { localStorage.removeItem(ijRunKey(c, st)); return null; }
-    return v.runId;
-  } catch (e) { return null; }
-}
-function ijRememberRun(c, st, id) {
-  try { localStorage.setItem(ijRunKey(c, st), JSON.stringify({ runId: id, at: Date.now() })); } catch (e) {}
-}
-function ijForgetRun(c, st) { try { localStorage.removeItem(ijRunKey(c, st)); } catch (e) {} }
-
-async function ijStart(retry) {
-  if (ijRunning) return;
-  if ((typeof dcRunning !== 'undefined' && dcRunning) || (typeof bsRunning !== 'undefined' && bsRunning)) {
-    ijLog('another crawl is running in this tab. Stop it first.', 'var(--red)');
-    return;
-  }
-  const country = ijCountry(), state = ijState(), scope = ijScopeLabel();
-  ijRunning = true;
-  ijTotals = { hosts: 0, found: 0, empty: 0, errors: 0 };
-
-  ijRunId = null;
-  const open = ijOpenRun(country, state);
-  if (open) {
-    if (confirm('Injectables run ' + open + ' for ' + scope + ' never finished.\n\nContinue it?'
-                + '\n\nCancel starts a new one.')) {
-      ijRunId = open;
-      ijLog('resuming run ' + open, 'var(--muted)');
-    } else { ijForgetRun(country, state); }
-  }
-
-  ijButtons(true);
-  ijLog((retry === true ? 'retrying hosts that failed' : 'starting') + ' \u00b7 ' + scope + '\u2026', 'var(--muted)');
-
-  let fails = 0;
-  const MAX_FAILS = 12, MAX_BACKOFF = 60000;
-
-  while (ijRunning) {
-    let data;
-    try {
-      // Hosts in a batch are fetched at the same time now, so a bigger batch
-      // costs the slowest host rather than the sum. 5 is the server's cap.
-      const r = await ijCall({ action: 'crawl', batch: 5, retry: retry === true,
-                               run_id: ijRunId, country: country, state: state });
-      data = r.data;
-      if (!r.ok) throw new Error((data && data.error) || 'request failed');
-      if (data.note) { ijLog(esc(data.note), 'var(--red)'); break; }
-    } catch (e) {
-      fails++;
-      if (fails >= MAX_FAILS) { ijLog('stopping after ' + fails + ' failures: ' + esc(String(e.message || e)), 'var(--red)'); break; }
-      const wait = Math.min(2000 * Math.pow(2, fails - 1), MAX_BACKOFF);
-      ijLog('hiccup (' + fails + '/' + MAX_FAILS + '): ' + esc(String(e.message || e))
-            + ' \u00b7 retrying in ' + (wait / 1000) + 's', 'var(--gold)');
-      await new Promise(r2 => setTimeout(r2, wait));
-      continue;
-    }
-
-    fails = 0; retry = false;
-    if (data.run_id) { ijRunId = data.run_id; ijRememberRun(country, state, ijRunId); }
-
-    for (const p of (data.processed || [])) {
-      ijTotals.hosts++;
-      const host = esc(p.host);
-      if (p.status === 'done') {
-        ijTotals.found++;
-        ijLog('<strong>' + host + '</strong> \u00b7 ' + esc((p.injectables || []).join(', '))
-              + ' \u00b7 across ' + p.clinics + ' clinic' + (p.clinics === 1 ? '' : 's'), 'var(--green)');
-      } else if (p.status === 'empty') {
-        ijTotals.empty++;
-        ijLog(host + ' \u00b7 no injectables named', 'var(--muted)');
-      } else if (p.status === 'needs_render') {
-        ijTotals.errors++;
-        ijLog(host + ' \u00b7 javascript only, could not read', 'var(--gold)');
-      } else {
-        ijTotals.errors++;
-        ijLog(host + ' \u00b7 ' + esc(p.error || p.status), 'var(--red)');
-      }
-    }
-
-    document.getElementById('ij-progress').textContent =
-      ijTotals.hosts + ' hosts \u00b7 ' + ijTotals.found + ' inject \u00b7 ' +
-      ijTotals.empty + ' none named \u00b7 ' + ijTotals.errors + ' unreadable \u00b7 ' +
-      ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
-
-    if (data.done) { ijForgetRun(country, state); ijLog('queue empty for ' + scope + '. done.', 'var(--muted)'); break; }
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  ijRunning = false;
-  ijButtons(false);
-  ijLoadStats();
-}
-
-async function ijTestHost() {
-  const input = document.getElementById('ij-one-host');
-  const host = (input && input.value || '').trim();
-  if (!host) { ijLog('Enter a host first.', 'var(--red)'); return; }
-  ijLog('testing ' + esc(host) + ' \u2026', 'var(--muted)');
-  const { ok, data } = await ijCall({ action: 'crawl', host: host });
-  if (!ok) { ijLog('failed: ' + esc((data && data.error) || 'request failed'), 'var(--red)'); return; }
-  if (data.note) { ijLog(esc(data.note), 'var(--gold)'); return; }
-  for (const p of (data.processed || [])) {
-    const d = p.diagnostic || {};
-    ijLog('<strong>' + esc(p.host) + '</strong> \u00b7 ' + esc(p.status)
-          + ' \u00b7 ' + (d.pages_read || 0) + ' page(s) read',
-          p.status === 'done' ? 'var(--green)' : 'var(--gold)');
-    const list = p.injectables || [];
-    if (list.length) for (const m of list) ijLog('&nbsp;&nbsp;&nbsp;' + esc(m), 'var(--green)');
-    else ijLog('&nbsp;&nbsp;&nbsp;nothing injectable named on the pages read', 'var(--muted)');
-    if (d.error) ijLog('&nbsp;&nbsp;&nbsp;error: ' + esc(d.error), 'var(--red)');
-  }
-  ijLoadStats();
-}
-
-async function ijRequeue() {
-  const country = ijCountry(), state = ijState(), scope = ijScopeLabel();
-  const pre = await ijCall({ action: 'requeue', country: country, state: state, preview: true });
-  if (!pre.ok) { ijLog('could not check: ' + esc((pre.data && pre.data.error) || 'failed'), 'var(--red)'); return; }
-  const n = (pre.data && pre.data.would_requeue) || 0;
-  if (!confirm('Read ' + n + ' host(s) in ' + scope + ' again for injectables?\n\n'
-               + 'Only the injectables pass resets. The device and biostimulator crawls are untouched.')) return;
-  const { ok, data } = await ijCall({ action: 'requeue', country: country, state: state });
-  if (!ok) { ijLog('requeue failed: ' + esc((data && data.error) || 'failed'), 'var(--red)'); return; }
-  ijForgetRun(country, state);
-  ijLog((data.requeued || 0) + ' host(s) back in the queue for ' + scope + '.', 'var(--gold)');
-  ijLoadStats();
-}
-
-async function ijLoadStats() {
-  const country = ijCountry();
-  const { ok, data } = await ijCall({ action: 'candidate-stats', country: country, state: ijState() });
-  if (!ok || !data || !data.queue) return;
-  const q = data.queue;
-  document.getElementById('ij-stats').textContent =
-    q.pending + ' hosts left to read in ' + (country || 'every country') + ' \u00b7 ' +
-    q.done + ' inject \u00b7 ' + q.empty + ' none named \u00b7 ' +
-    (q.error + q.needs_render) + ' unreadable';
-
-  const el = document.getElementById('ij-count');
-  if (el) { el.textContent = q.done; el.classList.toggle('zero', q.done === 0); }
-
-  const tally = document.getElementById('ij-tally');
-  if (tally) {
-    tally.innerHTML = q.done
-      ? '<div style="font-size:.82rem;color:var(--muted);">Per-category counts come from the '
-        + '<code>clinic_injectables</code> table. The crawl log above shows what each host matched as it runs.</div>'
-      : '<div style="font-size:.82rem;color:var(--muted);">Nothing read yet for '
-        + esc(country || 'every country') + '.</div>';
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
 // BIOSTIMULATION CRAWL (M40 phase 1)
 // ═══════════════════════════════════════════════════════════════════════════
 // The same function and the same review gate as the device crawl, with
@@ -4767,6 +4505,196 @@ async function mdSave() {
   mdPicked = []; mdRenderPicked();
 }
 
+
+// ─── SOCIAL MEDIA CRAWL (M25) ─────────────────────────────────────────────
+// Talks to /.netlify/functions/social-posts. Apify runs take minutes, so a run
+// is started, then checked, then collected in slices; nothing waits on a
+// single long request.
+const SC_FN = '/.netlify/functions/social-posts';
+let scBusy = false;
+
+async function scCall(body) {
+  const res = await fetch(SC_FN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+    body: JSON.stringify(body)
+  });
+  let data = {};
+  try { data = await res.json(); } catch (e) { data = { error: 'bad response (' + res.status + ')' }; }
+  return { ok: res.ok, data };
+}
+
+function scCountry() { return (document.getElementById('sc-country') || {}).value || 'taiwan'; }
+
+function scEnter() { scCost(); scLoadStats(); scLoadMentions(); }
+
+function scCost() {
+  const plat = document.getElementById('sc-platform').value;
+  const pages = parseInt(document.getElementById('sc-pages').value, 10) || 0;
+  const per = parseInt(document.getElementById('sc-per').value, 10) || 0;
+  const rate = plat === 'instagram' ? 1 : 2;   // US$ per 1,000 posts, Apify's listed price
+  const max = pages * per;
+  document.getElementById('sc-cost').textContent =
+    'At most ' + max.toLocaleString() + ' posts, about US$' + (max * rate / 1000).toFixed(2) +
+    ' at Apify’s listed ' + (plat === 'instagram' ? 'Instagram' : 'Facebook') + ' price. Pages never read go first, then the ones read longest ago.';
+}
+
+async function scLoadStats() {
+  const { ok, data } = await scCall({ mode: 'stats', country: scCountry() });
+  const runsBox = document.getElementById('sc-runs');
+  if (!ok) { runsBox.innerHTML = '<div class="empty-state">Could not load: ' + esc(data.error || 'error') + '</div>'; return; }
+  const p = data.pages || {}, m = data.mentions || {};
+  document.getElementById('sc-summary').textContent =
+    'Facebook pages ' + (p.facebook || 0) + ' (' + (p.facebook_never || 0) + ' never read) · Instagram ' +
+    (p.instagram || 0) + ' (' + (p.instagram_never || 0) + ' never read) · ' + (m.pending || 0) + ' mentions to review · ' + (m.approved || 0) + ' approved';
+  document.getElementById('sc-token-warn').style.display = data.apify_token_set ? 'none' : 'block';
+  const badge = document.getElementById('sc-count');
+  if (badge) { badge.textContent = m.pending || 0; badge.classList.toggle('zero', !m.pending); }
+
+  const runs = data.runs || [];
+  if (!runs.length) { runsBox.innerHTML = '<div class="empty-state">No runs yet.</div>'; return; }
+  runsBox.innerHTML = runs.map(function(r){
+    const done = r.status === 'collected';
+    const finished = ['SUCCEEDED', 'TIMED-OUT', 'ABORTED'].indexOf(r.status) !== -1;
+    const btn = done ? '' :
+      (finished ? '<button class="btn-approve" onclick="scCollect(' + r.id + ')">Collect</button>'
+                : (r.status === 'FAILED' ? '' : '<button class="btn-ghost" onclick="scPoll(' + r.id + ')">Check</button>'));
+    return '<div style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;padding:.55rem .8rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.5rem;font-size:.84rem;">' +
+      '<strong>#' + r.id + '</strong>' +
+      '<span>' + esc(r.platform) + ' · ' + r.pages + ' pages · last ' + esc(r.newer_than || '') + '</span>' +
+      '<span style="color:var(--muted);">' + esc(done ? 'collected' : r.status) + '</span>' +
+      '<span style="color:var(--muted);">' + (r.posts_saved || 0) + ' posts · ' + (r.mentions_found || 0) + ' mentions</span>' +
+      '<span style="color:var(--muted);">' + esc(String(r.started_at || '').slice(0, 16).replace('T', ' ')) + '</span>' +
+      (r.error ? '<span style="color:var(--rose);">' + esc(r.error) + '</span>' : '') +
+      btn + '</div>';
+  }).join('');
+}
+
+async function scStart() {
+  if (scBusy) return;
+  const pages = document.getElementById('sc-pages').value;
+  const per = document.getElementById('sc-per').value;
+  const plat = document.getElementById('sc-platform').value;
+  if (!confirm('Start a ' + plat + ' run on ' + pages + ' pages? This is charged by Apify.')) return;
+  scBusy = true;
+  const btn = document.getElementById('sc-start'); btn.disabled = true;
+  const msg = document.getElementById('sc-run-msg'); msg.textContent = 'Starting…';
+  const { ok, data } = await scCall({
+    mode: 'start', country: scCountry(), platform: plat, pages: pages, posts_per_page: per,
+    newer_than: document.getElementById('sc-newer').value
+  });
+  msg.textContent = ok && !data.error
+    ? 'Run #' + data.run_id + ' started on ' + data.pages + ' pages. It usually takes a few minutes to an hour; press Check to see if it has finished.'
+    : 'Could not start: ' + (data.error || 'error');
+  btn.disabled = false; scBusy = false;
+  scLoadStats();
+}
+
+async function scPoll(id) {
+  const msg = document.getElementById('sc-run-msg'); msg.textContent = 'Checking #' + id + '…';
+  const { ok, data } = await scCall({ mode: 'poll', run_id: id });
+  msg.textContent = ok ? ('Run #' + id + ': ' + ((data.run || {}).status || '?') + (data.finished ? ' — ready to collect.' : ' — still going.')) : ('Error: ' + (data.error || ''));
+  scLoadStats();
+}
+
+async function scCollect(id) {
+  if (scBusy) return;
+  scBusy = true;
+  const msg = document.getElementById('sc-run-msg');
+  let posts = 0, mentions = 0;
+  for (let guard = 0; guard < 400; guard++) {
+    msg.textContent = 'Collecting #' + id + '… ' + posts + ' posts read, ' + mentions + ' mentions so far';
+    const { ok, data } = await scCall({ mode: 'collect', run_id: id });
+    if (!ok || data.error) { msg.textContent = 'Stopped: ' + (data.error || 'error'); break; }
+    if (data.waiting) { msg.textContent = 'Run #' + id + ' has not finished yet.'; break; }
+    posts += data.posts_saved || 0; mentions += data.new_mentions || 0;
+    if (data.done) { msg.textContent = 'Run #' + id + ' collected: ' + posts + ' posts, ' + mentions + ' new mentions to review.'; break; }
+  }
+  scBusy = false;
+  scLoadStats(); scLoadMentions();
+}
+
+async function scLoadMentions() {
+  const list = document.getElementById('sc-list');
+  list.innerHTML = '<div class="empty-state">Loading&hellip;</div>';
+  const status = document.getElementById('sc-status').value;
+  const device = document.getElementById('sc-device').value;
+  const { ok, data } = await scCall({ mode: 'list-mentions', status: status, device_id: device || null, limit: 300 });
+  if (!ok) { list.innerHTML = '<div class="empty-state">Could not load: ' + esc(data.error || 'error') + '</div>'; return; }
+  const rows = data.mentions || [];
+  document.getElementById('sc-actions').style.display = (status === 'pending' && rows.length) ? 'flex' : 'none';
+
+  // Device filter keeps its choice and learns devices as they appear.
+  const sel = document.getElementById('sc-device');
+  const known = new Set(Array.from(sel.options).map(function(o){ return o.value; }));
+  rows.forEach(function(r){
+    const v = String(r.device_id);
+    if (!known.has(v)) {
+      known.add(v);
+      const o = document.createElement('option');
+      o.value = v; o.textContent = r.model + (r.name_zh ? ' ' + r.name_zh : '');
+      sel.appendChild(o);
+    }
+  });
+
+  if (!rows.length) { list.innerHTML = '<div class="empty-state">Nothing here.</div>'; return; }
+  const reviewing = status === 'pending';
+  let html = '', cur = null;
+  rows.forEach(function(r){
+    if (r.device_id !== cur) {
+      if (cur !== null) html += '</div>';
+      cur = r.device_id;
+      html += '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.9rem;overflow:hidden;">' +
+        '<div style="background:var(--warm);padding:.55rem .8rem;font-size:.82rem;"><strong>' + esc(r.model) + '</strong>' +
+        (r.name_zh ? ' ' + esc(r.name_zh) : '') + '</div>';
+    }
+    html += '<div style="padding:.7rem .8rem;border-top:1px solid var(--border);font-size:.84rem;">' +
+      '<div style="display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;">' +
+        (reviewing ? '<input type="checkbox" class="sc-cb" value="' + esc(r.id) + '">' : '') +
+        '<strong>' + esc(r.clinic_name) + '</strong>' +
+        '<span style="color:var(--muted);">' + esc(r.platform) + ' · ' + esc(String(r.posted_at || '').slice(0, 10)) + '</span>' +
+        (r.flag ? '<span style="color:var(--rose);font-size:.76rem;">comparison post</span>' : '') +
+        (r.post_url ? '<a href="' + esc(r.post_url) + '" target="_blank" rel="noopener" style="font-size:.78rem;">open post</a>' : '') +
+      '</div>' +
+      '<div style="color:var(--muted);margin-top:.3rem;font-size:.8rem;">' + esc(r.snippet || '') + '</div>' +
+    '</div>';
+  });
+  if (cur !== null) html += '</div>';
+  list.innerHTML = html;
+}
+
+function scSelectAll(on) {
+  document.querySelectorAll('.sc-cb').forEach(function(cb){ cb.checked = on; });
+}
+
+async function scDecide(approve) {
+  const ids = Array.from(document.querySelectorAll('.sc-cb:checked')).map(function(cb){ return cb.value; });
+  const msg = document.getElementById('sc-msg');
+  if (!ids.length) { msg.textContent = 'Nothing selected.'; return; }
+  msg.textContent = approve ? 'Approving…' : 'Rejecting…';
+  const { ok, data } = await scCall({ mode: approve ? 'approve' : 'reject', ids: ids });
+  msg.textContent = !ok ? ('Error: ' + (data.error || '')) :
+    (approve ? (data.approved || 0) + ' approved, ' + (data.new_devices || 0) + ' newly published' +
+               ((data.errors || []).length ? ' (' + data.errors.join('; ') + ')' : '')
+             : (data.rejected || 0) + ' rejected');
+  scLoadStats(); scLoadMentions();
+}
+
+async function scApproveAll() {
+  const device = document.getElementById('sc-device').value;
+  if (!confirm('Approve every mention that is not flagged as a comparison' + (device ? ' for this device' : '') + '?')) return;
+  const msg = document.getElementById('sc-msg');
+  let total = 0, published = 0;
+  for (let guard = 0; guard < 100; guard++) {
+    const { ok, data } = await scCall({ mode: 'approve-all', device_id: device || null });
+    if (!ok || data.error) { msg.textContent = 'Stopped: ' + (data.error || 'error'); break; }
+    total += data.approved || 0; published += data.new_devices || 0;
+    msg.textContent = total + ' approved, ' + published + ' newly published…';
+    if (data.done) break;
+  }
+  msg.textContent = total + ' approved, ' + published + ' newly published.';
+  scLoadStats(); scLoadMentions();
+}
 </script>
 </body>
 </html>
