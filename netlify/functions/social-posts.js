@@ -179,15 +179,27 @@ function matchPost(text, matcher) {
   return { hits: [...hits].map(([device_id, surface]) => ({ device_id, surface })), comparison };
 }
 
+// Postgres rejects a JSON body holding half an emoji (a lone UTF-16 surrogate)
+// or a NUL character: "invalid input syntax for type json". Captions can carry
+// either, and cutting text to length can split an emoji in two. Every string
+// that goes to the database passes through here, after any cutting.
+function clean(v) {
+  if (v == null) return v;
+  return String(v)
+    .replace(/[\ud800-\udbff](?![\udc00-\udfff])/g, '')
+    .replace(/(^|[^\ud800-\udbff])[\udc00-\udfff]/g, '$1')
+    .replace(/\u0000/g, '');
+}
+
 function snippetFor(text, surface) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   const lowT = base(t);
   const s = base(surface).trim();
   let at = s ? lowT.indexOf(s) : -1;
   if (at === -1 && s) at = lowT.indexOf(s.split(' ')[0]);
-  if (at === -1) return t.slice(0, 160);
+  if (at === -1) return clean(t.slice(0, 160));
   const from = Math.max(0, at - 60);
-  return (from > 0 ? '…' : '') + t.slice(from, at + s.length + 80) + (at + s.length + 80 < t.length ? '…' : '');
+  return clean((from > 0 ? '…' : '') + t.slice(from, at + s.length + 80) + (at + s.length + 80 < t.length ? '…' : ''));
 }
 
 // ---------------------------------------------------------------------------
@@ -395,7 +407,7 @@ function readItem(platform, it) {
     return {
       page_key: page ? page.key : null,
       post_key: String(it.postId || it.url || ''),
-      post_url: it.url || null,
+      post_url: clean(it.url) || null,
       posted_at: t,
       text: it.text || it.postText || ''
     };
@@ -445,7 +457,7 @@ async function collect(supabase, body) {
   let saved = [];
   const postRows = posts.map(p => ({
     platform, post_key: p.post_key, page_key: p.page_key, post_url: p.post_url,
-    posted_at: p.posted_at, text: (p.text || '').slice(0, 8000), run_id: id
+    posted_at: p.posted_at, text: clean(clean(p.text || '').slice(0, 8000)), run_id: id
   }));
   for (let i = 0; i < postRows.length; i += 200) {
     const { data, error: pErr } = await supabase.from('social_posts')
@@ -468,7 +480,7 @@ async function collect(supabase, body) {
       for (const h of m.hits) {
         mentions.push({
           post_id: p.id, clinic_id: clinicId, device_id: h.device_id, platform,
-          post_url: p.post_url, posted_at: p.posted_at, matched_text: h.surface,
+          post_url: p.post_url, posted_at: p.posted_at, matched_text: clean(h.surface),
           snippet: snippetFor(p.text, h.surface), flag: m.comparison ? 'comparison' : null,
           status: 'pending'
         });
