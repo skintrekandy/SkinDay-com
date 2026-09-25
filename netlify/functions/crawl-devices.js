@@ -54,6 +54,8 @@ const INVOCATION_BUDGET_MS = 20000;
 // reached by a host that genuinely exposes ~30 device and treatment pages, which
 // is exactly the host worth spending 35 fetches on.
 const PAGE_BUDGET_CAP = 35;
+// Homepage plus about three targeted pages. See the note where it is applied.
+const INJECT_PAGE_BUDGET = 4;
 
 const MAX_UNKNOWNS_PER_HOST = 15;
 // ⚠️⚠️ THE USER AGENT AND HEADERS ARE LOAD-BEARING, not boilerplate.
@@ -1253,6 +1255,18 @@ const SERVICE_HINTS = [
   'what-we-do', 'menu', 'price', 'pricing', 'traitements', 'soins', 'tarifs'
 ];
 
+// ⭐ The injectables pass wants a different set of pages. A clinic hides its
+// laser catalogue three clicks deep; it never hides that it does Botox. These
+// put /injectables/ and /botox/ ahead of /technology/ so the few pages it reads
+// are the ones that answer the question.
+const INJECT_HINTS = [
+  'injectable', 'injectables', 'injection', 'injections', 'injector',
+  'botox', 'neuromodulator', 'neurotoxin', 'wrinkle', 'anti-wrinkle',
+  'filler', 'fillers', 'dermal-filler', 'lip-filler', 'lips',
+  'prp', 'sculptra', 'biostimulator', 'threads', 'injectables-fillers',
+  'facial-injectables', 'cosmetic-injectables', 'injectable-treatments'
+];
+
 // ⚠️⚠️ ASSET FILES ARE NOT PAGES, and this cost dozens of clinics.
 // `menu` is a SERVICE_HINT because clinics publish a "treatment menu". But it
 // also matches WordPress theme assets:
@@ -1601,7 +1615,14 @@ async function crawlHost(row, matcher, opts) {
     return { status: 'error', pagesTried, pagesReadUrls: [], lastError: firstError || lastError, matches: [], unknowns: [] };
   }
 
-  const sm = await sitemapUrls(host.replace(/^www\./, ''));
+  // ⛔ THREE EXTRA REQUESTS ON EVERY HOST. The sitemap probe exists to rescue a
+  // JavaScript-only site whose text cannot be read, and it fires for all ~6,500
+  // of them regardless. For the injectables pass it only earns its cost when the
+  // homepage came back thin, which is a small minority.
+  const needSitemap = !injectMode || sawJsOnly || pages.length === 0;
+  const sm = needSitemap
+    ? await sitemapUrls(host.replace(/^www\./, ''))
+    : { urls: [], source: null };
   const sitemapLinks = sm.urls;
   const bareHost = host.replace(/^www\./, '');
 
@@ -1616,6 +1637,16 @@ async function crawlHost(row, matcher, opts) {
     bareHost, seen, vocab, matcher
   );
   budget = budgetFor(candidates, Array.isArray(row.clinic_ids) ? row.clinic_ids.length : 1);
+
+  // ⛔⛔ THE BUDGET ABOVE WAS BUILT FOR A DIFFERENT QUESTION. It reaches 35 pages
+  // because a laser catalogue genuinely scatters its equipment across a site,
+  // and that depth is why a national device crawl takes most of a day.
+  //
+  // Injectables are not hidden. A clinic that injects says so on its homepage
+  // or its treatments page, in the nav, usually in the page title. Reading
+  // thirty pages to find a word that was on the first one is the single
+  // largest cost in this pass, so it gets four.
+  if (injectMode) budget = Math.min(budget, INJECT_PAGE_BUDGET);
 
   let techUrl = null;
   if (homePage) {
@@ -1646,7 +1677,10 @@ async function crawlHost(row, matcher, opts) {
   // Whatever is left goes to the best remaining links across everything read.
   if (pages.length < budget) {
     const soFar = pages.flatMap(p => p.links);
-    for (const u of pickLinks(soFar, TECH_HINTS.concat(SERVICE_HINTS), bareHost, seen, budget - pages.length)) {
+    const hintSet = injectMode
+      ? INJECT_HINTS.concat(SERVICE_HINTS)
+      : TECH_HINTS.concat(SERVICE_HINTS);
+    for (const u of pickLinks(soFar, hintSet, bareHost, seen, budget - pages.length)) {
       if (pages.length >= budget) break;
       await readPage(u);
     }
@@ -2030,24 +2064,35 @@ async function doCrawl(supabase, body) {
   // whole crawl stops and has to be restarted by hand. One slow host should
   // cost one host, never the run.
   //
-  // Any host still unclaimed when the deadline passes is released back to
-  // 'pending' so the next invocation picks it up. Nothing is lost or skipped.
-  const DEADLINE_MS = 20000;
-  const startedAt = Date.now();
+  // ⓘ The per-host deadline check that used to sit at the top of this loop is
+  // gone: the batch now starts every host at once, so there is no "later host"
+  // left to defer. INVOCATION_DEADLINE inside readPage is what holds the line
+  // instead, and it applies to all of them at the same moment. `deferred` stays
+  // because the release below is still the right thing to do if it ever fills.
   const deferred = [];
 
-  for (const row of claimable) {
-    if (Date.now() - startedAt > DEADLINE_MS) {
-      deferred.push(row.id);
-      continue;
-    }
-    let out;
+  // ⭐⭐ THE HOSTS IN A BATCH ARE INDEPENDENT, so reading them one after another
+  // spent the invocation's whole budget on whoever went first. Fetching them
+  // together means the batch costs the SLOWEST host rather than the sum of all
+  // three, and each one now gets the full wall-clock window instead of the
+  // leftovers — so a third host that used to be cut short by the deadline is
+  // read properly.
+  //
+  // Only the fetching moves. Every database write below still happens in order,
+  // one host at a time, exactly as before.
+  const crawled = await Promise.all(claimable.map(async row => {
     try {
-      out = await crawlHost(row, matcher, { inject: inject });
+      return { row: row, out: await crawlHost(row, matcher, { inject: inject }) };
     } catch (e) {
-      out = { status: 'error', pagesTried: 0, lastError: String((e && e.message) || e),
-              matches: [], unknowns: [], injectables: [] };
+      return { row: row, out: { status: 'error', pagesTried: 0,
+               lastError: String((e && e.message) || e),
+               matches: [], unknowns: [], injectables: [] } };
     }
+  }));
+
+  for (const entry of crawled) {
+    const row = entry.row;
+    const out = entry.out;
 
     const clinicIds = Array.isArray(row.clinic_ids) ? row.clinic_ids : [];
     let inserted = 0;
