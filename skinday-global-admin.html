@@ -1253,7 +1253,7 @@
         <div class="form-subtitle">Reads recent posts from clinics&rsquo; own Facebook pages and Instagram accounts and finds the devices they mention. Every mention waits here for approval. Approving publishes the device with <strong>source = social</strong>, dated to the day the post went up, and writes an &ldquo;added&rdquo; entry to the change feed.</div>
 
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 .8rem;">
-          <select class="form-input" id="sc-country" style="max-width:160px;" onchange="scLoadStats()">
+          <select class="form-input" id="sc-country" style="max-width:160px;" onchange="document.getElementById('sc-device').value=''; scLoadStats(); scLoadMentions();">
             <option value="taiwan" selected>Taiwan</option>
             <option value="hongkong">Hong Kong</option>
             <option value="canada">Canada</option>
@@ -4655,7 +4655,7 @@ async function scLoadMentions() {
   list.innerHTML = '<div class="empty-state">Loading&hellip;</div>';
   const status = document.getElementById('sc-status').value;
   const device = document.getElementById('sc-device').value;
-  const { ok, data } = await scCall({ mode: 'list-mentions', status: status, device_id: device || null, limit: 300 });
+  const { ok, data } = await scCall({ mode: 'list-mentions', country: scCountry(), status: status, device_id: device || null, limit: 300 });
   if (!ok) { list.innerHTML = '<div class="empty-state">Could not load: ' + esc(data.error || 'error') + '</div>'; return; }
   const rows = data.mentions || [];
   document.getElementById('sc-actions').style.display = (status === 'pending' && rows.length) ? 'flex' : 'none';
@@ -4726,7 +4726,7 @@ async function scApproveAll() {
   const msg = document.getElementById('sc-msg');
   let total = 0, published = 0;
   for (let guard = 0; guard < 100; guard++) {
-    const { ok, data } = await scCall({ mode: 'approve-all', device_id: device || null });
+    const { ok, data } = await scCall({ mode: 'approve-all', country: scCountry(), device_id: device || null });
     if (!ok || data.error) { msg.textContent = 'Stopped: ' + (data.error || 'error'); break; }
     total += data.approved || 0; published += data.new_devices || 0;
     msg.textContent = total + ' approved, ' + published + ' newly published…';
