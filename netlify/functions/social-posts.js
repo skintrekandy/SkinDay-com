@@ -317,8 +317,8 @@ async function stats(supabase, body) {
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram')),
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').is('last_requested_at', null)),
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').is('last_requested_at', null)),
-    count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('status', 'pending')),
-    count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('status', 'approved'))
+    count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'pending')),
+    count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'approved'))
   ]);
   const { data: runs, error } = await supabase.from('social_crawl_runs')
     .select('*').eq('country', country).order('id', { ascending: false }).limit(10);
@@ -453,6 +453,16 @@ async function collect(supabase, body) {
     : [];
   const clinicsByPage = new Map(pageRows.map(r => [r.page_key, r.clinic_ids || []]));
 
+  // Pages with posts from an earlier run have been read before; the rest are on
+  // their first read, and whatever they mention is a baseline.
+  const seenBefore = new Set();
+  const keys = [...new Set(posts.map(p => p.page_key))];
+  for (let i = 0; i < keys.length; i += 150) {
+    const { data: prev } = await supabase.from('social_posts').select('page_key')
+      .eq('platform', platform).lt('run_id', id).in('page_key', keys.slice(i, i + 150)).limit(5000);
+    (prev || []).forEach(r => seenBefore.add(r.page_key));
+  }
+
   // Save posts (text kept, so a later matcher can re-read without paying again).
   let saved = [];
   const postRows = posts.map(p => ({
@@ -479,7 +489,7 @@ async function collect(supabase, body) {
     for (const clinicId of (clinicsByPage.get(p.page_key) || [])) {
       for (const h of m.hits) {
         mentions.push({
-          post_id: p.id, clinic_id: clinicId, device_id: h.device_id, platform,
+          post_id: p.id, clinic_id: clinicId, device_id: h.device_id, platform, country: run.country,
           post_url: p.post_url, posted_at: p.posted_at, matched_text: clean(h.surface),
           snippet: snippetFor(p.text, h.surface), flag: m.comparison ? 'comparison' : null,
           status: 'pending'
@@ -489,13 +499,15 @@ async function collect(supabase, body) {
   }
   let found = 0;
   const newIds = [];
+  const quietIds = new Set();
+  const firstReadPost = new Set(saved.filter(p => !seenBefore.has(p.page_key)).map(p => p.id));
   for (let i = 0; i < mentions.length; i += 200) {
     const { data, error: mErr } = await supabase.from('social_device_mentions')
       .upsert(mentions.slice(i, i + 200), { onConflict: 'post_id,clinic_id,device_id', ignoreDuplicates: true })
-      .select('id');
+      .select('id, post_id');
     if (mErr) throw new Error(mErr.message);
     found += (data || []).length;
-    (data || []).forEach(r => newIds.push(r.id));
+    (data || []).forEach(r => { newIds.push(r.id); if (firstReadPost.has(r.post_id)) quietIds.add(r.id); });
   }
 
   // Published straight away (Andy, 2026-09-25): a clinic only posts about a
@@ -503,7 +515,7 @@ async function collect(supabase, body) {
   // decide() adds only clinic-device pairs not already on file, dated to the post.
   let published = 0;
   for (let i = 0; i < newIds.length; i += 500) {
-    const res = await decide(supabase, { ids: newIds.slice(i, i + 500) }, true);
+    const res = await decide(supabase, { ids: newIds.slice(i, i + 500) }, true, { quietIds });
     published += res.new_devices || 0;
   }
 
@@ -526,8 +538,11 @@ async function collect(supabase, body) {
 async function listMentions(supabase, body) {
   const status = body.status || 'pending';
   const limit = Math.min(Math.max(parseInt(body.limit, 10) || 200, 1), 500);
+  // Scoped to the country chosen in the tab, so one country's list never
+  // shows another's mentions.
   let q = supabase.from('social_device_mentions')
     .select('id, clinic_id, device_id, platform, post_url, posted_at, matched_text, snippet, flag, status')
+    .eq('country', body.country || 'taiwan')
     .order('device_id', { ascending: true }).order('posted_at', { ascending: false }).limit(limit);
   if (status !== 'all') q = q.eq('status', status);
   if (body.device_id) q = q.eq('device_id', parseInt(body.device_id, 10));
@@ -551,7 +566,8 @@ async function listMentions(supabase, body) {
 // earliest post date among the approved mentions. A pair that is already
 // published (from a manufacturer list, the website crawl or by hand) is left
 // exactly as it is — its first_seen and source are not touched.
-async function decide(supabase, body, approve) {
+async function decide(supabase, body, approve, opts) {
+  const quiet = (opts && opts.quietIds) || new Set();
   const ids = (body.ids || []).map(x => parseInt(x, 10)).filter(Boolean);
   if (!ids.length) return { error: 'no ids' };
   const rows = (await selectIn(supabase, 'social_device_mentions',
@@ -604,7 +620,11 @@ async function decide(supabase, body, approve) {
   }
 
   // The change feed, same as the website crawl: one 'added' event per new pair.
-  const events = inserts.map(x => ({
+  // A device found on an account's FIRST read is a baseline, not an adoption:
+  // the clinic may have run it for years. Only later reads write 'added' events,
+  // so the Signal tab and change feed never show a backlog as new business.
+  const loudPairs = new Set(rows.filter(r => !quiet.has(r.id)).map(r => r.clinic_id + '|' + r.device_id));
+  const events = inserts.filter(x => loudPairs.has(x.clinic_id + '|' + x.device_id)).map(x => ({
     clinic_id: x.clinic_id, device_id: x.device_id, event: 'added',
     observed_at: x.first_seen, source_url: x.source_url
   }));
@@ -625,7 +645,8 @@ async function decide(supabase, body, approve) {
 // device. 500 per call; the tab repeats it until nothing is left.
 async function approveAll(supabase, body) {
   let q = supabase.from('social_device_mentions').select('id')
-    .eq('status', 'pending').is('flag', null).order('id', { ascending: true }).limit(500);
+    .eq('status', 'pending').is('flag', null).eq('country', body.country || 'taiwan')
+    .order('id', { ascending: true }).limit(500);
   if (body.device_id) q = q.eq('device_id', parseInt(body.device_id, 10));
   const { data, error } = await q;
   if (error) throw new Error(error.message);
