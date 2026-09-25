@@ -2481,6 +2481,7 @@ async function twCrawlStart(retry){
   document.getElementById('tw-crawl-start').style.display = 'none';
   document.getElementById('tw-crawl-stop').style.display = '';
   twCrawlLog(retry ? 'Retrying failed domains…' : 'Starting…');
+  let fails = 0;
 
   while (twCrawlRunning) {
     let data;
@@ -2503,11 +2504,19 @@ async function twCrawlStart(retry){
       catch (_) { throw new Error('HTTP ' + res.status + ' — ' + (raw || 'empty response').slice(0, 200)); }
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     } catch (e) {
+      if (wcTransient(e.message) && fails < 5) {
+        fails++;
+        twCrawlLog('Batch timed out (' + e.message.slice(0, 40) + ') — retrying in 10 s, ' + fails + ' of 5', 'warn');
+        await wcUnstickQuiet();
+        await wcSleep(10000);
+        continue;
+      }
       twCrawlLog('Stopping: ' + e.message, 'bad');
       twCrawlLog('If this says "Failed to fetch", the request never reached the '
         + 'function — check Netlify Functions, or press Test connection above.', 'warn');
       break;
     }
+    fails = 0;
 
     (data.processed || []).forEach(function(p){
       if (p.status === 'done') {
@@ -2571,6 +2580,24 @@ function twSocialStop(){
   twSocialLog('Stopped.', 'warn');
 }
 
+// A slow site can push one batch past Netlify's time limit (HTTP 502/504), and
+// a dropped connection shows as "Failed to fetch". Neither means the crawl is
+// broken, so the loops wait, put the timed-out rows back to pending and carry
+// on. Five failures in a row, or any 4xx, still stops the run.
+function wcTransient(msg){
+  return /^HTTP 5\d\d|Failed to fetch|NetworkError|Load failed|network/i.test(String(msg || ''));
+}
+async function wcUnstickQuiet(){
+  try {
+    await fetch('/.netlify/functions/crawl-queue-admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ action: 'unstick', country: wcCountry(), state: wcState() })
+    });
+  } catch (_) {}
+}
+function wcSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
 async function twSocialStart(retry){
   if (twSocialRunning) return;
   twSocialRunning = true;
@@ -2578,6 +2605,7 @@ async function twSocialStart(retry){
   document.getElementById('tw-social-start').style.display = 'none';
   document.getElementById('tw-social-stop').style.display = '';
   twSocialLog(retry ? 'Retrying failed domains…' : 'Starting…');
+  let fails = 0;
 
   while (twSocialRunning) {
     let data;
@@ -2585,18 +2613,26 @@ async function twSocialStart(retry){
       const res = await fetch('/.netlify/functions/crawl-socials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
-        body: JSON.stringify({ batch: 5, retry: retry === true, country: wcCountry() })
+        body: JSON.stringify({ batch: 3, retry: retry === true, country: wcCountry() })
       });
       const raw = await res.text();
       try { data = JSON.parse(raw); }
       catch (_) { throw new Error('HTTP ' + res.status + ' — ' + (raw || 'empty response').slice(0, 200)); }
       if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
     } catch (e) {
+      if (wcTransient(e.message) && fails < 5) {
+        fails++;
+        twSocialLog('Batch timed out (' + e.message.slice(0, 40) + ') — retrying in 10 s, ' + fails + ' of 5', 'warn');
+        await wcUnstickQuiet();
+        await wcSleep(10000);
+        continue;
+      }
       twSocialLog('Stopping: ' + e.message, 'bad');
       twSocialLog('If this says "Failed to fetch", the request never reached the '
         + 'function — check Netlify Functions, or press Test connection above.', 'warn');
       break;
     }
+    fails = 0;
 
     (data.processed || []).forEach(function(p){
       if (p.status === 'done') {
