@@ -37,6 +37,27 @@ const MATCHER_VERSION = '2026-08-05-seo-landing-page';
 // which is the right trade against publishing thousands of wrong claims.
 const AUTO_APPROVE_CEILING = 150;
 
+// ⭐⭐ THE CEILING ONLY GUARDS DEVICES WE HAVE NOT SEEN BEFORE (2026-09-20).
+// Measured on the September Canada run: of 853 held rows, 851 sat on devices
+// with a large verified published base and TWO sat on thin ones. The ceiling was
+// costing an evening of review to protect against two rows, and Andy was
+// approving nearly all of it anyway — which makes it a rubber stamp, the exact
+// thing auto-approval exists to prevent.
+//
+// A broken alias is a NEW-DEVICE failure. DermaV was dangerous because it had
+// just been added and nobody had ever checked a row of it. Morpheus8 with 723
+// published clinics behind it is not going to turn out to be a cream.
+//
+// ⚠️ THE HOLE IN "established devices are safe", and why the second constant
+// exists: an established device can be given a BAD NEW ALIAS, and then its
+// history counts for nothing — every row matched on that alias is wrong while
+// the device still looks trustworthy. So the exemption also requires the
+// device_reference row to have been untouched for a while. Edit an alias and
+// that device goes back under the ceiling for the next 30 days, which is
+// exactly when you want it there.
+const ESTABLISHED_PUBLISHED_MIN = 50;
+const ESTABLISHED_QUIET_DAYS    = 30;
+
 // Set at the top of every doCrawl invocation. readPage refuses to start a new
 // fetch past this point, so the function returns a real JSON result instead of
 // being killed mid-flight and handing the client an HTML error page.
@@ -54,8 +75,6 @@ const INVOCATION_BUDGET_MS = 20000;
 // reached by a host that genuinely exposes ~30 device and treatment pages, which
 // is exactly the host worth spending 35 fetches on.
 const PAGE_BUDGET_CAP = 35;
-// Homepage plus about three targeted pages. See the note where it is applied.
-const INJECT_PAGE_BUDGET = 4;
 
 const MAX_UNKNOWNS_PER_HOST = 15;
 // ⚠️⚠️ THE USER AGENT AND HEADERS ARE LOAD-BEARING, not boilerplate.
@@ -474,103 +493,6 @@ function pageOwnerModel(pathname, entries) {
 // ⭐ BLOG_PATH was already filtered HERE, per path. The comparison test belongs in
 // exactly the same place and did not get there. Every filter that protects the
 // own-page tier has to run per harvested path, not once per fetched page.
-// ===========================================================================
-// INJECTABLES (M40 phase 2) — a CATEGORY matcher, not a brand one.
-//
-// The question is only "does this clinic put a needle in a face", so the whole
-// problem that makes brand detection hard here works in our favour: a clinic
-// writing "Botox" loosely still proves it injects neurotoxin, and "lip filler"
-// proves filler without naming anyone's product. Terms come from
-// `injectable_reference` at runtime, so tuning a word is a SQL update.
-//
-// ⚠️ THE ERROR THAT COSTS MOST is the opposite of the device crawler's. There,
-// a false positive put a machine on a clinic that lacked it. Here the output is
-// a list of clinics that DON'T inject, so a false positive quietly deletes a
-// real prospect from that list — and device-only clinics write "an alternative
-// to fillers" and "without injections" constantly. Hence the extra frames below
-// and the corroboration rule on the bare generic words.
-const INJECT_NEGATION = NEGATION_FRAMES.concat([
-  'without', 'no need for', 'no injections', 'no injection', 'needle free',
-  'needle-free', 'non injectable', 'not an injectable', 'avoid injections',
-  'avoids injections', 'free alternative', 'sans injection', 'do not inject',
-  'don t inject', 'we do not perform', 'not performed', 'not available at',
-  'coming soon', 'referral', 'refer you'
-]);
-
-// Same three tiers the device side uses, so the evidence language stays one
-// vocabulary across the whole crawl.
-const INJECT_RANK = { own_page: 3, exact: 2, blog_only: 1 };
-
-function buildInjectMatcher(terms) {
-  const out = [];
-  for (const t of terms || []) {
-    if (t.active === false) continue;
-    const tn = String(t.term_norm || norm(t.term || '')).trim();
-    if (!tn) continue;
-    out.push({
-      category: t.category,
-      term: t.term,
-      term_norm: tn,
-      risky: t.needs_corroboration === true
-    });
-  }
-  // Longest first, so "lip filler" is claimed before bare "filler" and the
-  // shorter word cannot re-match the same span.
-  out.sort((a, b) => b.term_norm.length - a.term_norm.length);
-  return out;
-}
-
-function matchInjectables(rawText, pageUrl, matcher) {
-  const text = ' ' + norm(rawText) + ' ';
-  let pathname = '/';
-  try { pathname = new URL(pageUrl).pathname; } catch (e) {}
-  const blogish = BLOG_PATH.test(pathname);
-
-  // Service-page URLs are the strongest evidence a clinic offers something,
-  // exactly as a /morpheus8/ page is for equipment. Blog and shop paths are
-  // already stripped out by ownPagePaths.
-  const paths = ' ' + ownPagePaths(rawText, pageUrl, null).join(' | ') + ' ';
-
-  const claimed = [];
-  const overlaps = (a, b) => claimed.some(c => a < c[1] && c[0] < b);
-
-  const hits = [];
-  let strongHit = false;         // any non-risky term anywhere on this page
-
-  for (const e of matcher) {
-    const needle = ' ' + e.term_norm + ' ';
-    let from = 0, guard = 0;
-    while (guard++ < 40) {
-      const i = text.indexOf(needle, from);
-      if (i === -1) break;
-      const a = i + 1, b = a + e.term_norm.length;
-      from = b;
-      if (overlaps(a, b)) continue;
-
-      // Tight window, same shape as the device negation check: wide enough to
-      // catch "an alternative to fillers", narrow enough that a negation one
-      // clause earlier does not kill a genuine mention.
-      const win = text.slice(Math.max(0, a - 80), b + 50);
-      if (INJECT_NEGATION.some(f => win.indexOf(f) !== -1)) continue;
-
-      claimed.push([a, b]);
-      const onPath = paths.indexOf(' ' + e.term_norm + ' ') !== -1
-                  || paths.indexOf(e.term_norm) !== -1;
-      const confidence = blogish ? 'blog_only' : (onPath ? 'own_page' : 'exact');
-      if (!e.risky) strongHit = true;
-      hits.push({ category: e.category, matched_text: e.term,
-                  confidence: confidence, risky: e.risky });
-    }
-  }
-
-  // ⭐ THE CORROBORATION RULE. A bare "filler" or "injectables" only counts when
-  // the page also named something unambiguous. A device clinic whose only
-  // injectable word is "fillers" in "a natural alternative to fillers" has that
-  // mention dropped by the frames above; this catches the rest of that class.
-  const kept = hits.filter(h => !h.risky || strongHit);
-  return { matches: kept, strong: strongHit };
-}
-
 function ownPagePaths(rawText, pageUrl, entries) {
   let host = '';
   try { host = new URL(pageUrl).hostname.replace(/^www\./, ''); } catch (e) {}
@@ -1255,18 +1177,6 @@ const SERVICE_HINTS = [
   'what-we-do', 'menu', 'price', 'pricing', 'traitements', 'soins', 'tarifs'
 ];
 
-// ⭐ The injectables pass wants a different set of pages. A clinic hides its
-// laser catalogue three clicks deep; it never hides that it does Botox. These
-// put /injectables/ and /botox/ ahead of /technology/ so the few pages it reads
-// are the ones that answer the question.
-const INJECT_HINTS = [
-  'injectable', 'injectables', 'injection', 'injections', 'injector',
-  'botox', 'neuromodulator', 'neurotoxin', 'wrinkle', 'anti-wrinkle',
-  'filler', 'fillers', 'dermal-filler', 'lip-filler', 'lips',
-  'prp', 'sculptra', 'biostimulator', 'threads', 'injectables-fillers',
-  'facial-injectables', 'cosmetic-injectables', 'injectable-treatments'
-];
-
 // ⚠️⚠️ ASSET FILES ARE NOT PAGES, and this cost dozens of clinics.
 // `menu` is a SERVICE_HINT because clinics publish a "treatment menu". But it
 // also matches WordPress theme assets:
@@ -1512,8 +1422,7 @@ function pickPagedLinks(links, host, exclude, n) {
 // One host
 // ===========================================================================
 
-async function crawlHost(row, matcher, opts) {
-  const injectMode = !!(opts && opts.inject);
+async function crawlHost(row, matcher) {
   const host = row.host;
   const home = row.home_url || ('https://' + host + '/');
   const seen = new Set();
@@ -1615,14 +1524,7 @@ async function crawlHost(row, matcher, opts) {
     return { status: 'error', pagesTried, pagesReadUrls: [], lastError: firstError || lastError, matches: [], unknowns: [] };
   }
 
-  // ⛔ THREE EXTRA REQUESTS ON EVERY HOST. The sitemap probe exists to rescue a
-  // JavaScript-only site whose text cannot be read, and it fires for all ~6,500
-  // of them regardless. For the injectables pass it only earns its cost when the
-  // homepage came back thin, which is a small minority.
-  const needSitemap = !injectMode || sawJsOnly || pages.length === 0;
-  const sm = needSitemap
-    ? await sitemapUrls(host.replace(/^www\./, ''))
-    : { urls: [], source: null };
+  const sm = await sitemapUrls(host.replace(/^www\./, ''));
   const sitemapLinks = sm.urls;
   const bareHost = host.replace(/^www\./, '');
 
@@ -1637,16 +1539,6 @@ async function crawlHost(row, matcher, opts) {
     bareHost, seen, vocab, matcher
   );
   budget = budgetFor(candidates, Array.isArray(row.clinic_ids) ? row.clinic_ids.length : 1);
-
-  // ⛔⛔ THE BUDGET ABOVE WAS BUILT FOR A DIFFERENT QUESTION. It reaches 35 pages
-  // because a laser catalogue genuinely scatters its equipment across a site,
-  // and that depth is why a national device crawl takes most of a day.
-  //
-  // Injectables are not hidden. A clinic that injects says so on its homepage
-  // or its treatments page, in the nav, usually in the page title. Reading
-  // thirty pages to find a word that was on the first one is the single
-  // largest cost in this pass, so it gets four.
-  if (injectMode) budget = Math.min(budget, INJECT_PAGE_BUDGET);
 
   let techUrl = null;
   if (homePage) {
@@ -1677,10 +1569,7 @@ async function crawlHost(row, matcher, opts) {
   // Whatever is left goes to the best remaining links across everything read.
   if (pages.length < budget) {
     const soFar = pages.flatMap(p => p.links);
-    const hintSet = injectMode
-      ? INJECT_HINTS.concat(SERVICE_HINTS)
-      : TECH_HINTS.concat(SERVICE_HINTS);
-    for (const u of pickLinks(soFar, hintSet, bareHost, seen, budget - pages.length)) {
+    for (const u of pickLinks(soFar, TECH_HINTS.concat(SERVICE_HINTS), bareHost, seen, budget - pages.length)) {
       if (pages.length >= budget) break;
       await readPage(u);
     }
@@ -1693,36 +1582,6 @@ async function crawlHost(row, matcher, opts) {
   const thinOnly = pages.every(p => p.thin);
   const byDevice = new Map();
   const unknowns = new Map();
-
-  // ⭐ The injectables pass shares every line above this point — the fetching,
-  // the page picker, the sitemap and JSON-LD reads, the browser headers. Only
-  // the matching differs, which is the whole reason it is a mode rather than a
-  // second crawler.
-  const byCategory = new Map();
-  if (injectMode) {
-    for (const p of pages) {
-      const res = matchInjectables(p.text + ' ' + allLinks.join(' '), p.url, matcher);
-      for (const m of res.matches) {
-        const prev = byCategory.get(m.category);
-        if (!prev || INJECT_RANK[m.confidence] > INJECT_RANK[prev.confidence]) {
-          byCategory.set(m.category, Object.assign({}, m, { source_url: p.url }));
-        }
-      }
-    }
-    const found = [...byCategory.values()];
-    return {
-      status: found.length ? 'done' : (thinOnly ? 'needs_render' : 'empty'),
-      pagesTried,
-      pagesReadUrls: pages.map(x => x.url),
-      techUrl: null,
-      sitemapUrls: sitemapLinks.length,
-      thinOnly,
-      injectables: found,
-      matches: [],
-      unknowns: [],
-      lastError
-    };
-  }
 
   for (const p of pages) {
     const linkBlob = allLinks.join(' ');
@@ -1867,21 +1726,18 @@ async function doCrawl(supabase, body) {
   //   2. the queue is claimed on `biostim_status`, so the device crawl's own
   //      queue state, verdict history and month-over-month diff are untouched
   //      and either pass can be re-run independently (the crawl-socials rule);
-  //   3. NOTHING auto-publishes — every row waits for a human, because for
-  //      injectables a brand name is the vocabulary of the category rather than
-  //      evidence of stock, which is the opposite of the device case;
+  //   3. the per-device auto-publish ceiling does not apply, because for these
+  //      three the "one device on hundreds of clinics" shape that the ceiling
+  //      exists to catch is the EXPECTED shape (see AUTO_APPROVE_CEILING);
+  //      ⚠️ this paragraph used to read "NOTHING auto-publishes", which has not
+  //      been true since the ceiling exemption went in — corrected 2026-09-20;
   //   4. no census rows, since unmatched tokens near a device word are an
   //      equipment instrument and would only pollute that ranking.
   const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
   const BIOSTIM_CATEGORY = 'biostimulator';
-
-  // ⭐⭐ INJECTABLES MODE (M40 phase 2). Third pass over the same queue, its own
-  // claim column again, so all three can be re-run independently. Unlike the
-  // other two it writes to clinic_injectables and never touches clinic_devices.
-  const inject = String((body && body.mode) || '').trim().toLowerCase() === 'inject';
-
-  const Q_STATUS = inject ? 'inject_status'     : (biostim ? 'biostim_status' : 'status');
-  const Q_ERROR  = inject ? 'inject_error'      : (biostim ? 'biostim_error'  : 'last_error');
+  const INJECTABLE_CATEGORIES = ['biostimulator', 'neurotoxin'];
+  const Q_STATUS = biostim ? 'biostim_status' : 'status';
+  const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
 
   if (body.retry === true) {
     const reset = {};
@@ -1989,22 +1845,6 @@ async function doCrawl(supabase, body) {
 
   // Read the reference list fresh every invocation, so correcting a row is a SQL
   // update and never a redeploy.
-  // The injectables pass reads its own vocabulary. Everything below about
-  // devices is skipped for it.
-  let matcher;
-  if (inject) {
-    const { data: terms, error: tErr } = await supabase
-      .from('injectable_reference')
-      .select('category, term, term_norm, needs_corroboration, active')
-      .eq('active', true);
-    if (tErr) throw tErr;
-    matcher = buildInjectMatcher(terms || []);
-    if (!matcher.length) {
-      return { done: true, run_id: runId, processed: [], remaining: 0,
-               note: 'injectable_reference has no active terms — seed it first.' };
-    }
-  }
-
   let refQuery = supabase
     .from('device_reference')
     .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active')
@@ -2012,12 +1852,26 @@ async function doCrawl(supabase, body) {
   // ⭐ The whole reason a biostim pass is safe to run over already-crawled
   // hosts: it can only ever match these rows, so it cannot touch, refresh or
   // contradict a single equipment candidate.
-  if (biostim) refQuery = refQuery.eq('category', BIOSTIM_CATEGORY);
-  const { data: devices, error: refErr } = inject
-    ? { data: [], error: null }
-    : await refQuery;
+  //
+  // ⚠️⚠️ THE EXCLUSION HAS TO RUN BOTH WAYS, AND FOR A MONTH IT ONLY RAN ONE
+  // (found 2026-09-20). The biostim pass was scoped to its own category from
+  // day one, but the EQUIPMENT pass was never scoped away from it — so every
+  // device crawl also matched Sculptra, Radiesse and HArmonyCa and wrote them
+  // as equipment candidates. An injectable is a consumable a clinic buys by
+  // the vial, not a machine it owns, and the evidence bar is different: for a
+  // device a named brand on a services page is ownership, for an injectable it
+  // is just the vocabulary of the treatment. Matching them here published
+  // 139 Canadian clinics as equipped that carry no equipment at all.
+  //
+  // Neurotoxins (M25, 2026-09-25) are injectables too, so the equipment pass
+  // excludes every injectable category, not only biostimulators. Toxin brands
+  // are collected from clinics' social posts, not from this crawl.
+  refQuery = biostim
+    ? refQuery.eq('category', BIOSTIM_CATEGORY)
+    : refQuery.not('category', 'in', '(' + INJECTABLE_CATEGORIES.join(',') + ')');
+  const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
-  if (!inject) matcher = buildMatcher(devices || []);
+  const matcher = buildMatcher(devices || []);
 
   // ⭐⭐⭐ THE MONTH-OVER-MONTH GUARD. Written once per run, on the first
   // invocation only (`reference_count is null`), so the rest of the loop costs
@@ -2030,7 +1884,7 @@ async function doCrawl(supabase, body) {
   // of active reference rows. Change the code or add a device, and this run is
   // labelled a BACKFILL automatically: its new devices measure us, not the
   // market, and must stay out of the manufacturer change feed.
-  if (runId && !biostim && !inject) {
+  if (runId && !biostim) {
     const { data: mine } = await supabase.from('device_crawl_runs')
       .select('reference_count').eq('id', runId).single();
     if (!mine || mine.reference_count === null) {
@@ -2064,78 +1918,28 @@ async function doCrawl(supabase, body) {
   // whole crawl stops and has to be restarted by hand. One slow host should
   // cost one host, never the run.
   //
-  // ⓘ The per-host deadline check that used to sit at the top of this loop is
-  // gone: the batch now starts every host at once, so there is no "later host"
-  // left to defer. INVOCATION_DEADLINE inside readPage is what holds the line
-  // instead, and it applies to all of them at the same moment. `deferred` stays
-  // because the release below is still the right thing to do if it ever fills.
+  // Any host still unclaimed when the deadline passes is released back to
+  // 'pending' so the next invocation picks it up. Nothing is lost or skipped.
+  const DEADLINE_MS = 20000;
+  const startedAt = Date.now();
   const deferred = [];
 
-  // ⭐⭐ THE HOSTS IN A BATCH ARE INDEPENDENT, so reading them one after another
-  // spent the invocation's whole budget on whoever went first. Fetching them
-  // together means the batch costs the SLOWEST host rather than the sum of all
-  // three, and each one now gets the full wall-clock window instead of the
-  // leftovers — so a third host that used to be cut short by the deadline is
-  // read properly.
-  //
-  // Only the fetching moves. Every database write below still happens in order,
-  // one host at a time, exactly as before.
-  const crawled = await Promise.all(claimable.map(async row => {
-    try {
-      return { row: row, out: await crawlHost(row, matcher, { inject: inject }) };
-    } catch (e) {
-      return { row: row, out: { status: 'error', pagesTried: 0,
-               lastError: String((e && e.message) || e),
-               matches: [], unknowns: [], injectables: [] } };
+  for (const row of claimable) {
+    if (Date.now() - startedAt > DEADLINE_MS) {
+      deferred.push(row.id);
+      continue;
     }
-  }));
-
-  for (const entry of crawled) {
-    const row = entry.row;
-    const out = entry.out;
+    let out;
+    try {
+      out = await crawlHost(row, matcher);
+    } catch (e) {
+      out = { status: 'error', pagesTried: 0, lastError: String((e && e.message) || e), matches: [], unknowns: [] };
+    }
 
     const clinicIds = Array.isArray(row.clinic_ids) ? row.clinic_ids : [];
     let inserted = 0;
 
-    // ---- injectables ------------------------------------------------------
-    // Straight to the table, no review queue. These are category facts rather
-    // than a claim that a clinic owns a named product, and the review gate
-    // exists for the latter.
-    if (inject) {
-      const found = out.injectables || [];
-      if (found.length && clinicIds.length) {
-        const today = new Date().toISOString().slice(0, 10);
-        const rows = [];
-        for (const clinicId of clinicIds) {
-          for (const m of found) {
-            rows.push({
-              clinic_id: String(clinicId),
-              host: row.host,
-              category: m.category,
-              matched_text: m.matched_text,
-              source_url: m.source_url,
-              page_kind: out.thinOnly ? 'sitemap' : 'page',
-              confidence: m.confidence,
-              first_seen: today,
-              last_seen: today,
-              run_id: runId
-            });
-          }
-        }
-        for (let i = 0; i < rows.length; i += 200) {
-          // ⚠️ first_seen is NOT in the update list. It is the date this clinic
-          // was first seen offering the category, and a re-crawl must not reset
-          // it — the same rule the device approve path had to learn.
-          const { error: upErr } = await supabase
-            .from('clinic_injectables')
-            .upsert(rows.slice(i, i + 200), { onConflict: 'clinic_id,category' });
-          if (upErr) out.lastError = 'injectable upsert: ' + upErr.message;
-          else inserted += Math.min(200, rows.length - i);
-        }
-      }
-    }
-
-    if (!inject && out.matches.length && clinicIds.length) {
+    if (out.matches.length && clinicIds.length) {
       // A host fans out to every clinic on it, franchises included, the same
       // chain rule the price crawl settled on.
       const rows = [];
@@ -2198,11 +2002,13 @@ async function doCrawl(supabase, body) {
       // real guard: Elite, Icon, Halo, Forma, Soprano, Clarity, xeo, Dermapen
       // are where bad aliases hide, and they still go to review every time.
       //
-      // ⚠️ THE CEILING IS THE SAFETY NET. A broken alias always looks the same:
-      // one device suddenly appearing on hundreds of clinics at once. Past the
-      // threshold, that device stops auto-publishing FOR THE REST OF THE RUN and
-      // the remainder queues. Damage is capped at the ceiling rather than the
-      // size of the corpus. Raise or lower AUTO_APPROVE_CEILING as needed.
+      // ⚠️ THE CEILING IS THE SAFETY NET, BUT ONLY FOR DEVICES THAT NEED ONE.
+      // A broken alias always looks the same: one device suddenly appearing on
+      // hundreds of clinics at once. Past the threshold, that device stops
+      // auto-publishing FOR THE REST OF THE RUN and the remainder queues.
+      // Devices with an established, long-untouched published base skip it
+      // entirely — see ESTABLISHED_PUBLISHED_MIN for the measurement that
+      // forced this and for the alias-edit hole the quiet-days rule closes.
       // ⚠️ BIOSTIMULATORS AUTO-PUBLISH TOO, on exactly the same bar. An earlier
       // version held every one of them back on the theory that a brand name is
       // the category's vocabulary rather than evidence of stock. That was wrong
@@ -2216,7 +2022,12 @@ async function doCrawl(supabase, body) {
         if (strong.length) {
           const devIds = [...new Set(strong.map(r => r.device_id))];
           const refs = await selectIn(supabase, 'device_reference',
-            'id, model, name_is_also_generic', 'id', devIds);
+            'id, model, name_is_also_generic, updated_at', 'id', devIds);
+          // A row edited recently goes back under the ceiling: its published
+          // history says nothing about an alias that was added yesterday.
+          const quietCutoff = Date.now() - ESTABLISHED_QUIET_DAYS * 86400000;
+          const recentlyEditedById = new Map(refs.map(d => [
+            d.id, d.updated_at ? Date.parse(d.updated_at) > quietCutoff : true]));
           // ⭐ CHANGED 2026-08-06: a generic-named device is no longer excluded
           // outright. It stays eligible, and the BARE-NAME test below decides
           // row by row. See isBareModelName() for why.
@@ -2226,6 +2037,20 @@ async function doCrawl(supabase, body) {
 
           const okDevs = [];
           for (const did of eligibleDevs) {
+            // ⭐ ESTABLISHED DEVICES SKIP THE CEILING. One head-count instead of
+            // the run count, so this is not an extra round trip.
+            if (!recentlyEditedById.get(did)) {
+              const { count: published, error: pErr } = await supabase
+                .from('clinic_devices')
+                .select('clinic_id', { count: 'exact', head: true })
+                .eq('device_id', did);
+              if (pErr) continue;                     // on doubt, leave it pending
+              if ((published || 0) >= ESTABLISHED_PUBLISHED_MIN) {
+                okDevs.push(did);
+                out.autoCeilingExempt = (out.autoCeilingExempt || 0) + 1;
+                continue;
+              }
+            }
             // Counted across the WHOLE RUN, not this batch, so the ceiling holds
             // across invocations. Candidates carry run_id, which is what makes
             // this measurable without any new state.
@@ -2283,7 +2108,7 @@ async function doCrawl(supabase, body) {
     // survives even after a candidate is refreshed or its status changes.
     // This never touches a candidate row, so no approve/reject can be clobbered.
     // ignoreDuplicates handles the chain fan-out reading one host once per run.
-    if (!inject && out.matches.length && clinicIds.length) {
+    if (out.matches.length && clinicIds.length) {
       const sightRows = [];
       for (const clinicId of clinicIds) {
         for (const m of out.matches) {
@@ -2312,7 +2137,7 @@ async function doCrawl(supabase, body) {
       }
     }
 
-    if (out.unknowns.length && !biostim && !inject) {
+    if (out.unknowns.length && !biostim) {
       await supabase.from('device_unknown_tokens').insert(out.unknowns.map(u => ({
         token: u.token,
         token_norm: u.token_norm,
@@ -2327,11 +2152,7 @@ async function doCrawl(supabase, body) {
     // devices_found or tech_url here would overwrite the device crawl's record
     // of the host with a three-product count, which is exactly the kind of
     // silent corruption that makes a run-vs-run diff unreadable.
-    const qUpdate = inject
-      ? { inject_status: out.status,
-          inject_error: out.lastError,
-          inject_fetched_at: new Date().toISOString() }
-      : biostim
+    const qUpdate = biostim
       ? { biostim_status: out.status,
           biostim_error: out.lastError,
           biostim_fetched_at: new Date().toISOString() }
@@ -2353,7 +2174,7 @@ async function doCrawl(supabase, body) {
     // host status 'done' with no sighting = brand gone; 'error'/blocked = we
     // could not look, leave the published row alone. That distinction is the
     // whole reason the change feed can ever be trusted.
-    if (runId && !inject) {
+    if (runId) {
       await supabase.from('crawl_run_hosts')
         .upsert({
           run_id: runId,
@@ -2402,10 +2223,8 @@ async function doCrawl(supabase, body) {
       auto_approved: out.autoApproved || 0,
       auto_held_bare_name: out.autoHeldBareName || 0,
       auto_held_ceiling: out.autoHeldCeiling || 0,
-      devices: inject
-        ? (out.injectables || []).map(m => ({ model: m.category, category: m.category, confidence: m.confidence }))
-        : out.matches.map(m => ({ model: m.model, category: m.category, confidence: m.confidence })),
-      injectables: (out.injectables || []).map(m => m.category + ' via "' + m.matched_text + '"'),
+      auto_ceiling_exempt: out.autoCeilingExempt || 0,
+      devices: out.matches.map(m => ({ model: m.model, category: m.category, confidence: m.confidence })),
       unknowns: out.unknowns.map(u => u.token),
       error: out.lastError || null
     });
@@ -2619,9 +2438,8 @@ async function requeueAll(supabase, body) {
   // ⭐ A biostim requeue resets ONLY `biostim_status`, so re-running the
   // biostimulator pass never puts the equipment crawl back to pending.
   const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
-  const inject  = String((body && body.mode) || '').trim().toLowerCase() === 'inject';
-  const Q_STATUS = inject ? 'inject_status' : (biostim ? 'biostim_status' : 'status');
-  const Q_ERROR  = inject ? 'inject_error'  : (biostim ? 'biostim_error'  : 'last_error');
+  const Q_STATUS = biostim ? 'biostim_status' : 'status';
+  const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
   const country = body.country || null;
   // ⚠️ MUST honour the state too. Requeue is country-wide by default, so
   // without this a New York re-crawl puts all ~14,400 US hosts back to pending
@@ -2640,7 +2458,7 @@ async function requeueAll(supabase, body) {
   const reset = {};
   reset[Q_STATUS] = 'pending';
   reset[Q_ERROR] = null;
-  if (!biostim && !inject) reset.attempts = 0;
+  if (!biostim) reset.attempts = 0;
   let rq = supabase.from('crawl_device_queue')
     .update(reset)
     .eq('excluded', false);
@@ -2739,10 +2557,8 @@ async function candidateStats(supabase, body) {
   const state = ((body && body.state) || '').trim().toLowerCase();
   // ⭐ The biostim tab reads its own queue column through the same action, so
   // its progress line counts the biostim pass rather than the device crawl.
-  const _m = String((body && body.mode) || '').trim().toLowerCase();
-  const qStatusCol = _m === 'inject' ? 'inject_status'
-                   : _m === 'biostim' ? 'biostim_status'
-                   : 'status';
+  const qStatusCol = String((body && body.mode) || '').trim().toLowerCase() === 'biostim'
+    ? 'biostim_status' : 'status';
   const qc = async (status) => {
     let q = supabase.from('crawl_device_queue')
       .select('id', { count: 'exact', head: true })
