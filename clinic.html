@@ -688,8 +688,8 @@
 
     // ── VERIFIED DEVICES ──────────────────────────────────────────────────
     const devicesHtml = devices.length
-      ? '<div class="panel"><div class="panel-head"><span class="tick">\u2713</span>'
-        + (lang === 'zh' ? '\u539F\u5EE0\u8A8D\u8A3C\u5100\u5668' : 'Manufacturer-verified devices') + '</div>'
+      ? '<div class="panel"><div class="panel-head"><span><span class="tick">\u2713</span>'
+        + (lang === 'zh' ? '\u539F\u5EE0\u8A8D\u8A3C\u5100\u5668' : 'Manufacturer-verified devices') + '</span></div>'
         + '<div class="chip-row">'
         + devices.map(function (t) { return '<span class="chip">' + escapeHtml(TECH_LABEL[t] || t) + '</span>'; }).join('')
         + '</div></div>'
@@ -853,7 +853,28 @@
       });
       return orderTeam(out, clinic.name);
     }
+    // Devices come from clinic_devices through the same cached call the directory
+    // uses, so every certified list loaded there shows here with no page change.
+    // Label is "English 中文" (Thermage FLX 鳳凰電波); an English-only label stands
+    // alone. If the call fails, fall back to the old clinic_technologies rows.
     async function loadDevices() {
+      try {
+        const res = await fetch('/api/get-clinics?mode=verified-devices&country=' + encodeURIComponent(clinic.country));
+        if (res.ok) {
+          const payload = await res.json();
+          const mine = {};
+          (payload.rows || []).forEach(function (r) {
+            if (String(r[0]) === String(clinic.id)) mine[String(r[1])] = true;
+          });
+          const hasCJK = function (x) { return /[\u3400-\u9fff]/.test(x || ''); };
+          return (payload.devices || [])
+            .filter(function (d) { return mine[String(d.id)]; })
+            .map(function (d) {
+              const label = d.label || d.model;
+              return (hasCJK(label) && d.model) ? d.model + ' ' + label : label;
+            });
+        }
+      } catch (e) { /* fall through to the old table */ }
       const techRows = await sbGet('clinic_technologies?select=technology&clinic_id=eq.' + encodeURIComponent(clinic.id));
       const out = [];
       (techRows || []).forEach(function (t) {
