@@ -535,6 +535,29 @@ exports.handler = async (event) => {
         });
       }
 
+      // ⭐ PULSE (M25, 2026-09-25). What clinics promoted on Facebook and
+      // Instagram in the latest month, from their own posts. Market-wide, not
+      // tenant-specific, but it follows the territory like everything else.
+      case 'pulse': {
+        const { data, error } = await supabase.rpc('mi_pulse', {
+          p_country: country, p_regions: regions,
+          p_province: province, p_city: city, p_neighbourhood: neighbourhood
+        });
+        if (error) throw error;
+        // ⭐ INJECTABLES ARE INTERNAL ONLY for now: MI is sold to device
+        // companies. Listed emails see both sides; everyone else gets the
+        // injectable rows stripped here, on the server, not hidden in the page.
+        const allow = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
+          .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+        const injectables = !!(me.email && allow.includes(String(me.email).toLowerCase()));
+        const pulse = data || {};
+        if (!injectables) {
+          pulse.products = (pulse.products || []).filter(p => p.side !== 'injectables');
+          delete pulse.toxin;
+        }
+        return json(200, { pulse: pulse, injectables: injectables });
+      }
+
       // the tenant's own installed base, their taxonomy
       case 'feed': {
         const days = Math.min(Math.max(parseInt(body.days, 10) || 30, 1), 365);
