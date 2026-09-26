@@ -2454,8 +2454,11 @@
     loaded.landscape=true;
     el('lsBody').innerHTML='<div class="empty"><span class="spin"></span></div>';
     api('landscape',{}).then(function(res){
-      LS_ROWS=res.landscape||[];
-      LS_CO=res.companies||[];
+      // ⭐ A product with no clinic anywhere in the country is treated as not
+      // available there. The reference list is global (Ellansé is filed for
+      // Taiwan), and country availability is read from where it is seen.
+      LS_ROWS=(res.landscape||[]).filter(function(r){ return Number(r.clinics_country)>0; });
+      LS_CO=(res.companies||[]).filter(function(c){ return Number(c.clinics_country)>0; });
       paintLandscape();
     }).catch(handleErr);
   }
