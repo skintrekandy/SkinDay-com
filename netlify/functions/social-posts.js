@@ -710,6 +710,9 @@ async function decide(supabase, body, approve, opts) {
       .upsert(inserts.slice(i, i + 200), { onConflict: 'clinic_id,device_id', ignoreDuplicates: true });
     if (error) errors.push(error.message); else published += inserts.slice(i, i + 200).length;
   }
+  // A failed save must stop here: the mentions stay pending, so nothing is
+  // marked approved that is not actually on the clinic's profile.
+  if (errors.length) throw new Error('could not publish to clinic_devices: ' + errors[0]);
 
   // The change feed, same as the website crawl: one 'added' event per new pair.
   // A device found on an account's FIRST read is a baseline, not an adoption:
