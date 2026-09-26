@@ -539,7 +539,7 @@ exports.handler = async (event) => {
       // Instagram in the latest month, from their own posts. Market-wide, not
       // tenant-specific, but it follows the territory like everything else.
       case 'pulse': {
-        const { data, error } = await supabase.rpc('mi_pulse', {
+        const { data, error } = await supabase.rpc('mi_pulse_fast', {
           p_country: country, p_regions: regions,
           p_province: province, p_city: city, p_neighbourhood: neighbourhood
         });
