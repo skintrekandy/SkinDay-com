@@ -2087,7 +2087,7 @@
     var more=rows.length>12?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top 12':'Show all '+rows.length)+'</button>':'';
     var launches=rows.filter(function(r){ return r.launch_posts>0; })
       .sort(function(a,b){ return b.launch_posts-a.launch_posts || b.launch_businesses-a.launch_businesses; }).slice(0,10);
-    var lower='<section class="pl-card"><h3>Launch announcements</h3><p class="pl-hint">Posts saying a product is new at the clinic: "Introducing", "Now available", "Welcome our new".</p>'+
+    var lower='<section class="pl-card"><h3>Newly announced this month</h3><p class="pl-hint">Posts saying a product is new at the clinic, such as "Introducing" or "Now available".</p>'+
       (launches.length?'<div class="pl-chips">'+launches.map(function(r){
         return '<button type="button" class="pl-chip launch" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
           ' <span class="n">'+plPlural(r.launch_posts,'post','posts')+' · '+plPlural(r.launch_businesses,'business','businesses')+'</span></button>';
@@ -2095,18 +2095,18 @@
     if(PL_SIDE==='devices'){
       var em=rows.filter(function(r){ return (r.known_national||0)<=10; })
         .sort(function(a,b){ return (a.known_national||0)-(b.known_national||0) || b.posts-a.posts; });
-      lower+='<section class="pl-card"><h3>Emerging</h3><p class="pl-hint">Devices with very few known owners in the country that clinics posted about this month.</p>'+
+      lower+='<section class="pl-card"><h3>Early signals</h3><p class="pl-hint">Devices clinics posted about that had few or no known owners before.</p>'+
         (em.length?'<div class="pl-chips">'+em.map(function(r){
           return '<button type="button" class="pl-chip" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
-            ' <span class="n">'+plPlural(r.businesses,'business','businesses')+' · '+(r.known_national?plPlural(r.known_national,'known owner','known owners'):'no known owners')+'</span></button>';
+            ' <span class="n">'+(r.known_national?plPlural(r.businesses,'business','businesses')+' · '+plPlural(r.known_national,'known owner','known owners'):'New signal · '+plPlural(r.businesses,'business','businesses')+' · previously undetected')+'</span></button>';
         }).join('')+'</div>':'<div class="pl-hint">Nothing new this month.</div>')+'</section>';
     } else {
       var t=(PL&&PL.toxin)||{};
       var brands=rows.filter(function(r){ return r.category==='Neurotoxins'; });
       var bmax=brands.length?brands[0].posts:1;
-      lower+='<section class="pl-card pl-tox"><h3>Toxin: which brand?</h3><p class="pl-hint">Most toxin posts say "Botox" as a word and never name the product.</p>'+
-        '<div><span class="big">'+(t.brand_pct!=null?Math.round(t.brand_pct)+'%':'—')+'</span> <span style="color:var(--ink-2)">of locations posting about toxin named a brand</span></div>'+
-        '<div style="font-size:14px;color:var(--ink-2);margin-top:8px">'+num(t.generic_posts||0)+' posts from '+num(t.generic_businesses||0)+' businesses used toxin wording with no brand.</div>'+
+      lower+='<section class="pl-card pl-tox"><h3>Toxin: which brand?</h3><p class="pl-hint">Posts naming each brand.</p>'+
+        '<div><span style="color:var(--ink-2)">Only</span> <span class="big">'+(t.brand_pct!=null?Math.round(t.brand_pct)+'%':'—')+'</span> <span style="color:var(--ink-2)">of businesses discussing toxin named a brand.</span></div>'+
+        '<div style="font-size:14px;color:var(--ink-2);margin-top:8px">'+num(t.generic_businesses||0)+' businesses used "Botox" or toxin wording without naming the product.</div>'+
         brands.map(function(r){ return '<div class="pl-brand"><span>'+esc(r.product)+'</span><span class="t"><span style="width:'+(100*r.posts/bmax).toFixed(1)+'%"></span></span><span class="c">'+num(r.posts)+'</span></div>'; }).join('')+
         '<div style="font-size:12px;color:var(--muted);margin-top:8px">"Botox" alone counts as generic, so Botox Cosmetic shows only full-name mentions.</div></section>';
     }
@@ -2119,18 +2119,25 @@
   function paintPulseDetail(){
     var r=plRows().filter(function(x){ return x.product===PL_SEL[PL_SIDE]; })[0];
     if(!r) return;
-    var facts=[['Clinic locations represented',num(r.locations)],
-      ['Launch announcements', r.launch_posts?plPlural(r.launch_posts,'post','posts')+' · '+plPlural(r.launch_businesses,'business','businesses'):'None this month']];
-    if(r.known_owners) facts.push(['Known owners on file',num(r.known_owners)]);
-    facts.push(['Locations found only through their posts',num(r.found_only)]);
+    var facts=[['Locations represented',num(r.locations)],
+      ['Newly announced', r.launch_posts?plPlural(r.launch_posts,'post','posts')+' · '+plPlural(r.launch_businesses,'business','businesses'):'None this month']];
+    if(r.known_owners) facts.push(['Known owners',num(r.known_owners)]);
+    facts.push(['Discovered from social',num(r.found_only)]);
     var say=(r.pct_owners_promoted!=null&&r.known_owners)
-      ? '<div class="pl-say"><b>'+Math.round(r.pct_owners_promoted)+'%</b> of known '+esc(r.product)+' owners promoted '+esc(r.product)+' this month.</div>':'';
+      ? '<div class="pl-say" title="Known owners whose Facebook or Instagram we read this month"><b>'+Math.round(r.pct_owners_promoted)+'%</b> of monitored '+esc(r.product)+' owners promoted it this month.</div>':'';
+    var places=(r.places||[]);
+    var pmax=places.length?places[0].posts:1;
+    var where=places.length>1?'<div class="pl-where"><div class="pl-eyebrow" style="margin:16px 0 6px">Where the posts came from</div>'+
+      places.map(function(g){
+        var nm=(typeof provinceLabel==='function'&&!geo.province)?provinceLabel(g.place):g.place;
+        return '<div class="pl-brand"><span>'+esc(nm)+'</span><span class="t"><span style="width:'+(100*g.posts/pmax).toFixed(1)+'%"></span></span><span class="c">'+num(g.posts)+'</span></div>';
+      }).join('')+'</div>':'';
     el('plDet').innerHTML='<div class="pl-eyebrow">'+esc(r.category||'')+'</div>'+
       '<div class="pl-dname">'+esc(r.product)+((r.known_national||0)<=10&&r.side==='devices'?' <span class="pl-tag">Low sample</span>':'')+'</div>'+
       '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+num(r.posts)+'</div><div class="l">Posts</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
       facts.map(function(f){ return '<div class="pl-fact"><span>'+f[0]+'</span><span class="v">'+f[1]+'</span></div>'; }).join('')+
-      say+'<p class="pl-later">Change since last month appears from November.</p>';
+      say+where+'<p class="pl-later">Change since last month appears from November.</p>';
   }
   window.plPick=function(name){
     PL_SEL[PL_SIDE]=name;
