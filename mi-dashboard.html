@@ -1827,6 +1827,9 @@
     if(el('panel-accounts').classList.contains('on')) gateAccounts();
     if(el('panel-landscape').classList.contains('on')) loadLandscape();
     if(el('panel-pulse').classList.contains('on')) loadPulse();
+    // ⭐ Pulse is fetched quietly in the background, so the tab is already
+    // filled when the rep clicks it.
+    else setTimeout(function(){ if(!loaded.pulse) loadPulse(); }, 2500);
     if(el('panel-list').classList.contains('on')) loadSaved();
   }
 
@@ -3951,7 +3954,7 @@
     if(e&&e.unauth){ location.reload(); return; }
     var msg=(e&&e.detail)?e.detail:(e&&e.error)?e.error:'Something went wrong.';
     console.error('MI error:',e);
-    ['hero','portfolioList','catlist','acctList','savedList'].forEach(function(id){ var box=el(id); if(box&&box.querySelector('.spin')) box.innerHTML='<div class="empty">Could not load: '+esc(msg)+'</div>'; });
+    ['hero','portfolioList','catlist','acctList','savedList','plBody','lsBody'].forEach(function(id){ var box=el(id); if(box&&box.querySelector('.spin')) box.innerHTML='<div class="empty">Could not load: '+esc(msg)+'</div>'; });
   }
 })();
 </script>
