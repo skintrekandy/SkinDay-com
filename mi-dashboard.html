@@ -1344,6 +1344,11 @@
              gfTitle:'Brand opportunity', gfLine:'No brand identified yet', rsLine:'Not yet checked' }
   };
   function W(){ return WORDS[isInj()?'injectables':'energy']; }
+  // ⭐ INJECTABLE CATEGORIES IN ORDER OF HOW MUCH WE TRUST THEM (Andy,
+  // 2026-09-26): biostimulators, then neurotoxins, then fillers, whose data is
+  // still thin. Anything new sorts after these.
+  var INJ_ORDER=['biostimulator','neurotoxin','filler','fat_dissolving'];
+  function injRank(cat){ var i=INJ_ORDER.indexOf(cat); return i===-1?99:i; }
 
   // ⭐ COUNTRY VOCABULARY. The tenant carries a country; the page only carries
   // the WORDS for it. "province" stays the wire name everywhere (the RPCs
@@ -2120,6 +2125,7 @@
       if(!groups[r.category]){ groups[r.category]={label:r.label||r.category,group_label:r.group_label,devices:[],total:0}; order.push(r.category); }
       groups[r.category].devices.push(r); groups[r.category].total+=(r.installs||0);
     });
+    if(isInj()) order.sort(function(a,b){ return injRank(a)-injRank(b); });
     el('portfolioList').innerHTML=order.map(function(cat){
       var g=groups[cat];
       var devs=g.devices.map(function(d){
@@ -2182,7 +2188,7 @@
     html+='</div>';
     if(n>3){
       html+='<button type="button" class="boardmore" id="boardMore">'+
-        (BOARD_OPEN ? 'Show top three' : 'View all '+n+' manufacturers')+'</button>';
+        (BOARD_OPEN ? 'Show top three' : 'View all '+n+(isInj()?' companies':' manufacturers'))+'</button>';
     }
     html+='</div>';
     el('board').innerHTML=html;
@@ -2557,6 +2563,7 @@
       order.sort(function(a,b){ return catMove(b)-catMove(a) || by[b].rows.length-by[a].rows.length; });
     } else {
     order.sort(function(a,b){
+      if(isInj()) return injRank(a)-injRank(b);
       var oa=by[a].rows.some(function(r){return r.is_ours;})?0:1;
       var ob=by[b].rows.some(function(r){return r.is_ours;})?0:1;
       return oa-ob || by[b].rows.length-by[a].rows.length;
@@ -2608,7 +2615,7 @@
           '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
           '<span class="lsname">'+esc(g.label)+'</span>'+
           '<span class="lsp"></span>'+
-          '<span class="lscount">'+g.rows.length+' '+W().itemsPl+'</span>'+
+          '<span class="lscount">'+g.rows.length+' '+(g.rows.length===1?W().item:W().itemsPl)+'</span>'+
           lsMoveChip(catMv, null)+
         '</button>'+devs+
       '</div>';
@@ -2693,7 +2700,9 @@
     }
     // "Direct (manufacturer)" is a sentinel on 127 of 178 rows meaning there is
     // no distributor. Excluded in SQL so it can never appear as a company.
-    return section('Manufacturers','manufacturer') + section('Distributors','distributor');
+    // Injectable companies are pharmaceutical companies, not manufacturers.
+    return section(isInj()?'Pharmaceutical companies':'Manufacturers','manufacturer') +
+           section('Distributors','distributor');
   }
   // A company's devices, grouped by category so the shape of the portfolio is
   // readable rather than a flat alphabetical list.
@@ -2710,7 +2719,7 @@
       if(!by[k]){ by[k]=[]; order.push(k); }
       by[k].push(r);
     });
-    order.sort(function(a,b){ return by[b].length-by[a].length; });
+    order.sort(function(a,b){ return isInj() ? injRank(a)-injRank(b) : by[b].length-by[a].length; });
     return order.map(function(k){
       by[k].sort(function(a,b){ return (Number(b.clinics)||0)-(Number(a.clinics)||0); });
       return '<div class="lscat">'+esc(CAT_LABEL[k]||k)+'</div>'+
@@ -2852,7 +2861,10 @@
       c.sortKey = mine ? (rank>0 && rank<900 ? rank : 500) : 9999;
       c.present = !!mine;
       return c;
-    }).sort(function(a,b){ return a.sortKey-b.sortKey || b.total-a.total; });
+    }).sort(function(a,b){
+      if(isInj()) return injRank(a.category)-injRank(b.category);
+      return a.sortKey-b.sortKey || b.total-a.total;
+    });
     paintCategoryShare();
   }
   function paintCategoryShare(){
@@ -2942,7 +2954,9 @@
     '</svg>';
   }
   function seedCategorySelects(){
-    var opts='<option value="">All categories</option>'+catCache.map(function(c){ return '<option value="'+esc(c.category)+'">'+esc(c.label||c.category)+'</option>'; }).join('');
+    var list=catCache.slice();
+    if(isInj()) list.sort(function(a,b){ return injRank(a.category)-injRank(b.category); });
+    var opts='<option value="">All categories</option>'+list.map(function(c){ return '<option value="'+esc(c.category)+'">'+esc(c.label||c.category)+'</option>'; }).join('');
     var ac=el('acctCategory'); var cur=ac.value; ac.innerHTML=opts; ac.value=cur;
   }
 
