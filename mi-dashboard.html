@@ -626,6 +626,13 @@
   }
 
   /* ⭐ PULSE (M25). What clinics promoted in their own posts, ranked by posts. */
+  .pl-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .pl-i { width:18px; height:18px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-family:var(--font-mono); font-size:11px; line-height:1; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+  .pl-i:hover, .pl-i:focus-visible { border-color:var(--accent); color:var(--accent-strong); outline:none; }
+  .pl-tip { flex-basis:100%; font-size:12.5px; line-height:1.5; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line); border-radius:var(--radius-sm); padding:9px 11px; margin-top:4px; }
+  .pl-int { display:inline-block; font-family:var(--font-mono); font-size:10.5px; color:var(--muted); margin-top:4px; }
+  .pl-sub2 { display:block; font-size:11px; color:var(--muted); text-align:right; }
+  .pl-meas b { font-size:14px; }
   .pl-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:10px 20px; margin-bottom:16px; }
   .pl-head h2 { font-size:22px; margin:0; line-height:1.2; }
   .pl-head .pl-sub { color:var(--ink-2); font-size:14.5px; margin-top:4px; }
@@ -865,7 +872,7 @@
       <div class="pl-head">
         <div>
           <h2 id="plTitle">What clinics promoted this month</h2>
-          <div class="pl-sub" id="plSub"></div>
+          <div class="pl-sub pl-h" id="plSub"></div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
           <span class="pl-base" id="plBase">Baseline month · changes from November</span>
@@ -2046,11 +2053,20 @@
   // for everyone else the server strips them and this stays false.
   var PULSE_INJECTABLES=false;
   var PL=null, PL_SIDE='devices', PL_ALL=false, PL_SEL={};
+  // ⭐ RESULTS, NOT SCAFFOLDING (Andy, 2026-09-26). Customers see shares,
+  // businesses and plain definitions. Post counts, platform splits and
+  // denominators are shown only to internal accounts (the same allow-list
+  // that unlocks injectables), so "only 110 posts?" never comes up.
+  var PL_INTERNAL=false;
+  // ⭐ SHARES ON THE SURFACE, COUNTS UNDERNEATH (Andy + ChatGPT, 2026-09-26).
+  // Each product is a share of its own section, so month-to-month changes stay
+  // comparable even when more accounts are read. Raw numbers live in the hover
+  // text and the detail panel. Shares sum to 100% within a section.
   function loadPulse(){
     loaded.pulse=true;
     el('plBody').innerHTML='<div class="empty"><span class="spin"></span></div>';
     api('pulse',{}).then(function(res){
-      PL=res.pulse||{}; PULSE_INJECTABLES=!!res.injectables;
+      PL=res.pulse||{}; PULSE_INJECTABLES=!!res.injectables; PL_INTERNAL=!!res.injectables;
       if(!PULSE_INJECTABLES) PL_SIDE='devices';
       PL_ALL=false; paintPulse();
     }).catch(handleErr);
@@ -2061,80 +2077,123 @@
   }
   function plQ(s){ return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
   function plPlural(n,one,many){ return num(n)+' '+(n===1?one:many); }
-  function plMonth(d){
-    if(!d) return '';
-    var dt=new Date(d+'T12:00:00');
-    return dt.toLocaleDateString('en-CA',{month:'long'});
+  function plMonth(d){ if(!d) return ''; return new Date(d+'T12:00:00').toLocaleDateString('en-CA',{month:'long'}); }
+  function plDay(d,yr){ if(!d) return ''; var o={month:'short',day:'numeric'}; if(yr) o.year='numeric'; return new Date(d+'T12:00:00').toLocaleDateString('en-CA',o); }
+  function plPct(x,base){ if(!base) return null; return 100*x/base; }
+  function plFmt(v){ return v==null?'—':(v<0.1&&v>0?'<0.1':v.toFixed(1))+'%'; }
+  function plTot(k){ return ((PL&&PL.totals)||{})[k]||0; }
+  function plTerr(){
+    if(geo.province && typeof provinceLabel==='function') return provinceLabel(geo.province);
+    return COUNTRY==='usa'?'United States':'Canada';
+  }
+  function plSpan(){ return PL&&PL.since?plDay(PL.since)+' – '+plDay(PL.until,true):''; }
+  function plLow(r){ return (r.businesses||0)<3; }
+  function plInfo(id,text){
+    return '<button type="button" class="pl-i" aria-label="How this is measured" onclick="plTip(\''+id+'\')">i</button>'+
+      '<div class="pl-tip" id="'+id+'" hidden>'+text+'</div>';
+  }
+  window.plTip=function(id){ var t=el(id); if(t) t.hidden=!t.hidden; };
+  function plRowTitle(r,base){
+    var side=PL_SIDE==='devices'?'device':'injectable';
+    return num(r.posts)+' qualified posts · '+plPlural(r.businesses,'business','businesses')+
+      ' · Instagram '+num(r.ig_posts||0)+' · Facebook '+num(r.fb_posts||0)+
+      (r.launch_posts?' · '+plPlural(r.launch_posts,'launch announcement','launch announcements'):'')+
+      ' · Based on '+num(base)+' '+side+' mentions · '+plTerr()+' · '+plSpan();
   }
   function paintPulse(){
-    var s=(PL&&PL.summary)||{};
+    var dev=PL_SIDE==='devices';
     el('plSide').style.display=PULSE_INJECTABLES?'':'none';
     el('plTitle').textContent='What clinics promoted in '+(plMonth(PL&&PL.until)||'the last month');
-    el('plSub').innerHTML='<b style="font-family:var(--font-mono);font-weight:500">'+num(s.posts||0)+'</b> Facebook and Instagram posts from <b style="font-family:var(--font-mono);font-weight:500">'+num(s.businesses||0)+'</b> businesses'+
-      (PL&&PL.since?' <span style="color:var(--muted)">· '+esc(PL.since)+' to '+esc(PL.until)+'</span>':'');
+    var s=(PL&&PL.summary)||{};
+    el('plSub').innerHTML=esc(plTerr())+' · '+esc(plSpan())+' · Facebook and Instagram '+
+      plInfo('plTipSum','Public posts from clinics’ own Facebook and Instagram accounts during this period. Posts that only list hashtags or compare products are left out.'+
+        (PL_INTERNAL?' <span class="pl-int">Internal: '+num(s.posts||0)+' posts · '+num(s.businesses||0)+' businesses · '+num(s.locations||0)+' locations</span>':''));
     var rows=plRows();
     if(!rows.length){ el('plBody').innerHTML='<div class="empty">No posts in this territory yet.</div>'; return; }
     if(!PL_SEL[PL_SIDE] || !rows.some(function(r){ return r.product===PL_SEL[PL_SIDE]; })) PL_SEL[PL_SIDE]=rows[0].product;
-    var shown=PL_ALL?rows:rows.slice(0,12), max=rows[0].posts||1;
+    var base=plTot(dev?'devices_share_base':'injectables_share_base');
+    var shown=PL_ALL?rows:rows.slice(0,12), max=plPct(rows[0].posts,base)||1;
     var list=shown.map(function(r,i){
-      return '<button type="button" class="pl-row'+(r.product===PL_SEL[PL_SIDE]?' on':'')+'" onclick="plPick(\''+plQ(r.product)+'\')">'+
+      var v=plPct(r.posts,base);
+      return '<button type="button" class="pl-row'+(r.product===PL_SEL[PL_SIDE]?' on':'')+'"'+(PL_INTERNAL?' title="'+esc(plRowTitle(r,base))+'"':'')+' onclick="plPick(\''+plQ(r.product)+'\')">'+
         '<span class="pl-rank">'+(i+1)+'</span>'+
         '<span class="pl-name">'+esc(r.product)+' <span class="pl-cat">'+esc(r.category||'')+'</span></span>'+
-        '<span class="pl-meas"><b>'+num(r.posts)+'</b> posts · '+plPlural(r.businesses,'business','businesses')+'</span>'+
-        '<span></span><span class="pl-track"><span class="pl-fill" style="width:'+(100*r.posts/max).toFixed(1)+'%"></span></span>'+
+        '<span class="pl-meas"><b>'+plFmt(v)+'</b>'+(plLow(r)?' <span class="pl-tag">Early signal</span>':'')+'</span>'+
+        '<span></span><span class="pl-track"><span class="pl-fill" style="width:'+(100*v/max).toFixed(1)+'%"></span></span>'+
       '</button>';
     }).join('');
     var more=rows.length>12?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top 12':'Show all '+rows.length)+'</button>':'';
+    var lbase=plTot(dev?'devices_launch_base':'injectables_launch_base');
     var launches=rows.filter(function(r){ return r.launch_posts>0; })
       .sort(function(a,b){ return b.launch_posts-a.launch_posts || b.launch_businesses-a.launch_businesses; }).slice(0,10);
-    var lower='<section class="pl-card"><h3>Newly announced this month</h3><p class="pl-hint">Posts saying a product is new at the clinic, such as "Introducing" or "Now available".</p>'+
+    var lower='<section class="pl-card"><div class="pl-h"><h3>What’s launching</h3>'+
+      plInfo('plTipL','Each product’s share of this month’s '+(dev?'device':'product')+' launch announcements: posts saying a product is new at the clinic, such as “Introducing” or “Now available”.'+(PL_INTERNAL?' <span class="pl-int">Internal: '+num(lbase)+' announcement posts</span>':''))+'</div>'+
+      '<p class="pl-hint">New '+(dev?'device':'product')+' announcements</p>'+
       (launches.length?'<div class="pl-chips">'+launches.map(function(r){
-        return '<button type="button" class="pl-chip launch" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
-          ' <span class="n">'+plPlural(r.launch_posts,'post','posts')+' · '+plPlural(r.launch_businesses,'business','businesses')+'</span></button>';
+        return '<button type="button" class="pl-chip launch" title="'+esc(plPlural(r.launch_businesses,'business','businesses')+' announced it'+(PL_INTERNAL?' · '+plPlural(r.launch_posts,'post','posts'):''))+'" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
+          ' <span class="n">'+plFmt(plPct(r.launch_posts,lbase))+'</span></button>';
       }).join('')+'</div>':'<div class="pl-hint">None this month.</div>')+'</section>';
-    if(PL_SIDE==='devices'){
+    if(dev){
       var em=rows.filter(function(r){ return (r.known_national||0)<=10; })
         .sort(function(a,b){ return (a.known_national||0)-(b.known_national||0) || b.posts-a.posts; });
-      lower+='<section class="pl-card"><h3>Early signals</h3><p class="pl-hint">Devices clinics posted about that had few or no known owners before.</p>'+
+      lower+='<section class="pl-card"><div class="pl-h"><h3>What’s appearing</h3>'+
+        plInfo('plTipE','Devices clinics posted about that had few or no known owners in the country before. These are small, early signals rather than trends.')+'</div>'+
+        '<p class="pl-hint">Emerging signals</p>'+
         (em.length?'<div class="pl-chips">'+em.map(function(r){
-          return '<button type="button" class="pl-chip" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
-            ' <span class="n">'+(r.known_national?plPlural(r.businesses,'business','businesses')+' · '+plPlural(r.known_national,'known owner','known owners'):'New signal · '+plPlural(r.businesses,'business','businesses')+' · previously undetected')+'</span></button>';
+          var t=plPlural(r.businesses,'business','businesses')+(PL_INTERNAL?' · '+plPlural(r.posts,'post','posts'):'')+' · '+(r.known_national?plPlural(r.known_national,'known owner','known owners'):'previously undetected');
+          return '<button type="button" class="pl-chip" title="'+esc(t)+'" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
+            ' <span class="n">'+(r.known_national?plFmt(plPct(r.posts,base)):'New signal')+'</span></button>';
         }).join('')+'</div>':'<div class="pl-hint">Nothing new this month.</div>')+'</section>';
     } else {
       var t=(PL&&PL.toxin)||{};
-      var brands=rows.filter(function(r){ return r.category==='Neurotoxins'; });
-      var bmax=brands.length?brands[0].posts:1;
-      lower+='<section class="pl-card pl-tox"><h3>Toxin: which brand?</h3><p class="pl-hint">Posts naming each brand.</p>'+
-        '<div><span style="color:var(--ink-2)">Only</span> <span class="big">'+(t.brand_pct!=null?Math.round(t.brand_pct)+'%':'—')+'</span> <span style="color:var(--ink-2)">of businesses discussing toxin named a brand.</span></div>'+
-        '<div style="font-size:14px;color:var(--ink-2);margin-top:8px">'+num(t.generic_businesses||0)+' businesses used "Botox" or toxin wording without naming the product.</div>'+
-        brands.map(function(r){ return '<div class="pl-brand"><span>'+esc(r.product)+'</span><span class="t"><span style="width:'+(100*r.posts/bmax).toFixed(1)+'%"></span></span><span class="c">'+num(r.posts)+'</span></div>'; }).join('')+
-        '<div style="font-size:12px;color:var(--muted);margin-top:8px">"Botox" alone counts as generic, so Botox Cosmetic shows only full-name mentions.</div></section>';
+      var brands=rows.filter(function(r){ return r.category==='Neurotoxins'; })
+        .sort(function(a,b){ return b.businesses-a.businesses; });
+      var tb=plTot('toxin_brand_base'), bmax=brands.length?plPct(brands[0].businesses,tb):1;
+      lower+='<section class="pl-card pl-tox"><div class="pl-h"><h3>Toxin: which brand?</h3>'+
+        plInfo('plTipT','Brand shares are among businesses that named a toxin brand. A bare “Botox” is treated as generic wording, so Botox Cosmetic counts only when the full brand is named.'+(PL_INTERNAL?' <span class="pl-int">Internal: '+num(t.generic_businesses||0)+' businesses used toxin wording without a brand</span>':''))+'</div>'+
+        '<div style="margin-top:6px"><span style="color:var(--ink-2)">Only</span> <span class="big">'+(t.brand_pct!=null?Math.round(t.brand_pct)+'%':'—')+'</span> <span style="color:var(--ink-2)">of businesses discussing toxin named a brand.</span></div>'+
+        '<div style="font-size:14px;color:var(--ink-2);margin:6px 0 4px">Most use “Botox” generically without naming the product. Among those that do name one:</div>'+
+        brands.map(function(r){ var v=plPct(r.businesses,tb);
+          return '<div class="pl-brand"'+(PL_INTERNAL?' title="'+esc(plPlural(r.businesses,'business','businesses')+' · '+plPlural(r.posts,'post','posts'))+'"':'')+'><span>'+esc(r.product)+'</span><span class="t"><span style="width:'+(100*v/bmax).toFixed(1)+'%"></span></span><span class="c">'+plFmt(v)+'</span></div>'; }).join('')+
+        '</section>';
     }
     el('plBody').innerHTML=
-      '<div class="pl-grid"><section class="pl-card"><h3>Top trending</h3><p class="pl-hint">Ranked by posts. Businesses posting shows how widely.</p>'+list+more+'</section>'+
+      '<div class="pl-grid"><section class="pl-card"><div class="pl-h"><h3>What’s trending</h3>'+
+      plInfo('plTipTr','Each product’s share of all '+(dev?'device':'injectable product')+' mentions in clinics’ public posts this month. A post naming two products counts for both.'+(PL_INTERNAL?' <span class="pl-int">Internal: based on '+num(base)+' mentions. Hover a row for its counts.</span>':''))+'</div>'+
+      '<p class="pl-hint">'+(dev?'Device':'Injectable')+' conversation share</p>'+list+more+'</section>'+
       '<aside class="pl-card pl-det" id="plDet"></aside></div>'+
       '<div class="pl-lower">'+lower+'</div>';
     paintPulseDetail();
   }
   function paintPulseDetail(){
+    var dev=PL_SIDE==='devices';
     var r=plRows().filter(function(x){ return x.product===PL_SEL[PL_SIDE]; })[0];
     if(!r) return;
-    var facts=[['Locations represented',num(r.locations)],
-      ['Newly announced', r.launch_posts?plPlural(r.launch_posts,'post','posts')+' · '+plPlural(r.launch_businesses,'business','businesses'):'None this month']];
-    if(r.known_owners) facts.push(['Known owners',num(r.known_owners)]);
-    facts.push(['Discovered from social',num(r.found_only)]);
-    var say=(r.pct_owners_promoted!=null&&r.known_owners)
-      ? '<div class="pl-say" title="Known owners whose Facebook or Instagram we read this month"><b>'+Math.round(r.pct_owners_promoted)+'%</b> of monitored '+esc(r.product)+' owners promoted it this month.</div>':'';
+    var base=plTot(dev?'devices_share_base':'injectables_share_base');
+    var lbase=plTot(dev?'devices_launch_base':'injectables_launch_base');
+    // ⭐ CUSTOMER VIEW IS RESTRAINED (Andy + ChatGPT, 2026-09-26): share, businesses
+    // posting, share of new announcements, where the posts came from. Owner
+    // activation, locations, known owners and social discoveries stay internal.
+    var facts=[];
+    facts.push(['Share of new '+(dev?'device':'product')+' announcements', r.launch_posts?plFmt(plPct(r.launch_posts,lbase))+' <span class="pl-sub2">'+plPlural(r.launch_businesses,'business','businesses')+(PL_INTERNAL?' · '+plPlural(r.launch_posts,'post','posts'):'')+'</span>':'None this month']);
+    if(PL_INTERNAL){
+      facts.push(['Posts <span class="pl-int">internal</span>', num(r.posts)+' <span class="pl-sub2">Instagram '+num(r.ig_posts||0)+' · Facebook '+num(r.fb_posts||0)+'</span>']);
+      facts.push(['Locations represented <span class="pl-int">internal</span>',num(r.locations)]);
+      if(r.known_owners) facts.push(['Known owners <span class="pl-int">internal</span>',num(r.known_owners)]);
+      facts.push(['Discovered from social <span class="pl-int">internal</span>',num(r.found_only)]);
+      if(r.pct_owners_promoted!=null&&r.known_owners) facts.push(['Known owners who promoted it <span class="pl-int">internal</span>',Math.round(r.pct_owners_promoted)+'%']);
+    }
+    var say='';
     var places=(r.places||[]);
-    var pmax=places.length?places[0].posts:1;
+    var ptot=r.posts||1, pmax=places.length?places[0].posts:1;
     var where=places.length>1?'<div class="pl-where"><div class="pl-eyebrow" style="margin:16px 0 6px">Where the posts came from</div>'+
       places.map(function(g){
         var nm=(typeof provinceLabel==='function'&&!geo.province)?provinceLabel(g.place):g.place;
-        return '<div class="pl-brand"><span>'+esc(nm)+'</span><span class="t"><span style="width:'+(100*g.posts/pmax).toFixed(1)+'%"></span></span><span class="c">'+num(g.posts)+'</span></div>';
+        return '<div class="pl-brand"><span>'+esc(nm)+'</span><span class="t"><span style="width:'+(100*g.posts/pmax).toFixed(1)+'%"></span></span><span class="c">'+Math.round(100*g.posts/ptot)+'%</span></div>';
       }).join('')+'</div>':'';
     el('plDet').innerHTML='<div class="pl-eyebrow">'+esc(r.category||'')+'</div>'+
-      '<div class="pl-dname">'+esc(r.product)+((r.known_national||0)<=10&&r.side==='devices'?' <span class="pl-tag">Low sample</span>':'')+'</div>'+
-      '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+num(r.posts)+'</div><div class="l">Posts</div></div>'+
+      '<div class="pl-dname">'+esc(r.product)+(plLow(r)?' <span class="pl-tag">Early signal</span>':'')+'</div>'+
+      '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+plFmt(plPct(r.posts,base))+'</div><div class="l">of '+(dev?'device':'injectable')+' conversation</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
       facts.map(function(f){ return '<div class="pl-fact"><span>'+f[0]+'</span><span class="v">'+f[1]+'</span></div>'; }).join('')+
       say+where+'<p class="pl-later">Change since last month appears from November.</p>';
