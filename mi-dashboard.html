@@ -626,6 +626,26 @@
   }
 
   /* ⭐ PULSE (M25). What clinics promoted in their own posts, ranked by posts. */
+  .pl-how { background:none; border:1px solid var(--line); border-radius:100px; padding:4px 11px; font:inherit; font-size:12.5px; color:var(--accent-strong); cursor:pointer; }
+  .pl-how:hover, .pl-how:focus-visible { border-color:var(--accent); outline:none; }
+  .pl-modal { position:fixed; inset:0; background:rgba(20,24,29,.42); display:flex; align-items:flex-start; justify-content:center; padding:48px 16px; z-index:200; overflow-y:auto; }
+  .pl-modal[hidden] { display:none; }
+  .pl-modal-card { background:var(--surface); border-radius:var(--radius); max-width:640px; width:100%; padding:22px 24px; box-shadow:0 20px 50px rgba(0,0,0,.2); }
+  .pl-x { background:none; border:0; font-size:26px; line-height:1; color:var(--muted); cursor:pointer; padding:0 4px; }
+  .pl-dl { margin:14px 0 0; }
+  .pl-dl dt { font-weight:600; font-size:14.5px; margin-top:14px; }
+  .pl-dl dd { margin:4px 0 0; font-size:14px; color:var(--ink-2); line-height:1.55; }
+  .pl-see { margin-top:16px; width:100%; background:var(--accent); color:#fff; border:0; border-radius:var(--radius-sm); padding:11px 14px; font:inherit; font-size:14px; font-weight:600; cursor:pointer; }
+  .pl-see:hover { background:var(--accent-strong); }
+  .pl-clins { margin-top:12px; max-height:460px; overflow-y:auto; border-top:1px solid var(--line); }
+  .pl-cl { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; padding:10px 2px; border-bottom:1px solid var(--line); font-size:14px; }
+  .pl-cl .nm { font-weight:600; }
+  .pl-cl .ar { font-size:12.5px; color:var(--muted); }
+  .pl-cl .acts { display:flex; gap:10px; align-items:center; justify-content:flex-end; white-space:nowrap; font-size:12.5px; }
+  .pl-cl .acts a { color:var(--accent-strong); }
+  .pl-cl .sv { background:none; border:1px solid var(--line); border-radius:100px; padding:3px 9px; font:inherit; font-size:12px; cursor:pointer; color:var(--ink-2); }
+  .pl-cl .sv.on { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+  .pl-ann { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:#8A5A12; background:#F7EEDD; border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:middle; }
   .pl-h { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .pl-i { width:18px; height:18px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--muted); font-family:var(--font-mono); font-size:11px; line-height:1; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; }
   .pl-i:hover, .pl-i:focus-visible { border-color:var(--accent); color:var(--accent-strong); outline:none; }
@@ -875,7 +895,10 @@
           <div class="pl-sub pl-h" id="plSub"></div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-          <span class="pl-base" id="plBase">Baseline month · changes from November</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+            <button type="button" class="pl-how" onclick="plHow(true)">How Pulse works</button>
+            <span class="pl-base" id="plBase">Baseline month · changes from November</span>
+          </div>
           <div class="quick" id="plSide" style="margin-top:0;display:none">
             <button type="button" data-ps="devices" class="on">Devices</button>
             <button type="button" data-ps="injectables">Injectables</button>
@@ -883,6 +906,36 @@
         </div>
       </div>
       <div id="plBody"><div class="empty"><span class="spin"></span></div></div>
+      <div class="pl-modal" id="plHowBox" hidden onclick="if(event.target===this) plHow(false)">
+        <div class="pl-modal-card" role="dialog" aria-modal="true" aria-labelledby="plHowTitle">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <h3 id="plHowTitle" style="margin:0">How Pulse works</h3>
+            <button type="button" class="pl-x" aria-label="Close" onclick="plHow(false)">&times;</button>
+          </div>
+          <dl class="pl-dl">
+            <dt>What it covers</dt>
+            <dd>Public posts from the Facebook and Instagram accounts of aesthetic clinics in the SkinDay directory, for the country or territory you have selected. Each Pulse covers one month and is updated monthly.</dd>
+            <dt>What counts as a mention</dt>
+            <dd>A post counts when it names a product in its text. Posts that only list products in a string of hashtags, and posts that compare products, are left out, because they do not reliably show what a clinic offers. Generations of the same product are counted together, for example Thermage FLX and Thermage CPT as Thermage.</dd>
+            <dt>What’s trending</dt>
+            <dd>Each product’s share of all product mentions in the month. A post naming two products counts for both, so the shares within a section add up to 100%.</dd>
+            <dt>Businesses posting</dt>
+            <dd>The number of separate businesses that posted about the product. A group that runs one account for several locations counts once.</dd>
+            <dt>What’s launching</dt>
+            <dd>Each product’s share of posts announcing that a product is new at the clinic, such as “Introducing” or “Now available”. An announcement shows new promotion; it is not proof of a new purchase.</dd>
+            <dt>What’s appearing</dt>
+            <dd>Products clinics posted about that had few or no known owners in the country before. These are early, small signals rather than trends.</dd>
+            <dt>Where the posts came from</dt>
+            <dd>The province or area of the clinics that posted about the product.</dd>
+            <dt id="plHowToxT" hidden>Toxin brands</dt>
+            <dd id="plHowToxD" hidden>“Botox” on its own is treated as generic wording, since clinics use it for any neurotoxin. Botox Cosmetic counts only when the full brand is named.</dd>
+            <dt>Changes over time</dt>
+            <dd>September 2026 is the baseline month. Changes against the previous month appear from November.</dd>
+            <dt>Limits</dt>
+            <dd>Posting reflects what clinics promote, not how often a treatment is performed or sold. The data is not perfect and will keep getting better as coverage grows.</dd>
+          </dl>
+        </div>
+      </div>
     </section>
 
     <section class="panel" id="panel-feed">
@@ -2196,7 +2249,10 @@
       '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+plFmt(plPct(r.posts,base))+'</div><div class="l">of '+(dev?'device':'injectable')+' conversation</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
       facts.map(function(f){ return '<div class="pl-fact"><span>'+f[0]+'</span><span class="v">'+f[1]+'</span></div>'; }).join('')+
-      say+where+'<p class="pl-later">Change since last month appears from November.</p>';
+      say+where+
+      '<button type="button" class="pl-see" id="plSee" onclick="plClinics()">See the clinics that posted</button>'+
+      '<div id="plClinList"></div>'+
+      '<p class="pl-later">Change since last month appears from November.</p>';
   }
   window.plPick=function(name){
     PL_SEL[PL_SIDE]=name;
@@ -2205,6 +2261,37 @@
     });
     paintPulseDetail();
     if(window.innerWidth<900) el('plDet').scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  window.plHow=function(on){
+    el('plHowBox').hidden=!on;
+    el('plHowToxT').hidden=el('plHowToxD').hidden=!PULSE_INJECTABLES;
+  };
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'&&el('plHowBox')&&!el('plHowBox').hidden) plHow(false); });
+  window.plClinics=function(){
+    var name=PL_SEL[PL_SIDE], box=el('plClinList'), btn=el('plSee');
+    if(!box) return;
+    if(box.getAttribute('data-for')===name && box.innerHTML){ box.innerHTML=''; box.removeAttribute('data-for'); btn.textContent='See the clinics that posted'; return; }
+    box.setAttribute('data-for',name);
+    box.innerHTML='<div class="empty" style="padding:20px"><span class="spin"></span></div>';
+    api('pulse_clinics',{product:name}).then(function(res){
+      if(box.getAttribute('data-for')!==name) return;
+      var rows=res.clinics||[];
+      btn.textContent='Hide the clinic list';
+      if(!rows.length){ box.innerHTML='<div class="pl-hint" style="margin-top:10px">No clinics in this territory.</div>'; return; }
+      box.innerHTML='<div class="pl-hint" style="margin:10px 0 0">'+plPlural(rows.length,'clinic','clinics')+(rows.length>=300?' (first 300)':'')+'</div>'+
+        '<div class="pl-clins">'+rows.map(function(c){
+          var saved=!!savedIds[c.clinic_id];
+          return '<div class="pl-cl"><div><div class="nm">'+esc(c.name||'')+(c.announced?'<span class="pl-ann">Announced</span>':'')+'</div>'+
+            '<div class="ar">'+esc(c.area||'')+(c.last_posted?' · last post '+esc(plDay(c.last_posted))+'':'')+'</div></div>'+
+            '<div class="acts">'+(c.post_url?'<a href="'+esc(c.post_url)+'" target="_blank" rel="noopener">View post</a>':'')+
+            '<button type="button" class="sv'+(saved?' on':'')+'" data-cid="'+esc(c.clinic_id)+'" onclick="plSave(this)">'+(saved?'✓ Saved':'+ Save')+'</button></div></div>';
+        }).join('')+'</div>';
+    }).catch(function(e){ box.innerHTML='<div class="pl-hint" style="margin-top:10px">Could not load: '+esc((e&&(e.detail||e.error))||'error')+'</div>'; });
+  };
+  window.plSave=function(b){
+    var cid=b.getAttribute('data-cid');
+    if(savedIds[cid]){ api('remove_account',{clinic_id:cid}).then(function(){ delete savedIds[cid]; b.classList.remove('on'); b.textContent='+ Save'; updateListCount(); loaded.list=false; }).catch(handleErr); }
+    else { api('save_account',{clinic_id:cid}).then(function(){ savedIds[cid]=true; b.classList.add('on'); b.textContent='✓ Saved'; updateListCount(); loaded.list=false; }).catch(handleErr); }
   };
   window.plToggleAll=function(){ PL_ALL=!PL_ALL; paintPulse(); };
   Array.prototype.forEach.call(document.querySelectorAll('#plSide button'),function(b){
