@@ -50,6 +50,13 @@
   .top-in { max-width:1120px; margin:0 auto; padding:16px 28px; display:flex; align-items:center; gap:16px; }
   .top .brand { font-size:17px; font-weight:600; }
   .top .brand b { color:var(--accent-strong); }
+  /* Devices / Injectables. Shown only to a tenant that has both sides. */
+  .sidesw { display:inline-flex; gap:2px; padding:3px; border:1px solid var(--line); border-radius:100px; background:var(--surface-2); }
+  .sidesw[hidden] { display:none; }
+  .sidesw button { font:inherit; font-size:12.5px; font-weight:500; color:var(--muted); background:none; border:0; border-radius:100px; padding:5px 13px; cursor:pointer; }
+  .sidesw button:hover { color:var(--ink); }
+  .sidesw button.on { background:var(--surface); color:var(--accent-strong); font-weight:600; box-shadow:0 1px 2px rgba(20,26,33,.08); }
+  .sidesw button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .top .badge { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:4px 11px; }
   .top .spacer { flex:1; }
   .top button.out { background:none; border:0; color:var(--muted); font:inherit; font-size:13px; cursor:pointer; }
@@ -830,6 +837,10 @@
     <div class="top-in">
       <div class="brand">SkinDay <b>Market Intelligence</b></div>
       <span class="badge" id="mfrBadge"></span>
+      <div class="sidesw" id="sideSw" role="group" aria-label="Market" hidden>
+        <button type="button" data-side="energy" class="on">Devices</button>
+        <button type="button" data-side="injectables">Injectables</button>
+      </div>
       <div class="spacer"></div>
       <!-- Who you are, Settings and Sign out used to sit here as three separate
            controls. On a phone that crowded the top of the screen before the rep
@@ -1315,6 +1326,24 @@
   // Chosen country. Empty means "the tenant's own", which is what the server
   // uses when it is empty or not in the allow-list.
   var COUNTRY='';
+  // Chosen side: 'energy' (devices) or 'injectables'. Empty means the tenant's
+  // default. The server checks it against mi_tenants.segments.
+  var SIDE='';
+  function isInj(){ return SIDE==='injectables'; }
+  // ⭐ ONE PLACE FOR THE WORDS THAT CHANGE WITH THE SIDE.
+  var WORDS={
+    energy:{ competitor:'Competitor installed', ours:'Already using ours', greenfield:'No equipment found',
+             items:'machines', item:'device', itemsPl:'devices', search:'Search clinic, city or device',
+             anyMfr:'Runs any manufacturer', anyDev:'Runs any device', lsTech:'Technologies',
+             lsSearch:'Search device, manufacturer or technology', cov:' have equipment identified',
+             gfTitle:'Equipment opportunity', gfLine:'No devices identified yet', rsLine:'Equipment not yet checked' },
+    injectables:{ competitor:'Competitor brand', ours:'Using our brands', greenfield:'No brand found',
+             items:'brands', item:'brand', itemsPl:'brands', search:'Search clinic, city or brand',
+             anyMfr:'Uses any company', anyDev:'Uses any brand', lsTech:'Brands',
+             lsSearch:'Search brand, company or category', cov:' have a brand identified',
+             gfTitle:'Brand opportunity', gfLine:'No brand identified yet', rsLine:'Not yet checked' }
+  };
+  function W(){ return WORDS[isInj()?'injectables':'energy']; }
 
   // ⭐ COUNTRY VOCABULARY. The tenant carries a country; the page only carries
   // the WORDS for it. "province" stays the wire name everywhere (the RPCs
@@ -1355,7 +1384,7 @@
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
   function el(id){ return document.getElementById(id); }
   function api(action, extra){
-    var body=Object.assign({action:action,country:COUNTRY,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
+    var body=Object.assign({action:action,country:COUNTRY,side:SIDE,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
     return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY},body:JSON.stringify(body)})
       .then(function(r){ if(r.status===401) throw {unauth:true}; return r.json().then(function(j){ if(!r.ok) throw j; return j; }); });
   }
@@ -1430,9 +1459,41 @@
     sel.style.display=''; sep.style.display='';
   }
 
+  function renderSides(t){
+    var list=(t && Array.isArray(t.segments)) ? t.segments : ['energy'];
+    if(!SIDE || list.indexOf(SIDE)===-1) SIDE=(t && t.segment) || list[0] || 'energy';
+    el('sideSw').hidden = list.length<2;
+    Array.prototype.forEach.call(el('sideSw').querySelectorAll('button'),function(b){
+      b.classList.toggle('on', b.getAttribute('data-side')===SIDE);
+    });
+    applySideWords();
+  }
+  // Labels only. Values (ours, competitor, ...) are the same on both sides, so
+  // every filter, chip and query keeps working unchanged.
+  function applySideWords(){
+    var w=W();
+    var q=el('acctQuick');
+    if(q){
+      var map={competitor:w.competitor, ours:w.ours, greenfield:w.greenfield};
+      Array.prototype.forEach.call(q.querySelectorAll('button[data-seg]'),function(b){
+        var k=b.getAttribute('data-seg'); if(map[k]) b.textContent=map[k];
+      });
+    }
+    el('acctSearch').placeholder=w.search;
+    el('lsSearch').placeholder=w.lsSearch;
+    var lt=document.querySelector('#lsMode button[data-lm="tech"]'); if(lt) lt.textContent=w.lsTech;
+    // Movement on the injectables side would count this month's first social
+    // read as growth. Hidden until there is a second month to compare.
+    var mv=document.querySelector('#lsSort option[value="move"]');
+    if(mv){ mv.hidden=isInj(); mv.disabled=isInj(); }
+    if(isInj() && el('lsSort').value==='move'){ el('lsSort').value='size'; LS_SORT='size'; }
+    document.documentElement.setAttribute('data-side', isInj()?'injectables':'energy');
+  }
+
   function applyIdentity(t){
     ME=t;
     renderCountries(t);
+    renderSides(t);
     el('mfrBadge').textContent=t.display_name||'';
     el('whoami').textContent=[t.user_name,t.role].filter(Boolean).join(' \u00b7 ');
     if(t.accent_hex && /^#[0-9A-Fa-f]{6}$/.test(t.accent_hex)){
@@ -1909,6 +1970,25 @@
     }).catch(function(){ onGeoChange(); });
   });
 
+  // ⭐ SWITCHING SIDE. Territory stays; category, brand and search filters are
+  // cleared because their values belong to one side only.
+  el('sideSw').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-side]'); if(!b) return;
+    var v=b.getAttribute('data-side'); if(v===SIDE) return;
+    SIDE=v;
+    Array.prototype.forEach.call(el('sideSw').querySelectorAll('button'),function(x){
+      x.classList.toggle('on', x===b);
+    });
+    ['acctCategory','acctMfr','acctDist','acctDevice','acctExclude'].forEach(function(id){ if(el(id)) el(id).value=''; });
+    el('acctSearch').value=''; setSearch('');
+    LS_ROWS=null; LS_CO=[]; LS_OPEN={}; PL=null; PSIG=null; PSIG_KEY=null; LAST_ACCT_Q=null;
+    BOARD_OPEN=false; CAT_VIEW='compete';
+    PL_SIDE = isInj() ? 'injectables' : 'devices';
+    applySideWords(); advLabel();
+    api('categories',{}).then(function(res){ catCache=res.categories||[]; seedCategorySelects(); }).catch(function(){});
+    onGeoChange();
+  });
+
   el('geoReset').addEventListener('click',function(){ geo={province:'',city:'',neighbourhood:''}; el('selProvince').value=''; el('selHood').style.display='none'; el('sepHood').style.display='none'; el('selCity').style.display='none'; el('sepCity').style.display='none'; this.style.display='none'; onGeoChange(); });
   function onGeoChange(){
     loaded.accounts=false; loaded.list=false; loaded.feed=false; loaded.landscape=false; loaded.pulse=false;
@@ -1999,12 +2079,22 @@
     // instead — and for a distributor the competitive line is about what they
     // carry, not who made it.
     var isDist = !!(ME && ME.owner_type === 'distributor');
-    var ownLine = mine
-      ? (isDist ? ' run equipment distributed by ' + mine : ' run ' + mine)
-      : ' run your equipment';
-    var otherLine = isDist
-      ? ' more run equipment you do not distribute.'
-      : ' more run other manufacturers only.';
+    var ownLine, otherLine;
+    if(isInj()){
+      ownLine = mine
+        ? (isDist ? ' offer brands distributed by ' + mine : ' offer ' + mine + ' brands')
+        : ' offer your brands';
+      otherLine = isDist
+        ? ' more offer brands you do not distribute.'
+        : ' more offer other companies\u2019 brands only.';
+    } else {
+      ownLine = mine
+        ? (isDist ? ' run equipment distributed by ' + mine : ' run ' + mine)
+        : ' run your equipment';
+      otherLine = isDist
+        ? ' more run equipment you do not distribute.'
+        : ' more run other manufacturers only.';
+    }
     // ⭐ FIXED 2026-08-06 (server-side): mi_coverage now takes p_city and
     // p_neighbourhood and applies the same scope predicate as mi_kpis, including
     // the device_reference.active requirement. So every number on this line is
@@ -2017,7 +2107,7 @@
         : '')+
       (cov.verified!=null
         ? '<div class="cov"><b>'+num(cov.verified)+'</b> of <b>'+(cov.clinics!=null?num(cov.clinics):'—')+'</b> clinics in '+
-          esc(where)+' have equipment identified'+
+          esc(where)+W().cov+
           (pending!=null?' &middot; <b>'+num(pending)+'</b> not yet researched':'')+
           (cov.last_updated?' &middot; updated '+esc(new Date(cov.last_updated).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})):'')+
           '</div>'
@@ -2047,7 +2137,7 @@
         return row;
       }).join('');
       return '<div class="cat"><div class="cat-head"><span class="name">'+esc(g.label)+'</span>'+
-        '<span class="grp">'+esc(g.group_label||'')+'</span><span class="count"><b>'+g.total+'</b> installs</span></div>'+devs+'</div>';
+        '<span class="grp">'+esc(g.group_label||'')+'</span><span class="count"><b>'+g.total+'</b> '+(isInj()?'clinics':'installs')+'</span></div>'+devs+'</div>';
     }).join('');
   }
   // ⭐⭐⭐ TOP THREE PLUS YOU, ALWAYS. The leaderboard used to request three rows
@@ -2119,6 +2209,7 @@
   // was edited inside the window are excluded too, because re-matching after an
   // alias change writes rows that are indistinguishable from a sale.
   function lsMoveChip(added, newCo){
+    if(isInj()) return '';
     var a=Number(added)||0; if(!a) return '';
     var n=Number(newCo);
     return '<span class="lsmv">+'+num(a)+
@@ -2150,8 +2241,8 @@
     loaded.pulse=true;
     el('plBody').innerHTML='<div class="empty"><span class="spin"></span></div>';
     api('pulse',{}).then(function(res){
-      PL=res.pulse||{}; PULSE_INJECTABLES=!!res.injectables; PL_INTERNAL=!!res.injectables;
-      if(!PULSE_INJECTABLES) PL_SIDE='devices';
+      PL=res.pulse||{}; PULSE_INJECTABLES=!!res.injectables; PL_INTERNAL=!!res.internal;
+      PL_SIDE = (PULSE_INJECTABLES && isInj()) ? 'injectables' : 'devices';
       PL_ALL=false; paintPulse();
     }).catch(handleErr);
   }
@@ -2186,7 +2277,7 @@
   }
   function paintPulse(){
     var dev=PL_SIDE==='devices';
-    el('plSide').style.display=PULSE_INJECTABLES?'':'none';
+    el('plSide').style.display='none';
     el('plTitle').textContent='What clinics promoted in '+(plMonth(PL&&PL.until)||'the last month');
     var s=(PL&&PL.summary)||{};
     el('plSub').innerHTML=esc(plTerr())+' · '+esc(plSpan())+' · Facebook and Instagram '+
@@ -2517,7 +2608,7 @@
           '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
           '<span class="lsname">'+esc(g.label)+'</span>'+
           '<span class="lsp"></span>'+
-          '<span class="lscount">'+g.rows.length+' devices</span>'+
+          '<span class="lscount">'+g.rows.length+' '+W().itemsPl+'</span>'+
           lsMoveChip(catMv, null)+
         '</button>'+devs+
       '</div>';
@@ -2573,7 +2664,7 @@
             '<span class="lsname">'+esc(c.name)+'</span>'+
             (c.is_ours?'<span class="lsmine">Yours</span>':'')+
             '<span class="lsp"></span>'+
-            '<span class="lscount">'+nd+(nd===1?' device':' devices')+
+            '<span class="lscount">'+nd+' '+(nd===1?W().item:W().itemsPl)+
               ' \u00b7 '+nc+(nc===1?' category':' categories')+'</span>'+
             // ⭐ TWO NUMBERS, NOT ONE, and the gap between them is the story.
             // Cynosure placing 47 machines while entering only 17 new clinics is
@@ -2677,12 +2768,12 @@
       // ⚠️ THESE STRINGS ARE THE ONES ON SCREEN. fillNamed rewrites the whole
       // select, so the labels written in the markup are replaced the moment the
       // options load. Changing the markup alone does nothing.
-      fillNamed(el('acctMfr'),o.manufacturers||[],'Runs any manufacturer');
+      fillNamed(el('acctMfr'),o.manufacturers||[],W().anyMfr);
       fillNamed(el('acctDist'),o.distributors||[],'Any distributor');
       // Server-side now, so it covers the whole territory rather than only the
       // 200 accounts on screen, and it obeys the same energy-category rule as
       // the manufacturer list.
-      fillNamed(el('acctDevice'),o.devices||[],'Runs any device');
+      fillNamed(el('acctDevice'),o.devices||[],W().anyDev);
       // Same list, opposite meaning: "runs a competitor AND has none of theirs"
       // is the query that fills a sales day, and it takes two selectors to say.
       fillNamed(el('acctExclude'),o.manufacturers||[],'Missing nothing in particular');
@@ -2797,7 +2888,9 @@
       : '<div class="empty">Nothing in this view.</div>';
 
     box.innerHTML = tabs + grid +
-      '<div class="dnote">Share of identified installations within each category, across clinics with equipment identified. Each machine counts once, so slices total 100%. This is not the same measure as market position above, where a clinic running several manufacturers counts under each.</div>';
+      (isInj()
+        ? '<div class="dnote">Share of identified brand listings within each category. Each brand at a clinic counts once, so slices total 100%. This is not the same measure as market position above, where a clinic offering several companies\u2019 brands counts under each.</div>'
+        : '<div class="dnote">Share of identified installations within each category, across clinics with equipment identified. Each machine counts once, so slices total 100%. This is not the same measure as market position above, where a clinic running several manufacturers counts under each.</div>');
 
     Array.prototype.forEach.call(box.querySelectorAll('.catfilter button'),function(b){
       b.addEventListener('click',function(){ CAT_VIEW=b.getAttribute('data-cv'); paintCategoryShare(); });
@@ -2902,7 +2995,7 @@
           return '<span class="plate'+(d.is_ours?' ours':'')+(capped&&i>=PER_MFR?' plate-x':'')+'" role="button" tabindex="0"'+
                  ' data-ev="'+esc(JSON.stringify({
                      m:d.model||'', t:d.matched_text||'', u:d.source_url||'',
-                     s:d.status||'', d:d.last_seen||''
+                     s:d.status||'', d:d.last_seen||'', src:d.source||''
                    }))+'">'+esc(d.model)+'</span>';
         }).join('')+'</div>'+
       '</div>';
@@ -2920,7 +3013,7 @@
     var restHtml = rest.length ? '<div class="mfr-rest">'+rest.map(function(m){ return rowHtml(m,false); }).join('')+'</div>' : '';
     if(hidden){
       restHtml += '<button type="button" class="mfrmore">+ '+hidden+' more '+
-        (hidden===1?'device':'devices')+'</button>';
+        (hidden===1?W().item:W().itemsPl)+'</button>';
     }
     return '<div class="mfrs">'+head+restHtml+'</div><div class="evslot"></div>';
   }
@@ -2955,17 +3048,26 @@
   function evidenceHtml(v){
     var bits=[];
     if(v.d) bits.push('Last checked '+esc(String(v.d).slice(0,10)));
-    if(v.s) bits.push(esc(v.s==='listed'?'Listed on the clinic\u2019s own site':v.s));
+    var src=v.src||'website';
+    if(v.s && src==='website') bits.push(esc(v.s==='listed'?'Listed on the clinic\u2019s own site':v.s));
     if(v.u) bits.push('<a href="'+esc(v.u)+'" target="_blank" rel="noopener">View source</a>');
     // The matched string IS the evidence. When it differs from the model name it
     // is usually a treatment or a spelling variant, and that distinction is the
     // whole point of showing this at all.
-    var loose = v.t && v.m && v.t.toLowerCase().replace(/[^a-z0-9]/g,'')
+    var isPrice = /per unit$/.test(v.t||'');
+    var loose = src==='website' && !isPrice && v.t && v.m && v.t.toLowerCase().replace(/[^a-z0-9]/g,'')
                             !== v.m.toLowerCase().replace(/[^a-z0-9]/g,'');
+    var q = v.t ? '<span class="evq">\u201c'+esc(v.t)+'\u201d</span>' : '';
+    var lead;
+    if(src==='social')      lead = v.t ? 'Posted about on the clinic\u2019s own Facebook or Instagram: '+q+'.' : 'Posted about on the clinic\u2019s own Facebook or Instagram.';
+    else if(src==='manual') lead = isPrice ? 'Price confirmed by SkinDay: '+q+'.' : 'Confirmed by SkinDay.';
+    else if(src==='clinic') lead = isPrice ? 'Price provided by the clinic: '+q+'.' : 'Listed by the clinic on its SkinDay profile.';
+    else if(src==='manufacturer') lead = 'Listed by the manufacturer.';
+    else if(isPrice)        lead = 'Published price on the clinic\u2019s website: '+q+'.';
+    else lead = v.t ? 'Found '+q+' on the clinic\u2019s website.' : 'No matched text recorded for this entry.';
     return '<div class="ev">'+
       '<div class="evh">Evidence for '+esc(v.m)+'</div>'+
-      (v.t ? 'Found <span class="evq">\u201c'+esc(v.t)+'\u201d</span> on the clinic\u2019s website.'
-           : 'No matched text recorded for this entry.')+
+      lead+
       (loose ? '<div class="evwarn">This is not the model name itself. Worth confirming with the clinic which platform they run.</div>' : '')+
       (bits.length?'<div class="evm">'+bits.join('')+'</div>':'')+
     '</div>';
@@ -3273,7 +3375,7 @@
     loadSignals();
     // Switching to or from "Active on social" does not change what the server
     // returns, so repaint what is here instead of fetching it again.
-    var q=JSON.stringify(accountsQuery())+'|'+COUNTRY+'|'+geoKey();
+    var q=JSON.stringify(accountsQuery())+'|'+COUNTRY+'|'+SIDE+'|'+geoKey();
     if(q===LAST_ACCT_Q && ACCT_ALL && ACCT_ALL.length && !ACCT_GATED){ paintAccounts(); return; }
     LAST_ACCT_Q=q;
     ACCT_GATED=false;
@@ -3709,15 +3811,15 @@
     var inCat=function(d){ return !cat || !d.category || d.category===cat; };
     var title='', lines=[];
     if(seg==='competitor'){
-      title='Competitor installed';
+      title=W().competitor;
       var comp=listDevs(devs.filter(function(d){ return !d.is_ours && inCat(d); }),3);
       if(comp) lines.push(comp);
     } else if(seg==='ours'){
-      title='Already using ours';
+      title=W().ours;
       var mine=listDevs(devs.filter(function(d){ return d.is_ours; }),3);
       var who=(ME&&ME.display_name)?esc(ME.display_name):'yours';
       // A distributor does not make the machine, so the line names the relationship.
-      var lead=(ME&&ME.owner_type==='distributor') ? 'Distributed by '+who : 'Running '+who;
+      var lead=(ME&&ME.owner_type==='distributor') ? 'Distributed by '+who : (isInj()?'Using ':'Running ')+who;
       lines.push(mine ? lead+': '+mine : lead);
     } else if(seg==='new'){
       title='Newly listed';
@@ -3726,9 +3828,9 @@
         lines.push('First seen in our scan '+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}));
       }
     } else if(seg==='greenfield'){
-      title='Equipment opportunity'; lines.push('No devices identified yet');
+      title=W().gfTitle; lines.push(W().gfLine);
     } else if(seg==='research'){
-      title='Not researched'; lines.push('Equipment not yet checked');
+      title='Not researched'; lines.push(W().rsLine);
     }
     var dev=optText('acctDevice'), mfr=optText('acctMfr'), exc=optText('acctExclude'), dst=optText('acctDist');
     var bits=[];
@@ -3749,7 +3851,7 @@
   // session. Cards painted before it arrives are filled in afterwards.
   var PSIG=null, PSIG_KEY=null, PSIG_WAIT=null;
   function loadSignals(){
-    var key=COUNTRY;
+    var key=COUNTRY+'|'+SIDE;
     if(PSIG && PSIG_KEY===key) return Promise.resolve(PSIG);
     if(PSIG_WAIT && PSIG_KEY===key) return PSIG_WAIT;
     PSIG_KEY=key;
@@ -3826,7 +3928,7 @@
     var shot = '<div class="shot'+(usable?'':' none')+'">'+inner+pills+dist+'</div>';
 
     var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
-              (a.n_devices?a.n_devices+' machines':'')].filter(Boolean).join(' &middot; ');
+              (a.n_devices?a.n_devices+' '+W().items:'')].filter(Boolean).join(' &middot; ');
 
     return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
       shot+
