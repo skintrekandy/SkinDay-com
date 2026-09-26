@@ -145,10 +145,32 @@ exports.handler = async (event) => {
   // distributor names we already hold devices for, which is public information
   // and is exactly the vocabulary owner_name has to match.
   if (body.action === 'companies') {
-    // 'energy' by default so the signup page is unchanged; 'injectables' or
-    // 'all' only when a page asks for it.
+    // ⭐ side:'all' (the signup page) returns every company with the SIDES it
+    // has, so the page can ask Devices or Injectables only when a company has
+    // both (Allergan, Merz, Clarion). Anything else keeps the old devices list.
     const side = String(body.side || '').toLowerCase();
-    const seg = side === 'all' ? null : (side === 'injectables' ? 'injectables' : 'energy');
+    if (side === 'all') {
+      const [en, inj] = await Promise.all([
+        supabase.rpc('mi_companies', { p_mi_segment: 'energy' }),
+        supabase.rpc('mi_companies', { p_mi_segment: 'injectables' })
+      ]);
+      if (en.error) return json(500, { error: 'query failed', detail: en.error.message });
+      if (inj.error) return json(500, { error: 'query failed', detail: inj.error.message });
+      const byKey = {};
+      const add = (rows, s) => (rows || []).forEach(r => {
+        // "Direct (manufacturer)" means no distributor; it is not a company.
+        if (!r.name || r.name === 'Direct (manufacturer)') return;
+        const k = r.kind + '|' + r.name;
+        if (!byKey[k]) byKey[k] = { name: r.name, kind: r.kind, devices: 0, sides: [] };
+        byKey[k].devices += Number(r.devices) || 0;
+        if (!byKey[k].sides.includes(s)) byKey[k].sides.push(s);
+      });
+      add(en.data, 'energy'); add(inj.data, 'injectables');
+      const list = Object.values(byKey).sort((a, b) =>
+        a.name.localeCompare(b.name) || a.kind.localeCompare(b.kind));
+      return json(200, { companies: list });
+    }
+    const seg = side === 'injectables' ? 'injectables' : 'energy';
     const { data, error } = await supabase.rpc('mi_companies', { p_mi_segment: seg });
     if (error) return json(500, { error: 'query failed', detail: error.message });
     return json(200, { companies: data || [] });

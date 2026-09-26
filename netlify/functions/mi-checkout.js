@@ -64,12 +64,16 @@ exports.handler = async (event) => {
   const kind    = String(body.company_type || 'manufacturer').toLowerCase();
   const country = String(body.country || '').trim().toLowerCase();
   const person  = String(body.name || '').trim();
+  // Devices ('energy') or injectables. One side per subscription; a company
+  // that wants both is a custom plan.
+  const side    = String(body.side || 'energy').toLowerCase();
 
   if (!PLANS[plan])                          return json(400, { error: 'choose a plan' });
   if (!email || email.indexOf('@') === -1)    return json(400, { error: 'a valid email is required' });
   if (!company)                               return json(400, { error: 'choose your company' });
   if (['canada', 'usa'].indexOf(country) === -1) return json(400, { error: 'choose a country' });
   if (['manufacturer', 'distributor'].indexOf(kind) === -1) return json(400, { error: 'bad company type' });
+  if (['energy', 'injectables'].indexOf(side) === -1) return json(400, { error: 'choose devices or injectables' });
 
   const priceId = process.env[PLANS[plan][period]];
   if (!priceId) return json(500, { error: 'that plan is not available yet' });
@@ -92,7 +96,7 @@ exports.handler = async (event) => {
         metadata: {
           mi_company: company, mi_company_type: kind, mi_country: country,
           mi_plan: plan, mi_seats: String(PLANS[plan].seats),
-          mi_email: email, mi_name: person
+          mi_email: email, mi_name: person, mi_segment: side
         }
       },
       // Duplicated onto the session because the two objects arrive in different
@@ -100,7 +104,7 @@ exports.handler = async (event) => {
       metadata: {
         mi_company: company, mi_company_type: kind, mi_country: country,
         mi_plan: plan, mi_seats: String(PLANS[plan].seats),
-        mi_email: email, mi_name: person
+        mi_email: email, mi_name: person, mi_segment: side
       },
       success_url: site + '/mi-welcome?session_id={CHECKOUT_SESSION_ID}',
       cancel_url: site + '/mi-signup'
