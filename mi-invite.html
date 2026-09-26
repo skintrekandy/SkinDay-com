@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>Set your password &middot; SkinDay Market Intelligence</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --cream:#FAF7F2; --deep:#1C1714; --rose:#C8725A; --rose-s:#B35F48;
-    --muted:#8A7B72; --faint:#B5A89F; --line:#EAE2D8; --red:#B94040; --green:#3D7A55;
-    --font:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
-    --serif:'Cormorant Garamond',Georgia,serif;
+    --cream:#FBFCFD; --warm:#F4F7F9; --deep:#14181D; --rose:#147D74; --rose-s:#0F5F58;
+    --rose-bg:#EAF4F2; --gold:#147D74; --muted:#697079; --faint:#9AA1AA; --line:#E7EBEF;
+    --red:#C0473A; --green:#147D74;
+    --font:'Hanken Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Hanken Grotesk',system-ui,sans-serif;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--cream);color:var(--deep);font-family:var(--font);
@@ -37,11 +38,18 @@
   .fine{font-size:13px;color:var(--muted);margin-top:18px}
   a{color:var(--rose-s)}
   @media(max-width:640px){h1{font-size:30px}.wrap{padding:44px 18px 70px}}
+  /* Matches mi-dashboard.html and /mi. */
+  .brand{font-family:var(--font)!important;font-size:18px!important;font-weight:600;color:var(--deep);text-decoration:none;letter-spacing:0!important}
+  .brand b{font-size:inherit!important;margin-left:0!important;color:var(--rose-s);letter-spacing:0!important}
+  h1{letter-spacing:-.02em;font-weight:600}
+  .top-links{float:right;font-size:14px;margin-top:3px}
+  .top-links a{color:var(--muted);text-decoration:none;margin-left:16px}
+  .top-links a:hover{color:var(--deep)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">SkinDay <b>Market Intelligence</b></div>
+  <a class="brand" href="/mi">SkinDay <b>Market Intelligence</b></a>
 
   <div id="loading" class="who" style="margin-top:34px">Checking your invitation&hellip;</div>
 
@@ -63,7 +71,7 @@
     <p class="who">Invitations are valid for 14 days, and each one can only be used once.
        If you have already set a password, sign in as usual.</p>
     <div class="card">
-      <a href="/mi-dashboard.html">Go to sign in</a>
+      <a href="/mi-dashboard">Go to sign in</a>
       <p class="fine" style="margin-bottom:0">Need a new invitation? Email
         <a href="mailto:hello@skinday.ca?subject=Market%20Intelligence%20invitation">hello@skinday.ca</a>.</p>
     </div>
@@ -115,7 +123,7 @@
     api('accept_invite', { token: token, password: pw }).then(function(){
       msg.className = 'msg ok';
       msg.textContent = 'Done. Taking you to the dashboard\u2026';
-      setTimeout(function(){ location.href = '/mi-dashboard.html'; }, 900);
+      setTimeout(function(){ location.href = '/mi-dashboard'; }, 900);
     }).catch(function(e){
       el('go').disabled = false;
       msg.className = 'msg bad';
