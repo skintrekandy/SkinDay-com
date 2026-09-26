@@ -67,13 +67,23 @@
   <a class="brand" href="/mi">SkinDay <b>Market Intelligence</b></a>
 
   <h1>Find the right clinics before your next call.</h1>
-  <p class="lede">Search your territory, see the equipment each clinic publishes, and build a more focused prospecting list.</p>
+  <p class="lede">Search your territory, see the equipment and brands each clinic publishes, and build a more focused prospecting list.</p>
 
   <div class="card">
     <div class="field">
       <label for="company">Your company</label>
-      <div class="hint">We tailor the dashboard to your company, devices and competitors.</div>
+      <div class="hint">We tailor the dashboard to your company, products and competitors.</div>
       <select id="company"><option value="">Loading companies…</option></select>
+    </div>
+
+    <!-- Only for a company with both devices and injectables. Everyone else
+         goes straight to the side their products are on. -->
+    <div class="field" id="sideField" hidden>
+      <label>Which part of the business is this for?</label>
+      <div class="toggle" id="side" style="margin-bottom:0">
+        <button type="button" data-s="energy" class="on">Devices</button>
+        <button type="button" data-s="injectables">Injectables</button>
+      </div>
     </div>
 
     <div class="row">
@@ -124,14 +134,14 @@
   <div class="msg" id="msg"></div>
 
   <div class="ent">
-    <strong>Need more than 5 seats, access to both markets, or are you a pharmaceutical company?</strong>
+    <strong>Need more than 5 seats, both markets, or both devices and injectables?</strong>
     We can customize a plan for your team. <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20custom%20plan">Contact us</a>.
   </div>
 </div>
 
 <script>
   var el = function(id){ return document.getElementById(id); };
-  var plan = 'solo', period = 'month';
+  var plan = 'solo', period = 'month', side = 'energy';
 
   // The company list comes from device_reference, so it is exactly the set of
   // names the matcher already uses. Letting someone type a company freehand
@@ -139,14 +149,15 @@
   // nothing is theirs.
   fetch('/api/mi-dashboard', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'companies' })
+    body: JSON.stringify({ action: 'companies', side: 'all' })
   }).then(function(r){ return r.json(); }).then(function(d){
     var list = (d && d.companies) || [];
     var sel = el('company');
     if (!list.length) { sel.innerHTML = '<option value="">Could not load companies</option>'; return; }
     sel.innerHTML = '<option value="">Choose your company…</option>' +
       list.map(function(c){
-        return '<option value="' + esc(c.name) + '" data-kind="' + esc(c.kind) + '">' +
+        return '<option value="' + esc(c.name) + '" data-kind="' + esc(c.kind) +
+               '" data-sides="' + esc((c.sides || ['energy']).join(',')) + '">' +
                esc(c.name) + (c.kind === 'distributor' ? ' (distributor)' : '') + '</option>';
       }).join('');
   }).catch(function(){
@@ -155,6 +166,24 @@
 
   function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
     return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+
+  // A company on one side goes straight there; a company on both is asked.
+  function setSide(s){
+    side = s;
+    Array.prototype.forEach.call(document.querySelectorAll('#side button'), function(x){
+      x.classList.toggle('on', x.dataset.s === s);
+    });
+  }
+  el('company').addEventListener('change', function(){
+    var opt = this.options[this.selectedIndex];
+    var sides = ((opt && opt.dataset.sides) || 'energy').split(',');
+    var both = sides.indexOf('energy') !== -1 && sides.indexOf('injectables') !== -1;
+    el('sideField').hidden = !both;
+    setSide(both ? 'energy' : sides[0]);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('#side button'), function(b){
+    b.addEventListener('click', function(){ setSide(b.dataset.s); });
+  });
 
   Array.prototype.forEach.call(document.querySelectorAll('#plans .plan'), function(p){
     p.addEventListener('click', function(){
@@ -194,7 +223,7 @@
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         plan: plan, period: period, email: email, name: el('name').value.trim(),
-        company: company, company_type: kind, country: el('country').value
+        company: company, company_type: kind, country: el('country').value, side: side
       })
     }).then(function(r){ return r.json(); }).then(function(d){
       if (d && d.url) { window.location.href = d.url; return; }
