@@ -25,7 +25,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Bump whenever matching changes, so two runs are only compared like for like.
-const MATCHER_VERSION = '2026-09-24-social-v1';
+const MATCHER_VERSION = '2026-09-25-social-v2';   // v2: evidence types
 
 const ACTORS = {
   facebook: 'apify~facebook-posts-scraper',
@@ -179,6 +179,89 @@ function matchPost(text, matcher) {
   return { hits: [...hits].map(([device_id, surface]) => ({ device_id, surface })), comparison };
 }
 
+// ---------------------------------------------------------------------------
+// Evidence type (M25 step 38)
+//
+// Every mention gets a type and a confidence. Two types are WEAK and never put
+// a device on a clinic's profile by themselves: hashtag_only (the product only
+// appears inside a run of hashtags, "#botox #dysport #xeomin") and comparison.
+// Everything else is the clinic talking about a product on its own account.
+// Rules decide the obvious cases; posts with no cue at all stay "mention" and
+// can be refined by the AI pass (classify-ai), which only changes the type used
+// for analytics, never what is published.
+// ---------------------------------------------------------------------------
+
+const EVIDENCE_CONFIDENCE = {
+  announcement: 0.9, promotion: 0.8, before_after: 0.75, education: 0.6,
+  mention: 0.55, comparison: 0.3, hashtag_only: 0.2
+};
+const WEAK_EVIDENCE = new Set(['hashtag_only', 'comparison']);
+
+// Checked near the product (within ~160 characters either side).
+const ANNOUNCE_CUES = [
+  'now available', 'now offering', 'now offer', 'introducing', 'introduce', 'welcome our new', 'welcoming our new',
+  'new to our', 'newest', 'just arrived', 'has arrived', 'finally here', 'now here', 'now at ',
+  'excited to announce', 'excited to offer', 'excited to bring', 'excited to introduce', 'excited to share our new',
+  'proud to offer', 'proud to announce', 'proud to introduce', 'latest addition', 'new addition', 'new technology',
+  'new device', 'new machine', 'new treatment', 'launch', 'maintenant disponible', 'nouveau', 'nouvelle',
+  'nous sommes fiers', '新引進', '引進', '全新', '新到', '登場', '正式上線', '新儀器', '新設備'
+];
+const BEFORE_AFTER_CUES = [
+  'before and after', 'before & after', 'before/after', 'before + after', 'b&a', 'before after', 'results after',
+  'after 1 session', 'after one session', 'after 2 sessions', 'after two sessions', 'after 3 sessions',
+  'avant/après', 'avant et après', 'avant-après', '術前術後', '術前', '術後', '前後對比', '治療前後'
+];
+// Checked anywhere in the post.
+const PROMO_CUES = [
+  'book', 'booking', 'appointment', 'dm us', 'dm to', 'call us', 'call now', 'reserve', 'link in bio',
+  '% off', 'off ', 'sale', 'special', 'promo', 'offer', 'limited time', 'package', 'save ', 'deal', 'gift card',
+  'consultation', 'price', '$', 'réservez', 'rabais', 'promotion', '優惠', '預約', '限時', '特價', '活動價'
+];
+const EDU_CUES = [
+  'what is', "what's", 'how does', 'how it works', 'did you know', 'faq', 'myth', 'benefits of', 'good candidate',
+  'who is it for', 'what to expect', 'aftercare', 'downtime', 'qu\'est-ce', '什麼是', '你知道', '原理', '適合'
+];
+
+// Runs of two or more hashtags, with whatever emoji or punctuation sits between them.
+const HASHTAG_RUN = /(?:#[\p{L}\p{N}_]+(?:[\s\p{S}]|(?!#)\p{P})*){2,}/gu;
+
+function stripHashtagRuns(text) {
+  return String(text || '').replace(HASHTAG_RUN, ' ');
+}
+
+function anyCue(low, cues) {
+  return cues.some(c => low.indexOf(c) !== -1);
+}
+
+// text: the whole post; matched: the device ids found in the post WITHOUT its
+// hashtag runs (from matchPost on stripHashtagRuns(text)); surface: the name
+// that matched; comparison: the post-level flag.
+function classifyMention(text, deviceId, surface, comparison, matchedWithoutTags) {
+  if (!matchedWithoutTags.has(deviceId)) return 'hashtag_only';
+  if (comparison) return 'comparison';
+  const low = base(stripHashtagRuns(text));
+  const s = base(surface || '').trim();
+  let at = s ? low.indexOf(s) : -1;
+  if (at === -1 && s) at = low.indexOf(s.split(' ')[0]);
+  const near = at === -1 ? low : low.slice(Math.max(0, at - 160), at + s.length + 160);
+  if (anyCue(near, ANNOUNCE_CUES)) return 'announcement';
+  if (anyCue(near, BEFORE_AFTER_CUES)) return 'before_after';
+  if (anyCue(low, PROMO_CUES)) return 'promotion';
+  if (anyCue(low, EDU_CUES)) return 'education';
+  return 'mention';
+}
+
+// Classifies every hit in one post. matcher is the same one matchPost used.
+function classifyPost(text, hits, comparison, matcher) {
+  const withoutTags = new Set(matchPost(stripHashtagRuns(text), matcher).hits.map(h => h.device_id));
+  const out = new Map();
+  for (const h of hits) {
+    const type = classifyMention(text, h.device_id, h.surface, comparison, withoutTags);
+    out.set(h.device_id, { evidence_type: type, confidence: EVIDENCE_CONFIDENCE[type] });
+  }
+  return out;
+}
+
 // Postgres rejects a JSON body holding half an emoji (a lone UTF-16 surrogate)
 // or a NUL character: "invalid input syntax for type json". Captions can carry
 // either, and cutting text to length can split an emoji in two. Every string
@@ -312,19 +395,23 @@ async function stats(supabase, body) {
   const country = body.country || 'taiwan';
   await syncPages(supabase, country);
   const count = async (build) => { const { count, error } = await build(); if (error) throw new Error(error.message); return count || 0; };
-  const [fb, ig, fbNever, igNever, pending, approved] = await Promise.all([
+  // Due = not requested in the last 25 days (or never), i.e. still to read this month.
+  const dueBefore = new Date(Date.now() - 25 * 864e5).toISOString();
+  const [fb, ig, fbNever, igNever, pending, approved, fbDue, igDue] = await Promise.all([
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook')),
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram')),
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').is('last_requested_at', null)),
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').is('last_requested_at', null)),
     count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'pending')),
-    count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'approved'))
+    count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'approved')),
+    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore)),
+    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore))
   ]);
   const { data: runs, error } = await supabase.from('social_crawl_runs')
     .select('*').eq('country', country).order('id', { ascending: false }).limit(10);
   if (error) throw new Error(error.message);
   return {
-    pages: { facebook: fb, instagram: ig, facebook_never: fbNever, instagram_never: igNever },
+    pages: { facebook: fb, instagram: ig, facebook_never: fbNever, instagram_never: igNever, facebook_due: fbDue, instagram_due: igDue },
     mentions: { pending, approved },
     runs: runs || [],
     apify_token_set: !!process.env.APIFY_TOKEN
@@ -486,13 +573,18 @@ async function collect(supabase, body) {
     if (!p.text) continue;
     const m = matchPost(p.text, matcher);
     if (!m.hits.length) continue;
+    const ev = classifyPost(p.text, m.hits, m.comparison, matcher);
+    const nowIso = new Date().toISOString();
     for (const clinicId of (clinicsByPage.get(p.page_key) || [])) {
       for (const h of m.hits) {
+        const e = ev.get(h.device_id);
         mentions.push({
           post_id: p.id, clinic_id: clinicId, device_id: h.device_id, platform, country: run.country,
           post_url: p.post_url, posted_at: p.posted_at, matched_text: clean(h.surface),
           snippet: snippetFor(p.text, h.surface), flag: m.comparison ? 'comparison' : null,
-          status: 'pending'
+          evidence_type: e.evidence_type, confidence: e.confidence, classified_by: 'rules', classified_at: nowIso,
+          // Weak evidence (hashtag-only, comparison) is kept for listening but never publishes.
+          status: WEAK_EVIDENCE.has(e.evidence_type) ? 'weak' : 'pending'
         });
       }
     }
@@ -541,7 +633,7 @@ async function listMentions(supabase, body) {
   // Scoped to the country chosen in the tab, so one country's list never
   // shows another's mentions.
   let q = supabase.from('social_device_mentions')
-    .select('id, clinic_id, device_id, platform, post_url, posted_at, matched_text, snippet, flag, status')
+    .select('id, clinic_id, device_id, platform, post_url, posted_at, matched_text, snippet, flag, status, evidence_type, classified_by')
     .eq('country', body.country || 'taiwan')
     .order('device_id', { ascending: true }).order('posted_at', { ascending: false }).limit(limit);
   if (status !== 'all') q = q.eq('status', status);
@@ -656,6 +748,151 @@ async function approveAll(supabase, body) {
 }
 
 // ---------------------------------------------------------------------------
+// Evidence backfill (rules). Classifies mentions saved before step 38, from the
+// post text already stored, so nothing is paid for again. 800 per call; the tab
+// repeats it until done. A mention the current matcher no longer finds (an
+// exclusion added since, e.g. "pic à glace") becomes 'unmatched'. Mentions
+// still pending that turn out weak are moved to 'weak' so they never publish;
+// already-approved ones are left alone for the review list.
+// ---------------------------------------------------------------------------
+
+async function classifyRules(supabase, body) {
+  const country = body.country || 'taiwan';
+  const { data: rows, error } = await supabase.from('social_device_mentions')
+    .select('id, post_id, device_id, matched_text, status')
+    .eq('country', country).is('evidence_type', null)
+    .order('id', { ascending: true }).limit(800);
+  if (error) throw new Error(error.message);
+  if (!rows || !rows.length) return { done: true, classified: 0 };
+
+  const posts = await selectIn(supabase, 'social_posts', 'id, text', 'id', rows.map(r => r.post_id));
+  const textOf = new Map(posts.map(p => [p.id, p.text || '']));
+  const matcher = await loadMatcher(supabase);
+  const perPost = new Map();
+  const groups = new Map();        // type -> ids
+  const toWeak = [];
+  for (const r of rows) {
+    const text = textOf.get(r.post_id) || '';
+    let ev = perPost.get(r.post_id);
+    if (!ev) {
+      const m = matchPost(text, matcher);
+      ev = { hits: new Map(m.hits.map(h => [h.device_id, h])), cls: classifyPost(text, m.hits, m.comparison, matcher) };
+      perPost.set(r.post_id, ev);
+    }
+    const type = ev.cls.has(r.device_id) ? ev.cls.get(r.device_id).evidence_type : 'unmatched';
+    if (!groups.has(type)) groups.set(type, []);
+    groups.get(type).push(r.id);
+    if ((WEAK_EVIDENCE.has(type) || type === 'unmatched') && r.status === 'pending') toWeak.push(r.id);
+  }
+  const now = new Date().toISOString();
+  const byType = {};
+  for (const [type, ids] of groups) {
+    byType[type] = ids.length;
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error: uErr } = await supabase.from('social_device_mentions')
+        .update({ evidence_type: type, confidence: EVIDENCE_CONFIDENCE[type] || 0, classified_by: 'rules', classified_at: now })
+        .in('id', ids.slice(i, i + 200));
+      if (uErr) throw new Error(uErr.message);
+    }
+  }
+  for (let i = 0; i < toWeak.length; i += 200) {
+    await supabase.from('social_device_mentions').update({ status: 'weak' })
+      .in('id', toWeak.slice(i, i + 200)).eq('status', 'pending');
+  }
+  return { done: rows.length < 800, classified: rows.length, by_type: byType };
+}
+
+// ---------------------------------------------------------------------------
+// Evidence refinement (AI). Mentions the rules left as plain 'mention' (no cue
+// found) are read by a language model, 15 per call. It only refines the type
+// and confidence used for analytics; it never publishes or unpublishes.
+// Env: ANTHROPIC_API_KEY or OPENAI_API_KEY (either one). SOCIAL_AI_MODEL optional.
+// ---------------------------------------------------------------------------
+
+const AI_TYPES = ['announcement', 'promotion', 'before_after', 'education', 'mention', 'comparison'];
+
+async function askModel(prompt) {
+  if (process.env.ANTHROPIC_API_KEY) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({ model: process.env.SOCIAL_AI_MODEL || 'claude-haiku-4-5', max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }] })
+    });
+    const b = await res.json();
+    if (!res.ok) throw new Error('AI ' + res.status + ': ' + JSON.stringify(b).slice(0, 200));
+    return (b.content || []).map(c => c.text || '').join('');
+  }
+  if (process.env.OPENAI_API_KEY) {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'authorization': 'Bearer ' + process.env.OPENAI_API_KEY, 'content-type': 'application/json' },
+      body: JSON.stringify({ model: process.env.SOCIAL_AI_MODEL || 'gpt-4.1-mini',
+        response_format: { type: 'json_object' }, messages: [{ role: 'user', content: prompt }] })
+    });
+    const b = await res.json();
+    if (!res.ok) throw new Error('AI ' + res.status + ': ' + JSON.stringify(b).slice(0, 200));
+    return ((b.choices || [])[0] || {}).message ? b.choices[0].message.content : '';
+  }
+  return null;
+}
+
+async function classifyAI(supabase, body) {
+  if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+    return { error: 'No AI key in Netlify (ANTHROPIC_API_KEY or OPENAI_API_KEY). The rules classification is complete without it.' };
+  }
+  const country = body.country || 'taiwan';
+  const { data: rows, error } = await supabase.from('social_device_mentions')
+    .select('id, post_id, device_id')
+    .eq('country', country).eq('evidence_type', 'mention').eq('classified_by', 'rules')
+    .order('id', { ascending: true }).limit(15);
+  if (error) throw new Error(error.message);
+  if (!rows || !rows.length) return { done: true, classified: 0 };
+
+  const posts = await selectIn(supabase, 'social_posts', 'id, text', 'id', rows.map(r => r.post_id));
+  const devs = await selectIn(supabase, 'device_reference', 'id, model', 'id', rows.map(r => r.device_id));
+  const textOf = new Map(posts.map(p => [p.id, String(p.text || '').replace(/\s+/g, ' ').slice(0, 1200)]));
+  const nameOf = new Map(devs.map(d => [d.id, d.model]));
+  const items = rows.map(r => ({ id: r.id, product: nameOf.get(r.device_id), caption: textOf.get(r.post_id) }));
+
+  const prompt =
+    'Each item is a social media post from an aesthetic clinic\'s own account, and a product the post names.\n' +
+    'For each item, say how the post uses that product:\n' +
+    '- announcement: the clinic says it has newly added, launched or started offering the product\n' +
+    '- promotion: the clinic is selling or booking the treatment (offer, price, book now, availability)\n' +
+    '- before_after: the post shows or describes a result from the treatment at the clinic\n' +
+    '- education: the post explains the product or treatment in general terms\n' +
+    '- comparison: the post compares products or discusses one the clinic may not offer\n' +
+    '- mention: none of the above\n' +
+    'Give a confidence from 0 to 1 that the type is right.\n' +
+    'Reply with JSON only: {"items":[{"id":123,"type":"promotion","confidence":0.8}]}\n\n' +
+    JSON.stringify(items);
+
+  let parsed = [];
+  try {
+    const out = await askModel(prompt);
+    const j = JSON.parse(String(out).slice(String(out).indexOf('{'), String(out).lastIndexOf('}') + 1));
+    parsed = Array.isArray(j.items) ? j.items : [];
+  } catch (e) {
+    return { error: e.message };
+  }
+  const got = new Map(parsed.filter(x => x && AI_TYPES.includes(x.type)).map(x => [parseInt(x.id, 10), x]));
+  const now = new Date().toISOString();
+  const byType = {};
+  for (const r of rows) {
+    const x = got.get(r.id);
+    const upd = { classified_by: 'ai', classified_at: now };
+    if (x) {
+      upd.evidence_type = x.type;
+      upd.confidence = Math.max(0, Math.min(1, Number(x.confidence) || 0.5)).toFixed(2);
+      byType[x.type] = (byType[x.type] || 0) + 1;
+    }
+    await supabase.from('social_device_mentions').update(upd).eq('id', r.id);
+  }
+  return { done: rows.length < 15, classified: rows.length, by_type: byType };
+}
+
+// ---------------------------------------------------------------------------
 
 exports.handler = async event => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: cors(), body: '' };
@@ -679,6 +916,8 @@ exports.handler = async event => {
       case 'approve':        return json(200, await decide(supabase, body, true));
       case 'reject':         return json(200, await decide(supabase, body, false));
       case 'approve-all':    return json(200, await approveAll(supabase, body));
+      case 'classify':       return json(200, await classifyRules(supabase, body));
+      case 'classify-ai':    return json(200, await classifyAI(supabase, body));
       default:               return json(400, { error: 'unknown mode' });
     }
   } catch (e) {
@@ -700,4 +939,4 @@ function json(statusCode, obj) {
 }
 
 // Exported for the local check only; Netlify ignores these.
-module.exports._test = { buildMatcher, matchPost, facebookKey, instagramKey, snippetFor, readItem };
+module.exports._test = { buildMatcher, matchPost, facebookKey, instagramKey, snippetFor, readItem, classifyPost, stripHashtagRuns };
