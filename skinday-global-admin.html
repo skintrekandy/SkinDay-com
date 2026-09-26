@@ -1250,7 +1250,7 @@
     <div id="social-panel" style="display:none">
       <div class="add-clinic-form">
         <div class="form-title">Social media crawl</div>
-        <div class="form-subtitle">Reads recent posts from clinics&rsquo; own Facebook pages and Instagram accounts and finds the devices they mention. Every mention waits here for approval. Approving publishes the device with <strong>source = social</strong>, dated to the day the post went up, and writes an &ldquo;added&rdquo; entry to the change feed.</div>
+        <div class="form-subtitle">Reads clinics&rsquo; own Facebook and Instagram posts and adds the devices and injectables they name to each clinic&rsquo;s profile, dated to the post.</div>
 
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 .8rem;">
           <select class="form-input" id="sc-country" style="max-width:160px;" onchange="document.getElementById('sc-device').value=''; scLoadStats(); scLoadMentions();">
@@ -1264,31 +1264,35 @@
         </div>
         <div id="sc-token-warn" style="display:none;color:var(--rose);font-size:.84rem;margin-bottom:.8rem;">APIFY_TOKEN is not set in Netlify yet, so runs cannot start.</div>
 
-        <div class="form-section-label">1 &mdash; Start a run</div>
+        <div class="form-section-label">1 &mdash; Monthly read</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
-          <select class="form-input" id="sc-platform" style="max-width:150px;" onchange="scCost()">
-            <option value="facebook" selected>Facebook</option>
-            <option value="instagram">Instagram</option>
-          </select>
-          <label style="font-size:.82rem;color:var(--muted);">Pages</label>
-          <input class="form-input" id="sc-pages" type="number" min="1" max="1000" value="100" style="max-width:90px;" oninput="scCost()" />
-          <label style="font-size:.82rem;color:var(--muted);">Posts per page</label>
-          <input class="form-input" id="sc-per" type="number" min="1" max="50" value="20" style="max-width:80px;" oninput="scCost()" />
-          <label style="font-size:.82rem;color:var(--muted);">Posts from the last</label>
-          <select class="form-input" id="sc-newer" style="max-width:130px;">
-            <option value="1 month">1 month</option>
-            <option value="3 months" selected>3 months</option>
-            <option value="6 months">6 months</option>
-          </select>
-          <button class="btn-primary" id="sc-start" onclick="scStart()">Start</button>
+          <button class="btn-primary" id="sc-monthly" onclick="scMonthly()" style="width:auto;padding:.6rem 1.4rem;">Read every account for this country</button>
+          <span id="sc-monthly-note" style="font-size:.8rem;color:var(--muted);"></span>
         </div>
-        <div id="sc-cost" style="font-size:.8rem;color:var(--muted);margin:.45rem 0 1rem;"></div>
+        <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .6rem;">Last month&rsquo;s posts from every Facebook page and Instagram account on file, up to 30 per account. Run it once a month.</div>
+
+        <details style="margin:.2rem 0 1rem;">
+          <summary style="font-size:.8rem;color:var(--muted);cursor:pointer;">Small test run</summary>
+          <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.6rem;">
+            <select class="form-input" id="sc-platform" style="max-width:150px;" onchange="scCost()">
+              <option value="facebook" selected>Facebook</option>
+              <option value="instagram">Instagram</option>
+            </select>
+            <label style="font-size:.82rem;color:var(--muted);">Accounts</label>
+            <input class="form-input" id="sc-pages" type="number" min="1" max="1000" value="100" style="max-width:90px;" oninput="scCost()" />
+            <input type="hidden" id="sc-per" value="30" />
+            <input type="hidden" id="sc-newer" value="1 month" />
+            <button class="btn-ghost" id="sc-start" onclick="scStart()">Start test</button>
+          </div>
+          <div id="sc-cost" style="font-size:.8rem;color:var(--muted);margin-top:.45rem;"></div>
+        </details>
 
         <div class="form-section-label">2 &mdash; Runs</div>
+        <div style="margin-bottom:.6rem;"><button class="btn-ghost" onclick="scSweep()">Check all and collect finished runs</button></div>
         <div id="sc-runs"><div class="empty-state">Loading&hellip;</div></div>
         <div id="sc-run-msg" style="font-size:.82rem;color:var(--muted);margin:.4rem 0 1rem;"></div>
 
-        <div class="form-section-label">3 &mdash; Review mentions</div>
+        <div class="form-section-label">3 &mdash; Mentions</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
           <select class="form-input" id="sc-status" style="max-width:170px;" onchange="scLoadMentions()">
             <option value="pending" selected>Needs review</option>
@@ -4571,8 +4575,7 @@ function scCost() {
   const rate = plat === 'instagram' ? 1 : 2;   // US$ per 1,000 posts, Apify's listed price
   const max = pages * per;
   document.getElementById('sc-cost').textContent =
-    'At most ' + max.toLocaleString() + ' posts, about US$' + (max * rate / 1000).toFixed(2) +
-    ' at Apify’s listed ' + (plat === 'instagram' ? 'Instagram' : 'Facebook') + ' price. Pages never read go first, then the ones read longest ago.';
+    'Last month’s posts, at most ' + max.toLocaleString() + ' (about US$' + (max * rate / 1000).toFixed(2) + '). Accounts never read go first.';
 }
 
 async function scLoadStats() {
@@ -4580,6 +4583,8 @@ async function scLoadStats() {
   const runsBox = document.getElementById('sc-runs');
   if (!ok) { runsBox.innerHTML = '<div class="empty-state">Could not load: ' + esc(data.error || 'error') + '</div>'; return; }
   const p = data.pages || {}, m = data.mentions || {};
+  scPageCounts = p;
+  scMonthlyEstimate();
   document.getElementById('sc-summary').textContent =
     'Facebook pages ' + (p.facebook || 0) + ' (' + (p.facebook_never || 0) + ' never read) · Instagram ' +
     (p.instagram || 0) + ' (' + (p.instagram_never || 0) + ' never read) · ' + (m.pending || 0) + ' mentions to review · ' + (m.approved || 0) + ' approved';
@@ -4606,12 +4611,74 @@ async function scLoadStats() {
   }).join('');
 }
 
+
+// ─── MONTHLY READ ───────────────────────────────────────────────
+// One button for the whole country: every Facebook page and Instagram account,
+// last month's posts, up to 30 each. Apify takes at most 1,000 accounts per run,
+// so a platform with more is split into several runs; each run picks the
+// accounts read longest ago, so the runs never overlap.
+let scPageCounts = {};
+const SC_MONTH_CAP = 30, SC_CHUNK = 1000, SC_AVG = 6;   // SC_AVG: posts per account seen in the pilots
+function scMonthlyEstimate() {
+  const el = document.getElementById('sc-monthly-note');
+  if (!el) return;
+  const fb = scPageCounts.facebook || 0, ig = scPageCounts.instagram || 0;
+  const typical = (fb * 2 + ig * 1) * SC_AVG / 1000;
+  const most = (fb * 2 + ig * 1) * SC_MONTH_CAP / 1000;
+  el.textContent = fb.toLocaleString() + ' Facebook + ' + ig.toLocaleString() + ' Instagram accounts · usually about US$' +
+    Math.ceil(typical) + ', at most US$' + Math.ceil(most);
+}
+async function scMonthly() {
+  if (scBusy) return;
+  const fb = scPageCounts.facebook || 0, ig = scPageCounts.instagram || 0;
+  if (!fb && !ig) { alert('No accounts on file for this country yet.'); return; }
+  const country = document.getElementById('sc-country').selectedOptions[0].textContent;
+  if (!confirm('Read last month\'s posts from all ' + (fb + ig).toLocaleString() + ' ' + country +
+               ' accounts?\n\n' + document.getElementById('sc-monthly-note').textContent + '. Charged by Apify.')) return;
+  scBusy = true;
+  const btn = document.getElementById('sc-monthly'); btn.disabled = true;
+  const msg = document.getElementById('sc-run-msg');
+  const started = [];
+  for (const [plat, total] of [['facebook', fb], ['instagram', ig]]) {
+    for (let done = 0; done < total; done += SC_CHUNK) {
+      msg.textContent = 'Starting ' + plat + ' runs… ' + started.length + ' started';
+      const { ok, data } = await scCall({
+        mode: 'start', country: scCountry(), platform: plat,
+        pages: Math.min(SC_CHUNK, total - done), posts_per_page: SC_MONTH_CAP, newer_than: '1 month'
+      });
+      if (!ok || data.error) { msg.textContent = 'Stopped after ' + started.length + ' runs: ' + (data.error || 'error'); btn.disabled = false; scBusy = false; scLoadStats(); return; }
+      started.push('#' + data.run_id);
+    }
+  }
+  msg.textContent = 'Started ' + started.join(', ') + '. They take from a few minutes to an hour. Come back and press "Check all and collect finished runs".';
+  btn.disabled = false; scBusy = false;
+  scLoadStats();
+}
+// Checks every run that is not collected yet and collects the finished ones.
+async function scSweep() {
+  if (scBusy) return;
+  const { ok, data } = await scCall({ mode: 'stats', country: scCountry() });
+  if (!ok) return;
+  const open = (data.runs || []).filter(r => r.status !== 'collected' && r.status !== 'FAILED');
+  const msg = document.getElementById('sc-run-msg');
+  if (!open.length) { msg.textContent = 'Nothing waiting — every run is collected.'; return; }
+  let collected = 0, running = 0;
+  for (const r of open) {
+    msg.textContent = 'Checking #' + r.id + '…';
+    const res = await scCall({ mode: 'poll', run_id: r.id });
+    if (res.ok && res.data.finished) { await scCollect(r.id); collected++; }
+    else running++;
+  }
+  msg.textContent = collected + ' run(s) collected' + (running ? ', ' + running + ' still going — check again later.' : '.');
+  scLoadStats();
+}
+
 async function scStart() {
   if (scBusy) return;
   const pages = document.getElementById('sc-pages').value;
   const per = document.getElementById('sc-per').value;
   const plat = document.getElementById('sc-platform').value;
-  if (!confirm('Start a ' + plat + ' run on ' + pages + ' pages? This is charged by Apify.')) return;
+  if (!confirm('Start a test run on ' + pages + ' ' + plat + ' accounts? This is charged by Apify.')) return;
   scBusy = true;
   const btn = document.getElementById('sc-start'); btn.disabled = true;
   const msg = document.getElementById('sc-run-msg'); msg.textContent = 'Starting…';
