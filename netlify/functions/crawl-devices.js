@@ -1734,7 +1734,6 @@ async function doCrawl(supabase, body) {
   //   4. no census rows, since unmatched tokens near a device word are an
   //      equipment instrument and would only pollute that ranking.
   const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
-  const BIOSTIM_CATEGORY = 'biostimulator';
   const INJECTABLE_CATEGORIES = ['biostimulator', 'neurotoxin', 'filler', 'fat_dissolving'];
   const Q_STATUS = biostim ? 'biostim_status' : 'status';
   const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
@@ -1866,8 +1865,14 @@ async function doCrawl(supabase, body) {
   // Neurotoxins (M25, 2026-09-25) are injectables too, so the equipment pass
   // excludes every injectable category, not only biostimulators. Toxin brands
   // are collected from clinics' social posts, not from this crawl.
+  // ⭐ WIDENED 2026-09-26 (M26, Andy): the injectables pass now reads every
+  // injectable category — biostimulators, neurotoxins, fillers, fat dissolving —
+  // not biostimulators alone. Clinics rarely name the toxin or filler they use,
+  // but the ones that do are worth having alongside social and price evidence.
+  // The mode keeps its old name ('biostim') and its own queue columns, so the
+  // admin tab and requeue work unchanged.
   refQuery = biostim
-    ? refQuery.eq('category', BIOSTIM_CATEGORY)
+    ? refQuery.in('category', INJECTABLE_CATEGORIES)
     : refQuery.not('category', 'in', '(' + INJECTABLE_CATEGORIES.join(',') + ')');
   const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
