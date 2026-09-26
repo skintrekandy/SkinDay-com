@@ -137,6 +137,16 @@ exports.handler = async (event) => {
       if (error) throw error;
 
       const row = Array.isArray(data) ? data[0] : data;
+
+      // ⭐ THE SIDE THEY SIGNED UP FOR. mi_signup_tenant predates it, so it is
+      // written here. Absolute rather than incremental, so a Stripe retry is
+      // harmless. A signup without mi_segment (older checkout) stays on devices.
+      const side = md.mi_segment === 'injectables' ? 'injectables' : 'energy';
+      if (row && row.tenant_id) {
+        const { error: segErr } = await supabase.from('mi_tenants')
+          .update({ segments: [side] }).eq('id', row.tenant_id);
+        if (segErr) throw segErr;
+      }
       const to = md.mi_email || s.customer_email;
       let mailed = 'skipped';
       if (row && row.invite_token && to) {
