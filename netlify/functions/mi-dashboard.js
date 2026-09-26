@@ -578,6 +578,20 @@ exports.handler = async (event) => {
         return json(200, { clinics: data || [] });
       }
 
+      // ⭐ Pulse signals for the Clinics tab: which products each clinic posted
+      // about this Pulse month, and whether it announced them. Injectables only
+      // for the internal allow-list, decided here rather than in the page.
+      case 'pulse_signals': {
+        const allow = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
+          .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+        const internal = !!(me.email && allow.includes(String(me.email).toLowerCase()));
+        const { data, error } = await supabase.rpc('mi_pulse_signals', {
+          p_country: country, p_injectables: internal
+        });
+        if (error) throw error;
+        return json(200, { signals: data || {} });
+      }
+
       // the tenant's own installed base, their taxonomy
       case 'feed': {
         const days = Math.min(Math.max(parseInt(body.days, 10) || 30, 1), 365);
