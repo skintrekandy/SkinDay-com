@@ -32,6 +32,14 @@
 // Resolution order, so nobody is locked out mid-pilot:
 //   mi_users -> mi_tenants (treated as admin) -> MI_SECRET env var.
 //
+// ⭐⭐ TWO SIDES (M26, 2026-09-26). A tenant also carries `segments` on
+// mi_tenants: 'energy' (devices), 'injectables', or both. Every data RPC takes
+// p_mi_segment and defaults to 'energy'. The side a request reads is chosen from
+// the tenant's own list, exactly like country: a browser can pick between sides
+// the tenant has, never reach one it does not. Pulse injectables used to be
+// gated on an email allow-list; they now follow the tenant's sides. The email
+// list survives only for the INTERNAL counts (post totals, denominators).
+//
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MI_SECRET (fallback only)
 // ============================================================================
 const { createClient } = require('@supabase/supabase-js');
@@ -137,7 +145,11 @@ exports.handler = async (event) => {
   // distributor names we already hold devices for, which is public information
   // and is exactly the vocabulary owner_name has to match.
   if (body.action === 'companies') {
-    const { data, error } = await supabase.rpc('mi_companies');
+    // 'energy' by default so the signup page is unchanged; 'injectables' or
+    // 'all' only when a page asks for it.
+    const side = String(body.side || '').toLowerCase();
+    const seg = side === 'all' ? null : (side === 'injectables' ? 'injectables' : 'energy');
+    const { data, error } = await supabase.rpc('mi_companies', { p_mi_segment: seg });
     if (error) return json(500, { error: 'query failed', detail: error.message });
     return json(200, { companies: data || [] });
   }
@@ -256,10 +268,18 @@ exports.handler = async (event) => {
   // country. NULL/empty means single-country, so every existing tenant is
   // unaffected by this code existing.
   let allowedCountries = null;
+  // Sides this tenant may read. Absent means devices only, which is every
+  // tenant that existed before M26.
+  let allowedSides = ['energy'];
   if (me.tenant_id) {
     const { data: t } = await supabase.from('mi_tenants')
-      .select('plan, sub_status, trial_ends_at, seat_limit, countries')
+      .select('plan, sub_status, trial_ends_at, seat_limit, countries, segments')
       .eq('id', me.tenant_id).maybeSingle();
+    if (t && Array.isArray(t.segments) && t.segments.length) {
+      allowedSides = t.segments.map(x => String(x).toLowerCase())
+        .filter(x => x === 'energy' || x === 'injectables');
+      if (!allowedSides.length) allowedSides = ['energy'];
+    }
     // ⭐ THE COUNTRY ALLOW-LIST. Read here so it costs no extra query.
     if (t && Array.isArray(t.countries) && t.countries.length) {
       allowedCountries = t.countries.map(c => String(c).toLowerCase());
@@ -291,7 +311,10 @@ exports.handler = async (event) => {
     territories: me.territories || null,
     country: (me.country || 'canada').toLowerCase(),
     // The page renders a switcher only when this holds more than one.
-    countries: allowedCountries && allowedCountries.length > 1 ? allowedCountries : null
+    countries: allowedCountries && allowedCountries.length > 1 ? allowedCountries : null,
+    // Same shape for the Devices / Injectables switch.
+    segments: allowedSides,
+    segment: allowedSides[0]
   };
   const isAdmin = me.role === 'admin';
 
@@ -319,6 +342,15 @@ exports.handler = async (event) => {
     ? askedCountry
     : homeCountry;
   const inCountry = { p_country: country, p_regions: regions };
+  // ⭐ THE SIDE, validated the same way as the country.
+  const askedSide = String(body.side || '').trim().toLowerCase();
+  const side = allowedSides.includes(askedSide) ? askedSide : allowedSides[0];
+  const seg = { p_mi_segment: side };
+  const hasInjectables = allowedSides.includes('injectables');
+  // Internal counts (post totals, denominators) stay behind the email list.
+  const internalEmails = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
+    .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+  const isInternal = !!(me.email && internalEmails.includes(String(me.email).toLowerCase()));
   const city = nz(body.city);
   const neighbourhood = nz(body.neighbourhood);
   const category = nz(body.category);
@@ -345,7 +377,7 @@ exports.handler = async (event) => {
       // subtracts mi_kpis.with_ours from coverage.verified, so a metro
       // selection produced a state figure minus a metro figure.
       case 'coverage': {
-        const { data, error } = await supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood });
+        const { data, error } = await supabase.rpc('mi_coverage', Object.assign({ p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood }, seg));
         if (error) throw error;
         return json(200, { coverage: data });
       }
@@ -353,7 +385,7 @@ exports.handler = async (event) => {
       case 'kpis': {
         const { data, error } = await supabase.rpc('mi_kpis', Object.assign({ p_country: country, p_regions: regions, 
           p_province: province, p_city: city, p_neighbourhood: neighbourhood
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { kpis: data });
       }
@@ -361,7 +393,7 @@ exports.handler = async (event) => {
       case 'categories': {
         const { data, error } = await supabase.rpc('mi_categories', Object.assign({ p_country: country, p_regions: regions, 
           p_province: province, p_city: city, p_neighbourhood: neighbourhood
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { categories: data || [] });
       }
@@ -372,7 +404,7 @@ exports.handler = async (event) => {
         const limit = Math.min(Math.max(parseInt(body.limit, 10) || 3, 1), 20);
         const { data, error } = await supabase.rpc('mi_leaderboard', Object.assign({ p_country: country, p_regions: regions, 
           p_province: province, p_neighbourhood: neighbourhood, p_limit: limit
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { leaderboard: data || [] });
       }
@@ -385,7 +417,7 @@ exports.handler = async (event) => {
         const { data, error } = await supabase.rpc('mi_landscape', Object.assign({
           p_country: country, p_regions: regions,
           p_province: province, p_neighbourhood: neighbourhood
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         // ⭐⭐ COMPANIES COME FROM THEIR OWN RPC, NOT FROM SUMMING THE DEVICE
         // ROWS. Summing gave a clinic running two Candela machines a count of
@@ -395,7 +427,7 @@ exports.handler = async (event) => {
         const co = await supabase.rpc('mi_landscape_companies', Object.assign({
           p_country: country, p_regions: regions,
           p_province: province, p_neighbourhood: neighbourhood
-        }, owner));
+        }, owner, seg));
         if (co.error) throw co.error;
         return json(200, { landscape: data || [], companies: co.data || [] });
       }
@@ -411,7 +443,7 @@ exports.handler = async (event) => {
         const top = Math.min(Math.max(parseInt(body.top, 10) || 4, 2), 8);
         const { data, error } = await supabase.rpc('mi_category_share', Object.assign({ p_country: country, p_regions: regions, 
           p_province: province, p_neighbourhood: neighbourhood, p_top: top
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { category_share: data || [] });
       }
@@ -429,7 +461,8 @@ exports.handler = async (event) => {
           // Narrow the DEVICE list only. The manufacturer and distributor lists
           // stay category-wide so the rep can always change their mind.
           p_manufacturer: nz(body.filter_manufacturer),
-          p_distributor: nz(body.filter_distributor)
+          p_distributor: nz(body.filter_distributor),
+          p_mi_segment: side
         });
         if (error) throw error;
         return json(200, { options: data || { manufacturers: [], distributors: [], devices: [] } });
@@ -466,7 +499,7 @@ exports.handler = async (event) => {
           // distance from the prime meridian rather than an error.
           p_near_lat: (body.near_lat != null && body.near_lng != null) ? Number(body.near_lat) : null,
           p_near_lng: (body.near_lat != null && body.near_lng != null) ? Number(body.near_lng) : null
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { accounts: data || [] });
       }
@@ -478,7 +511,7 @@ exports.handler = async (event) => {
         const { data, error } = await supabase.rpc('mi_segment_counts', Object.assign({
           p_country: country, p_regions: regions, p_province: province,
           p_city: city, p_neighbourhood: neighbourhood, p_category: category
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { counts: data || {} });
       }
@@ -502,10 +535,10 @@ exports.handler = async (event) => {
         const [k, c, g, l, cov, cs] = await Promise.all([
           supabase.rpc('mi_kpis', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_city: city, p_neighbourhood: neighbourhood
-          }, owner)),
+          }, owner, seg)),
           supabase.rpc('mi_categories', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_city: city, p_neighbourhood: neighbourhood
-          }, owner)),
+          }, owner, seg)),
           supabase.rpc('mi_geo', { p_country: country, p_regions: regions,  p_province: province, p_city: city }),
           // ⭐ 25, not 3. The page shows the top three by default but must ALWAYS
           // be able to show the tenant's own row — a rep for the #7 manufacturer
@@ -513,11 +546,11 @@ exports.handler = async (event) => {
           // possible first impression. Composed client-side.
           supabase.rpc('mi_leaderboard', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_neighbourhood: neighbourhood, p_limit: 25
-          }, owner)),
-          supabase.rpc('mi_coverage', { p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood }),
+          }, owner, seg)),
+          supabase.rpc('mi_coverage', Object.assign({ p_country: country, p_regions: regions,  p_province: province, p_city: city, p_neighbourhood: neighbourhood }, seg)),
           supabase.rpc('mi_category_share', Object.assign({ p_country: country, p_regions: regions, 
             p_province: province, p_neighbourhood: neighbourhood, p_top: 4
-          }, owner))
+          }, owner, seg))
         ]);
         if (k.error) throw k.error;
         if (c.error) throw c.error;
@@ -544,28 +577,21 @@ exports.handler = async (event) => {
           p_province: province, p_city: city, p_neighbourhood: neighbourhood
         });
         if (error) throw error;
-        // ⭐ INJECTABLES ARE INTERNAL ONLY for now: MI is sold to device
-        // companies. Listed emails see both sides; everyone else gets the
-        // injectable rows stripped here, on the server, not hidden in the page.
-        const allow = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
-          .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-        const injectables = !!(me.email && allow.includes(String(me.email).toLowerCase()));
+        // ⭐ Injectable rows go only to tenants that have the injectables side,
+        // stripped here on the server rather than hidden in the page.
         const pulse = data || {};
-        if (!injectables) {
+        if (!hasInjectables) {
           pulse.products = (pulse.products || []).filter(p => p.side !== 'injectables');
           delete pulse.toxin;
         }
-        return json(200, { pulse: pulse, injectables: injectables });
+        return json(200, { pulse: pulse, injectables: hasInjectables, internal: isInternal });
       }
 
       // ⭐ The clinics behind one Pulse product, for reps to act on.
       case 'pulse_clinics': {
         const family = nz(body.product);
         if (!family) return json(400, { error: 'product required' });
-        const allow = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
-          .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-        const internal = !!(me.email && allow.includes(String(me.email).toLowerCase()));
-        if (!internal) {
+        if (!hasInjectables) {
           const { data: sd } = await supabase.from('pulse_mention').select('side')
             .eq('country', country).eq('family', family).limit(1);
           if (sd && sd[0] && sd[0].side === 'injectables') return json(403, { error: 'not available' });
@@ -582,11 +608,9 @@ exports.handler = async (event) => {
       // about this Pulse month, and whether it announced them. Injectables only
       // for the internal allow-list, decided here rather than in the page.
       case 'pulse_signals': {
-        const allow = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
-          .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
-        const internal = !!(me.email && allow.includes(String(me.email).toLowerCase()));
+        // Injectable posts only on the injectables side, for tenants that have it.
         const { data, error } = await supabase.rpc('mi_pulse_signals', {
-          p_country: country, p_injectables: internal
+          p_country: country, p_injectables: hasInjectables && side === 'injectables'
         });
         if (error) throw error;
         return json(200, { signals: data || {} });
@@ -689,7 +713,7 @@ exports.handler = async (event) => {
         const { data, error } = await supabase.rpc('mi_portfolio', Object.assign({ p_country: country, p_regions: regions,
           p_province: province, p_neighbourhood: neighbourhood,
           p_tenant_id: me.tenant_id || null
-        }, owner));
+        }, owner, seg));
         if (error) throw error;
         return json(200, { portfolio: data || [] });
       }
@@ -743,7 +767,7 @@ exports.handler = async (event) => {
           p_role: me.role,
           p_province: province,
           p_neighbourhood: neighbourhood
-        }, scope, owner));
+        }, scope, owner, seg));
         if (error) throw error;
         return json(200, { saved: data || [] });
       }
@@ -798,7 +822,7 @@ exports.handler = async (event) => {
       // ---- Focus devices (admin only) ----
       case 'list_focus': {
         if (!isAdmin) return json(403, { error: 'admin only' });
-        const { data, error } = await supabase.rpc('mi_list_focus', { p_tenant_id: me.tenant_id });
+        const { data, error } = await supabase.rpc('mi_list_focus', { p_tenant_id: me.tenant_id, p_mi_segment: side });
         if (error) throw error;
         return json(200, { focus: data || [] });
       }
