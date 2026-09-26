@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkinDay Market Intelligence</title>
+<meta name="description" content="SkinDay Market Intelligence helps device manufacturers, pharmaceutical companies and distributors find clinics, understand installed base and see what clinics are promoting. Available in Canada, California and New York.">
+<link rel="canonical" href="https://skinday.com/mi">
+<link rel="icon" href="/favicon.ico">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://skinday.com/mi">
+<meta property="og:title" content="SkinDay Market Intelligence">
+<meta property="og:description" content="Know the clinics. See the market. Know what's changing. Available in Canada, California and New York.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FBFCFD; --surface:#FFFFFF; --surface-2:#F4F7F9;
+    --ink:#14181D; --ink-2:#3A424C; --muted:#697079; --faint:#9AA1AA;
+    --line:#E7EBEF; --line-2:#F0F3F6;
+    --accent:#147D74; --accent-strong:#0F5F58; --accent-soft:#EAF4F2;
+    --comp:#C0473A;
+    --dark:#0F1A1A; --dark-2:#16302D;
+    --radius:14px; --radius-sm:9px;
+    --shadow:0 1px 2px rgba(20,26,33,.04), 0 18px 40px -26px rgba(20,26,33,.35);
+    --font-ui:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-ui); font-size:17px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  a { color:var(--accent-strong); text-decoration:none; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 28px; }
+  .mono { font-family:var(--font-mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; }
+
+  header { border-bottom:1px solid var(--line); background:var(--surface); }
+  header .wrap { display:flex; align-items:center; gap:16px; height:66px; }
+  .brand { font-size:17px; font-weight:600; color:var(--ink); }
+  .brand b { color:var(--accent-strong); font-weight:600; }
+  header .sp { flex:1; }
+  header .signin { font-size:14px; color:var(--muted); }
+  .btn { display:inline-block; font:inherit; font-size:15px; font-weight:600; padding:12px 22px; border-radius:var(--radius-sm); border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
+  .btn:hover { background:var(--accent-strong); border-color:var(--accent-strong); text-decoration:none; }
+  .btn.sm { padding:8px 15px; font-size:14px; }
+  .btn.ghost { background:transparent; color:var(--accent-strong); }
+  .btn.ghost:hover { background:var(--accent-soft); }
+
+  .hero { padding:96px 0 72px; }
+  .hero .kicker { color:var(--accent-strong); margin-bottom:22px; }
+  .hero h1 { font-size:clamp(36px,5.4vw,60px); line-height:1.06; letter-spacing:-.025em; font-weight:600; margin:0; max-width:19ch; }
+  .hero p.lead { font-size:clamp(18px,2vw,21px); color:var(--ink-2); max-width:36em; margin:26px 0 34px; }
+  .hero .ctas { display:flex; gap:12px; flex-wrap:wrap; }
+
+  .live { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:34px; }
+  .live .mono { color:var(--muted); margin-right:6px; }
+  .live .pl-c { font-size:14px; font-weight:500; padding:6px 13px; border-radius:100px; background:var(--accent-soft); color:var(--accent-strong); border:1px solid #CFE4E0; }
+  .live .pl-c::before { content:""; display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent); margin-right:7px; vertical-align:middle; position:relative; top:-1px; }
+  .facts { border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:var(--surface); }
+  .facts .wrap { display:grid; grid-template-columns:repeat(3,1fr); }
+  .fact { padding:28px 26px 28px 0; }
+  .fact + .fact { padding-left:26px; border-left:1px solid var(--line); }
+  .fact .n { font-size:30px; font-weight:600; letter-spacing:-.02em; line-height:1.1; }
+  .fact .l { color:var(--muted); font-size:14.5px; margin-top:6px; }
+
+  section.feat { padding:92px 0 0; }
+  .feat-row { display:grid; grid-template-columns:1fr 1.15fr; gap:56px; align-items:center; margin-bottom:96px; }
+  .feat-row.flip .txt { order:2; }
+  .feat-row .tag { color:var(--accent-strong); margin-bottom:12px; }
+  .feat-row h2 { font-size:clamp(26px,3vw,34px); line-height:1.15; letter-spacing:-.02em; font-weight:600; margin:0 0 14px; }
+  .feat-row p { color:var(--ink-2); margin:0 0 16px; }
+  .feat-row ul { margin:0; padding:0; list-style:none; }
+  .feat-row li { padding:9px 0; border-top:1px solid var(--line); color:var(--ink-2); font-size:15.5px; }
+
+  /* Product previews: drawn, not screenshots, and illustrative only. */
+  .shot { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px; }
+  .shot .bar { height:8px; border-radius:4px; background:var(--line); }
+  .qv { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .qv span { font-size:12.5px; padding:5px 11px; border:1px solid var(--line); border-radius:100px; color:var(--ink-2); }
+  .qv span.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .mc { border:1px solid var(--line); border-radius:var(--radius-sm); overflow:hidden; }
+  .mc .ph { height:52px; background:var(--surface-2); border-bottom:1px solid var(--line-2); }
+  .mc .bd { padding:12px; }
+  .mc .nm { height:10px; width:72%; border-radius:4px; background:#D9DEE3; margin-bottom:7px; }
+  .mc .mt { height:7px; width:48%; border-radius:4px; background:var(--line); }
+  .why { margin-top:10px; padding:7px 9px; border-radius:6px; background:var(--accent-soft); border-left:3px solid var(--accent); font-size:11.5px; line-height:1.4; color:var(--ink-2); }
+  .why b { display:block; font-family:var(--font-mono); font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--accent-strong); }
+  .sig { margin-top:7px; font-size:11px; color:var(--ink-2); }
+  .sig .s { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); border:1px solid var(--line); border-radius:100px; padding:1px 6px; margin-right:5px; }
+  .sig strong { color:var(--accent-strong); font-weight:600; }
+  .tg { display:flex; gap:5px; flex-wrap:wrap; margin-top:9px; }
+  .tg i { font-style:normal; font-size:10.5px; padding:2px 7px; border-radius:4px; background:var(--surface-2); color:var(--ink-2); }
+  .tg i.o { background:var(--accent-soft); color:var(--accent-strong); border:1px solid var(--accent); }
+
+  .ls { display:grid; grid-template-columns:132px 1fr; gap:22px; align-items:center; }
+  .donut { width:132px; height:132px; border-radius:50%; background:conic-gradient(var(--accent) 0 31%, #7FB7B0 31% 52%, #B9D6D1 52% 69%, #D6E2E0 69% 84%, #E9EEEE 84% 100%); position:relative; }
+  .donut::after { content:""; position:absolute; inset:26px; background:var(--surface); border-radius:50%; }
+  .donut span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:600; z-index:1; }
+  .rows .r { display:grid; grid-template-columns:96px 1fr 38px; gap:10px; align-items:center; font-size:12.5px; color:var(--ink-2); padding:5px 0; }
+  .rows .r .t { height:8px; border-radius:4px; background:var(--line-2); overflow:hidden; }
+  .rows .r .t div { height:100%; background:#9CC7C1; border-radius:4px; }
+  .rows .r.me .t div { background:var(--accent); }
+  .rows .r.me { font-weight:600; color:var(--ink); }
+  .rows .r .v { text-align:right; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+
+  .pl .h { display:flex; justify-content:space-between; font-family:var(--font-mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .pl .r { display:grid; grid-template-columns:22px 1fr 110px 44px; gap:10px; align-items:center; padding:9px 0; border-bottom:1px solid var(--line-2); font-size:13px; }
+  .pl .r .k { font-family:var(--font-mono); font-size:11px; color:var(--faint); }
+  .pl .r .c { color:var(--muted); font-size:11.5px; }
+  .pl .r .t { height:6px; border-radius:3px; background:var(--line-2); }
+  .pl .r .t div { height:100%; border-radius:3px; background:var(--accent); }
+  .pl .r .v { text-align:right; font-family:var(--font-mono); font-size:11.5px; }
+  .pl .new { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:1px 6px; margin-left:6px; }
+  .note { font-size:12px; color:var(--faint); margin-top:12px; }
+
+  .who { background:var(--dark); color:#E8EFEE; padding:88px 0; }
+  .who h2 { font-size:clamp(26px,3vw,34px); letter-spacing:-.02em; font-weight:600; margin:0 0 40px; color:#fff; max-width:22ch; line-height:1.15; }
+  .who .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#24403C; border:1px solid #24403C; border-radius:var(--radius); overflow:hidden; }
+  .who .c { background:var(--dark); padding:26px 22px; }
+  .who .c h3 { margin:0 0 8px; font-size:17px; font-weight:600; color:#fff; }
+  .who .c p { margin:0; font-size:14.5px; color:#A9BDBA; line-height:1.55; }
+
+  .data { padding:88px 0; }
+  .data .grid { display:grid; grid-template-columns:1fr 1fr; gap:56px; }
+  .data h2 { font-size:clamp(24px,2.6vw,30px); letter-spacing:-.02em; font-weight:600; margin:0 0 14px; line-height:1.2; }
+  .data p { color:var(--ink-2); margin:0 0 14px; }
+  .data .srcs { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+  .data .srcs span { font-size:13.5px; padding:6px 12px; border:1px solid var(--line); border-radius:100px; background:var(--surface); color:var(--ink-2); }
+  .data .nots { margin-top:22px; padding:16px 18px; border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-weight:600; color:var(--accent-strong); }
+
+  .req { padding:88px 0 110px; border-top:1px solid var(--line); background:var(--surface); }
+  .req .grid { display:grid; grid-template-columns:1fr 1.1fr; gap:56px; align-items:start; }
+  .req h2 { font-size:clamp(28px,3.4vw,40px); letter-spacing:-.025em; font-weight:600; margin:0 0 14px; line-height:1.1; }
+  .req p { color:var(--ink-2); margin:0; }
+  form { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  form .full { grid-column:1 / -1; }
+  label { display:block; font-size:13px; font-weight:500; color:var(--ink-2); margin-bottom:5px; }
+  input, select, textarea { width:100%; font:inherit; font-size:15px; padding:11px 13px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); }
+  textarea { min-height:92px; resize:vertical; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .hp { position:absolute; left:-9999px; }
+  .ok { display:none; padding:22px; border:1px solid var(--accent); background:var(--accent-soft); border-radius:var(--radius-sm); color:var(--accent-strong); font-weight:500; }
+
+  footer { padding:28px 0; font-size:13.5px; color:var(--muted); }
+  footer .wrap { display:flex; gap:18px; flex-wrap:wrap; }
+  footer .sp { flex:1; }
+
+  @media (max-width:860px){
+    .feat-row, .data .grid, .req .grid { grid-template-columns:1fr; gap:32px; }
+    .feat-row.flip .txt { order:0; }
+    .who .grid { grid-template-columns:1fr 1fr; }
+    .facts .wrap { grid-template-columns:1fr; }
+    .fact, .fact + .fact { padding:18px 0; border-left:0; }
+    .fact + .fact { border-top:1px solid var(--line); }
+  }
+  @media (max-width:560px){
+    .wrap { padding:0 16px; }
+    .hero { padding:64px 0 52px; }
+    .cards { grid-template-columns:1fr; }
+    .cards .mc:nth-child(2) { display:none; }
+    .ls { grid-template-columns:1fr; justify-items:start; }
+    .who .grid { grid-template-columns:1fr; }
+    form { grid-template-columns:1fr; }
+    header .signin { display:none; }
+    .pl .r { grid-template-columns:18px 1fr 70px 40px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="/mi">SkinDay <b>Market Intelligence</b></a>
+    <span class="sp"></span>
+    <a class="signin" href="/mi-dashboard">Sign in</a>
+    <a class="btn sm" href="#request">Request access</a>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <div class="mono kicker">For the medical aesthetics industry</div>
+      <h1>Know the clinics. See the market. Know what's changing.</h1>
+      <p class="lead">SkinDay Market Intelligence turns public activity across aesthetic clinics into account-level intelligence for commercial teams.</p>
+      <div class="ctas">
+        <a class="btn" href="#request">Request access</a>
+        <a class="btn ghost" href="/mi-dashboard">Sign in</a>
+      </div>
+      <div class="live"><span class="mono">Available now</span><span class="pl-c">Canada</span><span class="pl-c">California</span><span class="pl-c">New York</span></div>
+    </div>
+  </section>
+
+  <div class="facts">
+    <div class="wrap">
+      <div class="fact"><div class="n">8,400+</div><div class="l">Canadian aesthetic clinics mapped</div></div>
+      <div class="fact"><div class="n">17,000+</div><div class="l">public clinic posts read last month</div></div>
+      <div class="fact"><div class="n">One account view</div><div class="l">clinic, equipment and market activity together</div></div>
+    </div>
+  </div>
+
+  <section class="feat">
+    <div class="wrap">
+
+      <div class="feat-row">
+        <div class="txt">
+          <div class="mono tag">Clinics</div>
+          <h2>Find the accounts that matter in your territory.</h2>
+          <p>You can filter your territory by clinics running a competitor, already using yours, newly listed, or with no equipment identified yet. Each clinic shows why it's on the list.</p>
+          <ul>
+            <li>Equipment by manufacturer, on every clinic</li>
+            <li>Near-me sorting and route planning for field days</li>
+            <li>Saved lists your team can share</li>
+          </ul>
+        </div>
+        <div class="shot" aria-hidden="true">
+          <div class="qv"><span>All clinics</span><span class="on">Competitor installed</span><span>Already using ours</span><span>Newly listed</span></div>
+          <div class="cards">
+            <div class="mc"><div class="ph"></div><div class="bd">
+              <div class="nm"></div><div class="mt"></div>
+              <div class="why"><b>Competitor installed</b>RF microneedling · Body contouring</div>
+              <div class="sig"><span class="s">On social</span><strong>Announced</strong> a new laser</div>
+              <div class="tg"><i>RF microneedling</i><i>IPL</i><i>Body contouring</i></div>
+            </div></div>
+            <div class="mc"><div class="ph"></div><div class="bd">
+              <div class="nm" style="width:60%"></div><div class="mt" style="width:40%"></div>
+              <div class="why"><b>Competitor installed</b>Hair removal laser</div>
+              <div class="sig"><span class="s">On social</span>Posted about skin tightening</div>
+              <div class="tg"><i class="o">Your device</i><i>Hair removal</i></div>
+            </div></div>
+          </div>
+          <div class="note">Illustrative view</div>
+        </div>
+      </div>
+
+      <div class="feat-row flip">
+        <div class="txt">
+          <div class="mono tag">Landscape</div>
+          <h2>Understand installed base and competitive presence.</h2>
+          <p>You can see how your installed base compares with competitors in each category, and how that changes from one province or state, city or neighbourhood to the next.</p>
+          <ul>
+            <li>Share of identified installations by category</li>
+            <li>Manufacturer and device rankings by territory</li>
+            <li>Clinics with no equipment identified yet</li>
+          </ul>
+        </div>
+        <div class="shot" aria-hidden="true">
+          <div class="ls">
+            <div class="donut"><span>31%</span></div>
+            <div class="rows">
+              <div class="r me"><span>Your brand</span><div class="t"><div style="width:62%"></div></div><span class="v">31%</span></div>
+              <div class="r"><span>Competitor A</span><div class="t"><div style="width:42%"></div></div><span class="v">21%</span></div>
+              <div class="r"><span>Competitor B</span><div class="t"><div style="width:34%"></div></div><span class="v">17%</span></div>
+              <div class="r"><span>Competitor C</span><div class="t"><div style="width:30%"></div></div><span class="v">15%</span></div>
+              <div class="r"><span>Others</span><div class="t"><div style="width:32%"></div></div><span class="v">16%</span></div>
+            </div>
+          </div>
+          <div class="note">Illustrative view</div>
+        </div>
+      </div>
+
+      <div class="feat-row">
+        <div class="txt">
+          <div class="mono tag">Pulse</div>
+          <h2>See what clinics are promoting and launching.</h2>
+          <p>Pulse reads what clinics post publicly each month, so you can see which products are getting attention, which are being launched, and which are just starting to appear.</p>
+          <ul>
+            <li>Share of social conversation by product</li>
+            <li>Launch announcements, ranked by number of businesses</li>
+            <li>The clinics behind each signal, one tap away</li>
+          </ul>
+        </div>
+        <div class="shot pl" aria-hidden="true">
+          <div class="h"><span>Trending this month</span><span>Share</span></div>
+          <div class="r"><span class="k">1</span><span>Product A <span class="c">Facial</span></span><div class="t"><div style="width:100%"></div></div><span class="v">9.4%</span></div>
+          <div class="r"><span class="k">2</span><span>Product B <span class="c">RF microneedling</span></span><div class="t"><div style="width:72%"></div></div><span class="v">6.8%</span></div>
+          <div class="r"><span class="k">3</span><span>Product C <span class="c">Laser</span><span class="new">Launching</span></span><div class="t"><div style="width:60%"></div></div><span class="v">5.6%</span></div>
+          <div class="r"><span class="k">4</span><span>Product D <span class="c">Body</span></span><div class="t"><div style="width:44%"></div></div><span class="v">4.1%</span></div>
+          <div class="note">Illustrative view</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="who">
+    <div class="wrap">
+      <h2>Built for the teams that sell into aesthetic clinics.</h2>
+      <div class="grid">
+        <div class="c"><h3>Manufacturers</h3><p>Installed base, competitive presence and new accounts by territory.</p></div>
+        <div class="c"><h3>Pharmaceutical companies</h3><p>Which clinics are active, and what they are talking about.</p></div>
+        <div class="c"><h3>Distributors</h3><p>Where the equipment you carry sits, and where it doesn't yet.</p></div>
+        <div class="c"><h3>Field sales teams</h3><p>A territory list you can work from on the road.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="data">
+    <div class="wrap">
+      <div class="grid">
+        <div>
+          <h2>Where the data comes from</h2>
+          <p>SkinDay maps aesthetic clinics and connects each one to the information it publishes about itself, updated every month.</p>
+          <div class="srcs">
+            <span>Public business listings</span>
+            <span>Clinic-published information</span>
+            <span>Public social posts</span>
+            <span>Manufacturer sources</span>
+            <span>SkinDay's clinic directory</span>
+          </div>
+          <div class="nots">No patient data. No private clinic data.</div>
+        </div>
+        <div>
+          <h2>Clinics can correct their own profile</h2>
+          <p>Every clinic on SkinDay can claim its listing and update its information, and anyone using the dashboard can report something that looks wrong. The data isn't perfect, and it keeps getting better as more clinics and teams use it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="req" id="request">
+    <div class="wrap">
+      <div class="grid">
+        <div>
+          <h2>Request access</h2>
+          <p>Tell us a little about your team and territory, and we'll set up a trial for you.</p>
+        </div>
+        <div>
+          <!-- Netlify Forms: submissions appear under Forms → mi-access in the Netlify dashboard,
+               with email notifications set there. -->
+          <form name="mi-access" method="POST" data-netlify="true" netlify-honeypot="company_url" id="reqForm">
+            <input type="hidden" name="form-name" value="mi-access">
+            <p class="hp"><label>Leave this empty <input name="company_url"></label></p>
+            <div><label for="f-name">Name</label><input id="f-name" name="name" required autocomplete="name"></div>
+            <div><label for="f-email">Work email</label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
+            <div><label for="f-co">Company</label><input id="f-co" name="company" required autocomplete="organization"></div>
+            <div><label for="f-role">Role</label><input id="f-role" name="role" autocomplete="organization-title"></div>
+            <div class="full"><label for="f-type">Your company is a</label>
+              <select id="f-type" name="company_type">
+                <option>Device manufacturer</option>
+                <option>Pharmaceutical company</option>
+                <option>Distributor</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="full"><label for="f-terr">Territory</label><input id="f-terr" name="territory" placeholder="For example, Ontario, all of Canada, California or New York"></div>
+            <div class="full"><label for="f-msg">Anything you'd like to see</label><textarea id="f-msg" name="message"></textarea></div>
+            <div class="full"><button class="btn" type="submit">Request access</button></div>
+          </form>
+          <div class="ok" id="reqOk">Thank you. We'll be in touch shortly.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; <span id="yr"></span> SkinDay</span>
+    <span class="sp"></span>
+    <a href="/mi-dashboard">Sign in</a>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('yr').textContent = new Date().getFullYear();
+  // Submit in place so the visitor stays on the page; Netlify accepts the
+  // url-encoded post at "/".
+  var f = document.getElementById('reqForm');
+  f.addEventListener('submit', function(e){
+    e.preventDefault();
+    var btn = f.querySelector('button[type=submit]');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams(new FormData(f)).toString() })
+      .then(function(r){
+        if(!r.ok) throw new Error();
+        f.style.display = 'none';
+        document.getElementById('reqOk').style.display = 'block';
+      })
+      .catch(function(){
+        btn.disabled = false; btn.textContent = 'Request access';
+        alert('That did not go through. Please try again in a moment.');
+      });
+  });
+</script>
+</body>
+</html>
