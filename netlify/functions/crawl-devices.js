@@ -1735,7 +1735,7 @@ async function doCrawl(supabase, body) {
   //      equipment instrument and would only pollute that ranking.
   const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
   const BIOSTIM_CATEGORY = 'biostimulator';
-  const INJECTABLE_CATEGORIES = ['biostimulator', 'neurotoxin'];
+  const INJECTABLE_CATEGORIES = ['biostimulator', 'neurotoxin', 'filler', 'fat_dissolving'];
   const Q_STATUS = biostim ? 'biostim_status' : 'status';
   const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
 
