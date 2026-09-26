@@ -558,6 +558,26 @@ exports.handler = async (event) => {
         return json(200, { pulse: pulse, injectables: injectables });
       }
 
+      // ⭐ The clinics behind one Pulse product, for reps to act on.
+      case 'pulse_clinics': {
+        const family = nz(body.product);
+        if (!family) return json(400, { error: 'product required' });
+        const allow = (process.env.MI_PULSE_INJECTABLES_EMAILS || 'andy@skin-trek.com')
+          .split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+        const internal = !!(me.email && allow.includes(String(me.email).toLowerCase()));
+        if (!internal) {
+          const { data: sd } = await supabase.from('pulse_mention').select('side')
+            .eq('country', country).eq('family', family).limit(1);
+          if (sd && sd[0] && sd[0].side === 'injectables') return json(403, { error: 'not available' });
+        }
+        const { data, error } = await supabase.rpc('mi_pulse_clinics', {
+          p_country: country, p_regions: regions, p_province: province,
+          p_city: city, p_neighbourhood: neighbourhood, p_family: family
+        });
+        if (error) throw error;
+        return json(200, { clinics: data || [] });
+      }
+
       // the tenant's own installed base, their taxonomy
       case 'feed': {
         const days = Math.min(Math.max(parseInt(body.days, 10) || 30, 1), 365);
