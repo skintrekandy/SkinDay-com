@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SkinDay Market Intelligence</title>
 <meta name="description" content="Find clinics, see what devices they run, and build a better territory plan.">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --cream:#FAF7F2; --warm:#F4EDE4; --deep:#1C1714; --rose:#C8725A; --rose-s:#B35F48;
-    --rose-bg:#F5E8E3; --gold:#C9A96E; --muted:#8A7B72; --faint:#B5A89F; --line:#EAE2D8;
-    --font:'DM Sans',system-ui,sans-serif; --mono:'DM Mono',ui-monospace,monospace;
-    --serif:'Cormorant Garamond',Georgia,serif;
+    --cream:#FBFCFD; --warm:#F4F7F9; --deep:#14181D; --rose:#147D74; --rose-s:#0F5F58;
+    --rose-bg:#EAF4F2; --gold:#147D74; --muted:#697079; --faint:#9AA1AA; --line:#E7EBEF;
+    --red:#C0473A; --green:#147D74;
+    --font:'Hanken Grotesk',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --serif:'Hanken Grotesk',system-ui,sans-serif;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--cream);color:var(--deep);font-family:var(--font);
@@ -19,7 +20,7 @@
   .wrap{max-width:840px;margin:0 auto;padding:56px 22px 90px}
   .brand{font-family:var(--serif);font-size:24px;letter-spacing:.01em}
   .brand b{font-family:var(--font);font-size:15px;font-weight:600;letter-spacing:.02em;margin-left:8px}
-  h1{font-family:var(--serif);font-size:44px;line-height:1.12;margin:34px 0 12px;font-weight:600}
+  h1{font-family:var(--serif);font-size:40px;line-height:1.12;margin:34px 0 12px;font-weight:600}
   .lede{font-size:18px;color:var(--muted);max-width:52ch;margin:0 0 34px}
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
   .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px 24px;margin-bottom:16px}
@@ -51,11 +52,19 @@
   .ent{border:1px dashed var(--line);border-radius:12px;padding:18px;margin-top:16px;font-size:14px;color:var(--muted)}
   .ent a{color:var(--rose-s)}
   @media(max-width:640px){h1{font-size:34px}.row,.plans{grid-template-columns:1fr}.wrap{padding:34px 18px 70px}}
+  /* Matches mi-dashboard.html and /mi. */
+  .brand{font-family:var(--font)!important;font-size:18px!important;font-weight:600;color:var(--deep);text-decoration:none;letter-spacing:0!important}
+  .brand b{font-size:inherit!important;margin-left:0!important;color:var(--rose-s);letter-spacing:0!important}
+  h1{letter-spacing:-.02em;font-weight:600}
+  .top-links{float:right;font-size:14px;margin-top:3px}
+  .top-links a{color:var(--muted);text-decoration:none;margin-left:16px}
+  .top-links a:hover{color:var(--deep)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">SkinDay <b>Market Intelligence</b></div>
+  <div class="top-links"><a href="/mi">About</a><a href="/mi-dashboard">Sign in</a></div>
+  <a class="brand" href="/mi">SkinDay <b>Market Intelligence</b></a>
 
   <h1>Find the right clinics before your next call.</h1>
   <p class="lede">Search your territory, see the equipment each clinic publishes, and build a more focused prospecting list.</p>
@@ -72,7 +81,7 @@
         <label for="country">Market</label>
         <select id="country">
           <option value="canada">Canada</option>
-          <option value="usa">United States</option>
+          <option value="usa">United States (California, New York)</option>
         </select>
       </div>
       <div class="field">
@@ -108,14 +117,14 @@
       </div>
     </div>
     <p class="fine">Start with a 14-day free trial. Cancel before the trial ends and you will not be charged.
-       Prices are in USD. Canada and the United States are separate market subscriptions.</p>
+       Prices are in USD. Canada and the United States are separate market subscriptions. In the United States, California and New York are available now.</p>
   </div>
 
   <button class="go" id="go">Start free trial</button>
   <div class="msg" id="msg"></div>
 
   <div class="ent">
-    <strong>Need more than 5 seats or access to both markets?</strong>
+    <strong>Need more than 5 seats, access to both markets, or are you a pharmaceutical company?</strong>
     We can customize a plan for your team. <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20custom%20plan">Contact us</a>.
   </div>
 </div>

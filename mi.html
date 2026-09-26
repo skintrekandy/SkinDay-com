@@ -132,14 +132,8 @@
   .req .grid { display:grid; grid-template-columns:1fr 1.1fr; gap:56px; align-items:start; }
   .req h2 { font-size:clamp(28px,3.4vw,40px); letter-spacing:-.025em; font-weight:600; margin:0 0 14px; line-height:1.1; }
   .req p { color:var(--ink-2); margin:0; }
-  form { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  form .full { grid-column:1 / -1; }
-  label { display:block; font-size:13px; font-weight:500; color:var(--ink-2); margin-bottom:5px; }
-  input, select, textarea { width:100%; font:inherit; font-size:15px; padding:11px 13px; border:1px solid var(--line); border-radius:var(--radius-sm); background:var(--surface); color:var(--ink); }
-  textarea { min-height:92px; resize:vertical; }
-  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
-  .hp { position:absolute; left:-9999px; }
-  .ok { display:none; padding:22px; border:1px solid var(--accent); background:var(--accent-soft); border-radius:var(--radius-sm); color:var(--accent-strong); font-weight:500; }
+  .req-go .btn { padding:14px 26px; font-size:16px; }
+  .req-note { margin-top:18px !important; font-size:14.5px; color:var(--muted) !important; }
 
   footer { padding:28px 0; font-size:13.5px; color:var(--muted); }
   footer .wrap { display:flex; gap:18px; flex-wrap:wrap; }
@@ -160,7 +154,6 @@
     .cards .mc:nth-child(2) { display:none; }
     .ls { grid-template-columns:1fr; justify-items:start; }
     .who .grid { grid-template-columns:1fr; }
-    form { grid-template-columns:1fr; }
     header .signin { display:none; }
     .pl .r { grid-template-columns:18px 1fr 70px 40px; }
   }
@@ -173,7 +166,7 @@
     <a class="brand" href="/mi">SkinDay <b>Market Intelligence</b></a>
     <span class="sp"></span>
     <a class="signin" href="/mi-dashboard">Sign in</a>
-    <a class="btn sm" href="#request">Request access</a>
+    <a class="btn sm" href="/mi-signup">Start free trial</a>
   </div>
 </header>
 
@@ -184,7 +177,7 @@
       <h1>Know the clinics. See the market. Know what's changing.</h1>
       <p class="lead">SkinDay Market Intelligence turns public activity across aesthetic clinics into account-level intelligence for commercial teams.</p>
       <div class="ctas">
-        <a class="btn" href="#request">Request access</a>
+        <a class="btn" href="/mi-signup">Start free trial</a>
         <a class="btn ghost" href="/mi-dashboard">Sign in</a>
       </div>
       <div class="live"><span class="mono">Available now</span><span class="pl-c">Canada</span><span class="pl-c">California</span><span class="pl-c">New York</span></div>
@@ -318,36 +311,17 @@
     </div>
   </section>
 
-  <section class="req" id="request">
+  <section class="req" id="start">
     <div class="wrap">
       <div class="grid">
         <div>
-          <h2>Request access</h2>
-          <p>Tell us a little about your team and territory, and we'll set up a trial for you.</p>
+          <h2>Try it on your own territory</h2>
+          <p>You can start with a 14-day free trial, set up for your company, your devices and your competitors. Cancel before the trial ends and nothing is charged.</p>
         </div>
-        <div>
-          <!-- Netlify Forms: submissions appear under Forms → mi-access in the Netlify dashboard,
-               with email notifications set there. -->
-          <form name="mi-access" method="POST" data-netlify="true" netlify-honeypot="company_url" id="reqForm">
-            <input type="hidden" name="form-name" value="mi-access">
-            <p class="hp"><label>Leave this empty <input name="company_url"></label></p>
-            <div><label for="f-name">Name</label><input id="f-name" name="name" required autocomplete="name"></div>
-            <div><label for="f-email">Work email</label><input id="f-email" name="email" type="email" required autocomplete="email"></div>
-            <div><label for="f-co">Company</label><input id="f-co" name="company" required autocomplete="organization"></div>
-            <div><label for="f-role">Role</label><input id="f-role" name="role" autocomplete="organization-title"></div>
-            <div class="full"><label for="f-type">Your company is a</label>
-              <select id="f-type" name="company_type">
-                <option>Device manufacturer</option>
-                <option>Pharmaceutical company</option>
-                <option>Distributor</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div class="full"><label for="f-terr">Territory</label><input id="f-terr" name="territory" placeholder="For example, Ontario, all of Canada, California or New York"></div>
-            <div class="full"><label for="f-msg">Anything you'd like to see</label><textarea id="f-msg" name="message"></textarea></div>
-            <div class="full"><button class="btn" type="submit">Request access</button></div>
-          </form>
-          <div class="ok" id="reqOk">Thank you. We'll be in touch shortly.</div>
+        <div class="req-go">
+          <a class="btn" href="/mi-signup">Start free trial</a>
+          <p class="req-note">Need more than five seats, access to both Canada and the United States, or a plan for a pharmaceutical company? <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence">Email hello@skinday.ca</a> and we can put something together for your team.</p>
+          <p class="req-note">Already have an account? <a href="/mi-dashboard">Sign in</a></p>
         </div>
       </div>
     </div>
@@ -364,25 +338,6 @@
 
 <script>
   document.getElementById('yr').textContent = new Date().getFullYear();
-  // Submit in place so the visitor stays on the page; Netlify accepts the
-  // url-encoded post at "/".
-  var f = document.getElementById('reqForm');
-  f.addEventListener('submit', function(e){
-    e.preventDefault();
-    var btn = f.querySelector('button[type=submit]');
-    btn.disabled = true; btn.textContent = 'Sending…';
-    fetch('/', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams(new FormData(f)).toString() })
-      .then(function(r){
-        if(!r.ok) throw new Error();
-        f.style.display = 'none';
-        document.getElementById('reqOk').style.display = 'block';
-      })
-      .catch(function(){
-        btn.disabled = false; btn.textContent = 'Request access';
-        alert('That did not go through. Please try again in a moment.');
-      });
-  });
 </script>
 </body>
 </html>
