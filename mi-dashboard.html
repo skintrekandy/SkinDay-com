@@ -626,6 +626,22 @@
   }
 
   /* ⭐ PULSE (M25). What clinics promoted in their own posts, ranked by posts. */
+  .pl-lead { font-size:14.5px; color:var(--ink-2); margin:2px 0 10px; line-height:1.5; }
+  .pl-lead b { color:var(--ink); }
+  .pl-lrow { display:grid; grid-template-columns:26px minmax(0,1fr) auto; gap:4px 12px; align-items:center; width:100%; padding:8px 8px; border:0; border-radius:var(--radius-sm); background:transparent; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+  .pl-lrow:hover { background:var(--surface-2); }
+  .pl-fill.launch { background:#D9A441; }
+  .pl-hero { display:block; width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer; background:var(--accent-soft); border:1px solid transparent; border-radius:var(--radius-sm); padding:14px 16px; margin:4px 0 2px; }
+  .pl-hero:hover { border-color:var(--accent); }
+  .pl-hname { display:block; font-size:19px; font-weight:700; margin:4px 0 2px; }
+  .pl-htext { display:block; font-size:14px; color:var(--ink-2); line-height:1.5; }
+  .pl-rrow { display:grid; grid-template-columns:auto; gap:2px; width:100%; text-align:left; font:inherit; color:inherit; cursor:pointer; background:transparent; border:0; border-bottom:1px solid var(--line); padding:10px 4px; }
+  .pl-rrow:hover { background:var(--surface-2); }
+  .pl-rname { font-weight:600; font-size:15px; }
+  .pl-rtext { font-size:13px; color:var(--muted); }
+  .pl-lab { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .pl-lab.new { color:var(--accent-strong); font-weight:600; }
+  .pl-lrow:focus-visible, .pl-hero:focus-visible, .pl-rrow:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
   .pl-how { background:none; border:1px solid var(--line); border-radius:100px; padding:4px 11px; font:inherit; font-size:12.5px; color:var(--accent-strong); cursor:pointer; }
   .pl-how:hover, .pl-how:focus-visible { border-color:var(--accent); outline:none; }
   .pl-modal { position:fixed; inset:0; background:rgba(20,24,29,.42); display:flex; align-items:flex-start; justify-content:center; padding:48px 16px; z-index:200; overflow-y:auto; }
@@ -2105,7 +2121,7 @@
   // ⛔ Injectables show only for accounts the server allows (internal use);
   // for everyone else the server strips them and this stays false.
   var PULSE_INJECTABLES=false;
-  var PL=null, PL_SIDE='devices', PL_ALL=false, PL_SEL={};
+  var PL=null, PL_SIDE='devices', PL_ALL=false, PL_SEL={}, PL_LAUNCH_ALL=false, PL_RADAR_ALL=false;
   // ⭐ RESULTS, NOT SCAFFOLDING (Andy, 2026-09-26). Customers see shares,
   // businesses and plain definitions. Post counts, platform splits and
   // denominators are shown only to internal accounts (the same allow-list
@@ -2176,27 +2192,46 @@
       '</button>';
     }).join('');
     var more=rows.length>12?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top 12':'Show all '+rows.length)+'</button>':'';
-    var lbase=plTot(dev?'devices_launch_base':'injectables_launch_base');
+    // ⭐ LAUNCHING = a ranked mini-leaderboard by businesses announcing (no
+    // percentages). RADAR = an editorial list with labels, not a ranking.
     var launches=rows.filter(function(r){ return r.launch_posts>0; })
-      .sort(function(a,b){ return b.launch_posts-a.launch_posts || b.launch_businesses-a.launch_businesses; }).slice(0,10);
+      .sort(function(a,b){ return b.launch_businesses-a.launch_businesses || b.launch_posts-a.launch_posts; });
+    var lshow=PL_LAUNCH_ALL?launches:launches.slice(0,5);
+    var lmax=launches.length?launches[0].launch_businesses:1;
+    var lead=launches.length?'<p class="pl-lead"><b>'+esc(launches[0].product)+'</b> led new '+(dev?'device':'product')+' announcements this month, with '+
+      plPlural(launches[0].launch_businesses,'business','businesses')+' publicly introducing it.</p>':'';
     var lower='<section class="pl-card"><div class="pl-h"><h3>What’s launching</h3>'+
-      plInfo('plTipL','Each product’s share of this month’s '+(dev?'device':'product')+' launch announcements: posts saying a product is new at the clinic, such as “Introducing” or “Now available”.'+(PL_INTERNAL?' <span class="pl-int">Internal: '+num(lbase)+' announcement posts</span>':''))+'</div>'+
-      '<p class="pl-hint">New '+(dev?'device':'product')+' announcements</p>'+
-      (launches.length?'<div class="pl-chips">'+launches.map(function(r){
-        return '<button type="button" class="pl-chip launch" title="'+esc(plPlural(r.launch_businesses,'business','businesses')+' announced it'+(PL_INTERNAL?' · '+plPlural(r.launch_posts,'post','posts'):''))+'" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
-          ' <span class="n">'+plFmt(plPct(r.launch_posts,lbase))+'</span></button>';
-      }).join('')+'</div>':'<div class="pl-hint">None this month.</div>')+'</section>';
+      plInfo('plTipL','Businesses whose posts announced that a product is new at their clinic, such as “Introducing” or “Now available”. An announcement shows new promotion; it is not proof of a new purchase.')+'</div>'+
+      '<p class="pl-hint">Businesses announcing a new '+(dev?'device':'product')+' this month</p>'+
+      (launches.length? lead + lshow.map(function(r,i){
+        return '<button type="button" class="pl-lrow" onclick="plPick(\''+plQ(r.product)+'\')">'+
+          '<span class="pl-rank">'+(i+1)+'</span><span class="pl-name">'+esc(r.product)+'</span>'+
+          '<span class="pl-meas"><b>'+num(r.launch_businesses)+'</b> '+(r.launch_businesses===1?'business':'businesses')+(PL_INTERNAL?' · '+plPlural(r.launch_posts,'post','posts'):'')+'</span>'+
+          '<span></span><span class="pl-track"><span class="pl-fill launch" style="width:'+(100*r.launch_businesses/lmax).toFixed(1)+'%"></span></span></button>';
+      }).join('')+(launches.length>5?'<button type="button" class="pl-more" onclick="plLaunchAll()">'+(PL_LAUNCH_ALL?'Show top 5':'See all launch activity ('+launches.length+') →')+'</button>':'')
+      :'<div class="pl-hint">None this month.</div>')+'</section>';
     if(dev){
       var em=rows.filter(function(r){ return (r.known_national||0)<=10; })
-        .sort(function(a,b){ return (a.known_national||0)-(b.known_national||0) || b.posts-a.posts; });
-      lower+='<section class="pl-card"><div class="pl-h"><h3>What’s appearing</h3>'+
-        plInfo('plTipE','Devices clinics posted about that had few or no known owners in the country before. These are small, early signals rather than trends.')+'</div>'+
-        '<p class="pl-hint">Emerging signals</p>'+
-        (em.length?'<div class="pl-chips">'+em.map(function(r){
-          var t=plPlural(r.businesses,'business','businesses')+(PL_INTERNAL?' · '+plPlural(r.posts,'post','posts'):'')+' · '+(r.known_national?plPlural(r.known_national,'known owner','known owners'):'previously undetected');
-          return '<button type="button" class="pl-chip" title="'+esc(t)+'" onclick="plPick(\''+plQ(r.product)+'\')">'+esc(r.product)+
-            ' <span class="n">'+(r.known_national?plFmt(plPct(r.posts,base)):'New signal')+'</span></button>';
-        }).join('')+'</div>':'<div class="pl-hint">Nothing new this month.</div>')+'</section>';
+        .sort(function(a,b){ return (a.known_national||0)-(b.known_national||0) || b.businesses-a.businesses || b.posts-a.posts; });
+      var country=COUNTRY==='usa'?'the United States':'Canada';
+      var hero=em.filter(function(r){ return !r.known_national; })[0];
+      var rest=em.filter(function(r){ return r!==hero; });
+      var rshow=PL_RADAR_ALL?rest:rest.slice(0,5);
+      function lab(r){ return !r.known_national?'New signal':(r.businesses===1?'First social signal':'Early activity'); }
+      lower+='<section class="pl-card"><div class="pl-h"><h3>On the radar</h3>'+
+        plInfo('plTipE','Products clinics posted about this month that have a small footprint in '+country+': 10 or fewer known owners before this month. These are early signals rather than trends.')+'</div>'+
+        '<p class="pl-hint">Early signals from products with a small footprint in '+country+'</p>'+
+        (hero?'<button type="button" class="pl-hero" onclick="plPick(\''+plQ(hero.product)+'\')">'+
+          '<span class="pl-lab new">New this month</span><span class="pl-hname">'+esc(hero.product)+'</span>'+
+          '<span class="pl-htext">'+(hero.businesses===1?'The first clinic':plPlural(hero.businesses,'clinic','clinics'))+' in '+country+' posting about '+esc(hero.product)+', with no previous owners in SkinDay’s data.</span></button>':'')+
+        (rshow.length?(hero?'<div class="pl-eyebrow" style="margin:14px 0 4px">Also appearing</div>':'')+rshow.map(function(r){
+          return '<button type="button" class="pl-rrow" onclick="plPick(\''+plQ(r.product)+'\')">'+
+            '<span class="pl-lab'+(r.known_national?'':' new')+'">'+lab(r)+'</span>'+
+            '<span class="pl-rname">'+esc(r.product)+'</span>'+
+            '<span class="pl-rtext">'+plPlural(r.businesses,'business','businesses')+' posting · '+(r.known_national?plPlural(r.known_national,'known owner','known owners'):'no previous owners')+'</span></button>';
+        }).join(''):'')+
+        (rest.length>5?'<button type="button" class="pl-more" onclick="plRadarAll()">'+(PL_RADAR_ALL?'Show fewer':'See all emerging signals ('+em.length+') →')+'</button>':'')+
+        (!em.length?'<div class="pl-hint">Nothing new this month.</div>':'')+'</section>';
     } else {
       var t=(PL&&PL.toxin)||{};
       var brands=rows.filter(function(r){ return r.category==='Neurotoxins'; })
@@ -2228,7 +2263,7 @@
     // posting, share of new announcements, where the posts came from. Owner
     // activation, locations, known owners and social discoveries stay internal.
     var facts=[];
-    facts.push(['Share of new '+(dev?'device':'product')+' announcements', r.launch_posts?plFmt(plPct(r.launch_posts,lbase))+' <span class="pl-sub2">'+plPlural(r.launch_businesses,'business','businesses')+(PL_INTERNAL?' · '+plPlural(r.launch_posts,'post','posts'):'')+'</span>':'None this month']);
+    facts.push(['Businesses announcing it', r.launch_posts?num(r.launch_businesses)+(PL_INTERNAL?' <span class="pl-sub2">'+plPlural(r.launch_posts,'post','posts')+' · '+plFmt(plPct(r.launch_posts,lbase))+' of announcements</span>':''):'None this month']);
     if(PL_INTERNAL){
       facts.push(['Posts <span class="pl-int">internal</span>', num(r.posts)+' <span class="pl-sub2">Instagram '+num(r.ig_posts||0)+' · Facebook '+num(r.fb_posts||0)+'</span>']);
       facts.push(['Locations represented <span class="pl-int">internal</span>',num(r.locations)]);
@@ -2293,6 +2328,8 @@
     if(savedIds[cid]){ api('remove_account',{clinic_id:cid}).then(function(){ delete savedIds[cid]; b.classList.remove('on'); b.textContent='+ Save'; updateListCount(); loaded.list=false; }).catch(handleErr); }
     else { api('save_account',{clinic_id:cid}).then(function(){ savedIds[cid]=true; b.classList.add('on'); b.textContent='✓ Saved'; updateListCount(); loaded.list=false; }).catch(handleErr); }
   };
+  window.plLaunchAll=function(){ PL_LAUNCH_ALL=!PL_LAUNCH_ALL; paintPulse(); };
+  window.plRadarAll=function(){ PL_RADAR_ALL=!PL_RADAR_ALL; paintPulse(); };
   window.plToggleAll=function(){ PL_ALL=!PL_ALL; paintPulse(); };
   Array.prototype.forEach.call(document.querySelectorAll('#plSide button'),function(b){
     b.addEventListener('click',function(){
