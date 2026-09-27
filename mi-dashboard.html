@@ -57,6 +57,24 @@
   .sidesw button:hover { color:var(--ink); }
   .sidesw button.on { background:var(--surface); color:var(--accent-strong); font-weight:600; box-shadow:0 1px 2px rgba(20,26,33,.08); }
   .sidesw button:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  /* ================= MOBILE (M26, 2026-09-26) =================
+     A phone gets its own layout, not the desktop one squeezed: one-line
+     header, full-width Devices / Injectables, bottom navigation, short
+     two-line Pulse rows, and product detail in a bottom sheet. */
+  .brand .bs { display:none; }
+  .botnav { display:none; position:fixed; left:0; right:0; bottom:0; z-index:150;
+    background:var(--surface); border-top:1px solid var(--line);
+    padding:4px 4px calc(4px + env(safe-area-inset-bottom)); }
+  .botnav button { flex:1; font:inherit; font-size:12.5px; font-weight:500; color:var(--muted);
+    background:none; border:0; padding:10px 4px 9px; cursor:pointer; position:relative; }
+  .botnav button.on { color:var(--accent-strong); font-weight:600; }
+  .botnav button.on::before { content:""; position:absolute; top:0; left:28%; right:28%; height:2px; border-radius:2px; background:var(--accent); }
+  .botnav .bn-n { display:inline-block; min-width:16px; font-family:var(--font-mono); font-size:9.5px; font-weight:600;
+    line-height:15px; padding:0 4px; margin-left:3px; border-radius:100px; background:var(--accent); color:#fff; vertical-align:1px; }
+  .mi-mobile-only { display:none !important; }
+  .pl-msub { display:none; grid-column:2 / 4; font-size:12.5px; color:var(--muted); margin-top:-3px; }
+  .pl-shade { display:none; position:fixed; inset:0; background:rgba(20,24,29,.38); z-index:205; }
+  .pl-close { display:none; }
   .top .badge { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:4px 11px; }
   .top .spacer { flex:1; }
   .top button.out { background:none; border:0; color:var(--muted); font:inherit; font-size:13px; cursor:pointer; }
@@ -736,6 +754,156 @@
   .pl-brand .t { height:8px; background:var(--line-2); border-radius:4px; overflow:hidden; }
   .pl-brand .t span { display:block; height:100%; background:var(--accent); border-radius:4px; }
   .pl-brand .c { font-family:var(--font-mono); text-align:right; color:var(--ink-2); }
+  /* ---- phone layout, kept last so it wins over the desktop rules ---- */
+  @media (max-width:640px){
+    .top .badge { display:none; }
+    .brand .bl { display:none; }
+    .brand .bs { display:inline; }
+    .top-in { flex-wrap:wrap; row-gap:10px; padding:12px 16px; }
+    .sidesw:not([hidden]) { order:3; flex:1 1 100%; display:flex; }
+    .sidesw button { flex:1; padding:8px 10px; font-size:13.5px; }
+    header.top .tabs { display:none; }
+    .botnav { display:flex; }
+    .mi-mobile-only { display:block !important; }
+    main { padding-bottom:96px; }
+    /* Pulse rows: name and share on one line, breadth underneath. */
+    .pl-row { padding:11px 6px; }
+    .pl-row.on { background:transparent; }
+    .pl-row .pl-cat, .pl-row .pl-track { display:none; }
+    .pl-msub { display:block; }
+    .pl-name { font-size:16px; }
+    .pl-meas b { font-size:15px; }
+    /* Detail opens as a bottom sheet rather than below the list. */
+    .pl-det { position:fixed; left:0; right:0; bottom:0; top:auto; max-height:86vh; overflow-y:auto;
+      margin:0; border-radius:18px 18px 0 0; z-index:210; transform:translateY(105%);
+      transition:transform .22s ease; padding:22px 18px calc(22px + env(safe-area-inset-bottom)); }
+    .pl-det.open { transform:none; }
+    .pl-shade.open { display:block; }
+    .pl-head { margin-bottom:12px; }
+    .pl-head h2 { font-size:20px; }
+    .pl-head .pl-sub { font-size:13.5px; }
+    .pl-head > div:last-child { align-items:flex-start !important; }
+    .pl-base { display:none; }
+    .pl-close { display:block; position:absolute; top:10px; right:12px; background:none; border:0;
+      font-size:26px; line-height:1; color:var(--muted); cursor:pointer; padding:4px 8px; }
+
+    /* ---------- every tab, app-style (M26) ---------- */
+    main { padding:14px 16px 100px; }
+    .sec-label { margin:22px 0 10px; }
+    /* Territory: one slim scrolling row, no label. */
+    .geobar { flex-wrap:nowrap; overflow-x:auto; gap:8px; margin:0 -16px 12px; padding:0 16px 2px; scrollbar-width:none; }
+    .geobar::-webkit-scrollbar, .quick::-webkit-scrollbar, .fb-sub::-webkit-scrollbar, .catfilter::-webkit-scrollbar { display:none; }
+    .geobar > .mono:first-child { display:none; }
+    .geobar select { flex:0 0 auto; font-size:14px; padding:8px 30px 8px 12px; border-radius:100px; }
+    .geobar .sep { display:none !important; }
+    /* Horizontal chip rows instead of wrapping blocks. */
+    .quick, .catfilter { flex-wrap:nowrap; overflow-x:auto; margin-left:-16px; margin-right:-16px; padding:0 16px 2px; scrollbar-width:none; }
+    .quick button, .catfilter button { flex:0 0 auto; white-space:nowrap; }
+
+    /* ---- Clinics ---- */
+    .findbar { margin-bottom:10px; }
+    .fb-row { flex-wrap:nowrap; }
+    .fb-row .srch { flex:1 1 auto; min-width:0; max-width:none; }
+    .fb-row .srch input { padding:11px 14px 11px 38px; font-size:15px; border-radius:100px; }
+    .fb-row > .btn.near { flex:0 0 44px; width:44px; height:44px; padding:0; border-radius:50%; font-size:17px; }
+    .btn.near .nt { display:none; }
+    .fb-sub { flex-wrap:nowrap; overflow-x:auto; margin:10px -16px 0; padding:0 16px 2px; scrollbar-width:none; }
+    .fb-sub .fb-lab > span { display:none; }
+    .fb-sub select, .fb-sub .btn, .fb-sub .fb-lab { flex:0 0 auto !important; }
+    .fb-sub select { font-size:13.5px; padding:7px 28px 7px 12px; border-radius:100px; }
+    .fb-sub .btn { padding:7px 13px; border-radius:100px; font-size:13.5px; }
+    .fb-sub .count { flex:0 0 auto; margin-left:6px; align-self:center; }
+    .showbar .btn.go { border-radius:12px; }
+    /* A clinic is a list row: thumbnail, name, one line of facts, the reason.
+       Everything else opens in a sheet. */
+    .acctgrid { gap:8px; }
+    .acctgrid .acct.card { flex-direction:row; align-items:center; gap:12px; padding:12px;
+      border-radius:14px; box-shadow:none; margin:0; cursor:pointer; }
+    .acctgrid .acct.card .shot { flex:0 0 56px; width:56px; height:56px; border:0; border-radius:12px; overflow:hidden; }
+    .acctgrid .acct.card .shot .shotpills, .acctgrid .acct.card .shot .dist { display:none; }
+    .acctgrid .acct.card .shot.none span { display:none !important; }
+    .acctgrid .acct.card .shot.none::after { content:attr(data-i); font-size:20px; font-weight:600; color:var(--accent-strong); }
+    .acctgrid .acct.card .shot.none { background:var(--accent-soft); }
+    .acctgrid .acct.card .body { padding:0; min-width:0; }
+    .acctgrid .acct.card .aname { font-size:15.5px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .acctgrid .acct.card .ameta { margin:3px 0 0 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .acctgrid .acct.card .why { font-size:0; margin:5px 0 0; padding:0; background:none; border:0; }
+    .acctgrid .acct.card .why b { font-size:9.5px; margin:0; }
+    .acctgrid .acct.card .contacts, .acctgrid .acct.card .mfrs, .acctgrid .acct.card .evslot,
+    .acctgrid .acct.card .sig, .acctgrid .acct.card .actions { display:none !important; }
+    .acctgrid .acct.card::after { content:"\203A"; font-size:22px; color:var(--faint); flex:0 0 auto; }
+    body .mdist { display:inline; }
+
+    /* ---- Overview ---- */
+    .hero { margin-bottom:18px; }
+    .hero .big { font-size:36px; }
+    .hero .big .unit { font-size:16px; }
+    .hero .sub { font-size:14px; }
+    .cov { font-size:12px; }
+    .mrow { padding:10px 8px; gap:12px; }
+    .mrow .mname { font-size:14.5px; }
+    .mrow .mpct { min-width:0; font-size:15px; }
+    .cat-head { flex-wrap:wrap; row-gap:2px; }
+    .cat-head .name { font-size:16px; flex:1 1 auto; }
+    .cat-head .grp { display:none; }
+    .cat-head .count { font-size:13px; }
+    .dev { padding:10px 2px; }
+    .dev .num { font-size:17px; }
+    .dgrid { grid-template-columns:1fr; gap:10px; }
+    .dnote { font-size:11.5px; }
+
+    /* ---- Landscape: two-line rows ---- */
+    .lshead { padding:13px 6px; }
+    .lshead .lsname { font-size:16px; }
+    .lsrow { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:12px; row-gap:2px; padding:11px 8px; }
+    .lsrow.lssub { padding-left:22px; }
+    .lsrow > .lm { grid-column:1; grid-row:1; }
+    .lsrow > .lmk { grid-column:1; grid-row:2; font-size:12.5px; }
+    .lsrow > .lnum { grid-column:2; grid-row:1; min-width:0; text-align:right; }
+    .lsrow > .lgo { grid-column:2; grid-row:2; justify-self:end; padding:0; }
+    .lsrow > .lsp, .lsrow > .lgen, .lsrow > .lyou { display:none; }
+    .lsrow > .lsmv { grid-column:1; grid-row:3; }
+    .lsrow .lnum .ln2 { font-size:9px; }
+    .lscat { padding-left:22px; }
+
+    /* ---- My List ---- */
+    .routebar { padding:12px 14px; }
+    .routebar .rrow { flex-wrap:wrap; gap:8px; }
+    .routebar .rrow .btn { flex:1 1 30%; padding:10px 8px; }
+    .routebar .rhint { display:none; }
+    #savedList .acct.sv { padding:14px; border-radius:14px; box-shadow:none; margin-bottom:8px; }
+    #savedList .acct.sv .contacts, #savedList .acct.sv .mfrs { display:none; }
+    #savedList .acct.sv .aname { font-size:16px; }
+    #savedList .sv .svacts { flex-wrap:nowrap; gap:6px; }
+    #savedList .sv .svacts .btn.mini { padding:8px 10px; white-space:nowrap; }
+
+    /* ---- Settings ---- */
+    .sec-head { padding:14px 56px 14px 16px; }
+    .sec-head h2 { font-size:18px; }
+    .box { padding:18px; }
+    .row2 { grid-template-columns:1fr; gap:0; }
+
+    /* ---- The clinic sheet ---- */
+    body .app-sheet { display:block; }
+  }
+  /* Generic bottom sheet, used on phones for a clinic's full card. */
+  .mdist { display:none; }
+  .app-sheet { display:none; position:fixed; left:0; right:0; bottom:0; z-index:210; max-height:88vh; overflow-y:auto;
+    background:var(--surface); border-radius:18px 18px 0 0; box-shadow:0 -10px 40px rgba(20,24,29,.18);
+    transform:translateY(105%); transition:transform .22s ease; padding:12px 0 calc(16px + env(safe-area-inset-bottom)); }
+  .app-sheet.open { transform:none; }
+  .app-sheet:not(.open) { visibility:hidden; transition:transform .22s ease, visibility 0s .22s; }
+  .app-sheet .acct.card .shot.none { height:auto; min-height:0; background:none; margin:4px 14px 0; }
+  .app-sheet .acct.card .shot.none > span { display:none !important; }
+  .app-sheet .acct.card .shot.none { justify-content:flex-start; }
+  .app-sheet .acct.card .shot.none .shotpills { position:static; }
+  .app-sheet .grab { width:38px; height:4px; border-radius:4px; background:var(--line); margin:0 auto 8px; }
+  .app-sheet .acct.card { border:0; box-shadow:none; margin:0; border-radius:0; }
+  .app-sheet .acct.card .shot { height:150px; margin:0 14px; border-radius:14px; overflow:hidden; border:0; }
+  .app-sheet .x { position:absolute; top:10px; right:12px; z-index:2; background:rgba(255,255,255,.9); border:0; border-radius:50%;
+    width:34px; height:34px; font-size:22px; line-height:1; color:var(--ink-2); cursor:pointer; }
+  .app-shade { display:none; position:fixed; inset:0; background:rgba(20,24,29,.38); z-index:205; }
+  .app-shade.open { display:block; }
 </style>
 </head>
 <body>
@@ -835,7 +1003,7 @@
 <div id="app">
   <header class="top">
     <div class="top-in">
-      <div class="brand">SkinDay <b>Market Intelligence</b></div>
+      <div class="brand">SkinDay <b class="bl">Market Intelligence</b><b class="bs">MI</b></div>
       <span class="badge" id="mfrBadge"></span>
       <div class="sidesw" id="sideSw" role="group" aria-label="Market" hidden>
         <button type="button" data-side="energy" class="on">Devices</button>
@@ -849,6 +1017,7 @@
       <button class="out menubtn" id="menuBtn" aria-haspopup="true" aria-expanded="false">Menu</button>
       <div class="menu" id="userMenu" hidden>
         <div class="mono muted" id="whoami"></div>
+        <button class="mitem mi-mobile-only" id="menuOverview">Overview</button>
         <button class="mitem" id="settingsBtn" style="display:none">Settings</button>
         <button class="mitem" id="signout">Sign out</button>
       </div>
@@ -867,6 +1036,14 @@
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
     </div>
   </header>
+  <nav class="botnav" id="botnav" aria-label="Sections">
+    <button type="button" data-go="accounts" class="on">Clinics<span class="bn-n" id="bnNew" style="display:none"></span></button>
+    <button type="button" data-go="landscape">Landscape</button>
+    <button type="button" data-go="pulse">Pulse</button>
+    <button type="button" data-go="list">My List<span class="bn-n" id="bnList" style="display:none"></span></button>
+  </nav>
+  <div class="app-shade" id="appShade"></div>
+  <div class="app-sheet" id="appSheet" role="dialog" aria-modal="true"></div>
 
   <main>
     <div class="geobar" id="geobar">
@@ -946,6 +1123,7 @@
         </div>
       </div>
       <div id="plBody"><div class="empty"><span class="spin"></span></div></div>
+      <div class="pl-shade" id="plShade" onclick="plSheet(false)"></div>
       <div class="pl-modal" id="plHowBox" hidden onclick="if(event.target===this) plHow(false)">
         <div class="pl-modal-card" role="dialog" aria-modal="true" aria-labelledby="plHowTitle">
           <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
@@ -954,7 +1132,7 @@
           </div>
           <dl class="pl-dl">
             <dt>What it covers</dt>
-            <dd>Public posts from the Facebook and Instagram accounts of aesthetic clinics in the SkinDay directory, for the country or territory you have selected. Each Pulse covers one month and is updated monthly.</dd>
+            <dd>Public social media posts from aesthetic clinics in the SkinDay directory, for the country or territory you have selected. Each Pulse covers one month and is updated monthly.</dd>
             <dt>What counts as a mention</dt>
             <dd>A post counts when it names a product in its text. Posts that only list products in a string of hashtags, and posts that compare products, are left out, because they do not reliably show what a clinic offers. Generations of the same product are counted together, for example Thermage FLX and Thermage CPT as Thermage.</dd>
             <dt>What’s trending</dt>
@@ -1008,7 +1186,7 @@
         <div class="fb-row">
           <div class="srch"><input id="acctSearch" type="search" autocomplete="off" spellcheck="false"
                placeholder="Search clinic, city or device"></div>
-          <button class="btn near" id="acctNear" type="button">&#9678; Near me</button>
+          <button class="btn near" id="acctNear" type="button" aria-label="Near me">&#9678;<span class="nt"> Near me</span></button>
         </div>
         <!-- ⭐ ONE TAP INSTEAD OF A DROPDOWN. These ARE the segment control: the
              select below is kept in the DOM, hidden, so every filter, chip and
@@ -1344,6 +1522,9 @@
              gfTitle:'Brand opportunity', gfLine:'No brand identified yet', rsLine:'Not yet checked' }
   };
   function W(){ return WORDS[isInj()?'injectables':'energy']; }
+  function isPhone(){ return window.matchMedia && window.matchMedia('(max-width:640px)').matches; }
+  // 1435 -> "1.4k", so the count fits the bottom bar.
+  function compactN(n){ n=Number(n)||0; return n>=1000 ? (Math.round(n/100)/10)+'k' : String(n); }
   // ⭐ INJECTABLE CATEGORIES IN ORDER OF HOW MUCH WE TRUST THEM (Andy,
   // 2026-09-26): biostimulators, then neurotoxins, then fillers, whose data is
   // still thin. Anything new sorts after these.
@@ -1484,8 +1665,8 @@
         var k=b.getAttribute('data-seg'); if(map[k]) b.textContent=map[k];
       });
     }
-    el('acctSearch').placeholder=w.search;
-    el('lsSearch').placeholder=w.lsSearch;
+    el('acctSearch').placeholder=isPhone() ? 'Search clinics' : w.search;
+    el('lsSearch').placeholder=isPhone() ? (isInj()?'Search brands':'Search devices') : w.lsSearch;
     var lt=document.querySelector('#lsMode button[data-lm="tech"]'); if(lt) lt.textContent=w.lsTech;
     // Movement on the injectables side would count this month's first social
     // read as growth. Hidden until there is a second month to compare.
@@ -1500,7 +1681,7 @@
     renderCountries(t);
     renderSides(t);
     el('mfrBadge').textContent=t.display_name||'';
-    el('whoami').textContent=[t.user_name,t.role].filter(Boolean).join(' \u00b7 ');
+    el('whoami').textContent=[t.user_name,t.role,t.display_name].filter(Boolean).join(' \u00b7 ');
     if(t.accent_hex && /^#[0-9A-Fa-f]{6}$/.test(t.accent_hex)){
       var r=document.documentElement.style;
       r.setProperty('--accent',t.accent_hex);
@@ -1655,7 +1836,30 @@
     api('logout',{}).catch(function(){}).then(function(){ location.reload(); });
   });
 
+  // ⭐ BOTTOM NAV drives the same tab buttons, so every load rule stays in one
+  // place. The top tabs report back, so the two never disagree.
+  function syncBotnav(tab){
+    Array.prototype.forEach.call(document.querySelectorAll('#botnav button'),function(b){
+      b.classList.toggle('on', b.getAttribute('data-go')===tab);
+    });
+  }
+  el('botnav').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-go]'); if(!b) return;
+    var t=document.querySelector('.tabs button[data-tab="'+b.getAttribute('data-go')+'"]');
+    if(t) t.click();
+    window.scrollTo(0,0);
+  });
+  document.querySelector('.tabs').addEventListener('click',function(e){
+    var b=e.target.closest('button[data-tab]'); if(b) syncBotnav(b.getAttribute('data-tab'));
+  });
+  el('menuOverview').addEventListener('click',function(){
+    el('userMenu').hidden=true;
+    var t=document.querySelector('.tabs button[data-tab="portfolio"]'); if(t) t.click();
+    window.scrollTo(0,0);
+  });
+
   el('settingsBtn').addEventListener('click',function(){
+    syncBotnav('');
     Array.prototype.forEach.call(document.querySelectorAll('.tabs button'),function(x){ x.classList.remove('on'); });
     Array.prototype.forEach.call(document.querySelectorAll('.panel'),function(p){ p.classList.remove('on'); });
     el('panel-settings').classList.add('on');
@@ -2286,14 +2490,15 @@
     el('plSide').style.display='none';
     el('plTitle').textContent='What clinics promoted in '+(plMonth(PL&&PL.until)||'the last month');
     var s=(PL&&PL.summary)||{};
-    el('plSub').innerHTML=esc(plTerr())+' · '+esc(plSpan())+' · Facebook and Instagram '+
-      plInfo('plTipSum','Public posts from clinics’ own Facebook and Instagram accounts during this period. Posts that only list hashtags or compare products are left out.'+
+    el('plSub').innerHTML=esc(plTerr())+' · '+esc(plSpan())+' · Social media '+
+      plInfo('plTipSum','Public posts from clinics’ own social media accounts during this period. Posts that only list hashtags or compare products are left out.'+
         (PL_INTERNAL?' <span class="pl-int">Internal: '+num(s.posts||0)+' posts · '+num(s.businesses||0)+' businesses · '+num(s.locations||0)+' locations</span>':''));
     var rows=plRows();
     if(!rows.length){ el('plBody').innerHTML='<div class="empty">No posts in this territory yet.</div>'; return; }
     if(!PL_SEL[PL_SIDE] || !rows.some(function(r){ return r.product===PL_SEL[PL_SIDE]; })) PL_SEL[PL_SIDE]=rows[0].product;
     var base=plTot(dev?'devices_share_base':'injectables_share_base');
-    var shown=PL_ALL?rows:rows.slice(0,12), max=plPct(rows[0].posts,base)||1;
+    var top=isPhone()?5:12;
+    var shown=PL_ALL?rows:rows.slice(0,top), max=plPct(rows[0].posts,base)||1;
     var list=shown.map(function(r,i){
       var v=plPct(r.posts,base);
       return '<button type="button" class="pl-row'+(r.product===PL_SEL[PL_SIDE]?' on':'')+'"'+(PL_INTERNAL?' title="'+esc(plRowTitle(r,base))+'"':'')+' onclick="plPick(\''+plQ(r.product)+'\')">'+
@@ -2301,9 +2506,11 @@
         '<span class="pl-name">'+esc(r.product)+' <span class="pl-cat">'+esc(r.category||'')+'</span></span>'+
         '<span class="pl-meas"><b>'+plFmt(v)+'</b>'+(plLow(r)?' <span class="pl-tag">Early signal</span>':'')+'</span>'+
         '<span></span><span class="pl-track"><span class="pl-fill" style="width:'+(100*v/max).toFixed(1)+'%"></span></span>'+
+        // Phones only: breadth under the name. Post counts stay internal.
+        '<span class="pl-msub">'+(PL_INTERNAL?plPlural(r.posts,'post','posts')+' \u00b7 ':'')+plPlural(r.businesses,'business','businesses')+'</span>'+
       '</button>';
     }).join('');
-    var more=rows.length>12?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top 12':'Show all '+rows.length)+'</button>':'';
+    var more=rows.length>top?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top '+top:'View all '+rows.length+' \u2192')+'</button>':'';
     // ⭐ LAUNCHING = a ranked mini-leaderboard by businesses announcing (no
     // percentages). RADAR = an editorial list with labels, not a ranking.
     var launches=rows.filter(function(r){ return r.launch_posts>0; })
@@ -2391,7 +2598,8 @@
         var nm=(typeof provinceLabel==='function'&&!geo.province)?provinceLabel(g.place):g.place;
         return '<div class="pl-brand"><span>'+esc(nm)+'</span><span class="t"><span style="width:'+(100*g.posts/pmax).toFixed(1)+'%"></span></span><span class="c">'+Math.round(100*g.posts/ptot)+'%</span></div>';
       }).join('')+'</div>':'';
-    el('plDet').innerHTML='<div class="pl-eyebrow">'+esc(r.category||'')+'</div>'+
+    el('plDet').innerHTML='<button type="button" class="pl-close" aria-label="Close" onclick="plSheet(false)">&times;</button>'+
+      '<div class="pl-eyebrow">'+esc(r.category||'')+'</div>'+
       '<div class="pl-dname">'+esc(r.product)+(plLow(r)?' <span class="pl-tag">Early signal</span>':'')+'</div>'+
       '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+plFmt(plPct(r.posts,base))+'</div><div class="l">of '+(dev?'device':'injectable')+' conversation</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
@@ -2407,8 +2615,44 @@
       b.classList.toggle('on', b.querySelector('.pl-name').firstChild.textContent.trim()===name);
     });
     paintPulseDetail();
-    if(window.innerWidth<900) el('plDet').scrollIntoView({behavior:'smooth',block:'start'});
+    if(isPhone()) plSheet(true);
+    else if(window.innerWidth<900) el('plDet').scrollIntoView({behavior:'smooth',block:'start'});
   };
+  window.plSheet=function(on){
+    var d=el('plDet'), sh=el('plShade');
+    if(d) d.classList.toggle('open',!!on);
+    if(sh) sh.classList.toggle('open',!!on);
+    document.body.style.overflow=on?'hidden':'';
+  };
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape'){ plSheet(false); appSheet(false); } });
+
+  // ⭐ CLINIC SHEET (phones). The list shows a short row; tapping it opens the
+  // full card here, with every button working as it does on desktop.
+  window.appSheet=function(on, html){
+    var sh=el('appSheet'), sd=el('appShade');
+    if(on){
+      sh.innerHTML='<div class="grab"></div><button type="button" class="x" aria-label="Close">&times;</button>'+html;
+      Array.prototype.forEach.call(sh.querySelectorAll('[data-wired]'),function(n){ n.removeAttribute('data-wired'); });
+      sh.querySelector('.x').addEventListener('click',function(){ appSheet(false); });
+      wireSaveButtons(sh); bindEvidence(sh); bindFlags(sh);
+      sh.scrollTop=0;
+    } else {
+      // Keep the list's Save buttons in step with anything saved in the sheet.
+      Array.prototype.forEach.call(document.querySelectorAll('#acctList .savebtn'),function(b){
+        var on2=!!savedIds[b.getAttribute('data-cid')];
+        b.classList.toggle('on',on2); b.textContent=on2?'\u2713 Saved':'+ Save';
+      });
+    }
+    sh.classList.toggle('open',!!on); sd.classList.toggle('open',!!on);
+    document.body.style.overflow=on?'hidden':'';
+  };
+  document.addEventListener('click',function(e){
+    if(e.target && e.target.id==='appShade'){ appSheet(false); return; }
+    if(!isPhone()) return;
+    var card=e.target.closest && e.target.closest('#acctList .acct.card');
+    if(!card || e.target.closest('a,button,input,textarea,select')) return;
+    appSheet(true, card.outerHTML);
+  });
   window.plHow=function(on){
     el('plHowBox').hidden=!on;
     el('plHowToxT').hidden=el('plHowToxD').hidden=!PULSE_INJECTABLES;
@@ -3076,7 +3320,7 @@
                             !== v.m.toLowerCase().replace(/[^a-z0-9]/g,'');
     var q = v.t ? '<span class="evq">\u201c'+esc(v.t)+'\u201d</span>' : '';
     var lead;
-    if(src==='social')      lead = v.t ? 'Posted about on the clinic\u2019s own Facebook or Instagram: '+q+'.' : 'Posted about on the clinic\u2019s own Facebook or Instagram.';
+    if(src==='social')      lead = v.t ? 'Posted about on the clinic\u2019s own social media: '+q+'.' : 'Posted about on the clinic\u2019s own social media.';
     else if(src==='manual') lead = isPrice ? 'Price confirmed by SkinDay: '+q+'.' : 'Confirmed by SkinDay.';
     else if(src==='clinic') lead = isPrice ? 'Price provided by the clinic: '+q+'.' : 'Listed by the clinic on its SkinDay profile.';
     else if(src==='manufacturer') lead = 'Listed by the manufacturer.';
@@ -3368,8 +3612,10 @@
     if(!b) return;
     api('new_count',{}).then(function(res){
       var n = Number(res && res.count) || 0;
-      if(n > 0){ b.textContent = n.toLocaleString() + ' new'; b.title = n.toLocaleString()+' clinics newly listed in the last 60 days'; b.style.display=''; }
-      else { b.style.display='none'; }
+      var bn = el('bnNew');
+      if(n > 0){ b.textContent = n.toLocaleString() + ' new'; b.title = n.toLocaleString()+' clinics newly listed in the last 60 days'; b.style.display='';
+        if(bn){ bn.textContent = compactN(n); bn.style.display=''; } }
+      else { b.style.display='none'; if(bn) bn.style.display='none'; }
     }).catch(function(){ b.style.display='none'; });
   }
   // The query the screen is currently asking for, without paging. Shared by the
@@ -3942,9 +4188,9 @@
     var inner = usable
       ? '<img src="'+esc(a.photo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'none\')"><span style="display:none">'+esc(a.name)+'</span>'
       : '<span>'+esc(a.name)+'</span>';
-    var shot = '<div class="shot'+(usable?'':' none')+'">'+inner+pills+dist+'</div>';
+    var shot = '<div class="shot'+(usable?'':' none')+'" data-i="'+esc(String(a.name||'').trim().charAt(0).toUpperCase())+'">'+inner+pills+dist+'</div>';
 
-    var meta=[starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
+    var meta=[(a.distance_km!=null?'<span class="mdist">'+Number(a.distance_km).toFixed(1)+' km \u00b7 </span>':'')+starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
               (a.n_devices?a.n_devices+' '+W().items:'')].filter(Boolean).join(' &middot; ');
 
     return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
@@ -4036,7 +4282,8 @@
   function loadSavedIds(){ api('list_saved',{}).then(function(res){ (res.saved||[]).forEach(function(s){ savedIds[s.clinic_id]=true; }); updateListCount(); }).catch(function(){}); }
   // The badge counts what is in the current territory, so it agrees with the
   // list underneath it rather than with the whole country.
-  function updateListCount(){ var n=Object.keys(savedIds).length; var c=el('listCount'); c.textContent=n; c.style.display=n?'':'none'; }
+  function updateListCount(){ var n=Object.keys(savedIds).length; var c=el('listCount'); c.textContent=n; c.style.display=n?'':'none';
+    var bl=el('bnList'); if(bl){ bl.textContent=compactN(n); bl.style.display=n?'':'none'; } }
   // ---- Route planner -------------------------------------------------------
   // A rep plans 6-10 calls a day, which is small enough that a good-enough
   // ordering is instant: nearest-neighbour for a first pass, then 2-opt to undo
