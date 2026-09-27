@@ -3751,7 +3751,9 @@
     // screen. So the territory is still fetched WHOLE — but in SMALLER pages, so
     // the first cards paint in a fraction of the time and the rest arrive
     // behind them.
-    fetchAllAccounts(Object.assign(accountsQuery(), {limit:ACCT_FETCH_PAGE}));
+    // Near me shows the closest 100; everything else pages through the territory.
+    var q0=accountsQuery();
+    fetchAllAccounts(Object.assign(q0, {limit: q0.near_lat!=null ? 100 : ACCT_FETCH_PAGE}));
   }
   // ⭐⭐ PAGED FETCH. Lambda caps a response at 6MB and rows are ~1.1KB, so a
   // single request tops out around 5,000 accounts — fine for a Canadian
@@ -3785,8 +3787,15 @@
           return;
         }
         renderAccounts(all);
-      }).catch(function(e){ LAST_ACCT_Q=null; handleErr(e); });
+      }).catch(function(e){
+        // A cold database connection can run past the time limit on its first
+        // request and answer quickly on the next, so a timeout gets one retry.
+        var msg=String((e&&(e.error||e.detail||e.message))||'');
+        if(!retried && /timeout|took too long/i.test(msg) && seq===ACCT_SEQ){ retried=true; step(); return; }
+        LAST_ACCT_Q=null; handleErr(e);
+      });
     }
+    var retried=false;
     step();
   }
   // ---- New: what changed, and where the wind is blowing --------------------
@@ -4062,7 +4071,10 @@
     }
 
     var txt;
-    if(SEARCH_W.length){
+    if(NEAR && el('acctSort').value==='distance' && !SEARCH_W.length){
+      // Near me reads only the closest clinics, so a territory total means nothing here.
+      txt = rows.length ? 'Nearest '+rows.length.toLocaleString()+' clinics' : 'no results nearby';
+    } else if(SEARCH_W.length){
       // Measured against what was FETCHED, not total_matches: those are the only
       // rows search can see, and claiming otherwise would overstate the sweep.
       txt = shown.length
