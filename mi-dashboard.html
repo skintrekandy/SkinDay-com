@@ -1622,7 +1622,9 @@
   function api(action, extra){
     var body=Object.assign({action:action,country:COUNTRY,side:SIDE,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
     return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY},body:JSON.stringify(body)})
-      .then(function(r){ if(r.status===401) throw {unauth:true}; return r.json().then(function(j){ if(!r.ok) throw j; return j; }); });
+      .then(function(r){ if(r.status===401) throw {unauth:true};
+        return r.json().catch(function(){ throw {error: r.status>=500 ? 'The server took too long. Please try again.' : 'Something went wrong.'}; })
+          .then(function(j){ if(!r.ok) throw j; return j; }); });
   }
 
   // ⭐⭐ THE SESSION IS PERSISTED. Before this it lived only in the KEY variable,
@@ -3680,7 +3682,7 @@
       NEAR={lat:pos.coords.latitude,lng:pos.coords.longitude};
       el('acctNear').disabled=false; el('acctNear').classList.add('on');
       el('acctSort').value='distance';
-      nearNote('Sorted by distance from where you are now.',true);
+      nearNote('The clinics nearest to where you are now, closest first.',true);
       loadAccounts();
     },function(err){
       el('acctNear').disabled=false;
@@ -3753,6 +3755,9 @@
   var ACCT_FETCH_PAGE = 600, ACCT_MAX_PAGES = 40, ACCT_SEQ = 0;
   function fetchAllAccounts(body){
     var seq = ++ACCT_SEQ, all = [], page = 0;
+    // Near me wants what is close, not the whole territory in distance order:
+    // one page of the nearest clinics, one request.
+    var nearOnly = body.near_lat != null;
     function step(){
       var b = Object.assign({}, body, { offset: page * ACCT_FETCH_PAGE });
       api('accounts', b).then(function(res){
@@ -3764,7 +3769,7 @@
         var total = rows.length && rows[0].total_matches != null
           ? Number(rows[0].total_matches) : all.length;
         page++;
-        if(all.length < total && rows.length === ACCT_FETCH_PAGE && page < ACCT_MAX_PAGES){
+        if(!nearOnly && all.length < total && rows.length === ACCT_FETCH_PAGE && page < ACCT_MAX_PAGES){
           // Paint what has arrived so the rep is not staring at a spinner while
           // a large territory finishes.
           renderAccounts(all);
@@ -4080,7 +4085,7 @@
     // ⓘ Measured on the FETCHED set, never the searched one — a search showing
     // 3 of 900 is a search, not a truncation, and warning there would train the
     // rep to ignore the one message that must always be believed.
-    var cut = (total != null && rows.length < total);
+    var cut = (total != null && rows.length < total) && !(NEAR && el('acctSort').value==='distance');
     var warn = el('acctTrunc');
     if (warn) {
       warn.style.display = cut ? '' : 'none';
