@@ -196,7 +196,7 @@
   /* ⭐ THE WHOLE ROW IS THE CONTROL. The chevron alone was carrying the
      affordance; now the row has a hover fill, a pointer, and more height than
      the device rows beneath it so the hierarchy is obvious at a glance. */
-  .lshead { display:flex; align-items:center; gap:11px; padding:15px 10px; margin:0;
+  .lshead { color:var(--ink); -webkit-appearance:none; appearance:none; display:flex; align-items:center; gap:11px; padding:15px 10px; margin:0;
     border-bottom:1px solid var(--line-2); width:100%; text-align:left;
     background:none; border-left:0; border-right:0; border-top:0; font:inherit;
     cursor:pointer; border-radius:var(--radius-sm) var(--radius-sm) 0 0; }
@@ -865,6 +865,19 @@
     .lsrow > .lsmv { grid-column:1; grid-row:3; }
     .lsrow .lnum .ln2 { font-size:9px; }
     .lscat { padding-left:22px; }
+    /* Company rows: name and clinics on top, portfolio and link underneath,
+       movement last. Nothing sits outside the row. */
+    .lshead.lssubhead { display:grid; grid-template-columns:14px minmax(0,1fr) auto; column-gap:10px; row-gap:3px;
+      align-items:center; padding:12px 10px 12px 8px; }
+    .lshead.lssubhead > .lscar { grid-column:1; grid-row:1; }
+    .lshead.lssubhead > .lsname { grid-column:2; grid-row:1; font-size:15.5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .lshead.lssubhead > .lnum { grid-column:3; grid-row:1; min-width:0; text-align:right; font-size:13px; }
+    .lshead.lssubhead > .lscount { grid-column:2; grid-row:2; margin:0; font-size:11px; }
+    .lshead.lssubhead > .lgo { grid-column:3; grid-row:2; margin:0; justify-self:end; font-size:12.5px; }
+    .lshead.lssubhead > .lsmv { grid-column:2; grid-row:3; }
+    .lshead.lssubhead > .lsp, .lshead.lssubhead > .lsmine { display:none; }
+    .lshead.lssubhead > .lgo { color:var(--accent-strong); }
+    .lshead.lssubhead .lnum .ln2 { font-size:9px; }
 
     /* ---- My List ---- */
     .routebar { padding:12px 14px; }
@@ -2916,7 +2929,7 @@
             'data-co="'+esc(key)+'" aria-expanded="'+(open?'true':'false')+'">'+
             '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
             '<span class="lsname">'+esc(c.name)+'</span>'+
-            (c.is_ours?'<span class="lsmine">Yours</span>':'')+
+
             '<span class="lsp"></span>'+
             '<span class="lscount">'+nd+' '+(nd===1?W().item:W().itemsPl)+
               ' \u00b7 '+nc+(nc===1?' category':' categories')+'</span>'+
