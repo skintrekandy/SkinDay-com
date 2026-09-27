@@ -25,7 +25,7 @@
 const { createClient } = require('@supabase/supabase-js');
 
 // Bump whenever matching changes, so two runs are only compared like for like.
-const MATCHER_VERSION = '2026-09-25-social-v2';   // v2: evidence types
+const MATCHER_VERSION = '2026-09-26-social-v3';   // v3: hashtags count
 
 const ACTORS = {
   facebook: 'apify~facebook-posts-scraper',
@@ -182,10 +182,11 @@ function matchPost(text, matcher) {
 // ---------------------------------------------------------------------------
 // Evidence type (M25 step 38)
 //
-// Every mention gets a type and a confidence. Two types are WEAK and never put
-// a device on a clinic's profile by themselves: hashtag_only (the product only
-// appears inside a run of hashtags, "#botox #dysport #xeomin") and comparison.
-// Everything else is the clinic talking about a product on its own account.
+// Every mention gets a type and a confidence. Only COMPARISON is weak and never
+// puts a device on a clinic's profile by itself. hashtag_only (the product only
+// appears in the post's hashtags) used to be weak too; Andy, 2026-09-26: a
+// clinic tagging a brand on its OWN account counts, same as naming it. Every
+// account read here is a clinic's own, so hashtags publish like any mention.
 // Rules decide the obvious cases; posts with no cue at all stay "mention" and
 // can be refined by the AI pass (classify-ai), which only changes the type used
 // for analytics, never what is published.
@@ -195,7 +196,7 @@ const EVIDENCE_CONFIDENCE = {
   announcement: 0.9, promotion: 0.8, before_after: 0.75, education: 0.6,
   mention: 0.55, comparison: 0.3, hashtag_only: 0.2
 };
-const WEAK_EVIDENCE = new Set(['hashtag_only', 'comparison']);
+const WEAK_EVIDENCE = new Set(['comparison']);
 
 // Checked near the product (within ~160 characters either side).
 const ANNOUNCE_CUES = [
@@ -551,8 +552,17 @@ async function collect(supabase, body) {
   }
 
   // Save posts (text kept, so a later matcher can re-read without paying again).
+  // ⛔ ONE ROW PER POST PER BATCH. A collaboration post comes back once for each
+  // account tagged on it, with the same post key, and Postgres refuses an upsert
+  // that touches the same row twice ("ON CONFLICT DO UPDATE command cannot affect
+  // row a second time"). The first copy wins; the post is stored once either way.
   let saved = [];
-  const postRows = posts.map(p => ({
+  const seenPost = new Set();
+  const postRows = posts.filter(p => {
+    if (seenPost.has(p.post_key)) return false;
+    seenPost.add(p.post_key);
+    return true;
+  }).map(p => ({
     platform, post_key: p.post_key, page_key: p.page_key, post_url: p.post_url,
     posted_at: p.posted_at, text: clean(clean(p.text || '').slice(0, 8000)), run_id: id
   }));
@@ -583,7 +593,7 @@ async function collect(supabase, body) {
           post_url: p.post_url, posted_at: p.posted_at, matched_text: clean(h.surface),
           snippet: snippetFor(p.text, h.surface), flag: m.comparison ? 'comparison' : null,
           evidence_type: e.evidence_type, confidence: e.confidence, classified_by: 'rules', classified_at: nowIso,
-          // Weak evidence (hashtag-only, comparison) is kept for listening but never publishes.
+          // Weak evidence (comparison) is kept for listening but never publishes.
           status: WEAK_EVIDENCE.has(e.evidence_type) ? 'weak' : 'pending'
         });
       }
