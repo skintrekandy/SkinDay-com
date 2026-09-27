@@ -49,23 +49,40 @@ async function loadCategoryMeta(supabase) {
   }
 }
 
+// ── PUBLISHED LISTS (M26) ─────────────────────────────────────────────────
+// Once a clinic publishes its list from the portal Services tab, only the rows
+// it confirmed (declared_at set) display. Same rule as the device_facets and
+// device_clinic_ids RPCs, so a filter count and its list agree. The published
+// set is tiny, so one small query covers every request.
+async function publishedClinicIds(supabase) {
+  const { data, error } = await supabase
+    .from('clinics')
+    .select('id')
+    .not('devices_published_at', 'is', null)
+    .range(0, 9999);
+  if (error) throw new Error(error.message);
+  return new Set((data || []).map(r => String(r.id)));
+}
+const rowShows = (row, published) =>
+  !published.has(String(row.clinic_id)) || row.declared_at != null;
+
 // A device fetch NEVER throws. If it fails the directory renders exactly as it
 // did before devices existed, rather than the whole page going down over a
 // secondary feature.
 async function fetchDevicesFor(supabase, clinicIds) {
   if (!clinicIds || !clinicIds.length) return {};
   try {
-    const meta = await loadCategoryMeta(supabase);
+    const [meta, published] = await Promise.all([loadCategoryMeta(supabase), publishedClinicIds(supabase)]);
     const { data, error } = await supabase
       .from('clinic_devices')
-      .select('clinic_id, status, device_reference!inner(id, model, manufacturer, category, active)')
+      .select('clinic_id, status, declared_at, device_reference!inner(id, model, manufacturer, category, active)')
       .in('clinic_id', clinicIds)
       .eq('device_reference.active', true);
     if (error) throw new Error(error.message);
     const map = {};
     (data || []).forEach(r => {
       const d = r.device_reference;
-      if (!d) return;
+      if (!d || !rowShows(r, published)) return;
       const k = String(r.clinic_id);
       (map[k] = map[k] || []).push({
         model: d.model,
@@ -143,15 +160,16 @@ async function resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGro
     // ── 2. read the owning clinics in ORDERED PAGES ─────────────────────
     const PAGE = 1000;
     const ids = new Set();
+    const published = await publishedClinicIds(supabase);
     for (let from = 0; from < 60000; from += PAGE) {
       const { data, error } = await supabase
         .from('clinic_devices')
-        .select('clinic_id')
+        .select('clinic_id, declared_at')
         .in('device_id', deviceIds)
         .order('clinic_id', { ascending: true })
         .range(from, from + PAGE - 1);
       if (error) throw new Error(error.message);
-      (data || []).forEach(r => ids.add(String(r.clinic_id)));
+      (data || []).forEach(r => { if (rowShows(r, published)) ids.add(String(r.clinic_id)); });
       if (!data || data.length < PAGE) break;
     }
     return ids;
