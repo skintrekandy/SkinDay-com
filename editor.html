@@ -415,6 +415,19 @@
     }
 
     .tab-pane { display: none; animation: fadeIn 0.25s ease; }
+
+    /* ─── SERVICES: Devices / Injectables switch ─── */
+    .identity-intro.svc-intro { font-family: 'DM Sans', sans-serif; font-style: normal; font-size: 15px; }
+    .svc-seg { display: inline-flex; gap: 3px; padding: 4px; margin: 0 0 18px; background: var(--warm-white);
+      border: 1px solid var(--border); border-radius: 100px; }
+    .svc-seg button { font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500; color: var(--bark-light);
+      background: none; border: 0; border-radius: 100px; padding: 8px 20px; cursor: pointer; -webkit-appearance: none; appearance: none; }
+    .svc-seg button.on { background: var(--rose); color: #fff; }
+    .svc-seg .svc-n { font-size: 12px; opacity: .75; margin-left: 2px; }
+    @media (max-width: 600px) {
+      .svc-seg { display: flex; }
+      .svc-seg button { flex: 1; padding: 10px 8px; }
+    }
     .tab-pane.active { display: block; }
 
     /* ─── M28 CLINIC IDENTITY ─── */
@@ -423,7 +436,6 @@
       font-size: 16px;
       line-height: 1.55;
       color: var(--bark-mid);
-      font-style: italic;
       margin-bottom: 28px;
       padding: 18px 22px;
       background: rgba(201, 169, 110, 0.06);
@@ -600,7 +612,6 @@
 
     .pill-picker-input::placeholder {
       color: var(--bark-light);
-      font-style: italic;
       font-weight: 300;
     }
 
@@ -766,7 +777,6 @@
       text-align: center;
       font-size: 13px;
       color: var(--bark-light);
-      font-style: italic;
     }
 
     .pill-picker-empty-examples {
@@ -1588,7 +1598,7 @@
       <button class="tab-btn" onclick="switchTab('hours', this)">Hours</button>
       <button class="tab-btn" onclick="switchTab('photos', this)">Photos</button>
       <button class="tab-btn" onclick="switchTab('practitioners', this)">Practitioners</button>
-      <button class="tab-btn" onclick="switchTab('devices', this)">Devices</button>
+      <button class="tab-btn" onclick="switchTab('devices', this)">Services</button>
     </nav>
 
     <!-- ─── TAB: PRICING ─── -->
@@ -1946,7 +1956,6 @@
         <div class="field-hint" style="margin-top:12px;">JPG or PNG, max 5MB each. Drag ☰ to reorder. First photo is your hero image.</div>
       </div>
     </div>
-  </div>
 
     <!-- ─── TAB: PRACTITIONERS ─── -->
     <div class="tab-pane" id="tab-practitioners">
@@ -1962,14 +1971,21 @@
       </div>
     </div>
 
-    <!-- ─── TAB: DEVICES (M23) ─── -->
+    <!-- ─── TAB: SERVICES (M23 devices + M26 injectables) ───
+         The tab id stays 'devices' so switchTab and the save path are unchanged.
+         Both sides are one list and one publish; the switch only filters. -->
     <div class="tab-pane" id="tab-devices">
-      <div class="identity-intro">
-        The equipment you run is one of the things patients search by. Confirm what you have, remove anything we got wrong, and add what we missed.
+      <div class="identity-intro svc-intro">
+        Patients search by the treatments and brands a clinic offers. Confirm what you have, remove anything that is wrong, and add what is missing.
+      </div>
+
+      <div class="svc-seg" id="svc-seg" role="tablist" aria-label="Service type">
+        <button type="button" class="on" data-side="dev" onclick="deviceSetSide('dev')">Devices <span class="svc-n" id="svc-n-dev"></span></button>
+        <button type="button" data-side="inj" onclick="deviceSetSide('inj')">Injectables <span class="svc-n" id="svc-n-inj"></span></button>
       </div>
 
       <div class="identity-card">
-        <div class="identity-card-title">Your equipment</div>
+        <div class="identity-card-title" id="device-card-title">Your equipment</div>
         <div class="identity-card-desc" id="device-card-desc">Search by model name. Only devices on our reference list can be added, so spelling and manufacturer stay consistent across the directory.</div>
 
         <div class="identity-counter" id="device-counter">
@@ -1998,18 +2014,19 @@
         </div>
 
         <div class="identity-helper" id="device-helper">
-          Don't see your machine? Email <span class="site-contact">hello@skinday.ca</span> with the model name and we'll add it to the reference list.
+          Don't see your <span id="device-helper-noun">machine</span>? Email <span class="site-contact">hello@skinday.ca</span> with the name and we'll add it to the reference list.
         </div>
       </div>
 
       <div class="identity-card">
         <div class="identity-card-title">What publishing does</div>
         <div class="identity-card-desc">
-          Once you save this list, it becomes the equipment shown on your SkinDay profile, replacing anything we found by reading your website. If you leave something off, it stops showing. You can come back and change it any time.
+          Once you save, your devices and injectables become what your SkinDay profile shows, replacing anything we found ourselves. If you leave something off, it stops showing. You can come back and change it any time.
         </div>
         <div class="field-hint" id="device-published-state" style="margin-top:10px;"></div>
       </div>
     </div>
+  </div>
 
   <!-- Save Bar -->
   <div class="save-bar" id="save-bar">
@@ -3790,6 +3807,41 @@
   const deviceCatLabel  = {};   // category slug -> display label
   const deviceCatGroup  = {};   // category slug -> parent group label
   const deviceCatSort   = {};   // category slug -> sort order
+  const deviceCatSeg    = {};   // category slug -> 'inj' | 'dev'
+  let deviceSide        = 'dev';
+  // Fallback for the four injectable categories if device_categories cannot
+  // be read with mi_segment.
+  const DEVICE_INJ_CATS = ['biostimulator','neurotoxin','filler','fat_dissolving'];
+  const DEVICE_INJ_ORDER = { biostimulator: 1, neurotoxin: 2, filler: 3, fat_dissolving: 4 };
+  function deviceSegOf(cat) {
+    if (deviceCatSeg[cat]) return deviceCatSeg[cat];
+    return DEVICE_INJ_CATS.includes(cat) ? 'inj' : 'dev';
+  }
+  function deviceSideOfId(id) {
+    const d = deviceById(id);
+    return d ? deviceSegOf(d.category) : 'dev';
+  }
+  const DEVICE_SIDE_TEXT = {
+    dev: { title: 'Your equipment', noun: 'machine', ph: 'Search by model, e.g. Morpheus8…',
+           desc: 'Search by model name. Only devices on our reference list can be added, so spelling and manufacturer stay consistent across the directory.' },
+    inj: { title: 'Your injectables', noun: 'product', ph: 'Search by brand, e.g. Sculptra…',
+           desc: 'Search by brand name. Only products on our reference list can be added, so names stay consistent across the directory.' }
+  };
+  function deviceSetSide(side) {
+    deviceSide = side === 'inj' ? 'inj' : 'dev';
+    document.querySelectorAll('#svc-seg button').forEach(b => b.classList.toggle('on', b.getAttribute('data-side') === deviceSide));
+    const t = DEVICE_SIDE_TEXT[deviceSide];
+    const set = (id, v, prop) => { const el = document.getElementById(id); if (el) el[prop || 'textContent'] = v; };
+    set('device-card-title', t.title);
+    set('device-card-desc', t.desc);
+    set('device-helper-noun', t.noun);
+    const input = document.getElementById('device-input');
+    if (input) { input.placeholder = t.ph; input.value = ''; }
+    deviceQuery = '';
+    const clearBtn = document.getElementById('device-clear');
+    if (clearBtn) clearBtn.classList.remove('visible');
+    deviceRender();
+  }
 
   function deviceHeaders() {
     const tok = sessionStorage.getItem('sd_token');
@@ -3820,14 +3872,19 @@
       // which is ugly but still usable, so it must not block the picker.
       try {
         const cRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/device_categories?select=category,label_en,group_label,sort_order&limit=200`,
+          `${SUPABASE_URL}/rest/v1/device_categories?select=category,label_en,group_label,sort_order,mi_segment&limit=200`,
           { headers: h }
         );
-        const cats = await cRes.json();
+        let cats = await cRes.json();
+        if (!cRes.ok) {
+          const r2 = await fetch(`${SUPABASE_URL}/rest/v1/device_categories?select=category,label_en,group_label,sort_order&limit=200`, { headers: h });
+          cats = await r2.json();
+        }
         if (Array.isArray(cats)) {
           cats.forEach(c => {
             deviceCatLabel[c.category] = c.label_en || c.category;
             deviceCatGroup[c.category] = c.group_label || '';
+            if (c.mi_segment) deviceCatSeg[c.category] = c.mi_segment === 'injectables' ? 'inj' : 'dev';
             deviceCatSort[c.category]  = (c.sort_order === null || c.sort_order === undefined) ? 999 : c.sort_order;
           });
         }
@@ -3892,6 +3949,7 @@
     const selected = new Set(deviceSelected.map(Number));
     return deviceReference.filter(d => {
       if (selected.has(Number(d.id))) return false;
+      if (deviceSegOf(d.category) !== deviceSide) return false;
       if (!q) return true;
       return (d.model || '').toLowerCase().includes(q)
           || (d.manufacturer || '').toLowerCase().includes(q);
@@ -3910,7 +3968,7 @@
         cat,
         label: deviceCatLabel[cat] || cat,
         group: deviceCatGroup[cat] || '',
-        sort: deviceCatSort[cat] === undefined ? 999 : deviceCatSort[cat],
+        sort: DEVICE_INJ_ORDER[cat] || (deviceCatSort[cat] === undefined ? 999 : deviceCatSort[cat]),
         items: list
       }))
       .sort((a, b) => (a.sort - b.sort) || a.label.localeCompare(b.label));
@@ -3928,7 +3986,8 @@
     if (!chipsEl || !counterEl) return;
 
     chipsEl.innerHTML = '';
-    deviceSelected.forEach(id => {
+    const sideIds = deviceSelected.filter(id => deviceSideOfId(id) === deviceSide);
+    sideIds.forEach(id => {
       const d = deviceById(id);
       const row = deviceRowFor(id);
       const chip = document.createElement('span');
@@ -3940,6 +3999,8 @@
       let provenance = '';
       if (row && !row.declared_at && row.source === 'website') provenance = 'From your website';
       else if (row && !row.declared_at && row.source === 'manufacturer') provenance = 'From the manufacturer';
+      else if (row && !row.declared_at && row.source === 'social') provenance = 'From your social media';
+      else if (row && !row.declared_at && row.source === 'clinic') provenance = 'From your prices';
 
       chip.innerHTML =
         `<span>${escapeHtml(deviceLabel(id))}</span>` +
@@ -3949,7 +4010,12 @@
       chipsEl.appendChild(chip);
     });
 
-    counterEl.querySelector('.count-num').textContent = deviceSelected.length;
+    counterEl.querySelector('.count-num').textContent = sideIds.length;
+    const nDev = deviceSelected.filter(id => deviceSideOfId(id) === 'dev').length;
+    const nInj = deviceSelected.length - nDev;
+    const nd = document.getElementById('svc-n-dev'), ni = document.getElementById('svc-n-inj');
+    if (nd) nd.textContent = nDev ? nDev : '';
+    if (ni) ni.textContent = nInj ? nInj : '';
   }
 
   function deviceRenderPanel() {
@@ -3957,15 +4023,15 @@
     if (!panel) return;
 
     if (deviceReference.length === 0) {
-      panel.innerHTML = `<div class="pill-picker-empty">Loading the device list…</div>`;
+      panel.innerHTML = `<div class="pill-picker-empty">Loading the list…</div>`;
       return;
     }
 
     const filtered = deviceFiltered();
     if (filtered.length === 0) {
       panel.innerHTML = deviceQuery
-        ? `<div class="pill-picker-empty">No device matches "<strong>${escapeHtml(deviceQuery)}</strong>". If we're missing your machine, email ${SITE_CONTACT} and we'll add it.</div>`
-        : `<div class="pill-picker-empty">Everything on our list is already selected.</div>`;
+        ? `<div class="pill-picker-empty">Nothing matches "<strong>${escapeHtml(deviceQuery)}</strong>". If we're missing it, email ${SITE_CONTACT} and we'll add it.</div>`
+        : `<div class="pill-picker-empty">Everything on this list is already selected.</div>`;
       return;
     }
 
@@ -3996,8 +4062,8 @@
         : 'You have published this list.';
     } else {
       el.textContent = deviceRows.length > 0
-        ? 'Not published yet. The list above is what we found by reading your website, so please check it before saving.'
-        : 'Not published yet. Nothing has been added for your clinic, so start by searching for your machines.';
+        ? 'Not published yet. The lists above are what we found for your clinic, so please check both before saving.'
+        : 'Not published yet. Nothing has been added for your clinic, so start by searching above.';
     }
   }
 
