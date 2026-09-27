@@ -1602,25 +1602,21 @@
 
   function tryKey(k){
     KEY=k;
-    return api('overview',{}).then(function(res){
+    // ⭐⭐ SIGN-IN ASKS ONLY WHO YOU ARE. It used to run the whole Overview
+    // batch (six market-wide queries) before showing anything, although the
+    // app opens on Clinics. Now the app appears as soon as the account is
+    // known; the Overview loads the first time it is opened.
+    return api('tenant',{}).then(function(res){
       rememberSession(k);
       applyIdentity(res.tenant||{});
       document.documentElement.removeAttribute('data-resuming');
       var rz0=el('gateResume'); if(rz0) rz0.style.display='none';
       el('gateSignin').style.display='';
       el('gate').style.display='none'; el('app').style.display='block';
-      fillSelect(el('selProvince'),res.geo||[],CTY.all,provinceLabel);
-      COVERAGE=res.coverage||null;
-      // Sign-in must not be a way round the territory gate, so the first paint
-      // goes through the same path every later refresh does.
-      if(CTY.key==='usa' && !geo.province){
-        refreshPortfolio();
-        catCache=res.categories||[]; seedCategorySelects();
-      } else {
-        renderHero(res.kpis); renderBoard(res.leaderboard||[]);
-        renderCategoryShare(res.category_share||[]); catCache=res.categories||[]; seedCategorySelects();
-        api('portfolio',{}).then(function(r2){ renderPortfolio(r2.portfolio||[]); }).catch(handleErr);
-      }
+      api('geo',{}).then(function(r){ fillSelect(el('selProvince'),r.geo||[],CTY.all,provinceLabel); }).catch(function(){});
+      api('categories',{}).then(function(r){ catCache=r.categories||[]; seedCategorySelects(); }).catch(function(){});
+      PORTFOLIO_STALE=true;
+      if(el('panel-portfolio').classList.contains('on')) refreshPortfolio();
       loadFilterOptions(); loadSavedIds(); bindRoute();
       // ⭐ Clinics is the landing tab, so the find bar and its count are ready
       // at sign-in — but the list itself waits for the rep to press Show.
@@ -2248,10 +2244,10 @@
     el('hero').innerHTML='<div class="empty"><span class="spin"></span></div>';
     el('portfolioList').innerHTML='<div class="empty"><span class="spin"></span></div>';
     el('catlist').innerHTML='<div class="empty"><span class="spin"></span></div>';
-    api('coverage',{}).then(function(res){ COVERAGE=res.coverage||null; })
-      .catch(function(){})
-      .then(function(){ return api('kpis',{}); })
-      .then(function(res){ renderHero(res.kpis); }).catch(handleErr);
+    // Coverage and the headline run side by side; the hero waits for both.
+    var covP=api('coverage',{}).then(function(res){ COVERAGE=res.coverage||null; }).catch(function(){});
+    var kpiP=api('kpis',{});
+    Promise.all([covP,kpiP]).then(function(r){ renderHero(r[1].kpis); }).catch(handleErr);
     api('leaderboard',{limit:3}).then(function(res){ renderBoard(res.leaderboard||[]); }).catch(handleErr);
     api('portfolio',{}).then(function(res){ renderPortfolio(res.portfolio||[]); }).catch(handleErr);
     api('category_share',{top:4}).then(function(res){ renderCategoryShare(res.category_share||[]); }).catch(handleErr);
