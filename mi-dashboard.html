@@ -262,6 +262,11 @@
   .lscat { font-family:var(--font-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
     color:var(--faint); padding:10px 10px 4px; }
   .lsrow.lssub { padding-left:40px; background:var(--surface); }
+  /* A generation sits under its family, like the Overview. No tag: the indent
+     says it. The family row above carries the family total. */
+  .lsrow.lskid { padding-left:34px; background:var(--surface); }
+  .lsrow.lssub.lskid { padding-left:58px; }
+  .lsrow.lskid .lm { font-size:13.5px; font-weight:400; color:var(--ink-2); }
   /* A company head is subordinate to its section head: indented, lighter type,
      and it never takes the tinted open-state fill that marks a section. */
   .lshead.lssubhead { padding-left:26px; }
@@ -865,6 +870,8 @@
     .lshead .lsname { font-size:16px; }
     .lsrow { display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:12px; row-gap:2px; padding:11px 8px; }
     .lsrow.lssub { padding-left:22px; }
+    .lsrow.lskid { padding-left:26px; }
+    .lsrow.lssub.lskid { padding-left:40px; }
     .lsrow > .lm { grid-column:1; grid-row:1; }
     .lsrow > .lmk { grid-column:1; grid-row:2; font-size:12.5px; }
     .lsrow > .lnum { grid-column:2; grid-row:1; min-width:0; text-align:right; }
@@ -2386,7 +2393,21 @@
         // Generation sub-rows appear whenever the device HAS a newer generation
         // in device_reference — no device list, no hard-coded label. The parent
         // line already shows the family total, so these two add up to it.
-        if ((d.gen_newer||0) > 0 && d.gen_newer_label){
+        // ⭐ A family can have more than one newer generation (Elite iQ and
+        // Elite+), so mi_portfolio now returns them all in `gens`. The last line
+        // is the family's own row: clinics that named no generation, or the
+        // original one.
+        var gens = Array.isArray(d.gens) ? d.gens.filter(function(g){ return (g.n||0) > 0; }) : [];
+        if (gens.length){
+          row += '<div class="genrows">'+
+            gens.map(function(g){
+              return '<div class="genrow"><span class="gm">'+esc(g.label)+'</span><span class="spacer"></span><span class="gc">'+(g.n||0)+'</span></div>';
+            }).join('')+
+            ((d.gen_base||0) > 0
+              ? '<div class="genrow"><span class="gm">'+esc(d.model)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_base||0)+'</span></div>'
+              : '')+
+          '</div>';
+        } else if ((d.gen_newer||0) > 0 && d.gen_newer_label){
           row += '<div class="genrows">'+
             '<div class="genrow"><span class="gm">'+esc(d.gen_newer_label)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_newer||0)+'</span></div>'+
             '<div class="genrow"><span class="gm">'+esc(d.model)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_base||0)+'</span></div>'+
@@ -2801,7 +2822,7 @@
       // ⭐ A product with no clinic anywhere in the country is treated as not
       // available there. The reference list is global (Ellansé is filed for
       // Taiwan), and country availability is read from where it is seen.
-      LS_ROWS=(res.landscape||[]).filter(function(r){ return Number(r.clinics_country)>0; });
+      LS_ROWS=(res.landscape||[]).filter(function(r){ return famVal(r,'clinics_country')>0; });
       LS_CO=(res.companies||[]).filter(function(c){ return Number(c.clinics_country)>0; });
       paintLandscape();
     }).catch(handleErr);
@@ -2821,6 +2842,53 @@
     for(var i=0;i<LS_W.length;i++){ if(h.indexOf(LS_W[i])===-1) return false; }
     return true;
   }
+  // ⭐ FAMILIES. A generation row (PicoSure Pro, Elite iQ) carries its family's
+  // id in parent_device_id. The family row shows the family total, which comes
+  // from SQL as DISTINCT clinics across the family: a clinic listing both
+  // PicoSure and PicoSure Pro is one clinic, so the rows can never be summed.
+  // Generation rows show their own numbers. Falls back to the row's own count
+  // if the server has not been updated yet.
+  function famVal(r,k){
+    if(!r) return 0;
+    if(r.parent_device_id) return Number(r[k])||0;
+    var f=r['fam_'+k];
+    return (f!=null) ? (Number(f)||0) : (Number(r[k])||0);
+  }
+  function lsNest(rows){
+    var byId={}, tops=[];
+    rows.forEach(function(r){ r.__kids=[]; byId[r.device_id]=r; });
+    rows.forEach(function(r){
+      var p=r.parent_device_id ? byId[r.parent_device_id] : null;
+      if(p && p!==r) p.__kids.push(r); else tops.push(r);
+    });
+    tops.forEach(function(t){
+      t.__kids.sort(function(a,b){ return (Number(b.clinics)||0)-(Number(a.clinics)||0); });
+    });
+    return tops;
+  }
+  // A search keeps whole families together: typing "elite iq" still shows it
+  // under Elite, and typing "elite" shows the generations too.
+  function lsFamFilter(rows){
+    var byId={}, keep={};
+    rows.forEach(function(r){ byId[r.device_id]=r; });
+    rows.forEach(function(r){
+      if(!lsMatch(r)) return;
+      keep[r.device_id]=1;
+      if(r.parent_device_id) keep[r.parent_device_id]=1;
+    });
+    return rows.filter(function(r){
+      return keep[r.device_id] || (r.parent_device_id && keep[r.parent_device_id] && lsMatch(byId[r.parent_device_id]||{}));
+    });
+  }
+  function lsKidRow(r, sub){
+    return '<div class="lsrow lskid'+(sub?' lssub':'')+(r.is_ours?' ours':'')+'">'+
+      '<span class="lm">'+esc(r.model)+'</span>'+
+      '<span class="lsp"></span>'+
+      (sub ? '<span class="lnum">'+num(Number(r.clinics)||0)+' clinics</span>'
+           : lsMoveChip(r.added_30d, null)+lsNum(r))+
+      '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
+    '</div>';
+  }
   // "View clinics" hands off to the Clinics tab with the device filter set. The
   // counts were checked equal on both paths, for standalone devices and for
   // generation families, before this was wired up.
@@ -2838,7 +2906,7 @@
     // Territory first, because that is the number the rep can act on. The
     // national figure sits under it so a device absent from this patch still
     // reads as a real product rather than an empty row.
-    var t=Number(r.clinics)||0, n=Number(r.clinics_country)||0;
+    var t=famVal(r,'clinics'), n=famVal(r,'clinics_country');
     // ⛔ "clinics", never "installs" — see the note in lsByCompany. This counts
     // clinics KNOWN TO RUN the device, not machines in the field.
     return '<span class="lnum">'+num(t)+' clinics'+
@@ -2866,7 +2934,7 @@
       box.innerHTML = co.length ? lsByCompany(co)
         : '<div class="empty">No manufacturer or distributor matches that.</div>';
     } else {
-      var rows=LS_W.length ? LS_ROWS.filter(lsMatch) : LS_ROWS;
+      var rows=LS_W.length ? lsFamFilter(LS_ROWS) : LS_ROWS;
       box.innerHTML = rows.length ? lsByCategory(rows)
         : '<div class="empty">Nothing matches that. Search covers device, manufacturer, distributor and category.</div>';
     }
@@ -2924,13 +2992,17 @@
     var searching = LS_W.length > 0;
     return order.map(function(k){
       var g=by[k];
-      g.rows.sort(function(a,b){
-        if(LS_SORT==='move'){
-          return lsAdd(b)-lsAdd(a) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
-        }
-        return (b.is_ours?1:0)-(a.is_ours?1:0) || (Number(b.clinics)||0)-(Number(a.clinics)||0);
-      });
       var catMv=catMove(k);
+      // Families first, generations tucked under them. Sorting uses the family
+      // figures so Elite ranks by everything Elite, not by its unspecified rows.
+      var tops=lsNest(g.rows);
+      tops.sort(function(a,b){
+        if(LS_SORT==='move'){
+          return famVal(b,'added_30d')-famVal(a,'added_30d') || famVal(b,'clinics')-famVal(a,'clinics');
+        }
+        return (b.is_ours?1:0)-(a.is_ours?1:0) || famVal(b,'clinics')-famVal(a,'clinics');
+      });
+      g.rows=tops;
       var open = searching || !!LS_OPEN[k];
       // ⚠️ RANK IS BORROWED FROM THE OVERVIEW, NEVER RECOMPUTED HERE. Ranking
       // manufacturers from these rows would mean summing each maker's devices,
@@ -2939,16 +3011,16 @@
       // share-of-installations rank for the same territory; if the Overview has
       // not been rendered yet the line is simply omitted.
       var devs = !open ? '' : g.rows.map(function(r){
-        // ⚠️ A generation is its OWN row, never folded into the parent: the
-        // parent count excludes its children, so adding them would double.
-        var gen = r.parent_device_id ? '<span class="lgen">Generation</span>' : '';
+        // The family row carries the family total (distinct clinics), and
+        // "View clinics" on it opens every clinic in the family.
         return '<div class="lsrow'+(r.is_ours?' ours':'')+'">'+
           '<span class="lm">'+esc(r.model)+'</span>'+
           '<span class="lmk">'+esc(r.manufacturer)+distTxt(r)+'</span>'+
-          gen+(r.is_ours?'<span class="lyou">Yours</span>':'')+
-          '<span class="lsp"></span>'+lsMoveChip(r.added_30d, null)+lsNum(r)+
+          (r.is_ours?'<span class="lyou">Yours</span>':'')+
+          '<span class="lsp"></span>'+lsMoveChip(famVal(r,'added_30d'), null)+lsNum(r)+
           '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
-        '</div>';
+        '</div>'+
+        (r.__kids||[]).map(function(kid){ return lsKidRow(kid, false); }).join('');
       }).join('');
       // ⭐⭐ THE HEADER IS MARKET DATA ONLY — no "N yours", no "#3 position".
       // Andy, 2026-09-22: "Landscape can be more general market data rather than
@@ -3068,20 +3140,21 @@
     });
     order.sort(function(a,b){ return isInj() ? injRank(a)-injRank(b) : by[b].length-by[a].length; });
     return order.map(function(k){
-      by[k].sort(function(a,b){ return (Number(b.clinics)||0)-(Number(a.clinics)||0); });
+      var tops=lsNest(by[k]);
+      tops.sort(function(a,b){ return famVal(b,'clinics')-famVal(a,'clinics'); });
       return '<div class="lscat">'+esc(CAT_LABEL[k]||k)+'</div>'+
-        by[k].map(function(r){
+        tops.map(function(r){
           // ⚠️ Per-device counts are distinct clinics and are correct as shown.
           // They must never be added together to describe the company — that is
           // the double-count the header figure exists to avoid.
-          var gen = r.parent_device_id ? '<span class="lgen">Generation</span>' : '';
           return '<div class="lsrow lssub">'+
-            '<span class="lm">'+esc(r.model)+'</span>'+gen+
+            '<span class="lm">'+esc(r.model)+'</span>'+
             (kind==='distributor'?'<span class="lmk">'+esc(r.manufacturer)+'</span>':'')+
             '<span class="lsp"></span>'+
-            '<span class="lnum">'+num(Number(r.clinics)||0)+' clinics</span>'+
+            '<span class="lnum">'+num(famVal(r,'clinics'))+' clinics</span>'+
             '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
-          '</div>';
+          '</div>'+
+          (r.__kids||[]).map(function(kid){ return lsKidRow(kid, true); }).join('');
         }).join('');
     }).join('');
   }
@@ -3129,7 +3202,7 @@
       // Server-side now, so it covers the whole territory rather than only the
       // 200 accounts on screen, and it obeys the same energy-category rule as
       // the manufacturer list.
-      fillNamed(el('acctDevice'),o.devices||[],W().anyDev);
+      fillDevices(el('acctDevice'),o.devices||[],W().anyDev);
       // Same list, opposite meaning: "runs a competitor AND has none of theirs"
       // is the query that fills a sales day, and it takes two selectors to say.
       fillNamed(el('acctExclude'),o.manufacturers||[],'Missing nothing in particular');
@@ -3170,6 +3243,29 @@
     // list. Switching from RF tightening to laser hair used to leave "Thermage"
     // applied while no longer being visible in the dropdown — an empty result
     // with no way to see why. Dropping it back to "any" is the honest state.
+    if(cur){
+      sel.value=cur;
+      if(sel.value!==cur) sel.value='';
+    }
+  }
+
+  // The device list, with each generation indented under its family. Choosing
+  // the family shows every clinic in it; choosing a generation shows just those.
+  function fillDevices(sel,rows,allLabel){
+    var cur=sel.value, kids={}, tops=[], topNames={};
+    rows.forEach(function(r){ if(!r.parent){ tops.push(r); topNames[r.name]=1; } });
+    rows.forEach(function(r){
+      if(!r.parent) return;
+      if(topNames[r.parent]) (kids[r.parent]=kids[r.parent]||[]).push(r);
+      else tops.push(r);
+    });
+    var pad='    ';
+    sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+tops.map(function(r){
+      return '<option value="'+esc(r.name)+'">'+esc(r.name)+' ('+r.clinics+')</option>'+
+        (kids[r.name]||[]).map(function(k){
+          return '<option value="'+esc(k.name)+'">'+pad+esc(k.name)+' ('+k.clinics+')</option>';
+        }).join('');
+    }).join('');
     if(cur){
       sel.value=cur;
       if(sel.value!==cur) sel.value='';
@@ -4176,7 +4272,7 @@
   function optText(id){
     var s=el(id); if(!s||!s.value) return '';
     var o=s.options[s.selectedIndex];
-    return String(o?o.textContent:s.value).replace(/\s*\(\d[\d,]*\)\s*$/,'');
+    return String(o?o.textContent:s.value).replace(/\s*\(\d[\d,]*\)\s*$/,'').replace(/^\s+/,'');
   }
   function listDevs(devs, max){
     var names=[], seen={};
