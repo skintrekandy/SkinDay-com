@@ -436,6 +436,35 @@
     border-radius:999px; }
   .quick button:hover { border-color:var(--accent); color:var(--accent-strong); }
   .quick button.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  /* ---- phone: every filter in one bottom sheet ---- */
+  .adv-sheethead, .adv-phone { display:none; }
+  @media (max-width:640px){
+    .adv:not([hidden]) { display:block; position:fixed; left:0; right:0; bottom:0; z-index:215; margin:0;
+      max-height:86vh; overflow-y:auto; border:0; border-radius:18px 18px 0 0; background:var(--surface);
+      padding:12px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow:0 -10px 30px rgba(20,24,29,.18); }
+    .adv .adv-sheethead { display:flex; align-items:center; justify-content:space-between; margin:0 0 6px; }
+    .adv .adv-sheethead b { font-size:17px; }
+    .adv .adv-sheethead .x { background:none; border:0; font-size:26px; line-height:1; color:var(--muted); padding:4px 8px; cursor:pointer; }
+    .adv .adv-phone { display:block; }
+    .adv .adv-head { display:none; }
+    .adv .adv-lab { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+      color:var(--muted); margin:14px 0 8px; }
+    .adv .quick { flex-wrap:wrap; overflow:visible; margin:0; padding:0; }
+    .adv .quick button { flex:0 0 auto; }
+    .adv #advCatSlot .fb-lab { display:block; }
+    .adv #advCatSlot .fb-lab > span { display:none; }
+    .adv #advCatSlot select, .adv .adv-grid select { width:100%; font-size:15px; padding:11px 30px 11px 12px; border-radius:12px;
+      font-family:var(--font-ui); color:var(--ink); border:1px solid var(--line); background-color:var(--surface);
+      -webkit-appearance:none; appearance:none; cursor:pointer;
+      background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+      background-repeat:no-repeat; background-position:right 12px center; background-size:13px; }
+    .adv .adv-grid { grid-template-columns:1fr; gap:8px; }
+    .adv .adv-foot { position:sticky; bottom:calc(-14px - env(safe-area-inset-bottom)); background:var(--surface);
+      margin:14px -16px 0; padding:10px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line-2); }
+    .adv .adv-foot .btn { width:100%; padding:13px; border-radius:12px; background:var(--accent); border-color:var(--accent);
+      color:#fff; font-weight:600; font-size:15px; }
+    #advShade.open { display:block; }
+  }
   /* Single clinics / Chains. */
   .acctsplit { margin:0 0 14px; }
   .acctsplit button small { font-size:.8em; opacity:.8; font-weight:400; }
@@ -451,6 +480,7 @@
   .chainhead .chname { font-size:15.5px; font-weight:600; }
   .chainhead .chmeta { margin-left:auto; font-family:var(--font-mono); font-size:11.5px; color:var(--muted); text-align:right; }
   .chainbody { padding:0 14px; }
+  .chain:not(.open) .chainbody { display:none; }
   .chain.open .chainbody { padding:4px 14px 16px; }
   @media (max-width:640px){
     .acctsplit { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
@@ -1118,6 +1148,7 @@
     <button type="button" data-go="list">My List<span class="bn-n" id="bnList" style="display:none"></span></button>
   </nav>
   <div class="app-shade" id="appShade"></div>
+  <div class="app-shade" id="advShade"></div>
   <div class="app-sheet" id="appSheet" role="dialog" aria-modal="true"></div>
 
   <main>
@@ -1313,6 +1344,16 @@
            They close on Apply and leave their chips behind, so the default state
            stays two lines. -->
       <div class="adv" id="acctAdv" hidden>
+        <!-- On a phone this panel is a bottom sheet holding EVERY filter, so a
+             first-time rep sees them all at once instead of a row they have to
+             discover by swiping. The "Show" chips and Category are moved in
+             here on a phone and back out on a wider screen. -->
+        <div class="adv-sheethead"><b>Filters</b><button type="button" class="x" id="advClose" aria-label="Close">&times;</button></div>
+        <div class="adv-phone" id="advPhone">
+          <div class="adv-lab">Show</div><div id="advSegSlot"></div>
+          <div class="adv-lab">Category</div><div id="advCatSlot"></div>
+          <div class="adv-lab">Equipment and more</div>
+        </div>
         <div class="adv-head">Advanced filters</div>
         <div class="adv-grid">
           <select id="acctMfr"><option value="">Runs any manufacturer</option></select>
@@ -3591,22 +3632,53 @@
     document.addEventListener('keydown',function(e){ if(e.key==='Escape') shut(); });
   })();
 
+  // ⭐ On a phone, the Show chips and Category live in the filter sheet; on a
+  // wider screen they go back where they were. The same elements move, so
+  // every handler and query path is unchanged.
+  var FB_HOME=null;
+  function placeFilters(relabel){
+    var q=el('acctQuick'), catLab=el('acctCategory').closest('label');
+    if(!FB_HOME) FB_HOME={ q:{parent:q.parentNode, next:q.nextSibling}, cat:{parent:catLab.parentNode, next:catLab.nextSibling} };
+    if(isPhone()){
+      if(q.parentNode.id!=='advSegSlot') el('advSegSlot').appendChild(q);
+      if(catLab.parentNode.id!=='advCatSlot') el('advCatSlot').appendChild(catLab);
+    } else {
+      if(q.parentNode.id==='advSegSlot') FB_HOME.q.parent.insertBefore(q, FB_HOME.q.next);
+      if(catLab.parentNode.id==='advCatSlot') FB_HOME.cat.parent.insertBefore(catLab, FB_HOME.cat.next);
+    }
+    if(relabel) advLabel();
+    else if(isPhone()) el('acctMore').textContent='Filters';
+  }
+  function advSheet(on){
+    var p=el('acctAdv'), b=el('acctMore'), sh=el('advShade');
+    p.hidden=!on; b.setAttribute('aria-expanded', on?'true':'false');
+    var phone=isPhone();
+    if(sh) sh.classList.toggle('open', !!on && phone);
+    document.body.style.overflow=(on && phone)?'hidden':'';
+    advLabel();
+  }
+  placeFilters();
+  if(window.matchMedia){
+    var mqF=window.matchMedia('(max-width:640px)');
+    var onMq=function(){ placeFilters(true); if(!el('acctAdv').hidden) advSheet(true); };
+    if(mqF.addEventListener) mqF.addEventListener('change',onMq); else if(mqF.addListener) mqF.addListener(onMq);
+  }
+  el('advClose').addEventListener('click',function(){ advSheet(false); });
+  el('advShade').addEventListener('click',function(){ advSheet(false); });
+
   // More filters. The count on the button is the important part: a rep who
   // collapsed the panel with three filters still applied would otherwise be
   // looking at a narrowed list with no visible reason for it.
   (function(){
     var b=el('acctMore'), p=el('acctAdv');
     if(!b||!p) return;
-    b.addEventListener('click',function(){
-      p.hidden=!p.hidden; b.setAttribute('aria-expanded', p.hidden?'false':'true');
-      advLabel();
-    });
+    b.addEventListener('click',function(){ advSheet(p.hidden); });
     // ⭐ Apply closes the panel and leaves the chips behind, so the default
     // state is two lines rather than three. The selects already fire their own
     // change handlers, so this only has to collapse and refresh.
     var ap=el('acctApply');
     if(ap) ap.addEventListener('click',function(){
-      p.hidden=true; b.setAttribute('aria-expanded','false'); advLabel();
+      advSheet(false);
       if(ACCT_GATED) refreshShowBar(); else loadAccounts();
     });
   })();
@@ -3730,6 +3802,11 @@
   }
   function advLabel(){
     var n=advCount(), b=el('acctMore');
+    if(isPhone()){
+      // One button for every filter on a phone, counting all of them.
+      n += (el('acctSegment').value?1:0) + (el('acctCategory').value?1:0);
+      b.textContent = n ? 'Filters ('+n+')' : 'Filters';
+    } else
     b.textContent = n ? 'More filters ('+n+')' : 'More filters';
     b.classList.toggle('on', n>0);
     el('acctReset').style.display = (activeFilters()||SEARCH_W.length) ? '' : 'none';
@@ -3771,6 +3848,13 @@
       parts.push('<span class="fchip"><b>'+esc(CHIP_LABELS[id])+':</b> '+esc(txt)+
                  '<button type="button" data-clear="'+id+'" aria-label="Remove filter">&times;</button></span>');
     });
+    // On a phone the Show chips are inside the filter sheet, so the chosen one
+    // gets a chip here like everything else.
+    if(isPhone() && el('acctSegment').value){
+      var sg=el('acctSegment'), st=sg.options[sg.selectedIndex]?sg.options[sg.selectedIndex].textContent:sg.value;
+      parts.unshift('<span class="fchip"><b>Show:</b> '+esc(st)+
+        '<button type="button" data-clear="acctSegment" aria-label="Remove filter">&times;</button></span>');
+    }
     if(!parts.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
     // "Clear all" also covers the quick view, so it shows whenever there is
     // more than one thing to undo, counting the quick view as one.
@@ -3793,7 +3877,7 @@
       ACCT_FILTERS.forEach(function(f){ if(el(f)) el(f).value=''; });
       el('acctSearch').value=''; setSearch(''); syncQuick();
     }
-    else if(el(id)){ el(id).value=''; }
+    else if(el(id)){ el(id).value=''; if(id==='acctSegment') syncQuick(); }
     advLabel();
     // Clearing a category or manufacturer widens what the other dropdowns may
     // offer, so rebuild them rather than leaving a narrowed list behind.
