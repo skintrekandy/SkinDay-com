@@ -2989,11 +2989,14 @@
       // it is how a rep misses a field someone else just took.
       order.sort(function(a,b){ return catMove(b)-catMove(a) || by[b].rows.length-by[a].rows.length; });
     } else {
+    // "Most clinics": categories rank by the clinics in them, whoever's
+    // devices they are. Ordering only, the sum is never shown as a figure.
+    function catSize(k){
+      return by[k].rows.reduce(function(s,r){ return s+(r.parent_device_id?0:famVal(r,'clinics')); },0);
+    }
     order.sort(function(a,b){
       if(isInj()) return injRank(a)-injRank(b);
-      var oa=by[a].rows.some(function(r){return r.is_ours;})?0:1;
-      var ob=by[b].rows.some(function(r){return r.is_ours;})?0:1;
-      return oa-ob || by[b].rows.length-by[a].rows.length;
+      return catSize(b)-catSize(a) || by[b].rows.length-by[a].rows.length;
     });
     }
     // ⭐⭐ CATEGORIES COLLAPSED BY DEFAULT. 178 devices in one scroll is the same
@@ -3012,7 +3015,9 @@
         if(LS_SORT==='move'){
           return famVal(b,'added_30d')-famVal(a,'added_30d') || famVal(b,'clinics')-famVal(a,'clinics');
         }
-        return (b.is_ours?1:0)-(a.is_ours?1:0) || famVal(b,'clinics')-famVal(a,'clinics');
+        // "Most clinics" means exactly that. The tenant's own devices are
+        // highlighted where they fall, not lifted to the top.
+        return famVal(b,'clinics')-famVal(a,'clinics');
       });
       g.rows=tops;
       var open = searching || !!LS_OPEN[k];
