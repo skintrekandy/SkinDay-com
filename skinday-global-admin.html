@@ -1134,7 +1134,7 @@
           <span style="font-size:.78rem;color:var(--muted);">Crawls one site now and shows exactly what it read, whatever its queue status or country.</span>
         </div>
 
-        <div class="form-subtitle" style="margin-top:.6rem;">This only advances while the tab is open and awake, so do not run it alongside another crawl. Watch the first ten hosts before leaving it to loop. Each device shows how it was found: <strong>own page</strong> means the clinic has a dedicated page for that machine, which is the strongest evidence; <strong>named</strong> means it was written in the page text; <strong>blog</strong> means it appeared in an article and may be a device they only wrote about.</div>
+        <div class="form-subtitle" style="margin-top:.6rem;">This only advances while the tab is open and awake. It runs three crawls side by side, so do not start a second tab on the same queue. Watch the first ten hosts before leaving it to loop. Each device shows how it was found: <strong>own page</strong> means the clinic has a dedicated page for that machine, which is the strongest evidence; <strong>named</strong> means it was written in the page text; <strong>blog</strong> means it appeared in an article and may be a device they only wrote about.</div>
 
         <div id="dc-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
       </div>
@@ -3212,6 +3212,10 @@ async function dtReset(){
 // requeues Canada's errors.
 // ═══════════════════════════════════════════════════════════════════════════
 const DC_FN = '/.netlify/functions/crawl-devices';
+// Parallel crawl loops, and hosts per call. Three workers of four hosts keeps
+// about a dozen sites in flight without leaning hard on the database.
+const DC_WORKERS = 3;
+const DC_BATCH = 4;
 let dcRunning  = false;
 let dcRunId    = null;
 let dcTotals   = { hosts: 0, devices: 0, empty: 0, errors: 0, render: 0 };
@@ -3599,93 +3603,119 @@ async function dcStart(retry) {
   // ⭐ A SINGLE BAD RESPONSE MUST NOT END THE RUN. Netlify returns an HTML error
   // page when a function is killed, which arrives here as "Unexpected token '<'".
   // That is transient: back off and carry on, give up only after several in a row.
-  let consecutiveFailures = 0;
-  // ⭐⭐ THESE NUMBERS ARE THE DIFFERENCE BETWEEN ONE RUN AND FOUR. The old
-  // ladder was 2s/4s/6s/8s then stop — 20 seconds total, which is far less time
-  // than a killed Netlify function needs to come back. A national crawl died
-  // mid-run three times because of it, and every restart opens a NEW run row,
-  // which fragments the month-over-month comparison across run ids.
-  // Now: 2,4,8,16,32,60,60… capped at 60s, 12 attempts ≈ 7 minutes of trying.
-  const MAX_CONSECUTIVE_FAILURES = 12;
-  const MAX_BACKOFF_MS = 60000;
+  // ⚡⚡ SEVERAL WORKERS, ONE QUEUE. One loop meant one host at a time for the
+  // whole country: every call waited for the previous one, and a single slow
+  // site held everything up. The function now claims hosts atomically, so
+  // DC_WORKERS loops can share the queue without ever crawling a host twice.
+  // Worker 1 makes the first call alone, so a new run is opened once and
+  // "Retry failed" requeues once; the others join as soon as it returns.
+  let dcFirstCall = false;
+  let dcQueueDone = false;
+  let lastRemaining;
+  const dcWorker = async function (n) {
+    if (n > 1) {
+      while (dcRunning && !dcFirstCall) await new Promise(r => setTimeout(r, 300));
+      if (!dcRunning) return;
+    }
+    let consecutiveFailures = 0;
+    // ⭐⭐ THESE NUMBERS ARE THE DIFFERENCE BETWEEN ONE RUN AND FOUR. The old
+    // ladder was 2s/4s/6s/8s then stop — 20 seconds total, which is far less time
+    // than a killed Netlify function needs to come back. A national crawl died
+    // mid-run three times because of it, and every restart opens a NEW run row,
+    // which fragments the month-over-month comparison across run ids.
+    // Now: 2,4,8,16,32,60,60… capped at 60s, 12 attempts ≈ 7 minutes of trying.
+    const MAX_CONSECUTIVE_FAILURES = 12;
+    const MAX_BACKOFF_MS = 60000;
 
-  while (dcRunning) {
-    let data;
-    try {
-      const r = await dcCall({ action: 'crawl', batch: 3, retry: retry === true, run_id: dcRunId, country: country, state: state });
-      data = r.data;
-      if (!r.ok) throw new Error((data && data.error) || 'request failed');
-    } catch (e) {
-      consecutiveFailures++;
-      if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-        dcLog('stopping after ' + consecutiveFailures + ' consecutive failures: '
-              + esc(String((e && e.message) || e)), 'var(--red)');
-        break;
+    while (dcRunning) {
+      let data;
+      try {
+        const r = await dcCall({ action: 'crawl', batch: DC_BATCH, retry: retry === true, run_id: dcRunId, country: country, state: state });
+        data = r.data;
+        if (!r.ok) throw new Error((data && data.error) || 'request failed');
+      } catch (e) {
+        consecutiveFailures++;
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          dcLog('stopping after ' + consecutiveFailures + ' consecutive failures: '
+                + esc(String((e && e.message) || e)), 'var(--red)');
+          break;
+        }
+        const waitMs = Math.min(2000 * Math.pow(2, consecutiveFailures - 1), MAX_BACKOFF_MS);
+        dcLog('hiccup (' + consecutiveFailures + '/' + MAX_CONSECUTIVE_FAILURES + '): '
+              + esc(String((e && e.message) || e))
+              + ' · retrying in ' + (waitMs / 1000) + 's', 'var(--gold)');
+        await new Promise(r2 => setTimeout(r2, waitMs));
+        continue;
       }
-      const waitMs = Math.min(2000 * Math.pow(2, consecutiveFailures - 1), MAX_BACKOFF_MS);
-      dcLog('hiccup (' + consecutiveFailures + '/' + MAX_CONSECUTIVE_FAILURES + '): '
-            + esc(String((e && e.message) || e))
-            + ' · retrying in ' + (waitMs / 1000) + 's', 'var(--gold)');
-      await new Promise(r2 => setTimeout(r2, waitMs));
-      continue;
-    }
 
-    consecutiveFailures = 0;
-    retry = false;                     // requeue once, not on every loop
-    if (data.run_id && data.run_id !== dcRunId) {
-      dcRunId = data.run_id;
-      dcRememberRun(country, state, dcRunId);
-    } else if (data.run_id) {
-      dcRememberRun(country, state, dcRunId);   // refresh the timestamp on a long run
-    }
-
-    for (const p of (data.processed || [])) {
-      dcTotals.hosts++;
-      const host = esc(p.host);
-      if (p.status === 'done') {
-        dcTotals.devices += (p.devices || []).length;
-        const list = (p.devices || [])
-          .map(d => esc(d.model) + ' ' + dcConfLabel(d.confidence)).join(', ');
-        dcLog('<strong>' + host + '</strong> · ' + list +
-              ' · across ' + p.clinics + ' clinic' + ((p.clinics === 1) ? '' : 's') +
-              // Auto-approval must be visible as it happens. A rule that
-              // publishes without a human should never be silent, or nobody can
-              // tell the difference between it working and it running wild.
-              (p.auto_approved ? ' · <span style="color:var(--green);">' + p.auto_approved + ' auto-published</span>' : '') +
-              (p.auto_held_ceiling ? ' · <span style="color:var(--red);">' + p.auto_held_ceiling + ' device(s) held: run ceiling reached</span>' : '') +
-              (p.thin_only ? ' · <span style="color:var(--gold);">javascript only, read from its sitemap</span>' : '') +
-              (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls' : '') +
-              ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
-              'var(--green)');
-      } else if (p.status === 'empty') {
-        dcTotals.empty++;
-        dcLog(host + ' · no devices found' +
-              (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls read' : '') +
-              ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
-              'var(--muted)');
-      } else if (p.status === 'needs_render') {
-        dcTotals.render++;
-        dcLog(host + ' · javascript only, and its sitemap did not help either'
-              + (p.sitemap_urls ? ' (sitemap had ' + p.sitemap_urls + ' urls)' : ' (no sitemap found)'),
-              'var(--gold)');
-      } else {
-        dcTotals.errors++;
-        dcLog(host + ' · ' + esc(p.error || p.status), 'var(--red)');
+      consecutiveFailures = 0;
+      retry = false;                     // requeue once, not on every loop
+      dcFirstCall = true;                // the other workers may start now
+      if (data.run_id && data.run_id !== dcRunId) {
+        dcRunId = data.run_id;
+        dcRememberRun(country, state, dcRunId);
+      } else if (data.run_id) {
+        dcRememberRun(country, state, dcRunId);   // refresh the timestamp on a long run
       }
-    }
 
-    document.getElementById('dc-progress').textContent =
-      dcTotals.hosts + ' hosts · ' + dcTotals.devices + ' devices · ' +
-      dcTotals.empty + ' none found · ' + dcTotals.render + ' need rendering · ' +
-      dcTotals.errors + ' failed · ' +
-      ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
+      for (const p of (data.processed || [])) {
+        dcTotals.hosts++;
+        const host = esc(p.host);
+        if (p.status === 'done') {
+          dcTotals.devices += (p.devices || []).length;
+          const list = (p.devices || [])
+            .map(d => esc(d.model) + ' ' + dcConfLabel(d.confidence)).join(', ');
+          dcLog('<strong>' + host + '</strong> · ' + list +
+                ' · across ' + p.clinics + ' clinic' + ((p.clinics === 1) ? '' : 's') +
+                // Auto-approval must be visible as it happens. A rule that
+                // publishes without a human should never be silent, or nobody can
+                // tell the difference between it working and it running wild.
+                (p.auto_approved ? ' · <span style="color:var(--green);">' + p.auto_approved + ' auto-published</span>' : '') +
+                (p.auto_held_ceiling ? ' · <span style="color:var(--red);">' + p.auto_held_ceiling + ' device(s) held: run ceiling reached</span>' : '') +
+                (p.thin_only ? ' · <span style="color:var(--gold);">javascript only, read from its sitemap</span>' : '') +
+                (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls' : '') +
+                ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
+                'var(--green)');
+        } else if (p.status === 'empty') {
+          dcTotals.empty++;
+          dcLog(host + ' · no devices found' +
+                (p.sitemap_urls ? ' · sitemap ' + p.sitemap_urls + ' urls read' : '') +
+                ((p.unknowns || []).length ? ' · unmatched: ' + esc(p.unknowns.join(', ')) : ''),
+                'var(--muted)');
+        } else if (p.status === 'needs_render') {
+          dcTotals.render++;
+          dcLog(host + ' · javascript only, and its sitemap did not help either'
+                + (p.sitemap_urls ? ' (sitemap had ' + p.sitemap_urls + ' urls)' : ' (no sitemap found)'),
+                'var(--gold)');
+        } else {
+          dcTotals.errors++;
+          dcLog(host + ' · ' + esc(p.error || p.status), 'var(--red)');
+        }
+      }
 
-    if (data.done) {
-      dcForgetRun(country, state);
-      dcLog('queue empty for ' + scope + '. done.', 'var(--muted)');
-      break;
+      if (data.remaining !== undefined && (data.processed || []).length) lastRemaining = data.remaining;
+      document.getElementById('dc-progress').textContent =
+        dcTotals.hosts + ' hosts · ' + dcTotals.devices + ' devices · ' +
+        dcTotals.empty + ' none found · ' + dcTotals.render + ' need rendering · ' +
+        dcTotals.errors + ' failed · ' +
+        ((lastRemaining === undefined) ? '?' : lastRemaining) + ' left';
+
+      if (data.done) { dcQueueDone = true; break; }
+      if (dcQueueDone) break;
+      await new Promise(r => setTimeout(r, 400));
     }
-    await new Promise(r => setTimeout(r, 400));
+    if (n === 1) dcFirstCall = true;   // never leave the others waiting on a worker that gave up
+  };
+  await Promise.all(Array.from({ length: DC_WORKERS }, (_, i) => dcWorker(i + 1)));
+
+  if (dcQueueDone) {
+    // One last call once every worker has finished its batch: it finds the
+    // queue empty, stamps the run finished and refreshes the dashboard's
+    // crawled-hosts view with every host included. The worker that first saw
+    // the empty queue did that while the others were still mid-batch.
+    try { await dcCall({ action: 'crawl', batch: 1, run_id: dcRunId, country: country, state: state }); } catch (e) {}
+    dcForgetRun(country, state);
+    dcLog('queue empty for ' + scope + '. done.', 'var(--muted)');
   }
 
   dcRunning = false;
