@@ -20,7 +20,10 @@ const { createClient } = require('@supabase/supabase-js');
 const BATCH_DEFAULT = 3;
 const BATCH_MAX = 5;
 const FETCH_TIMEOUT_MS = 12000;
-const MAX_DEVICES_PER_HOST = 25;   // a directory-style page can name dozens
+const MAX_DEVICES_PER_HOST = 25;
+// Pages fetched at once from ONE host. Four is still gentler than a browser,
+// which opens six connections per site.
+const PAGE_CONCURRENCY = 4;   // a directory-style page can name dozens
 
 // ⭐⭐ BUMP THIS WHENEVER MATCHING LOGIC CHANGES — aliases, normalisation, page
 // selection, reject rules, anything that alters what a given page yields.
@@ -1077,10 +1080,14 @@ async function sitemapUrls(host) {
   // Bounded on purpose: at most three probes, https only. A host that answers on
   // http but not https will have already told us so via the home fetch, and one
   // clinic's sitemap is never worth risking the whole batch.
+  // ⚡ The three probes run AT ONCE, then the first hit in the old priority
+  // order wins, so the result is exactly what the one-at-a-time loop picked.
+  // One at a time, a host with no sitemap cost up to 3 × 4s of waiting.
   let xml = null, found = null;
-  for (const path of ['/sitemap.xml', '/sitemap_index.xml', '/wp-sitemap.xml']) {
-    xml = await getXml('https://' + host + path);
-    if (xml) { found = 'https://' + host + path; break; }
+  const probePaths = ['/sitemap.xml', '/sitemap_index.xml', '/wp-sitemap.xml'];
+  const probes = await Promise.all(probePaths.map(p => getXml('https://' + host + p)));
+  for (let i = 0; i < probes.length; i++) {
+    if (probes[i]) { xml = probes[i]; found = 'https://' + host + probePaths[i]; break; }
   }
   // robots.txt is the last resort and costs one more fetch, so it only runs when
   // the three direct probes all missed.
@@ -1122,9 +1129,11 @@ async function sitemapUrls(host) {
       .sort((a, b) => a.r - b.r || a.i - b.i)
       .slice(0, MAX_CHILD_SITEMAPS)
       .map(x => x.u);
+    // ⚡ Child sitemaps are fetched together and joined in rank order, so the
+    // URL list (and the cap) comes out the same as reading them one by one.
     urls = [];
-    for (const child of children) {
-      const childXml = await getXml(child);
+    const childXmls = await Promise.all(children.map(c => getXml(c)));
+    for (const childXml of childXmls) {
       if (childXml) urls = urls.concat(locs(childXml));
       if (urls.length >= MAX_SITEMAP_URLS) break;
     }
@@ -1437,8 +1446,16 @@ async function crawlHost(row, matcher) {
   // very first fetch of every host. It starts at the floor so the homepage and
   // the www/http fallbacks always fit, then the queue raises it.
   let budget = 5;
-  const readPage = async url => {
-    if (seen.has(url) || pages.length >= budget) return null;
+  // ⚡ PAGES ARE FETCHED A FEW AT A TIME. Reading up to 35 pages strictly one
+  // after another, each allowed 12s, is what made a single host take 20-60s.
+  // fetchOne does the network part; commit files the result. readMany fetches
+  // a group together and then commits them IN THE ORDER GIVEN, so pages[] is
+  // ordered exactly as the one-at-a-time version ordered it and the crawl stays
+  // deterministic run to run. `inflight` holds budget slots for pages still
+  // downloading, so a group can never overshoot the budget.
+  let inflight = 0;
+  const fetchOne = async url => {
+    if (seen.has(url) || pages.length + inflight >= budget) return null;
     // ⛔ WALL-CLOCK GUARD. Budgets now reach 35 pages, and three slow hosts in one
     // invocation was overrunning the function's time limit. The proxy then
     // returned an HTML error page, the client tried to parse it as JSON, and the
@@ -1451,7 +1468,16 @@ async function crawlHost(row, matcher) {
     if (Date.now() > INVOCATION_DEADLINE) return null;
     seen.add(url);
     pagesTried++;
-    const r = await getPage(url);
+    inflight++;
+    try {
+      return { url, r: await getPage(url) };
+    } finally {
+      inflight--;
+    }
+  };
+  const commit = f => {
+    if (!f) return null;
+    const url = f.url, r = f.r;
     if (/\.(css|js|png|jpe?g|gif|svg|webp|ico|woff2?|ttf)(\?|$)/i.test(url)) {
       // Second line of defence: no code path should ever fetch an asset as a
       // page, and if one does it is a bug worth seeing rather than a timeout.
@@ -1492,6 +1518,21 @@ async function crawlHost(row, matcher) {
     };
     pages.push(page);
     return thin ? null : page;
+  };
+  const readPage = async url => commit(await fetchOne(url));
+  const readMany = async urls => {
+    const got = await Promise.all(urls.map(fetchOne));
+    return got.map(commit);
+  };
+  // Reads a ranked list until the budget is spent, a group at a time.
+  const readList = async urls => {
+    let i = 0;
+    while (i < urls.length && pages.length < budget) {
+      const room = Math.min(PAGE_CONCURRENCY, budget - pages.length);
+      const group = urls.slice(i, i + room);
+      i += group.length;
+      await readMany(group);
+    }
   };
 
   let homePage = await readPage(home);
@@ -1548,31 +1589,46 @@ async function crawlHost(row, matcher) {
 
   // ---- spend the budget from the top of the queue --------------------------
   const skipped = [];
-  for (const c of candidates) {
-    if (pages.length >= budget) { skipped.push(c); continue; }
-    const p = await readPage(c.url);
+  let ci = 0;
+  while (ci < candidates.length) {
+    if (pages.length >= budget) { skipped.push(...candidates.slice(ci)); break; }
+    const room = Math.min(PAGE_CONCURRENCY, budget - pages.length);
+    const group = [];
+    while (ci < candidates.length && group.length < room) {
+      const c = candidates[ci++];
+      if (seen.has(c.url)) continue;
+      group.push(c);
+      // A catalogue page ends the group, so its children are read straight
+      // after it, before the next candidate, exactly as they were before.
+      if (c.why === 'catalogue-filter') break;
+    }
+    if (!group.length) continue;
+    const got = await readMany(group.map(c => c.url));
+    const last = group[group.length - 1];
+    const p = got[got.length - 1];
     // A catalogue page earns its children: reading /care/?wpv-services2=... is
     // only useful if the /services/<device>/ links it lists are then read too.
-    if (p && c.why === 'catalogue-filter') {
+    if (p && last.why === 'catalogue-filter') {
       const more = buildCandidates(p.links, bareHost, seen, vocab, matcher);
-      for (const m of more) {
-        if (pages.length >= budget) { skipped.push(m); continue; }
-        if (m.devices || m.score >= 50) await readPage(m.url);
+      let mi = 0;
+      while (mi < more.length) {
+        if (pages.length >= budget) { skipped.push(...more.slice(mi)); break; }
+        const mroom = Math.min(PAGE_CONCURRENCY, budget - pages.length);
+        const mgroup = [];
+        while (mi < more.length && mgroup.length < mroom) {
+          const m = more[mi++];
+          if (m.devices || m.score >= 50) mgroup.push(m.url);
+        }
+        if (mgroup.length) await readMany(mgroup);
       }
-      for (const pg of pickPagedLinks(p.links, bareHost, seen, 3)) {
-        if (pages.length >= budget) break;
-        await readPage(pg);
-      }
+      await readList(pickPagedLinks(p.links, bareHost, seen, 3));
     }
   }
 
   // Whatever is left goes to the best remaining links across everything read.
   if (pages.length < budget) {
     const soFar = pages.flatMap(p => p.links);
-    for (const u of pickLinks(soFar, TECH_HINTS.concat(SERVICE_HINTS), bareHost, seen, budget - pages.length)) {
-      if (pages.length >= budget) break;
-      await readPage(u);
-    }
+    await readList(pickLinks(soFar, TECH_HINTS.concat(SERVICE_HINTS), bareHost, seen, budget - pages.length));
   }
 
   // ---- own-page signal ----------------------------------------------------
@@ -1782,10 +1838,14 @@ async function doCrawl(supabase, body) {
     claimQuery = claimQuery.eq(Q_STATUS, 'pending').eq('excluded', false);
     if (country) claimQuery = claimQuery.eq('country', country);
     if (state) claimQuery = claimQuery.contains('states', [state]);
-    claimQuery = claimQuery.order('id', { ascending: true }).limit(batch);
+    // ⚡ A POOL, NOT JUST THE NEXT FEW. Several browser workers now crawl the
+    // same queue at once. If they all asked for "the lowest three ids" they
+    // would keep reaching for the same rows, so each takes a random handful
+    // from the front of the queue and claims only what it wins (see below).
+    claimQuery = claimQuery.order('id', { ascending: true }).limit(batch * 4);
   }
 
-  const { data: claimable, error: claimErr } = await claimQuery;
+  let { data: claimable, error: claimErr } = await claimQuery;
   if (claimErr) throw claimErr;
 
   if (oneHost && (!claimable || !claimable.length)) {
@@ -1838,9 +1898,35 @@ async function doCrawl(supabase, body) {
 
   const runningMark = {};
   runningMark[Q_STATUS] = 'running';
-  await supabase.from('crawl_device_queue')
-    .update(runningMark)
-    .in('id', claimable.map(r => r.id));
+  if (oneHost) {
+    await supabase.from('crawl_device_queue')
+      .update(runningMark)
+      .in('id', claimable.map(r => r.id));
+  } else {
+    // ⭐⭐ THE CLAIM IS NOW ATOMIC. It used to read the pending rows and then
+    // mark them running as two separate steps, so two crawls at once could
+    // both read the same rows and crawl every host twice. That is why the page
+    // said never to run two at a time. Now the update itself only touches rows
+    // that are STILL pending, and Postgres re-checks that per row, so when two
+    // workers race for a host exactly one of them gets it back.
+    const pool = claimable.slice();
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    const want = pool.slice(0, batch).map(r => r.id);
+    const { data: won, error: wonErr } = await supabase.from('crawl_device_queue')
+      .update(runningMark)
+      .in('id', want)
+      .eq(Q_STATUS, 'pending')
+      .select('id, host, clinic_ids, home_url, attempts');
+    if (wonErr) throw wonErr;
+    claimable = (won || []).sort((a, b) => a.id - b.id);
+    if (!claimable.length) {
+      // Another worker got there first. Not the end of the queue, just try again.
+      return { done: false, run_id: runId, processed: [], remaining: pool.length };
+    }
+  }
 
   // Read the reference list fresh every invocation, so correcting a row is a SQL
   // update and never a redeploy.
