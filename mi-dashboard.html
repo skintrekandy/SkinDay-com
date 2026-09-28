@@ -2394,18 +2394,18 @@
         // in device_reference — no device list, no hard-coded label. The parent
         // line already shows the family total, so these two add up to it.
         // ⭐ A family can have more than one newer generation (Elite iQ and
-        // Elite+), so mi_portfolio now returns them all in `gens`. The last line
+        // Elite+), so mi_portfolio now returns them all in `gens`. The first line
         // is the family's own row: clinics that named no generation, or the
         // original one.
         var gens = Array.isArray(d.gens) ? d.gens.filter(function(g){ return (g.n||0) > 0; }) : [];
         if (gens.length){
           row += '<div class="genrows">'+
-            gens.map(function(g){
-              return '<div class="genrow"><span class="gm">'+esc(g.label)+'</span><span class="spacer"></span><span class="gc">'+(g.n||0)+'</span></div>';
-            }).join('')+
             ((d.gen_base||0) > 0
               ? '<div class="genrow"><span class="gm">'+esc(d.model)+'</span><span class="spacer"></span><span class="gc">'+(d.gen_base||0)+'</span></div>'
               : '')+
+            gens.map(function(g){
+              return '<div class="genrow"><span class="gm">'+esc(g.label)+'</span><span class="spacer"></span><span class="gc">'+(g.n||0)+'</span></div>';
+            }).join('')+
           '</div>';
         } else if ((d.gen_newer||0) > 0 && d.gen_newer_label){
           row += '<div class="genrows">'+
@@ -2880,13 +2880,19 @@
       return keep[r.device_id] || (r.parent_device_id && keep[r.parent_device_id] && lsMatch(byId[r.parent_device_id]||{}));
     });
   }
-  function lsKidRow(r, sub){
+  // The family's own row under the family total (Ultherapy 400 under
+  // Ultherapy 467): its View clinics asks for that exact row only ('=' prefix).
+  function lsBaseRow(r, sub){
+    if(!(Number(r.clinics_country)>0)) return '';
+    return lsKidRow(r, sub, '='+r.model);
+  }
+  function lsKidRow(r, sub, devValue){
     return '<div class="lsrow lskid'+(sub?' lssub':'')+(r.is_ours?' ours':'')+'">'+
       '<span class="lm">'+esc(r.model)+'</span>'+
       '<span class="lsp"></span>'+
       (sub ? '<span class="lnum">'+num(Number(r.clinics)||0)+' clinics</span>'
-           : lsMoveChip(r.added_30d, null)+lsNum(r))+
-      '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
+           : lsMoveChip(r.added_30d, null)+lsNumOwn(r))+
+      '<button class="lgo" type="button" data-device="'+esc(devValue||r.model)+'">View clinics &rarr;</button>'+
     '</div>';
   }
   // "View clinics" hands off to the Clinics tab with the device filter set. The
@@ -2901,6 +2907,12 @@
     syncQuick(); advLabel();
     document.querySelector('.tabs button[data-tab="accounts"]').click();
     loadAccounts();
+  }
+  // A row's own figures, never the family's: used for the rows under a family.
+  function lsNumOwn(r){
+    var t=Number(r.clinics)||0, n=Number(r.clinics_country)||0;
+    return '<span class="lnum">'+num(t)+' clinics'+
+      (n!==t?'<span class="ln2">'+num(n)+' in '+esc(CTY.country)+'</span>':'')+'</span>';
   }
   function lsNum(r){
     // Territory first, because that is the number the rep can act on. The
@@ -3020,6 +3032,7 @@
           '<span class="lsp"></span>'+lsMoveChip(famVal(r,'added_30d'), null)+lsNum(r)+
           '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
         '</div>'+
+        ((r.__kids||[]).length ? lsBaseRow(r, false) : '')+
         (r.__kids||[]).map(function(kid){ return lsKidRow(kid, false); }).join('');
       }).join('');
       // ⭐⭐ THE HEADER IS MARKET DATA ONLY — no "N yours", no "#3 position".
@@ -3154,6 +3167,7 @@
             '<span class="lnum">'+num(famVal(r,'clinics'))+' clinics</span>'+
             '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
           '</div>'+
+          ((r.__kids||[]).length ? lsBaseRow(r, true) : '')+
           (r.__kids||[]).map(function(kid){ return lsKidRow(kid, true); }).join('');
         }).join('');
     }).join('');
@@ -3263,7 +3277,9 @@
     sel.innerHTML='<option value="">'+esc(allLabel)+'</option>'+tops.map(function(r){
       return '<option value="'+esc(r.name)+'">'+esc(r.name)+' ('+r.clinics+')</option>'+
         (kids[r.name]||[]).map(function(k){
-          return '<option value="'+esc(k.name)+'">'+pad+esc(k.name)+' ('+k.clinics+')</option>';
+          // The family's own row carries exact:true and is asked for as '=Name'.
+          var v=(k.exact?'=':'')+k.name;
+          return '<option value="'+esc(v)+'">'+pad+esc(k.name)+' ('+k.clinics+')</option>';
         }).join('');
     }).join('');
     if(cur){
