@@ -1263,6 +1263,7 @@
           <span class="claim-submitted" id="sc-summary"></span>
         </div>
         <div id="sc-token-warn" style="display:none;color:var(--rose);font-size:.84rem;margin-bottom:.8rem;">APIFY_TOKEN is not set in Netlify yet, so runs cannot start.</div>
+        <div id="sc-sckey-warn" style="display:none;color:var(--rose);font-size:.84rem;margin-bottom:.8rem;">SCRAPECREATORS_API_KEY is not set in Netlify for this site yet, so ScrapeCreators runs cannot start.</div>
 
         <div class="form-section-label">1 &mdash; Monthly read</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
@@ -1274,6 +1275,10 @@
         <details style="margin:.2rem 0 1rem;">
           <summary style="font-size:.8rem;color:var(--muted);cursor:pointer;">Small test run</summary>
           <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.6rem;">
+            <select class="form-input" id="sc-provider" style="max-width:170px;" onchange="scCost()">
+              <option value="apify">Apify</option>
+              <option value="scrapecreators" selected>ScrapeCreators</option>
+            </select>
             <select class="form-input" id="sc-platform" style="max-width:150px;" onchange="scCost()">
               <option value="facebook" selected>Facebook</option>
               <option value="instagram">Instagram</option>
@@ -1284,6 +1289,10 @@
             <input type="hidden" id="sc-newer" value="1 month" />
             <button class="btn-ghost" id="sc-start" onclick="scStart()">Start test</button>
           </div>
+          <label id="sc-compare-wrap" style="display:flex;gap:.45rem;align-items:center;font-size:.82rem;color:var(--muted);margin-top:.5rem;">
+            <input type="checkbox" id="sc-compare" checked onchange="scCost()" />
+            Use accounts Apify already read, to compare the two
+          </label>
           <div id="sc-cost" style="font-size:.8rem;color:var(--muted);margin-top:.45rem;"></div>
         </details>
 
@@ -4573,10 +4582,27 @@ function scCountry() { return (document.getElementById('sc-country') || {}).valu
 
 function scEnter() { scCost(); scLoadStats(); scLoadMentions(); }
 
+// ScrapeCreators: US$47 for 25,000 credits, 1 credit per request. Instagram
+// returns ~12 posts a request, Facebook 3.
+const SCR_USD_PER_CREDIT = 47 / 25000;
+const SCR_CREDITS_PER_ACCOUNT = { instagram: 1.5, facebook: 3 };
+function scProvider() { return (document.getElementById('sc-provider') || {}).value || 'apify'; }
 function scCost() {
   const plat = document.getElementById('sc-platform').value;
   const pages = parseInt(document.getElementById('sc-pages').value, 10) || 0;
   const per = parseInt(document.getElementById('sc-per').value, 10) || 0;
+  const cw = document.getElementById('sc-compare-wrap');
+  if (cw) cw.style.display = scProvider() === 'scrapecreators' ? 'flex' : 'none';
+  if (scProvider() === 'scrapecreators') {
+    const cr = Math.round(pages * SCR_CREDITS_PER_ACCOUNT[plat]);
+    const maxCr = pages * (plat === 'facebook' ? Math.ceil(per / 3) : Math.ceil(per / 12));
+    document.getElementById('sc-cost').textContent =
+      'About ' + cr.toLocaleString() + ' credits (US$' + (cr * SCR_USD_PER_CREDIT).toFixed(2) + '), at most ' +
+      maxCr.toLocaleString() + ' credits. ' + (document.getElementById('sc-compare').checked
+        ? 'Uses accounts Apify read most recently, so the results can be compared.'
+        : 'Accounts read longest ago go first.');
+    return;
+  }
   const r = SC_RATE[plat];
   document.getElementById('sc-cost').textContent =
     'Likely about US$' + (pages * r.posts * r.usd).toFixed(2) + ', at most US$' + (pages * per * r.usd).toFixed(2) + '. Accounts read longest ago go first.';
@@ -4593,6 +4619,7 @@ async function scLoadStats() {
     'Facebook pages ' + (p.facebook || 0) + ' (' + (p.facebook_never || 0) + ' never read) · Instagram ' +
     (p.instagram || 0) + ' (' + (p.instagram_never || 0) + ' never read) · ' + (m.pending || 0) + ' mentions to review · ' + (m.approved || 0) + ' approved';
   document.getElementById('sc-token-warn').style.display = data.apify_token_set ? 'none' : 'block';
+  document.getElementById('sc-sckey-warn').style.display = data.scrapecreators_key_set ? 'none' : 'block';
   const badge = document.getElementById('sc-count');
   if (badge) { badge.textContent = m.pending || 0; badge.classList.toggle('zero', !m.pending); }
 
@@ -4600,15 +4627,22 @@ async function scLoadStats() {
   if (!runs.length) { runsBox.innerHTML = '<div class="empty-state">No runs yet.</div>'; return; }
   runsBox.innerHTML = runs.map(function(r){
     const done = r.status === 'collected';
+    const isSC = r.provider === 'scrapecreators';
     const finished = ['SUCCEEDED', 'TIMED-OUT', 'ABORTED'].indexOf(r.status) !== -1;
-    const btn = done ? '' :
-      (finished ? '<button class="btn-approve" onclick="scCollect(' + r.id + ')">Collect</button>'
-                : (r.status === 'FAILED' ? '' : '<button class="btn-ghost" onclick="scPoll(' + r.id + ')">Check</button>'));
+    const btn = done ? '' : isSC
+      ? '<button class="btn-ghost" onclick="scRunSteps(' + r.id + ')">Continue</button>'
+      : (finished ? '<button class="btn-approve" onclick="scCollect(' + r.id + ')">Collect</button>'
+                  : (r.status === 'FAILED' ? '' : '<button class="btn-ghost" onclick="scPoll(' + r.id + ')">Check</button>'));
+    const scInfo = isSC
+      ? '<span style="color:var(--muted);">ScrapeCreators · ' + (r.credits_used || 0) + ' credits (US$' + ((r.credits_used || 0) * SCR_USD_PER_CREDIT).toFixed(2) + ')' +
+        (r.compare_mode ? ' · found ' + (r.compare_sc_posts || 0) + ' posts, earlier read had ' + (r.compare_apify_posts || 0) + ', ' + (r.compare_overlap || 0) + ' the same' : '') + '</span>'
+      : '<span style="color:var(--muted);">Apify</span>';
     return '<div style="display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;padding:.55rem .8rem;border:1px solid var(--border);border-radius:8px;margin-bottom:.5rem;font-size:.84rem;">' +
       '<strong>#' + r.id + '</strong>' +
       '<span>' + esc(r.platform) + ' · ' + r.pages + ' pages · last ' + esc(r.newer_than || '') + '</span>' +
       '<span style="color:var(--muted);">' + esc(done ? 'collected' : r.status) + '</span>' +
       '<span style="color:var(--muted);">' + (r.posts_saved || 0) + ' posts · ' + (r.mentions_found || 0) + ' mentions</span>' +
+      scInfo +
       '<span style="color:var(--muted);">' + esc(String(r.started_at || '').slice(0, 16).replace('T', ' ')) + '</span>' +
       (r.error ? '<span style="color:var(--rose);">' + esc(r.error) + '</span>' : '') +
       btn + '</div>';
@@ -4699,7 +4733,7 @@ async function scSweep() {
   if (scBusy) return;
   const { ok, data } = await scCall({ mode: 'stats', country: scCountry() });
   if (!ok) return;
-  const open = (data.runs || []).filter(r => r.status !== 'collected' && r.status !== 'FAILED');
+  const open = (data.runs || []).filter(r => r.status !== 'collected' && r.status !== 'FAILED' && r.provider !== 'scrapecreators');
   const msg = document.getElementById('sc-run-msg');
   if (!open.length) { msg.textContent = 'Nothing waiting — every run is collected.'; return; }
   let collected = 0, running = 0;
@@ -4718,6 +4752,19 @@ async function scStart() {
   const pages = document.getElementById('sc-pages').value;
   const per = document.getElementById('sc-per').value;
   const plat = document.getElementById('sc-platform').value;
+  if (scProvider() === 'scrapecreators') {
+    const compare = document.getElementById('sc-compare').checked;
+    if (!confirm('Read ' + pages + ' ' + plat + ' accounts through ScrapeCreators?' +
+                 (compare ? '\n\nUses accounts Apify already read, so the two can be compared.' : ''))) return;
+    const msg = document.getElementById('sc-run-msg'); msg.textContent = 'Starting…';
+    const { ok, data } = await scCall({
+      mode: 'sc-start', country: scCountry(), platform: plat, pages: pages, posts_per_page: per,
+      newer_than: document.getElementById('sc-newer').value, compare: compare
+    });
+    if (!ok || data.error) { msg.textContent = 'Could not start: ' + (data.error || 'error'); return; }
+    scLoadStats();
+    return scRunSteps(data.run_id);
+  }
   if (!confirm('Start a test run on ' + pages + ' ' + plat + ' accounts? This is charged by Apify.')) return;
   scBusy = true;
   const btn = document.getElementById('sc-start'); btn.disabled = true;
@@ -4731,6 +4778,27 @@ async function scStart() {
     : 'Could not start: ' + (data.error || 'error');
   btn.disabled = false; scBusy = false;
   scLoadStats();
+}
+
+// ScrapeCreators answers straight away, so a run is simply stepped through a
+// few accounts at a time until it is done. Safe to stop and Continue later.
+async function scRunSteps(id) {
+  if (scBusy) return;
+  scBusy = true;
+  const btn = document.getElementById('sc-start'); if (btn) btn.disabled = true;
+  const msg = document.getElementById('sc-run-msg');
+  let posts = 0, mentions = 0, credits = 0, errs = 0;
+  for (let guard = 0; guard < 2000; guard++) {
+    const { ok, data } = await scCall({ mode: 'sc-step', run_id: id });
+    if (!ok || data.error) { msg.textContent = 'Run #' + id + ' paused: ' + (data.error || 'error') + '. Press Continue to carry on.'; break; }
+    posts += data.posts_saved || 0; mentions += data.new_mentions || 0; credits += data.credits || 0; errs += (data.errors || []).length;
+    msg.textContent = 'Run #' + id + ': ' + (data.accounts_done || 0) + ' of ' + (data.accounts_total || '?') + ' accounts · ' +
+      posts + ' posts · ' + mentions + ' new mentions · ' + credits + ' credits' + (errs ? ' · ' + errs + ' accounts could not be read' : '');
+    if (data.done) { msg.textContent = 'Run #' + id + ' done. ' + msg.textContent.replace(/^Run #\d+: /, ''); break; }
+  }
+  if (btn) btn.disabled = false;
+  scBusy = false;
+  scLoadStats(); scLoadMentions();
 }
 
 async function scPoll(id) {
