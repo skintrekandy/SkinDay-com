@@ -19,7 +19,13 @@
 // the Chinese name_zh), so a wrong alias is a SQL update, never a redeploy.
 //
 // Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ADMIN_SECRET (already set)
-//      APIFY_TOKEN  (NEW — from apify.com -> Settings -> API & Integrations)
+//      APIFY_TOKEN  (from apify.com -> Settings -> API & Integrations)
+//      SCRAPECREATORS_API_KEY  (second provider, 2026-09-28)
+//
+// SCRAPECREATORS is a plain API: one request returns a page of posts straight
+// away (Instagram ~12, Facebook 3), 1 credit each. There is no run to wait for,
+// so the flow is sc-start (picks the accounts) then sc-step repeatedly, a few
+// accounts per call, until the run is done.
 // ===========================================================================
 
 const { createClient } = require('@supabase/supabase-js');
@@ -32,6 +38,11 @@ const ACTORS = {
   instagram: 'apify~instagram-post-scraper'
 };
 const APIFY = 'https://api.apify.com/v2';
+const SCRAPECREATORS = 'https://api.scrapecreators.com';
+// One call must finish inside the function limit: fetching stops here, leaving
+// time to save and match what was read.
+const SC_FETCH_MS = 5500;
+const SC_BATCH = { instagram: 4, facebook: 1 };   // Facebook pages 3 posts a request, so one account a call
 
 const COLLECT_PAGE = 400;
 const MAX_PAGES_PER_RUN = 1000;
@@ -361,6 +372,208 @@ async function apify(path, opts) {
   return body;
 }
 
+
+// ---------------------------------------------------------------------------
+// ScrapeCreators
+// ---------------------------------------------------------------------------
+
+async function scrapeCreators(path, params) {
+  const key = process.env.SCRAPECREATORS_API_KEY;
+  if (!key) throw new Error('SCRAPECREATORS_API_KEY is not set in Netlify environment variables');
+  const qs = new URLSearchParams();
+  Object.keys(params || {}).forEach(k => { if (params[k] != null && params[k] !== '') qs.set(k, params[k]); });
+  const res = await fetch(SCRAPECREATORS + path + '?' + qs.toString(), { headers: { 'x-api-key': key } });
+  const text = await res.text();
+  let body; try { body = JSON.parse(text); } catch (e) { body = { raw: text }; }
+  if (!res.ok || body.success === false) {
+    const msg = (body && (body.message || body.error)) || String(text).slice(0, 200);
+    const err = new Error('ScrapeCreators ' + res.status + ': ' + msg);
+    err.status = res.status;
+    err.credits = Number(body && body.credits_charged) || 0;
+    throw err;
+  }
+  return body;
+}
+
+// "1 month", "3 months", "2 weeks", "30 days" -> the oldest date to keep.
+function cutoffFrom(newerThan) {
+  const m = String(newerThan || '1 month').match(/(\d+)\s*(day|week|month|year)/i);
+  const n = m ? parseInt(m[1], 10) : 1, unit = m ? m[2].toLowerCase() : 'month';
+  const days = unit === 'day' ? n : unit === 'week' ? n * 7 : unit === 'year' ? n * 365 : n * 30;
+  return new Date(Date.now() - days * 864e5);
+}
+
+function scInstagramPost(pageKey, it) {
+  const code = it.code || it.shortcode || null;
+  const t = it.created_at || (it.taken_at ? new Date(Number(it.taken_at) * 1000).toISOString() : null);
+  return {
+    page_key: pageKey,
+    // Same key Apify stores (the shortcode), so the two providers never
+    // save one post twice.
+    post_key: String(code || it.pk || it.id || ''),
+    post_url: it.url || (code ? 'https://www.instagram.com/p/' + code + '/' : null),
+    posted_at: t,
+    text: (it.caption && (it.caption.text || '')) || ''
+  };
+}
+
+function scFacebookPost(pageKey, it) {
+  const t = it.publishTime ? new Date(Number(it.publishTime) * 1000).toISOString() : (it.time || null);
+  return {
+    page_key: pageKey,
+    post_key: String(it.post_id || it.id || it.permalink || it.url || ''),
+    post_url: clean(it.permalink || it.url) || null,
+    posted_at: t,
+    text: it.text || it.message || ''
+  };
+}
+
+// Reads one account's recent posts, page after page, until it has enough, has
+// gone past the date window, or runs out of time. Never throws: an account that
+// fails (deleted, private, blocked) is reported and the run carries on.
+async function scReadAccount(platform, page, perPage, cutoff, deadline) {
+  const out = []; let credits = 0, cursor = null, error = null, requests = 0, more = false;
+  try {
+    while (out.length < perPage && Date.now() < deadline && requests < 8) {
+      requests++;
+      let body, items, next;
+      if (platform === 'instagram') {
+        body = await scrapeCreators('/v2/instagram/user/posts', { handle: page.page_key, next_max_id: cursor });
+        items = (body.items || []).map(it => scInstagramPost(page.page_key, it));
+        next = body.more_available ? body.next_max_id : null;
+      } else {
+        body = await scrapeCreators('/v1/facebook/profile/posts', { url: page.url, cursor: cursor });
+        items = (body.posts || []).map(it => scFacebookPost(page.page_key, it));
+        next = body.cursor || null;
+      }
+      credits += Number(body.credits_charged) || 1;
+      const inWindow = items.filter(p => p.post_key && (!p.posted_at || new Date(p.posted_at) >= cutoff));
+      out.push(...inWindow);
+      // Pinned posts can be old, so stop only when the NEWEST post on this page
+      // of results is already outside the window, or nothing more is offered.
+      const newest = items.reduce((a, p) => (p.posted_at && (!a || p.posted_at > a)) ? p.posted_at : a, null);
+      if (!next || !items.length || (newest && new Date(newest) < cutoff)) { more = false; break; }
+      cursor = next; more = true;
+    }
+    // Stopped by the clock with more posts still in the window: say so, so an
+    // undercount is visible rather than silent.
+    if (more && out.length < perPage && Date.now() >= deadline) error = 'stopped at the time limit after ' + out.length + ' posts';
+  } catch (e) {
+    error = e.message; credits += e.credits || 0;
+  }
+  const seen = new Set();
+  const uniq = out.filter(p => !seen.has(p.post_key) && seen.add(p.post_key));
+  return { posts: uniq.slice(0, perPage), credits, error };
+}
+
+async function scStart(supabase, body) {
+  const country = body.country || 'canada';
+  const platform = body.platform === 'instagram' ? 'instagram' : 'facebook';
+  const nPages = Math.min(Math.max(parseInt(body.pages, 10) || 50, 1), MAX_PAGES_PER_RUN);
+  const perPage = Math.min(Math.max(parseInt(body.posts_per_page, 10) || 15, 1), MAX_POSTS_PER_PAGE);
+  const newerThan = String(body.newer_than || '1 month').slice(0, 20);
+  const compare = !!body.compare;
+
+  await syncPages(supabase, country);
+
+  // COMPARE picks accounts Apify has already read, most recently first, so the
+  // two providers can be set side by side on the same accounts and window.
+  // Otherwise: never-read accounts first, then the ones read longest ago.
+  let q = supabase.from('social_pages').select('page_key, url')
+    .eq('country', country).eq('platform', platform);
+  q = compare
+    ? q.not('last_run_id', 'is', null).order('last_requested_at', { ascending: false })
+    : q.order('last_requested_at', { ascending: true, nullsFirst: true });
+  const { data: pages, error } = await q.order('page_key', { ascending: true }).limit(nPages);
+  if (error) throw new Error(error.message);
+  if (!pages || !pages.length) return { error: 'no ' + platform + ' pages found for ' + country };
+
+  const { data: run, error: rErr } = await supabase.from('social_crawl_runs').insert({
+    platform, country, pages: pages.length, posts_per_page: perPage,
+    newer_than: newerThan, matcher_version: MATCHER_VERSION, status: 'RUNNING',
+    provider: 'scrapecreators', page_keys: pages.map(p => p.page_key),
+    compare_mode: compare, collect_offset: 0, credits_used: 0,
+    compare_apify_posts: 0, compare_overlap: 0
+  }).select('id').single();
+  if (rErr) throw new Error(rErr.message);
+  return { run_id: run.id, pages: pages.length, platform, compare };
+}
+
+async function scStep(supabase, body) {
+  const t0 = Date.now();
+  const id = parseInt(body.run_id, 10);
+  const { data: run, error } = await supabase.from('social_crawl_runs').select('*').eq('id', id).single();
+  if (error) throw new Error(error.message);
+  if (run.provider !== 'scrapecreators') return { error: 'run #' + id + ' is not a ScrapeCreators run' };
+  if (run.status === 'collected') return { done: true, run };
+
+  const platform = run.platform;
+  const keys = run.page_keys || [];
+  const from = run.collect_offset || 0;
+  const batch = keys.slice(from, from + (SC_BATCH[platform] || 2));
+  if (!batch.length) {
+    await supabase.from('social_crawl_runs').update({ status: 'collected', collected_at: new Date().toISOString() }).eq('id', id);
+    return { done: true };
+  }
+  const { data: pages, error: pErr } = await supabase.from('social_pages').select('page_key, url')
+    .eq('platform', platform).in('page_key', batch);
+  if (pErr) throw new Error(pErr.message);
+  const cutoff = cutoffFrom(run.newer_than);
+  const deadline = t0 + SC_FETCH_MS;
+
+  const results = await Promise.all((pages || []).map(p =>
+    scReadAccount(platform, p, run.posts_per_page || 15, cutoff, deadline)));
+  let posts = [], credits = 0; const errors = [];
+  results.forEach((r, i) => {
+    posts = posts.concat(r.posts); credits += r.credits;
+    if (r.error) errors.push(pages[i].page_key + ': ' + r.error);
+  });
+
+  // What we already hold for these accounts in the same window, from any
+  // earlier read. A post already on file under another key (Facebook ids can
+  // differ between providers) is matched on its opening text, so it is counted
+  // as overlap and not saved a second time.
+  const { data: existing } = await supabase.from('social_posts')
+    .select('post_key, page_key, text, run_id')
+    .eq('platform', platform).in('page_key', batch).gte('posted_at', cutoff.toISOString()).limit(5000);
+  const prior = (existing || []).filter(r => r.run_id !== id);
+  const priorKeys = new Set(prior.map(r => r.post_key));
+  const sig = t => clean(t || '').toLowerCase().replace(/\s+/g, ' ').slice(0, 80);
+  const priorSig = new Set(prior.map(r => r.page_key + '|' + sig(r.text)).filter(x => !x.endsWith('|')));
+  let overlap = 0;
+  const fresh = posts.filter(p => {
+    const same = priorKeys.has(p.post_key) || (sig(p.text) && priorSig.has(p.page_key + '|' + sig(p.text)));
+    if (same) { overlap++; return priorKeys.has(p.post_key); }   // same key: harmless re-save
+    return true;
+  });
+
+  const r = await processPosts(supabase, run, fresh);
+
+  const now = new Date().toISOString();
+  await supabase.from('social_pages').update({ last_requested_at: now, last_run_id: id })
+    .eq('platform', platform).in('page_key', batch);
+
+  const nextOffset = from + batch.length;
+  const done = nextOffset >= keys.length;
+  const upd = {
+    collect_offset: nextOffset,
+    posts_saved: (run.posts_saved || 0) + r.saved,
+    mentions_found: (run.mentions_found || 0) + r.found,
+    credits_used: (run.credits_used || 0) + credits,
+    compare_apify_posts: (run.compare_apify_posts || 0) + prior.length,
+    compare_overlap: (run.compare_overlap || 0) + overlap,
+    compare_sc_posts: (run.compare_sc_posts || 0) + posts.length
+  };
+  if (errors.length) upd.error = ((run.error ? run.error + ' | ' : '') + errors.join(' | ')).slice(0, 1500);
+  if (done) { upd.status = 'collected'; upd.collected_at = now; upd.finished_at = now; }
+  await supabase.from('social_crawl_runs').update(upd).eq('id', id);
+  return {
+    done, accounts_done: nextOffset, accounts_total: keys.length,
+    posts_read: posts.length, posts_saved: r.saved, new_mentions: r.found,
+    new_devices_published: r.published, credits, errors
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Modes
 // ---------------------------------------------------------------------------
@@ -415,7 +628,8 @@ async function stats(supabase, body) {
     pages: { facebook: fb, instagram: ig, facebook_never: fbNever, instagram_never: igNever, facebook_due: fbDue, instagram_due: igDue },
     mentions: { pending, approved },
     runs: runs || [],
-    apify_token_set: !!process.env.APIFY_TOKEN
+    apify_token_set: !!process.env.APIFY_TOKEN,
+    scrapecreators_key_set: !!process.env.SCRAPECREATORS_API_KEY
   };
 }
 
@@ -533,6 +747,24 @@ async function collect(supabase, body) {
 
   const platform = run.platform;
   const posts = list.map(it => readItem(platform, it)).filter(p => p.post_key && p.page_key);
+  const r = await processPosts(supabase, run, posts);
+
+  const done = list.length < COLLECT_PAGE;
+  const upd = {
+    collect_offset: (run.collect_offset || 0) + list.length,
+    posts_saved: (run.posts_saved || 0) + r.saved,
+    mentions_found: (run.mentions_found || 0) + r.found
+  };
+  if (done) { upd.status = 'collected'; upd.collected_at = new Date().toISOString(); }
+  await supabase.from('social_crawl_runs').update(upd).eq('id', id);
+  return { done, read: list.length, posts_saved: r.saved, new_mentions: r.found, new_devices_published: r.published, total: upd };
+}
+
+// Saves posts, finds device mentions, publishes them. Shared by both providers,
+// so a post read through Apify or ScrapeCreators is handled identically.
+async function processPosts(supabase, run, posts) {
+  const id = run.id;
+  const platform = run.platform;
 
   // Which clinics own each page.
   const pageRows = posts.length
@@ -625,16 +857,7 @@ async function collect(supabase, body) {
     await supabase.from('social_pages').update({ last_post_at: at })
       .eq('platform', platform).eq('page_key', key).or('last_post_at.is.null,last_post_at.lt."' + at + '"');
   }
-
-  const done = list.length < COLLECT_PAGE;
-  const upd = {
-    collect_offset: (run.collect_offset || 0) + list.length,
-    posts_saved: (run.posts_saved || 0) + saved.length,
-    mentions_found: (run.mentions_found || 0) + found
-  };
-  if (done) { upd.status = 'collected'; upd.collected_at = new Date().toISOString(); }
-  await supabase.from('social_crawl_runs').update(upd).eq('id', id);
-  return { done, read: list.length, posts_saved: saved.length, new_mentions: found, new_devices_published: published, total: upd };
+  return { saved: saved.length, found, published };
 }
 
 async function listMentions(supabase, body) {
@@ -925,6 +1148,8 @@ exports.handler = async event => {
       case 'start':          return json(200, await start(supabase, body));
       case 'poll':           return json(200, await poll(supabase, body));
       case 'collect':        return json(200, await collect(supabase, body));
+      case 'sc-start':       return json(200, await scStart(supabase, body));
+      case 'sc-step':        return json(200, await scStep(supabase, body));
       case 'list-mentions':  return json(200, await listMentions(supabase, body));
       case 'approve':        return json(200, await decide(supabase, body, true));
       case 'reject':         return json(200, await decide(supabase, body, false));
@@ -952,4 +1177,5 @@ function json(statusCode, obj) {
 }
 
 // Exported for the local check only; Netlify ignores these.
-module.exports._test = { buildMatcher, matchPost, facebookKey, instagramKey, snippetFor, readItem, classifyPost, stripHashtagRuns };
+module.exports._test = { buildMatcher, matchPost, facebookKey, instagramKey, snippetFor, readItem, classifyPost, stripHashtagRuns,
+  scInstagramPost, scFacebookPost, cutoffFrom, scReadAccount };
