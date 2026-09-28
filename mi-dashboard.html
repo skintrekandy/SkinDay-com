@@ -436,24 +436,30 @@
     border-radius:999px; }
   .quick button:hover { border-color:var(--accent); color:var(--accent-strong); }
   .quick button.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
-  /* ---- phone: every filter in one bottom sheet ---- */
-  .adv-sheethead, .adv-phone { display:none; }
+  /* ---- every filter behind one button: a panel on a computer, a bottom
+     sheet on a phone ---- */
+  .adv .adv-sheethead { display:flex; align-items:center; justify-content:space-between; margin:0 0 2px; }
+  .adv .adv-sheethead b { font-size:16px; }
+  .adv .adv-sheethead .x { background:none; border:0; font-size:24px; line-height:1; color:var(--muted); padding:2px 6px; cursor:pointer; }
+  .adv .adv-head { display:none; }
+  .adv .adv-lab { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--muted); margin:14px 0 8px; }
+  .adv .quick { flex-wrap:wrap; overflow:visible; margin:0; padding:0; }
+  .adv .quick button { flex:0 0 auto; }
+  .adv #advCatSlot .fb-lab { display:block; }
+  .adv #advCatSlot .fb-lab > span { display:none; }
+  .adv #advCatSlot select { width:100%; max-width:420px; font-family:var(--font-ui); font-size:.9rem; color:var(--ink);
+    padding:9px 30px 9px 12px; border:1px solid var(--line); background-color:var(--surface); border-radius:var(--radius-sm);
+    -webkit-appearance:none; appearance:none; cursor:pointer;
+    background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat:no-repeat; background-position:right 10px center; background-size:13px; }
+  .adv .adv-foot .btn { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; padding:10px 22px; }
   @media (max-width:640px){
     .adv:not([hidden]) { display:block; position:fixed; left:0; right:0; bottom:0; z-index:215; margin:0;
       max-height:86vh; overflow-y:auto; border:0; border-radius:18px 18px 0 0; background:var(--surface);
       padding:12px 16px calc(14px + env(safe-area-inset-bottom)); box-shadow:0 -10px 30px rgba(20,24,29,.18); }
-    .adv .adv-sheethead { display:flex; align-items:center; justify-content:space-between; margin:0 0 6px; }
     .adv .adv-sheethead b { font-size:17px; }
-    .adv .adv-sheethead .x { background:none; border:0; font-size:26px; line-height:1; color:var(--muted); padding:4px 8px; cursor:pointer; }
-    .adv .adv-phone { display:block; }
-    .adv .adv-head { display:none; }
-    .adv .adv-lab { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
-      color:var(--muted); margin:14px 0 8px; }
-    .adv .quick { flex-wrap:wrap; overflow:visible; margin:0; padding:0; }
-    .adv .quick button { flex:0 0 auto; }
-    .adv #advCatSlot .fb-lab { display:block; }
-    .adv #advCatSlot .fb-lab > span { display:none; }
-    .adv #advCatSlot select, .adv .adv-grid select { width:100%; font-size:15px; padding:11px 30px 11px 12px; border-radius:12px;
+    .adv #advCatSlot select, .adv .adv-grid select { width:100%; max-width:none; font-size:15px; padding:11px 30px 11px 12px; border-radius:12px;
       font-family:var(--font-ui); color:var(--ink); border:1px solid var(--line); background-color:var(--surface);
       -webkit-appearance:none; appearance:none; cursor:pointer;
       background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23697079' stroke-width='2'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
@@ -461,8 +467,7 @@
     .adv .adv-grid { grid-template-columns:1fr; gap:8px; }
     .adv .adv-foot { position:sticky; bottom:calc(-14px - env(safe-area-inset-bottom)); background:var(--surface);
       margin:14px -16px 0; padding:10px 16px calc(12px + env(safe-area-inset-bottom)); border-top:1px solid var(--line-2); }
-    .adv .adv-foot .btn { width:100%; padding:13px; border-radius:12px; background:var(--accent); border-color:var(--accent);
-      color:#fff; font-weight:600; font-size:15px; }
+    .adv .adv-foot .btn { width:100%; padding:13px; border-radius:12px; font-size:15px; }
     #advShade.open { display:block; }
   }
   /* Single clinics / Chains. */
@@ -3635,11 +3640,12 @@
   // ⭐ On a phone, the Show chips and Category live in the filter sheet; on a
   // wider screen they go back where they were. The same elements move, so
   // every handler and query path is unchanged.
-  var FB_HOME=null;
+  var FB_HOME=null, FILTERS_IN_PANEL=true;
   function placeFilters(relabel){
     var q=el('acctQuick'), catLab=el('acctCategory').closest('label');
     if(!FB_HOME) FB_HOME={ q:{parent:q.parentNode, next:q.nextSibling}, cat:{parent:catLab.parentNode, next:catLab.nextSibling} };
-    if(isPhone()){
+    // Andy 2026-09-27: one button for every filter on a computer too.
+    if(FILTERS_IN_PANEL){
       if(q.parentNode.id!=='advSegSlot') el('advSegSlot').appendChild(q);
       if(catLab.parentNode.id!=='advCatSlot') el('advCatSlot').appendChild(catLab);
     } else {
@@ -3647,7 +3653,7 @@
       if(catLab.parentNode.id==='advCatSlot') FB_HOME.cat.parent.insertBefore(catLab, FB_HOME.cat.next);
     }
     if(relabel) advLabel();
-    else if(isPhone()) el('acctMore').textContent='Filters';
+    else if(FILTERS_IN_PANEL) el('acctMore').textContent='Filters';
   }
   function advSheet(on){
     var p=el('acctAdv'), b=el('acctMore'), sh=el('advShade');
@@ -3802,8 +3808,8 @@
   }
   function advLabel(){
     var n=advCount(), b=el('acctMore');
-    if(isPhone()){
-      // One button for every filter on a phone, counting all of them.
+    if(FILTERS_IN_PANEL){
+      // One button for every filter, counting all of them.
       n += (el('acctSegment').value?1:0) + (el('acctCategory').value?1:0);
       b.textContent = n ? 'Filters ('+n+')' : 'Filters';
     } else
@@ -3850,7 +3856,7 @@
     });
     // On a phone the Show chips are inside the filter sheet, so the chosen one
     // gets a chip here like everything else.
-    if(isPhone() && el('acctSegment').value){
+    if(FILTERS_IN_PANEL && el('acctSegment').value){
       var sg=el('acctSegment'), st=sg.options[sg.selectedIndex]?sg.options[sg.selectedIndex].textContent:sg.value;
       parts.unshift('<span class="fchip"><b>Show:</b> '+esc(st)+
         '<button type="button" data-clear="acctSegment" aria-label="Remove filter">&times;</button></span>');
@@ -4403,8 +4409,11 @@
   }
   // "Dermapure Ottawa Downtown" + "Dermapure Newmarket" -> "Dermapure".
   function chainName(c){
-    var cap=function(w){ return w ? w.charAt(0).toUpperCase()+w.slice(1) : ''; };
-    if(c.rows.length<2) return cap(c.brand||'')||c.rows[0].name;
+    // The server names the chain from ALL its locations' names (the words they
+    // share), which is right even when only one location is in the results.
+    var g=c.rows[0].group_name;
+    if(g && String(g).length>=3) return g;
+    if(c.rows.length<2) return c.rows[0].name;
     var words=c.rows.map(function(a){ return String(a.name||'').split(/\s+/); });
     var out=[];
     for(var i=0;i<words[0].length;i++){
@@ -4413,7 +4422,7 @@
       out.push(w);
     }
     var name=out.join(' ').replace(/[\s\-\u2013\u2014|,:(]+$/,'');
-    return name.length>=3 ? name : (cap(c.brand||'')||c.rows[0].name);
+    return name.length>=3 ? name : c.rows[0].name;
   }
   function paintChains(chains){
     var body=el('acctBody');
