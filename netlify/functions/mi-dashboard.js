@@ -626,6 +626,32 @@ exports.handler = async (event) => {
         return json(200, { clinics: data || [] });
       }
 
+      // ⭐ Daily trend for one Pulse product (2026-09-28). Same territory and the
+      // same injectables gate as pulse_clinics. Post counts go back only to
+      // internal accounts; everyone else gets the shape and businesses posting.
+      case 'pulse_trend': {
+        const family = nz(body.product);
+        if (!family) return json(400, { error: 'product required' });
+        if (!hasInjectables) {
+          const { data: sd } = await supabase.from('pulse_mention').select('side')
+            .eq('country', country).eq('family', family).limit(1);
+          if (sd && sd[0] && sd[0].side === 'injectables') return json(403, { error: 'not available' });
+        }
+        const days = Math.min(Math.max(parseInt(body.days, 10) || 30, 7), 366);
+        const { data, error } = await supabase.rpc('mi_pulse_trend', {
+          p_country: country, p_regions: regions, p_province: province,
+          p_city: city, p_neighbourhood: neighbourhood, p_family: family, p_days: days
+        });
+        if (error) throw error;
+        const trend = data || { days: [] };
+        if (!isInternal) {
+          // The shape is kept (relative heights), the counts are not.
+          const max = Math.max(1, ...(trend.days || []).map(d => d.p || 0));
+          trend.days = (trend.days || []).map(d => ({ d: d.d, r: Math.round(1000 * (d.p || 0) / max) / 1000, b: d.b }));
+        }
+        return json(200, { trend, internal: isInternal });
+      }
+
       // ⭐ Pulse signals for the Clinics tab: which products each clinic posted
       // about this Pulse month, and whether it announced them. Injectables only
       // for the internal allow-list, decided here rather than in the page.
