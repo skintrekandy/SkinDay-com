@@ -39,9 +39,12 @@ const ACTORS = {
 };
 const APIFY = 'https://api.apify.com/v2';
 const SCRAPECREATORS = 'https://api.scrapecreators.com';
-// One call must finish inside the function limit: fetching stops here, leaving
-// time to save and match what was read.
-const SC_FETCH_MS = 5500;
+// One call must finish inside the function limit (26s): no new request starts
+// after SC_FETCH_MS, and no single request may run past SC_REQUEST_MS, which
+// leaves time to save and match what was read. At 5.5s a Facebook account got
+// two requests (6 posts) before the clock stopped it.
+const SC_FETCH_MS = 14000;
+const SC_REQUEST_MS = 7000;
 const SC_BATCH = { instagram: 4, facebook: 1 };   // Facebook pages 3 posts a request, so one account a call
 
 const COLLECT_PAGE = 400;
@@ -382,8 +385,17 @@ async function scrapeCreators(path, params) {
   if (!key) throw new Error('SCRAPECREATORS_API_KEY is not set in Netlify environment variables');
   const qs = new URLSearchParams();
   Object.keys(params || {}).forEach(k => { if (params[k] != null && params[k] !== '') qs.set(k, params[k]); });
-  const res = await fetch(SCRAPECREATORS + path + '?' + qs.toString(), { headers: { 'x-api-key': key } });
-  const text = await res.text();
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), SC_REQUEST_MS);
+  let res, text;
+  try {
+    res = await fetch(SCRAPECREATORS + path + '?' + qs.toString(), { headers: { 'x-api-key': key }, signal: ctl.signal });
+    text = await res.text();
+  } catch (e) {
+    throw new Error(e && e.name === 'AbortError' ? 'ScrapeCreators took longer than ' + (SC_REQUEST_MS / 1000) + 's' : String(e && e.message || e));
+  } finally {
+    clearTimeout(timer);
+  }
   let body; try { body = JSON.parse(text); } catch (e) { body = { raw: text }; }
   if (!res.ok || body.success === false) {
     const msg = (body && (body.message || body.error)) || String(text).slice(0, 200);
@@ -479,12 +491,36 @@ async function scStart(supabase, body) {
   // COMPARE picks accounts Apify has already read, most recently first, so the
   // two providers can be set side by side on the same accounts and window.
   // Otherwise: never-read accounts first, then the ones read longest ago.
-  let q = supabase.from('social_pages').select('page_key, url')
-    .eq('country', country).eq('platform', platform);
-  q = compare
-    ? q.not('last_run_id', 'is', null).order('last_requested_at', { ascending: false })
-    : q.order('last_requested_at', { ascending: true, nullsFirst: true });
-  const { data: pages, error } = await q.order('page_key', { ascending: true }).limit(nPages);
+  let pages, error;
+  if (compare) {
+    // ⛔ WHAT THIS REPLACES: "accounts with a last run, most recent first". A
+    // FAILED Apify run still stamps its accounts, so the first ScrapeCreators
+    // test (#18) compared against 15 accounts Apify never actually read and
+    // reported "earlier read had 0" for all of them. Now: only accounts Apify
+    // really returned posts for in the same window, sampled at random.
+    const cutoff = cutoffFrom(newerThan);
+    const { data: scRuns } = await supabase.from('social_crawl_runs').select('id').eq('provider', 'scrapecreators');
+    const scIds = new Set((scRuns || []).map(r => r.id));
+    const { data: held, error: hErr } = await supabase.from('social_posts')
+      .select('page_key, run_id').eq('platform', platform)
+      .gte('posted_at', cutoff.toISOString()).limit(20000);
+    if (hErr) throw new Error(hErr.message);
+    const keys = Array.from(new Set((held || []).filter(r => !scIds.has(r.run_id)).map(r => r.page_key)));
+    for (let i = keys.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1)); const t = keys[i]; keys[i] = keys[j]; keys[j] = t;
+    }
+    const res = await supabase.from('social_pages').select('page_key, url')
+      .eq('country', country).eq('platform', platform)
+      .in('page_key', keys.slice(0, Math.min(keys.length, nPages * 4)));
+    error = res.error;
+    pages = (res.data || []).slice(0, nPages);
+  } else {
+    const res = await supabase.from('social_pages').select('page_key, url')
+      .eq('country', country).eq('platform', platform)
+      .order('last_requested_at', { ascending: true, nullsFirst: true })
+      .order('page_key', { ascending: true }).limit(nPages);
+    error = res.error; pages = res.data;
+  }
   if (error) throw new Error(error.message);
   if (!pages || !pages.length) return { error: 'no ' + platform + ' pages found for ' + country };
 
