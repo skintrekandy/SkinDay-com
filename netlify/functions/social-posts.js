@@ -312,7 +312,7 @@ function snippetFor(text, surface) {
 // Facebook paths that are never a clinic's page.
 const FB_NOT_A_PAGE = new Set(['sharer', 'sharer.php', 'share', 'share.php', 'groups', 'events', 'watch',
   'photo', 'photo.php', 'story.php', 'login', 'login.php', 'dialog', 'search', 'security', 'help',
-  'policies', 'privacy', 'legal', 'home.php', 'business', 'plugins', 'tr', 'hashtag', 'marketplace']);
+  'policies', 'privacy', 'legal', 'lite', 'home.php', 'terms', 'about', 'ads', 'settings', 'business', 'plugins', 'tr', 'hashtag', 'marketplace']);
 // Website builders, theme sellers and other vendors whose social links sit in
 // a template footer and get picked up as the clinic's own account. Found in the
 // Canada audit of 28 Sep 2026 (Alibaba was attached to three clinics).
@@ -549,6 +549,7 @@ async function scStart(supabase, body) {
     const res = await supabase.from('social_pages').select('page_key, url')
       .eq('country', country).eq('platform', platform)
       .or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore)
+      .or('missing_since.is.null,missing_since.lt.' + new Date(Date.now() - 90 * 864e5).toISOString())
       .order('last_requested_at', { ascending: true, nullsFirst: true })
       .order('page_key', { ascending: true }).limit(nPages);
     error = res.error; pages = res.data;
@@ -592,7 +593,13 @@ async function scStep(supabase, body) {
   const { data: pageRows, error: pErr } = await supabase.from('social_pages').select('page_key, url')
     .eq('platform', platform).in('page_key', batch);
   if (pErr) throw new Error(pErr.message);
-  const byKey = new Map((pageRows || []).map(p => [p.page_key, p]));
+  // A row that today's rules reject (a /legal or /lite link saved before the
+  // rules knew better) is skipped rather than read and charged for.
+  const stillValid = p => {
+    const k = platform === 'instagram' ? instagramKey(p.url) : facebookKey(p.url);
+    return !!k;
+  };
+  const byKey = new Map((pageRows || []).filter(stillValid).map(p => [p.page_key, p]));
   const jobs = resumed.filter(x => byKey.has(x.key)).map(x => ({ page: byKey.get(x.key), cursor: x.cursor, have: x.have || 0, tries: x.tries || 1 }))
     .concat(newKeys.filter(k => byKey.has(k)).map(k => ({ page: byKey.get(k), cursor: null, have: 0, tries: 0 })));
   const pages = jobs.map(j => j.page);
@@ -604,6 +611,7 @@ async function scStep(supabase, body) {
     scReadAccount(platform, j.page, Math.max(perPage - j.have, 1), cutoff, deadline, j.cursor)));
   let posts = [], credits = 0; const errors = [];
   const nextResume = restResume.slice();
+  const missing = [];
   results.forEach((r, i) => {
     const j = jobs[i];
     posts = posts.concat(r.posts); credits += r.credits;
@@ -611,6 +619,7 @@ async function scStep(supabase, body) {
       // Not an error yet: it gets another call to finish.
       nextResume.push({ key: j.page.page_key, cursor: r.cursor, have: j.have + r.posts.length, tries: j.tries + 1 });
     } else if (r.error) {
+      if (/\b404\b/.test(r.error)) missing.push(j.page.page_key);
       const msg = r.cutOff ? 'stopped at the time limit after ' + (j.have + r.posts.length) + ' posts' : r.error;
       errors.push(j.page.page_key + ': ' + msg);
     }
@@ -642,6 +651,12 @@ async function scStep(supabase, body) {
   const now = new Date().toISOString();
   await supabase.from('social_pages').update({ last_requested_at: now, last_run_id: id })
     .eq('platform', platform).in('page_key', batch);
+  // "Account doesn't exist": remember it, so the monthly read stops paying to
+  // ask again. It is tried once more after 90 days in case the page comes back.
+  if (missing.length) {
+    await supabase.from('social_pages').update({ missing_since: now })
+      .eq('platform', platform).in('page_key', missing);
+  }
 
   const nextOffset = from + newKeys.length;
   const done = nextOffset >= keys.length && !nextResume.length;
@@ -702,6 +717,7 @@ async function stats(supabase, body) {
   const count = async (build) => { const { count, error } = await build(); if (error) throw new Error(error.message); return count || 0; };
   // Due = not requested in the last 25 days (or never), i.e. still to read this month.
   const dueBefore = new Date(Date.now() - 25 * 864e5).toISOString();
+  const missingBefore = new Date(Date.now() - 90 * 864e5).toISOString();
   const [fb, ig, fbNever, igNever, pending, approved, fbDue, igDue] = await Promise.all([
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook')),
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram')),
@@ -709,8 +725,8 @@ async function stats(supabase, body) {
     count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').is('last_requested_at', null)),
     count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'pending')),
     count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'approved')),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore)),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore))
+    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore).or('missing_since.is.null,missing_since.lt.' + missingBefore)),
+    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore).or('missing_since.is.null,missing_since.lt.' + missingBefore))
   ]);
   const { data: runs, error } = await supabase.from('social_crawl_runs')
     .select('*').eq('country', country).order('id', { ascending: false }).limit(10);
