@@ -826,6 +826,18 @@
   .pl-trend .base { stroke:var(--line); }
   .pl-trend .cap { font-size:12px; color:var(--ink-2); min-height:18px; margin-top:4px; }
   .pl-trend .cap .m { color:var(--muted); }
+  /* Competitor comparison (2026-09-28): same numbers, side by side. Neutral on
+     purpose: nothing is coloured as winning or losing. */
+  .pl-cmp { margin:0 0 16px; }
+  .pl-cmp .ch { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin:6px 0 10px; }
+  .pl-cmp .ch button { border:1px solid var(--line); background:var(--surface); color:var(--ink-2); font:inherit; font-size:12px; padding:4px 10px; border-radius:999px; cursor:pointer; }
+  .pl-cmp .ch button.on { border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+  .pl-cmp .ch select { font:inherit; font-size:12px; padding:4px 6px; border:1px solid var(--line); border-radius:999px; background:var(--surface); color:var(--ink-2); max-width:150px; }
+  .pl-cmp table { width:100%; border-collapse:collapse; font-size:13px; }
+  .pl-cmp th { font-weight:600; text-align:right; padding:6px 0 6px 8px; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
+  .pl-cmp th:first-child { text-align:left; padding-left:0; font-weight:500; color:var(--muted); font-size:12px; }
+  .pl-cmp td { padding:7px 0 7px 8px; border-bottom:1px solid var(--line-2); text-align:right; font-family:var(--font-mono); font-size:13px; }
+  .pl-cmp td:first-child { text-align:left; padding-left:0; font-family:var(--font-ui); color:var(--ink-2); }
   .pl-fact { display:flex; justify-content:space-between; gap:14px; padding:10px 2px; border-bottom:1px solid var(--line); font-size:14px; }
   .pl-fact:first-child { border-top:1px solid var(--line); }
   .pl-fact span:first-child { color:var(--ink-2); }
@@ -2761,13 +2773,62 @@
       '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+plFmt(plPct(r.posts,base))+'</div><div class="l">of '+(dev?'device':'injectable')+' conversation</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
       '<div class="pl-trend" id="plTrend"><div class="th"><span class="tt">Daily activity</span></div><svg viewBox="0 0 300 128"></svg><div class="cap"></div></div>'+
+      '<div class="pl-cmp" id="plCmp"></div>'+
       facts.map(function(f){ return '<div class="pl-fact"><span>'+f[0]+'</span><span class="v">'+f[1]+'</span></div>'; }).join('')+
       say+where+
       '<button type="button" class="pl-see" id="plSee" onclick="plClinics()">See the clinics that posted</button>'+
       '<div id="plClinList"></div>'+
       '<p class="pl-later">Change since last month appears from November.</p>';
     plTrendLoad(r.product);
+    plCmpPaint(r);
   }
+
+  // ─── COMPARE WITH (2026-09-28) ────────────────────────────────────────────
+  // The selected product next to one other, on the same Pulse numbers. The
+  // suggestions are the busiest products in the same category; any other
+  // product can be picked from the list. Owner activation stays internal, like
+  // the rest of the owner figures. (Superseded 2026-09-28: posts and owner
+  // activation now show to everyone in this table.)
+  var PL_CMP={};
+  function plCmpPaint(r){
+    var box=el('plCmp'); if(!box) return;
+    var dev=PL_SIDE==='devices', rows=plRows();
+    var same=rows.filter(function(x){ return x.product!==r.product && x.category===r.category; });
+    var sugg=same.slice(0,3);
+    var pick=PL_CMP[r.product];
+    if(!pick || !rows.some(function(x){ return x.product===pick; })) pick=sugg.length?sugg[0].product:null;
+    if(!pick){ box.innerHTML=''; return; }
+    PL_CMP[r.product]=pick;
+    var o=rows.filter(function(x){ return x.product===pick; })[0];
+    var others=rows.filter(function(x){ return x.product!==r.product && !sugg.some(function(s2){ return s2.product===x.product; }); });
+    var chips=sugg.map(function(x){
+      return '<button type="button" class="'+(x.product===pick?'on':'')+'" onclick="plCmp(\''+plQ(x.product)+'\')">'+esc(x.product)+'</button>';
+    }).join('')+
+      (others.length?'<select aria-label="Compare with another product" onchange="if(this.value) plCmp(this.value)"><option value="">Other…</option>'+
+        others.map(function(x){ return '<option value="'+esc(x.product)+'"'+(x.product===pick?' selected':'')+'>'+esc(x.product)+'</option>'; }).join('')+'</select>':'');
+    var base=plTot(dev?'devices_share_base':'injectables_share_base');
+    var act=function(x){ return (x.pct_owners_promoted!=null&&x.known_owners)?Math.round(x.pct_owners_promoted)+'%':'—'; };
+    var lines=[
+      ['Share of '+(dev?'device':'injectable')+' conversation', plFmt(plPct(r.posts,base)), plFmt(plPct(o.posts,base))],
+      ['Businesses posting', num(r.businesses), num(o.businesses)],
+      ['Businesses announcing it', num(r.launch_businesses||0), num(o.launch_businesses||0)]
+    ];
+    // Shown to everyone since 2026-09-28 (Andy). Owner activation carries its
+    // definition in the tip, because the denominator is what gets challenged.
+    lines.push(['Public posts', num(r.posts), num(o.posts)]);
+    lines.push(['Owner activation '+plInfo('plTipAct','Of the clinics known to have the product whose social media accounts are on file, the share that posted about it this month.'), act(r), act(o)]);
+    box.innerHTML='<div class="pl-eyebrow" style="margin:0">Compare with</div>'+
+      '<div class="ch">'+chips+'</div>'+
+      '<table><thead><tr><th></th><th>'+esc(r.product)+'</th><th>'+esc(o.product)+'</th></tr></thead><tbody>'+
+      lines.map(function(l){ return '<tr><td>'+l[0]+'</td><td>'+l[1]+'</td><td>'+l[2]+'</td></tr>'; }).join('')+
+      '</tbody></table>';
+  }
+  window.plCmp=function(name){
+    var cur=PL_SEL[PL_SIDE]; if(!cur) return;
+    PL_CMP[cur]=name;
+    var r=plRows().filter(function(x){ return x.product===cur; })[0];
+    if(r) plCmpPaint(r);
+  };
 
   // ─── DAILY TREND (2026-09-28) ─────────────────────────────────────────────
   // Posts per day for the selected product, with a 7-day average line. Days
