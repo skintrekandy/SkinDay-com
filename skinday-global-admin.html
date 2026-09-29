@@ -204,6 +204,12 @@
   }
 
   .nav-tab:hover { color: var(--cream); }
+  .admin-groups { background: var(--deep2); padding: .7rem 2rem 0; display:flex; gap:.4rem; overflow-x:auto; }
+  .admin-groups .grp { background:none; border:1px solid rgba(234,226,216,0.14); color:var(--muted); font-family:'DM Sans',sans-serif;
+    font-size:.8rem; font-weight:500; letter-spacing:.02em; padding:.4rem .9rem; border-radius:999px; cursor:pointer; display:flex; align-items:center; gap:.45rem; white-space:nowrap; }
+  .admin-groups .grp:hover { color:var(--cream); border-color:rgba(234,226,216,0.3); }
+  .admin-groups .grp.on { background:rgba(234,226,216,0.1); color:var(--cream); border-color:rgba(234,226,216,0.3); }
+  .nav-tab.hidden-grp { display:none; }
   .nav-tab.active { color: var(--cream); border-bottom-color: var(--rose); }
 
   .tab-count {
@@ -703,6 +709,7 @@
     .admin-header { padding: 1rem; }
     .admin-main { padding: 1rem; }
     .admin-nav { padding: 0 1rem; overflow-x: auto; }
+    .admin-groups { padding: .6rem 1rem 0; }
     .stats-bar { grid-template-columns: 1fr; }
     .claim-meta { grid-template-columns: 1fr 1fr; }
   }
@@ -734,42 +741,54 @@
     </div>
   </header>
 
+  <!-- ⭐ GROUPED NAV (2026-09-29). Twelve tabs in one row had stopped reading as
+       anything. Four groups on top, the chosen group's tabs underneath; a
+       group's badge is the sum of its tabs' badges, so nothing waiting is hidden. -->
+  <div class="admin-groups" id="adminGroups">
+    <button class="grp" data-group="crawls" onclick="showGroup('crawls')">Crawls <span class="tab-count zero" data-gsum="crawls">0</span></button>
+    <button class="grp" data-group="directory" onclick="showGroup('directory')">Directory <span class="tab-count zero" data-gsum="directory">0</span></button>
+    <button class="grp" data-group="fixes" onclick="showGroup('fixes')">Corrections <span class="tab-count zero" data-gsum="fixes">0</span></button>
+    <button class="grp" data-group="business" onclick="showGroup('business')">Business</button>
+  </div>
   <nav class="admin-nav">
-    <button class="nav-tab active" data-tab="costs" onclick="switchTab('costs')">
-      $ Costs
-    </button>
-    <button class="nav-tab" data-tab="flagged" onclick="switchTab('flagged')">
-      &#9873; Flagged Votes <span class="tab-count zero" id="flagged-count">0</span>
-    </button>
-    <button class="nav-tab" data-tab="signups" onclick="switchTab('signups')">
-      &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
-    </button>
-    <button class="nav-tab" data-tab="claims" onclick="switchTab('claims')">
-      &#9998; Directory Claims <span class="tab-count zero" id="claims-count">0</span>
-    </button>
-    <button class="nav-tab" data-tab="taiwan" onclick="switchTab('taiwan')">
-      &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
-    </button>
-    <button class="nav-tab" data-tab="websites" onclick="switchTab('websites')">
-      &#9788; Websites
-    </button>
-    <button class="nav-tab" data-tab="data" onclick="switchTab('data')">
-      &#9635; Data <span class="tab-count zero" id="data-count">0</span>
-    </button>
-    <button class="nav-tab" data-tab="devices" onclick="switchTab('devices')">
+    <button class="nav-tab" data-group="crawls" data-tab="devices" onclick="switchTab('devices')">
       &#9881; Devices <span class="tab-count zero" id="dc-count">0</span>
     </button>
-    <button class="nav-tab" data-tab="biostim" onclick="switchTab('biostim')">
+    <button class="nav-tab" data-group="crawls" data-tab="prices" onclick="switchTab('prices')">
+      $ Prices <span class="tab-count zero" id="pc-count">0</span>
+    </button>
+    <button class="nav-tab" data-group="crawls" data-tab="social" onclick="switchTab('social')">
+      &#9788; Social <span class="tab-count zero" id="sc-count">0</span>
+    </button>
+    <button class="nav-tab" data-group="crawls" data-tab="biostim" onclick="switchTab('biostim')">
       &#9679; Biostimulators <span class="tab-count zero" id="bs-count">0</span>
     </button>
-    <button class="nav-tab" data-tab="manual" onclick="switchTab('manual')">
-      &#9998; Add devices
+    <button class="nav-tab" data-group="directory" data-tab="signups" onclick="switchTab('signups')">
+      &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
     </button>
-    <button class="nav-tab" data-tab="reports" onclick="switchTab('reports')">
+    <button class="nav-tab" data-group="directory" data-tab="claims" onclick="switchTab('claims')">
+      &#9998; Directory Claims <span class="tab-count zero" id="claims-count">0</span>
+    </button>
+    <button class="nav-tab" data-group="directory" data-tab="flagged" onclick="switchTab('flagged')">
+      &#9873; Flagged Votes <span class="tab-count zero" id="flagged-count">0</span>
+    </button>
+    <button class="nav-tab" data-group="directory" data-tab="data" onclick="switchTab('data')">
+      &#9635; Data <span class="tab-count zero" id="data-count">0</span>
+    </button>
+    <button class="nav-tab" data-group="directory" data-tab="taiwan" onclick="switchTab('taiwan')">
+      &#9670; Taiwan <span class="tab-count zero" id="tw-review-count">0</span>
+    </button>
+    <button class="nav-tab" data-group="fixes" data-tab="reports" onclick="switchTab('reports')">
       &#9873; Reports <span class="tab-count zero" id="rp-count">0</span>
     </button>
-    <button class="nav-tab" data-tab="social" onclick="switchTab('social')">
-      &#9788; Social <span class="tab-count zero" id="sc-count">0</span>
+    <button class="nav-tab" data-group="fixes" data-tab="manual" onclick="switchTab('manual')">
+      &#9998; Add devices
+    </button>
+    <button class="nav-tab active" data-group="business" data-tab="costs" onclick="switchTab('costs')">
+      $ Visualize costs
+    </button>
+    <button class="nav-tab" data-group="business" data-tab="websites" onclick="switchTab('websites')">
+      &#9788; Websites
     </button>
   </nav>
 
@@ -1247,6 +1266,60 @@
     </div>
 
 
+    <div id="prices-panel" style="display:none">
+      <div class="add-clinic-form">
+        <div class="form-title">Price crawl</div>
+        <div class="form-subtitle">Reads each clinic's own website for a published per-unit neurotoxin price and lands it as a candidate. Nothing here is visible to patients until a candidate is approved.</div>
+
+        <div class="form-section-label">Country</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <select class="form-input" id="pc-country" style="max-width:220px;" onchange="pcCountryChanged()">
+            <option value="usa">United States</option>
+            <option value="canada">Canada</option>
+          </select>
+          <select class="form-input" id="pc-state" style="max-width:200px;" onchange="pcCountryChanged()">
+            <option value="">Every state</option>
+            <option value="new-york">New York</option>
+            <option value="california">California</option>
+            <option value="florida">Florida</option>
+          </select>
+        </div>
+
+        <div class="form-section-label" style="margin-top:1rem;">Run</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
+          <button class="btn-primary" id="pc-start" onclick="pcStart()">Start crawl</button>
+          <button class="btn-ghost" id="pc-stop" onclick="pcStop()" style="display:none;">Stop</button>
+          <button class="btn-ghost" onclick="pcStart(true)">Retry failed</button>
+          <span id="pc-progress" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div class="form-subtitle" style="margin-top:.6rem;">Runs while this tab is open. A price with a question mark had no "per unit" wording on the page, so those deserve a closer look at review time.</div>
+        <div id="pc-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
+      </div>
+
+      <div class="add-clinic-form" style="margin-top:1.4rem;">
+        <div class="form-title">Review candidates</div>
+        <div class="form-subtitle">Approving writes the price to the clinic, labelled as published on their own website and dated to the day the page was read. A clinic that already has a price for that brand is skipped rather than overwritten.</div>
+        <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <select class="form-input" id="pc-cand-status" style="max-width:190px;" onchange="pcLoadCandidates()">
+            <option value="needs_review">Needs review</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+          <button class="btn-ghost" onclick="pcLoadCandidates()">Refresh</button>
+          <span id="pc-cand-stats" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div id="pc-cand-actions" style="display:none;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
+          <button class="btn-ghost" onclick="pcSelectAll(true)">Select all</button>
+          <button class="btn-ghost" onclick="pcSelectExplicit()">Select only the ones that said per unit</button>
+          <button class="btn-ghost" onclick="pcSelectAll(false)">Clear</button>
+          <button class="btn-approve" onclick="pcDecide(pcSelectedIds(), true)">Approve selected</button>
+          <button class="btn-reject" onclick="pcDecide(pcSelectedIds(), false)">Reject selected</button>
+          <span id="pc-cand-msg" style="font-size:.82rem;color:var(--muted);"></span>
+        </div>
+        <div id="pc-cand-list"></div>
+      </div>
+    </div>
+
     <div id="social-panel" style="display:none">
       <div class="add-clinic-form">
         <div class="form-title">Social media crawl</div>
@@ -1484,9 +1557,12 @@ function logout() {
 async function enterApp(){
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  await loadCosts();
+  var lastTab = null; try { lastTab = localStorage.getItem('ga_tab'); } catch (e) {}
+  if (lastTab && lastTab !== 'costs' && document.querySelector('.nav-tab[data-tab="' + lastTab + '"]')) switchTab(lastTab);
+  else { showGroup('business', true); await loadCosts(); }
   refreshFlaggedCount(); // show pending-review badge immediately
   rpRefreshCount();     // open rep reports badge
+  pcLoadStats();        // price candidates waiting for review
   refreshSignupCount(); // show pending clinic sign-ups badge immediately
 }
 
@@ -1496,12 +1572,45 @@ function refresh(){
   else if (currentTab === 'signups') { loadSignups(); }
   else if (currentTab === 'taiwan') { twLoadStats(); twRefreshCurrentView(); }
   else if (currentTab === 'data') { dtCheck(); }
-  else { costsLoaded = false; loadCosts(); }
+  else if (currentTab === 'devices') { dcLoadStats(); dcLoadCandidates(); }
+  else if (currentTab === 'prices') { pcLoadCandidates(); }
+  else if (currentTab === 'social') { scEnter(); }
+  else if (currentTab === 'claims') { clLoad(); }
+  else if (currentTab === 'costs') { costsLoaded = false; loadCosts(); }
 }
 
-// Single-tab for now; structured so more tabs slot in later.
+// ── Grouped nav ──────────────────────────────────────────────
+var currentGroup = 'business';
+function showGroup(g, noOpen){
+  currentGroup = g;
+  document.querySelectorAll('.admin-groups .grp').forEach(function(b){ b.classList.toggle('on', b.dataset.group === g); });
+  document.querySelectorAll('.nav-tab').forEach(function(b){ b.classList.toggle('hidden-grp', b.dataset.group !== g); });
+  if (noOpen) return;
+  // Opening a group opens the tab last used in it, else its first tab.
+  var last = null; try { last = localStorage.getItem('ga_tab_' + g); } catch (e) {}
+  var btn = last && document.querySelector('.nav-tab[data-tab="' + last + '"][data-group="' + g + '"]');
+  if (!btn) btn = document.querySelector('.nav-tab[data-group="' + g + '"]');
+  if (btn) switchTab(btn.dataset.tab);
+}
+function sumGroupCounts(){
+  document.querySelectorAll('[data-gsum]').forEach(function(el){
+    var g = el.getAttribute('data-gsum'), n = 0;
+    document.querySelectorAll('.nav-tab[data-group="' + g + '"] .tab-count').forEach(function(c){ n += parseInt(c.textContent, 10) || 0; });
+    el.textContent = n; el.classList.toggle('zero', !n);
+  });
+}
+(function(){
+  var obs = new MutationObserver(function(){ sumGroupCounts(); });
+  document.querySelectorAll('.admin-nav .tab-count').forEach(function(c){ obs.observe(c, { childList:true, characterData:true, subtree:true }); });
+})();
+
 function switchTab(tab){
   currentTab = tab;
+  var tb = document.querySelector('.nav-tab[data-tab="' + tab + '"]');
+  if (tb && tb.dataset.group) {
+    if (currentGroup !== tb.dataset.group) showGroup(tb.dataset.group, true);
+    try { localStorage.setItem('ga_tab_' + tb.dataset.group, tab); localStorage.setItem('ga_tab', tab); } catch (e) {}
+  }
   document.querySelectorAll('.nav-tab').forEach(function(b){
     b.classList.toggle('active', b.dataset.tab === tab);
   });
@@ -1523,6 +1632,8 @@ function switchTab(tab){
   if (manP) manP.style.display = (tab === 'manual') ? 'block' : 'none';
   var bsP = document.getElementById('biostim-panel');
   if (bsP) bsP.style.display = (tab === 'biostim') ? 'block' : 'none';
+  var pcP = document.getElementById('prices-panel');
+  if (pcP) pcP.style.display = (tab === 'prices') ? 'block' : 'none';
   var scP = document.getElementById('social-panel');
   if (scP) scP.style.display = (tab === 'social') ? 'block' : 'none';
   var rpP = document.getElementById('reports-panel');
@@ -1534,6 +1645,7 @@ function switchTab(tab){
   if (tab === 'manual') mdEnter();
   if (tab === 'reports') rpLoad();
   if (tab === 'social') scEnter();
+  if (tab === 'prices') pcEnter();
   if (tab === 'costs' && !costsLoaded) loadCosts();
   if (tab === 'flagged') loadFlagged();
   if (tab === 'signups') loadSignups();
@@ -4943,6 +5055,162 @@ async function scApproveAll() {
   }
   msg.textContent = total + ' approved, ' + published + ' newly published.';
   scLoadStats(); scLoadMentions();
+}
+
+// ── PRICE CRAWL + REVIEW (ported from skinday.ca's admin, 2026-09-29) ──────
+// Same function (crawl-prices.js) and the same admin-action.js review actions
+// as the .ca admin, now with a STATE select so New York can run on its own.
+let pcRunning = false, pcEntered = false, pcCandidates = [];
+let pcTotals = { hosts: 0, inserted: 0, empty: 0, errors: 0 };
+function pcCountry(){ const el = document.getElementById('pc-country'); return el ? el.value : 'usa'; }
+function pcState(){ if (pcCountry() !== 'usa') return ''; const el = document.getElementById('pc-state'); return el ? el.value : ''; }
+function pcEnter(){
+  const sel = document.getElementById('pc-state');
+  if (sel) sel.style.display = (pcCountry() === 'usa') ? '' : 'none';
+  if (!pcEntered) { pcEntered = true; pcLoadCandidates(); } else pcLoadStats();
+}
+function pcCountryChanged(){ const sel = document.getElementById('pc-state'); if (sel) sel.style.display = (pcCountry() === 'usa') ? '' : 'none'; }
+function pcLog(html, colour){
+  const box = document.getElementById('pc-log'); box.style.display = 'block';
+  const line = document.createElement('div'); if (colour) line.style.color = colour;
+  line.innerHTML = html; box.appendChild(line); box.scrollTop = box.scrollHeight;
+}
+function pcButtons(running){
+  document.getElementById('pc-start').style.display = running ? 'none' : '';
+  document.getElementById('pc-stop').style.display = running ? '' : 'none';
+}
+function pcStop(){ pcRunning = false; pcButtons(false); pcLog('stopping after this batch…', 'var(--muted)'); }
+async function pcStart(retry){
+  if (pcRunning) return;
+  pcRunning = true;
+  const country = pcCountry(), state = pcState();
+  const scope = state ? state.replace(/-/g, ' ') : country;
+  pcTotals = { hosts: 0, inserted: 0, empty: 0, errors: 0 };
+  pcButtons(true);
+  pcLog((retry === true ? 'retrying hosts that failed' : 'starting') + ' · ' + esc(scope) + '…', 'var(--muted)');
+  let fails = 0;
+  while (pcRunning) {
+    let data;
+    try {
+      const res = await fetch('/.netlify/functions/crawl-prices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+        body: JSON.stringify({ batch: 3, retry: retry === true, country: country, state: state })
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
+      fails = 0;
+    } catch (e) {
+      fails++;
+      if (fails >= 6) { pcLog('stopping after ' + fails + ' failures in a row: ' + esc(String((e && e.message) || e)), 'var(--red)'); break; }
+      const wait = Math.min(2000 * Math.pow(2, fails - 1), 30000);
+      pcLog('hiccup (' + fails + '/6): ' + esc(String((e && e.message) || e)) + ' · retrying in ' + (wait / 1000) + 's', 'var(--gold)');
+      await new Promise(r => setTimeout(r, wait));
+      continue;
+    }
+    retry = false;
+    for (const p of (data.processed || [])) {
+      pcTotals.hosts++;
+      const host = esc(p.host);
+      if (p.status === 'done') {
+        pcTotals.inserted += (p.inserted || 0);
+        pcLog('<strong>' + host + '</strong> · ' + esc(p.summary || '') + ' · ' + (p.inserted || 0) + ' candidate' + (p.inserted === 1 ? '' : 's') +
+              ' across ' + p.clinics + ' clinic' + (p.clinics === 1 ? '' : 's') + (p.skipped ? ' (' + p.skipped + ' already priced)' : ''), 'var(--green)');
+      } else if (p.status === 'empty') {
+        pcTotals.empty++; pcLog(host + ' · no published price found', 'var(--muted)');
+      } else if (p.status === 'needs_render') {
+        pcLog(host + ' · javascript only, needs rendering', 'var(--gold)');
+      } else {
+        pcTotals.errors++; pcLog(host + ' · ' + esc(p.error || p.status), 'var(--red)');
+      }
+    }
+    document.getElementById('pc-progress').textContent =
+      pcTotals.hosts + ' hosts · ' + pcTotals.inserted + ' candidates · ' + pcTotals.empty + ' no price · ' +
+      pcTotals.errors + ' failed · ' + ((data.remaining === undefined) ? '?' : data.remaining) + ' left';
+    if (data.done) { pcLog('queue empty for ' + esc(scope) + '. done.', 'var(--muted)'); break; }
+    await new Promise(r => setTimeout(r, 400));
+  }
+  pcRunning = false; pcButtons(false); pcLoadStats();
+}
+function pcCandMsg(text, colour){ const el = document.getElementById('pc-cand-msg'); el.textContent = text || ''; el.style.color = colour || 'var(--muted)'; }
+async function pcLoadStats(){
+  try {
+    const data = await adminAction({ action: 'price-candidate-stats' });
+    if (!data || !data.counts) return;
+    document.getElementById('pc-cand-stats').textContent =
+      data.counts.needs_review + ' to review · ' + data.counts.approved + ' approved · ' +
+      data.counts.rejected + ' rejected · ' + data.queue_pending + ' hosts left to crawl';
+    const c = document.getElementById('pc-count');
+    if (c) { c.textContent = data.counts.needs_review; c.classList.toggle('zero', !data.counts.needs_review); }
+  } catch (e) {}
+}
+async function pcLoadCandidates(){
+  const status = document.getElementById('pc-cand-status').value;
+  const list = document.getElementById('pc-cand-list');
+  list.innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading candidates…</div>';
+  pcCandMsg('');
+  try {
+    const data = await adminAction({ action: 'list-price-candidates', status: status, limit: 300 });
+    pcCandidates = (data && data.candidates) || [];
+  } catch (e) {
+    list.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load candidates</div><div class="empty-desc">' + esc(e.message || e) + '</div></div>';
+    return;
+  }
+  pcRender(); pcLoadStats();
+}
+function pcRender(){
+  const list = document.getElementById('pc-cand-list');
+  const actions = document.getElementById('pc-cand-actions');
+  const reviewing = document.getElementById('pc-cand-status').value === 'needs_review';
+  if (!pcCandidates.length) {
+    actions.style.display = 'none';
+    list.innerHTML = '<div class="empty-state"><div class="empty-title">Nothing here</div><div class="empty-desc">No candidates with that status.</div></div>';
+    return;
+  }
+  actions.style.display = reviewing ? 'flex' : 'none';
+  const byHost = {};
+  pcCandidates.forEach(c => { const k = c.host || 'unknown'; (byHost[k] = byHost[k] || []).push(c); });
+  let html = '';
+  Object.keys(byHost).sort().forEach(host => {
+    const rows = byHost[host];
+    html += '<div style="border:1px solid var(--border);border-radius:10px;margin-bottom:.9rem;overflow:hidden;">' +
+      '<div style="background:var(--warm);padding:.55rem .8rem;font-size:.82rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;">' +
+      '<strong>' + esc(host) + '</strong><a href="' + esc(rows[0].source_url) + '" target="_blank" rel="noopener" style="color:var(--rose);text-decoration:none;">open the page it came from</a></div>';
+    rows.forEach(c => {
+      const inferred = c.basis_source !== 'explicit';
+      const flag = inferred
+        ? '<span style="background:var(--red-bg);color:var(--red);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">no per unit wording</span>'
+        : '<span style="background:var(--green-bg);color:var(--green);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">said per unit</span>';
+      const range = c.from_range ? ' <span style="background:var(--warm);color:var(--muted);padding:.1rem .4rem;border-radius:4px;font-size:.7rem;">low end of a range</span>' : '';
+      const cur = c.currency && c.currency !== 'CAD' ? ' ' + esc(c.currency) : '';
+      html += '<div style="padding:.7rem .8rem;border-top:1px solid var(--border);font-size:.84rem;">' +
+        '<div style="display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;">' +
+        (reviewing ? '<input type="checkbox" class="pc-cand-cb" value="' + esc(c.id) + '" data-explicit="' + (inferred ? '0' : '1') + '">' : '') +
+        '<strong>$' + esc(c.price) + cur + '</strong><span style="text-transform:capitalize;">' + esc(c.toxin) + '</span>' +
+        '<span style="color:var(--muted);">' + esc(c.clinic_name || '') + (c.clinic_region ? ', ' + esc(c.clinic_region) : '') + '</span>' + flag + range + '</div>' +
+        '<div style="color:var(--muted);margin-top:.35rem;font-size:.78rem;">' + esc(c.raw_text || '') + '</div>' +
+        (reviewing ? '<div style="margin-top:.5rem;display:flex;gap:.4rem;"><button class="btn-approve" onclick="pcDecide([\'' + esc(c.id) + '\'], true)">Approve</button>' +
+          '<button class="btn-reject" onclick="pcDecide([\'' + esc(c.id) + '\'], false)">Reject</button></div>' : '') +
+        '</div>';
+    });
+    html += '</div>';
+  });
+  list.innerHTML = html;
+}
+function pcSelectAll(on){ document.querySelectorAll('.pc-cand-cb').forEach(cb => { cb.checked = !!on; }); }
+function pcSelectExplicit(){ document.querySelectorAll('.pc-cand-cb').forEach(cb => { cb.checked = cb.dataset.explicit === '1'; }); }
+function pcSelectedIds(){ return [...document.querySelectorAll('.pc-cand-cb:checked')].map(cb => cb.value); }
+async function pcDecide(ids, approve){
+  if (!ids || !ids.length) { pcCandMsg('Nothing selected.', 'var(--red)'); return; }
+  if (approve && ids.length > 1 && !confirm('Approve ' + ids.length + ' prices? They go live on the directory.')) return;
+  pcCandMsg((approve ? 'Approving ' : 'Rejecting ') + ids.length + '…');
+  let data;
+  try { data = await adminAction({ action: approve ? 'approve-price-candidates' : 'reject-price-candidates', ids: ids }); }
+  catch (e) { pcCandMsg(String(e.message || e), 'var(--red)'); return; }
+  if (approve) pcCandMsg(data.approved + ' approved' + (data.already_priced ? ', ' + data.already_priced + ' skipped as already priced' : '') + '.', 'var(--green)');
+  else pcCandMsg(data.rejected + ' rejected.', 'var(--muted)');
+  if (data.errors && data.errors.length) pcCandMsg(String(data.errors[0]), 'var(--red)');
+  pcLoadCandidates();
 }
 </script>
 </body>
