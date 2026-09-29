@@ -45,7 +45,12 @@ const SCRAPECREATORS = 'https://api.scrapecreators.com';
 // two requests (6 posts) before the clock stopped it.
 const SC_FETCH_MS = 14000;
 const SC_REQUEST_MS = 7000;
-const SC_BATCH = { instagram: 4, facebook: 1 };   // Facebook pages 3 posts a request, so one account a call
+// Accounts read at once per call. They run side by side, so three Facebook
+// accounts take no longer than one did.
+const SC_BATCH = { instagram: 6, facebook: 3 };
+// An account the clock cut off is picked up again from where it stopped, at
+// most this many times, instead of being left short.
+const SC_MAX_RESUMES = 2;
 
 const COLLECT_PAGE = 400;
 const MAX_PAGES_PER_RUN = 1000;
@@ -443,8 +448,8 @@ function scFacebookPost(pageKey, it) {
 // Reads one account's recent posts, page after page, until it has enough, has
 // gone past the date window, or runs out of time. Never throws: an account that
 // fails (deleted, private, blocked) is reported and the run carries on.
-async function scReadAccount(platform, page, perPage, cutoff, deadline) {
-  const out = []; let credits = 0, cursor = null, error = null, requests = 0, more = false;
+async function scReadAccount(platform, page, perPage, cutoff, deadline, startCursor) {
+  const out = []; let credits = 0, cursor = startCursor || null, error = null, requests = 0, more = false, cutOff = false;
   try {
     while (out.length < perPage && Date.now() < deadline && requests < 8) {
       requests++;
@@ -469,13 +474,16 @@ async function scReadAccount(platform, page, perPage, cutoff, deadline) {
     }
     // Stopped by the clock with more posts still in the window: say so, so an
     // undercount is visible rather than silent.
-    if (more && out.length < perPage && Date.now() >= deadline) error = 'stopped at the time limit after ' + out.length + ' posts';
+    if (more && out.length < perPage && Date.now() >= deadline) {
+      cutOff = true;
+      error = 'stopped at the time limit after ' + out.length + ' posts';
+    }
   } catch (e) {
     error = e.message; credits += e.credits || 0;
   }
   const seen = new Set();
   const uniq = out.filter(p => !seen.has(p.post_key) && seen.add(p.post_key));
-  return { posts: uniq.slice(0, perPage), credits, error };
+  return { posts: uniq.slice(0, perPage), credits, error, cutOff, cursor: cutOff ? cursor : null };
 }
 
 async function scStart(supabase, body) {
@@ -515,8 +523,12 @@ async function scStart(supabase, body) {
     error = res.error;
     pages = (res.data || []).slice(0, nPages);
   } else {
+    // The monthly read: only accounts not read in the last 25 days, the same
+    // rule the "still to read this month" count uses.
+    const dueBefore = new Date(Date.now() - 25 * 864e5).toISOString();
     const res = await supabase.from('social_pages').select('page_key, url')
       .eq('country', country).eq('platform', platform)
+      .or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore)
       .order('last_requested_at', { ascending: true, nullsFirst: true })
       .order('page_key', { ascending: true }).limit(nPages);
     error = res.error; pages = res.data;
@@ -546,23 +558,42 @@ async function scStep(supabase, body) {
   const platform = run.platform;
   const keys = run.page_keys || [];
   const from = run.collect_offset || 0;
-  const batch = keys.slice(from, from + (SC_BATCH[platform] || 2));
+  const size = SC_BATCH[platform] || 2;
+  // Accounts the clock cut off last time go first, continuing from their cursor.
+  const resume = Array.isArray(run.sc_resume) ? run.sc_resume : [];
+  const resumed = resume.slice(0, size);
+  const restResume = resume.slice(resumed.length);
+  const newKeys = keys.slice(from, from + (size - resumed.length));
+  const batch = resumed.map(x => x.key).concat(newKeys);
   if (!batch.length) {
     await supabase.from('social_crawl_runs').update({ status: 'collected', collected_at: new Date().toISOString() }).eq('id', id);
     return { done: true };
   }
-  const { data: pages, error: pErr } = await supabase.from('social_pages').select('page_key, url')
+  const { data: pageRows, error: pErr } = await supabase.from('social_pages').select('page_key, url')
     .eq('platform', platform).in('page_key', batch);
   if (pErr) throw new Error(pErr.message);
+  const byKey = new Map((pageRows || []).map(p => [p.page_key, p]));
+  const jobs = resumed.filter(x => byKey.has(x.key)).map(x => ({ page: byKey.get(x.key), cursor: x.cursor, have: x.have || 0, tries: x.tries || 1 }))
+    .concat(newKeys.filter(k => byKey.has(k)).map(k => ({ page: byKey.get(k), cursor: null, have: 0, tries: 0 })));
+  const pages = jobs.map(j => j.page);
   const cutoff = cutoffFrom(run.newer_than);
   const deadline = t0 + SC_FETCH_MS;
+  const perPage = run.posts_per_page || 15;
 
-  const results = await Promise.all((pages || []).map(p =>
-    scReadAccount(platform, p, run.posts_per_page || 15, cutoff, deadline)));
+  const results = await Promise.all(jobs.map(j =>
+    scReadAccount(platform, j.page, Math.max(perPage - j.have, 1), cutoff, deadline, j.cursor)));
   let posts = [], credits = 0; const errors = [];
+  const nextResume = restResume.slice();
   results.forEach((r, i) => {
+    const j = jobs[i];
     posts = posts.concat(r.posts); credits += r.credits;
-    if (r.error) errors.push(pages[i].page_key + ': ' + r.error);
+    if (r.cutOff && r.cursor && j.tries < SC_MAX_RESUMES) {
+      // Not an error yet: it gets another call to finish.
+      nextResume.push({ key: j.page.page_key, cursor: r.cursor, have: j.have + r.posts.length, tries: j.tries + 1 });
+    } else if (r.error) {
+      const msg = r.cutOff ? 'stopped at the time limit after ' + (j.have + r.posts.length) + ' posts' : r.error;
+      errors.push(j.page.page_key + ': ' + msg);
+    }
   });
 
   // What we already hold for these accounts in the same window, from any
@@ -573,6 +604,9 @@ async function scStep(supabase, body) {
     .select('post_key, page_key, text, run_id')
     .eq('platform', platform).in('page_key', batch).gte('posted_at', cutoff.toISOString()).limit(5000);
   const prior = (existing || []).filter(r => r.run_id !== id);
+  // An account being continued was already compared on its first call.
+  const newKeySet = new Set(newKeys);
+  const priorNew = prior.filter(r => newKeySet.has(r.page_key));
   const priorKeys = new Set(prior.map(r => r.post_key));
   const sig = t => clean(t || '').toLowerCase().replace(/\s+/g, ' ').slice(0, 80);
   const priorSig = new Set(prior.map(r => r.page_key + '|' + sig(r.text)).filter(x => !x.endsWith('|')));
@@ -589,14 +623,15 @@ async function scStep(supabase, body) {
   await supabase.from('social_pages').update({ last_requested_at: now, last_run_id: id })
     .eq('platform', platform).in('page_key', batch);
 
-  const nextOffset = from + batch.length;
-  const done = nextOffset >= keys.length;
+  const nextOffset = from + newKeys.length;
+  const done = nextOffset >= keys.length && !nextResume.length;
   const upd = {
     collect_offset: nextOffset,
+    sc_resume: nextResume,
     posts_saved: (run.posts_saved || 0) + r.saved,
     mentions_found: (run.mentions_found || 0) + r.found,
     credits_used: (run.credits_used || 0) + credits,
-    compare_apify_posts: (run.compare_apify_posts || 0) + prior.length,
+    compare_apify_posts: (run.compare_apify_posts || 0) + priorNew.length,
     compare_overlap: (run.compare_overlap || 0) + overlap,
     compare_sc_posts: (run.compare_sc_posts || 0) + posts.length
   };
