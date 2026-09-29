@@ -1270,7 +1270,7 @@
           <button class="btn-primary" id="sc-monthly" onclick="scMonthly()" style="width:auto;padding:.6rem 1.4rem;">Read the next 1,000 accounts</button>
           <span id="sc-monthly-note" style="font-size:.8rem;color:var(--muted);"></span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .6rem;">Last month&rsquo;s posts, up to 15 per account, one batch at a time. Instagram first, then Facebook. Collect each batch before starting the next.</div>
+        <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .6rem;">Last month&rsquo;s posts, up to 15 per account, read through ScrapeCreators. Instagram first, then Facebook. Keep this tab open while it reads; if it stops, press Continue on the run.</div>
 
         <details style="margin:.2rem 0 1rem;">
           <summary style="font-size:.8rem;color:var(--muted);cursor:pointer;">Small test run</summary>
@@ -4615,7 +4615,9 @@ function scEnter() { scCost(); scLoadStats(); scLoadMentions(); }
 // ScrapeCreators: US$47 for 25,000 credits, 1 credit per request. Instagram
 // returns ~12 posts a request, Facebook 3.
 const SCR_USD_PER_CREDIT = 47 / 25000;
-const SCR_CREDITS_PER_ACCOUNT = { instagram: 1.5, facebook: 3 };
+// Measured on the first real tests (28 Sep 2026): 64 credits for 30 Instagram
+// accounts, 55 for 15 Facebook accounts.
+const SCR_CREDITS_PER_ACCOUNT = { instagram: 2.2, facebook: 3.7 };
 function scProvider() { return (document.getElementById('sc-provider') || {}).value || 'apify'; }
 function scCost() {
   const plat = document.getElementById('sc-platform').value;
@@ -4697,8 +4699,9 @@ function scNextBatch() {
   return null;
 }
 function scBatchCost(b) {
-  const r = SC_RATE[b.platform];
-  return { likely: b.pages * r.posts * r.usd, cap: b.pages * SC_MONTH_CAP * r.usd };
+  // The monthly read runs on ScrapeCreators now (switched 28 Sep 2026).
+  const credits = Math.round(b.pages * SCR_CREDITS_PER_ACCOUNT[b.platform]);
+  return { credits: credits, likely: credits * SCR_USD_PER_CREDIT };
 }
 function scMonthlyEstimate() {
   const el = document.getElementById('sc-monthly-note');
@@ -4717,19 +4720,17 @@ async function scMonthly() {
   if (!b) return;
   const c = scBatchCost(b);
   if (!confirm('Read ' + b.pages.toLocaleString() + ' ' + (b.platform === 'instagram' ? 'Instagram' : 'Facebook') +
-               ' accounts?\n\nLikely about US$' + c.likely.toFixed(0) + ' (Apify cannot charge more than US$' + Math.ceil(c.cap) + ' for this batch).')) return;
-  scBusy = true;
-  const btn = document.getElementById('sc-monthly'); btn.disabled = true;
+               ' accounts through ScrapeCreators?\n\nLikely about ' + c.credits.toLocaleString() + ' credits (US$' + c.likely.toFixed(0) +
+               '). Keep this tab open while it reads. If it stops, press Continue on the run.')) return;
   const msg = document.getElementById('sc-run-msg');
   msg.textContent = 'Starting…';
   const { ok, data } = await scCall({
-    mode: 'start', country: scCountry(), platform: b.platform,
-    pages: b.pages, posts_per_page: SC_MONTH_CAP, newer_than: '1 month'
+    mode: 'sc-start', country: scCountry(), platform: b.platform,
+    pages: b.pages, posts_per_page: SC_MONTH_CAP, newer_than: '1 month', compare: false
   });
-  msg.textContent = (!ok || data.error) ? 'Could not start: ' + (data.error || 'error')
-    : 'Run #' + data.run_id + ' started. It takes from a few minutes to an hour. Then press "Check all and collect finished runs" before starting the next batch.';
-  btn.disabled = false; scBusy = false;
+  if (!ok || data.error) { msg.textContent = 'Could not start: ' + (data.error || 'error'); return; }
   scLoadStats();
+  return scRunSteps(data.run_id);
 }
 // Evidence type for every mention: rules first, then AI for the ones with no clear cue.
 const SC_EVIDENCE_LABEL = { announcement: 'announcement', promotion: 'promotion', before_after: 'before/after', education: 'education',
@@ -4816,6 +4817,7 @@ async function scRunSteps(id) {
   if (scBusy) return;
   scBusy = true;
   const btn = document.getElementById('sc-start'); if (btn) btn.disabled = true;
+  const mbtn = document.getElementById('sc-monthly'); if (mbtn) mbtn.disabled = true;
   const msg = document.getElementById('sc-run-msg');
   let posts = 0, mentions = 0, credits = 0, errs = 0;
   for (let guard = 0; guard < 2000; guard++) {
@@ -4827,6 +4829,7 @@ async function scRunSteps(id) {
     if (data.done) { msg.textContent = 'Run #' + id + ' done. ' + msg.textContent.replace(/^Run #\d+: /, ''); break; }
   }
   if (btn) btn.disabled = false;
+  if (mbtn) mbtn.disabled = false;
   scBusy = false;
   scLoadStats(); scLoadMentions();
 }
