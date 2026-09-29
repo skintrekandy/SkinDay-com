@@ -5073,6 +5073,8 @@ async function scApproveAll() {
 // as the .ca admin, now with a STATE select so New York can run on its own.
 let pcRunning = false, pcEntered = false, pcCandidates = [];
 let pcTotals = { hosts: 0, inserted: 0, empty: 0, errors: 0 };
+// Nuceiva is the Canadian name; the same product is sold as Jeuveau in the US.
+function pcToxinLabel(t){ return (t === 'nuceiva' && pcCountry() === 'usa') ? 'Jeuveau' : t; }
 function pcCountry(){ const el = document.getElementById('pc-country'); return el ? el.value : 'usa'; }
 function pcState(){ if (pcCountry() !== 'usa') return ''; const el = document.getElementById('pc-state'); return el ? el.value : ''; }
 function pcEnter(){
@@ -5197,7 +5199,7 @@ function pcRender(){
       html += '<div style="padding:.7rem .8rem;border-top:1px solid var(--border);font-size:.84rem;">' +
         '<div style="display:flex;gap:.6rem;align-items:baseline;flex-wrap:wrap;">' +
         (reviewing ? '<input type="checkbox" class="pc-cand-cb" value="' + esc(c.id) + '" data-explicit="' + (inferred ? '0' : '1') + '">' : '') +
-        '<strong>$' + esc(c.price) + cur + '</strong><span style="text-transform:capitalize;">' + esc(c.toxin) + '</span>' +
+        '<strong>$' + esc(c.price) + cur + '</strong><span style="text-transform:capitalize;">' + esc(pcToxinLabel(c.toxin)) + '</span>' +
         '<span style="color:var(--muted);">' + esc(c.clinic_name || '') + (c.clinic_region ? ', ' + esc(c.clinic_region) : '') + '</span>' + flag + range + '</div>' +
         '<div style="color:var(--muted);margin-top:.35rem;font-size:.78rem;">' + esc(c.raw_text || '') + '</div>' +
         (reviewing ? '<div style="margin-top:.5rem;display:flex;gap:.4rem;"><button class="btn-approve" onclick="pcDecide([\'' + esc(c.id) + '\'], true)">Approve</button>' +
