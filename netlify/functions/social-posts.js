@@ -47,7 +47,7 @@ const SC_FETCH_MS = 14000;
 const SC_REQUEST_MS = 7000;
 // Accounts read at once per call. They run side by side, so three Facebook
 // accounts take no longer than one did.
-const SC_BATCH = { instagram: 6, facebook: 3 };
+const SC_BATCH = { instagram: 10, facebook: 8 };
 // An account the clock cut off is picked up again from where it stopped, at
 // most this many times, instead of being left short.
 const SC_MAX_RESUMES = 2;
