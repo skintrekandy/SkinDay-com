@@ -309,6 +309,18 @@ function snippetFor(text, surface) {
 // Page keys
 // ---------------------------------------------------------------------------
 
+// Facebook paths that are never a clinic's page.
+const FB_NOT_A_PAGE = new Set(['sharer', 'sharer.php', 'share', 'share.php', 'groups', 'events', 'watch',
+  'photo', 'photo.php', 'story.php', 'login', 'login.php', 'dialog', 'search', 'security', 'help',
+  'policies', 'privacy', 'legal', 'home.php', 'business', 'plugins', 'tr', 'hashtag', 'marketplace']);
+// Website builders, theme sellers and other vendors whose social links sit in
+// a template footer and get picked up as the clinic's own account. Found in the
+// Canada audit of 28 Sep 2026 (Alibaba was attached to three clinics).
+const SOCIAL_VENDORS = new Set(['squarespace', 'wixstudio', 'wix', 'wordpresscom', 'wordpressdotcom',
+  'wordpress', 'strikingly', 'qodeinteractive', 'themerex_net', 'themerex', 'shopify', 'godaddy',
+  'weebly', 'elementor', 'envato', 'themeforest', 'alibaba.comglobal', 'alibaba.com_official',
+  'facebook', 'instagram', 'meta']);
+
 function facebookKey(raw) {
   let u;
   try { u = new URL(String(raw).trim()); } catch (e) { return null; }
@@ -324,8 +336,15 @@ function facebookKey(raw) {
   // first segment is the page.
   const segs = path.split('/').filter(Boolean);
   if (!segs.length) return null;
-  if (['sharer', 'sharer.php', 'share', 'groups', 'events', 'watch', 'photo', 'photo.php', 'story.php', 'login', 'dialog'].includes(segs[0].toLowerCase())) return null;
-  const keep = (segs[0].toLowerCase() === 'pages' || segs[0].toLowerCase() === 'p') ? segs.slice(0, 3) : segs.slice(0, 1);
+  const first = segs[0].toLowerCase();
+  if (FB_NOT_A_PAGE.has(first) || SOCIAL_VENDORS.has(first)) return null;
+  // /pages/Name/123, /p/Name-123 and /people/Name/123 are real pages only with
+  // the name after them. A bare /people or /pages is a link to Facebook itself
+  // (26 Canadian clinics had exactly that), and before this every
+  // /people/... page collapsed into one key, "/people".
+  const nested = (first === 'pages' || first === 'p' || first === 'people');
+  if (nested && segs.length < 2) return null;
+  const keep = nested ? segs.slice(0, 3) : segs.slice(0, 1);
   const p = '/' + keep.join('/');
   return { key: p.toLowerCase(), url: 'https://www.facebook.com' + encodeURI(p) };
 }
@@ -338,6 +357,7 @@ function instagramKey(raw) {
   if (!segs.length) return null;
   const user = segs[0].toLowerCase();
   if (['p', 'reel', 'reels', 'explore', 'stories', 'accounts', 'tv'].includes(user)) return null;
+  if (SOCIAL_VENDORS.has(user)) return null;
   if (!/^[a-z0-9._]{1,30}$/.test(user)) return null;
   return { key: user, url: 'https://www.instagram.com/' + user + '/' };
 }
