@@ -1139,6 +1139,7 @@
           <button class="btn-primary" id="dc-start" onclick="dcStart()">Start crawl</button>
           <button class="btn-ghost" id="dc-stop" onclick="dcStop()" style="display:none;">Stop</button>
           <button class="btn-ghost" onclick="dcStart(true)">Retry failed</button>
+          <button class="btn-ghost" onclick="dcStart('into')" title="Read the queued sites into an earlier run, so that run is complete and stays comparable">Finish a past run</button>
           <button class="btn-ghost" id="dc-requeue" onclick="dcRequeue()">Requeue everything</button>
           <button class="btn-ghost" id="dc-sync" onclick="dcSync()">Skip de-approved clinics</button>
           <span id="dc-progress" style="font-size:.82rem;color:var(--muted);"></span>
@@ -3694,7 +3695,17 @@ async function dcStart(retry) {
   // Resume the interrupted run unless the operator says otherwise. Cancel
   // starts a new one, which is the right choice for a fresh monthly crawl.
   dcRunId = null;
-  const openRun = dcOpenRun(country, state);
+  // ⭐ FINISH A PAST RUN. Sites that were read badly get requeued and read into
+  // the SAME run number, so that run is whole again and the month-over-month
+  // comparison still lines up (runs 148/149 after the 2026-09-28 time-limit bug).
+  if (retry === 'into') {
+    const n = parseInt(prompt('Which run number should these sites be read into?') || '', 10);
+    if (!n) { dcRunning = false; return; }
+    dcRunId = n;
+    retry = false;
+    dcLog('reading queued sites into run ' + n, 'var(--muted)');
+  }
+  const openRun = dcRunId ? null : dcOpenRun(country, state);
   if (openRun) {
     if (confirm('Run ' + openRun + ' for ' + scope
                 + ' never finished.\n\nContinue it? Everything read so far stays '
