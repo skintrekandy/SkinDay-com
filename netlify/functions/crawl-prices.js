@@ -364,6 +364,36 @@ function priceFrom(win) {
   return null;   // two unrelated numbers: new-patient vs existing, or a table row
 }
 
+// ⭐⭐ WHICH BRANDS A PRICE BELONGS TO (Andy, 2026-09-29, NY review).
+// A window used to hand its price to EVERY brand it mentioned. Two NY pages
+// showed why that is wrong:
+//   isavelapacednp.com  "Dysport $4/Unit (Please note ... 1u of Botox is ..."
+//                        -> filed as BOTOX $4; the page says Botox $12.
+//   upkeepmedspa.com     a "Botox, Dysport & Xeomin — starting at $5/unit"
+//                        banner beat its own list (Botox $15, Xeomin $11).
+// Now: the price goes to the brand named right before it, plus any brands
+// chained to that one by a list separator ("Botox / Xeomin / Dysport $14",
+// "Dysport + Botox — $15"). Only if no brand comes before the price does it go
+// to the list right after it ("$15/unit XEOMIN, Dysport, BOTOX").
+const CHAIN_GAP = /^[\s\/,&+|()®™*:\-–—]*(?:and|or|et|ou)?[\s\/,&+|()®™*:\-–—]*(?:cosmetic)?[\s\/,&+|()®™*:\-–—]*$/i;
+function ownersOf(win, toxins, at) {
+  const before = toxins.filter(t => t.end <= at).sort((a, b) => b.end - a.end);
+  const after = toxins.filter(t => t.start >= at).sort((a, b) => a.start - b.start);
+  const chain = (list, gapOf) => {
+    if (!list.length) return [];
+    const out = [list[0]];
+    for (let i = 1; i < list.length; i++) {
+      if (!CHAIN_GAP.test(gapOf(out[out.length - 1], list[i]))) break;
+      out.push(list[i]);
+    }
+    return out;
+  };
+  if (before.length) return chain(before, (near, far) => win.slice(far.end, near.start));
+  return chain(after, (near, far) => win.slice(near.end, far.start));
+}
+
+const AREA_WORDS = /\b(glabell\w*|forehead|crow'?s?\s*feet|bunny\s*lines?|frown\s*lines?|11\s*lines|lip\s*flip|gummy\s*smile|masseter|jaw\w*|chin|platysm\w*|neck|underarms?|per\s*area|area)\b/i;
+
 function extractPrices(text, opts = {}) {
   const min = opts.min ?? MIN_UNIT_PRICE;
   const max = opts.max ?? MAX_UNIT_PRICE;
@@ -382,6 +412,11 @@ function extractPrices(text, opts = {}) {
     if (got.isRange && toxins.length > 1) continue;
 
     const explicit = UNIT_BASIS.some(re => re.test(win));
+    // ⭐ AN AREA PRICE IS NOT A UNIT PRICE (2026-09-29). clalasers.com lists
+    // Daxxify by area — Glabella $330, Forehead $330, Bunny Lines $40 — and the
+    // $40 was filed as $40 per unit. With no "per unit" on the line, a treatment
+    // area beside the number means the price is for that area.
+    if (!explicit && AREA_WORDS.test(win)) continue;
     if (!explicit) {
       // No basis word, so the number has to sit right beside a brand name.
       const gap = Math.min(...toxins.map(t =>
@@ -390,13 +425,18 @@ function extractPrices(text, opts = {}) {
     }
     const basis_source = explicit ? 'explicit' : 'inferred';
 
-    for (const t of toxins) {
+    const owners = ownersOf(win, toxins, got.at);
+    const shared = owners.length > 1;
+    for (const t of owners) {
       const prev = best.get(t.name);
-      // Prefer an explicit basis over an inferred one; among equals, the lower
+      // Prefer an explicit basis over an inferred one; then a price quoted for
+      // this brand alone over one shared with others (a "starting at" banner
+      // for three brands is weaker than the brand's own line); then the lower
       // price, since the card displays "from $X".
       const better = !prev
         || (prev.basis_source === 'inferred' && explicit)
-        || (prev.basis_source === basis_source && got.value < prev.price);
+        || (prev.basis_source === basis_source && prev.shared && !shared)
+        || (prev.basis_source === basis_source && prev.shared === shared && got.value < prev.price);
       if (better) {
         best.set(t.name, {
           toxin: t.name,
@@ -404,6 +444,7 @@ function extractPrices(text, opts = {}) {
           basis: 'per_unit',
           basis_source,
           from_range: got.isRange,
+          shared,
           raw: win.slice(0, 200)
         });
       }
@@ -578,7 +619,15 @@ async function landPrices(prices, clinicIds, sourceUrl, host, country) {
 
   for (const clinicId of clinicIds) {
     for (const p of prices) {
-      if (isUS && p.toxin === 'dysport' && Number(p.price) < DYSPORT_US_MIN) { skipped++; continue; }
+      // ⭐ CHANGED 2026-09-29 (Andy): a low US Dysport price is no longer dropped.
+      // It is a true-Dysport-unit price, and the site already tells patients
+      // Dysport is shown in Botox-equivalent units, so it is converted at 3:1
+      // ($4 -> $12, $5 -> $15) and the raw text keeps the original.
+      let price = Number(p.price), raw = p.raw;
+      if (isUS && p.toxin === 'dysport' && price < DYSPORT_US_MIN) {
+        price = Math.round(price * 3 * 100) / 100;
+        raw = '[x3 Botox-equivalent from $' + p.price + '] ' + (p.raw || '');
+      }
       const existing = await sb(
         `clinic_prices?select=id&clinic_id=eq.${encodeURIComponent(clinicId)}` +
         `&toxin=eq.${encodeURIComponent(p.toxin)}&limit=1`
@@ -592,13 +641,13 @@ async function landPrices(prices, clinicIds, sourceUrl, host, country) {
           clinic_id: clinicId,
           host,
           toxin: p.toxin,
-          price: p.price,
+          price,
           currency,
           basis: 'per_unit',
           basis_source: p.basis_source,
           from_range: !!p.from_range,
           source_url: sourceUrl,
-          raw_text: p.raw,
+          raw_text: raw,
           status: 'needs_review'
         })
       });
