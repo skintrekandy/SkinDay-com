@@ -1431,14 +1431,35 @@ function pickPagedLinks(links, host, exclude, n) {
 // One host
 // ===========================================================================
 
+// ⚠️ THE STORED HOME URL CAN CARRY AN ENCODED QUERY. Some queue rows hold
+// https://skinneymedspa.com/%3Futm_source%3Dgoogle%26utm_medium%3Dorganic — the
+// "?" was escaped into the PATH, so the homepage 404s and the whole host is
+// filed as an error (NY run 149: skinneymedspa, skinlyaesthetics, juvly).
+// A tracking query never helps a crawl, so the homepage is always origin + path
+// with anything from an encoded ?/# onward dropped, and no query string.
+function cleanHome(u, host) {
+  const def = 'https://' + host + '/';
+  if (!u) return def;
+  try {
+    const x = new URL(u);
+    let p = x.pathname;
+    const cut = p.search(/%3F|%23|%26/i);
+    if (cut >= 0) p = p.slice(0, cut);
+    return x.origin + (p || '/');
+  } catch (e) { return def; }
+}
+
 async function crawlHost(row, matcher) {
   const host = row.host;
-  const home = row.home_url || ('https://' + host + '/');
+  const home = cleanHome(row.home_url, host);
   const seen = new Set();
   const pages = [];
   let pagesTried = 0;
   let lastError = null;
   let sawJsOnly = false;
+  // Set when the invocation deadline refused a fetch. A host cut short this way
+  // was NOT read, and must not be recorded as if it had been (see doCrawl).
+  let cutShort = false;
 
   // ⚠️ DECLARED BEFORE readPage, NOT AFTER. readPage closes over `budget`, and
   // the homepage is fetched before the candidate queue exists — a `const`
@@ -1465,7 +1486,7 @@ async function crawlHost(row, matcher) {
     // Stopping early is safe: whatever has been read is still matched and saved,
     // and the host is recorded with the pages it managed. Losing the tail of one
     // host beats losing the batch and stalling the run.
-    if (Date.now() > INVOCATION_DEADLINE) return null;
+    if (Date.now() > INVOCATION_DEADLINE) { cutShort = true; return null; }
     seen.add(url);
     pagesTried++;
     inflight++;
@@ -1562,7 +1583,7 @@ async function crawlHost(row, matcher) {
     // ⚠️ THE FIRST ERROR, NOT THE LAST. A 403 on the apex followed by a 404 on a
     // www host that does not exist was being filed as a dead domain, so real
     // blocks were invisible in the error breakdown.
-    return { status: 'error', pagesTried, pagesReadUrls: [], lastError: firstError || lastError, matches: [], unknowns: [] };
+    return { status: 'error', cutShort, pagesTried, pagesReadUrls: [], lastError: firstError || lastError, matches: [], unknowns: [] };
   }
 
   const sm = await sitemapUrls(host.replace(/^www\./, ''));
@@ -1673,6 +1694,7 @@ async function crawlHost(row, matcher) {
 
   return {
     status: status,
+    cutShort,
     pagesTried,
     // ⭐⭐ THE PAGE SET. `pagesTried` is a COUNT of attempts and cannot say
     // whether two runs looked at the same thing. Without the URLs, "device absent
@@ -2015,8 +2037,25 @@ async function doCrawl(supabase, body) {
   const startedAt = Date.now();
   const deferred = [];
 
+  // ⛔⛔ A HOST THAT RAN OUT OF TIME GOES BACK TO THE QUEUE, NOT INTO THE RESULTS.
+  // Hosts in one call run one after another against a single 20s deadline. The
+  // old check only refused to START a host once the deadline had passed, so the
+  // third or fourth host routinely began at 17-19s, got its homepage, and then
+  // every further fetch was silently refused. It was saved as done/empty with
+  // ONE page. NY run 149: advanceddermatologypc.com went from 8 pages to 1 and
+  // its 39 clinics lost 234 device pairs — MedLite C6, DermaV, Vanquish,
+  // Thermage, Sofwave, HydraFacial all "dropped" in 13 days. Raising the batch
+  // to 4 hosts per call made this far more common.
+  //   1. A host after the first only starts with at least HOST_START_MIN_MS left.
+  //   2. A host after the first that is still cut short is released to pending
+  //      and read again from the top of a fresh call, where it goes first.
+  //   The first host of a call keeps what it read — otherwise one very slow
+  //   site would bounce forever.
+  const HOST_START_MIN_MS = 10000;
+  let hostsRun = 0;
   for (const row of claimable) {
-    if (Date.now() - startedAt > DEADLINE_MS) {
+    if (Date.now() - startedAt > DEADLINE_MS
+        || (hostsRun > 0 && INVOCATION_DEADLINE - Date.now() < HOST_START_MIN_MS)) {
       deferred.push(row.id);
       continue;
     }
@@ -2026,6 +2065,11 @@ async function doCrawl(supabase, body) {
     } catch (e) {
       out = { status: 'error', pagesTried: 0, lastError: String((e && e.message) || e), matches: [], unknowns: [] };
     }
+    if (out.cutShort && hostsRun > 0) {
+      deferred.push(row.id);
+      continue;
+    }
+    hostsRun++;
 
     const clinicIds = Array.isArray(row.clinic_ids) ? row.clinic_ids : [];
     let inserted = 0;
