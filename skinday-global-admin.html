@@ -5069,7 +5069,7 @@ function pcEnter(){
   if (sel) sel.style.display = (pcCountry() === 'usa') ? '' : 'none';
   if (!pcEntered) { pcEntered = true; pcLoadCandidates(); } else pcLoadStats();
 }
-function pcCountryChanged(){ const sel = document.getElementById('pc-state'); if (sel) sel.style.display = (pcCountry() === 'usa') ? '' : 'none'; }
+function pcCountryChanged(){ const sel = document.getElementById('pc-state'); if (sel) sel.style.display = (pcCountry() === 'usa') ? '' : 'none'; pcLoadCandidates(); }
 function pcLog(html, colour){
   const box = document.getElementById('pc-log'); box.style.display = 'block';
   const line = document.createElement('div'); if (colour) line.style.color = colour;
@@ -5135,7 +5135,7 @@ async function pcStart(retry){
 function pcCandMsg(text, colour){ const el = document.getElementById('pc-cand-msg'); el.textContent = text || ''; el.style.color = colour || 'var(--muted)'; }
 async function pcLoadStats(){
   try {
-    const data = await adminAction({ action: 'price-candidate-stats' });
+    const data = await adminAction({ action: 'price-candidate-stats', country: pcCountry(), state: pcState() });
     if (!data || !data.counts) return;
     document.getElementById('pc-cand-stats').textContent =
       data.counts.needs_review + ' to review · ' + data.counts.approved + ' approved · ' +
@@ -5150,7 +5150,7 @@ async function pcLoadCandidates(){
   list.innerHTML = '<div class="loading-state"><div class="spinner"></div> Loading candidates…</div>';
   pcCandMsg('');
   try {
-    const data = await adminAction({ action: 'list-price-candidates', status: status, limit: 300 });
+    const data = await adminAction({ action: 'list-price-candidates', status: status, limit: 300, country: pcCountry(), state: pcState() });
     pcCandidates = (data && data.candidates) || [];
   } catch (e) {
     list.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load candidates</div><div class="empty-desc">' + esc(e.message || e) + '</div></div>';
