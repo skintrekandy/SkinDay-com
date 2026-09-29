@@ -12,9 +12,13 @@
 // through the Canadian admin. The four claim actions below are therefore added
 // deliberately, not by oversight.
 //
-// PRICES and ADD-CLINIC remain absent. Those are Canadian directory editing
-// operations with no US equivalent yet, and the original scoping still holds
-// for them.
+// ADD-CLINIC and manual price entry (set-prices) remain .ca only.
+//
+// ⭐ PRICE CRAWL REVIEW ADDED 2026-09-29, for the New York price crawl run from
+// this admin. Same four actions and the same rules as the .ca build (a price a
+// clinic already has is never overwritten; price_date is the day the page was
+// read), plus optional country/state scoping so a US review list is not buried
+// under Canadian rows.
 //
 // (skinday.com and skinday.ca share one Supabase database, so every action
 // here operates on the same rows either admin would see.)
@@ -27,6 +31,10 @@
 //   approve              { claim_id, admin_note } -> { success }
 //   reject               { claim_id, admin_note } -> { success }
 //   revoke               { claim_id, admin_note } -> { success }
+//   price-candidate-stats    { country?, state? } -> { counts, queue_pending }
+//   list-price-candidates    { status, limit, country?, state? } -> { candidates }
+//   approve-price-candidates { ids:[...] } -> { approved, already_priced }
+//   reject-price-candidates  { ids:[...], note? } -> { rejected }
 //
 // M36 moderation model:
 //   A vote counts publicly unless it is HIDDEN. `flagged` means "needs review"
@@ -146,6 +154,48 @@ function approvalEmailHtml(clinicName, setupLink, locationCount, portalUrl) {
     + '</div>'
     + '<div class="footer">Questions? Reply to this email or contact <a href="mailto:' + contact + '" style="color:#c9736a;">' + contact + '</a><br/>SkinDay</div>'
     + '</div></body></html>';
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// PRICE CRAWL REVIEW (ported from the .ca build, 2026-09-29)
+// ─────────────────────────────────────────────────────────────
+
+// PostgREST puts .in() lists in the URL; ~300 text ids overflow it and the
+// request fails quietly. Always chunk.
+async function selectInChunks(table, cols, column, values) {
+  const out = [];
+  for (let i = 0; i < values.length; i += 60) {
+    const { data, error } = await supabase.from(table).select(cols).in(column, values.slice(i, i + 60));
+    if (error) throw error;
+    (data || []).forEach(r => out.push(r));
+  }
+  return out;
+}
+
+// Recompute clinics.price from EVERY clinic_prices row for the clinic, so the
+// card and the price modal agree. Identical to the .ca build.
+async function syncClinicLowestPrice(clinicId) {
+  const id = String(clinicId);
+  const { data: rows, error } = await supabase
+    .from('clinic_prices')
+    .select('price, toxin, price_source, price_date')
+    .eq('clinic_id', id)
+    .order('price', { ascending: true })
+    .limit(1);
+  if (error) { console.error('syncClinicLowestPrice read error:', error); return; }
+  const update = (rows && rows.length)
+    ? { price: rows[0].price, price_source: rows[0].price_source, price_date: rows[0].price_date, toxin_type: rows[0].toxin }
+    : { price: null, price_source: null, price_date: null, toxin_type: null };
+  const { error: upErr } = await supabase.from('clinics').update(update).eq('id', id);
+  if (upErr) console.error('syncClinicLowestPrice write error:', upErr);
+}
+
+function cleanScope(body) {
+  const country = String(body.country || '').trim().toLowerCase() || null;
+  const st = String(body.state || '').trim().toLowerCase();
+  const state = (country === 'usa' && /^[a-z-]+$/.test(st)) ? st : null;
+  return { country, state };
 }
 
 exports.handler = async (event) => {
@@ -756,12 +806,145 @@ exports.handler = async (event) => {
     };
   }
 
+  // == PRICE CANDIDATES =======================================================
+  if (action === 'price-candidate-stats') {
+    const { country, state } = cleanScope(body);
+    const counts = {};
+    for (const st of ['needs_review', 'approved', 'rejected']) {
+      const { count } = await supabase
+        .from('clinic_price_candidates')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', st);
+      counts[st] = count || 0;
+    }
+    let q = supabase.from('crawl_price_queue').select('id', { count: 'exact', head: true }).eq('status', 'pending');
+    if (country) q = q.eq('country', country);
+    if (state) q = q.contains('states', [state]);
+    const { count: queueLeft } = await q;
+    return { statusCode: 200, headers, body: JSON.stringify({ counts, queue_pending: queueLeft || 0 }) };
+  }
+
+  if (action === 'list-price-candidates') {
+    const status = body.status || 'needs_review';
+    const limit = Math.min(Math.max(parseInt(body.limit, 10) || 100, 1), 500);
+    const { country, state } = cleanScope(body);
+
+    // Read more than asked for when a country is given, because the country
+    // lives on the clinic and is only known after the second query.
+    const { data: cands, error } = await supabase
+      .from('clinic_price_candidates')
+      .select('*')
+      .eq('status', status)
+      .order('host', { ascending: true })
+      .order('toxin', { ascending: true })
+      .limit(country ? 2000 : limit);
+    if (error) {
+      console.error('list-price-candidates error:', error);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+    }
+
+    const ids = [...new Set((cands || []).map(c => String(c.clinic_id)))];
+    const byId = {};
+    try {
+      (await selectInChunks('clinics', 'id, name, region, province, state, country', 'id', ids))
+        .forEach(c => { byId[String(c.id)] = c; });
+    } catch (e) {
+      return { statusCode: 500, headers, body: JSON.stringify({ error: 'clinic lookup failed: ' + e.message }) };
+    }
+
+    const out = (cands || [])
+      .filter(c => {
+        const k = byId[String(c.clinic_id)];
+        if (country && (!k || String(k.country || '').toLowerCase() !== country)) return false;
+        if (state && (!k || String(k.state || '').toLowerCase() !== state)) return false;
+        return true;
+      })
+      .slice(0, limit)
+      .map(c => {
+        const k = byId[String(c.clinic_id)] || {};
+        const place = k.country === 'usa' ? (k.state || '').replace(/-/g, ' ') : (k.province || k.region || '');
+        return Object.assign({}, c, {
+          clinic_name: k.name || ('Clinic ' + c.clinic_id),
+          clinic_region: place || null
+        });
+      });
+
+    return { statusCode: 200, headers, body: JSON.stringify({ candidates: out }) };
+  }
+
+  if (action === 'approve-price-candidates') {
+    const ids = Array.isArray(body.ids) ? body.ids : (body.id ? [body.id] : []);
+    if (!ids.length) return { statusCode: 400, headers, body: JSON.stringify({ error: 'id or ids required' }) };
+
+    const nowIso = new Date().toISOString();
+    let approved = 0, alreadyPriced = 0;
+    const touched = new Set();
+    const errors = [];
+
+    for (const id of ids) {
+      const { data: cand } = await supabase.from('clinic_price_candidates').select('*').eq('id', id).maybeSingle();
+      if (!cand) { errors.push('candidate ' + id + ' not found'); continue; }
+
+      // A price the clinic gave us, or entered itself, outranks a web page.
+      const { data: existing } = await supabase
+        .from('clinic_prices').select('id')
+        .eq('clinic_id', String(cand.clinic_id)).eq('toxin', cand.toxin).limit(1);
+      if (existing && existing.length) {
+        await supabase.from('clinic_price_candidates')
+          .update({ status: 'rejected', reviewed_at: nowIso, note: 'clinic already has a ' + cand.toxin + ' price' })
+          .eq('id', id);
+        alreadyPriced++;
+        continue;
+      }
+
+      // Dated to the day the page was READ, not the day it was approved.
+      const priceDate = (cand.crawled_at || nowIso).split('T')[0];
+      const { error: insErr } = await supabase.from('clinic_prices').upsert({
+        clinic_id:     String(cand.clinic_id),
+        toxin:         cand.toxin,
+        price:         cand.price,
+        injector_type: '',
+        currency:      cand.currency || 'CAD',
+        price_source:  'website',
+        price_date:    priceDate,
+        updated_at:    nowIso
+      }, { onConflict: 'clinic_id,toxin,injector_type' });
+      if (insErr) { console.error('approve-price-candidate insert error:', insErr); errors.push(insErr.message); continue; }
+
+      await supabase.from('clinic_price_candidates').update({ status: 'approved', reviewed_at: nowIso }).eq('id', id);
+      touched.add(String(cand.clinic_id));
+      approved++;
+    }
+
+    // One clinics write per clinic, after all its prices are in: clinics
+    // carries the approve-clinic trigger.
+    for (const clinicId of touched) await syncClinicLowestPrice(clinicId);
+
+    return { statusCode: 200, headers, body: JSON.stringify({
+      success: errors.length === 0, approved, already_priced: alreadyPriced, clinics_synced: touched.size, errors
+    }) };
+  }
+
+  if (action === 'reject-price-candidates') {
+    const ids = Array.isArray(body.ids) ? body.ids : (body.id ? [body.id] : []);
+    if (!ids.length) return { statusCode: 400, headers, body: JSON.stringify({ error: 'id or ids required' }) };
+    for (let i = 0; i < ids.length; i += 60) {
+      const { error } = await supabase.from('clinic_price_candidates')
+        .update({ status: 'rejected', reviewed_at: new Date().toISOString(), note: body.note || null })
+        .in('id', ids.slice(i, i + 60));
+      if (error) {
+        console.error('reject-price-candidates error:', error);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: error.message }) };
+      }
+    }
+    return { statusCode: 200, headers, body: JSON.stringify({ success: true, rejected: ids.length }) };
+  }
+
   // == UNKNOWN ACTION =========================================================
-  // Prices and add-clinic remain .ca only: they are Canadian directory editing
-  // operations with no US equivalent yet.
+  // add-clinic and manual price entry remain .ca only.
   return {
     statusCode: 400,
     headers,
-    body: JSON.stringify({ error: "Invalid action. Supported: list, approve, reject, revoke, list-flagged-votes, review-vote, review-votes-bulk, list-pending-clinics, approve-clinic, reject-clinic." })
+    body: JSON.stringify({ error: "Invalid action. Supported: list, approve, reject, revoke, list-flagged-votes, review-vote, review-votes-bulk, list-pending-clinics, approve-clinic, reject-clinic, price-candidate-stats, list-price-candidates, approve-price-candidates, reject-price-candidates." })
   };
 };
