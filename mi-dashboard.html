@@ -808,6 +808,24 @@
   .pl-kpi { background:var(--surface-2); border-radius:var(--radius-sm); padding:12px; }
   .pl-kpi .v { font-family:var(--font-mono); font-size:24px; line-height:1.1; }
   .pl-kpi .l { font-size:12px; color:var(--muted); margin-top:4px; }
+  /* Daily trend inside the product detail (2026-09-28). One compact chart, no
+     new section on the page: the ranking stays the overview, this is depth. */
+  .pl-trend { margin:4px 0 16px; }
+  .pl-trend .th { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:6px; }
+  .pl-trend .tt { font-size:12px; color:var(--muted); }
+  .pl-trend .tr { display:flex; gap:2px; background:var(--surface-2); border-radius:7px; padding:2px; }
+  .pl-trend .tr button { border:0; background:none; font:inherit; font-size:11px; color:var(--muted); padding:3px 8px; border-radius:5px; cursor:pointer; }
+  .pl-trend .tr button.on { background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); }
+  .pl-trend svg { display:block; width:100%; height:128px; touch-action:pan-y; cursor:crosshair; }
+  .pl-trend .bar { fill:var(--accent); opacity:.28; }
+  .pl-trend .bar.hot { opacity:.9; }
+  .pl-trend .bar.part { fill:var(--faint); opacity:.35; }
+  .pl-trend .avg { fill:none; stroke:var(--accent-strong); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .pl-trend .band { fill:var(--surface-2); }
+  .pl-trend .ax { font-family:var(--font-mono); font-size:10px; fill:var(--faint); }
+  .pl-trend .base { stroke:var(--line); }
+  .pl-trend .cap { font-size:12px; color:var(--ink-2); min-height:18px; margin-top:4px; }
+  .pl-trend .cap .m { color:var(--muted); }
   .pl-fact { display:flex; justify-content:space-between; gap:14px; padding:10px 2px; border-bottom:1px solid var(--line); font-size:14px; }
   .pl-fact:first-child { border-top:1px solid var(--line); }
   .pl-fact span:first-child { color:var(--ink-2); }
@@ -2742,12 +2760,123 @@
       '<div class="pl-dname">'+esc(r.product)+(plLow(r)?' <span class="pl-tag">Early signal</span>':'')+'</div>'+
       '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+plFmt(plPct(r.posts,base))+'</div><div class="l">of '+(dev?'device':'injectable')+' conversation</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
+      '<div class="pl-trend" id="plTrend"><div class="th"><span class="tt">Daily activity</span></div><svg viewBox="0 0 300 128"></svg><div class="cap"></div></div>'+
       facts.map(function(f){ return '<div class="pl-fact"><span>'+f[0]+'</span><span class="v">'+f[1]+'</span></div>'; }).join('')+
       say+where+
       '<button type="button" class="pl-see" id="plSee" onclick="plClinics()">See the clinics that posted</button>'+
       '<div id="plClinList"></div>'+
       '<p class="pl-later">Change since last month appears from November.</p>';
+    plTrendLoad(r.product);
   }
+
+  // ─── DAILY TREND (2026-09-28) ─────────────────────────────────────────────
+  // Posts per day for the selected product, with a 7-day average line. Days
+  // after most accounts were last read are greyed as "still being collected",
+  // so a collection gap never reads as interest falling. Customers see the
+  // shape and businesses posting; post counts stay internal like the rest of
+  // Pulse. The range switch appears only once there is history to switch to.
+  var PL_TR={}, PL_TR_RANGE=30, PL_TR_CUR=null;
+  function plTrKey(name){ return [COUNTRY,geo.province,geo.city,geo.neighbourhood,name,PL_TR_RANGE].join('|'); }
+  function plTrendLoad(name){
+    var k=plTrKey(name);
+    if(PL_TR[k]){ plTrendPaint(name,PL_TR[k]); return; }
+    var box=el('plTrend'); if(!box) return;
+    box.querySelector('.cap').innerHTML='<span class="m">Loading…</span>';
+    api('pulse_trend',{product:name,days:PL_TR_RANGE}).then(function(res){
+      PL_TR[k]=res;
+      if(PL_SEL[PL_SIDE]===name) plTrendPaint(name,res);
+    }).catch(function(){ var b=el('plTrend'); if(b) b.querySelector('.cap').innerHTML='<span class="m">Trend could not load.</span>'; });
+  }
+  window.plTrRange=function(n){ PL_TR_RANGE=n; plTrendLoad(PL_SEL[PL_SIDE]); };
+  function plTrDate(s){ return new Date(s+'T12:00:00'); }
+  function plTrendPaint(name,res){
+    var box=el('plTrend'); if(!box) return;
+    var t=(res&&res.trend)||{}, internal=!!(res&&res.internal), days=t.days||[];
+    PL_TR_CUR={name:name,res:res};
+    var cu=t.complete_until||null;
+    var valOf=function(d){ return internal?(d.p||0):(d.r||0); };
+    // Weekly bars beyond 90 days: 365 daily bars are unreadable.
+    var weekly=days.length>100, pts=[];
+    if(weekly){
+      var cur=null;
+      days.forEach(function(d){
+        var dt=plTrDate(d.d), wd=(dt.getDay()+6)%7, start=new Date(dt); start.setDate(dt.getDate()-wd);
+        var key=start.toISOString().slice(0,10);
+        if(!cur||cur.d!==key){ cur={d:key,v:0,b:0,part:false,n:0}; pts.push(cur); }
+        cur.v+=valOf(d); cur.b=Math.max(cur.b,d.b||0); cur.n++;
+        if(cu&&d.d>cu) cur.part=true;
+      });
+    } else {
+      pts=days.map(function(d){ return {d:d.d,v:valOf(d),b:d.b||0,p:d.p,part:!!(cu&&d.d>cu)}; });
+    }
+    // Trailing 7-day average over complete days (daily view only).
+    if(!weekly) pts.forEach(function(q,i){
+      if(q.part){ q.avg=null; return; }
+      var s=0,n=0; for(var j=Math.max(0,i-6);j<=i;j++){ if(!pts[j].part){ s+=pts[j].v; n++; } }
+      q.avg=n>=3?s/n:null;
+    });
+    var hasHist=t.first&&t.until&&(plTrDate(t.until)-plTrDate(t.first))/864e5>45;
+    var ranges=hasHist?[[30,'30 days'],[90,'90 days'],[365,'12 months']]:[];
+    var head='<span class="tt">'+(weekly?'Weekly':'Daily')+' activity'+(ranges.length?'':' · last 30 days')+'</span>'+
+      (ranges.length?'<span class="tr">'+ranges.map(function(r){ return '<button type="button" class="'+(PL_TR_RANGE===r[0]?'on':'')+'" onclick="plTrRange('+r[0]+')">'+r[1]+'</button>'; }).join('')+'</span>':'');
+    box.querySelector('.th').innerHTML=head;
+    var svg=box.querySelector('svg');
+    var W=Math.max(220,Math.round(svg.getBoundingClientRect().width||box.clientWidth||300)), H=128, top=8, bot=18, left=internal?22:2, right=4;
+    svg.setAttribute('viewBox','0 0 '+W+' '+H);
+    var n=pts.length||1, cw=(W-left-right)/n, max=0;
+    pts.forEach(function(q){ max=Math.max(max,q.v,q.avg||0); }); if(!max) max=1;
+    var y=function(v){ return top+(H-top-bot)*(1-v/max); };
+    var out='';
+    var firstPart=-1; pts.forEach(function(q,i){ if(q.part&&firstPart<0) firstPart=i; });
+    if(firstPart>=0){
+      var bx=left+firstPart*cw;
+      out+='<rect class="band" x="'+bx.toFixed(1)+'" y="'+top+'" width="'+(W-right-bx).toFixed(1)+'" height="'+(H-top-bot)+'"></rect>';
+      if(W-right-bx>74) out+='<text class="ax" x="'+(W-right-3)+'" y="'+(top+10)+'" text-anchor="end">still being collected</text>';
+    }
+    out+='<line class="base" x1="'+left+'" x2="'+(W-right)+'" y1="'+(H-bot)+'" y2="'+(H-bot)+'"></line>';
+    pts.forEach(function(q,i){
+      var h=Math.max(q.v>0?1.5:0,(H-top-bot)*q.v/max), bw=Math.max(1,cw*0.72);
+      out+='<rect class="bar'+(q.part?' part':'')+'" data-i="'+i+'" x="'+(left+i*cw+(cw-bw)/2).toFixed(1)+'" y="'+(H-bot-h).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'"></rect>';
+    });
+    if(!weekly){
+      var path='', pen=false;
+      pts.forEach(function(q,i){
+        if(q.avg==null){ pen=false; return; }
+        path+=(pen?'L':'M')+(left+i*cw+cw/2).toFixed(1)+' '+y(q.avg).toFixed(1); pen=true;
+      });
+      if(path) out+='<path class="avg" d="'+path+'"></path>';
+    }
+    if(internal) out+='<text class="ax" x="0" y="'+(top+8)+'">'+Math.round(max)+'</text>';
+    if(pts.length){
+      var lab=function(i,anchor){ return '<text class="ax" x="'+(anchor==='start'?left:anchor==='end'?W-right:left+i*cw+cw/2).toFixed(1)+'" y="'+(H-4)+'" text-anchor="'+anchor+'">'+esc(plDay(pts[i].d))+'</text>'; };
+      out+=lab(0,'start')+(pts.length>8?lab(Math.floor(pts.length/2),'middle'):'')+lab(pts.length-1,'end');
+    }
+    svg.innerHTML=out;
+    var cap=box.querySelector('.cap');
+    var bandLabelled=firstPart>=0&&(W-right-(left+firstPart*cw))>74;
+    var idle='<span class="m">'+(weekly?'Weekly totals':'Bars are days, the line is the 7-day average')+
+      (firstPart>=0&&!bandLabelled?' · grey days are still being collected':'')+(isPhone()?' · tap a bar for detail':' · hover for detail')+'</span>';
+    cap.innerHTML=idle;
+    var hot=null;
+    function show(e){
+      var r=svg.getBoundingClientRect(); if(!r.width) return;
+      var x=(e.clientX-r.left)*W/r.width, i=Math.floor((x-left)/cw);
+      if(i<0||i>=pts.length) return;
+      var q=pts[i];
+      if(hot) hot.classList.remove('hot');
+      hot=svg.querySelector('rect.bar[data-i="'+i+'"]'); if(hot) hot.classList.add('hot');
+      var when=weekly?'Week of '+plDay(q.d):plTrDate(q.d).toLocaleDateString('en-CA',{weekday:'short',month:'short',day:'numeric'});
+      cap.innerHTML='<b>'+esc(when)+'</b> · '+(weekly?'up to ':'')+plPlural(q.b,'business','businesses')+' posting'+
+        (internal?' · '+plPlural(Math.round(q.v),'post','posts'):'')+(q.part?' <span class="m">· still being collected</span>':'');
+    }
+    svg.onpointermove=show; svg.onclick=show;
+    svg.onpointerleave=function(){ if(hot) hot.classList.remove('hot'); hot=null; if(!isPhone()) cap.innerHTML=idle; };
+  }
+  var plTrResize=null;
+  window.addEventListener('resize',function(){
+    clearTimeout(plTrResize);
+    plTrResize=setTimeout(function(){ if(PL_TR_CUR&&PL_SEL[PL_SIDE]===PL_TR_CUR.name) plTrendPaint(PL_TR_CUR.name,PL_TR_CUR.res); },150);
+  });
   window.plPick=function(name){
     PL_SEL[PL_SIDE]=name;
     Array.prototype.forEach.call(document.querySelectorAll('#plBody .pl-row'),function(b){
