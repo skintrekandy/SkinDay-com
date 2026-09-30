@@ -1748,7 +1748,7 @@ function renderPageCards(clinicsData, append) {
     const devOverflow = devs.length - devShown.length;
     const devChipRow = devs.length
       ? `<div class="card-devices" aria-label="Technology listed by this clinic">${
-          devShown.map(d => `<a class="dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}" onclick="event.stopPropagation()">${devEsc(d.model)}</a>`).join('')
+          devShown.map(d => `<a class="dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}" onclick="event.stopPropagation()">${devEsc(usModel(d.model))}</a>`).join('')
         }${devOverflow > 0 ? `<span class="dev-chip dev-chip-more">+${devOverflow}</span>` : ''}</div>`
       : '';
 
@@ -1994,7 +1994,7 @@ function openCompareModal() {
     const isTop = (parseFloat(c.rating)||0) === maxRating;
     html += `<td${isTop?' class="compare-winner"':''}><span class="compare-stars">★</span> <span class="compare-rating-num">${c.rating||'-'}</span>${isTop?'<span class="compare-winner-tag">Top</span>':''}<div class="compare-reviews">${(c.reviews||0).toLocaleString('en-US')}  reviews</div></td>`;
   });
-  html += '</tr><tr><th>NTD Price</th>';
+  html += '</tr><tr><th>Price</th>';
   clinics.forEach(c => {
     const isLowest = c.price && parseFloat(c.price) === minPrice;
     html += c.price
@@ -2105,6 +2105,9 @@ const TOXIN_LABELS = {
   botox: 'Botox', dysport: 'Dysport', xeomin: 'Xeomin',
   nuceiva: 'Jeuveau', jeuveau: 'Jeuveau', daxxify: 'Daxxify', letybo: 'Letybo'
 };
+// Nuceiva is the Canadian name; in the US the same product is Jeuveau. The
+// shared reference list keeps one row, so the name is swapped for display.
+function usModel(m) { return /^nuceiva$/i.test(String(m || '').trim()) ? 'Jeuveau' : m; }
 function toxinLabel(c) {
   const t = String((c && c.toxin_type) || '').trim().toLowerCase();
   return TOXIN_LABELS[t] || 'Neurotoxin';
@@ -2270,6 +2273,20 @@ function cmBuildContent(c) {
       return `<div style="display:grid;grid-template-columns:${cols};gap:0.6rem;margin-bottom:1.5rem;">${btns.join('')}</div>`;
     })(),
 
+    // Social accounts, same as skinday.ca: shown only when the clinic has one
+    // on file, never as a greyed-out gap.
+    (function(){
+      const safe = u => (typeof u === 'string' && /^https?:\/\//i.test(u.trim())) ? u.trim() : '';
+      const fb = safe(c.facebook_url), ig = safe(c.instagram_url);
+      if (!fb && !ig) return '';
+      const style = "display:flex;align-items:center;justify-content:center;gap:0.45rem;background:transparent;border:1.5px solid var(--border);color:var(--deep);padding:0.8rem;border-radius:10px;font-size:0.88rem;text-decoration:none;font-family:'DM Sans',sans-serif;";
+      const icon = d => `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+      const btns = [];
+      if (fb) btns.push(`<a href="${devEsc(fb)}" target="_blank" rel="noopener" style="${style}">${icon('<path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/>')}Facebook</a>`);
+      if (ig) btns.push(`<a href="${devEsc(ig)}" target="_blank" rel="noopener" style="${style}">${icon('<rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>')}Instagram</a>`);
+      return `<div style="display:grid;grid-template-columns:${btns.length === 1 ? '1fr' : '1fr 1fr'};gap:0.6rem;margin:${(c.phone || c.website || c.email) ? '-0.9rem' : '0'} 0 1.5rem;">${btns.join('')}</div>`;
+    })(),
+
     // Treatment categories, the clinic's self-declared taxonomy.
     (function(){
       const cats = (Array.isArray(c.categories) ? c.categories : [])
@@ -2296,7 +2313,7 @@ function cmBuildContent(c) {
         <div>
           <div class="cm-dev-group-label">${devEsc(key)}</div>
           <div class="cm-dev-chips">${seen[key].map(d =>
-            `<a class="cm-dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}">${devEsc(d.model)}${
+            `<a class="cm-dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}">${devEsc(usModel(d.model))}${
               d.manufacturer ? `<span class="mfr">${devEsc(d.manufacturer)}</span>` : ''
             }${d.status === 'verified' ? '<span class="vtag">\u2713</span>' : ''}</a>`
           ).join('')}</div>
