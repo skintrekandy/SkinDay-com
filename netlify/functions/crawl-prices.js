@@ -609,7 +609,11 @@ const CURRENCY_BY_COUNTRY = { canada: 'CAD', usa: 'USD' };
 // ⓘ The honest source for a low Dysport price is the clinic itself, through the
 // portal. Until a clinic publishes its own, a number we cannot interpret is
 // worse than no number.
-const DYSPORT_US_MIN = 6;
+// ⭐ ANDY'S RULE (2026-09-29): a US Dysport price of $5 or less is a real-Dysport-unit
+// price and is multiplied by 3 ($4 -> $12, $5 -> $15). Above $5 it is taken as
+// quoted: $6-7 a unit is common, and over $15 Botox-equivalent would be
+// outrageous in this market, so nothing above $5 needs converting.
+const DYSPORT_US_MAX_TRUE_UNIT = 5;
 
 async function landPrices(prices, clinicIds, sourceUrl, host, country) {
   const countryKey = String(country || '').trim().toLowerCase();
@@ -624,7 +628,7 @@ async function landPrices(prices, clinicIds, sourceUrl, host, country) {
       // Dysport is shown in Botox-equivalent units, so it is converted at 3:1
       // ($4 -> $12, $5 -> $15) and the raw text keeps the original.
       let price = Number(p.price), raw = p.raw;
-      if (isUS && p.toxin === 'dysport' && price < DYSPORT_US_MIN) {
+      if (isUS && p.toxin === 'dysport' && price <= DYSPORT_US_MAX_TRUE_UNIT) {
         price = Math.round(price * 3 * 100) / 100;
         raw = '[x3 Botox-equivalent from $' + p.price + '] ' + (p.raw || '');
       }
