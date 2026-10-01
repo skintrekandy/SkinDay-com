@@ -819,7 +819,8 @@
      together, and the full ranking scrolls inside its own card instead. */
   .pl-det { position:static; }
   .pl-list.all { max-height:min(720px,72vh); overflow-y:auto; margin-right:-8px; padding-right:8px; overscroll-behavior:contain; }
-  .pl-catsel { margin:0 0 8px; }
+  .pl-catsel { margin:0 0 8px; display:flex; gap:8px; flex-wrap:wrap; }
+  .pl-catsel select.pl-win { flex:0 0 auto; }
   .pl-catsel select { font:inherit; font-size:13px; color:var(--ink); background:var(--surface-2); border:1px solid var(--line);
     border-radius:var(--radius-sm); padding:6px 28px 6px 10px; max-width:100%; }
   .pl-mfr { font-size:13px; color:var(--ink-2); margin-top:3px; }
@@ -895,7 +896,9 @@
     .pl-row .pl-cat, .pl-row .pl-track { display:none; }
     .pl-msub { display:block; }
     .pl-list.all { max-height:none; overflow:visible; margin-right:0; padding-right:0; }
-    .pl-catsel select { width:100%; font-size:15px; padding:10px 12px; }
+    .pl-catsel { flex-wrap:nowrap; }
+    .pl-catsel select { width:100%; min-width:0; flex:1 1 0; font-size:15px; padding:10px 12px; }
+    .pl-catsel select.pl-win { flex:0 0 38%; }
     .pl-name { font-size:16px; }
     .pl-meas b { font-size:15px; }
     /* Detail opens as a bottom sheet rather than below the list. */
@@ -2685,6 +2688,10 @@
   // for everyone else the server strips them and this stays false.
   var PULSE_INJECTABLES=false;
   var PL_CAT={};   // category filter on the trending list, per side (2026-10-01)
+  // ⭐ PERIOD on the trending list (Andy, 2026-10-01): 1 month or 7 days. The
+  // 7-day numbers come from mi_pulse_window, counted the same way as the month.
+  // Launching, On the radar and the toxin card stay on the month.
+  var PL_WIN=30, PL_WD=null, PL_WLOAD=false;
   var PL=null, PL_SIDE='devices', PL_ALL=false, PL_SEL={}, PL_LAUNCH_ALL=false, PL_RADAR_ALL=false;
   // ⭐ RESULTS, NOT SCAFFOLDING (Andy, 2026-09-26). Customers see shares,
   // businesses and plain definitions. Post counts, platform splits and
@@ -2701,10 +2708,31 @@
     api('pulse',{}).then(function(res){
       PL=res.pulse||{}; PULSE_INJECTABLES=!!res.injectables; PL_INTERNAL=!!res.internal;
       PL_SIDE = (PULSE_INJECTABLES && isInj()) ? 'injectables' : 'devices';
-      PL_ALL=false; paintPulse();
+      PL_ALL=false; PL_WD=null;
+      if(PL_WIN!==30) plWinLoad(); else paintPulse();
     }).catch(handleErr);
   }
+  function plWinLoad(){
+    PL_WLOAD=true; paintPulse();
+    api('pulse_window',{days:PL_WIN}).then(function(res){
+      PL_WD=res.window||{}; PL_WLOAD=false; paintPulse();
+    }).catch(function(e){ PL_WLOAD=false; PL_WIN=30; paintPulse(); handleErr(e); });
+  }
+  window.plWin=function(n){ PL_WIN=parseInt(n,10)||30; PL_ALL=false;
+    if(PL_WIN!==30 && !PL_WD) plWinLoad(); else paintPulse(); };
+  function plWinOn(){ return PL_WIN!==30 && PL_WD && !PL_WLOAD; }
+  function plWord(){ return PL_WIN===30?'this month':'in the last '+PL_WIN+' days'; }
+  // Rows for the trending list and the detail panel: the month, or the shorter
+  // period with each product's monthly extras (maker, owners) carried over.
   function plRows(){
+    if(!plWinOn()) return plRowsMonth();
+    var month={}; plRowsMonth().forEach(function(r){ month[r.product]=r; });
+    return ((PL_WD.products)||[]).filter(function(p){ return p.side===PL_SIDE && p.posts>0; })
+      .map(function(p){ var m=month[p.product]||{};
+        return Object.assign({},m,p,{places:[],pct_owners_promoted:null,ig_posts:null,fb_posts:null,locations:m.locations,known_national:m.known_national}); })
+      .sort(function(a,b){ return b.posts-a.posts || b.businesses-a.businesses; });
+  }
+  function plRowsMonth(){
     return ((PL&&PL.products)||[]).filter(function(p){ return p.side===PL_SIDE; })
       .sort(function(a,b){ return b.posts-a.posts || b.businesses-a.businesses; });
   }
@@ -2714,7 +2742,10 @@
   function plDay(d,yr){ if(!d) return ''; var o={month:'short',day:'numeric'}; if(yr) o.year='numeric'; return new Date(d+'T12:00:00').toLocaleDateString('en-CA',o); }
   function plPct(x,base){ if(!base) return null; return 100*x/base; }
   function plFmt(v){ return v==null?'—':(v<0.1&&v>0?'<0.1':v.toFixed(1))+'%'; }
-  function plTot(k){ return ((PL&&PL.totals)||{})[k]||0; }
+  function plTot(k){
+    if(plWinOn() && PL_WD.totals && PL_WD.totals[k]!=null) return PL_WD.totals[k]||0;
+    return ((PL&&PL.totals)||{})[k]||0;
+  }
   function plTerr(){
     if(geo.province && typeof provinceLabel==='function') return provinceLabel(geo.province);
     return COUNTRY==='usa'?'United States':'Canada';
@@ -2742,6 +2773,7 @@
       plInfo('plTipSum','Public posts from clinics’ own social media accounts during this period. Posts that only list hashtags or compare products are left out.'+
         (PL_INTERNAL?' <span class="pl-int">Internal: '+num(s.posts||0)+' posts · '+num(s.businesses||0)+' businesses · '+num(s.locations||0)+' locations</span>':''));
     var rows=plRows();
+    if(!rows.length && plWinOn()){ PL_WIN=30; rows=plRows(); }
     if(!rows.length){ el('plBody').innerHTML='<div class="empty">No posts in this territory yet.</div>'; return; }
     // ⭐ CATEGORY FILTER (Andy, 2026-10-01): rank within one category. Shares stay
     // shares of ALL device conversation, so a number means the same thing with
@@ -2759,6 +2791,8 @@
     var catSel='<div class="pl-catsel"><select aria-label="Category" onchange="plCat(this.value)">'+
       '<option value="">All categories</option>'+
       catList.map(function(c){ return '<option value="'+esc(c)+'"'+(c===cat?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+
+      '</select><select aria-label="Period" class="pl-win" onchange="plWin(this.value)">'+
+      [[30,'Last month'],[7,'Last 7 days']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===PL_WIN?' selected':'')+'>'+o[1]+'</option>'; }).join('')+
       '</select></div>';
     var list=shown.map(function(r,i){
       var v=plPct(r.posts,base);
@@ -2774,7 +2808,7 @@
     var more=rows.length>top?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top '+top:'View all '+rows.length+' \u2192')+'</button>':'';
     // ⭐ LAUNCHING = a ranked mini-leaderboard by businesses announcing (no
     // percentages). RADAR = an editorial list with labels, not a ranking.
-    rows=all;   // launching / radar / toxin below always use the whole side
+    rows=plRowsMonth();   // launching / radar / toxin below always use the whole month
     var launches=rows.filter(function(r){ return r.launch_posts>0; })
       .sort(function(a,b){ return b.launch_businesses-a.launch_businesses || b.launch_posts-a.launch_posts; });
     var lshow=PL_LAUNCH_ALL?launches:launches.slice(0,5);
@@ -2828,9 +2862,9 @@
     }
     el('plBody').innerHTML=
       '<div class="pl-grid"><section class="pl-card"><div class="pl-h"><h3>What’s trending</h3>'+
-      plInfo('plTipTr','Each product’s share of all '+(dev?'device':'injectable product')+' mentions in clinics’ public posts this month. A post naming two products counts for both.'+(PL_INTERNAL?' <span class="pl-int">Internal: based on '+num(base)+' mentions. Hover a row for its counts.</span>':''))+'</div>'+
-      '<p class="pl-hint">'+(dev?'Device':'Injectable')+' conversation share</p>'+catSel+
-      '<div class="pl-list'+(PL_ALL?' all':'')+'">'+list+'</div>'+more+'</section>'+
+      plInfo('plTipTr','Each product’s share of all '+(dev?'device':'injectable product')+' mentions in clinics’ public posts '+plWord()+'. A post naming two products counts for both.'+(PL_INTERNAL?' <span class="pl-int">Internal: based on '+num(base)+' mentions. Hover a row for its counts.</span>':''))+'</div>'+
+      '<p class="pl-hint">'+(dev?'Device':'Injectable')+' conversation share '+plWord()+'</p>'+catSel+
+      (PL_WLOAD?'<div class="empty"><span class="spin"></span></div>':'<div class="pl-list'+(PL_ALL?' all':'')+'">'+list+'</div>'+more)+'</section>'+
       '<aside class="pl-card pl-det" id="plDet"></aside></div>'+
       '<div class="pl-lower">'+lower+'</div>';
     paintPulseDetail();
@@ -2845,7 +2879,7 @@
     // posting, share of new announcements, where the posts came from. Owner
     // activation, locations, known owners and social discoveries stay internal.
     var facts=[];
-    facts.push(['Businesses announcing it', r.launch_posts?num(r.launch_businesses)+(PL_INTERNAL?' <span class="pl-sub2">'+plPlural(r.launch_posts,'post','posts')+' · '+plFmt(plPct(r.launch_posts,lbase))+' of announcements</span>':''):'None this month']);
+    facts.push(['Businesses announcing it', r.launch_posts?num(r.launch_businesses)+(PL_INTERNAL?' <span class="pl-sub2">'+plPlural(r.launch_posts,'post','posts')+' · '+plFmt(plPct(r.launch_posts,lbase))+' of announcements</span>':''):'None '+plWord()]);
     if(PL_INTERNAL){
       facts.push(['Posts <span class="pl-int">internal</span>', num(r.posts)+' <span class="pl-sub2">Instagram '+num(r.ig_posts||0)+' · Facebook '+num(r.fb_posts||0)+'</span>']);
       facts.push(['Locations represented <span class="pl-int">internal</span>',num(r.locations)]);
