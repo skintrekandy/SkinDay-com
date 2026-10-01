@@ -606,6 +606,30 @@ exports.handler = async (event) => {
           pulse.products = (pulse.products || []).filter(p => p.side !== 'injectables');
           delete pulse.toxin;
         }
+        // ⭐ MAKER ON EACH PRODUCT (2026-10-01), for the detail panel. Pulse rows
+        // carry the FAMILY name (Thermage, not Thermage FLX), so the lookup is the
+        // exact model first, then the first model that starts with the family.
+        // Best effort: a failed lookup leaves the rows exactly as they were.
+        try {
+          const { data: refs } = await supabase.from('device_reference')
+            .select('model, manufacturer, distributor_ca, parent_device_id')
+            .eq('active', true);
+          const list = (refs || []).filter(r => r.model);
+          const exact = new Map();
+          list.forEach(r => {
+            const k = r.model.trim().toLowerCase();
+            const cur = exact.get(k);
+            if (!cur || (cur.parent_device_id && !r.parent_device_id)) exact.set(k, r);
+          });
+          (pulse.products || []).forEach(p => {
+            const k = String(p.product || '').trim().toLowerCase();
+            if (!k) return;
+            const hit = exact.get(k) || list.find(r => r.model.trim().toLowerCase().startsWith(k + ' '));
+            if (!hit) return;
+            p.manufacturer = hit.manufacturer || null;
+            if (String(country).toLowerCase() === 'canada') p.distributor = hit.distributor_ca || null;
+          });
+        } catch (e) { /* the panel simply shows no maker line */ }
         return json(200, { pulse: pulse, injectables: hasInjectables, internal: isInternal });
       }
 
