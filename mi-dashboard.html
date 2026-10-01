@@ -801,7 +801,16 @@
   .pl-fill { display:block; height:100%; background:#C9D3DB; border-radius:3px; }
   .pl-row.on .pl-fill { background:var(--accent); }
   .pl-more { margin:8px 0 4px; background:none; border:0; padding:4px 8px; font:inherit; font-size:13px; font-weight:600; color:var(--accent-strong); cursor:pointer; }
-  .pl-det { position:sticky; top:16px; }
+  /* ⭐ NOT STICKY (Andy, 2026-10-01): with the detail pinned, the page scrolled
+     the long ranking while the detail stood still, and the detail's own lower
+     half could not be reached until the ranking ran out. Both columns now move
+     together, and the full ranking scrolls inside its own card instead. */
+  .pl-det { position:static; }
+  .pl-list.all { max-height:min(720px,72vh); overflow-y:auto; margin-right:-8px; padding-right:8px; overscroll-behavior:contain; }
+  .pl-catsel { margin:0 0 8px; }
+  .pl-catsel select { font:inherit; font-size:13px; color:var(--ink); background:var(--surface-2); border:1px solid var(--line);
+    border-radius:var(--radius-sm); padding:6px 28px 6px 10px; max-width:100%; }
+  .pl-mfr { font-size:13px; color:var(--ink-2); margin-top:3px; }
   .pl-eyebrow { font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
   .pl-dname { font-size:22px; font-weight:700; line-height:1.2; margin:2px 0 0; }
   .pl-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0; }
@@ -873,6 +882,8 @@
     .pl-row.on { background:transparent; }
     .pl-row .pl-cat, .pl-row .pl-track { display:none; }
     .pl-msub { display:block; }
+    .pl-list.all { max-height:none; overflow:visible; margin-right:0; padding-right:0; }
+    .pl-catsel select { width:100%; font-size:15px; padding:10px 12px; }
     .pl-name { font-size:16px; }
     .pl-meas b { font-size:15px; }
     /* Detail opens as a bottom sheet rather than below the list. */
@@ -2606,6 +2617,7 @@
   // ⛔ Injectables show only for accounts the server allows (internal use);
   // for everyone else the server strips them and this stays false.
   var PULSE_INJECTABLES=false;
+  var PL_CAT={};   // category filter on the trending list, per side (2026-10-01)
   var PL=null, PL_SIDE='devices', PL_ALL=false, PL_SEL={}, PL_LAUNCH_ALL=false, PL_RADAR_ALL=false;
   // ⭐ RESULTS, NOT SCAFFOLDING (Andy, 2026-09-26). Customers see shares,
   // businesses and plain definitions. Post counts, platform splits and
@@ -2664,10 +2676,23 @@
         (PL_INTERNAL?' <span class="pl-int">Internal: '+num(s.posts||0)+' posts · '+num(s.businesses||0)+' businesses · '+num(s.locations||0)+' locations</span>':''));
     var rows=plRows();
     if(!rows.length){ el('plBody').innerHTML='<div class="empty">No posts in this territory yet.</div>'; return; }
+    // ⭐ CATEGORY FILTER (Andy, 2026-10-01): rank within one category. Shares stay
+    // shares of ALL device conversation, so a number means the same thing with
+    // or without the filter; only the ranking and the bar scale change.
+    var cats={}; rows.forEach(function(r){ var c=r.category||'Other'; cats[c]=(cats[c]||0)+r.posts; });
+    var catList=Object.keys(cats).sort(function(a,b){ return cats[b]-cats[a] || a.localeCompare(b); });
+    if(PL_CAT[PL_SIDE] && !cats[PL_CAT[PL_SIDE]]) PL_CAT[PL_SIDE]='';
+    var cat=PL_CAT[PL_SIDE]||'';
+    var all=rows;
+    rows=cat?rows.filter(function(r){ return (r.category||'Other')===cat; }):rows;
     if(!PL_SEL[PL_SIDE] || !rows.some(function(r){ return r.product===PL_SEL[PL_SIDE]; })) PL_SEL[PL_SIDE]=rows[0].product;
     var base=plTot(dev?'devices_share_base':'injectables_share_base');
     var top=isPhone()?5:12;
     var shown=PL_ALL?rows:rows.slice(0,top), max=plPct(rows[0].posts,base)||1;
+    var catSel='<div class="pl-catsel"><select aria-label="Category" onchange="plCat(this.value)">'+
+      '<option value="">All categories</option>'+
+      catList.map(function(c){ return '<option value="'+esc(c)+'"'+(c===cat?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+
+      '</select></div>';
     var list=shown.map(function(r,i){
       var v=plPct(r.posts,base);
       return '<button type="button" class="pl-row'+(r.product===PL_SEL[PL_SIDE]?' on':'')+'"'+(PL_INTERNAL?' title="'+esc(plRowTitle(r,base))+'"':'')+' onclick="plPick(\''+plQ(r.product)+'\')">'+
@@ -2682,6 +2707,7 @@
     var more=rows.length>top?'<button type="button" class="pl-more" onclick="plToggleAll()">'+(PL_ALL?'Show top '+top:'View all '+rows.length+' \u2192')+'</button>':'';
     // ⭐ LAUNCHING = a ranked mini-leaderboard by businesses announcing (no
     // percentages). RADAR = an editorial list with labels, not a ranking.
+    rows=all;   // launching / radar / toxin below always use the whole side
     var launches=rows.filter(function(r){ return r.launch_posts>0; })
       .sort(function(a,b){ return b.launch_businesses-a.launch_businesses || b.launch_posts-a.launch_posts; });
     var lshow=PL_LAUNCH_ALL?launches:launches.slice(0,5);
@@ -2736,7 +2762,8 @@
     el('plBody').innerHTML=
       '<div class="pl-grid"><section class="pl-card"><div class="pl-h"><h3>What’s trending</h3>'+
       plInfo('plTipTr','Each product’s share of all '+(dev?'device':'injectable product')+' mentions in clinics’ public posts this month. A post naming two products counts for both.'+(PL_INTERNAL?' <span class="pl-int">Internal: based on '+num(base)+' mentions. Hover a row for its counts.</span>':''))+'</div>'+
-      '<p class="pl-hint">'+(dev?'Device':'Injectable')+' conversation share</p>'+list+more+'</section>'+
+      '<p class="pl-hint">'+(dev?'Device':'Injectable')+' conversation share</p>'+catSel+
+      '<div class="pl-list'+(PL_ALL?' all':'')+'">'+list+'</div>'+more+'</section>'+
       '<aside class="pl-card pl-det" id="plDet"></aside></div>'+
       '<div class="pl-lower">'+lower+'</div>';
     paintPulseDetail();
@@ -2770,6 +2797,8 @@
     el('plDet').innerHTML='<button type="button" class="pl-close" aria-label="Close" onclick="plSheet(false)">&times;</button>'+
       '<div class="pl-eyebrow">'+esc(r.category||'')+'</div>'+
       '<div class="pl-dname">'+esc(r.product)+(plLow(r)?' <span class="pl-tag">Early signal</span>':'')+'</div>'+
+      // Maker on the detail only; the ranking stays name + category so it reads at a glance.
+      (r.manufacturer?'<div class="pl-mfr">'+esc(r.manufacturer)+(r.distributor&&r.distributor!=='Direct (manufacturer)'&&r.distributor!==r.manufacturer?' \u00b7 via '+esc(r.distributor):'')+'</div>':'')+
       '<div class="pl-kpis"><div class="pl-kpi"><div class="v">'+plFmt(plPct(r.posts,base))+'</div><div class="l">of '+(dev?'device':'injectable')+' conversation</div></div>'+
       '<div class="pl-kpi"><div class="v">'+num(r.businesses)+'</div><div class="l">Businesses posting</div></div></div>'+
       '<div class="pl-trend" id="plTrend"><div class="th"><span class="tt">Daily activity</span></div><svg viewBox="0 0 300 128"></svg><div class="cap"></div></div>'+
@@ -3062,6 +3091,7 @@
   window.plLaunchAll=function(){ PL_LAUNCH_ALL=!PL_LAUNCH_ALL; paintPulse(); };
   window.plRadarAll=function(){ PL_RADAR_ALL=!PL_RADAR_ALL; paintPulse(); };
   window.plToggleAll=function(){ PL_ALL=!PL_ALL; paintPulse(); };
+  window.plCat=function(c){ PL_CAT[PL_SIDE]=c||''; PL_ALL=false; paintPulse(); };
   Array.prototype.forEach.call(document.querySelectorAll('#plSide button'),function(b){
     b.addEventListener('click',function(){
       Array.prototype.forEach.call(document.querySelectorAll('#plSide button'),function(x){ x.classList.remove('on'); });
