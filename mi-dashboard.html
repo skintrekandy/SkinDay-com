@@ -2729,7 +2729,7 @@
     var month={}; plRowsMonth().forEach(function(r){ month[r.product]=r; });
     return ((PL_WD.products)||[]).filter(function(p){ return p.side===PL_SIDE && p.posts>0; })
       .map(function(p){ var m=month[p.product]||{};
-        return Object.assign({},m,p,{places:[],pct_owners_promoted:null,ig_posts:null,fb_posts:null,locations:m.locations,known_national:m.known_national}); })
+        return Object.assign({},m,p,{places:[],pct_owners_promoted:null,ig_posts:null,fb_posts:null,locations:null,found_only:null,known_national:m.known_national}); })
       .sort(function(a,b){ return b.posts-a.posts || b.businesses-a.businesses; });
   }
   function plRowsMonth(){
@@ -2881,10 +2881,10 @@
     var facts=[];
     facts.push(['Businesses announcing it', r.launch_posts?num(r.launch_businesses)+(PL_INTERNAL?' <span class="pl-sub2">'+plPlural(r.launch_posts,'post','posts')+' · '+plFmt(plPct(r.launch_posts,lbase))+' of announcements</span>':''):'None '+plWord()]);
     if(PL_INTERNAL){
-      facts.push(['Posts <span class="pl-int">internal</span>', num(r.posts)+' <span class="pl-sub2">Instagram '+num(r.ig_posts||0)+' · Facebook '+num(r.fb_posts||0)+'</span>']);
-      facts.push(['Locations represented <span class="pl-int">internal</span>',num(r.locations)]);
+      facts.push(['Posts <span class="pl-int">internal</span>', num(r.posts)+(r.ig_posts!=null?' <span class="pl-sub2">Instagram '+num(r.ig_posts||0)+' · Facebook '+num(r.fb_posts||0)+'</span>':'')]);
+      if(r.locations!=null) facts.push(['Locations represented <span class="pl-int">internal</span>',num(r.locations)]);
       if(r.known_owners) facts.push(['Known owners <span class="pl-int">internal</span>',num(r.known_owners)]);
-      facts.push(['Discovered from social <span class="pl-int">internal</span>',num(r.found_only)]);
+      if(r.found_only!=null) facts.push(['Discovered from social <span class="pl-int">internal</span>',num(r.found_only)]);
       if(r.pct_owners_promoted!=null&&r.known_owners) facts.push(['Known owners who promoted it <span class="pl-int">internal</span>',Math.round(r.pct_owners_promoted)+'%']);
     }
     var say='';
@@ -2967,13 +2967,15 @@
   // shape and businesses posting; post counts stay internal like the rest of
   // Pulse. The range switch appears only once there is history to switch to.
   var PL_TR={}, PL_TR_RANGE=30, PL_TR_CUR=null;
-  function plTrKey(name){ return [COUNTRY,geo.province,geo.city,geo.neighbourhood,name,PL_TR_RANGE].join('|'); }
+  // The chart follows the trending period: 7 days when that is picked (2026-10-01).
+  function plTrDays(){ return PL_WIN===7?7:PL_TR_RANGE; }
+  function plTrKey(name){ return [COUNTRY,geo.province,geo.city,geo.neighbourhood,name,plTrDays()].join('|'); }
   function plTrendLoad(name){
     var k=plTrKey(name);
     if(PL_TR[k]){ plTrendPaint(name,PL_TR[k]); return; }
     var box=el('plTrend'); if(!box) return;
     box.querySelector('.cap').innerHTML='<span class="m">Loading…</span>';
-    api('pulse_trend',{product:name,days:PL_TR_RANGE}).then(function(res){
+    api('pulse_trend',{product:name,days:plTrDays()}).then(function(res){
       PL_TR[k]=res;
       if(PL_SEL[PL_SIDE]===name) plTrendPaint(name,res);
     }).catch(function(){ var b=el('plTrend'); if(b) b.querySelector('.cap').innerHTML='<span class="m">Trend could not load.</span>'; });
@@ -3007,8 +3009,8 @@
       q.avg=n>=3?s/n:null;
     });
     var hasHist=t.first&&t.until&&(plTrDate(t.until)-plTrDate(t.first))/864e5>45;
-    var ranges=hasHist?[[30,'30 days'],[90,'90 days'],[365,'12 months']]:[];
-    var head='<span class="tt">'+(weekly?'Weekly':'Daily')+' activity'+(ranges.length?'':' · last 30 days')+'</span>'+
+    var ranges=(hasHist&&PL_WIN!==7)?[[30,'30 days'],[90,'90 days'],[365,'12 months']]:[];
+    var head='<span class="tt">'+(weekly?'Weekly':'Daily')+' activity'+(ranges.length?'':' · last '+plTrDays()+' days')+'</span>'+
       (ranges.length?'<span class="tr">'+ranges.map(function(r){ return '<button type="button" class="'+(PL_TR_RANGE===r[0]?'on':'')+'" onclick="plTrRange('+r[0]+')">'+r[1]+'</button>'; }).join('')+'</span>':'');
     box.querySelector('.th').innerHTML=head;
     var svg=box.querySelector('svg');
