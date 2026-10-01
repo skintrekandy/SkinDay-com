@@ -633,6 +633,20 @@ exports.handler = async (event) => {
         return json(200, { pulse: pulse, injectables: hasInjectables, internal: isInternal });
       }
 
+      // ⭐ Pulse trending over a shorter period (2026-10-01): 7 days, same counting
+      // as the month. Same injectables gate as the monthly call.
+      case 'pulse_window': {
+        const days = Math.min(Math.max(parseInt(body.days, 10) || 7, 1), 31);
+        const { data, error } = await supabase.rpc('mi_pulse_window', {
+          p_country: country, p_regions: regions, p_province: province,
+          p_city: city, p_neighbourhood: neighbourhood, p_days: days
+        });
+        if (error) throw error;
+        const win = data || {};
+        if (!hasInjectables) win.products = (win.products || []).filter(p => p.side !== 'injectables');
+        return json(200, { window: win });
+      }
+
       // ⭐ The clinics behind one Pulse product, for reps to act on.
       case 'pulse_clinics': {
         const family = nz(body.product);
