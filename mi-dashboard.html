@@ -713,6 +713,8 @@
   .visit.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent-strong); font-weight:600; }
   .sv .svacts { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px; }
   .sv .svacts .spacer { flex:1; }
+  .ml-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .ml-head .btn.mini { text-transform:none; letter-spacing:0; font-family:var(--font-ui); font-size:13px; }
   .sv .dots { font:inherit; font-size:15px; line-height:1; color:var(--faint); background:none; border:0;
     cursor:pointer; padding:6px 8px; border-radius:var(--radius-sm); }
   .sv .dots:hover { color:var(--ink-2); background:var(--surface-2); }
@@ -926,6 +928,15 @@
     .fb-sub select { font-size:13.5px; padding:7px 28px 7px 12px; border-radius:100px; }
     .fb-sub .btn { padding:7px 13px; border-radius:100px; font-size:13.5px; }
     .fb-sub .count { flex:0 0 auto; margin-left:6px; align-self:center; }
+    /* ⭐ NO SIDEWAYS SWIPE (Xcite, 2026-10-01). The sort, Filters, Reset and the
+       count sat in one scrolling row, so half of it was off screen. Now: sort and
+       Filters share the first line, the count and Reset sit under them. */
+    .fb-row.fb-sub { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 8px; overflow:visible;
+      margin:10px 0 0; padding:0; align-items:center; }
+    .fb-sub .fb-lab { min-width:0; }
+    .fb-sub .fb-lab select, .fb-sub select { width:100%; }
+    .fb-sub .count { grid-column:1; margin-left:2px; white-space:normal; font-size:12px; }
+    .fb-sub #acctReset { grid-column:2; justify-self:end; }
     .showbar .btn.go { border-radius:12px; }
     /* A clinic is a list row: thumbnail, name, one line of facts, the reason.
        Everything else opens in a sheet. */
@@ -1644,7 +1655,7 @@
     </section>
 
     <section class="panel" id="panel-list">
-      <div class="sec-label">My list</div>
+      <div class="sec-label ml-head">My list <button class="btn mini" id="mlExport" type="button" style="display:none">Export to spreadsheet</button></div>
       <!-- ⭐ The route panel names the job and counts the selection, so the
            checkboxes below explain themselves instead of needing a sentence. -->
       <div class="routebar" id="routebar" style="display:none">
@@ -3459,6 +3470,9 @@
             '<span class="lm">'+esc(r.model)+'</span>'+
             (kind==='distributor'?'<span class="lmk">'+esc(r.manufacturer)+'</span>':'')+
             '<span class="lsp"></span>'+
+            // ⭐ (Xcite, 2026-10-01) which of the company's devices gained clinics
+            // in the last 30 days, the same +N the company header adds up.
+            lsMoveChip(famVal(r,'added_30d'), null)+
             '<span class="lnum">'+num(famVal(r,'clinics'))+' clinics</span>'+
             '<button class="lgo" type="button" data-device="'+esc(r.model)+'">View clinics &rarr;</button>'+
           '</div>'+
@@ -5163,7 +5177,31 @@
   // screens and the actual job — pick who to visit, plan the route — was buried
   // under empty textareas. Everything below the action row is now collapsed, and
   // a note that exists is shown as TEXT rather than as a filled-in form field.
+  var SAVED_ROWS=[];
+  // ⭐ EXPORT MY LIST (Xcite, 2026-10-01). A CSV with a byte-order mark, so Excel,
+  // Numbers and Google Sheets all open it with accents and Chinese intact.
+  function exportSaved(){
+    var rows=SAVED_ROWS||[]; if(!rows.length) return;
+    function cell(v){ v=(v==null?'':String(v)); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+    var head=['Clinic','Area','Province/State','Address','Phone','Email','Website','Rating','Reviews',
+              (isInj()?'Brands':'Devices'),'Note','Saved by','Saved on'];
+    var lines=[head.map(cell).join(',')];
+    rows.forEach(function(a){
+      var devs=(a.devices||[]).map(function(d){ return d.model+(d.manufacturer?' ('+d.manufacturer+')':''); }).join('; ');
+      lines.push([a.name,a.neighbourhood,(a.province||'').toUpperCase(),a.address,a.phone,a.email,a.website,
+        a.rating,a.reviews,devs,a.note,(a.is_mine?'me':(a.saved_by||'')),
+        (a.saved_at?String(a.saved_at).slice(0,10):'')].map(cell).join(','));
+    });
+    var blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+    var url=URL.createObjectURL(blob), link=document.createElement('a');
+    link.href=url; link.download='skinday-my-list-'+new Date().toISOString().slice(0,10)+'.csv';
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); },2000);
+  }
+  if(el('mlExport')) el('mlExport').addEventListener('click',exportSaved);
   function renderSaved(rows){
+    SAVED_ROWS=rows||[];
+    if(el('mlExport')) el('mlExport').style.display=SAVED_ROWS.length?'':'none';
     savedIds={}; rows.forEach(function(r){ if(r.is_mine) savedIds[r.clinic_id]=true; }); updateListCount();
     if(!rows.length){
       el('savedList').innerHTML='<div class="empty">Saved clinics appear here. Add them from Clinics.</div>';
