@@ -1301,7 +1301,7 @@
     <section class="panel" id="panel-pulse">
       <div class="pl-head">
         <div>
-          <h2 id="plTitle">What clinics promoted this month</h2>
+          <h2 id="plTitle">What clinics are promoting</h2>
           <div class="pl-sub pl-h" id="plSub"></div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
@@ -2691,7 +2691,7 @@
   // ⭐ PERIOD on the trending list (Andy, 2026-10-01): 1 month or 7 days. The
   // 7-day numbers come from mi_pulse_window, counted the same way as the month.
   // Launching, On the radar and the toxin card stay on the month.
-  var PL_WIN=30, PL_WD=null, PL_WLOAD=false;
+  var PL_WIN=30, PL_WD=null, PL_WLOAD=false, PL_PERIODS=false;
   var PL=null, PL_SIDE='devices', PL_ALL=false, PL_SEL={}, PL_LAUNCH_ALL=false, PL_RADAR_ALL=false;
   // ⭐ RESULTS, NOT SCAFFOLDING (Andy, 2026-09-26). Customers see shares,
   // businesses and plain definitions. Post counts, platform splits and
@@ -2767,7 +2767,7 @@
   function paintPulse(){
     var dev=PL_SIDE==='devices';
     el('plSide').style.display='none';
-    el('plTitle').textContent='What clinics promoted in '+(plMonth(PL&&PL.until)||'the last month');
+    el('plTitle').textContent='What clinics are promoting';
     var s=(PL&&PL.summary)||{};
     el('plSub').innerHTML=esc(plTerr())+' · '+esc(plSpan())+' · Social media '+
       plInfo('plTipSum','Public posts from clinics’ own social media accounts during this period. Posts that only list hashtags or compare products are left out.'+
@@ -2791,9 +2791,13 @@
     var catSel='<div class="pl-catsel"><select aria-label="Category" onchange="plCat(this.value)">'+
       '<option value="">All categories</option>'+
       catList.map(function(c){ return '<option value="'+esc(c)+'"'+(c===cat?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+
-      '</select><select aria-label="Period" class="pl-win" onchange="plWin(this.value)">'+
+      '</select>'+
+      // ⭐ PERIOD PICKER HIDDEN (Andy, 2026-10-01): accounts are read monthly, so a
+      // 7-day window is mostly days still being collected. Turn PL_PERIODS on once
+      // collection runs often enough to fill a week.
+      (PL_PERIODS?'<select aria-label="Period" class="pl-win" onchange="plWin(this.value)">'+
       [[30,'Last month'],[7,'Last 7 days']].map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===PL_WIN?' selected':'')+'>'+o[1]+'</option>'; }).join('')+
-      '</select></div>';
+      '</select>':'')+'</div>';
     var list=shown.map(function(r,i){
       var v=plPct(r.posts,base);
       return '<button type="button" class="pl-row'+(r.product===PL_SEL[PL_SIDE]?' on':'')+'"'+(PL_INTERNAL?' title="'+esc(plRowTitle(r,base))+'"':'')+' onclick="plPick(\''+plQ(r.product)+'\')">'+
