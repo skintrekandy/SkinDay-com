@@ -1113,21 +1113,18 @@ const PAGE_SIZE = 24;
 // ─── MANUFACTURER VERIFIED DEVICES (M18) ──────────────────────
 // Clinics that Solta lists as certified for 鳳凰電波. The chip only appears
 // once there is data behind it, so patients never meet an empty filter.
-// Four manufacturer-verified devices patients can search. Order = display order
-// in the dropdown. `tech` is the exact clinic_technologies.technology string;
-// `label` is the short Chinese name shown to patients.
-const DEVICES = [
-  { tech: '鳳凰電波 Thermage FLX',      label: '鳳凰電波' },
-  { tech: '美國音波二代 Ultherapy Prime', label: '美國音波二代' },
-  { tech: '蜂巢皮秒 PicoSure',          label: '蜂巢皮秒' },
-  { tech: '超皮秒 PicoWay',            label: '超皮秒' },
-];
-const TECH_LABEL = Object.fromEntries(DEVICES.map(d => [d.tech, d.label]));
-// Per-device Sets of clinic ids: { '鳳凰電波 Thermage FLX': Set, ... }. Populated
-// by loadVerifiedDevices(). deviceById maps a clinic id -> [tech,...] for badges.
+// M25/M27: the device list now comes from /api/get-clinics?mode=verified-devices,
+// which reads every manufacturer certified-clinic list in clinic_devices. A new
+// list loaded into the database appears here with no page change.
+// `tech` is the device_reference id (as a string); `label` is the English model
+// followed by the Chinese name, e.g. "Thermage FLX 鳳凰電波".
+let DEVICES = [];
+let TECH_LABEL = {};
+// Per-device Sets of clinic ids, keyed by device id. Populated by
+// loadVerifiedDevices(). deviceById maps a clinic id -> [device id,...] for badges.
 let verifiedByTech = {};
-let deviceById = {};            // clinic_id(String) -> array of tech strings
-let activeDevice = null;        // the currently selected device tech, or null
+let deviceById = {};            // clinic_id(String) -> array of device ids
+let activeDevice = null;        // the selected device id, '__all__', or null
 
 let currentFilter = 'all';
 let currentNameQuery = '';
@@ -1324,7 +1321,7 @@ function buildApiUrl(page) {
   params.set('country', COUNTRY);
   if (currentNameQuery) params.set('search', currentNameQuery);
   if (currentFilter !== 'all') params.set('neighbourhood', currentFilter);
-  // A device tech string, or '__all__' for every manufacturer-verified device.
+  // A device_reference id, or '__all__' for every manufacturer-verified device.
   // get-clinics.js resolves both to a clinic-id list server-side.
   if (activeDevice) params.set('verified_device', activeDevice);
   return '/api/get-clinics?' + params.toString();
@@ -2633,27 +2630,38 @@ function unhighlightPinById(cid) {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
-// Reads the manufacturer verified rows straight from Supabase. A failure here
-// is silent on purpose: the directory still works, it just loses the chip.
+// Reads the manufacturer verified devices and clinic rows from the API. A failure
+// here is silent on purpose: the directory still works, it just loses the chip.
+function deviceLabel(d) {
+  const en = (d.model || '').trim();
+  const zh = (d.label && d.label !== d.model) ? d.label.trim() : '';
+  if (!zh) return en;
+  if (!en) return zh;
+  // Drop any English already inside the Chinese name ("鳳凰電波 Thermage FLX").
+  const zhOnly = zh.replace(en, '').trim();
+  return en + ' ' + (zhOnly || zh);
+}
 async function loadVerifiedDevices() {
   try {
-    const techs = DEVICES.map(d => d.tech);
-    const inList = '(' + techs.map(t => '"' + t.replace(/"/g,'\\"') + '"').join(',') + ')';
-    const url = SB_URL + '/rest/v1/clinic_technologies?select=clinic_id,technology'
-      + '&technology=in.' + encodeURIComponent(inList)
-      + '&evidence_type=eq.manufacturer_directory';
-    const res = await fetch(url, { headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY } });
+    const res = await fetch('/api/get-clinics?mode=verified-devices&country=' + encodeURIComponent(COUNTRY));
     if (!res.ok) return;
-    const rows = await res.json();
+    const data = await res.json();
+    const devs = (data && data.devices) || [];
+    // Most clinics first, as the API already sorts them.
+    DEVICES = devs.map(d => ({ tech: String(d.id), label: deviceLabel(d), clinics: d.clinics || 0 }));
+    TECH_LABEL = Object.fromEntries(DEVICES.map(d => [d.tech, d.label]));
+    verifiedByTech = {}; deviceById = {};
     DEVICES.forEach(d => { verifiedByTech[d.tech] = new Set(); });
-    (rows || []).forEach(r => {
-      const id = String(r.clinic_id);
-      if (verifiedByTech[r.technology]) verifiedByTech[r.technology].add(id);
-      (deviceById[id] = deviceById[id] || []).push(r.technology);
+    ((data && data.rows) || []).forEach(([cid, did]) => {
+      const id = String(cid), t = String(did);
+      if (!verifiedByTech[t]) return;
+      verifiedByTech[t].add(id);
+      (deviceById[id] = deviceById[id] || []).push(t);
     });
-    // Keep each clinic's device list in canonical DEVICES order for tidy badges.
+    // Keep each clinic's device list in DEVICES order for tidy badges.
+    const order = Object.fromEntries(DEVICES.map((d, i) => [d.tech, i]));
     Object.keys(deviceById).forEach(id => {
-      deviceById[id] = DEVICES.map(d => d.tech).filter(t => deviceById[id].includes(t));
+      deviceById[id] = [...new Set(deviceById[id])].sort((x, y) => order[x] - order[y]);
     });
     buildDeviceDropdown();
   } catch (e) { /* directory works without it */ }
@@ -2688,6 +2696,12 @@ function buildDeviceDropdown() {
   };
 
   const opts = ['<option value="">儀器篩選</option>'];
+  if (DEVICES.length > 1) {
+    let all = 0;
+    const u = allVerifiedIds();
+    if (!hoodIds) all = u.size; else u.forEach(id => { if (hoodIds.has(id)) all++; });
+    opts.push('<option value="__all__">全部原廠認證儀器（' + all + '）</option>');
+  }
   DEVICES.forEach(d => {
     const n = countFor(d.tech);
     // Keep the option visible even at 0 within a neighbourhood, so the user sees
@@ -2700,11 +2714,11 @@ function buildDeviceDropdown() {
   sel.value = activeDevice || '';
   // Show the field only if at least one device has clinics anywhere.
   const wrap = document.getElementById('deviceSearchField');
-  if (wrap) wrap.style.display = opts.length > 1 ? '' : 'none';
+  if (wrap) wrap.style.display = DEVICES.length ? '' : 'none';
   if (typeof syncMapDeviceDropdown === 'function') syncMapDeviceDropdown();
 }
 
-// Union of clinic ids across all four devices (for the "all verified" option).
+// Union of clinic ids across all verified devices (for the "all verified" option).
 function allVerifiedIds() {
   const s = new Set();
   Object.values(verifiedByTech).forEach(set => set.forEach(id => s.add(id)));
