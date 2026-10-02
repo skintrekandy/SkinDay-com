@@ -761,7 +761,7 @@
       &#9788; Social <span class="tab-count zero" id="sc-count">0</span>
     </button>
     <button class="nav-tab" data-group="crawls" data-tab="biostim" onclick="switchTab('biostim')">
-      &#9679; Biostimulators <span class="tab-count zero" id="bs-count">0</span>
+      &#9679; Injectables <span class="tab-count zero" id="bs-count">0</span>
     </button>
     <button class="nav-tab" data-group="directory" data-tab="signups" onclick="switchTab('signups')">
       &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
@@ -1159,7 +1159,7 @@
         <div id="dc-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
       </div>
 
-      <div class="add-clinic-form" style="margin-top:1.4rem;">
+      <div class="add-clinic-form" id="dc-review-card" style="margin-top:1.4rem;">
         <div class="form-title">Review candidates</div>
         <div class="form-subtitle">Approving publishes the device on the clinic, marked as listed rather than verified, and dates it to the day the page was read. A newly published device also writes an entry to the change feed, which is what a manufacturer subscribes to.</div>
 
@@ -1211,8 +1211,8 @@
     <div id="biostim-panel" style="display:none">
 
       <div class="add-clinic-form">
-        <div class="form-title">Biostimulation crawl</div>
-        <div class="form-subtitle">Reads the same clinic pages as the device crawl, but matches only the injectable biostimulators &mdash; Sculptra, Radiesse and HArmonyCa. It keeps its own place in the queue, so it never disturbs the device crawl or its month-over-month comparison, and either can be re-run on its own. Nothing here publishes anything: every match waits for review, because a clinic can order from any manufacturer at any time, so a page shows what it advertises rather than what it stocks.</div>
+        <div class="form-title">Injectables crawl</div>
+        <div class="form-subtitle">Reads the same clinic pages as the device crawl, but matches only injectables: neurotoxins, fillers, biostimulators and fat dissolving. It keeps its own place in the queue, so it never disturbs the device crawl or its month-over-month comparison. A product with its own page publishes on its own; a brand named on a page about the same kind of product (Dysport on a Botox page) publishes too, and a brand named on a page about a different product is rejected. Anything left over waits below.</div>
 
         <div class="form-section-label">Country</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
@@ -1229,7 +1229,7 @@
             <option value="california">California</option>
             <option value="florida">Florida</option>
           </select>
-          <span style="font-size:.78rem;color:var(--muted);">Which products exist is a country question: these three are the ones available in Canada. The reference list is shared, so a run in another country matches the same rows and finds only what those clinics actually name.</span>
+          <span style="font-size:.78rem;color:var(--muted);">The reference list is shared, so a run in any country matches the same products and finds only what those clinics actually name.</span>
         </div>
 
         <div class="form-section-label" style="margin-top:1rem;">Run</div>
@@ -1247,7 +1247,7 @@
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--border);">
           <input class="form-input" id="bs-one-host" placeholder="skin-trek.com" style="max-width:260px;" onkeydown="if(event.key==='Enter')bsTestHost()" />
           <button class="btn-ghost" onclick="bsTestHost()">Test this host</button>
-          <span style="font-size:.78rem;color:var(--muted);">Reads one site now and shows exactly what matched, whatever its queue status. Worth doing on a clinic you know injects Sculptra before leaving the full run to loop.</span>
+          <span style="font-size:.78rem;color:var(--muted);">Reads one site now and shows exactly what matched, whatever its queue status.</span>
         </div>
 
         <div id="bs-log" style="display:none;margin-top:1rem;max-height:60vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid var(--border);padding-top:.7rem;line-height:1.6;"></div>
@@ -1255,7 +1255,7 @@
 
       <div class="add-clinic-form" style="margin-top:1.4rem;">
         <div class="form-title">What is waiting</div>
-        <div class="form-subtitle">Candidates per product for the country selected above. New crawls publish these automatically; this button is for rows found before that was switched on. Publishing puts them on the directory and writes the change feed a manufacturer subscribes to.</div>
+        <div class="form-subtitle">What is still waiting, per product, for the country selected above. Review them one by one in the list below, or publish a product's rows in one go here.</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:.9rem;">
           <button class="btn-approve" id="bs-publish" onclick="bsPublishAll()">Publish everything waiting</button>
           <button class="btn-ghost" onclick="bsLoadStats()">Refresh</button>
@@ -3354,7 +3354,30 @@ function dcScopeLabel() {
   return dcCountry() || 'every country';
 }
 
+// ⭐ ONE REVIEW CARD, TWO TABS (2026-10-01). Equipment is reviewed under Devices
+// and injectables under Injectables. The same card moves between the two panels
+// and every review call carries the side, so neither list shows the other's rows.
+var DC_SIDE = 'devices', DC_CARD_HOME = null;
+function dcReviewCountry() { return DC_SIDE === 'injectables' ? bsCountry() : dcCountry(); }
+function dcPlaceReview(side) {
+  DC_SIDE = side;
+  const card = document.getElementById('dc-review-card');
+  if (!card) return;
+  if (!DC_CARD_HOME) DC_CARD_HOME = { parent: card.parentNode, next: card.nextSibling };
+  if (side === 'injectables') {
+    const bs = document.getElementById('biostim-panel');
+    if (bs && card.parentNode !== bs) bs.appendChild(card);
+  } else if (card.parentNode !== DC_CARD_HOME.parent) {
+    DC_CARD_HOME.parent.insertBefore(card, DC_CARD_HOME.next);
+  }
+  const dev = document.getElementById('dc-cand-device');
+  if (dev) dev.value = '';
+}
+
 function dcEnter() {
+  const moved = DC_SIDE !== 'devices';
+  dcPlaceReview('devices');
+  if (moved && dcEntered) { dcLoadCandidates(); }
   // ⚠️ The state select is hidden by default and revealed by the country
   // select's onchange — but USA is the DEFAULT selection, so that event never
   // fires and the dropdown stayed invisible. Set visibility on entry too.
@@ -3598,14 +3621,14 @@ async function dcRequeue() {
 // wrong claim per clinic. Review those on their own with the device filter.
 async function dcApproveAll() {
   if (dcRunning) { alert('Stop the crawl before approving in bulk.'); return; }
-  const country = dcCountry();
+  const country = dcReviewCountry();
   const label = country || 'every country';
   const btn = document.getElementById('dc-approve-all');
   const deviceSel = document.getElementById('dc-cand-device');
   const deviceId = deviceSel && deviceSel.value ? deviceSel.value : '';
   if (btn) btn.disabled = true;
   try {
-    const pre = await dcCall({ action: 'approve-all', country: country,
+    const pre = await dcCall({ action: 'approve-all', country: country, side: DC_SIDE,
                                device_id: deviceId, preview: true });
     if (!pre.ok) throw new Error((pre.data && pre.data.error) || 'request failed');
     const n = (pre.data && pre.data.would_approve) || 0;
@@ -3624,7 +3647,7 @@ async function dcApproveAll() {
 
     let approved = 0, events = 0, guard = 0;
     for (;;) {
-      const r = await dcCall({ action: 'approve-all', country: country, device_id: deviceId });
+      const r = await dcCall({ action: 'approve-all', country: country, side: DC_SIDE, device_id: deviceId });
       if (!r.ok) throw new Error((r.data && r.data.error) || 'request failed');
       const d = r.data || {};
       approved += d.approved || 0;
@@ -3888,6 +3911,8 @@ function bsScopeLabel() {
 function bsEnter() {
   const sel = document.getElementById('bs-state');
   if (sel) sel.style.display = (bsCountry() === 'usa') ? '' : 'none';
+  dcPlaceReview('injectables');
+  dcLoadCandidates();
   if (bsEntered) { bsLoadStats(); return; }
   bsEntered = true;
   bsLoadStats();
@@ -3897,6 +3922,7 @@ function bsCountryChanged() {
   const sel = document.getElementById('bs-state');
   if (sel) sel.style.display = (bsCountry() === 'usa') ? '' : 'none';
   bsLoadStats();
+  if (DC_SIDE === 'injectables') dcLoadCandidates();
 }
 
 async function bsCall(body) {
@@ -3976,7 +4002,7 @@ async function bsStart(retry) {
   bsRunId = null;
   const openRun = bsOpenRun(country, state);
   if (openRun) {
-    if (confirm('Biostimulation run ' + openRun + ' for ' + scope
+    if (confirm('Injectables run ' + openRun + ' for ' + scope
                 + ' never finished.\n\nContinue it? Everything read so far stays '
                 + 'in that run.\n\nCancel starts a brand new run instead.')) {
       bsRunId = openRun;
@@ -4115,7 +4141,7 @@ async function bsRequeue() {
 
 async function bsLoadStats() {
   const country = bsCountry();
-  const { ok, data } = await bsCall({ action: 'candidate-stats', country: country, state: bsState() });
+  const { ok, data } = await bsCall({ action: 'candidate-stats', country: country, state: bsState(), side: 'injectables' });
   if (!ok || !data || !data.queue) return;
 
   const where = country || 'every country';
@@ -4128,10 +4154,8 @@ async function bsLoadStats() {
   // filtered to the three biostimulators here. The count that matters for a
   // manufacturer conversation is clinics per product, and each pending row is
   // one clinic and product pair.
-  const WANT = ['sculptra', 'radiesse', 'harmonyca'];
-  const rows = (data.by_device || []).filter(function (d) {
-    return WANT.indexOf(String(d.model || '').toLowerCase().replace(/[^a-z]/g, '')) !== -1;
-  });
+  // Scoped server-side to injectables (side), so every product shows here.
+  const rows = (data.by_device || []);
 
   const tally = document.getElementById('bs-tally');
   if (!rows.length) {
@@ -4284,8 +4308,10 @@ function dcCandMsg(text, colour) {
 }
 
 async function dcLoadStats() {
-  const country = dcCountry();
-  const { ok, data } = await dcCall({ action: 'candidate-stats', country: country, state: dcState() });
+  const country = dcReviewCountry();
+  const inj = DC_SIDE === 'injectables';
+  const { ok, data } = await dcCall(Object.assign({ action: 'candidate-stats', country: country,
+    state: inj ? bsState() : dcState(), side: DC_SIDE }, inj ? { mode: 'biostim' } : {}));
   if (!ok || !data || !data.counts) return;
 
   // ⛔ THE OLD LINE MIXED TWO SCOPES INTO ONE SENTENCE and ended it with "in
@@ -4303,7 +4329,7 @@ async function dcLoadStats() {
   if (data.pending_truncated) bits.push('pending count capped, more waiting');
   document.getElementById('dc-cand-stats').textContent = bits.join(' · ');
 
-  const el = document.getElementById('dc-count');
+  const el = document.getElementById(inj ? 'bs-count' : 'dc-count');
   if (el) {
     el.textContent = data.counts.pending;
     el.classList.toggle('zero', data.counts.pending === 0);
@@ -4316,7 +4342,7 @@ async function dcLoadStats() {
   const sel = document.getElementById('dc-cand-device');
   if (sel && Array.isArray(data.by_device)) {
     const keep = sel.value;
-    let opts = '<option value="">Every device (' + data.counts.pending + ')</option>';
+    let opts = '<option value="">' + (inj ? 'Every product' : 'Every device') + ' (' + data.counts.pending + ')</option>';
     data.by_device.forEach(function (d) {
       opts += '<option value="' + d.device_id + '">' +
               esc(d.model) + ' · ' + esc(d.manufacturer || '—') +
@@ -4337,7 +4363,7 @@ async function dcLoadCandidates() {
 
   const { ok, data } = await dcCall({
     action: 'list-candidates', status: status, confidence: conf,
-    device_id: device, limit: 300, country: dcCountry()
+    device_id: device, limit: 300, country: dcReviewCountry(), side: DC_SIDE
   });
   if (!ok) {
     list.innerHTML = '<div class="empty-state"><div class="empty-title">Could not load candidates</div><div class="empty-desc">' +
