@@ -2234,6 +2234,70 @@ async function doCrawl(supabase, body) {
           }
         }
       } catch (e) { out.lastError = out.lastError || ('auto-approve: ' + e.message); }
+
+      // ---- INJECTABLE TRIAGE (Andy, 2026-10-01) ---------------------------
+      // ⭐ WHY. Injectable brands named in page text go to review by design (a
+      // brand name is the category's vocabulary), and one Canada pass left
+      // 1,256 of them waiting. Reviewed by hand on 2026-10-01, they split
+      // cleanly on the PAGE ADDRESS, so the same rule now runs here:
+      //   1. already listed for this clinic        -> approve (refresh only)
+      //   2. address names a DIFFERENT brand       -> reject (/what-is-harmonyca
+      //      naming Restylane, /juvederm naming Belotero: comparison/SEO copy)
+      //   3. a blog page                           -> reject (written for search)
+      //   4. toxin on a botox / wrinkle / neurotoxin / injectables page,
+      //      filler on a filler / lip / cheek / injectables page -> approve
+      //   5. anything else                         -> reject (Belkyra on a botox
+      //      page is a "related treatments" line, not an offer)
+      // Botox itself is not a "different brand" in an address: clinics name
+      // their whole neurotoxin page "botox".
+      try {
+        const weak = rows.filter(r => r.confidence === 'blog_only' || r.confidence === 'generic_review');
+        if (weak.length) {
+          const devIds = [...new Set(weak.map(r => r.device_id))];
+          const refs = await selectIn(supabase, 'device_reference', 'id, model, category', 'id', devIds);
+          const cats = [...new Set(refs.map(d => d.category).filter(Boolean))];
+          const segs = cats.length ? await selectIn(supabase, 'device_categories', 'category, mi_segment', 'category', cats) : [];
+          const segOf = new Map(segs.map(c => [c.category, c.mi_segment]));
+          const refById = new Map(refs.map(d => [d.id, d]));
+          const norm = x => String(x || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+          const BRANDS = ['juvederm','restylane','belotero','teosyal','revanesse','stylage','saypha','sculptra',
+            'radiesse','harmonyca','skinvive','belkyra','dysport','xeomin','nuceiva','jeuveau','letybo','daxxify','relfydess'];
+          const injIds = new Set(refs.filter(d => segOf.get(d.category) === 'injectables').map(d => d.id));
+          if (injIds.size) {
+            const cands = await selectIn(supabase, 'clinic_device_candidates',
+              'id, clinic_id, device_id, status, source_url, page_kind, confidence', 'clinic_id', clinicIds);
+            const mine = cands.filter(c => c.status === 'pending' && injIds.has(c.device_id) &&
+              (c.confidence === 'blog_only' || c.confidence === 'generic_review'));
+            if (mine.length) {
+              const listed = await selectIn(supabase, 'clinic_devices', 'clinic_id, device_id, status', 'clinic_id',
+                [...new Set(mine.map(c => c.clinic_id))]);
+              const isListed = new Set(listed.filter(r => r.status === 'listed').map(r => r.clinic_id + '|' + r.device_id));
+              const approveIds = [], rejectIds = [];
+              for (const c of mine) {
+                const d = refById.get(c.device_id) || {};
+                const raw = String(c.source_url || '').toLowerCase();
+                const u = norm(c.source_url);
+                const own = norm(d.model);
+                const cat = String(d.category || '').toLowerCase();
+                if (isListed.has(c.clinic_id + '|' + c.device_id)) { approveIds.push(c.id); continue; }
+                if (BRANDS.some(b => b !== own && u.includes(b))) { rejectIds.push(c.id); continue; }
+                if (c.page_kind === 'blog') { rejectIds.push(c.id); continue; }
+                if (cat.includes('toxin') && /(botox|wrinkle|toxin|neuromod|anti-?wrinkle|injectable)/.test(raw)) { approveIds.push(c.id); continue; }
+                if (cat.includes('filler') && /(filler|lip|cheek|hyaluronic|injectable)/.test(raw)) { approveIds.push(c.id); continue; }
+                rejectIds.push(c.id);
+              }
+              if (approveIds.length) {
+                const res = await decide(supabase, { ids: approveIds }, true);
+                out.injApproved = (out.injApproved || 0) + (res.approved || 0);
+              }
+              if (rejectIds.length) {
+                await decide(supabase, { ids: rejectIds, note: 'auto-triage: named on a page about another product' }, false);
+                out.injRejected = (out.injRejected || 0) + rejectIds.length;
+              }
+            }
+          }
+        }
+      } catch (e) { out.lastError = out.lastError || ('injectable triage: ' + e.message); }
     }
 
     // ---- sightings: one row per (clinic, device, run, url), plain insert -----
@@ -2680,6 +2744,20 @@ async function syncExclusions(supabase, body) {
 // review
 // ---------------------------------------------------------------------------
 
+// ⭐ REVIEW SIDES (2026-10-01). Equipment and injectables share one candidates
+// table but are reviewed in different admin tabs (Devices / Injectables), so
+// every review call can be scoped by side. Without a side it sees everything,
+// as before.
+const INJ_CATS = ['biostimulator', 'neurotoxin', 'filler', 'fat_dissolving'];
+async function sideFilter(supabase, side) {
+  side = String(side || '').toLowerCase();
+  if (side !== 'devices' && side !== 'injectables') return null;
+  const { data, error } = await supabase.from('device_reference').select('id').in('category', INJ_CATS);
+  if (error) throw error;
+  const inj = new Set((data || []).map(d => d.id));
+  return side === 'injectables' ? (id => inj.has(id)) : (id => !inj.has(id));
+}
+
 async function candidateStats(supabase, body) {
   const country = ((body && body.country) || '').trim().toLowerCase();
   const c = async (table, col, val) => {
@@ -2737,6 +2815,8 @@ async function candidateStats(supabase, body) {
     if (pendErr) throw pendErr;
     let rows = pend || [];
     pendingTruncated = rows.length >= PEND_CAP;
+    const keepSide = await sideFilter(supabase, body && body.side);
+    if (keepSide) rows = rows.filter(r => keepSide(r.device_id));
     // ⛔⛔ THIS USED TO SCOPE BY THE CANDIDATE'S HOST → crawl_device_queue.country,
     // while the review LIST scopes by the CLINIC's country. Two definitions of
     // "in canada" on one screen: the counter read 601 against a list of 496, and
@@ -2824,6 +2904,7 @@ async function listCandidates(supabase, body) {
   const status = ['pending', 'approved', 'rejected'].includes(body.status) ? body.status : 'pending';
   const limit = Math.min(Math.max(parseInt(body.limit, 10) || 300, 1), 1000);
   const wantCountry = (body.country || '').trim().toLowerCase();
+  const keepSide = await sideFilter(supabase, body.side);
 
   const PAGE = 500;
   const MAX_PAGES = 40;          // 20,000 rows scanned, hard ceiling on cost
@@ -2866,6 +2947,7 @@ async function listCandidates(supabase, body) {
     }
 
     for (const c of cands) {
+      if (keepSide && !keepSide(c.device_id)) continue;
       if (wantCountry) {
         const cl = clinicById.get(c.clinic_id);
         if (!cl || (cl.country || '').toLowerCase() !== wantCountry) continue;
@@ -3030,6 +3112,8 @@ async function approveAll(supabase, body) {
   const { data: pend, error } = await q;
   if (error) throw error;
   let rows = pend || [];
+  const keepSide = await sideFilter(supabase, body.side);
+  if (keepSide) rows = rows.filter(r => keepSide(r.device_id));
 
   // Country comes from the crawl queue's host map, since candidates carry no
   // country column. A host with no queue row cannot be attributed and is left
