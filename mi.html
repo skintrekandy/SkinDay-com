@@ -4,13 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SkinDay Market Intelligence</title>
-<meta name="description" content="SkinDay Market Intelligence helps device manufacturers, pharmaceutical companies and distributors find clinics, understand installed base and see what clinics are promoting. Available in Canada, California and New York.">
+<meta name="description" content="SkinDay Market Intelligence follows more than 8,000 aesthetic clinics across Canada every month: which devices each clinic offers, which ones they are adding, and what they are promoting to patients.">
 <link rel="canonical" href="https://skinday.com/mi">
 <link rel="icon" href="/favicon.ico">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://skinday.com/mi">
 <meta property="og:title" content="SkinDay Market Intelligence">
-<meta property="og:description" content="Know the clinics. See the market. Know what's changing. Available in Canada, California and New York.">
+<meta property="og:description" content="See where the aesthetics market is moving, and plan around it. Available in Canada.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -96,7 +96,7 @@
   .donut { width:132px; height:132px; border-radius:50%; background:conic-gradient(var(--accent) 0 31%, #7FB7B0 31% 52%, #B9D6D1 52% 69%, #D6E2E0 69% 84%, #E9EEEE 84% 100%); position:relative; }
   .donut::after { content:""; position:absolute; inset:26px; background:var(--surface); border-radius:50%; }
   .donut span { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:600; z-index:1; }
-  .rows .r { display:grid; grid-template-columns:96px 1fr 38px; gap:10px; align-items:center; font-size:12.5px; color:var(--ink-2); padding:5px 0; }
+  .rows .r { display:grid; grid-template-columns:128px 1fr 38px; gap:10px; align-items:center; font-size:12.5px; color:var(--ink-2); padding:5px 0; }
   .rows .r .t { height:8px; border-radius:4px; background:var(--line-2); overflow:hidden; }
   .rows .r .t div { height:100%; background:#9CC7C1; border-radius:4px; }
   .rows .r.me .t div { background:var(--accent); }
@@ -115,13 +115,12 @@
 
   .who { background:var(--dark); color:#E8EFEE; padding:88px 0; }
   .who h2 { font-size:clamp(26px,3vw,34px); letter-spacing:-.02em; font-weight:600; margin:0 0 40px; color:#fff; max-width:22ch; line-height:1.15; }
-  .who .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:#24403C; border:1px solid #24403C; border-radius:var(--radius); overflow:hidden; }
+  .who .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#24403C; border:1px solid #24403C; border-radius:var(--radius); overflow:hidden; }
   .who .c { background:var(--dark); padding:26px 22px; }
   .who .c h3 { margin:0 0 8px; font-size:17px; font-weight:600; color:#fff; }
   .who .c p { margin:0; font-size:14.5px; color:#A9BDBA; line-height:1.55; }
 
   .data { padding:88px 0; }
-  .data .grid { display:grid; grid-template-columns:1fr 1fr; gap:56px; }
   .data h2 { font-size:clamp(24px,2.6vw,30px); letter-spacing:-.02em; font-weight:600; margin:0 0 14px; line-height:1.2; }
   .data p { color:var(--ink-2); margin:0 0 14px; }
   .data .srcs { display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
@@ -129,20 +128,101 @@
   .data .nots { margin-top:22px; padding:16px 18px; border-left:3px solid var(--accent); background:var(--accent-soft); border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-weight:600; color:var(--accent-strong); }
 
   .req { padding:88px 0 110px; border-top:1px solid var(--line); background:var(--surface); }
-  .req .grid { display:grid; grid-template-columns:1fr 1.1fr; gap:56px; align-items:start; }
   .req h2 { font-size:clamp(28px,3.4vw,40px); letter-spacing:-.025em; font-weight:600; margin:0 0 14px; line-height:1.1; }
   .req p { color:var(--ink-2); margin:0; }
   .req-go .btn { padding:14px 26px; font-size:16px; }
   .req-note { margin-top:18px !important; font-size:14.5px; color:var(--muted) !important; }
 
+  .views { border-bottom:1px solid var(--line); background:var(--surface); }
+  .views .wrap { display:grid; grid-template-columns:repeat(4,1fr); gap:28px; padding-top:34px; padding-bottom:38px; }
+  .views .n { font-size:24px; font-weight:300; color:var(--accent-strong); line-height:1; padding-bottom:10px; border-bottom:1px solid var(--line); margin-bottom:12px; }
+  .views h3 { margin:0 0 4px; font-size:17px; font-weight:600; }
+  .views p { margin:0; font-size:14.5px; color:var(--muted); line-height:1.5; }
+  .uses { display:grid; grid-template-columns:1fr; gap:0; margin-top:6px; }
+  .uses div { padding:11px 0; border-top:1px solid var(--line); font-size:15.5px; color:var(--ink-2); }
+  .uses b { display:block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent-strong); font-weight:500; margin-bottom:2px; }
+  .plus { font-family:var(--font-mono); font-size:11px; color:var(--comp); font-weight:500; }
+  .cmp { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+  .cmp .lb { font-family:var(--font-mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); margin:8px 0 5px; }
+  .cmp .r { display:grid; grid-template-columns:80px 1fr 34px; gap:10px; align-items:center; font-size:12.5px; padding:3px 0; color:var(--ink-2); }
+  .cmp .r .t { height:7px; border-radius:4px; background:var(--line-2); }
+  .cmp .r .t div { height:100%; border-radius:4px; background:var(--accent); }
+  .cmp .r.b .t div { background:#B9D6D1; }
+  .cmp .r .v { text-align:right; font-family:var(--font-mono); font-size:11px; }
+  .route { border:1px solid var(--line); border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; }
+  .route .hd { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; font-size:13.5px; font-weight:600; }
+  .route .hd span { font-family:var(--font-mono); font-size:10.5px; color:var(--muted); font-weight:400; }
+  .route .btns { display:flex; gap:6px; }
+  .route .btns i { font-style:normal; font-size:11.5px; padding:5px 10px; border:1px solid var(--line); border-radius:7px; color:var(--ink-2); }
+  .route .btns i.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .route .meta { font-family:var(--font-mono); font-size:10.5px; color:var(--accent-strong); margin-top:10px; }
+  .stop { display:grid; grid-template-columns:22px 1fr; gap:10px; align-items:start; padding:9px 0; border-top:1px solid var(--line-2); }
+  .stop .k { width:20px; height:20px; border-radius:50%; background:var(--accent-soft); color:var(--accent-strong); font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center; }
+  .stop .nm { height:10px; border-radius:4px; background:#D9DEE3; margin:5px 0 7px; }
+  .stop .mt { height:7px; width:42%; border-radius:4px; background:var(--line); }
+  .stop .nt { margin-top:6px; padding:7px 9px; border-radius:6px; background:var(--surface-2); font-size:11.5px; color:var(--ink-2); line-height:1.4; }
+  .stop .nt b { font-family:var(--font-mono); font-size:8.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); display:block; font-weight:500; }
+  .stop .nt.m { background:var(--accent-soft); }
+  .statement { padding:76px 0 84px; text-align:center; }
+  .statement p { font-size:clamp(22px,2.6vw,30px); line-height:1.35; letter-spacing:-.01em; color:var(--ink); max-width:26ch; margin:0 auto; font-weight:500; }
+  .statement p span { color:var(--accent-strong); }
+  .who .closer { margin:36px 0 0; font-size:17px; color:#C7D6D4; max-width:40em; }
+
+  .wide { padding:12px 0 96px; }
+  .wide-head { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:end; margin-bottom:32px; }
+  .wide-head .tag { color:var(--accent-strong); margin-bottom:12px; }
+  .wide-head h2 { font-size:clamp(26px,3vw,34px); line-height:1.15; letter-spacing:-.02em; font-weight:600; margin:0; }
+  .wide-head p { color:var(--ink-2); margin:0; }
+  .shot.big { padding:30px 32px; }
+  .big-grid { display:grid; grid-template-columns:220px 1fr; gap:44px; align-items:center; }
+  .big-side { display:flex; flex-direction:column; align-items:flex-start; gap:14px; }
+  .big-side .sm { color:var(--muted); font-size:10.5px; }
+  .donut.lg { width:180px; height:180px; }
+  .donut.lg::after { inset:34px; }
+  .donut.lg span { font-size:26px; }
+  .legend { font-size:12.5px; color:var(--muted); line-height:1.45; }
+  .legend b { color:var(--accent-strong); }
+  .tbl .th, .tbl .tr { display:grid; grid-template-columns:1.3fr .6fr 2fr .6fr; gap:14px; align-items:center; }
+  .tbl .th { font-family:var(--font-mono); font-size:10px; letter-spacing:.07em; text-transform:uppercase; color:var(--faint); padding-bottom:10px; border-bottom:1px solid var(--line); }
+  .tbl .th span:last-child { text-align:right; }
+  .tbl .tr { padding:11px 0; border-bottom:1px solid var(--line-2); font-size:14px; color:var(--ink-2); }
+  .tbl .tr span:nth-child(3) { display:flex; align-items:center; gap:10px; font-family:var(--font-mono); font-size:12px; }
+  .tbl .tr i { display:block; height:7px; border-radius:4px; background:#B9D6D1; max-width:70%; }
+  .tbl .tr.me { font-weight:600; color:var(--ink); }
+  .tbl .tr.me i, .tbl .tr.sub i { background:var(--accent); }
+  .tbl .tr.sub { padding-left:14px; font-size:13px; border-left:2px solid var(--accent); }
+  .tbl .tr span:last-child { text-align:right; }
+  .plus.muted { color:var(--faint); }
+  .wide-pts { display:grid; grid-template-columns:repeat(3,1fr); gap:28px; margin-top:28px; }
+  .wide-pts div { font-size:15px; color:var(--ink-2); border-top:2px solid var(--accent); padding-top:12px; }
+  .wide-pts b { display:block; color:var(--ink); font-weight:600; margin-bottom:2px; }
+  .feat-2 { padding-top:0; }
+  .data { padding:56px 0; border-top:1px solid var(--line); }
+  .data-row { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; }
+  .data h2 { font-size:21px; margin:0 0 8px; }
+  .data p { font-size:15.5px; margin:0; }
+  .data .srcs { margin-top:0; }
+  .data .nots { margin-top:14px; padding:11px 14px; font-size:15px; }
+  .req h2 { margin-bottom:28px; }
+  .plans { display:grid; grid-template-columns:1fr 1.25fr; gap:20px; }
+  .plan { border:1px solid var(--line); border-radius:var(--radius); padding:28px 28px 30px; background:var(--bg); display:flex; flex-direction:column; align-items:flex-start; }
+  .plan .tag { color:var(--accent-strong); margin-bottom:10px; }
+  .plan h3 { margin:0 0 10px; font-size:20px; font-weight:600; letter-spacing:-.01em; line-height:1.25; }
+  .plan p { color:var(--ink-2); margin:0 0 22px; font-size:15.5px; flex:1; }
+  .plan.ent { background:var(--dark); border-color:var(--dark); }
+  .plan.ent h3 { color:#fff; } .plan.ent p { color:#B9CBC8; } .plan.ent .tag { color:#8FD0C6; }
   footer { padding:28px 0; font-size:13.5px; color:var(--muted); }
   footer .wrap { display:flex; gap:18px; flex-wrap:wrap; }
   footer .sp { flex:1; }
 
   @media (max-width:860px){
-    .feat-row, .data .grid, .req .grid { grid-template-columns:1fr; gap:32px; }
+    .feat-row, .wide-head, .data-row, .plans, .big-grid { grid-template-columns:1fr; gap:28px; }
+    .wide-pts { grid-template-columns:1fr; gap:16px; }
+    .big-side { flex-direction:row; align-items:center; flex-wrap:wrap; }
+    .donut.lg { width:120px; height:120px; } .donut.lg::after { inset:24px; }
     .feat-row.flip .txt { order:0; }
-    .who .grid { grid-template-columns:1fr 1fr; }
+    .who .grid { grid-template-columns:1fr; }
+    .views .wrap { grid-template-columns:1fr 1fr; }
     .facts .wrap { grid-template-columns:1fr; }
     .fact, .fact + .fact { padding:18px 0; border-left:0; }
     .fact + .fact { border-top:1px solid var(--line); }
@@ -153,9 +233,16 @@
     .cards { grid-template-columns:1fr; }
     .cards .mc:nth-child(2) { display:none; }
     .ls { grid-template-columns:1fr; justify-items:start; }
-    .who .grid { grid-template-columns:1fr; }
+    .views .wrap { grid-template-columns:1fr; gap:22px; }
     header .signin { display:none; }
     .pl .r { grid-template-columns:18px 1fr 70px 40px; }
+    .shot.big { padding:18px; }
+    .tbl .th, .tbl .tr { grid-template-columns:1.4fr 1.6fr .5fr; gap:8px; }
+    .tbl .th span:nth-child(2), .tbl .tr span:nth-child(2) { display:none; }
+    .tbl .tr { font-size:13px; }
+    .cmp .r { grid-template-columns:72px 1fr 26px; }
+    .cmp .r span:first-child { white-space:nowrap; }
+    .route .btns i { font-size:10.5px; padding:5px 8px; white-space:nowrap; }
   }
 </style>
 </head>
@@ -174,21 +261,30 @@
   <section class="hero">
     <div class="wrap">
       <div class="mono kicker">For the medical aesthetics industry</div>
-      <h1>Know the clinics. See the market. Know what's changing.</h1>
-      <p class="lead">SkinDay Market Intelligence turns public activity across aesthetic clinics into account-level intelligence for commercial teams.</p>
+      <h1>See where the market is moving. Plan around it.</h1>
+      <p class="lead">SkinDay follows more than 8,000 aesthetic clinics across Canada every month: which devices each clinic offers, which ones they are adding, and what they are actively promoting to patients. Sales, marketing and leadership can all work from the same live picture.</p>
       <div class="ctas">
         <a class="btn" href="/mi-signup">Start free trial</a>
         <a class="btn ghost" href="/mi-dashboard">Sign in</a>
       </div>
-      <div class="live"><span class="mono">Available now</span><span class="pl-c">Canada</span><span class="pl-c">California</span><span class="pl-c">New York</span></div>
+      <div class="live"><span class="mono">Available now</span><span class="pl-c">Canada</span></div>
     </div>
   </section>
 
   <div class="facts">
     <div class="wrap">
-      <div class="fact"><div class="n">8,400+</div><div class="l">Canadian aesthetic clinics mapped</div></div>
+      <div class="fact"><div class="n">8,000+</div><div class="l">aesthetic clinics across Canada, with contacts and equipment</div></div>
+      <div class="fact"><div class="n">90+</div><div class="l">device models tracked by company and category</div></div>
       <div class="fact"><div class="n">17,000+</div><div class="l">public clinic posts read last month</div></div>
-      <div class="fact"><div class="n">One account view</div><div class="l">clinic, equipment and market activity together</div></div>
+    </div>
+  </div>
+
+  <div class="views">
+    <div class="wrap">
+      <div><div class="n">01</div><h3>Clinics</h3><p>Find accounts by what they already run, what they are missing, and how big they are.</p></div>
+      <div><div class="n">02</div><h3>Landscape</h3><p>Installed base by company and device, and what was added in the last 30 days.</p></div>
+      <div><div class="n">03</div><h3>Pulse</h3><p>What clinics are promoting this month, and who is announcing something new.</p></div>
+      <div><div class="n">04</div><h3>My List</h3><p>Plan the day's route, log visit notes, and keep managers in the loop.</p></div>
     </div>
   </div>
 
@@ -197,14 +293,14 @@
 
       <div class="feat-row">
         <div class="txt">
-          <div class="mono tag">Clinics</div>
-          <h2>Find the accounts that matter in your territory.</h2>
-          <p>You can filter your territory by clinics running a competitor, already using yours, newly listed, or with no equipment identified yet. Each clinic shows why it's on the list.</p>
-          <ul>
-            <li>Equipment by manufacturer, on every clinic</li>
-            <li>Near-me sorting and route planning for field days</li>
-            <li>Saved lists your team can share</li>
-          </ul>
+          <div class="mono tag">01 · Clinics</div>
+          <h2>Every account, and what it already runs.</h2>
+          <p>Each clinic comes with its equipment grouped by company, contacts, review count, and whether it posted about a device this month. You can narrow the whole country down to the accounts worth a visit this week.</p>
+          <div class="uses">
+            <div><b>Competitive accounts</b>Clinics running a competitor's device and none of yours.</div>
+            <div><b>Installed base</b>Clinics already running your devices, for upgrades, add-ons and a second platform.</div>
+            <div><b>New opportunities</b>Newly listed clinics, and clinics with no equipment identified yet.</div>
+          </div>
         </div>
         <div class="shot" aria-hidden="true">
           <div class="qv"><span>All clinics</span><span class="on">Competitor installed</span><span>Already using ours</span><span>Newly listed</span></div>
@@ -226,41 +322,59 @@
         </div>
       </div>
 
-      <div class="feat-row flip">
-        <div class="txt">
-          <div class="mono tag">Landscape</div>
-          <h2>Understand installed base and competitive presence.</h2>
-          <p>You can see how your installed base compares with competitors in each category, and how that changes from one province or state, city or neighbourhood to the next.</p>
-          <ul>
-            <li>Share of identified installations by category</li>
-            <li>Manufacturer and device rankings by territory</li>
-            <li>Clinics with no equipment identified yet</li>
-          </ul>
+    </div>
+  </section>
+
+  <section class="wide">
+    <div class="wrap">
+      <div class="wide-head">
+        <div>
+          <div class="mono tag">02 · Landscape</div>
+          <h2>The installed base, and how it is changing.</h2>
         </div>
-        <div class="shot" aria-hidden="true">
-          <div class="ls">
-            <div class="donut"><span>31%</span></div>
-            <div class="rows">
-              <div class="r me"><span>Your brand</span><div class="t"><div style="width:62%"></div></div><span class="v">31%</span></div>
-              <div class="r"><span>Competitor A</span><div class="t"><div style="width:42%"></div></div><span class="v">21%</span></div>
-              <div class="r"><span>Competitor B</span><div class="t"><div style="width:34%"></div></div><span class="v">17%</span></div>
-              <div class="r"><span>Competitor C</span><div class="t"><div style="width:30%"></div></div><span class="v">15%</span></div>
-              <div class="r"><span>Others</span><div class="t"><div style="width:32%"></div></div><span class="v">16%</span></div>
-            </div>
-          </div>
-          <div class="note">Illustrative view</div>
-        </div>
+        <p>You can see every company and device in Canada, or in any province, city or neighbourhood you choose, along with the clinics that added a device in the last 30 days. Territory plans, targets and competitive strategy can start from the actual installed base rather than estimates.</p>
       </div>
+      <div class="shot big" aria-hidden="true">
+        <div class="big-grid">
+          <div class="big-side">
+            <div class="mono sm">RF microneedling · Ontario</div>
+            <div class="donut lg"><span>31%</span></div>
+            <div class="legend"><b>Your brand</b> share of clinics with an identified device in this category</div>
+          </div>
+          <div class="tbl">
+            <div class="th"><span>Company</span><span>Devices</span><span>Clinics</span><span>30 days</span></div>
+            <div class="tr me"><span>Your brand</span><span>4</span><span><i style="width:100%"></i>412</span><span class="plus">+9</span></div>
+            <div class="tr"><span>Competitor A</span><span>6</span><span><i style="width:68%"></i>281</span><span class="plus">+4</span></div>
+            <div class="tr"><span>Competitor B</span><span>3</span><span><i style="width:55%"></i>226</span><span class="plus">+1</span></div>
+            <div class="tr"><span>Competitor C</span><span>5</span><span><i style="width:48%"></i>198</span><span class="plus">+6</span></div>
+            <div class="tr"><span>Competitor D</span><span>2</span><span><i style="width:30%"></i>124</span><span class="plus muted">—</span></div>
+            <div class="tr sub"><span>Your device X</span><span></span><span><i style="width:58%"></i>239</span><span class="plus">+5</span></div>
+            <div class="tr sub"><span>Your device Y</span><span></span><span><i style="width:42%"></i>173</span><span class="plus">+4</span></div>
+          </div>
+        </div>
+        <div class="note">Illustrative view</div>
+      </div>
+      <div class="wide-pts">
+        <div><b>Movement by device</b>Which devices gained clinics this month, model by model.</div>
+        <div><b>Every company side by side</b>Each company's full portfolio, by category and by region.</div>
+        <div><b>From number to clinic</b>Every count opens the clinics behind it.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="feat feat-2">
+    <div class="wrap">
 
       <div class="feat-row">
         <div class="txt">
-          <div class="mono tag">Pulse</div>
-          <h2>See what clinics are promoting and launching.</h2>
-          <p>Pulse reads what clinics post publicly each month, so you can see which products are getting attention, which are being launched, and which are just starting to appear.</p>
+          <div class="mono tag">03 · Pulse</div>
+          <h2>What clinics are promoting right now.</h2>
+          <p>The installed base tells you where devices sit. Pulse shows which products clinics are actively promoting to patients each month, which gives a good read on where clinics are putting their marketing effort.</p>
           <ul>
-            <li>Share of social conversation by product</li>
-            <li>Launch announcements, ranked by number of businesses</li>
-            <li>The clinics behind each signal, one tap away</li>
+            <li>What's trending: products ranked by share of conversation</li>
+            <li>What's launching: clinics announcing something new this month</li>
+            <li>On the radar: smaller products clinics are starting to talk about</li>
+            <li>Compare any product with a competitor on the same measures</li>
           </ul>
         </div>
         <div class="shot pl" aria-hidden="true">
@@ -269,6 +383,36 @@
           <div class="r"><span class="k">2</span><span>Product B <span class="c">RF microneedling</span></span><div class="t"><div style="width:72%"></div></div><span class="v">6.8%</span></div>
           <div class="r"><span class="k">3</span><span>Product C <span class="c">Laser</span><span class="new">Launching</span></span><div class="t"><div style="width:60%"></div></div><span class="v">5.6%</span></div>
           <div class="r"><span class="k">4</span><span>Product D <span class="c">Body</span></span><div class="t"><div style="width:44%"></div></div><span class="v">4.1%</span></div>
+          <div class="cmp">
+            <div class="lb">Businesses announcing it</div>
+            <div class="r"><span>Product B</span><div class="t"><div style="width:100%"></div></div><span class="v">5</span></div>
+            <div class="r b"><span>Product E</span><div class="t"><div style="width:80%"></div></div><span class="v">4</span></div>
+          </div>
+          <div class="note">Illustrative view</div>
+        </div>
+      </div>
+
+      <div class="feat-row flip">
+        <div class="txt">
+          <div class="mono tag">04 · My List</div>
+          <h2>From target list to visit notes, in one place.</h2>
+          <p>The clinics each rep is working on, the day's route, and what happened at every visit, visible to the whole team.</p>
+          <ul>
+            <li>Route planning included: pick the day's clinics, set a start point, and the stops open in order in Google Maps</li>
+            <li>Visit notes stay with the clinic, and managers and directors can reply</li>
+            <li>Any list exports to a spreadsheet for your CRM or a team meeting</li>
+          </ul>
+        </div>
+        <div class="shot" aria-hidden="true">
+          <div class="route">
+            <div class="hd">Today's route <span>4 clinics selected</span></div>
+            <div class="btns"><i>Use my location</i><i class="on">Plan route</i><i>Open in Maps</i></div>
+            <div class="meta">4 stops · 62 km</div>
+          </div>
+          <div class="stop"><span class="k">1</span><div><div class="nm" style="width:58%"></div><div class="mt"></div>
+            <div class="nt"><b>Visit note · rep</b>Interested in a demo next month. Wants pricing for two handpieces.</div>
+            <div class="nt m"><b>Reply · manager</b>Good. Bring the clinical study and loop me in.</div></div></div>
+          <div class="stop"><span class="k">2</span><div><div class="nm" style="width:46%"></div><div class="mt" style="width:36%"></div></div></div>
           <div class="note">Illustrative view</div>
         </div>
       </div>
@@ -276,36 +420,34 @@
     </div>
   </section>
 
+  <section class="statement">
+    <div class="wrap"><p>Installed base tells you where devices are. <span>Pulse tells you where attention is moving.</span></p></div>
+  </section>
+
   <section class="who">
     <div class="wrap">
-      <h2>Built for the teams that sell into aesthetic clinics.</h2>
+      <h2>One platform. Three teams. One market view.</h2>
       <div class="grid">
-        <div class="c"><h3>Manufacturers</h3><p>Installed base, competitive presence and new accounts by territory.</p></div>
-        <div class="c"><h3>Pharmaceutical companies</h3><p>Which clinics are active, and what they are talking about.</p></div>
-        <div class="c"><h3>Distributors</h3><p>Where the equipment you carry sits, and where it doesn't yet.</p></div>
-        <div class="c"><h3>Field sales teams</h3><p>A territory list you can work from on the road.</p></div>
+        <div class="c"><h3>Sales</h3><p>Know which accounts to prioritize and what they already run.</p></div>
+        <div class="c"><h3>Marketing</h3><p>See which products and categories are gaining attention, and where launches are happening.</p></div>
+        <div class="c"><h3>Leadership</h3><p>Track installed base, competitive movement, regional performance and field activity from the same dataset.</p></div>
       </div>
+      <p class="closer">SkinDay gives the commercial organization one shared view of the Canadian aesthetics market.</p>
     </div>
   </section>
 
   <section class="data">
     <div class="wrap">
-      <div class="grid">
-        <div>
+      <div class="data-row">
+        <div class="data-l">
           <h2>Where the data comes from</h2>
-          <p>SkinDay maps aesthetic clinics and connects each one to the information it publishes about itself, updated every month.</p>
+          <p>Information clinics publish about themselves, connected to each clinic and updated every month. Clinics can claim and correct their own profile, and anyone using the dashboard can report something that looks wrong.</p>
+        </div>
+        <div class="data-r">
           <div class="srcs">
-            <span>Public business listings</span>
-            <span>Clinic-published information</span>
-            <span>Public social posts</span>
-            <span>Manufacturer sources</span>
-            <span>SkinDay's clinic directory</span>
+            <span>Public business listings</span><span>Clinic-published information</span><span>Public social posts</span><span>Manufacturer sources</span><span>SkinDay's clinic directory</span>
           </div>
           <div class="nots">No patient data. No private clinic data.</div>
-        </div>
-        <div>
-          <h2>Clinics can correct their own profile</h2>
-          <p>Every clinic on SkinDay can claim its listing and update its information, and anyone using the dashboard can report something that looks wrong. The data isn't perfect, and it keeps getting better as more clinics and teams use it.</p>
         </div>
       </div>
     </div>
@@ -313,17 +455,22 @@
 
   <section class="req" id="start">
     <div class="wrap">
-      <div class="grid">
-        <div>
-          <h2>Try it on your own territory</h2>
-          <p>You can start with a 14-day free trial, set up for your company, your devices and your competitors. Cancel before the trial ends and nothing is charged.</p>
+      <h2>Two ways to get started</h2>
+      <div class="plans">
+        <div class="plan">
+          <div class="mono tag">Teams</div>
+          <h3>For a regional team or a smaller distributor</h3>
+          <p>A 14-day trial set up for your territory, your products and your competitors, for up to five people.</p>
+          <a class="btn ghost" href="/mi-signup">Start free trial</a>
         </div>
-        <div class="req-go">
-          <a class="btn" href="/mi-signup">Start free trial</a>
-          <p class="req-note">Need more than five seats, access to both Canada and the United States, or a plan for a pharmaceutical company? <a href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence">Email hello@skinday.ca</a> and we can put something together for your team.</p>
-          <p class="req-note">Already have an account? <a href="/mi-dashboard">Sign in</a></p>
+        <div class="plan ent">
+          <div class="mono tag">Enterprise</div>
+          <h3>For manufacturers, distributors and pharmaceutical companies</h3>
+          <p>Company-wide access for sales, marketing and leadership, configured around your portfolio, your competitors and your regions, with onboarding for each team and one view of field activity across the country.</p>
+          <a class="btn" href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence%20-%20Enterprise%20access">Discuss enterprise access</a>
         </div>
       </div>
+      <p class="req-note">Already have an account? <a href="/mi-dashboard">Sign in</a></p>
     </div>
   </section>
 </main>
