@@ -319,16 +319,47 @@ exports.handler = async (event) => {
         if (key && groupMap[key]) groupMap[key].clinics = g.clinics;
       });
 
+      // ⭐⭐ NO COUNTS LEAVE THIS FUNCTION (Andy, 2026-10-03). The dropdown is
+      // public, and clinic counts per device are a market-share table, which is
+      // what Market Intelligence sells. Same rule as skinday.ca:
+      //   1. models under DEVICE_MIN_CLINICS are dropped HERE, not in the browser;
+      //   2. models are listed ALPHABETICALLY (family first, then generations),
+      //      so the order no longer ranks popularity;
+      //   3. every count is stripped. has_family replaces the family_clinics test
+      //      and has_devices replaces clinics_with_devices.
+      const DEVICE_MIN_CLINICS = 3;
+      const famHasGen = {};
+      modelsOut.forEach(m => { if (m.parent_model && (m.clinics || 0) > 0) famHasGen[m.parent_model] = true; });
+      const famOf = m => m.parent_model || m.model;
+      const alpha = (a, b) => {
+        const fa = famOf(a), fb = famOf(b);
+        if (fa !== fb) return fa.localeCompare(fb, 'en', { sensitivity: 'base' });
+        if (!!a.parent_model !== !!b.parent_model) return a.parent_model ? 1 : -1;
+        return a.model.localeCompare(b.model, 'en', { sensitivity: 'base' });
+      };
+      const cleanModel = m => ({ model: m.model, category: m.category, slug: m.slug,
+                                 parent_model: m.parent_model,
+                                 has_family: !m.parent_model && !!famHasGen[m.model] });
+      const pubByCat = {};
+      Object.keys(modelsByCategory).forEach(c => {
+        const kept = modelsByCategory[c].filter(m => (m.clinics || 0) >= DEVICE_MIN_CLINICS)
+          .sort(alpha).map(cleanModel);
+        if (kept.length) pubByCat[c] = kept;
+      });
+      const pubModels = [].concat(...Object.values(pubByCat)).sort(alpha);
+
       const out = {
-        clinics_with_devices: raw.clinics_with_devices || 0,
-        models: modelsOut,
-        models_by_category: modelsByCategory,
+        has_devices: (raw.clinics_with_devices || 0) > 0,
+        models: pubModels,
+        models_by_category: pubByCat,
         groups: Object.values(groupMap)
           .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label))
-          .map(g => {
-            g.categories.sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label));
-            return g;
-          })
+          .map(g => ({
+            key: g.key, label: g.label, order: g.order,
+            categories: g.categories
+              .sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label))
+              .map(c => ({ category: c.category, label: c.label, sort_order: c.sort_order }))
+          }))
       };
 
       return {
