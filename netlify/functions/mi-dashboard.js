@@ -314,7 +314,11 @@ exports.handler = async (event) => {
         ends_at: t.trial_ends_at,
         // Round UP: with 6 hours left a rep should read "1 day", not "0".
         days_left: Math.max(0, Math.ceil(ms / 86400000)),
-        expired: ms <= 0
+        expired: ms <= 0,
+        // ⭐ LOCKED (2026-10-04): an ended trial with no paid subscription. Until
+        // this existed an expired trial only changed a message in Settings and
+        // every tab kept working (Chad, Cutera, weeks after his trial ended).
+        locked: ms <= 0 && !['active', 'past_due'].includes(String(t.sub_status || '').toLowerCase())
       };
     }
   }
@@ -376,6 +380,18 @@ exports.handler = async (event) => {
   const city = nz(body.city);
   const neighbourhood = nz(body.neighbourhood);
   const category = nz(body.category);
+
+  // ⭐⭐ THE TRIAL LOCK, ENFORCED HERE AND NOT IN THE PAGE. Once a trial has
+  // ended without a subscription, only the calls needed to sign in, see the
+  // notice, subscribe or sign out still work. Internal accounts are exempt so
+  // a test tenant can still be inspected.
+  if (trial && trial.locked && !isInternal) {
+    const OPEN = ['tenant', 'logout', 'billing', 'start_subscription', 'billing_portal',
+                  'set_password', 'set_own_name', 'list_users', 'list_focus'];
+    if (!OPEN.includes(action)) {
+      return json(402, { error: 'trial_ended', ended: trial.ends_at });
+    }
+  }
 
   try {
     switch (action) {
