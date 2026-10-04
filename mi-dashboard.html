@@ -1227,6 +1227,16 @@
     <button type="button" data-go="pulse">Pulse</button>
     <button type="button" data-go="list">My List<span class="bn-n" id="bnList" style="display:none"></span></button>
   </nav>
+  <div id="trialLock" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(20,24,29,.55);align-items:center;justify-content:center;padding:16px">
+    <div style="background:var(--surface);border-radius:16px;max-width:440px;width:100%;padding:28px 26px;box-shadow:0 30px 70px rgba(0,0,0,.25)">
+      <div style="font-size:21px;font-weight:600;letter-spacing:-.01em">Your trial has ended.</div>
+      <p id="tlSub" style="color:var(--ink-2);margin:10px 0 20px;font-size:15px;line-height:1.55"></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button type="button" class="btn" id="tlPlan" style="background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;padding:11px 18px;font-size:14px" onclick="trialLock(false);document.getElementById('settingsBtn').click()">Choose a plan</button>
+        <a class="btn" style="padding:11px 18px;font-size:14px;text-decoration:none" href="mailto:hello@skinday.ca?subject=SkinDay%20Market%20Intelligence">Email us</a>
+      </div>
+    </div>
+  </div>
   <div class="app-shade" id="appShade"></div>
   <div class="app-shade" id="advShade"></div>
   <div class="app-sheet" id="appSheet" role="dialog" aria-modal="true"></div>
@@ -1782,6 +1792,7 @@
     var body=Object.assign({action:action,country:COUNTRY,side:SIDE,province:geo.province,city:geo.city,neighbourhood:geo.neighbourhood},extra||{});
     return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY},body:JSON.stringify(body)})
       .then(function(r){ if(r.status===401) throw {unauth:true};
+        if(r.status===402) throw {trialEnded:true};
         return r.json().catch(function(){ throw {error: r.status>=500 ? 'The server took too long. Please try again.' : 'Something went wrong.'}; })
           .then(function(j){ if(!r.ok) throw j; return j; }); });
   }
@@ -1899,6 +1910,8 @@
     // whole Settings tab on user_id locked out the very person who sets it up.
     el('settingsBtn').style.display=(t.role==='admin'||t.user_id)?'':'none';
     renderTrial(t.trial);
+    TRIAL_ENDS=(t.trial&&t.trial.ends_at)||null;
+    if(t.trial&&t.trial.locked) trialLock(true);
     // Name and password need a personal account to edit.
     el('secAccount').style.display=t.user_id?'':'none';
     el('myName').value=t.user_name||'';
@@ -1964,6 +1977,19 @@
   // ⭐ Days remaining on a pilot. Rounded UP — with six hours left a rep should
   // read "1 day", not "0". Hidden entirely when there is no trial date, so a
   // paying customer never sees a countdown.
+  // ⭐ TRIAL LOCK (2026-10-04). The server refuses data once a trial ends
+  // without a subscription; this is the screen the user sees instead of
+  // half-empty tabs. Settings stays reachable so they can choose a plan.
+  var TRIAL_ENDS=null;
+  window.trialLock=function(on){
+    var o=el('trialLock'); if(!o) return;
+    if(on){
+      var ends=TRIAL_ENDS?new Date(TRIAL_ENDS).toLocaleDateString(undefined,{day:'numeric',month:'long',year:'numeric'}):'';
+      el('tlSub').textContent=(ends?'It ran until '+ends+'. ':'')+'You can choose a plan to keep your access, or get in touch and we can sort something out for your team.';
+      el('tlPlan').style.display=(el('settingsBtn').style.display==='none')?'none':'';
+    }
+    o.style.display=on?'flex':'none';
+  };
   function renderTrial(tr){
     var box=el('trialBox'); if(!box) return;
     if(!tr || !tr.ends_at){ box.style.display='none'; return; }
@@ -5437,6 +5463,7 @@
 
   function handleErr(e){
     if(e&&e.unauth){ location.reload(); return; }
+    if(e&&e.trialEnded){ trialLock(true); return; }
     var msg=(e&&e.detail)?e.detail:(e&&e.error)?e.error:'Something went wrong.';
     console.error('MI error:',e);
     ['hero','portfolioList','catlist','acctList','savedList','plBody','lsBody'].forEach(function(id){ var box=el(id); if(box&&box.querySelector('.spin')) box.innerHTML='<div class="empty">Could not load: '+esc(msg)+'</div>'; });
