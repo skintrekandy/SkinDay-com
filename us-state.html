@@ -1322,15 +1322,14 @@ let clinicsIndex = [];
 
 // ── TECHNOLOGY FILTER (M39, lifted from skinday.ca) ───────────────────────
 // A deep-linkable param applied server-side, three tiers, searchable. Options
-// come from /api/get-clinics?mode=device-facets, which returns a clinic COUNT
-// on every entry — offering all 141 models would bury the patient in options
-// returning two clinics each.
+// come from /api/get-clinics?mode=device-facets: names only, alphabetical
+// (Andy, 2026-10-03). Per-device clinic counts are market share and belong to
+// Market Intelligence; thin options are dropped on the server.
 let currentDevice      = null;   // model slug
 let currentDeviceCat   = null;   // category key
 let currentDeviceGroup = null;   // parent group key
 let deviceFacets       = null;
 
-const DEVICE_MIN_CLINICS = 3;
 
 // Model and manufacturer strings come from a crawl of third-party websites, so
 // they are escaped before being interpolated into HTML.
@@ -1362,7 +1361,7 @@ async function loadDeviceFacets() {
     // ⭐ No devices read in this state yet: hide the control entirely rather
     // than offer a dropdown where every option returns nothing. Hides the label
     // with it, and leaves the rest of the filter bar untouched.
-    if (!deviceFacets.clinics_with_devices) {
+    if (!deviceFacets.has_devices) {
       const grp = document.getElementById('techGroup');
       if (grp) grp.style.display = 'none';
       return;
@@ -1416,7 +1415,8 @@ function renderTechPanel() {
     // While searching, only matching models show, and a group or subcategory
     // appears only if something under it matched.
     const catBlocks = cats.map(c => {
-      const models = (byCat[c.category] || []).filter(m => m.clinics >= DEVICE_MIN_CLINICS);
+      // Thin options are dropped on the server, which no longer sends counts.
+      const models = (byCat[c.category] || []);
       const shownModels = term ? models.filter(m => m.model.toLowerCase().includes(term)) : models;
       const catMatches = !term
         || c.label.toLowerCase().includes(term)
@@ -1433,23 +1433,23 @@ function renderTechPanel() {
       const modelRows = shownSet.map(m => {
         matches++;
         const isGen = !!m.parent_model;
-        const hasFamily = !isGen && m.family_clinics != null && m.family_clinics > m.clinics;
+        const hasFamily = !isGen && !!m.has_family;
         const rows = [];
         if (hasFamily) {
-          rows.push(`<button type="button" class="tech-family${currentDevice === m.slug ? ' sel' : ''}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)} <span class="n">${m.family_clinics}</span></button>`);
+          rows.push(`<button type="button" class="tech-family${currentDevice === m.slug ? ' sel' : ''}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)}</button>`);
         }
         const gen = isGen || (hasFamily && shownNames.has(m.model));
         const cls = 'tech-model' + (gen ? ' gen' : '') + (currentDevice === m.slug ? ' sel' : '');
-        rows.push(`<button type="button" class="${cls}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)} <span class="n">${m.clinics}</span></button>`);
+        rows.push(`<button type="button" class="${cls}" onclick="applyDevice('model:${m.slug}')">${devEsc(m.model)}</button>`);
         return rows.join('');
       }).join('');
-      return `<button type="button" class="tech-sub ${currentDeviceCat === c.category ? 'sel' : ''}" onclick="applyDevice('cat:${c.category}')">${devEsc(c.label)} <span class="n">${c.clinics}</span></button>${modelRows}`;
+      return `<button type="button" class="tech-sub ${currentDeviceCat === c.category ? 'sel' : ''}" onclick="applyDevice('cat:${c.category}')">${devEsc(c.label)}</button>${modelRows}`;
     }).join('');
 
     const groupMatches = !term || g.label.toLowerCase().includes(term) || catBlocks.length > 0;
     if (!groupMatches || !catBlocks) return;
 
-    html += `<button type="button" class="tech-group ${currentDeviceGroup === g.key ? 'sel' : ''}" onclick="applyDevice('group:${g.key}')">${devEsc(g.label)} <span class="n">${g.clinics}</span></button>${catBlocks}`;
+    html += `<button type="button" class="tech-group ${currentDeviceGroup === g.key ? 'sel' : ''}" onclick="applyDevice('group:${g.key}')">${devEsc(g.label)}</button>${catBlocks}`;
   });
 
   if (term && matches === 0) html += '<div class="tech-empty">Nothing matches that.</div>';
