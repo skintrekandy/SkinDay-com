@@ -52,6 +52,7 @@ const TARGETS = {
     col:        'photo',
     sourceCol:  'photo_source',
     stampCol:   'photo_rehosted_at',
+    failCol:    'photo_rehost_failed_at',
     prefix:     '',
     defaultPx:  800,
     label:      'card photo'
@@ -60,6 +61,7 @@ const TARGETS = {
     col:        'logo',
     sourceCol:  'logo_source',
     stampCol:   'logo_rehosted_at',
+    failCol:    'logo_rehost_failed_at',
     prefix:     'logos/',
     defaultPx:  160,
     label:      'clinic logo'
@@ -90,6 +92,25 @@ function sized(url, px) {
   const eq    = tail.indexOf('=');
   const token = eq === -1 ? tail : tail.slice(0, eq); // drop Google's suffix
   return url.slice(0, cut + 1) + token + '=w' + px;
+}
+
+// ⭐ 2026-10-05: October's Canadian links came back 403 to this function while
+// the very same links opened fine in a browser. Node's fetch announces itself as
+// "node" and asks for anything; a browser asks for an image. So ask the way a
+// browser does, and if the resized link is still refused, try the link exactly
+// as Google gave it before calling the row a failure.
+const BROWSER_HEADERS = {
+  'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36',
+  'accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+  'accept-language': 'en-US,en;q=0.9'
+};
+async function fetchImage(url, px) {
+  const first = sized(url, px);
+  let res = await fetch(first, { redirect: 'follow', headers: BROWSER_HEADERS });
+  if (!res.ok && first !== url) {
+    res = await fetch(url, { redirect: 'follow', headers: BROWSER_HEADERS });
+  }
+  return res;
 }
 
 function ok(body)      { return { statusCode: 200, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body, null, 2) }; }
@@ -136,6 +157,7 @@ exports.handler = async (event) => {
   // under the observed ~1 month lifetime.
   // Pass max_age_days to widen or narrow it, or fresh_only=0 to drop the window
   // entirely (kept for the old call shape; it will mostly fetch dead links).
+  const retryFailed = q.retry_failed === '1';
   const maxAgeDays = (q.fresh_only === '0')
     ? null
     : (parseInt(q.max_age_days || '25', 10) || 25);
@@ -145,6 +167,10 @@ exports.handler = async (event) => {
 
   const scope = (sel) => {
     sel = sel.like(T.col, '%googleusercontent.com%').is(T.stampCol, null);
+    // ⭐ A row that failed is set aside, not retried in every batch. Before this,
+    // ~20 dead rows sat at the front of the queue and each batch of 25 spent most
+    // of itself on them again. Clear the column to put rows back in the queue.
+    if (!retryFailed) sel = sel.is(T.failCol, null);
     if (country) sel = sel.eq('country', country);
     if (state)   sel = sel.eq('state', state);
     // One OR group, ANDed with everything above by PostgREST. A row qualifies on
@@ -217,7 +243,7 @@ exports.handler = async (event) => {
       const rows = await pending(8);
       const results = await Promise.all(rows.map(async r => {
         try {
-          const res = await fetch(sized(r[T.col], px), { redirect: 'follow' });
+          const res = await fetchImage(r[T.col], px);
           const len = res.headers.get('content-length');
           return {
             id: r.id, name: (r.name || '').slice(0, 28),
@@ -248,11 +274,11 @@ exports.handler = async (event) => {
 
       const out = await Promise.all(rows.map(async r => {
         try {
-          const res = await fetch(sized(r[T.col], px), { redirect: 'follow' });
-          if (!res.ok) return { id: r.id, ok: false, status: res.status };
+          const res = await fetchImage(r[T.col], px);
+          if (!res.ok) return { id: r.id, ok: false, status: res.status, mark: true };
 
           const type = res.headers.get('content-type') || 'image/jpeg';
-          if (!type.startsWith('image/')) return { id: r.id, ok: false, status: 'not an image: ' + type };
+          if (!type.startsWith('image/')) return { id: r.id, ok: false, status: 'not an image: ' + type, mark: true };
 
           const buf  = Buffer.from(await res.arrayBuffer());
           if (!buf.length) return { id: r.id, ok: false, status: 'empty body' };
@@ -284,6 +310,14 @@ exports.handler = async (event) => {
           return { id: r.id, ok: false, status: String(e.message || e) };
         }
       }));
+
+      // Set the refused rows aside so the next batch moves on to new ones.
+      // Only Google refusing the image counts; an upload or database hiccup on
+      // our side stays in the queue and is simply tried again.
+      const refused = out.filter(r => r.mark).map(r => r.id);
+      if (refused.length) {
+        await sb.from('clinics').update({ [T.failCol]: new Date().toISOString() }).in('id', refused);
+      }
 
       const good = out.filter(r => r.ok);
       return ok({
