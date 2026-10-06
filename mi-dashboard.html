@@ -546,6 +546,21 @@
   .pill.chain { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
     background:#FBE9F1; border:1px solid #E9AFC9; color:#9C2F63; font-weight:600;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
+  .pill.new { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+    background:rgba(255,255,255,.94); border:1px solid var(--line-2); color:var(--ink-2); font-weight:600;
+    border-radius:100px; padding:3px 9px; white-space:nowrap; }
+  .acct .newtag { display:none; }
+  .acct .aloc { font-size:13.5px; color:var(--ink-2); margin-top:3px; }
+  .acct.card .ameta { margin-top:4px; }
+  .acct.card .contacts { margin-top:10px; }
+  .acct.card .contacts a { font-size:12.5px; color:var(--muted); }
+  .acct .more { position:relative; margin-left:auto; }
+  .acct .more summary { list-style:none; cursor:pointer; color:var(--faint); font-size:18px; letter-spacing:1px; padding:4px 8px; border-radius:7px; }
+  .acct .more summary::-webkit-details-marker { display:none; }
+  .acct .more[open] summary, .acct .more summary:hover { color:var(--ink-2); background:var(--surface-2); }
+  .acct .moremenu { position:absolute; right:0; bottom:calc(100% + 4px); background:var(--surface); border:1px solid var(--line); border-radius:10px; box-shadow:var(--shadow); padding:6px; min-width:160px; z-index:5; display:flex; flex-direction:column; }
+  .acct .moremenu a, .acct .moremenu .flagbtn { display:block; text-align:left; font-size:13px; color:var(--ink-2); text-decoration:none; padding:8px 10px; margin:0; border-radius:7px; }
+  .acct .moremenu a:hover, .acct .moremenu .flagbtn:hover { background:var(--surface-2); }
   .pill.locs { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
     background:var(--surface-2); border:1px solid var(--line-2); color:var(--muted); font-weight:500;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
@@ -974,6 +989,13 @@
     .acctgrid .acct.card .body { padding:0; min-width:0; }
     .acctgrid .acct.card .aname { font-size:15.5px; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .acctgrid .acct.card .ameta { margin:3px 0 0 !important; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .acctgrid .acct.card .head { flex-wrap:nowrap; gap:8px; align-items:center; }
+    .acctgrid .acct.card .newtag { display:inline-block; flex:0 0 auto; font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2); border:1px solid var(--line-2); border-radius:100px; padding:1px 6px; }
+    .acctgrid .acct.card .aloc, .acctgrid .acct.card .ameta { display:inline; font-size:12px; margin:0 !important; }
+    .acctgrid .acct.card .aloc { font-family:var(--font-mono); color:var(--muted); }
+    .acctgrid .acct.card .aloc::after { content:"\00a0\00b7\00a0"; }
+    .acctgrid .acct.card .body { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .acctgrid .acct.card .head { white-space:normal; }
     .acctgrid .acct.card .why { font-size:0; margin:5px 0 0; padding:0; background:none; border:0; }
     .acctgrid .acct.card .why b { font-size:9.5px; margin:0; }
     .acctgrid .acct.card .contacts, .acctgrid .acct.card .mfrs, .acctgrid .acct.card .evslot,
@@ -3864,8 +3886,7 @@
       bits.push('<a href="mailto:'+esc(a.email)+'"><span class="ico">&#9993;</span>'+esc(a.email)+
         (given?'<span class="vc" title="Provided by the clinic through SkinDay">Given</span>':'')+'</a>');
     }
-    if(a.website) bits.push('<a href="'+esc(a.website)+'" target="_blank" rel="noopener"><span class="ico">&#8599;</span>Website</a>');
-    if(a.neighbourhood) bits.push('<span><span class="ico">&#9678;</span>'+esc(a.neighbourhood)+'</span>');
+
     return bits.length?'<div class="contacts">'+bits.join('')+'</div>':'';
   }
   // Devices grouped under their manufacturer. Tenant's group always first and
@@ -4881,12 +4902,6 @@
       // A distributor does not make the machine, so the line names the relationship.
       var lead=(ME&&ME.owner_type==='distributor') ? 'Distributed by '+who : (isInj()?'Using ':'Running ')+who;
       lines.push(mine ? lead+': '+mine : lead);
-    } else if(seg==='new'){
-      title='Newly listed';
-      if(a.first_seen_at){
-        var d=new Date(a.first_seen_at+'T00:00:00');
-        title+=' '+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
-      }
     } else if(seg==='greenfield'){
       title=W().gfTitle; lines.push(W().gfLine);
     } else if(seg==='research'){
@@ -4955,31 +4970,19 @@
     var src=String(a.photo_source||'').toLowerCase();
     var usable=a.photo && src.indexOf('street')===-1 && String(a.photo).indexOf('streetviewpixels')===-1;
 
-    // ⭐ Date is shown, not just the word. A rep can then judge freshness without
-    // needing to know our scrape cadence, and the claim stays one we can defend:
-    // this is when WE first saw the listing, not when the clinic opened.
     var fresh = '';
     if(a.first_seen_at){
       var d = new Date(a.first_seen_at + 'T00:00:00');
       var days = Math.floor((Date.now() - d.getTime()) / 86400000);
       if(days <= 30 && days >= 0){
-        fresh = '<span class="pill chain">Newly listed &middot; '+
-                d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span>';
+        fresh = 'New &middot; '+d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
       }
     }
-    // Multi-location brands often buy centrally, so a rep may be better off at
-    // head office than at this address. We state the fact and leave the call to
-    // them: nothing in the data says which location is head office.
-    // ⓘ Neutral, not the status colour — this is a characteristic, not news.
     var chain = a.group_locations
       ? '<span class="pill locs" title="This brand has '+a.group_locations+
         ' locations. Purchasing may be handled centrally.">'+a.group_locations+' locations</span>'
       : '';
-
-    // ⭐⭐ BADGES SIT ON THE PHOTO. Beside the clinic name they made the busiest
-    // part of the card the title line; the content area now opens with the name
-    // and nothing competing with it.
-    var pills = (fresh||chain) ? '<div class="shotpills">'+fresh+chain+'</div>' : '';
+    var pills = (fresh||chain) ? '<div class="shotpills">'+(fresh?'<span class="pill new">'+fresh+'</span>':'')+chain+'</div>' : '';
     var dist  = (a.distance_km!=null)
       ? '<div class="dist">'+Number(a.distance_km).toFixed(1)+' km away</div>' : '';
     var inner = usable
@@ -4987,24 +4990,40 @@
       : '<span>'+esc(a.name)+'</span>';
     var shot = '<div class="shot'+(usable?'':' none')+'" data-i="'+esc(String(a.name||'').trim().charAt(0).toUpperCase())+'">'+inner+pills+dist+'</div>';
 
-    var meta=[(a.distance_km!=null?'<span class="mdist">'+Number(a.distance_km).toFixed(1)+' km \u00b7 </span>':'')+starsHtml(a.rating), (a.reviews!=null?a.reviews+' reviews':''),
-              (a.n_devices?a.n_devices+' '+W().items:'')].filter(Boolean).join(' &middot; ');
+    var loc = placeLine(a);
+    var meta=[(a.distance_km!=null?'<span class="mdist">'+Number(a.distance_km).toFixed(1)+' km · </span>':'')+starsHtml(a.rating),
+              (a.reviews!=null?a.reviews+' reviews':'')].filter(Boolean).join(' &middot; ');
 
     return '<div class="acct card" data-cid="'+esc(a.clinic_id)+'">'+
       shot+
       '<div class="body">'+
-        '<div class="head"><span class="aname">'+esc(a.name)+'</span></div>'+
-        '<div class="ameta" style="margin:5px 0 2px">'+meta+'</div>'+
+        '<div class="head"><span class="aname">'+esc(a.name)+'</span>'+
+          (fresh?'<span class="newtag">'+fresh+'</span>':'')+'</div>'+
+        (loc?'<div class="aloc">'+esc(loc)+'</div>':'')+
+        '<div class="ameta">'+meta+'</div>'+
         whyHtml(a)+sigHtml(a.clinic_id)+
-        contactsHtml(a)+platesHtml(a.devices||[])+
+        platesHtml(a.devices||[])+
+        contactsHtml(a)+
       '</div>'+
       '<div class="actions">'+
-        '<a class="btn go" href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
+        (a.website?'<a class="btn" href="'+esc(a.website)+'" target="_blank" rel="noopener">Website</a>':'')+
         (a.phone?'<a class="btn" href="tel:'+esc(a.phone)+'">Call</a>':'')+
-        '<button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'\u2713 Saved':'+ Save')+'</button>'+
-        flagBtn(a.clinic_id, null)+
+        '<button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'✓ Saved':'+ Save')+'</button>'+
+        '<details class="more"><summary aria-label="More">&middot;&middot;&middot;</summary><div class="moremenu">'+
+          '<a href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
+          flagBtn(a.clinic_id, null)+
+        '</div></details>'+
       '</div>'+
     '</div>';
+  }
+  // "Toronto, ON". The province comes from the address Google gave us, which
+  // ends "…, ON M5V 2T6" in Canada and "…, CA 90210" in the US.
+  function placeLine(a){
+    var city = String(a.neighbourhood||'').trim();
+    var m = String(a.address||'').match(/,\s*([A-Z]{2})\s+(?:[A-Z]\d[A-Z]|\d{5})/);
+    var reg = m ? m[1] : '';
+    if(city && reg && city.toUpperCase()!==reg) return city+', '+reg;
+    return city || reg;
   }
   // ---- Save this view -------------------------------------------------------
   // ⭐⭐ CINDY JOO'S REQUEST (2026-08-17): she had filtered to the view she
