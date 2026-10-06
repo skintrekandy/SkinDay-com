@@ -2637,6 +2637,9 @@ function deviceLabel(d) {
   const zh = (d.label && d.label !== d.model) ? d.label.trim() : '';
   if (!zh) return en;
   if (!en) return zh;
+  // A "Chinese" name with no Chinese characters is the device's Taiwan market name
+  // in English (Onda → "Onda Pro"). Show it alone rather than doubling the name.
+  if (!/[\u3400-\u9fff]/.test(zh)) return zh;
   // Drop any English already inside the Chinese name ("鳳凰電波 Thermage FLX").
   const zhOnly = zh.replace(en, '').trim();
   return en + ' ' + (zhOnly || zh);
