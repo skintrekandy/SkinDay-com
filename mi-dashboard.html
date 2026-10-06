@@ -1415,7 +1415,7 @@
           <option value="competitor">Running a competitor, none of yours</option>
           <option value="greenfield">No equipment identified</option>
           <option value="research">Not yet researched</option>
-          <!-- ⭐ Rolling 60 days on clinics.first_seen_at. "Newly listed", never
+          <!-- ⭐ Rolling 30 days on clinics.first_seen_at. "Newly listed", never
                "newly opened": first_seen_at is when a clinic first appeared in
                OUR scan, and the August batch is coverage catch-up — several were
                verified as trading since 2023. -->
@@ -4303,7 +4303,7 @@
     api('new_count',{}).then(function(res){
       var n = Number(res && res.count) || 0;
       var bn = el('bnNew');
-      if(n > 0){ b.textContent = n.toLocaleString() + ' new'; b.title = n.toLocaleString()+' clinics newly listed in the last 60 days'; b.style.display='';
+      if(n > 0){ b.textContent = n.toLocaleString() + ' new'; b.title = n.toLocaleString()+' clinics newly listed in the last 30 days'; b.style.display='';
         if(bn){ bn.textContent = compactN(n); bn.style.display=''; } }
       else { b.style.display='none'; if(bn) bn.style.display='none'; }
     }).catch(function(){ b.style.display='none'; });
@@ -4334,6 +4334,12 @@
     ACCT_GATED=false;
     var sb=el('acctShow'); if(sb) sb.style.display='none';
     loaded.accounts=true; el('acctList').innerHTML='<div class="empty"><span class="spin"></span></div>';
+    // The previous view's count and "Save all N" belong to that view. Clear them
+    // the moment a new one is asked for, so they can never sit beside a spinner
+    // or an error and offer to save clinics that are no longer on screen.
+    var svb=el('acctSaveView'); if(svb){ svb.style.display='none'; svb.innerHTML=''; }
+    var cnt=el('acctCount'); if(cnt) cnt.textContent='';
+    var trw=el('acctTrunc'); if(trw) trw.style.display='none';
     // ⛔ A CAP HERE MEANS A REP WORKS A PARTIAL LIST WITHOUT KNOWING. Christos
     // found 200 shown against 300+ available; Kyle runs email campaigns off this
     // screen. So the territory is still fetched WHOLE — but in SMALLER pages, so
@@ -4879,7 +4885,7 @@
       title='Newly listed';
       if(a.first_seen_at){
         var d=new Date(a.first_seen_at+'T00:00:00');
-        lines.push('First seen in our scan '+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}));
+        title+=' '+d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
       }
     } else if(seg==='greenfield'){
       title=W().gfTitle; lines.push(W().gfLine);
@@ -4896,7 +4902,7 @@
     if(exc) bits.push(esc(exc)+' not identified');
     if(dst) bits.push(esc(dst)+' equipment identified');
     if(bits.length){ if(!title) title='Target match'; lines.push(bits.join(' \u00b7 ')); }
-    if(!title || !lines.length) return '';
+    if(!title || (!lines.length && seg!=='new')) return '';
     return '<div class="why"><b>'+esc(title)+'</b>'+lines.join('<br>')+'</div>';
   }
 
@@ -4956,8 +4962,8 @@
     if(a.first_seen_at){
       var d = new Date(a.first_seen_at + 'T00:00:00');
       var days = Math.floor((Date.now() - d.getTime()) / 86400000);
-      if(days <= 60 && days >= 0){
-        fresh = '<span class="pill chain" title="First appeared in our scan on this date. Not necessarily a new business.">Newly listed &middot; '+
+      if(days <= 30 && days >= 0){
+        fresh = '<span class="pill chain">Newly listed &middot; '+
                 d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+'</span>';
       }
     }
