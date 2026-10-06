@@ -547,13 +547,12 @@
     background:#FBE9F1; border:1px solid #E9AFC9; color:#9C2F63; font-weight:600;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
   .pill.new { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase;
-    background:rgba(255,255,255,.94); border:1px solid var(--line-2); color:var(--ink-2); font-weight:600;
+    background:rgba(255,255,255,.95); border:1px solid #E9AFC9; color:#9C2F63; font-weight:600;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
   .acct .newtag { display:none; }
   .acct .aloc { font-size:13.5px; color:var(--ink-2); margin-top:3px; }
   .acct.card .ameta { margin-top:4px; }
   .acct.card .contacts { margin-top:10px; }
-  .acct.card .contacts a { font-size:12.5px; color:var(--muted); }
   .acct .more { position:relative; margin-left:auto; }
   .acct .more summary { list-style:none; cursor:pointer; color:var(--faint); font-size:18px; letter-spacing:1px; padding:4px 8px; border-radius:7px; }
   .acct .more summary::-webkit-details-marker { display:none; }
@@ -3886,6 +3885,7 @@
       bits.push('<a href="mailto:'+esc(a.email)+'"><span class="ico">&#9993;</span>'+esc(a.email)+
         (given?'<span class="vc" title="Provided by the clinic through SkinDay">Given</span>':'')+'</a>');
     }
+    if(a.website) bits.push('<a href="'+esc(a.website)+'" target="_blank" rel="noopener"><span class="ico">&#8599;</span>Website</a>');
 
     return bits.length?'<div class="contacts">'+bits.join('')+'</div>':'';
   }
@@ -5002,15 +5002,13 @@
         (loc?'<div class="aloc">'+esc(loc)+'</div>':'')+
         '<div class="ameta">'+meta+'</div>'+
         whyHtml(a)+sigHtml(a.clinic_id)+
-        platesHtml(a.devices||[])+
-        contactsHtml(a)+
+        contactsHtml(a)+platesHtml(a.devices||[])+
       '</div>'+
       '<div class="actions">'+
-        (a.website?'<a class="btn" href="'+esc(a.website)+'" target="_blank" rel="noopener">Website</a>':'')+
+        '<a class="btn go" href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
         (a.phone?'<a class="btn" href="tel:'+esc(a.phone)+'">Call</a>':'')+
         '<button class="btn savebtn'+(saved?' on':'')+'" data-cid="'+esc(a.clinic_id)+'">'+(saved?'✓ Saved':'+ Save')+'</button>'+
         '<details class="more"><summary aria-label="More">&middot;&middot;&middot;</summary><div class="moremenu">'+
-          '<a href="'+esc(directionsUrl(a))+'" target="_blank" rel="noopener">Directions</a>'+
           flagBtn(a.clinic_id, null)+
         '</div></details>'+
       '</div>'+
