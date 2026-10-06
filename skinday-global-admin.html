@@ -763,6 +763,9 @@
     <button class="nav-tab" data-group="crawls" data-tab="biostim" onclick="switchTab('biostim')">
       &#9679; Injectables <span class="tab-count zero" id="bs-count">0</span>
     </button>
+    <button class="nav-tab" data-group="crawls" data-tab="websites" onclick="switchTab('websites')">
+      &#9741; Websites
+    </button>
     <button class="nav-tab" data-group="directory" data-tab="signups" onclick="switchTab('signups')">
       &#43; Clinic Sign-ups <span class="tab-count zero" id="signups-count">0</span>
     </button>
@@ -786,9 +789,6 @@
     </button>
     <button class="nav-tab active" data-group="business" data-tab="costs" onclick="switchTab('costs')">
       $ Visualize costs
-    </button>
-    <button class="nav-tab" data-group="business" data-tab="websites" onclick="switchTab('websites')">
-      &#9788; Websites
     </button>
   </nav>
 
@@ -993,7 +993,7 @@
     <div id="websites-panel" style="display:none">
       <div class="add-clinic-form">
         <div class="form-title">Clinic websites</div>
-        <div class="form-subtitle">Reads each clinic's own website for the doctors it lists and the social accounts it links.</div>
+        <div class="form-subtitle">Reads each clinic's own website for the doctors it lists, the social accounts it links and its email.</div>
 
         <!-- Country first: these crawls claim from crawl_queue, which holds every country. -->
         <div class="form-section-label">Country</div>
@@ -1042,7 +1042,7 @@
           <button class="btn-ghost" onclick="twSocialStart(true)">Retry failed</button>
           <span id="tw-social-progress" style="font-size:.82rem;color:var(--muted);"></span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">Facebook and Instagram everywhere, LINE in Taiwan and Hong Kong, TikTok in North America. Only empty fields are filled.</div>
+        <div style="font-size:.78rem;color:var(--muted);margin-top:.4rem;">Email, Facebook and Instagram everywhere, LINE in Taiwan and Hong Kong, TikTok in North America. Only empty fields are filled.</div>
         <div id="tw-social-log" style="display:none;margin-top:.8rem;max-height:40vh;overflow:auto;font-size:.78rem;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;border-top:1px solid rgba(234,226,216,0.12);padding-top:.7rem;line-height:1.6;"></div>
 
         <div class="form-subtitle" style="margin-top:1rem;">Both crawls only advance while this tab is open, and either can be stopped at any time.</div>
@@ -2769,6 +2769,7 @@ async function twSocialStart(retry){
       if (p.status === 'done') {
         twSocialTotals.done++; twSocialTotals.fields += p.found;
         var bits = [];
+        if (p.email) bits.push(p.email);
         if (p.line) bits.push('LINE ' + p.line);
         if (p.facebook) bits.push(p.facebook);
         if (p.instagram) bits.push(p.instagram);
