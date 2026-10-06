@@ -30,7 +30,10 @@ const PAGE_CONCURRENCY = 4;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-const MATCHER_VERSION = '2026-08-05-seo-landing-page';
+// 2026-10-05 (M27): bumped for the M26 time-limit fix and cleanHome(). Both
+// change what a given host yields, so the October Canada re-scrape is labelled
+// a backfill run and its newly found devices stay out of Landscape's +N.
+const MATCHER_VERSION = '2026-10-05-time-limit-fix';
 
 // Per-device, per-run cap on auto-approval. Above this, the device stops
 // publishing unseen for the rest of the run and the rest queues for review.
