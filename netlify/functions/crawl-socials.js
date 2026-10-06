@@ -310,6 +310,80 @@ function lineFromText(text) {
   return null;
 }
 
+// ── EMAIL ───────────────────────────────────────────────────────────────────
+// Added 2026-10-05. Two thirds of approved Canadian clinics had no email on file,
+// and the address is usually sitting in the footer or on the contact page this
+// crawler already reads. Same rules as every other column here: the clinic's
+// own site only, fill an empty column only, never overwrite.
+//
+// Junk that looks like an email: image names (logo@2x.png), template
+// placeholders, and the error-reporting addresses site builders embed.
+const EMAIL_RE = /[a-z0-9][a-z0-9._%+-]{0,63}@[a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,24}/gi;
+const EMAIL_JUNK_DOMAIN = /(^|\.)(example\.(com|org|net)|domain\.com|yourdomain\.com|yoursite\.com|mysite\.com|website\.com|company\.com|email\.com|test\.com|address\.com|sentry\.io|wixpress\.com|wix\.com|squarespace\.com|wordpress\.com|godaddy\.com|shopify\.com|mailchimp\.com|sentry-next\.wixpress\.com)$/i;
+const EMAIL_JUNK_LOCAL = /^(no-?reply|do-?not-?reply|donotreply|privacy|webmaster|postmaster|abuse|wordpress|example|youremail|your-?email|your\.name|name|email|user|username|test|sentry)$/i;
+const EMAIL_ASSET = /\.(png|jpe?g|gif|webp|svg|ico|css|js)$/i;
+const FREE_MAIL = /^(gmail\.com|googlemail\.com|hotmail\.(com|ca)|outlook\.(com|ca)|live\.(com|ca)|yahoo\.(com|ca)|icloud\.com|me\.com|msn\.com|rogers\.com|bell\.net|sympatico\.ca|shaw\.ca|telus\.net|videotron\.ca|cogeco\.ca|protonmail\.com|proton\.me|aol\.com)$/i;
+const PREFERRED_LOCAL = /^(info|contact|hello|reception|front ?desk|frontdesk|admin|office|clinic|book|booking|bookings|appointments?|inquiries|enquiries|care|team)$/i;
+
+// Cloudflare hides addresses as /cdn-cgi/l/email-protection#<hex> or
+// data-cfemail="<hex>": the first byte is a key XOR'd over the rest.
+function cfDecode(hex) {
+  try {
+    const key = parseInt(hex.slice(0, 2), 16);
+    let out = '';
+    for (let i = 2; i < hex.length; i += 2) out += String.fromCharCode(parseInt(hex.substr(i, 2), 16) ^ key);
+    return out;
+  } catch { return ''; }
+}
+
+function cleanEmail(e) {
+  const m = String(e || '').trim().toLowerCase().replace(/^mailto:/, '').split('?')[0];
+  try { return decodeURIComponent(m); } catch { return m; }
+}
+
+function emailOk(e) {
+  if (!/^[^@\s]+@[^@\s]+\.[a-z]{2,24}$/.test(e) || e.length > 100) return false;
+  const [local, dom] = e.split('@');
+  if (EMAIL_ASSET.test(e) || EMAIL_JUNK_DOMAIN.test(dom) || EMAIL_JUNK_LOCAL.test(local)) return false;
+  if (/^\d+x$/.test(dom.split('.')[0])) return false;   // logo@2x.png slipped past
+  return true;
+}
+
+function extractEmail(html, text, pageUrl) {
+  const site = bareHost(pageUrl);
+  const cand = new Map();   // email -> { mailto }
+  const add = (e, mailto) => {
+    e = cleanEmail(e);
+    if (!emailOk(e)) return;
+    const prev = cand.get(e);
+    cand.set(e, { mailto: mailto || (prev && prev.mailto) || false });
+  };
+  const decoded = decodeEntities(String(html || '')).replace(/&#0*64;|&#x40;/gi, '@');
+  let m;
+  const mt = /mailto:([^"'?\s>]+)/gi;
+  while ((m = mt.exec(decoded)) !== null) add(m[1], true);
+  const cf = /(?:email-protection#|data-cfemail=["'])([0-9a-f]{10,})/gi;
+  while ((m = cf.exec(decoded)) !== null) add(cfDecode(m[1]), true);
+  const plain = String(text || '') + ' ' + decoded.replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  for (const e of plain.match(EMAIL_RE) || []) add(e, false);
+
+  // Rank: the clinic's own domain first, then a free-mail inbox (common for
+  // small clinics), then any other address only if it was a mailto link.
+  // An address on some other company's domain written in plain text is
+  // usually the web agency's credit line, not the clinic.
+  let best = '', bestScore = 0;
+  for (const [e, info] of cand) {
+    const dom = e.split('@')[1];
+    const own = site && (dom === site || site.endsWith('.' + dom) || dom.endsWith('.' + site));
+    let score = own ? 30 : FREE_MAIL.test(dom) ? 20 : info.mailto ? 10 : 0;
+    if (!score) continue;
+    if (info.mailto) score += 3;
+    if (PREFERRED_LOCAL.test(e.split('@')[0])) score += 2;
+    if (score > bestScore) { best = e; bestScore = score; }
+  }
+  return best;
+}
+
 // ── Extraction ──────────────────────────────────────────────────────────────
 function hrefs(html) {
   const out = [];
@@ -351,6 +425,7 @@ function extractSocials(html, baseUrl, text, country) {
   }
 
   return {
+    email: extractEmail(html, text, baseUrl),
     facebook_url: shortestPath(fb),
     instagram_url: shortestPath(ig),
     tiktok_url: shortestPath(tt),
@@ -458,7 +533,7 @@ async function isShared(column, value, excludeIds, country) {
 // bug that once killed beautybox.com.tw for containing "x.com", so the host is
 // re-checked EXACTLY in JS before any row is accepted as a branch.
 async function siblingsFor(domain, clinicId, country) {
-  const cols = 'id,name,website,facebook_url,instagram_url,tiktok_url,line_url,line_id';
+  const cols = 'id,name,website,email,facebook_url,instagram_url,tiktok_url,line_url,line_id';
   // ⛔ SCOPED TO THE ROW'S COUNTRY, never a hardcoded one. A domain can carry
   // clinics in more than one country, and the queue is now multi-country.
   const rows = await sb(`clinics?select=${cols}&country=eq.${encodeURIComponent(country)}&website=ilike.`
@@ -490,6 +565,13 @@ async function land(found, row) {
   if (found.instagram_url) {
     if (await isShared('instagram_url', found.instagram_url, ids, country)) skipped.push('instagram shared');
     else allow.instagram_url = found.instagram_url;
+  }
+  if (found.email) {
+    // A chain's shared inbox lands on every branch, same as its Instagram. The
+    // same address on several UNRELATED clinics is a booking platform or an
+    // agency, not the clinic.
+    if (await isShared('email', found.email, ids, country)) skipped.push('email shared');
+    else allow.email = found.email;
   }
   if (found.tiktok_url) {
     if (await isShared('tiktok_url', found.tiktok_url, ids, country)) skipped.push('tiktok shared');
@@ -535,16 +617,27 @@ async function crawlOne(row) {
   let found = extractSocials(home.html, home.finalUrl, homeText, country);
   let source = home.finalUrl;
 
-  const nothing = f => !f.facebook_url && !f.instagram_url && !f.tiktok_url && !f.line_url && !f.line_id;
+  const nothing = f => !f.email && !f.facebook_url && !f.instagram_url && !f.tiktok_url && !f.line_url && !f.line_id;
+  const noSocials = f => !f.facebook_url && !f.instagram_url && !f.tiktok_url && !f.line_url && !f.line_id;
 
-  if (nothing(found)) {
+  // The contact page is read when the homepage gave no socials (as before) OR
+  // no email, since the email is the field most often kept off the homepage.
+  // Whatever the homepage found is kept; the contact page only fills the gaps.
+  if (noSocials(found) || !found.email) {
     const contactUrl = findContactUrl(home.html, home.finalUrl);
     if (contactUrl && contactUrl !== home.finalUrl) {
       const page = await getPage(contactUrl);
       if (page.ok) {
         const t = toText(page.html);
         const second = extractSocials(page.html, page.finalUrl, t, country);
-        if (!nothing(second)) { found = second; source = page.finalUrl; }
+        if (noSocials(found) && !noSocials(second)) {
+          const keepEmail = found.email;
+          found = second;
+          if (keepEmail) found.email = keepEmail;
+          source = page.finalUrl;
+        } else if (!found.email && second.email) {
+          found.email = second.email;
+        }
       }
     }
   }
@@ -667,6 +760,7 @@ exports.handler = async (event) => {
         fields: (result.fields || []).join(', '),
         branches: result.branches || 0,
         clinics_on_domain: result.targetCount || 0,
+        email: f.email || null,
         facebook: f.facebook_url || null,
         instagram: f.instagram_url || null,
         tiktok: f.tiktok_url || null,
