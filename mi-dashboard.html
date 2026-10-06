@@ -3854,7 +3854,7 @@
 
   function contactsHtml(a){
     var bits=[];
-    if(a.phone) bits.push('<a href="tel:'+esc(a.phone)+'"><span class="ico">&#9742;</span>'+esc(a.phone)+'</a>');
+    // Phone number not shown: the Call button already dials it.
     // Email is absent for most of the country (populated in ON/AB/QC/BC only),
     // so it renders when present and leaves no gap when it isn't.
     // `email_source` distinguishes an address the clinic GAVE us from one
