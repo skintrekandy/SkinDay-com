@@ -606,8 +606,20 @@
   .gp-dev .who ul { margin:0; padding:0; list-style:none; }
   .gp-dev .who li { padding:2px 0; color:var(--ink-2); }
   .gp-dev .who .no li { color:var(--muted); }
-  .gp-br { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line-2); font-size:14px; }
-  .gp-br span:last-child { color:var(--muted); font-size:12.5px; white-space:nowrap; }
+  .gp-loc { border-bottom:1px solid var(--line-2); }
+  .gp-br { width:100%; display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 2px;
+    background:none; border:0; font:inherit; font-size:14px; color:inherit; text-align:left; cursor:pointer; }
+  .gp-br:hover { background:var(--surface-2); }
+  .gp-br .lt { min-width:0; }
+  .gp-br .lt small { display:block; font-size:12px; color:var(--muted); }
+  .gp-br .lp { color:var(--muted); font-size:12.5px; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+  .gp-br .lp i { font-style:normal; color:var(--faint); transition:transform .15s; }
+  .gp-loc.open .gp-br .lp i { transform:rotate(90deg); color:var(--accent); }
+  .gp-loc .gp-card { display:none; padding:2px 0 14px; }
+  .gp-loc.open .gp-card { display:block; }
+  .gp-card .acct.card { margin:0; box-shadow:none; }
+  .gp-dev .who li a { color:inherit; text-decoration:none; border-bottom:1px dotted var(--line); cursor:pointer; }
+  .gp-dev .who li a:hover { color:var(--accent-strong); border-bottom-color:var(--accent); }
   @media (max-width:640px){
     .chainrow { flex-wrap:wrap; }
     .grpopen { margin:0 12px 10px 34px; }
@@ -1504,9 +1516,9 @@
           <!-- ⭐ Small labels so "Most reviews" reads as the order, not as another filter. -->
           <label class="fb-lab"><span>Category</span><select id="acctCategory"><option value="">All categories</option></select></label>
           <label class="fb-lab"><span>Sort by</span><select id="acctSort">
+            <option value="devices" selected>Most equipment</option>
             <option value="reviews">Most reviews</option>
             <option value="rating">Best rated</option>
-            <option value="devices">Most equipment</option>
             <option value="social">Active on social</option>
             <option value="distance">Nearest to me</option>
             <option value="newest">Most recently listed</option>
@@ -4229,7 +4241,7 @@
   }
   el('acctReset').addEventListener('click',function(){
     ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
-    el('acctSort').value='reviews';
+    el('acctSort').value='devices';
     el('acctSearch').value=''; setSearch(''); syncQuick();
     NEAR=null; el('acctNear').classList.remove('on'); nearNote('',false);
     advLabel();
@@ -4363,10 +4375,10 @@
       el('acctNear').disabled=false;
       // Falling back silently would leave the rep looking at a list ordered by
       // something else while the control says "nearest".
-      if(el('acctSort').value==='distance') el('acctSort').value='reviews';
+      if(el('acctSort').value==='distance') el('acctSort').value='devices';
       nearNote(err && err.code===1
-        ? 'Location permission was declined, so this is sorted by reviews instead.'
-        : 'Could not get a location just now, so this is sorted by reviews instead.', true);
+        ? 'Location permission was declined, so this is sorted by equipment instead.'
+        : 'Could not get a location just now, so this is sorted by equipment instead.', true);
       loadAccounts();
     },{enableHighAccuracy:false,timeout:10000,maximumAge:300000});
   }
@@ -4403,7 +4415,13 @@
     return body;
   }
   var LAST_ACCT_Q=null;
+  // On the injectables side the same sort counts brands, not machines.
+  function sortLabel(){
+    var o=el('acctSort') && el('acctSort').querySelector('option[value="devices"]');
+    if(o) o.textContent=isInj()?'Most brands':'Most equipment';
+  }
   function loadAccounts(){
+    sortLabel();
     loadSignals();
     // Switching to or from "Active on social" does not change what the server
     // returns, so repaint what is here instead of fetching it again.
@@ -4847,6 +4865,10 @@
       byKey[k].rows.push(a); n++;
     });
     chains.forEach(function(c){ c.name=chainName(c); });
+    // Biggest groups first: total locations, then how many are in this territory.
+    chains.sort(function(a,b){
+      return (b.total-a.total) || (b.rows.length-a.rows.length) || (a.name<b.name?-1:1);
+    });
     return {singles:singles, chains:chains, chainClinics:n};
   }
   // "Dermapure Ottawa Downtown" + "Dermapure Newmarket" -> "Dermapure".
@@ -4944,7 +4966,7 @@
       var has={}; (x.clinic_ids||[]).forEach(function(id){ has[id]=1; });
       var yes=br.filter(function(b){ return has[b.clinic_id]; }), no=br.filter(function(b){ return !has[b.clinic_id]; });
       var pct=total?Math.round(100*yes.length/total):0;
-      function list(a){ return a.length ? '<ul>'+a.map(function(b){ return '<li>'+esc(label(b))+'</li>'; }).join('')+'</ul>' : '<ul><li>None</li></ul>'; }
+      function list(a){ return a.length ? '<ul>'+a.map(function(b){ return '<li><a data-goto="'+esc(b.clinic_id)+'">'+esc(label(b))+'</a></li>'; }).join('')+'</ul>' : '<ul><li>None</li></ul>'; }
       return '<div class="gp-dev" data-i="'+i+'"><button type="button" aria-expanded="false">'+name+
         '<span class="bar"><i style="width:'+pct+'%"></i></span><span class="nn">'+yes.length+' / '+total+'</span></button>'+
         '<div class="who"><div><b>Has it \u00b7 '+yes.length+'</b>'+list(yes)+'</div>'+
@@ -4959,13 +4981,59 @@
         '<div class="gp-h">Equipment'+(dv.length?' \u00b7 '+dv.length:'')+'</div>'+
         (dv.length ? rows : '<p class="gp-note">No equipment identified yet.</p>')+
         '<div class="gp-h">Locations</div>'+
-        br.map(function(b){ return '<div class="gp-br"><span>'+esc(b.name)+'</span><span>'+esc(place(b))+'</span></div>'; }).join('')+
+        br.map(function(b){
+          var nd=(b.devices||[]).length;
+          return '<div class="gp-loc" data-cid="'+esc(b.clinic_id)+'"><button type="button" class="gp-br" aria-expanded="false">'+
+            '<span class="lt">'+esc(b.name)+'<small>'+(nd?nd+(nd===1?' device':' devices'):'No equipment identified')+'</small></span>'+
+            '<span class="lp">'+esc(place(b))+'<i>&rsaquo;</i></span></button><div class="gp-card"></div></div>';
+        }).join('')+
       '</div>';
     p.querySelector('.gp-x').addEventListener('click',closeGroup);
     Array.prototype.forEach.call(p.querySelectorAll('.gp-dev:not(.flat) > button'),function(b){
       b.addEventListener('click',function(){
         var row=b.parentNode, on=!row.classList.contains('open');
         row.classList.toggle('open',on); b.setAttribute('aria-expanded',on?'true':'false');
+      });
+    });
+    // A location opens its full clinic card in place. The territory's own row is
+    // used when it is loaded; a location outside the territory is built from the
+    // group data so every location can be opened.
+    function cardFor(b){
+      var a=null;
+      for(var i=0;i<ACCT_ALL.length;i++){ if(ACCT_ALL[i].clinic_id===b.clinic_id){ a=ACCT_ALL[i]; break; } }
+      if(!a){
+        var dist=(j.owner_type==='distributor');
+        a=Object.assign({}, b, {
+          devices:(b.devices||[]).map(function(x){
+            var who=String((dist?x.distributor:x.manufacturer)||'').toLowerCase();
+            return Object.assign({}, x, {is_ours: !!j.owner_name && who===String(j.owner_name).toLowerCase()});
+          })
+        });
+      }
+      // No group pill inside the group's own view.
+      return acctCard(Object.assign({}, a, {group_brand:null, group_locations:null, group_name:null}));
+    }
+    function openLoc(box, scroll){
+      var cb=box.querySelector('.gp-card'), btn=box.querySelector('.gp-br');
+      if(!cb.firstChild){
+        var b=byId[box.getAttribute('data-cid')]; if(!b) return;
+        cb.innerHTML=cardFor(b);
+        wireSaveButtons(cb); bindEvidence(cb); bindFlags(cb);
+      }
+      box.classList.add('open'); btn.setAttribute('aria-expanded','true');
+      if(scroll) box.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+    Array.prototype.forEach.call(p.querySelectorAll('.gp-loc'),function(box){
+      box.querySelector('.gp-br').addEventListener('click',function(){
+        if(box.classList.contains('open')){ box.classList.remove('open'); this.setAttribute('aria-expanded','false'); }
+        else openLoc(box, false);
+      });
+    });
+    Array.prototype.forEach.call(p.querySelectorAll('[data-goto]'),function(a){
+      a.addEventListener('click',function(e){
+        e.preventDefault();
+        var box=p.querySelector('.gp-loc[data-cid="'+a.getAttribute('data-goto')+'"]');
+        if(box) openLoc(box, true);
       });
     });
   }
