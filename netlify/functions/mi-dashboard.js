@@ -542,6 +542,19 @@ exports.handler = async (event) => {
         return json(200, { accounts: data || [] });
       }
 
+      // One named group (Dermapure, Victoria Park, VOS...): its locations and
+      // which devices each location has. Owner name comes back so the page can
+      // mark the tenant's own devices without a second request.
+      case 'group': {
+        const gid = parseInt(body.group_id, 10);
+        if (!gid) return json(400, { error: 'group_id required' });
+        const { data, error } = await supabase.rpc('mi_group_detail', {
+          p_group_id: gid, p_mi_segment: seg.p_mi_segment
+        });
+        if (error) throw error;
+        return json(200, { detail: data || null, owner_type: me.owner_type, owner_name: me.owner_name });
+      }
+
       // ⭐ Counts beside each option in the segment dropdown. Its own action so
       // it can be re-fetched when the category changes without re-running the
       // 500-row accounts query.
