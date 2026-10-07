@@ -33,12 +33,21 @@ function slugifyModel(m) {
 // in device_categories. Enrich here rather than in the browser, so the client
 // stays dumb and the two directories cannot drift apart.
 let CATEGORY_META = null;
+
+// ── INJECTABLES ARE NOT TECHNOLOGY (same rule as skinday.ca) ───────────────
+// Injectable products sit in device_reference beside the machines because the
+// crawler and the clinic_devices join are shared. To a patient they are a
+// product a clinic offers, not equipment it owns, so they get their own filter
+// and their own block in the profile. device_categories.segment is the one
+// dividing line, so new injectable categories need no change here.
+const INJECTABLE_SEGMENT = 'injectables';
+const isInjCategory = (meta, c) => ((meta || {})[c] || {}).segment === INJECTABLE_SEGMENT;
 async function loadCategoryMeta(supabase) {
   if (CATEGORY_META) return CATEGORY_META;
   try {
     const { data, error } = await supabase
       .from('device_categories')
-      .select('category, label_en, sort_order, group_key, group_label, group_order');
+      .select('category, label_en, sort_order, group_key, group_label, group_order, segment');
     if (error) throw new Error(error.message);
     CATEGORY_META = {};
     (data || []).forEach(r => { CATEGORY_META[r.category] = r; });
@@ -91,7 +100,8 @@ async function fetchDevicesFor(supabase, clinicIds) {
         category_label: ((meta || {})[d.category] || {}).label_en
                         || String(d.category || '').replace(/_/g, ' '),
         status: r.status,
-        slug: slugifyModel(d.model)
+        slug: slugifyModel(d.model),
+        injectable: isInjCategory(meta, d.category)
       });
     });
     Object.keys(map).forEach(k => map[k].sort((a, b) => a.model.localeCompare(b.model)));
@@ -275,6 +285,7 @@ exports.handler = async (event) => {
       });
 
       const modelsByCategory = {};
+      const injModelsByCategory = {};
       modelsOut
         .slice()
         // Rank by FAMILY total so a generation never floats away from its
@@ -289,14 +300,17 @@ exports.handler = async (event) => {
           return (b.clinics || 0) - (a.clinics || 0);
         })
         .forEach(m => {
-          (modelsByCategory[m.category] = modelsByCategory[m.category] || []).push(m);
+          const into = isInjCategory(meta, m.category) ? injModelsByCategory : modelsByCategory;
+          (into[m.category] = into[m.category] || []).push(m);
         });
 
       const groupMap = {};
+      const injGroupMap = {};
       (raw.categories || []).forEach(c => {
         const m  = catMeta(c.category);
         const gk = m.group_key || '_other';
-        const g  = (groupMap[gk] = groupMap[gk] || {
+        const gm = isInjCategory(meta, c.category) ? injGroupMap : groupMap;
+        const g  = (gm[gk] = gm[gk] || {
           key: gk,
           label: m.group_label || 'Other',
           order: m.group_order == null ? 900 : m.group_order,
@@ -347,6 +361,23 @@ exports.handler = async (event) => {
         if (kept.length) pubByCat[c] = kept;
       });
       const pubModels = [].concat(...Object.values(pubByCat)).sort(alpha);
+      // Injectables keep no minimum, as on skinday.ca.
+      const pubInjByCat = {};
+      Object.keys(injModelsByCategory).forEach(c => {
+        const kept = injModelsByCategory[c].filter(m => (m.clinics || 0) >= 1).sort(alpha).map(cleanModel);
+        if (kept.length) pubInjByCat[c] = kept;
+      });
+      const pubInjModels = [].concat(...Object.values(pubInjByCat)).sort(alpha);
+      const shapeGroupsOut = (gm, byCat) => Object.values(gm)
+        .map(g => ({
+          key: g.key, label: g.label, order: g.order,
+          categories: g.categories
+            .filter(c => (byCat[c.category] || []).length)
+            .sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label))
+            .map(c => ({ category: c.category, label: c.label, sort_order: c.sort_order }))
+        }))
+        .filter(g => g.categories.length)
+        .sort((a, b) => (a.order - b.order) || a.label.localeCompare(b.label));
 
       const out = {
         has_devices: (raw.clinics_with_devices || 0) > 0,
@@ -359,7 +390,10 @@ exports.handler = async (event) => {
             categories: g.categories
               .sort((a, b) => (a.sort_order - b.sort_order) || a.label.localeCompare(b.label))
               .map(c => ({ category: c.category, label: c.label, sort_order: c.sort_order }))
-          }))
+          })),
+        inj_groups: shapeGroupsOut(injGroupMap, pubInjByCat),
+        inj_models: pubInjModels,
+        inj_models_by_category: pubInjByCat
       };
 
       return {
@@ -481,6 +515,11 @@ exports.handler = async (event) => {
     const deviceSlug = (params.device || '').trim().toLowerCase();
     const deviceCat  = (params.devicecat || '').trim();
     const deviceGroup = (params.devicegroup || '').trim();
+    // Injectables get their own params (?inj= / ?injcat= / ?injgroup=) so the
+    // two filters combine instead of one silently clearing the other.
+    const injSlug  = (params.inj || '').trim().toLowerCase();
+    const injCat   = (params.injcat || '').trim();
+    const injGroup = (params.injgroup || '').trim();
     const from          = page * PAGE_SIZE;
     const needed        = from + PAGE_SIZE;
 
@@ -578,8 +617,9 @@ exports.handler = async (event) => {
 
     // The device filter and the priced-id list do not depend on each other,
     // so they are fetched side by side.
-    const [deviceIdSet, pricedIdsRes] = await Promise.all([
+    const [eqpIdSet, injIdSet, pricedIdsRes] = await Promise.all([
       resolveDeviceClinicIds(supabase, deviceSlug, deviceCat, deviceGroup),
+      resolveDeviceClinicIds(supabase, injSlug, injCat, injGroup),
       supabase
         .from('clinic_prices')
         .select('clinic_id')
@@ -591,6 +631,10 @@ exports.handler = async (event) => {
       console.error('Supabase error (priced ids):', pricedIdsRes.error);
       return { statusCode: 500, body: JSON.stringify({ error: pricedIdsRes.error.message }) };
     }
+    // Both filters on: clinics in BOTH sets.
+    const deviceIdSet = (eqpIdSet && injIdSet)
+      ? new Set([...eqpIdSet].filter(id => injIdSet.has(id)))
+      : (eqpIdSet || injIdSet);
     const pricedIdSet  = new Set((pricedIdsRes.data || []).map(r => String(r.clinic_id)));
     const pricedIdList = [...pricedIdSet];
     const hasPricedIds = pricedIdList.length > 0;
