@@ -373,6 +373,10 @@
       white-space: nowrap;
     }
     .dev-chip-more { background: transparent; border-style: dashed; color: var(--muted); }
+    /* Injectables get their own row under the machines, tinted so a product
+       reads as a different kind of thing from equipment. */
+    .card-injectables { margin-top: 0.25rem; }
+    .inj-chip { background: #E3E9F2; border-color: rgba(31,58,99,0.35); color: var(--rose-m); font-weight: 600; }
 
     /* Devices in the modal, grouped by category — the modal has room for the
        structure the card does not. */
@@ -396,6 +400,9 @@
     }
     .cm-dev-chip:hover { background: var(--rose-bg, var(--warm)); border-color: var(--rose-m, var(--rose)); }
     .cm-dev-chip .mfr { color: var(--muted); font-weight: 400; font-size: 0.66rem; }
+    .cm-inj-chip { background: #E3E9F2; border-color: rgba(31,58,99,0.35); color: var(--rose-m); font-weight: 600; }
+    .cm-inj-chip:hover { background: var(--rose-m); border-color: var(--rose-m); color: #fff; }
+    .cm-inj-chip:hover .mfr { color: #fff; opacity: .8; }
     .cm-dev-chip .vtag { color: var(--green, #3D7A55); font-size: 0.6rem; letter-spacing: 0.04em; }
     .cm-dev-note { font-size: 0.66rem; color: var(--dim, var(--muted)); line-height: 1.5; margin-top: 0.5rem; }
 
@@ -943,6 +950,19 @@
       </div>
     </div>
     </div>
+    <div class="filter-group" id="injGroupWrap" style="display:none;">
+    <span class="filter-label">Injectables</span>
+    <div class="tech-picker" id="injPicker">
+      <button type="button" class="tech-btn" id="injBtn" onclick="toggleInjPanel()" aria-haspopup="listbox" aria-expanded="false">
+        <span id="injBtnLabel">Any injectable</span>
+        <span class="tech-caret" aria-hidden="true">&#8964;</span>
+      </button>
+      <div class="tech-panel" id="injPanel" role="listbox" aria-label="Injectables">
+        <input type="text" class="tech-search" id="injSearch" placeholder="Search a product" oninput="renderInjPanel()" autocomplete="off" />
+        <div class="tech-scroll" id="injScroll"></div>
+      </div>
+    </div>
+    </div>
     <div class="filter-group">
     <span class="filter-label">Sort</span>
     <select class="sort-select" onchange="sortCards(this.value)" id="mainSortSelect">
@@ -1329,6 +1349,11 @@ let currentDevice      = null;   // model slug
 let currentDeviceCat   = null;   // category key
 let currentDeviceGroup = null;   // parent group key
 let deviceFacets       = null;
+// Injectables: own state and own params (?inj= / ?injcat= / ?injgroup=), never
+// shared with Technology, so the two filters combine.
+let currentInj      = null;
+let currentInjCat   = null;
+let currentInjGroup = null;
 
 
 // Model and manufacturer strings come from a crawl of third-party websites, so
@@ -1358,10 +1383,13 @@ async function loadDeviceFacets() {
       + '&state=' + encodeURIComponent(STATE));
     if (!res.ok) return;
     deviceFacets = await res.json();
+    renderInjPanel();
+    syncInjButton();
     // ⭐ No devices read in this state yet: hide the control entirely rather
     // than offer a dropdown where every option returns nothing. Hides the label
     // with it, and leaves the rest of the filter bar untouched.
-    if (!deviceFacets.has_devices) {
+    const hasEquipment = (deviceFacets.groups || []).some(g => (g.categories || []).length);
+    if (!deviceFacets.has_devices || !hasEquipment) {
       const grp = document.getElementById('techGroup');
       if (grp) grp.style.display = 'none';
       return;
@@ -1508,17 +1536,19 @@ function updateActiveFilterLine() {
   if (!line || !text) return;
 
   const hasDevice = !!(currentDevice || currentDeviceCat || currentDeviceGroup);
-  if (!hasDevice) { line.style.display = 'none'; return; }
+  const hasInj    = !!(currentInj || currentInjCat || currentInjGroup);
+  if (!hasDevice && !hasInj) { line.style.display = 'none'; return; }
 
   const n = currentTotal || 0;
   const clinicWord = n === 1 ? 'clinic' : 'clinics';
+  const what = [hasDevice ? activeDeviceLabel() : '', hasInj ? injLabel() : ''].filter(Boolean).join(' and ');
 
   if (n > 0) {
-    text.textContent = `${n.toLocaleString()} ${clinicWord} listing ${activeDeviceLabel()}`;
+    text.textContent = `${n.toLocaleString()} ${clinicWord} listing ${what}`;
   } else {
-    // Name the technology rather than the generic "no clinics found": a filtered
+    // Name the filter rather than the generic "no clinics found": a filtered
     // result is STRICT, and the patient should see which filter emptied it.
-    text.textContent = `No clinics listing ${activeDeviceLabel()} in this view. Try another area.`;
+    text.textContent = `No clinics listing ${what} in this view. Try another area.`;
   }
   line.style.display = '';
 }
@@ -1526,8 +1556,11 @@ function updateActiveFilterLine() {
 // Clears whichever technology filter is on and returns to the full list.
 function clearAllFilters() {
   currentDevice = null; currentDeviceCat = null; currentDeviceGroup = null;
+  currentInj = null; currentInjCat = null; currentInjGroup = null;
   syncTechButton();
+  syncInjButton();
   syncDeviceUrl();
+  syncInjUrl();
   fetchPage(0, false);
 }
 
@@ -1539,6 +1572,127 @@ function applyDevice(val) {
   syncTechButton();
   syncDeviceUrl();
   toggleTechPanel(false);
+  fetchPage(0, false);
+}
+
+// ── INJECTABLES FILTER (same as skinday.ca) ───────────────────────────────
+// Reads the inj_* half of the facets payload. The control hides when the state
+// has no injectables listed yet, rather than offering an empty dropdown.
+function injHasOptions() {
+  return !!(deviceFacets && (deviceFacets.inj_groups || []).length);
+}
+
+function toggleInjPanel(force) {
+  const panel = document.getElementById('injPanel');
+  const btn   = document.getElementById('injBtn');
+  if (!panel || !btn) return;
+  const open = (force !== undefined) ? force : !panel.classList.contains('open');
+  panel.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) {
+    renderInjPanel();
+    const q = document.getElementById('injSearch');
+    if (q) { q.value = ''; setTimeout(() => q.focus(), 30); }
+  }
+}
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('injPicker');
+  if (wrap && !wrap.contains(e.target)) toggleInjPanel(false);
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleInjPanel(false); });
+
+function renderInjPanel() {
+  const wrap = document.getElementById('injGroupWrap');
+  const box  = document.getElementById('injScroll');
+  if (!box || !deviceFacets) return;
+  if (wrap) wrap.style.display = (injHasOptions() || currentInj || currentInjCat || currentInjGroup) ? '' : 'none';
+  if (!injHasOptions()) return;
+
+  const q = (document.getElementById('injSearch') || {}).value || '';
+  const term = q.trim().toLowerCase();
+  const groups = deviceFacets.inj_groups || [];
+  const byCat  = deviceFacets.inj_models_by_category || {};
+
+  let html = '<button type="button" class="tech-any" onclick="applyInj(\'\')">Any injectable</button>';
+  let matches = 0;
+
+  groups.forEach(g => {
+    const catBlocks = (g.categories || []).map(c => {
+      const models = (byCat[c.category] || []);
+      const shown = term ? models.filter(m => m.model.toLowerCase().includes(term)) : models;
+      const catMatches = !term
+        || c.label.toLowerCase().includes(term)
+        || g.label.toLowerCase().includes(term)
+        || shown.length > 0;
+      if (!catMatches) return '';
+      const modelRows = shown.map(m => {
+        matches++;
+        const cls = 'tech-model' + (currentInj === m.slug ? ' sel' : '');
+        return `<button type="button" class="${cls}" onclick="applyInj('model:${m.slug}')">${devEsc(usModel(m.model))}</button>`;
+      }).join('');
+      return `<button type="button" class="tech-sub ${currentInjCat === c.category ? 'sel' : ''}" onclick="applyInj('cat:${c.category}')">${devEsc(c.label)}</button>${modelRows}`;
+    }).join('');
+
+    const groupMatches = !term || g.label.toLowerCase().includes(term) || catBlocks.length > 0;
+    if (!groupMatches || !catBlocks) return;
+    // A group heading over a single category would just repeat it.
+    if ((g.categories || []).length < 2) { html += catBlocks; return; }
+    html += `<button type="button" class="tech-group ${currentInjGroup === g.key ? 'sel' : ''}" onclick="applyInj('group:${g.key}')">${devEsc(g.label)}</button>${catBlocks}`;
+  });
+
+  if (term && matches === 0) html += '<div class="tech-empty">Nothing matches that.</div>';
+  box.innerHTML = html;
+}
+
+function injLabel() {
+  if (!deviceFacets) return currentInj || currentInjCat || currentInjGroup || 'Any injectable';
+  if (currentInj) {
+    const m = (deviceFacets.inj_models || []).find(x => x.slug === currentInj);
+    return m ? usModel(m.model) : currentInj;
+  }
+  if (currentInjCat) {
+    for (const g of (deviceFacets.inj_groups || [])) {
+      const c = (g.categories || []).find(x => x.category === currentInjCat);
+      if (c) return c.label;
+    }
+    return currentInjCat;
+  }
+  if (currentInjGroup) {
+    const g = (deviceFacets.inj_groups || []).find(x => x.key === currentInjGroup);
+    return g ? g.label : currentInjGroup;
+  }
+  return 'Any injectable';
+}
+
+function syncInjButton() {
+  const wrap = document.getElementById('injGroupWrap');
+  const btn  = document.getElementById('injBtn');
+  const lab  = document.getElementById('injBtnLabel');
+  if (!btn || !lab) return;
+  const active = !!(currentInj || currentInjCat || currentInjGroup);
+  // A deep link into ?inj= shows the control even before the facets arrive.
+  if (wrap) wrap.style.display = (injHasOptions() || active) ? '' : 'none';
+  lab.textContent = injLabel();
+  btn.classList.toggle('on', active);
+}
+
+function syncInjUrl() {
+  const params = new URLSearchParams(window.location.search);
+  if (currentInj) params.set('inj', currentInj); else params.delete('inj');
+  if (currentInjCat) params.set('injcat', currentInjCat); else params.delete('injcat');
+  if (currentInjGroup) params.set('injgroup', currentInjGroup); else params.delete('injgroup');
+  const qs = params.toString();
+  window.history.replaceState(null, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
+}
+
+function applyInj(val) {
+  currentInj = null; currentInjCat = null; currentInjGroup = null;
+  if (val && val.indexOf('group:') === 0)      currentInjGroup = val.slice(6);
+  else if (val && val.indexOf('cat:') === 0)   currentInjCat   = val.slice(4);
+  else if (val && val.indexOf('model:') === 0) currentInj      = val.slice(6);
+  syncInjButton();
+  syncInjUrl();
+  toggleInjPanel(false);
   fetchPage(0, false);
 }
 
@@ -1654,6 +1808,9 @@ function buildApiUrl(page) {
   if (currentDevice)      params.set('device', currentDevice);
   if (currentDeviceCat)   params.set('devicecat', currentDeviceCat);
   if (currentDeviceGroup) params.set('devicegroup', currentDeviceGroup);
+  if (currentInj)         params.set('inj', currentInj);
+  if (currentInjCat)      params.set('injcat', currentInjCat);
+  if (currentInjGroup)    params.set('injgroup', currentInjGroup);
   return '/api/get-clinics?' + params.toString();
 }
 
@@ -1743,14 +1900,21 @@ function renderPageCards(clinicsData, append) {
     // manufacturer — the card's job is "does this clinic have the machine I
     // searched for". Nothing renders when there are none, because most clinics
     // have not had their site read yet and an empty row would read as a finding.
-    const devs = Array.isArray(c.devices) ? c.devices : [];
-    const devShown = devs.slice(0, 3);
-    const devOverflow = devs.length - devShown.length;
-    const devChipRow = devs.length
-      ? `<div class="card-devices" aria-label="Technology listed by this clinic">${
-          devShown.map(d => `<a class="dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}" onclick="event.stopPropagation()">${devEsc(usModel(d.model))}</a>`).join('')
-        }${devOverflow > 0 ? `<span class="dev-chip dev-chip-more">+${devOverflow}</span>` : ''}</div>`
-      : '';
+    // Injectables come down the same array and are split out by the server's
+    // injectable flag. Each kind gets its own row and its own +N counter.
+    const allDevs = Array.isArray(c.devices) ? c.devices : [];
+    const devs = allDevs.filter(d => !d.injectable);
+    const injs = allDevs.filter(d => d.injectable);
+    const chipRow = (list, cls, param, aria, extra) => {
+      if (!list.length) return '';
+      const shown = list.slice(0, 3);
+      const over = list.length - shown.length;
+      return `<div class="card-devices${extra}" aria-label="${aria}">${
+        shown.map(d => `<a class="dev-chip${cls}" href="/us/${STATE}?${param}=${devSlug(d.model)}" onclick="event.stopPropagation()">${devEsc(usModel(d.model))}</a>`).join('')
+      }${over > 0 ? `<span class="dev-chip dev-chip-more">+${over}</span>` : ''}</div>`;
+    };
+    const devChipRow = chipRow(devs, '', 'device', 'Technology listed by this clinic', '')
+                     + chipRow(injs, ' inj-chip', 'inj', 'Injectables listed by this clinic', ' card-injectables');
 
     const profileHref = (() => {
       // Use the stored slug. It is globally unique and carries the city suffix that
@@ -2299,30 +2463,38 @@ function cmBuildContent(c) {
 
     // Technology, grouped by category. The modal has room for the structure
     // the card does not.
+    // Injectables and Technology are separate sections: a product the clinic
+    // offers is not equipment it owns.
     (function(){
-      const cmDevs = Array.isArray(c.devices) ? c.devices : [];
-      if (!cmDevs.length) return '';
-      const order = [];
-      const seen = {};
-      cmDevs.forEach(d => {
-        const key = d.category_label || d.category || 'Other';
-        if (!seen[key]) { seen[key] = []; order.push(key); }
-        seen[key].push(d);
-      });
-      const body = order.map(key => `
+      const all = Array.isArray(c.devices) ? c.devices : [];
+      const block = (list, title, param, chipCls, withNote) => {
+        if (!list.length) return '';
+        const order = [];
+        const seen = {};
+        list.forEach(d => {
+          const key = d.category_label || d.category || 'Other';
+          if (!seen[key]) { seen[key] = []; order.push(key); }
+          seen[key].push(d);
+        });
+        const body = order.map(key => `
         <div>
           <div class="cm-dev-group-label">${devEsc(key)}</div>
           <div class="cm-dev-chips">${seen[key].map(d =>
-            `<a class="cm-dev-chip" href="/us/${STATE}?device=${devSlug(d.model)}">${devEsc(usModel(d.model))}${
+            `<a class="cm-dev-chip${chipCls}" href="/us/${STATE}?${param}=${devSlug(d.model)}">${devEsc(usModel(d.model))}${
               d.manufacturer ? `<span class="mfr">${devEsc(d.manufacturer)}</span>` : ''
             }${d.status === 'verified' ? '<span class="vtag">\u2713</span>' : ''}</a>`
           ).join('')}</div>
         </div>`).join('');
-      return `<div class="cm-sec">`
-           + `<div class="cm-devices-label">Technology</div>`
-           + `<div class="cm-devices-list">${body}</div>`
-           + `<div class="cm-dev-note">Listed from this clinic&rsquo;s own website. A check mark means the clinic confirmed it with us.</div>`
-           + `</div>`;
+        return `<div class="cm-sec">`
+             + `<div class="cm-devices-label">${title}</div>`
+             + `<div class="cm-devices-list">${body}</div>`
+             + (withNote ? `<div class="cm-dev-note">Listed from this clinic&rsquo;s own website. A check mark means the clinic confirmed it with us.</div>` : '')
+             + `</div>`;
+      };
+      const injs = all.filter(d => d.injectable);
+      const devs = all.filter(d => !d.injectable);
+      return block(injs, 'Injectables', 'inj', ' cm-inj-chip', !devs.length)
+           + block(devs, 'Technology', 'device', '', true);
     })(),
 
     // Practitioners. Filled by the async refresh; renders nothing until then.
@@ -3171,7 +3343,11 @@ function unhighlightPinById(cid) {
     currentDevice      = (qp.get('device') || '').trim() || null;
     currentDeviceCat   = (qp.get('devicecat') || '').trim() || null;
     currentDeviceGroup = (qp.get('devicegroup') || '').trim() || null;
+    currentInj         = (qp.get('inj') || '').trim() || null;
+    currentInjCat      = (qp.get('injcat') || '').trim() || null;
+    currentInjGroup    = (qp.get('injgroup') || '').trim() || null;
     syncTechButton();
+    syncInjButton();
   }
   loadDeviceFacets();   // non-blocking on purpose: the grid never waits for it
 
