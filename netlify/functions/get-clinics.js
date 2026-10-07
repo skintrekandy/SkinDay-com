@@ -78,13 +78,13 @@ const rowShows = (row, published) =>
 // A device fetch NEVER throws. If it fails the directory renders exactly as it
 // did before devices existed, rather than the whole page going down over a
 // secondary feature.
-async function fetchDevicesFor(supabase, clinicIds) {
+async function fetchDevicesFor(supabase, clinicIds, country) {
   if (!clinicIds || !clinicIds.length) return {};
   try {
     const [meta, published] = await Promise.all([loadCategoryMeta(supabase), publishedClinicIds(supabase)]);
     const { data, error } = await supabase
       .from('clinic_devices')
-      .select('clinic_id, status, declared_at, device_reference!inner(id, model, manufacturer, category, active)')
+      .select('clinic_id, status, declared_at, device_reference!inner(id, model, manufacturer, category, active, markets)')
       .in('clinic_id', clinicIds)
       .eq('device_reference.active', true);
     if (error) throw new Error(error.message);
@@ -92,6 +92,9 @@ async function fetchDevicesFor(supabase, clinicIds) {
     (data || []).forEach(r => {
       const d = r.device_reference;
       if (!d || !rowShows(r, published)) return;
+      // A product not approved in this country (device_reference.markets) is
+      // never shown here, whatever row exists. NULL markets = unrestricted.
+      if (country && Array.isArray(d.markets) && !d.markets.includes(country)) return;
       const k = String(r.clinic_id);
       (map[k] = map[k] || []).push({
         model: d.model,
@@ -692,7 +695,7 @@ exports.handler = async (event) => {
     // Devices and prices for this page are independent, so fetch them together.
     let pricesMap = {};
     const [devicesMap, pricesRes] = await Promise.all([
-      fetchDevicesFor(supabase, clinicIds),
+      fetchDevicesFor(supabase, clinicIds, country),
       clinicIds.length > 0
         ? supabase
             .from('clinic_prices')

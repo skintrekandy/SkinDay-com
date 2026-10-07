@@ -30,10 +30,7 @@ const PAGE_CONCURRENCY = 4;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-// 2026-10-05 (M27): bumped for the M26 time-limit fix and cleanHome(). Both
-// change what a given host yields, so the October Canada re-scrape is labelled
-// a backfill run and its newly found devices stay out of Landscape's +N.
-const MATCHER_VERSION = '2026-10-05-time-limit-fix';
+const MATCHER_VERSION = '2026-08-05-seo-landing-page';
 
 // Per-device, per-run cap on auto-approval. Above this, the device stops
 // publishing unseen for the rest of the run and the rest queues for review.
@@ -1850,7 +1847,7 @@ async function doCrawl(supabase, body) {
 
   let claimQuery = supabase
     .from('crawl_device_queue')
-    .select('id, host, clinic_ids, home_url, attempts');
+    .select('id, host, clinic_ids, home_url, attempts, country');
 
   if (oneHost) {
     // Deliberately ignores status and `excluded`: the whole point is to inspect
@@ -1944,7 +1941,7 @@ async function doCrawl(supabase, body) {
       .update(runningMark)
       .in('id', want)
       .eq(Q_STATUS, 'pending')
-      .select('id, host, clinic_ids, home_url, attempts');
+      .select('id, host, clinic_ids, home_url, attempts, country');
     if (wonErr) throw wonErr;
     claimable = (won || []).sort((a, b) => a.id - b.id);
     if (!claimable.length) {
@@ -1957,7 +1954,7 @@ async function doCrawl(supabase, body) {
   // update and never a redeploy.
   let refQuery = supabase
     .from('device_reference')
-    .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active')
+    .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active, markets')
     .eq('active', true);
   // ⭐ The whole reason a biostim pass is safe to run over already-crawled
   // hosts: it can only ever match these rows, so it cannot touch, refresh or
@@ -1988,6 +1985,21 @@ async function doCrawl(supabase, body) {
   const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
   const matcher = buildMatcher(devices || []);
+  // ⭐ COUNTRY-SCOPED MATCHING (2026-10-06). device_reference.markets lists the
+  // countries a product is approved in (Health Canada vs FDA). NULL means not
+  // restricted, which is every machine. A host is only ever matched against
+  // products approved in its own country, so a Canadian brand (Nuceiva,
+  // Belkyra, HArmonyCa) can never be written for a US clinic, or the reverse.
+  const matcherByCountry = {};
+  const matcherFor = (rowCountry) => {
+    const k = String(rowCountry || '').toLowerCase().trim();
+    if (!k) return matcher;
+    if (!matcherByCountry[k]) {
+      matcherByCountry[k] = buildMatcher((devices || []).filter(d =>
+        !Array.isArray(d.markets) || d.markets.includes(k)));
+    }
+    return matcherByCountry[k];
+  };
 
   // ⭐⭐⭐ THE MONTH-OVER-MONTH GUARD. Written once per run, on the first
   // invocation only (`reference_count is null`), so the rest of the loop costs
@@ -2064,7 +2076,7 @@ async function doCrawl(supabase, body) {
     }
     let out;
     try {
-      out = await crawlHost(row, matcher);
+      out = await crawlHost(row, matcherFor(row.country));
     } catch (e) {
       out = { status: 'error', pagesTried: 0, lastError: String((e && e.message) || e), matches: [], unknowns: [] };
     }
