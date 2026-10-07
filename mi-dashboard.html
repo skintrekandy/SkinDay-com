@@ -563,6 +563,62 @@
   .pill.locs { font-family:var(--font-mono); font-size:10px; letter-spacing:.03em;
     background:var(--surface-2); border:1px solid var(--line-2); color:var(--muted); font-weight:500;
     border-radius:100px; padding:3px 9px; white-space:nowrap; }
+  button.pill.grp { cursor:pointer; color:var(--accent-strong); border-color:var(--accent-soft); background:var(--surface); }
+  button.pill.grp:hover { background:var(--accent-soft); }
+
+  /* Group view: a named group's locations and which devices each one has.
+     A drawer on desktop, a full-height sheet on a phone. */
+  .chainrow { display:flex; align-items:center; }
+  .chainrow .chainhead { flex:1; min-width:0; }
+  .grpopen { font:inherit; font-size:12.5px; font-weight:600; color:var(--accent-strong); background:none;
+    border:1px solid var(--line); border-radius:100px; padding:5px 12px; margin-right:14px; cursor:pointer; white-space:nowrap; }
+  .grpopen:hover { background:var(--accent-soft); border-color:var(--accent-soft); }
+  .grp-shade { display:none; position:fixed; inset:0; background:rgba(20,24,29,.38); z-index:215; }
+  .grp-shade.open { display:block; }
+  .grp-panel { position:fixed; top:0; right:0; bottom:0; width:min(620px,100%); z-index:220; background:var(--surface);
+    box-shadow:-10px 0 40px rgba(20,24,29,.16); overflow-y:auto; transform:translateX(102%); transition:transform .22s ease; }
+  .grp-panel.open { transform:none; }
+  .grp-panel:not(.open) { visibility:hidden; transition:transform .22s ease, visibility 0s .22s; }
+  .grp-panel .gp-top { position:sticky; top:0; background:var(--surface); border-bottom:1px solid var(--line-2); padding:18px 22px 14px; z-index:1; }
+  .grp-panel .gp-top h3 { margin:0; font-size:20px; font-weight:600; padding-right:40px; }
+  .grp-panel .gp-sub { margin-top:4px; font-family:var(--font-mono); font-size:11.5px; color:var(--muted); }
+  .grp-panel .gp-x { position:absolute; top:14px; right:14px; width:34px; height:34px; border-radius:50%; border:0;
+    background:var(--surface-2); font-size:22px; line-height:1; color:var(--ink-2); cursor:pointer; }
+  .grp-panel .gp-body { padding:6px 22px 28px; }
+  .grp-panel .gp-note { margin:12px 0 4px; font-size:13.5px; color:var(--muted); }
+  .grp-panel .gp-h { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:20px 0 6px; }
+  .gp-dev { border-bottom:1px solid var(--line-2); }
+  .gp-dev > button { width:100%; display:grid; grid-template-columns:minmax(0,1fr) 120px 56px; align-items:center; gap:12px;
+    padding:11px 2px; background:none; border:0; font:inherit; color:inherit; text-align:left; cursor:pointer; }
+  .gp-dev > button:hover { background:var(--surface-2); }
+  .gp-dev.flat > button { grid-template-columns:minmax(0,1fr); cursor:default; }
+  .gp-dev.flat > button:hover { background:none; }
+  .gp-dev .dm { font-size:15px; font-weight:600; }
+  .gp-dev .dm small { display:block; font-weight:400; font-size:12.5px; color:var(--muted); }
+  .gp-dev .dm .yours { display:inline-block; margin-left:6px; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:2px 7px; vertical-align:2px; }
+  .gp-dev .bar { height:6px; border-radius:6px; background:var(--line-2); overflow:hidden; }
+  .gp-dev .bar i { display:block; height:100%; background:var(--accent); border-radius:6px; }
+  .gp-dev .nn { font-family:var(--font-mono); font-size:12px; color:var(--ink-2); text-align:right; }
+  .gp-dev .who { display:none; padding:2px 2px 14px; font-size:13.5px; }
+  .gp-dev.open .who { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .gp-dev .who b { display:block; font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); font-weight:500; margin-bottom:4px; }
+  .gp-dev .who ul { margin:0; padding:0; list-style:none; }
+  .gp-dev .who li { padding:2px 0; color:var(--ink-2); }
+  .gp-dev .who .no li { color:var(--muted); }
+  .gp-br { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--line-2); font-size:14px; }
+  .gp-br span:last-child { color:var(--muted); font-size:12.5px; white-space:nowrap; }
+  @media (max-width:640px){
+    .chainrow { flex-wrap:wrap; }
+    .grpopen { margin:0 12px 10px 34px; }
+    .grp-panel { top:auto; left:0; width:100%; height:92vh; border-radius:18px 18px 0 0; transform:translateY(102%);
+      box-shadow:0 -10px 40px rgba(20,24,29,.18); }
+    .grp-panel .gp-top { padding:16px 16px 12px; border-radius:18px 18px 0 0; }
+    .grp-panel .gp-top h3 { font-size:18px; }
+    .grp-panel .gp-body { padding:4px 16px calc(24px + env(safe-area-inset-bottom)); }
+    .gp-dev > button { grid-template-columns:minmax(0,1fr) 64px 48px; gap:10px; }
+    .gp-dev.open .who { grid-template-columns:1fr; gap:10px; }
+  }
 
   /* Industry pulse: what is being added most, ranked. Deliberately a list and
      not a chart. A rep reads names, and a bar chart of ten devices says less
@@ -1261,6 +1317,8 @@
   <div class="app-shade" id="appShade"></div>
   <div class="app-shade" id="advShade"></div>
   <div class="app-sheet" id="appSheet" role="dialog" aria-modal="true"></div>
+  <div class="grp-shade" id="grpShade"></div>
+  <div class="grp-panel" id="grpPanel" role="dialog" aria-modal="true" aria-label="Group"></div>
 
   <main>
     <button type="button" class="geopill" id="geoPill" aria-haspopup="dialog" aria-controls="geobar">
@@ -4783,7 +4841,8 @@
     var singles=[], chains=[], byKey={}, n=0;
     rows.forEach(function(a){
       if(!(Number(a.group_locations)>=2)){ singles.push(a); return; }
-      var k=hostOf(a.website)||('b:'+(a.group_brand||a.clinic_id));
+      var gb=String(a.group_brand||'');
+      var k=gb.indexOf('grp:')===0 ? gb : (hostOf(a.website)||('b:'+(gb||a.clinic_id)));
       if(!byKey[k]){ byKey[k]={key:k, brand:a.group_brand, total:Number(a.group_locations)||0, rows:[]}; chains.push(byKey[k]); }
       byKey[k].rows.push(a); n++;
     });
@@ -4812,20 +4871,24 @@
     body.innerHTML='<div class="chainlist">'+chains.map(function(c,i){
       var open=!!CHAIN_OPEN[c.key];
       var here=c.rows.length;
+      var gid=c.key.indexOf('grp:')===0 ? c.key.slice(4) : '';
       return '<div class="chain'+(open?' open':'')+'" data-i="'+i+'">'+
+        '<div class="chainrow">'+
         '<button class="chainhead" type="button" aria-expanded="'+(open?'true':'false')+'">'+
           '<span class="lscar" aria-hidden="true">&rsaquo;</span>'+
           '<span class="chname">'+esc(c.name)+'</span>'+
           '<span class="chmeta">'+here.toLocaleString()+(here===1?' location':' locations')+' here'+
             (c.total>here?' · '+c.total.toLocaleString()+' in total':'')+'</span>'+
         '</button>'+
+        (gid?'<button type="button" class="grpopen" data-gid="'+esc(gid)+'">Group view</button>':'')+
+        '</div>'+
         '<div class="chainbody">'+(open?'<div class="acctgrid">'+c.rows.map(acctCard).join('')+'</div>':'')+'</div>'+
       '</div>';
     }).join('')+'</div>';
     wireChainCards(body);
     Array.prototype.forEach.call(body.querySelectorAll('.chainhead'),function(h){
       h.addEventListener('click',function(){
-        var box=h.parentNode, c=chains[Number(box.getAttribute('data-i'))];
+        var box=h.closest('.chain'), c=chains[Number(box.getAttribute('data-i'))];
         var open=!box.classList.contains('open');
         box.classList.toggle('open',open); h.setAttribute('aria-expanded',open?'true':'false');
         if(open){ CHAIN_OPEN[c.key]=1;
@@ -4837,6 +4900,75 @@
     });
   }
   function wireChainCards(root){ wireSaveButtons(root); bindEvidence(root); bindFlags(root); }
+
+  // ---- Group view ----
+  // Opened from a card's group pill or a chain's "Group view" button.
+  var GRP_CACHE={};
+  document.addEventListener('click',function(e){
+    var b=e.target.closest && e.target.closest('[data-gid]');
+    if(b && (b.classList.contains('grp')||b.classList.contains('grpopen'))){ e.preventDefault(); e.stopPropagation(); openGroup(b.getAttribute('data-gid')); return; }
+    if(e.target && e.target.id==='grpShade') closeGroup();
+  }, true);
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape' && el('grpPanel').classList.contains('open')) closeGroup(); });
+  function closeGroup(){
+    el('grpPanel').classList.remove('open'); el('grpShade').classList.remove('open');
+    if(!el('appSheet').classList.contains('open')) document.body.style.overflow='';
+  }
+  function openGroup(gid){
+    var p=el('grpPanel');
+    p.innerHTML='<div class="gp-top"><h3>Loading\u2026</h3><button type="button" class="gp-x" aria-label="Close">&times;</button></div>';
+    p.querySelector('.gp-x').addEventListener('click',closeGroup);
+    p.classList.add('open'); el('grpShade').classList.add('open'); document.body.style.overflow='hidden'; p.scrollTop=0;
+    var key=SIDE+':'+gid;
+    var go=GRP_CACHE[key] ? Promise.resolve(GRP_CACHE[key]) : api('group',{group_id:gid}).then(function(j){ GRP_CACHE[key]=j; return j; });
+    go.then(function(j){ paintGroup(j); })
+      .catch(function(err){
+        p.querySelector('h3').textContent='Could not load this group';
+      });
+  }
+  function paintGroup(j){
+    var d=j.detail||{}, g=d.group||{}, br=d.branches||[], dv=d.devices||[];
+    var total=br.length, perBranch=(g.device_detail!=='group');
+    var mine=(j.owner_type!=='distributor' && j.owner_name) ? String(j.owner_name).toLowerCase() : '';
+    var byId={}; br.forEach(function(b){ byId[b.clinic_id]=b; });
+    function place(b){ return (b.neighbourhood||'')+(b.province?(b.neighbourhood?', ':'')+String(b.province).toUpperCase():''); }
+    function label(b){ return b.name; }
+    var sub=[total.toLocaleString()+(total===1?' location':' locations')];
+    var brands={}; br.forEach(function(b){ if(b.brand && b.brand!==g.name) brands[b.brand]=1; });
+    var nb=Object.keys(brands).length; if(nb>1) sub.push(nb+' brands');
+
+    var rows=dv.map(function(x,i){
+      var yours = mine && String(x.manufacturer||'').toLowerCase()===mine;
+      var name='<span class="dm">'+esc(x.model)+(yours?'<span class="yours">Yours</span>':'')+'<small>'+esc(x.manufacturer||'')+'</small></span>';
+      if(!perBranch) return '<div class="gp-dev flat"><button type="button" tabindex="-1">'+name+'</button></div>';
+      var has={}; (x.clinic_ids||[]).forEach(function(id){ has[id]=1; });
+      var yes=br.filter(function(b){ return has[b.clinic_id]; }), no=br.filter(function(b){ return !has[b.clinic_id]; });
+      var pct=total?Math.round(100*yes.length/total):0;
+      function list(a){ return a.length ? '<ul>'+a.map(function(b){ return '<li>'+esc(label(b))+'</li>'; }).join('')+'</ul>' : '<ul><li>None</li></ul>'; }
+      return '<div class="gp-dev" data-i="'+i+'"><button type="button" aria-expanded="false">'+name+
+        '<span class="bar"><i style="width:'+pct+'%"></i></span><span class="nn">'+yes.length+' / '+total+'</span></button>'+
+        '<div class="who"><div><b>Has it \u00b7 '+yes.length+'</b>'+list(yes)+'</div>'+
+        '<div class="no"><b>Doesn\u2019t have it \u00b7 '+no.length+'</b>'+list(no)+'</div></div></div>';
+    }).join('');
+
+    var p=el('grpPanel');
+    p.innerHTML='<div class="gp-top"><h3>'+esc(g.name||'Group')+'</h3><div class="gp-sub">'+sub.join(' \u00b7 ')+'</div>'+
+        '<button type="button" class="gp-x" aria-label="Close">&times;</button></div>'+
+      '<div class="gp-body">'+
+        (perBranch ? '' : '<p class="gp-note">This group lists its equipment for all locations together, so it isn\u2019t broken down by location.</p>')+
+        '<div class="gp-h">Equipment'+(dv.length?' \u00b7 '+dv.length:'')+'</div>'+
+        (dv.length ? rows : '<p class="gp-note">No equipment identified yet.</p>')+
+        '<div class="gp-h">Locations</div>'+
+        br.map(function(b){ return '<div class="gp-br"><span>'+esc(b.name)+'</span><span>'+esc(place(b))+'</span></div>'; }).join('')+
+      '</div>';
+    p.querySelector('.gp-x').addEventListener('click',closeGroup);
+    Array.prototype.forEach.call(p.querySelectorAll('.gp-dev:not(.flat) > button'),function(b){
+      b.addEventListener('click',function(){
+        var row=b.parentNode, on=!row.classList.contains('open');
+        row.classList.toggle('open',on); b.setAttribute('aria-expanded',on?'true':'false');
+      });
+    });
+  }
   function appendAccountPage(){
     var host = el('acctBody') || el('acctList');
     var grid = host.querySelector('.acctgrid');
@@ -4978,7 +5110,11 @@
         fresh = 'New &middot; '+d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
       }
     }
-    var chain = a.group_locations
+    var gb = String(a.group_brand||'');
+    var chain = (gb.indexOf('grp:')===0 && a.group_name)
+      ? '<button type="button" class="pill locs grp" data-gid="'+esc(gb.slice(4))+'">'+
+        esc(a.group_name)+' &middot; '+a.group_locations+'</button>'
+      : a.group_locations
       ? '<span class="pill locs" title="This brand has '+a.group_locations+
         ' locations. Purchasing may be handled centrally.">'+a.group_locations+' locations</span>'
       : '';
