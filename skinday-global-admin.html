@@ -1327,11 +1327,17 @@
         <div class="form-subtitle">Reads clinics&rsquo; own Facebook and Instagram posts and adds the devices and injectables they name to each clinic&rsquo;s profile, dated to the post.</div>
 
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.4rem 0 .8rem;">
-          <select class="form-input" id="sc-country" style="max-width:160px;" onchange="document.getElementById('sc-device').value=''; scLoadStats(); scLoadMentions();">
+          <select class="form-input" id="sc-country" style="max-width:160px;" onchange="document.getElementById('sc-device').value=''; scStateVis(); scLoadStats(); scLoadMentions();">
             <option value="taiwan" selected>Taiwan</option>
             <option value="hongkong">Hong Kong</option>
             <option value="canada">Canada</option>
             <option value="usa">United States</option>
+          </select>
+          <select class="form-input" id="sc-state" style="max-width:160px;display:none;" onchange="scLoadStats()">
+            <option value="">All states</option>
+            <option value="california">California</option>
+            <option value="florida">Florida</option>
+            <option value="new-york">New York</option>
           </select>
           <button class="btn-ghost" onclick="scLoadStats()">Refresh</button>
           <span class="claim-submitted" id="sc-summary"></span>
@@ -1342,6 +1348,9 @@
         <div class="form-section-label">1 &mdash; Monthly read</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
           <button class="btn-primary" id="sc-monthly" onclick="scMonthly()" style="width:auto;padding:.6rem 1.4rem;">Read the next 1,000 accounts</button>
+          <label style="font-size:.82rem;color:var(--muted);">Skip accounts read in the last</label>
+          <input class="form-input" id="sc-skip" type="number" min="0" max="60" value="25" style="max-width:70px;" onchange="scLoadStats()" />
+          <label style="font-size:.82rem;color:var(--muted);">days</label>
           <span id="sc-monthly-note" style="font-size:.8rem;color:var(--muted);"></span>
         </div>
         <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .6rem;">Last month&rsquo;s posts, up to 15 per account, read through ScrapeCreators. Instagram first, then Facebook. Keep this tab open while it reads; if it stops, press Continue on the run.</div>
@@ -4747,7 +4756,20 @@ async function mdSave() {
 const SC_FN = '/.netlify/functions/social-posts';
 let scBusy = false;
 
+// Every call carries the state (US only) and the skip window, so counts and
+// runs always describe the same set of accounts.
+function scStateVis() {
+  const st = document.getElementById('sc-state');
+  if (!st) return;
+  const us = scCountry() === 'usa';
+  st.style.display = us ? '' : 'none';
+  if (!us) st.value = '';
+}
 async function scCall(body) {
+  const st = document.getElementById('sc-state');
+  if (st && st.value && scCountry() === 'usa') body.state = st.value;
+  const sk = document.getElementById('sc-skip');
+  if (sk && sk.value !== '') body.skip_days = parseInt(sk.value, 10);
   const res = await fetch(SC_FN, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
