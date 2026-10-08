@@ -30,7 +30,10 @@ const PAGE_CONCURRENCY = 4;   // a directory-style page can name dozens
 // A run-vs-run diff is a MARKET comparison only when two runs share both this
 // string and their `reference_count`. Otherwise the diff measures our own
 // changes, and every "new" device in it is a backfill rather than a purchase.
-const MATCHER_VERSION = '2026-08-05-seo-landing-page';
+// 2026-10-05 (M27): bumped for the M26 time-limit fix and cleanHome(). Both
+// change what a given host yields, so the October Canada re-scrape is labelled
+// a backfill run and its newly found devices stay out of Landscape's +N.
+const MATCHER_VERSION = '2026-10-05-time-limit-fix';
 
 // Per-device, per-run cap on auto-approval. Above this, the device stops
 // publishing unseen for the rest of the run and the rest queues for review.
@@ -1812,7 +1815,7 @@ async function doCrawl(supabase, body) {
   //   4. no census rows, since unmatched tokens near a device word are an
   //      equipment instrument and would only pollute that ranking.
   const biostim = String((body && body.mode) || '').trim().toLowerCase() === 'biostim';
-  const INJECTABLE_CATEGORIES = ['biostimulator', 'neurotoxin', 'filler', 'fat_dissolving'];
+  const INJECTABLE_CATEGORIES = ['biostimulator', 'neurotoxin', 'filler', 'skin_booster', 'mesotherapy', 'fat_dissolving'];
   const Q_STATUS = biostim ? 'biostim_status' : 'status';
   const Q_ERROR  = biostim ? 'biostim_error'  : 'last_error';
 
@@ -1847,7 +1850,7 @@ async function doCrawl(supabase, body) {
 
   let claimQuery = supabase
     .from('crawl_device_queue')
-    .select('id, host, clinic_ids, home_url, attempts, country');
+    .select('id, host, clinic_ids, home_url, attempts');
 
   if (oneHost) {
     // Deliberately ignores status and `excluded`: the whole point is to inspect
@@ -1941,7 +1944,7 @@ async function doCrawl(supabase, body) {
       .update(runningMark)
       .in('id', want)
       .eq(Q_STATUS, 'pending')
-      .select('id, host, clinic_ids, home_url, attempts, country');
+      .select('id, host, clinic_ids, home_url, attempts');
     if (wonErr) throw wonErr;
     claimable = (won || []).sort((a, b) => a.id - b.id);
     if (!claimable.length) {
@@ -1954,7 +1957,7 @@ async function doCrawl(supabase, body) {
   // update and never a redeploy.
   let refQuery = supabase
     .from('device_reference')
-    .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active, markets')
+    .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active')
     .eq('active', true);
   // ⭐ The whole reason a biostim pass is safe to run over already-crawled
   // hosts: it can only ever match these rows, so it cannot touch, refresh or
@@ -1985,21 +1988,6 @@ async function doCrawl(supabase, body) {
   const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
   const matcher = buildMatcher(devices || []);
-  // ⭐ COUNTRY-SCOPED MATCHING (2026-10-06). device_reference.markets lists the
-  // countries a product is approved in (Health Canada vs FDA). NULL means not
-  // restricted, which is every machine. A host is only ever matched against
-  // products approved in its own country, so a Canadian brand (Nuceiva,
-  // Belkyra, HArmonyCa) can never be written for a US clinic, or the reverse.
-  const matcherByCountry = {};
-  const matcherFor = (rowCountry) => {
-    const k = String(rowCountry || '').toLowerCase().trim();
-    if (!k) return matcher;
-    if (!matcherByCountry[k]) {
-      matcherByCountry[k] = buildMatcher((devices || []).filter(d =>
-        !Array.isArray(d.markets) || d.markets.includes(k)));
-    }
-    return matcherByCountry[k];
-  };
 
   // ⭐⭐⭐ THE MONTH-OVER-MONTH GUARD. Written once per run, on the first
   // invocation only (`reference_count is null`), so the rest of the loop costs
@@ -2076,7 +2064,7 @@ async function doCrawl(supabase, body) {
     }
     let out;
     try {
-      out = await crawlHost(row, matcherFor(row.country));
+      out = await crawlHost(row, matcher);
     } catch (e) {
       out = { status: 'error', pagesTried: 0, lastError: String((e && e.message) || e), matches: [], unknowns: [] };
     }
@@ -2295,10 +2283,15 @@ async function doCrawl(supabase, body) {
                 const own = norm(d.model);
                 const cat = String(d.category || '').toLowerCase();
                 if (isListed.has(c.clinic_id + '|' + c.device_id)) { approveIds.push(c.id); continue; }
-                if (BRANDS.some(b => b !== own && u.includes(b))) { rejectIds.push(c.id); continue; }
+                // A brand inside the product's own name is not "another brand":
+                // /restylane-skinboosters names Restylane Skinboosters, not Restylane.
+                if (BRANDS.some(b => b !== own && !own.includes(b) && u.includes(b))) { rejectIds.push(c.id); continue; }
                 if (c.page_kind === 'blog') { rejectIds.push(c.id); continue; }
                 if (cat.includes('toxin') && /(botox|wrinkle|toxin|neuromod|anti-?wrinkle|injectable)/.test(raw)) { approveIds.push(c.id); continue; }
                 if (cat.includes('filler') && /(filler|lip|cheek|hyaluronic|injectable)/.test(raw)) { approveIds.push(c.id); continue; }
+                // Skin boosters and mesotherapy (split from fillers 2026-10-07).
+                if ((cat === 'skin_booster' || cat === 'mesotherapy') &&
+                    /(booster|skinvive|skin-quality|hydrat|meso|nctf|glow|injectable)/.test(raw)) { approveIds.push(c.id); continue; }
                 rejectIds.push(c.id);
               }
               if (approveIds.length) {
@@ -2763,7 +2756,7 @@ async function syncExclusions(supabase, body) {
 // table but are reviewed in different admin tabs (Devices / Injectables), so
 // every review call can be scoped by side. Without a side it sees everything,
 // as before.
-const INJ_CATS = ['biostimulator', 'neurotoxin', 'filler', 'fat_dissolving'];
+const INJ_CATS = ['biostimulator', 'neurotoxin', 'filler', 'skin_booster', 'mesotherapy', 'fat_dissolving'];
 async function sideFilter(supabase, side) {
   side = String(side || '').toLowerCase();
   if (side !== 'devices' && side !== 'injectables') return null;
