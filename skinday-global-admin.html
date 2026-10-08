@@ -1347,13 +1347,24 @@
 
         <div class="form-section-label">1 &mdash; Monthly read</div>
         <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;">
-          <button class="btn-primary" id="sc-monthly" onclick="scMonthly()" style="width:auto;padding:.6rem 1.4rem;">Read the next 1,000 accounts</button>
+          <button class="btn-primary" id="sc-monthly" onclick="scMonthly()" style="width:auto;padding:.6rem 1.4rem;">Read all accounts</button>
+          <button class="btn-ghost" id="sc-pause" onclick="scPause()" style="display:none;">Pause</button>
           <label style="font-size:.82rem;color:var(--muted);">Skip accounts read in the last</label>
           <input class="form-input" id="sc-skip" type="number" min="0" max="60" value="25" style="max-width:70px;" onchange="scLoadStats()" />
           <label style="font-size:.82rem;color:var(--muted);">days</label>
-          <span id="sc-monthly-note" style="font-size:.8rem;color:var(--muted);"></span>
         </div>
-        <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .6rem;">Last month&rsquo;s posts, up to 15 per account, read through ScrapeCreators. Instagram first, then Facebook. Keep this tab open while it reads; if it stops, press Continue on the run.</div>
+        <div id="sc-monthly-note" style="font-size:.8rem;color:var(--muted);margin-top:.45rem;"></div>
+        <div id="sc-prog" style="display:none;margin:.7rem 0 .2rem;padding:.75rem .9rem;border:1px solid var(--border);border-radius:8px;">
+          <div style="display:flex;justify-content:space-between;gap:.6rem;font-size:.84rem;margin-bottom:.45rem;flex-wrap:wrap;">
+            <strong id="sc-prog-title">Reading…</strong>
+            <span id="sc-prog-pct" style="color:var(--muted);"></span>
+          </div>
+          <div style="height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+            <div id="sc-prog-bar" style="height:100%;width:0;background:var(--accent, #c07a62);transition:width .4s;"></div>
+          </div>
+          <div id="sc-prog-detail" style="font-size:.78rem;color:var(--muted);margin-top:.45rem;"></div>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin:.4rem 0 .6rem;">Last month&rsquo;s posts, up to 15 per account, read through ScrapeCreators. Instagram first, then Facebook, in batches of 1,000 that start one after another. Keep this tab open while it reads. Pause any time; pressing the button again picks up where it left off.</div>
 
         <details style="margin:.2rem 0 1rem;">
           <summary style="font-size:.8rem;color:var(--muted);cursor:pointer;">Small test run</summary>
@@ -4818,6 +4829,7 @@ async function scLoadStats() {
   if (!ok) { runsBox.innerHTML = '<div class="empty-state">Could not load: ' + esc(data.error || 'error') + '</div>'; return; }
   const p = data.pages || {}, m = data.mentions || {};
   scPageCounts = p;
+  scRuns = data.runs || [];
   scMonthlyEstimate();
   document.getElementById('sc-summary').textContent =
     'Facebook pages ' + (p.facebook || 0) + ' (' + (p.facebook_never || 0) + ' never read) · Instagram ' +
@@ -4875,34 +4887,108 @@ function scBatchCost(b) {
   const credits = Math.round(b.pages * SCR_CREDITS_PER_ACCOUNT[b.platform]);
   return { credits: credits, likely: credits * SCR_USD_PER_CREDIT };
 }
+let scRuns = [], scStopReq = false;
+// A ScrapeCreators run that was started but not stepped to the end (tab closed,
+// paused, network blip). Its remaining accounts still count as "to read", so it
+// is always finished before a new batch starts, or the two would overlap.
+function scOpenRun() {
+  return scRuns.filter(r => r.provider === 'scrapecreators' && r.status === 'RUNNING')
+               .sort((x, y) => x.id - y.id)[0] || null;
+}
 function scMonthlyEstimate() {
   const el = document.getElementById('sc-monthly-note');
-  if (!el) return;
+  const btn = document.getElementById('sc-monthly');
+  if (!el || !btn || scBusy) return;           // never touch the button mid-read
   const ig = scPageCounts.instagram_due || 0, fb = scPageCounts.facebook_due || 0;
-  const b = scNextBatch();
-  if (!b) { el.textContent = 'Every account has been read this month.'; document.getElementById('sc-monthly').disabled = true; return; }
-  document.getElementById('sc-monthly').disabled = false;
-  const c = scBatchCost(b);
-  el.textContent = ig.toLocaleString() + ' Instagram + ' + fb.toLocaleString() + ' Facebook accounts still to read this month · next batch: ' +
-    b.pages.toLocaleString() + ' ' + (b.platform === 'instagram' ? 'Instagram' : 'Facebook') + ', likely about US$' + c.likely.toFixed(0);
+  const open = scOpenRun();
+  if (!ig && !fb && !open) {
+    el.textContent = 'Every account has been read this month.';
+    btn.textContent = 'All read this month'; btn.disabled = true; return;
+  }
+  btn.disabled = false;
+  const cr = Math.round(ig * SCR_CREDITS_PER_ACCOUNT.instagram + fb * SCR_CREDITS_PER_ACCOUNT.facebook);
+  const usd = cr * SCR_USD_PER_CREDIT;
+  btn.textContent = open ? 'Resume reading (' + (ig + fb).toLocaleString() + ' left)'
+                         : 'Read all ' + (ig + fb).toLocaleString() + ' accounts';
+  el.textContent = ig.toLocaleString() + ' Instagram + ' + fb.toLocaleString() + ' Facebook still to read · about ' +
+    cr.toLocaleString() + ' credits, US$' + usd.toFixed(0) + ' · ' + Math.max(1, Math.ceil(ig / SC_CHUNK) + Math.ceil(fb / SC_CHUNK)) +
+    ' batches, run one after another' + (open ? ' · run #' + open.id + ' was left part-way and goes first' : '');
 }
+function scPause() {
+  scStopReq = true;
+  const pb = document.getElementById('sc-pause');
+  if (pb) { pb.disabled = true; pb.textContent = 'Pausing after this step…'; }
+}
+function scReadingUi(on) {
+  const btn = document.getElementById('sc-monthly'), pb = document.getElementById('sc-pause');
+  const tb = document.getElementById('sc-start');
+  if (btn) { btn.disabled = on; if (on) btn.textContent = 'Reading…'; }
+  if (tb) tb.disabled = on;
+  if (pb) { pb.style.display = on ? '' : 'none'; pb.disabled = false; pb.textContent = 'Pause'; }
+  if (on) document.getElementById('sc-prog').style.display = '';
+}
+function scProg(title, pct, detail) {
+  document.getElementById('sc-prog-title').textContent = title;
+  document.getElementById('sc-prog-pct').textContent = pct == null ? '' : Math.floor(pct) + '%';
+  document.getElementById('sc-prog-bar').style.width = (pct == null ? 0 : Math.min(100, pct)) + '%';
+  document.getElementById('sc-prog-detail').textContent = detail || '';
+}
+// One press reads every account still due for the selected country (and state):
+// any half-finished run first, then fresh batches of up to 1,000, Instagram
+// before Facebook, until nothing is left or Pause is pressed.
 async function scMonthly() {
   if (scBusy) return;
-  const b = scNextBatch();
-  if (!b) return;
-  const c = scBatchCost(b);
-  if (!confirm('Read ' + b.pages.toLocaleString() + ' ' + (b.platform === 'instagram' ? 'Instagram' : 'Facebook') +
-               ' accounts through ScrapeCreators?\n\nLikely about ' + c.credits.toLocaleString() + ' credits (US$' + c.likely.toFixed(0) +
-               '). Keep this tab open while it reads. If it stops, press Continue on the run.')) return;
-  const msg = document.getElementById('sc-run-msg');
-  msg.textContent = 'Starting…';
-  const { ok, data } = await scCall({
-    mode: 'sc-start', country: scCountry(), platform: b.platform,
-    pages: b.pages, posts_per_page: SC_MONTH_CAP, newer_than: '1 month', compare: false
-  });
-  if (!ok || data.error) { msg.textContent = 'Could not start: ' + (data.error || 'error'); return; }
-  scLoadStats();
-  return scRunSteps(data.run_id);
+  await scLoadStats();
+  const ig0 = scPageCounts.instagram_due || 0, fb0 = scPageCounts.facebook_due || 0;
+  const total = ig0 + fb0;
+  if (!total && !scOpenRun()) return;
+  const cr = Math.round(ig0 * SCR_CREDITS_PER_ACCOUNT.instagram + fb0 * SCR_CREDITS_PER_ACCOUNT.facebook);
+  const where = scCountry() === 'usa' && document.getElementById('sc-state').value
+    ? document.getElementById('sc-state').selectedOptions[0].textContent : document.getElementById('sc-country').selectedOptions[0].textContent;
+  if (!confirm('Read ' + total.toLocaleString() + ' accounts in ' + where + ' (' + ig0.toLocaleString() + ' Instagram, ' + fb0.toLocaleString() +
+               ' Facebook) through ScrapeCreators?\n\nAbout ' + cr.toLocaleString() + ' credits (US$' + (cr * SCR_USD_PER_CREDIT).toFixed(0) +
+               '). Keep this tab open. You can pause at any time and resume later.')) return;
+
+  scBusy = true; scStopReq = false; scReadingUi(true);
+  const sum = { accounts: 0, posts: 0, mentions: 0, credits: 0, errs: 0 };
+  const msg = document.getElementById('sc-run-msg'); msg.textContent = '';
+  let outcome = 'done';
+  for (let batch = 1; batch <= 50; batch++) {
+    if (scStopReq) { outcome = 'paused'; break; }
+    let open = scOpenRun(), runId, plat, startAt = 0;
+    if (open) { runId = open.id; plat = open.platform; startAt = open.collect_offset || 0; }
+    else {
+      const b = scNextBatch();
+      if (!b) break;
+      scProg('Starting ' + (b.platform === 'instagram' ? 'Instagram' : 'Facebook') + ' batch…', sum.accounts / Math.max(total, 1) * 100, '');
+      const { ok, data } = await scCall({
+        mode: 'sc-start', country: scCountry(), platform: b.platform,
+        pages: b.pages, posts_per_page: SC_MONTH_CAP, newer_than: '1 month', compare: false
+      });
+      if (!ok || data.error) { outcome = 'error: could not start a batch (' + (data.error || 'error') + ')'; break; }
+      runId = data.run_id; plat = b.platform;
+    }
+    const r = await scStepRun(runId, function(d, delta) {
+      sum.accounts += delta; sum.posts += d.posts_saved || 0; sum.mentions += d.new_mentions || 0;
+      sum.credits += d.credits || 0; sum.errs += (d.errors || []).length;
+      scProg((plat === 'instagram' ? 'Instagram' : 'Facebook') + ' · run #' + runId + ' · ' +
+               (d.accounts_done || 0).toLocaleString() + ' of ' + (d.accounts_total || 0).toLocaleString(),
+             sum.accounts / Math.max(total, 1) * 100,
+             sum.accounts.toLocaleString() + ' of ' + total.toLocaleString() + ' accounts read · ' + sum.posts.toLocaleString() + ' posts · ' +
+             sum.mentions.toLocaleString() + ' new mentions · ' + sum.credits.toLocaleString() + ' credits (US$' + (sum.credits * SCR_USD_PER_CREDIT).toFixed(2) + ')' +
+             (sum.errs ? ' · ' + sum.errs + ' accounts could not be read' : ''));
+    }, startAt);
+    if (r !== 'done') { outcome = r; break; }
+    await scLoadStats();        // refreshes the due counts and the run list for the next batch
+  }
+  scBusy = false; scReadingUi(false);
+  const tail = sum.accounts.toLocaleString() + ' accounts · ' + sum.posts.toLocaleString() + ' posts · ' + sum.mentions.toLocaleString() +
+               ' new mentions · US$' + (sum.credits * SCR_USD_PER_CREDIT).toFixed(2);
+  await scLoadStats(); scLoadMentions();
+  const left = (scPageCounts.instagram_due || 0) + (scPageCounts.facebook_due || 0);
+  if (outcome === 'done' && !left) scProg('Done. Next: press Classify evidence below.', 100, tail);
+  else if (outcome === 'paused') scProg('Paused · ' + left.toLocaleString() + ' left. Press Resume to carry on.', null, tail);
+  else scProg('Stopped · ' + left.toLocaleString() + ' left. Press Resume to carry on.', null, outcome.replace(/^error: /, '') + ' · ' + tail);
 }
 // Evidence type for every mention: rules first, then AI for the ones with no clear cue.
 const SC_EVIDENCE_LABEL = { announcement: 'announcement', promotion: 'promotion', before_after: 'before/after', education: 'education',
@@ -4985,24 +5071,45 @@ async function scStart() {
 
 // ScrapeCreators answers straight away, so a run is simply stepped through a
 // few accounts at a time until it is done. Safe to stop and Continue later.
+// Returns 'done', 'paused' or 'error: …'. onStep(data, accountsAddedThisStep).
+async function scStepRun(id, onStep, startAt) {
+  let last = startAt || 0, fails = 0;
+  for (let guard = 0; guard < 3000; guard++) {
+    if (scStopReq) return 'paused';
+    let res;
+    try { res = await scCall({ mode: 'sc-step', run_id: id }); }
+    catch (e) { res = { ok: false, data: { error: e.message } }; }
+    const { ok, data } = res;
+    if (!ok || data.error) {
+      // A single timeout or network blip is common on long reads: wait and retry.
+      if (++fails <= 3) { await new Promise(r => setTimeout(r, 4000 * fails)); continue; }
+      return 'error: ' + (data.error || 'error');
+    }
+    fails = 0;
+    const doneNow = data.accounts_done || 0;
+    const delta = Math.max(0, doneNow - last);
+    last = doneNow;
+    if (onStep) onStep(data, delta);
+    if (data.done) return 'done';
+  }
+  return 'error: step limit reached';
+}
+// Continue on a run card, and the small test run.
 async function scRunSteps(id) {
   if (scBusy) return;
-  scBusy = true;
-  const btn = document.getElementById('sc-start'); if (btn) btn.disabled = true;
-  const mbtn = document.getElementById('sc-monthly'); if (mbtn) mbtn.disabled = true;
-  const msg = document.getElementById('sc-run-msg');
+  scBusy = true; scStopReq = false; scReadingUi(true);
   let posts = 0, mentions = 0, credits = 0, errs = 0;
-  for (let guard = 0; guard < 2000; guard++) {
-    const { ok, data } = await scCall({ mode: 'sc-step', run_id: id });
-    if (!ok || data.error) { msg.textContent = 'Run #' + id + ' paused: ' + (data.error || 'error') + '. Press Continue to carry on.'; break; }
-    posts += data.posts_saved || 0; mentions += data.new_mentions || 0; credits += data.credits || 0; errs += (data.errors || []).length;
-    msg.textContent = 'Run #' + id + ': ' + (data.accounts_done || 0) + ' of ' + (data.accounts_total || '?') + ' accounts · ' +
-      posts + ' posts · ' + mentions + ' new mentions · ' + credits + ' credits' + (errs ? ' · ' + errs + ' accounts could not be read' : '');
-    if (data.done) { msg.textContent = 'Run #' + id + ' done. ' + msg.textContent.replace(/^Run #\d+: /, ''); break; }
-  }
-  if (btn) btn.disabled = false;
-  if (mbtn) mbtn.disabled = false;
-  scBusy = false;
+  const run = scRuns.find(x => x.id === id);
+  const r = await scStepRun(id, function(d) {
+    posts += d.posts_saved || 0; mentions += d.new_mentions || 0; credits += d.credits || 0; errs += (d.errors || []).length;
+    scProg('Run #' + id + ' · ' + (d.accounts_done || 0) + ' of ' + (d.accounts_total || '?') + ' accounts',
+           (d.accounts_done || 0) / Math.max(d.accounts_total || 1, 1) * 100,
+           posts + ' posts · ' + mentions + ' new mentions · ' + credits + ' credits' + (errs ? ' · ' + errs + ' accounts could not be read' : ''));
+  }, run ? run.collect_offset || 0 : 0);
+  if (r !== 'done') scProg('Run #' + id + (r === 'paused' ? ' paused.' : ' stopped: ' + r.replace(/^error: /, '')) + ' Press Continue to carry on.', null,
+                           document.getElementById('sc-prog-detail').textContent);
+  else document.getElementById('sc-prog-title').textContent = 'Run #' + id + ' done.';
+  scBusy = false; scReadingUi(false);
   scLoadStats(); scLoadMentions();
 }
 
