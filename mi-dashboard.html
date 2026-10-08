@@ -260,6 +260,8 @@
   .ovws button { font:inherit; font-size:12.5px; font-weight:600; color:var(--accent-strong); background:var(--surface);
     border:1px solid var(--accent-soft); border-radius:100px; padding:5px 12px; cursor:pointer; }
   .ovws button:hover { border-color:var(--accent); }
+  .ovws.plain { background:var(--surface-2); }
+  .ovws.plain b { color:var(--ink); }
   .ovsvg { display:block; width:100%; max-width:320px; margin:6px auto 0; }
   .ovsvg text { font-family:var(--font-mono); font-size:13px; fill:var(--ink); text-anchor:middle; dominant-baseline:middle; font-weight:500; }
   .ovleg { margin:6px 0 0; padding:0; list-style:none; }
@@ -2012,6 +2014,7 @@
     // read as growth. Hidden until there is a second month to compare.
     var mv=document.querySelector('#lsSort option[value="move"]');
     if(mv){ mv.hidden=isInj(); mv.disabled=isInj(); }
+    lsSortVis();
     if(isInj() && el('lsSort').value==='move'){ el('lsSort').value='size'; LS_SORT='size'; }
     document.documentElement.setAttribute('data-side', isInj()?'injectables':'energy');
   }
@@ -3473,8 +3476,17 @@
   // One line of scale above the list, so the numbers below have a denominator
   // before anyone starts scanning. Silent when nothing moved, rather than
   // announcing a zero.
+  // A one-option sort is not a choice: the selector shows only where it has two.
+  function lsSortVis(){
+    var sel=el('lsSort'); if(!sel) return;
+    sel.style.display=(isInj()||LS_MODE==='ov')?'none':'';
+  }
   function lsPaintSummary(){
     var s=el('lsSum'); if(!s) return;
+    lsSortVis();
+    // The injectables side has had one full read so far, so a "+N in 30 days"
+    // there would be the first read, not growth.
+    if(isInj()||LS_MODE==='ov'){ s.textContent=''; return; }
     var adds=(LS_ROWS||[]).reduce(function(t,r){ return t+lsAdd(r); },0);
     if(!adds){ s.textContent=''; return; }
     var movers=(LS_ROWS||[]).filter(function(r){ return lsAdd(r)>0; }).length;
@@ -3546,7 +3558,7 @@
         ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
         el('acctSearch').value=''; setSearch('');
         el('acctCategory').value=b.getAttribute('data-ovgo');
-        el('acctSegment').value='competitor';
+        el('acctSegment').value=b.getAttribute('data-ovseg')||'';
         syncQuick(); advLabel();
         document.querySelector('.tabs button[data-tab="accounts"]').click();
         loadAccounts();
@@ -3589,8 +3601,9 @@
     var ws = c.has_ours && c.not_ours_n>0
       ? '<div class="ovws"><b>'+num(c.not_ours_n)+'</b><span>'+
           (isInj()?'clinics use another brand but not yours':'clinics run another device but not yours')+
-        '</span><button type="button" data-ovgo="'+esc(c.category)+'">View clinics</button></div>'
-      : '';
+        '</span><button type="button" data-ovgo="'+esc(c.category)+'" data-ovseg="competitor">View clinics</button></div>'
+      : '<div class="ovws plain"><b>'+num(c.total)+'</b><span>clinics</span>'+
+        '<button type="button" data-ovgo="'+esc(c.category)+'" data-ovseg="">View clinics</button></div>';
     var sub=num(c.total)+' clinics'+(c.has_ours?' \u00b7 '+num(c.ours_n)+' use yours':'')+
       (otherOnly&&top.length>=2?' \u00b7 '+num(otherOnly)+(isInj()?' other brands only':' other devices only'):'');
     return '<div class="ovcard"><h3>'+esc(label)+'</h3><div class="ovsub">'+sub+'</div>'+ws+svg+
