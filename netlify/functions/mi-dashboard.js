@@ -452,22 +452,24 @@ exports.handler = async (event) => {
       // too: the competitor a new rep has not met yet is what they need to read
       // about. Counts use the same scope CTE as mi_leaderboard.
       case 'landscape': {
-        const { data, error } = await supabase.rpc('mi_landscape', Object.assign({
-          p_country: country, p_regions: regions,
-          p_province: province, p_neighbourhood: neighbourhood
-        }, owner, seg));
-        if (error) throw error;
         // ⭐⭐ COMPANIES COME FROM THEIR OWN RPC, NOT FROM SUMMING THE DEVICE
         // ROWS. Summing gave a clinic running two Candela machines a count of
         // two, which is neither a clinic count nor an install count — we cannot
         // see UNITS at all. Distinct clinics is the only figure this data
         // supports, and it is verified equal to mi_leaderboard.
-        const co = await supabase.rpc('mi_landscape_companies', Object.assign({
+        // 2026-10-07: the two queries run side by side rather than one after
+        // the other, so the tab waits for the slower one, not for both.
+        const args = Object.assign({
           p_country: country, p_regions: regions,
           p_province: province, p_neighbourhood: neighbourhood
-        }, owner, seg));
+        }, owner, seg);
+        const [ls, co] = await Promise.all([
+          supabase.rpc('mi_landscape', args),
+          supabase.rpc('mi_landscape_companies', args)
+        ]);
+        if (ls.error) throw ls.error;
         if (co.error) throw co.error;
-        return json(200, { landscape: data || [], companies: co.data || [] });
+        return json(200, { landscape: ls.data || [], companies: co.data || [] });
       }
 
       // Per-category competitive field, as SHARE OF IDENTIFIED INSTALLATIONS.
