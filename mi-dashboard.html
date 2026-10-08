@@ -248,6 +248,36 @@
   .lsgroup.open { margin-bottom:18px; }
   .lshead .lsname { font-size:17px; font-weight:600; letter-spacing:-.01em; }
   .lshead .lscount { margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--muted); }
+  /* Overlap view: one card per category with a Venn of its top three products. */
+  .ovlist { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
+  .ovcard { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px 18px 14px; }
+  .ovcard h3 { margin:0; font-size:15.5px; font-weight:600; }
+  .ovcard .ovsub { font-family:var(--font-mono); font-size:11px; color:var(--muted); margin-top:2px; }
+  .ovws { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:12px 0 4px; padding:10px 12px;
+    background:var(--accent-soft); border-radius:10px; }
+  .ovws b { font-size:22px; font-weight:600; color:var(--accent-strong); font-variant-numeric:tabular-nums; }
+  .ovws span { font-size:13.5px; color:var(--ink-2); flex:1; min-width:150px; }
+  .ovws button { font:inherit; font-size:12.5px; font-weight:600; color:var(--accent-strong); background:var(--surface);
+    border:1px solid var(--accent-soft); border-radius:100px; padding:5px 12px; cursor:pointer; }
+  .ovws button:hover { border-color:var(--accent); }
+  .ovsvg { display:block; width:100%; max-width:320px; margin:6px auto 0; }
+  .ovsvg text { font-family:var(--font-mono); font-size:13px; fill:var(--ink); text-anchor:middle; dominant-baseline:middle; font-weight:500; }
+  .ovleg { margin:6px 0 0; padding:0; list-style:none; }
+  .ovleg li { display:flex; align-items:center; gap:8px; padding:5px 0; font-size:13.5px; border-top:1px solid var(--line-2); }
+  .ovleg li:first-child { border-top:0; }
+  .ovleg i { width:10px; height:10px; border-radius:50%; flex:0 0 10px; }
+  .ovleg .nm { flex:1; min-width:0; }
+  .ovleg .nm small { color:var(--muted); margin-left:6px; font-size:12px; }
+  .ovleg .yours { font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.04em;
+    color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:2px 7px; margin-left:6px; }
+  .ovleg .n { font-family:var(--font-mono); font-size:12px; color:var(--ink-2); }
+  .ovleg li.oth { color:var(--muted); font-size:12.5px; }
+  .ovleg li.oth i { background:var(--line); }
+  @media (max-width:640px){
+    .ovlist { grid-template-columns:1fr; gap:10px; }
+    .ovcard { padding:14px; }
+    .ovws b { font-size:20px; }
+  }
   .lsrow { display:flex; align-items:center; gap:14px; padding:11px 10px; border-bottom:1px solid var(--line-2); }
   .lsrow:last-child { border-bottom:0; }
   .lsrow.ours { border-left:2px solid var(--accent); background:var(--accent-soft); padding-left:10px; }
@@ -1383,6 +1413,7 @@
       <div class="quick" id="lsMode">
         <button type="button" data-lm="tech" class="on">Technologies</button>
         <button type="button" data-lm="co">Companies</button>
+        <button type="button" data-lm="ov">Overlap</button>
       </div>
       <!-- ⭐⭐ MOVEMENT. "Who is big" is a standing fact a rep learns once; "who
            is winning right now" is why they come back. Same rows, two orders.
@@ -1825,7 +1856,7 @@
              anyMfr:'Runs any manufacturer', anyDev:'Runs any device', lsTech:'Technologies',
              lsSearch:'Search device, manufacturer or technology', cov:' have equipment identified',
              gfTitle:'Equipment opportunity', gfLine:'No devices identified yet', rsLine:'Equipment not yet checked' },
-    injectables:{ competitor:'Competitor brand', ours:'Using our brands', greenfield:'No brand found',
+    injectables:{ competitor:'Not using ours', ours:'Using our brands', greenfield:'No brand found',
              items:'brands', item:'brand', itemsPl:'brands', search:'Search clinic, city or brand',
              anyMfr:'Uses any company', anyDev:'Uses any brand', lsTech:'Brands',
              lsSearch:'Search brand, company or category', cov:' have a brand identified',
@@ -2775,7 +2806,7 @@
   // stops being an independent layer and becomes their brochure.
   // ⓘ No technology descriptions yet — device_reference has nowhere to put them.
   // Structure ships now; Andy fills the copy for the devices reps actually meet.
-  var LS_ROWS=null, LS_CO=[], LS_MODE='tech', LS_Q='', LS_W=[], LS_T=null;
+  var LS_ROWS=null, LS_CO=[], LS_MODE='tech', LS_Q='', LS_W=[], LS_T=null, LS_OV=null, LS_OV_LOADING=false;
   // 'size' = the standing market, 'move' = what changed in the last 30 days.
   var LS_SORT='size';
   function lsAdd(r){ return Number(r && r.added_30d) || 0; }
@@ -3325,6 +3356,7 @@
 
   function loadLandscape(){
     loaded.landscape=true;
+    LS_OV=null;
     el('lsBody').innerHTML='<div class="empty"><span class="spin"></span></div>';
     // The category names come from the categories list; wait for it if the
     // Overview has not loaded it yet, so no raw keys (laser_hair) show.
@@ -3453,6 +3485,7 @@
     var box=el('lsBody');
     if(!LS_ROWS){ return; }
     lsPaintSummary();
+    if(LS_MODE==='ov'){ paintOverlap(box); return; }
     if(LS_MODE==='co'){
       var co=LS_W.length
         ? LS_CO.filter(function(c){ return lsMatchName(c.name); })
@@ -3484,6 +3517,84 @@
       b.addEventListener('click',go);
       b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') go(e); });
     });
+  }
+  // ---- Overlap ----
+  var OV_COL=['#147D74','#C2832A','#5D6B8E'];
+  function paintOverlap(box){
+    if(!LS_OV){
+      box.innerHTML='<div class="empty"><span class="spin"></span></div>';
+      if(LS_OV_LOADING) return;
+      LS_OV_LOADING=true;
+      api('overlap',{}).then(function(r){ LS_OV=r.overlap||[]; LS_OV_LOADING=false; if(LS_MODE==='ov') paintLandscape(); })
+        .catch(function(e){ LS_OV_LOADING=false; handleErr(e); });
+      return;
+    }
+    var cats=LS_OV.slice();
+    if(LS_W.length) cats=cats.filter(function(c){
+      var h=[CAT_LABEL[c.category]||c.category].concat((c.top||[]).map(function(t){return t.model+' '+t.manufacturer;}),
+            (c.others||[]).map(function(t){return t.model+' '+t.manufacturer;})).join(' ').toLowerCase();
+      return LS_W.every(function(w){ return h.indexOf(w)!==-1; });
+    });
+    cats.sort(function(a,b){
+      if(isInj()) return injRank(a.category)-injRank(b.category);
+      return (b.has_ours?1:0)-(a.has_ours?1:0) || b.total-a.total;
+    });
+    if(!cats.length){ box.innerHTML='<div class="empty">Nothing matches that.</div>'; return; }
+    box.innerHTML='<div class="ovlist">'+cats.map(ovCard).join('')+'</div>';
+    Array.prototype.forEach.call(box.querySelectorAll('[data-ovgo]'),function(b){
+      b.addEventListener('click',function(){
+        ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
+        el('acctSearch').value=''; setSearch('');
+        el('acctCategory').value=b.getAttribute('data-ovgo');
+        el('acctSegment').value='competitor';
+        syncQuick(); advLabel();
+        document.querySelector('.tabs button[data-tab="accounts"]').click();
+        loadAccounts();
+      });
+    });
+  }
+  function ovCard(c){
+    var top=c.top||[], R=c.regions||{}, label=CAT_LABEL[c.category]||c.category;
+    function r(m){ return Number(R[m]||0); }
+    var inVenn=0; Object.keys(R).forEach(function(k){ inVenn+=Number(R[k])||0; });
+    var otherOnly=Math.max(0,(c.total||0)-inVenn);
+    // The tenant's own product always takes the accent colour.
+    var others=OV_COL.slice(1), col=top.map(function(t){ return t.is_ours ? OV_COL[0] : null; });
+    var anyOurs=col.some(Boolean), oi=0;
+    col=col.map(function(x){ return x || (anyOurs ? others[oi++] : OV_COL[oi++]); });
+    var svg='';
+    if(top.length>=2){
+      var three=top.length>=3;
+      var C= three ? [[112,104],[188,104],[150,170]] : [[118,120],[202,120]];
+      var circles=C.map(function(p,i){
+        return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+(three?80:84)+'" fill="'+col[i]+'" fill-opacity=".16" stroke="'+col[i]+'" stroke-width="1.6"/>';
+      }).join('');
+      var spots= three
+        ? [[1,62,82],[2,238,82],[4,150,222],[3,150,76],[5,104,156],[6,196,156],[7,150,128]]
+        : [[1,82,120],[2,238,120],[3,160,120]];
+      var nums=spots.map(function(s){ return '<text x="'+s[1]+'" y="'+s[2]+'">'+num(r(s[0]))+'</text>'; }).join('');
+      svg='<svg class="ovsvg" viewBox="0 0 300 '+(three?262:240)+'" role="img" aria-label="Overlap of the top products in '+esc(label)+'">'+circles+nums+'</svg>';
+    }
+    var legend=top.map(function(t,i){
+      return '<li><i style="background:'+col[i]+'"></i><span class="nm">'+esc(t.model)+
+        (t.is_ours?'<span class="yours">Yours</span>':'')+'<small>'+esc(t.manufacturer||'')+'</small></span>'+
+        '<span class="n">'+num(t.n)+'</span></li>';
+    }).join('');
+    var oth=(c.others||[]);
+    if(oth.length){
+      legend+='<li class="oth"><i></i><span class="nm">'+oth.map(function(t){
+        return esc(t.model)+(t.is_ours?' (yours)':'')+' '+num(t.n);
+      }).join(' \u00b7 ')+'</span></li>';
+    }
+    var ws = c.has_ours && c.not_ours_n>0
+      ? '<div class="ovws"><b>'+num(c.not_ours_n)+'</b><span>'+
+          (isInj()?'clinics use another brand but not yours':'clinics run another device but not yours')+
+        '</span><button type="button" data-ovgo="'+esc(c.category)+'">View clinics</button></div>'
+      : '';
+    var sub=num(c.total)+' clinics'+(c.has_ours?' \u00b7 '+num(c.ours_n)+' use yours':'')+
+      (otherOnly&&top.length>=2?' \u00b7 '+num(otherOnly)+(isInj()?' other brands only':' other devices only'):'');
+    return '<div class="ovcard"><h3>'+esc(label)+'</h3><div class="ovsub">'+sub+'</div>'+ws+svg+
+      '<ul class="ovleg">'+legend+'</ul></div>';
   }
   function lsByCategory(rows){
     var by={}, order=[];
