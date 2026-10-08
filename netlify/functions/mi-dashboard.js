@@ -542,6 +542,18 @@ exports.handler = async (event) => {
         return json(200, { accounts: data || [] });
       }
 
+      // Landscape "Overlap": per category, how the top three products overlap
+      // across clinics, and how many clinics use the category without any of
+      // the tenant's own products.
+      case 'overlap': {
+        const { data, error } = await supabase.rpc('mi_overlap', Object.assign({
+          p_country: country, p_regions: regions,
+          p_province: province, p_neighbourhood: neighbourhood
+        }, owner, seg));
+        if (error) throw error;
+        return json(200, { overlap: data || [] });
+      }
+
       // One named group (Dermapure, Victoria Park, VOS...): its locations and
       // which devices each location has. Owner name comes back so the page can
       // mark the tenant's own devices without a second request.
