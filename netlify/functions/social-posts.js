@@ -537,17 +537,17 @@ async function scStart(supabase, body) {
     for (let i = keys.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1)); const t = keys[i]; keys[i] = keys[j]; keys[j] = t;
     }
-    const res = await supabase.from('social_pages').select('page_key, url')
-      .eq('country', country).eq('platform', platform)
+    const res = await byState(supabase.from('social_pages').select('page_key, url')
+      .eq('country', country).eq('platform', platform), body)
       .in('page_key', keys.slice(0, Math.min(keys.length, nPages * 4)));
     error = res.error;
     pages = (res.data || []).slice(0, nPages);
   } else {
-    // The monthly read: only accounts not read in the last 25 days, the same
-    // rule the "still to read this month" count uses.
-    const dueBefore = new Date(Date.now() - 25 * 864e5).toISOString();
-    const res = await supabase.from('social_pages').select('page_key, url')
-      .eq('country', country).eq('platform', platform)
+    // The monthly read: only accounts not read in the last N days (25 by
+    // default), the same rule the "still to read" count uses.
+    const dueBefore = new Date(Date.now() - skipDays(body) * 864e5).toISOString();
+    const res = await byState(supabase.from('social_pages').select('page_key, url')
+      .eq('country', country).eq('platform', platform), body)
       .or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore)
       .or('missing_since.is.null,missing_since.lt.' + new Date(Date.now() - 90 * 864e5).toISOString())
       .order('last_requested_at', { ascending: true, nullsFirst: true })
@@ -684,11 +684,26 @@ async function scStep(supabase, body) {
 // Modes
 // ---------------------------------------------------------------------------
 
+// ⭐ STATE SCOPE (2026-10-07). The US is one country with very different
+// states, so a run can be limited to one state (body.state = 'california').
+// social_pages carries the state of the clinic it belongs to; Canada leaves it
+// empty and nothing changes there.
+function byState(q, body) {
+  const st = body && body.state ? String(body.state).trim().toLowerCase() : '';
+  return st ? q.eq('state', st) : q;
+}
+// "Still to read" = not requested in the last N days. 25 suits the monthly
+// read; a shorter window allows an extra read before a meeting.
+function skipDays(body) {
+  const n = parseInt(body && body.skip_days, 10);
+  return Number.isFinite(n) && n >= 0 && n <= 60 ? n : 25;
+}
+
 // Rebuild social_pages from clinics. Cheap (a few thousand rows) and it means a
 // Facebook link added in the portal is picked up by the next run with no step.
 async function syncPages(supabase, country) {
   const clinics = await pageAll(() => supabase.from('clinics')
-    .select('id, facebook_url, instagram_url')
+    .select('id, facebook_url, instagram_url, state')
     .eq('country', country).eq('approved', true).order('id', { ascending: true }));
   const pages = new Map();
   for (const c of clinics) {
@@ -697,7 +712,8 @@ async function syncPages(supabase, country) {
       const k = fn(raw);
       if (!k) continue;
       const id = platform + '|' + k.key;
-      const p = pages.get(id) || { platform, page_key: k.key, url: k.url, country, clinic_ids: [] };
+      const p = pages.get(id) || { platform, page_key: k.key, url: k.url, country,
+                                   state: c.state ? String(c.state).toLowerCase() : null, clinic_ids: [] };
       if (!p.clinic_ids.includes(String(c.id))) p.clinic_ids.push(String(c.id));
       pages.set(id, p);
     }
@@ -715,18 +731,18 @@ async function stats(supabase, body) {
   const country = body.country || 'taiwan';
   await syncPages(supabase, country);
   const count = async (build) => { const { count, error } = await build(); if (error) throw new Error(error.message); return count || 0; };
-  // Due = not requested in the last 25 days (or never), i.e. still to read this month.
-  const dueBefore = new Date(Date.now() - 25 * 864e5).toISOString();
+  // Due = not requested in the last N days (25 by default), or never.
+  const dueBefore = new Date(Date.now() - skipDays(body) * 864e5).toISOString();
   const missingBefore = new Date(Date.now() - 90 * 864e5).toISOString();
   const [fb, ig, fbNever, igNever, pending, approved, fbDue, igDue] = await Promise.all([
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook')),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram')),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').is('last_requested_at', null)),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').is('last_requested_at', null)),
+    count(() => byState(supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook'), body)),
+    count(() => byState(supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram'), body)),
+    count(() => byState(supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').is('last_requested_at', null), body)),
+    count(() => byState(supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').is('last_requested_at', null), body)),
     count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'pending')),
     count(() => supabase.from('social_device_mentions').select('id', { count: 'exact', head: true }).eq('country', country).eq('status', 'approved')),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore).or('missing_since.is.null,missing_since.lt.' + missingBefore)),
-    count(() => supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore).or('missing_since.is.null,missing_since.lt.' + missingBefore))
+    count(() => byState(supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'facebook').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore).or('missing_since.is.null,missing_since.lt.' + missingBefore), body)),
+    count(() => byState(supabase.from('social_pages').select('page_key', { count: 'exact', head: true }).eq('country', country).eq('platform', 'instagram').or('last_requested_at.is.null,last_requested_at.lt.' + dueBefore).or('missing_since.is.null,missing_since.lt.' + missingBefore), body))
   ]);
   const { data: runs, error } = await supabase.from('social_crawl_runs')
     .select('*').eq('country', country).order('id', { ascending: false }).limit(10);
@@ -750,9 +766,9 @@ async function start(supabase, body) {
   await syncPages(supabase, country);
 
   // Pages never read come first, then the ones read longest ago.
-  const { data: pages, error } = await supabase.from('social_pages')
+  const { data: pages, error } = await byState(supabase.from('social_pages')
     .select('page_key, url')
-    .eq('country', country).eq('platform', platform)
+    .eq('country', country).eq('platform', platform), body)
     .order('last_requested_at', { ascending: true, nullsFirst: true })
     .order('page_key', { ascending: true })
     .limit(nPages);
