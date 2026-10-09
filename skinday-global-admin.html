@@ -5372,13 +5372,21 @@ function pcSelectedIds(){ return [...document.querySelectorAll('.pc-cand-cb:chec
 async function pcDecide(ids, approve){
   if (!ids || !ids.length) { pcCandMsg('Nothing selected.', 'var(--red)'); return; }
   if (approve && ids.length > 1 && !confirm('Approve ' + ids.length + ' prices? They go live on the directory.')) return;
-  pcCandMsg((approve ? 'Approving ' : 'Rejecting ') + ids.length + '…');
-  let data;
-  try { data = await adminAction({ action: approve ? 'approve-price-candidates' : 'reject-price-candidates', ids: ids }); }
-  catch (e) { pcCandMsg(String(e.message || e), 'var(--red)'); return; }
-  if (approve) pcCandMsg(data.approved + ' approved' + (data.already_priced ? ', ' + data.already_priced + ' skipped as already priced' : '') + '.', 'var(--green)');
-  else pcCandMsg(data.rejected + ' rejected.', 'var(--muted)');
-  if (data.errors && data.errors.length) pcCandMsg(String(data.errors[0]), 'var(--red)');
+  // Sent 40 at a time: one request for a few hundred timed out (504) on the server.
+  const CHUNK = 40;
+  let done = 0, skipped = 0, firstErr = null;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const part = ids.slice(i, i + CHUNK);
+    pcCandMsg((approve ? 'Approving ' : 'Rejecting ') + Math.min(i + CHUNK, ids.length) + ' of ' + ids.length + '…');
+    let data;
+    try { data = await adminAction({ action: approve ? 'approve-price-candidates' : 'reject-price-candidates', ids: part }); }
+    catch (e) { firstErr = String(e.message || e); break; }
+    done += (approve ? data.approved : data.rejected) || 0;
+    skipped += data.already_priced || 0;
+    if (data.errors && data.errors.length && !firstErr) firstErr = String(data.errors[0]);
+  }
+  const msg = done + (approve ? ' approved' : ' rejected') + (skipped ? ', ' + skipped + ' skipped as already priced' : '') + '.';
+  pcCandMsg(firstErr ? msg + ' Stopped: ' + firstErr + ' Press again to carry on with the rest.' : msg, firstErr ? 'var(--red)' : (approve ? 'var(--green)' : 'var(--muted)'));
   pcLoadCandidates();
 }
 </script>
