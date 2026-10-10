@@ -123,7 +123,41 @@ async function resolveIdentity(supabase, secret) {
   return null;
 }
 
+// ⭐ REGIONAL PRODUCT NAMES (2026-10-09). One product, one row, but the name a
+// rep knows depends on the country: Nuceiva is sold as Jeuveau in the US,
+// Belkyra as Kybella, Volnewmer as Everesse. device_reference.name_us /
+// name_ca hold the local name; the database keeps the one canonical model name.
+// Responses are translated on the way out (exact string matches only), and any
+// name the page sends back is translated home again, so lookups by model keep
+// working.
+let REGIONAL_CACHE = { at: 0, rows: [] };
+async function regionalNames(supabase) {
+  if (Date.now() - REGIONAL_CACHE.at < 10 * 60 * 1000) return REGIONAL_CACHE.rows;
+  const { data, error } = await supabase.from('device_reference')
+    .select('model, name_us, name_ca').or('name_us.not.is.null,name_ca.not.is.null');
+  REGIONAL_CACHE = { at: Date.now(), rows: error ? [] : (data || []) };
+  return REGIONAL_CACHE.rows;
+}
+function renameDeep(v, map) {
+  if (typeof v === 'string') return map.has(v) ? map.get(v) : v;
+  if (Array.isArray(v)) return v.map(x => renameDeep(x, map));
+  if (v && typeof v === 'object') {
+    const o = {};
+    for (const k of Object.keys(v)) o[k] = renameDeep(v[k], map);
+    return o;
+  }
+  return v;
+}
+
 exports.handler = async (event) => {
+  const res = await coreHandler(event);
+  const map = event.__regionalOut;
+  if (!map || !map.size || !res || res.statusCode !== 200 || !res.body) return res;
+  try { res.body = JSON.stringify(renameDeep(JSON.parse(res.body), map)); } catch (e) { /* leave as is */ }
+  return res;
+};
+
+async function coreHandler(event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: cors(), body: '' };
   if (event.httpMethod !== 'POST') return json(405, { error: 'method not allowed' });
 
@@ -368,6 +402,17 @@ exports.handler = async (event) => {
     ? askedCountry
     : homeCountry;
   const inCountry = { p_country: country, p_regions: regions };
+  {
+    const col = country === 'usa' ? 'name_us' : (country === 'canada' ? 'name_ca' : null);
+    if (col) {
+      const rows = (await regionalNames(supabase)).filter(r => r[col] && r[col] !== r.model);
+      if (rows.length) {
+        event.__regionalOut = new Map(rows.map(r => [r.model, r[col]]));
+        const back = new Map(rows.map(r => [r[col], r.model]));
+        for (const k of Object.keys(body)) body[k] = renameDeep(body[k], back);
+      }
+    }
+  }
   // ⭐ THE SIDE, validated the same way as the country.
   const askedSide = String(body.side || '').trim().toLowerCase();
   const side = allowedSides.includes(askedSide) ? askedSide : allowedSides[0];
@@ -1184,4 +1229,4 @@ exports.handler = async (event) => {
   } catch (e) {
     return json(500, { error: 'query failed', detail: String(e.message || e) });
   }
-};
+}
