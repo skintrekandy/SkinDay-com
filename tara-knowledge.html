@@ -88,7 +88,7 @@
 <header><div class="hin">
   <div class="brand">SkinDay <b>Tara Knowledge</b></div>
   <div class="spacer"></div>
-  <label class="btn" style="cursor:pointer">Import drafts<input type="file" id="imp" accept=".json,application/json" hidden></label>
+  <label class="btn" style="cursor:pointer">Import file<input type="file" id="imp" accept=".json,application/json" hidden></label>
 </div></header>
 <div id="app" class="wrap" hidden>
   <aside class="side">
@@ -137,7 +137,7 @@
     el('list').innerHTML=rows.length ? rows.map(function(r){
       return '<button class="row'+(CUR&&CUR.id===r.id?' on':'')+'" data-id="'+r.id+'"><span class="n">'+esc(r.product)+'</span>'+
         '<span class="chip '+esc(r.status)+'">'+esc(LABELS[r.status]||r.status)+'</span>'+
-        '<span class="m">'+esc([r.manufacturer, r.category].filter(Boolean).join(' · '))+'</span></button>';
+        '<span class="m">'+esc(r.kind==='primer' ? 'Technology primer' : [r.manufacturer, r.category].filter(Boolean).join(' · '))+'</span></button>';
     }).join('') : '<div class="empty">Nothing here yet.</div>';
     var ap=ALL.filter(function(r){ return r.status==='approved'; }).length;
     el('count').textContent=ap+' of '+ALL.length+' approved';
@@ -161,12 +161,12 @@
     var e=CUR||{}, ap=e.approvals||{}, src=Array.isArray(e.sources)?e.sources:[];
     el('editor').innerHTML=
       '<div class="ehead"><button class="btn back" id="back">‹ List</button><div><h1>'+esc(e.product)+'</h1>'+
-      '<div class="sub">'+esc([e.manufacturer, e.category, LABELS[e.status]].filter(Boolean).join(' · '))+
+      '<div class="sub">'+esc([e.kind==='primer'?'Technology primer':e.manufacturer, e.kind==='primer'?null:e.category, LABELS[e.status]].filter(Boolean).join(' · '))+
       (e.reviewed_at?' · approved '+esc(String(e.reviewed_at).slice(0,10)):'')+'</div></div></div>'+
       area('k_summary','What it is',e.summary,3)+
       area('k_technology','How it works',e.technology,3)+
       area('k_uses','Common uses',e.uses,3)+
-      area('k_generations','Generations and versions',e.generations,2)+
+      area('k_generations',e.kind==='primer'?'Variants':'Generations and versions',e.generations,2)+
       area('k_treatment','What a treatment involves',e.treatment,3)+
       '<div class="two">'+area('k_ca','Canada approval',ap.canada,2)+area('k_us','US approval',ap.usa,2)+'</div>'+
       '<div class="f clin"><label for="k_clin">Your clinical notes</label><div class="hint">What you have seen in practice. Tara passes this on as experience from SkinDay’s clinical team.</div>'+
@@ -211,10 +211,20 @@
     rd.onload=function(){
       var data; try{ data=JSON.parse(rd.result); }catch(e){ alert('That file is not valid JSON.'); return; }
       var list=Array.isArray(data)?data:(data.entries||[]);
-      api('kb_import',{entries:list}).then(function(j){
-        alert('Imported: '+j.added+' new, '+j.updated+' updated'+(j.kept_approved?', '+j.kept_approved+' already approved and left as they are':'')+'.');
-        load();
-      }).catch(function(e){ alert((e&&(e.detail||e.error))||'Import failed.'); });
+      // Small chunks, so each call finishes well inside the server time limit.
+      var tot={added:0,updated:0,approved:0,kept_approved:0}, i=0, N=15;
+      function next(){
+        if(i>=list.length){
+          alert('Imported: '+tot.added+' new, '+tot.updated+' updated'+(tot.approved?', '+tot.approved+' approved':'')+(tot.kept_approved?', '+tot.kept_approved+' already approved and left as they are':'')+'.');
+          el('count').textContent=''; load(); return;
+        }
+        el('count').textContent='Importing '+Math.min(i+N,list.length)+' of '+list.length+'…';
+        api('kb_import',{entries:list.slice(i,i+N)}).then(function(j){
+          ['added','updated','approved','kept_approved'].forEach(function(k){ tot[k]+=j[k]||0; });
+          i+=N; next();
+        }).catch(function(e){ alert(((e&&(e.detail||e.error))||'Import failed')+' (stopped after '+i+' of '+list.length+'; importing the same file again is safe).'); load(); });
+      }
+      next();
     };
     rd.readAsText(f); this.value='';
   });
