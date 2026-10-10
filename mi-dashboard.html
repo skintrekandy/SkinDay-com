@@ -1214,7 +1214,10 @@
      A chat panel on a computer; a full-screen chat on a phone, with the
      input above the bottom navigation and clinic cards in a bottom sheet. */
   body.on-tara .geopill, body.on-tara #geobar { display:none !important; }
-  .tara { max-width:780px; margin:0 auto; }
+  /* Conversation text stays at a reading width; results lists use the wider frame. */
+  .tara { max-width:1000px; margin:0 auto; }
+  .tm.me { max-width:620px; }
+  .tm.bot .tbody > p, .tm.bot .tbody > ul, .tm.bot .tbody > ol, .tm.bot .tbody > .th { max-width:760px; }
   .tara-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:18px; }
   .tara-head h2 { font-size:22px; margin:0; line-height:1.2; letter-spacing:-.01em; }
   .tara-head .tsub { color:var(--ink-2); font-size:14.5px; margin-top:4px; }
@@ -1228,8 +1231,35 @@
   .tm.bot p { margin:0 0 10px; } .tm.bot p:last-child { margin-bottom:0; }
   .tm.bot ul, .tm.bot ol { margin:4px 0 10px; padding-left:20px; } .tm.bot li { margin:5px 0; }
   .tm.bot .th { font-weight:600; margin:12px 0 6px; } .tm.bot .th:first-child { margin-top:0; }
-  .tm.bot a.tclin { color:var(--accent-strong); font-weight:600; text-decoration:none; border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor:pointer; }
-  .tm.bot a.tclin:hover { border-bottom-color:var(--accent); }
+  .tm.bot a.tclin { color:var(--ink); font-weight:600; text-decoration:none; border-bottom:1px dotted var(--faint); cursor:pointer; }
+  .tm.bot a.tclin:hover { color:var(--accent-strong); border-bottom:1px solid var(--accent); }
+  /* Results list under an answer */
+  .tres { margin:14px 0 2px; border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--surface); }
+  .tres-h { display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; padding:12px 14px; background:var(--surface-2); border-bottom:1px solid var(--line); }
+  .tres-h b { font-size:15px; font-weight:600; }
+  .tres-h span { font-size:13px; color:var(--muted); }
+  .trow { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 12px; align-items:center; width:100%; text-align:left;
+    padding:10px 14px; background:none; border:0; border-bottom:1px solid var(--line-2); font:inherit; color:inherit; cursor:pointer; }
+  .trow:last-child { border-bottom:0; }
+  .trow:hover { background:var(--surface-2); }
+  .trow .tn { font-size:14.5px; font-weight:600; color:var(--ink); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .trow .tl { grid-column:1; font-size:12.5px; color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .trow .tr { grid-column:2; grid-row:1 / 3; font-family:var(--font-mono); font-size:11px; color:var(--faint); white-space:nowrap; display:flex; align-items:center; gap:8px; }
+  .trow .tr .tgo2 { font-family:var(--font-ui); font-size:18px; color:var(--faint); }
+  .trow .tours { font-family:var(--font-mono); font-size:9px; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-strong); background:var(--accent-soft); border-radius:100px; padding:1px 6px; margin-left:6px; vertical-align:2px; }
+  .tres-f { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 14px; border-top:1px solid var(--line); background:var(--surface); }
+  .tres-f button { font:inherit; font-size:13px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line); border-radius:100px; padding:6px 13px; cursor:pointer; }
+  .tres-f button:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .tres-f .tnote { font-size:12px; color:var(--muted); margin-left:auto; }
+  .tres-f button.confirm { border-color:var(--accent); background:var(--accent-soft); color:var(--accent-strong); font-weight:600; }
+  .tres-sort { margin-left:auto; font:inherit; font-size:12.5px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line); border-radius:100px; padding:4px 8px; }
+  /* Follow-up questions */
+.thist { border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-top:14px; }
+  .thist .trow.cur { background:var(--accent-soft); }
+  .thist .trow .tn { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .tfu { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .tfu button { font:inherit; font-size:13.5px; text-align:left; color:var(--ink-2); background:var(--surface-2); border:1px solid var(--line-2); border-radius:100px; padding:7px 13px; cursor:pointer; }
+  .tfu button:hover { border-color:var(--accent); color:var(--accent-strong); background:var(--surface); }
   .tm.bot code { font-family:var(--font-mono); font-size:13px; background:var(--surface-2); padding:1px 5px; border-radius:4px; }
   .tm.bot .tstat { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:14px; }
   .tm.bot .terr { color:var(--comp); font-size:14px; }
@@ -1242,13 +1272,32 @@
   .tsug { display:flex; flex-direction:column; gap:8px; }
   .tsug button { text-align:left; font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 14px; cursor:pointer; }
   .tsug button:hover { border-color:var(--accent); color:var(--accent-strong); }
-  .tara-bar { position:sticky; bottom:0; z-index:5; background:var(--bg); padding:12px 0 14px; }
-  .tara-bar form { display:flex; gap:8px; align-items:flex-end; }
-  .tara-bar textarea { flex:1; resize:none; font:inherit; font-size:15px; line-height:1.45; padding:11px 14px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--ink); max-height:160px; min-height:46px; }
-  .tara-bar textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
-  .tara-bar .tgo { flex:0 0 auto; height:46px; padding:0 18px; border:0; border-radius:14px; background:var(--accent); color:#fff; font:inherit; font-size:14.5px; font-weight:600; cursor:pointer; }
+  /* The composer: one card anchored to the bottom, with the mic inside it. */
+  .tara-bar { position:sticky; bottom:0; z-index:5; padding:14px 0 16px;
+    background:linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent), var(--bg) 26%); }
+  .tara-bar form { display:flex; gap:6px; align-items:flex-end; max-width:760px; margin:0 auto; padding:6px 6px 6px 4px;
+    background:var(--surface); border:1px solid var(--line); border-radius:18px; box-shadow:0 1px 2px rgba(20,26,33,.04), 0 12px 32px -18px rgba(20,26,33,.35); }
+  .tara-bar form:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft), 0 12px 32px -18px rgba(20,26,33,.35); }
+  .tara-bar textarea { flex:1; resize:none; font:inherit; font-size:15px; line-height:1.45; padding:10px 10px; border:0; background:transparent; color:var(--ink); max-height:160px; min-height:44px; }
+  .tara-bar textarea:focus { outline:none; }
+  .tara-bar .tgo { flex:0 0 auto; height:42px; padding:0 18px; border:0; border-radius:13px; background:var(--accent); color:#fff; font:inherit; font-size:14.5px; font-weight:600; cursor:pointer; }
+  .tara-quota { max-width:760px; margin-left:auto; margin-right:auto; }
   .tara-bar .tgo:disabled { opacity:.5; cursor:default; }
   .tara-quota { font-family:var(--font-mono); font-size:10.5px; color:var(--muted); margin-top:6px; min-height:14px; }
+  .tara-tools { display:flex; gap:8px; align-items:center; }
+  .tara-tools select { font:inherit; font-size:13px; color:var(--ink-2); background:var(--surface); border:1px solid var(--line); border-radius:100px; padding:6px 10px; max-width:190px; }
+  .tmic { flex:0 0 auto; height:42px; min-width:42px; padding:0 11px; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    border:0; border-radius:13px; background:var(--surface-2); color:var(--accent-strong); cursor:pointer; font:inherit; font-size:13px; }
+  .tmic[hidden] { display:none; }
+  .tmic:hover { background:var(--accent-soft); }
+  .tmic.rec { background:#B3261E; border-color:#B3261E; color:#fff; }
+  .tmic.rec svg { animation:tpulse 1.2s ease-in-out infinite; }
+  .tmic .trec:empty { display:none; }
+  .tmic .trec { font-family:var(--font-mono); font-size:12px; }
+  .tmic:disabled { opacity:.5; cursor:default; }
+  @keyframes tpulse { 50% { opacity:.45; } }
+  .tm.me .tvia { display:block; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; opacity:.75; margin-bottom:2px; }
+  .tfb .tlisten { margin-left:auto; color:var(--accent-strong); }
   @media (max-width:640px){
     body.on-tara main { padding-bottom:150px; }
     .tara-head { margin-bottom:12px; }
@@ -1257,10 +1306,25 @@
     .tm { font-size:15px; }
     .tm.me { max-width:88%; }
     .tm.bot { padding:12px 14px; box-shadow:none; }
-    .tara-bar { position:fixed; left:0; right:0; bottom:calc(52px + env(safe-area-inset-bottom)); padding:8px 12px 6px;
-      border-top:1px solid var(--line-2); z-index:140; }
-    .tara-bar textarea { font-size:16px; border-radius:22px; padding:10px 15px; min-height:44px; }
-    .tara-bar .tgo { height:44px; border-radius:22px; padding:0 16px; }
+    .tara-bar { position:fixed; left:0; right:0; bottom:calc(52px + env(safe-area-inset-bottom)); padding:8px 10px 6px;
+      background:var(--bg); z-index:140; }
+    .tara-bar form { border-radius:24px; padding:4px 4px 4px 6px; }
+    .tara-bar textarea { font-size:16px; padding:9px 8px; min-height:40px; }
+    .tara-bar .tgo { height:40px; border-radius:20px; padding:0 15px; }
+    .tmic { height:40px; min-width:40px; border-radius:20px; padding:0 10px; }
+    /* While typing, the keyboard takes the bottom nav's place and the composer sits on it. */
+    body.tara-typing .botnav { display:none; }
+    body.tara-typing .tara-bar { bottom:var(--kb, 0px); padding-bottom:calc(6px + env(safe-area-inset-bottom)); }
+    body.tara-typing .tara-quota { display:none; }
+    .tres { margin-left:-2px; margin-right:-2px; }
+    .trow { padding:11px 12px; }
+    .tres-f .tnote { margin-left:0; width:100%; }
+    .tfu { flex-wrap:nowrap; overflow-x:auto; margin-left:-14px; margin-right:-14px; padding:0 14px 2px; scrollbar-width:none; }
+    .tfu::-webkit-scrollbar { display:none; }
+    .tfu button { flex:0 0 auto; white-space:nowrap; }
+    .tara-head { flex-wrap:wrap; }
+    .tara-tools { width:100%; }
+    .tara-tools select { flex:1; max-width:none; font-size:14px; padding:8px 12px; }
     .tara-quota { text-align:center; margin-top:4px; }
   }
 </style>
@@ -1900,12 +1964,28 @@
       <div class="tara">
         <div class="tara-head">
           <div><h2>Tara</h2><div class="tsub">Ask about your territory, your accounts and the market.</div></div>
-          <button type="button" class="tara-new" id="taraNew">New chat</button>
+          <div class="tara-tools">
+            <select id="taraLang" aria-label="Reply language">
+              <option value="">Reply in my language</option>
+              <option value="en">English</option>
+              <option value="fr">Français</option>
+              <option value="zh-hant">繁體中文</option>
+              <option value="zh-hans">简体中文</option>
+              <option value="ko">한국어</option>
+              <option value="es">Español</option>
+            </select>
+            <button type="button" class="tara-new" id="taraHist">Past chats</button>
+            <button type="button" class="tara-new" id="taraNew">New chat</button>
+          </div>
         </div>
         <div class="tara-log" id="taraLog"></div>
         <div class="tara-bar">
           <form id="taraForm" autocomplete="off">
             <textarea id="taraIn" rows="1" placeholder="Ask Tara" aria-label="Ask Tara"></textarea>
+            <button type="button" class="tmic" id="taraMic" aria-label="Ask by voice" hidden>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+              <span class="trec"></span>
+            </button>
             <button type="submit" class="tgo" id="taraGo">Ask</button>
           </form>
           <div class="tara-quota" id="taraQuota"></div>
@@ -5911,6 +5991,7 @@
     taraApi('status',{}).then(function(s){
       if(!s || !s.enabled) return;
       TARA.on=true; TARA.used=s.used||0; TARA.limit=s.limit||null;
+      TARA.voice=!!s.voice; taraVoiceSetup();
       el('tabTara').style.display=''; el('bnTara').style.display='';
       taraQuota();
     }).catch(function(){});
@@ -5946,8 +6027,13 @@
       b.addEventListener('click',function(){ taraSend(b.textContent); });
     });
   }
+  function taraThreadSet(t){ TARA.thread=t||null; try{ if(t) localStorage.setItem('tara_thread',t); else localStorage.removeItem('tara_thread'); }catch(e){} }
   function taraOpen(){
-    if(!el('taraLog').children.length) taraEmpty();
+    if(!el('taraLog').children.length){
+      // Coming back to Tara reopens the chat you were in, even after a refresh.
+      var last=''; try{ last=localStorage.getItem('tara_thread')||''; }catch(e){}
+      if(last) taraLoadThread(last); else taraEmpty();
+    }
     if(!isPhone()) setTimeout(function(){ el('taraIn').focus(); },50);
   }
   function taraScroll(){ window.scrollTo(0, document.body.scrollHeight); }
@@ -5991,15 +6077,16 @@
   function taraBusy(on){
     TARA.busy=on; el('taraGo').disabled=on;
   }
-  function taraSend(q){
+  function taraSend(q, via){
     q=String(q||'').trim();
     if(!q || TARA.busy) return;
     taraBusy(true);
     el('taraIn').value=''; taraGrow();
-    taraAdd('me', esc(q));
+    taraAdd('me', (via==='voice'?'<span class="tvia">Spoken</span>':'')+esc(q));
     var bot=taraAdd('bot','<div class="tname">Tara</div><div class="tbody"><div class="tstat"><span class="spin"></span><span class="tst">Thinking</span></div></div>');
-    taraApi('ask',{question:q, thread_id:TARA.thread}).then(function(j){
-      TARA.thread=j.thread_id||TARA.thread;
+    bot.setAttribute('data-via', via||'');
+    taraApi('ask',{question:q, thread_id:TARA.thread, via:via||'', reply_lang:taraLangGet()}).then(function(j){
+      taraThreadSet(j.thread_id||TARA.thread);
       if(j.used!=null){ TARA.used=j.used; taraQuota(); }
       return taraFollow(j, bot, 0);
     }).catch(function(e){ taraFail(bot,e); });
@@ -6022,7 +6109,20 @@
     if(j.answer){
       b.innerHTML=taraMd(j.answer)+
         '<div class="tfb" data-id="'+esc(j.id)+'"><span>Was this useful?</span>'+
-        '<button type="button" data-r="1">Yes</button><button type="button" data-r="-1">No</button></div>';
+        '<button type="button" data-r="1">Yes</button><button type="button" data-r="-1">No</button>'+
+        (TARA.voice?'<button type="button" class="tlisten" data-listen="'+esc(j.id)+'">Listen</button>':'')+'</div>';
+      if(j.results && j.results.rows && j.results.rows.length){
+        var fbEl=b.querySelector('.tfb'); var holder=document.createElement('div');
+        holder.innerHTML=taraPanel(j.results); fbEl.parentNode.insertBefore(holder.firstChild, fbEl);
+      }
+      if(j.followups && j.followups.length){
+        var fu=document.createElement('div'); fu.className='tfu';
+        fu.innerHTML=j.followups.map(function(q){ return '<button type="button">'+esc(q)+'</button>'; }).join('');
+        b.appendChild(fu);
+      }
+      if(TARA.voice && bot.getAttribute('data-via')==='voice'){
+        var lb=b.querySelector('.tlisten'); if(lb) taraListen(lb, true);
+      }
     } else {
       b.innerHTML='<div class="terr">'+esc(j.error||'Tara could not finish that one. Please try asking again.')+'</div>';
     }
@@ -6044,11 +6144,70 @@
   el('taraForm').addEventListener('submit',function(e){ e.preventDefault(); taraSend(el('taraIn').value); });
   el('taraNew').addEventListener('click',function(){
     if(TARA.busy) return;
-    TARA.thread=null; el('taraLog').innerHTML=''; taraEmpty();
+    taraThreadSet(null); el('taraLog').innerHTML=''; taraEmpty();
+  });
+  el('taraHist').addEventListener('click',taraHistory);
+  // Past chats open in the same drawer / bottom sheet the clinic cards use.
+  function taraHistory(){
+    var p=el('grpPanel');
+    p.innerHTML='<div class="gp-top"><h3>Past chats</h3><button type="button" class="gp-x" aria-label="Close">&times;</button></div><div class="gp-body"><div class="empty"><span class="spin"></span></div></div>';
+    p.querySelector('.gp-x').addEventListener('click',closeGroup);
+    p.classList.add('open'); el('grpShade').classList.add('open'); document.body.style.overflow='hidden'; p.scrollTop=0;
+    taraApi('threads',{}).then(function(j){
+      var list=j.threads||[], body=p.querySelector('.gp-body');
+      if(!list.length){ body.innerHTML='<div class="empty">No past chats yet.</div>'; return; }
+      body.innerHTML='<div class="thist">'+list.map(function(t){
+        var d=new Date(t.last_at);
+        var when=d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' \u00b7 '+d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
+        return '<button type="button" class="trow thr'+(t.thread_id===TARA.thread?' cur':'')+'" data-t="'+esc(t.thread_id)+'">'+
+          '<span class="tn">'+esc(t.title)+'</span><span class="tr">'+esc(when)+'<span class="tgo2">\u203a</span></span>'+
+          '<span class="tl">'+t.count+(t.count===1?' question':' questions')+'</span></button>';
+      }).join('')+'</div>';
+      Array.prototype.forEach.call(body.querySelectorAll('.thr'),function(b){
+        b.addEventListener('click',function(){ closeGroup(); taraLoadThread(b.getAttribute('data-t')); });
+      });
+    }).catch(function(){ p.querySelector('.gp-body').innerHTML='<div class="empty">Could not load past chats.</div>'; });
+  }
+  function taraLoadThread(tid){
+    if(TARA.busy) return;
+    var log=el('taraLog');
+    log.innerHTML='<div class="empty"><span class="spin"></span></div>';
+    taraApi('thread',{thread_id:tid}).then(function(j){
+      var turns=j.turns||[];
+      log.innerHTML='';
+      if(!turns.length){ taraThreadSet(null); taraEmpty(); return; }
+      taraThreadSet(tid);
+      turns.forEach(function(t){
+        taraAdd('me', esc(t.question||''));
+        var bot=taraAdd('bot','<div class="tname">Tara</div><div class="tbody"><div class="tstat"><span class="spin"></span><span class="tst">Thinking</span></div></div>');
+        if(t.done){
+          taraFinish(bot,t);
+          if(t.rating){ var on=bot.querySelector('.tfb button[data-r="'+t.rating+'"]'); if(on) on.classList.add('on'); }
+        } else { taraBusy(true); taraFollow(t, bot, 0); }
+      });
+      taraScroll();
+    }).catch(function(){ log.innerHTML=''; taraEmpty(); });
+  }
+  el('taraLog').addEventListener('change',function(e){
+    var sel=e.target.closest('.tres-sort'); if(!sel) return;
+    var box=sel.closest('.tres'), i=box.getAttribute('data-p');
+    TPANELS[i].sort=sel.value; box.outerHTML=taraPanel(null,i);
   });
   el('taraLog').addEventListener('click',function(e){
     var a=e.target.closest('a.tclin');
     if(a){ e.preventDefault(); taraClinic(a.getAttribute('data-cid')); return; }
+    var tr=e.target.closest('.trow');
+    if(tr){ taraClinic(tr.getAttribute('data-cid')); return; }
+    var fuB=e.target.closest('.tfu button');
+    if(fuB){ taraSend(fuB.textContent); return; }
+    var more=e.target.closest('.tres-more');
+    if(more){ var box=more.closest('.tres'); TPANELS[box.getAttribute('data-p')].open=true; box.outerHTML=taraPanel(null, box.getAttribute('data-p')); return; }
+    var op=e.target.closest('.tres-open');
+    if(op){ taraOpenInClinics(TPANELS[op.closest('.tres').getAttribute('data-p')].p.args||{}); return; }
+    var sv=e.target.closest('.tres-save');
+    if(sv){ taraSaveAll(sv); return; }
+    var ls=e.target.closest('.tfb .tlisten');
+    if(ls){ taraListen(ls, false); return; }
     var fb=e.target.closest('.tfb button');
     if(fb){
       var box=fb.parentNode, r=parseInt(fb.getAttribute('data-r'),10);
@@ -6056,6 +6215,274 @@
       taraApi('feedback',{id:box.getAttribute('data-id'), rating:r}).catch(function(){});
     }
   });
+
+  // ---- Tara voice: tap the mic, speak, tap again. The recording is turned into
+  // text on the server, shown as the question, and sent. Answers to spoken
+  // questions are read aloud; any answer has a Listen button.
+  var TV={ rec:null, chunks:[], stream:null, mime:'', t0:0, timer:null, player:null, playingBtn:null, cache:{} };
+  function taraLangGet(){ try{ return localStorage.getItem('tara_lang')||''; }catch(e){ return ''; } }
+  (function(){
+    var sel=el('taraLang'); sel.value=taraLangGet();
+    sel.addEventListener('change',function(){ try{ localStorage.setItem('tara_lang',sel.value); }catch(e){} });
+  })();
+  function taraPickMime(){
+    if(!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    var c=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/aac'];
+    for(var i=0;i<c.length;i++){ if(MediaRecorder.isTypeSupported(c[i])) return c[i]; }
+    return '';
+  }
+  function taraVoiceSetup(){
+    var ok=TARA.voice && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder;
+    el('taraMic').hidden=!ok;
+  }
+  // iPhone only plays sound that starts from a tap, so the player is unlocked
+  // on the mic tap and reused when the answer arrives.
+  function taraPlayer(){
+    if(!TV.player){ TV.player=new Audio(); TV.player.addEventListener('ended',taraStopPlay); }
+    return TV.player;
+  }
+  // A real, tiny silent WAV built in the page, used only to unlock playback.
+  function taraSilence(){
+    var n=800, buf=new ArrayBuffer(44+n*2), v=new DataView(buf);
+    function w(o,str){ for(var i=0;i<str.length;i++) v.setUint8(o+i,str.charCodeAt(i)); }
+    w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true);
+    v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,8000,true); v.setUint32(28,16000,true);
+    v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+    var bin='', bytes=new Uint8Array(buf); for(var i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+    return 'data:audio/wav;base64,'+btoa(bin);
+  }
+  function taraUnlock(){
+    var a=taraPlayer();
+    try{ a.src=taraSilence(); var p=a.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){}
+  }
+  function taraStopPlay(){
+    if(TV.player){ try{ TV.player.pause(); }catch(e){} }
+    if(TV.playingBtn){ TV.playingBtn.textContent='Listen'; TV.playingBtn.classList.remove('on'); TV.playingBtn=null; }
+  }
+  function taraListen(btn, auto){
+    if(TV.playingBtn===btn){ taraStopPlay(); return; }
+    taraStopPlay();
+    var id=btn.getAttribute('data-listen');
+    btn.textContent='Loading…';
+    var go=function(src){
+      var a=taraPlayer(); a.src=src; TV.playingBtn=btn; btn.textContent='Stop'; btn.classList.add('on');
+      var p=a.play();
+      if(p && p.catch) p.catch(function(){ btn.textContent='Listen'; btn.classList.remove('on'); TV.playingBtn=null; });
+    };
+    if(TV.cache[id]){ go(TV.cache[id]); return; }
+    taraApi('speak',{id:id}).then(function(j){
+      TV.cache[id]='data:'+(j.mime||'audio/mpeg')+';base64,'+j.audio; go(TV.cache[id]);
+    }).catch(function(){ btn.textContent=auto?'Listen':'Could not play'; if(!auto) setTimeout(function(){ btn.textContent='Listen'; },2000); });
+  }
+  function taraRecTick(){
+    var s=Math.floor((Date.now()-TV.t0)/1000);
+    el('taraMic').querySelector('.trec').textContent='0:'+(s<10?'0':'')+s;
+    if(s>=60) taraRecStop();
+  }
+  function taraRecStart(){
+    if(TARA.busy) return;
+    taraStopPlay(); taraUnlock();
+    TV.mime=taraPickMime(); TV.chunks=[];
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      TV.stream=stream;
+      try{ TV.rec=TV.mime ? new MediaRecorder(stream,{mimeType:TV.mime}) : new MediaRecorder(stream); }
+      catch(e){ TV.rec=new MediaRecorder(stream); }
+      TV.mime=TV.rec.mimeType||TV.mime||'audio/webm';
+      TV.rec.ondataavailable=function(ev){ if(ev.data && ev.data.size) TV.chunks.push(ev.data); };
+      TV.rec.onstop=taraRecDone;
+      TV.rec.start();
+      TV.t0=Date.now(); TV.timer=setInterval(taraRecTick,250); taraRecTick();
+      var m=el('taraMic'); m.classList.add('rec'); m.setAttribute('aria-label','Stop and send');
+      el('taraIn').placeholder='Listening… tap the mic again to send';
+    }).catch(function(){
+      el('taraQuota').textContent='The microphone is blocked. You can allow it in your browser settings.';
+    });
+  }
+  function taraRecStop(){
+    if(TV.rec && TV.rec.state!=='inactive'){ try{ TV.rec.stop(); }catch(e){} }
+  }
+  function taraRecReset(){
+    clearInterval(TV.timer); TV.timer=null;
+    if(TV.stream){ TV.stream.getTracks().forEach(function(t){ t.stop(); }); TV.stream=null; }
+    var m=el('taraMic'); m.classList.remove('rec'); m.querySelector('.trec').textContent=''; m.setAttribute('aria-label','Ask by voice');
+    el('taraIn').placeholder='Ask Tara';
+  }
+  function taraRecDone(){
+    var short=(Date.now()-TV.t0)<700;
+    taraRecReset();
+    var blob=new Blob(TV.chunks,{type:TV.mime||'audio/webm'}); TV.chunks=[];
+    if(short || !blob.size) return;
+    var m=el('taraMic'); m.disabled=true;
+    el('taraIn').placeholder='Getting your question…';
+    var fr=new FileReader();
+    fr.onload=function(){
+      var b64=String(fr.result||'').split(',')[1]||'';
+      taraApi('transcribe',{audio:b64, mime:TV.mime}).then(function(j){
+        m.disabled=false; el('taraIn').placeholder='Ask Tara';
+        var t=String(j.text||'').trim();
+        if(!t){ el('taraQuota').textContent='I could not hear a question. Please try again.'; return; }
+        taraSend(t,'voice');
+      }).catch(function(e){
+        m.disabled=false; el('taraIn').placeholder='Ask Tara';
+        if(e&&e.unauth){ location.reload(); return; }
+        el('taraQuota').textContent=(e&&e.error)?e.error:'Could not hear that. Please try again.';
+      });
+    };
+    fr.readAsDataURL(blob);
+  }
+  el('taraMic').addEventListener('click',function(){
+    if(TV.rec && TV.rec.state==='recording') taraRecStop(); else taraRecStart();
+  });
+
+
+  // ---- results list under an answer ----
+  var TPANELS=[];
+  var SEG_WORDS={ ours:'Already using ours', competitor:'Competitor only', greenfield:'Nothing identified',
+                  research:'Not researched yet', 'new':'Newly listed' };
+  function taraPanelTitle(p){
+    var a=p.args||{}, bits=[];
+    if(p.kind==='posted'){ if(a.product) bits.push('Posted about '+a.product); }
+    else if(p.kind==='changes'){ bits.push('First seen in the last '+(a.days||30)+' days'); }
+    else {
+      if(a.segment) bits.push((isInj()&&a.segment==='competitor')?W().competitor:(SEG_WORDS[a.segment]||a.segment));
+      if(a.category) bits.push(CAT_LABEL[a.category]||a.category);
+      if(a.device) bits.push(String(a.device).replace(/^=/,''));
+      if(a.manufacturer) bits.push(a.manufacturer);
+      if(a.distributor) bits.push('via '+a.distributor);
+      if(a.exclude_manufacturer) bits.push('no '+a.exclude_manufacturer);
+      if(a.name_contains) bits.push('“'+a.name_contains+'”');
+    }
+    var where=a.neighbourhood ? titleCase(a.neighbourhood) : (a.city ? regionLabel(a.city) : (a.province ? regionLabel(a.province) : ''));
+    if(where) bits.push(where);
+    return bits.join(' · ');
+  }
+  function taraPanel(p, idx){
+    if(idx==null){ TPANELS.push({p:p, open:false}); idx=TPANELS.length-1; }
+    var st=TPANELS[idx]; p=st.p;
+    var rows=p.rows||[], total=Number(p.total)||rows.length;
+    // A location shown on every row says nothing, so it only appears when rows differ.
+    var areas={}; rows.forEach(function(r){ if(r.area) areas[r.area]=1; });
+    var showArea=Object.keys(areas).length>1;
+    var sort=st.sort||'';
+    if(sort){
+      rows=rows.slice().sort(function(x,y){
+        if(sort==='reviews') return (Number(y.reviews)||0)-(Number(x.reviews)||0);
+        if(sort==='rating') return (Number(y.rating)||0)-(Number(x.rating)||0) || (Number(y.reviews)||0)-(Number(x.reviews)||0);
+        return String(x.name||'').localeCompare(String(y.name||''));
+      });
+    }
+    var shown=st.open ? rows : rows.slice(0,5);
+    var noun=total===1?' clinic':' clinics';
+    var sorter = (p.kind==='clinics' && rows.length>1)
+      ? '<select class="tres-sort" aria-label="Order">'+[['','As Tara found them'],['reviews','Most reviews'],['rating','Best rated'],['name','A to Z']]
+          .map(function(o){ return '<option value="'+o[0]+'"'+(o[0]===sort?' selected':'')+'>'+o[1]+'</option>'; }).join('')+'</select>'
+      : '';
+    var h='<div class="tres" data-p="'+idx+'"><div class="tres-h"><b>'+num(total)+noun+'</b><span>'+esc(taraPanelTitle(p))+'</span>'+sorter+'</div>';
+    h+=shown.map(function(r){
+      var right=(r.reviews!=null?num(r.reviews)+' reviews':'');
+      var line=[r.line, showArea?r.area:'', r.group?r.group:''].filter(Boolean).join(' · ');
+      return '<button type="button" class="trow" data-cid="'+esc(r.id)+'">'+
+        '<span class="tn">'+esc(r.name)+(r.ours?'<span class="tours">Ours</span>':'')+'</span>'+
+        '<span class="tr">'+esc(right)+'<span class="tgo2">›</span></span>'+
+        (line?'<span class="tl">'+esc(line)+'</span>':'')+'</button>';
+    }).join('');
+    var foot=[];
+    if(!st.open && rows.length>5) foot.push('<button type="button" class="tres-more">Show all '+num(rows.length)+'</button>');
+    if(p.kind==='clinics') foot.push('<button type="button" class="tres-open">Open in Clinics</button>');
+    if(rows.length>1) foot.push('<button type="button" class="tres-save">Save all '+num(rows.length)+' to My List</button>');
+    if(total>rows.length) foot.push('<span class="tnote">The first '+num(rows.length)+' of '+num(total)+' are listed. Ask Tara to narrow it down.</span>');
+    if(foot.length) h+='<div class="tres-f">'+foot.join('')+'</div>';
+    return h+'</div>';
+  }
+  function taraSaveAll(btn){
+    var box=btn.closest('.tres'), st=TPANELS[box.getAttribute('data-p')];
+    var ids=(st.p.rows||[]).map(function(r){ return String(r.id); });
+    // Two taps: adding dozens of accounts is not something to do by accident.
+    if(!btn.classList.contains('confirm')){
+      var fresh=ids.filter(function(id){ return !savedIds[id]; }).length;
+      if(!fresh){ btn.textContent='All already in My List'; btn.disabled=true; return; }
+      btn.classList.add('confirm');
+      btn.textContent='Add '+num(fresh)+' to My List? Tap again'+(ids.length>fresh?' ('+num(ids.length-fresh)+' already saved)':'');
+      setTimeout(function(){ if(btn.classList.contains('confirm') && !btn.disabled){ btn.classList.remove('confirm'); btn.textContent='Save all '+num(ids.length)+' to My List'; } },6000);
+      return;
+    }
+    btn.classList.remove('confirm');
+    btn.disabled=true; btn.textContent='Saving\u2026';
+    api('save_accounts_bulk',{clinic_ids:ids}).then(function(res){
+      var r=res.result||{};
+      ids.forEach(function(id){ savedIds[id]=true; }); updateListCount(); loaded.list=false;
+      btn.textContent='✓ '+num(r.added||0)+' added'+(r.already?' · '+num(r.already)+' already saved':'');
+    }).catch(function(e){ btn.disabled=false; btn.textContent=(e&&e.error)?e.error:'Could not save'; });
+  }
+  // On a phone the composer follows the keyboard instead of hiding behind it.
+  (function(){
+    var inp=el('taraIn');
+    function kb(){
+      if(!window.visualViewport) return;
+      var off=Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+      document.body.style.setProperty('--kb', off+'px');
+    }
+    inp.addEventListener('focus',function(){ if(isPhone()){ document.body.classList.add('tara-typing'); kb(); setTimeout(taraScroll,250); } });
+    inp.addEventListener('blur',function(){ document.body.classList.remove('tara-typing'); document.body.style.removeProperty('--kb'); });
+    if(window.visualViewport){ window.visualViewport.addEventListener('resize',kb); window.visualViewport.addEventListener('scroll',kb); }
+  })();
+
+  // "Open in Clinics": the same territory and filters, set on the Clinics tab,
+  // so the rep can carry on with the full tools there.
+  function taraSetSel(id,v){
+    var s=el(id); if(!s) return;
+    v=v||'';
+    if(v && !Array.prototype.some.call(s.options,function(o){ return o.value===v; })){
+      var o=document.createElement('option'); o.value=v; o.textContent=String(v).replace(/^=/,''); s.appendChild(o);
+    }
+    s.value=v;
+  }
+  function taraOpenInClinics(a){
+    var locked=!!(ME && (ME.province || (ME.territories && ME.territories.length)));
+    var prov=locked ? geo.province : String(a.province||'').toLowerCase();
+    var usa=CTY.key==='usa';
+    var tier2=usa ? (a.city||'') : (a.neighbourhood||'');
+    var tier3=usa ? (a.neighbourhood||'') : '';
+    geo={province:prov, city:'', neighbourhood:''};
+    if(!locked) taraSetSel('selProvince', prov);
+    var hood=el('selHood'), city=el('selCity');
+    hood.style.display=prov?'':'none'; el('sepHood').style.display=prov?'':'none';
+    el('geoReset').style.display=(prov&&!locked)?'':'none';
+    city.style.display='none'; el('sepCity').style.display='none';
+    var steps=Promise.resolve();
+    if(prov){
+      steps=api('geo',{}).then(function(r){
+        fillSelect(hood, r.geo||[], 'All areas', regionLabel);
+        if(tier2){ taraSetSel('selHood', tier2); if(usa) geo.city=tier2; else geo.neighbourhood=tier2; }
+        if(usa && tier2){
+          city.style.display=''; el('sepCity').style.display='';
+          return api('geo',{}).then(function(r2){
+            fillSelect(city, r2.geo||[], 'All cities', titleCase);
+            if(tier3){ taraSetSel('selCity', tier3); geo.neighbourhood=tier3; }
+          });
+        }
+      }).catch(function(){});
+    }
+    steps.then(function(){
+      ACCT_FILTERS.forEach(function(id){ if(el(id)) el(id).value=''; });
+      el('acctSearch').value=a.name_contains||''; setSearch(a.name_contains||'');
+      taraSetSel('acctCategory', a.category);
+      el('acctSegment').value=a.segment||'';
+      taraSetSel('acctMfr', a.manufacturer);
+      taraSetSel('acctDist', a.distributor);
+      taraSetSel('acctDevice', a.device);
+      taraSetSel('acctExclude', a.exclude_manufacturer);
+      var mr=String(a.min_reviews||''); el('acctMinRev').value=['50','200','500'].indexOf(mr)>-1?mr:'';
+      if(a.sort && ['devices','reviews','rating','newest'].indexOf(a.sort)>-1) el('acctSort').value=a.sort;
+      syncQuick(); advLabel();
+      loaded.accounts=false; loaded.landscape=false; loaded.pulse=false; loaded.list=false;
+      PORTFOLIO_STALE=true; loadNewCount(); geoPillSync();
+      document.querySelector('.tabs button[data-tab="accounts"]').click();
+      window.scrollTo(0,0);
+      loadAccounts();
+    });
+  }
+
   // A clinic named in an answer opens its full card: a drawer on a computer,
   // a bottom sheet on a phone (the same panel the Group view uses).
   function taraClinic(cid){
