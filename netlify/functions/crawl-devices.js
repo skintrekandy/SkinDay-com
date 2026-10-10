@@ -1960,7 +1960,7 @@ async function doCrawl(supabase, body) {
   // update and never a redeploy.
   let refQuery = supabase
     .from('device_reference')
-    .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active')
+    .select('id, model, model_aliases, manufacturer, manufacturer_aliases, category, name_is_also_generic, exclusion_phrases, corroborate_aliases, active, markets')
     .eq('active', true);
   // ⭐ The whole reason a biostim pass is safe to run over already-crawled
   // hosts: it can only ever match these rows, so it cannot touch, refresh or
@@ -1990,7 +1990,14 @@ async function doCrawl(supabase, body) {
     : refQuery.not('category', 'in', '(' + INJECTABLE_CATEGORIES.join(',') + ')');
   const { data: devices, error: refErr } = await refQuery;
   if (refErr) throw refErr;
-  const matcher = buildMatcher(devices || []);
+  // ⭐ MARKETS (2026-10-09). Some products are sold under a different name per
+  // country and carry a row each (Nuceiva in Canada, Jeuveau in the US). A row
+  // with `markets` set only matches clinics in those countries, so a US page
+  // saying "Jeuveau" can no longer be filed under the Canadian row. Rows with no
+  // markets match everywhere. reference_count below still uses the full list, so
+  // switching countries between runs does not relabel a run as a backfill.
+  const forCountry = (d) => !country || !Array.isArray(d.markets) || !d.markets.length || d.markets.includes(country);
+  const matcher = buildMatcher((devices || []).filter(forCountry));
 
   // ⭐⭐⭐ THE MONTH-OVER-MONTH GUARD. Written once per run, on the first
   // invocation only (`reference_count is null`), so the rest of the loop costs

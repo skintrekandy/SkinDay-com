@@ -848,11 +848,15 @@ function readItem(platform, it) {
   };
 }
 
-async function loadMatcher(supabase) {
+// ⭐ MARKETS (2026-10-09): a row with `markets` set only matches posts from
+// clinics in those countries (Nuceiva for Canada, Jeuveau for the US), so a
+// US post naming Jeuveau lands on the US row. No markets = every country.
+async function loadMatcher(supabase, country) {
   const devices = await pageAll(() => supabase.from('device_reference')
-    .select('id, model, model_aliases, name_zh, name_is_also_generic, exclusion_phrases, corroborate_aliases, active')
+    .select('id, model, model_aliases, name_zh, name_is_also_generic, exclusion_phrases, corroborate_aliases, active, markets')
     .order('id', { ascending: true }));
-  return buildMatcher(devices);
+  const c = String(country || '').toLowerCase();
+  return buildMatcher(devices.filter(d => !c || !Array.isArray(d.markets) || !d.markets.length || d.markets.includes(c)));
 }
 
 async function collect(supabase, body) {
@@ -929,7 +933,7 @@ async function processPosts(supabase, run, posts) {
     saved = saved.concat(data || []);
   }
 
-  const matcher = await loadMatcher(supabase);
+  const matcher = await loadMatcher(supabase, run.country);
   const mentions = [];
   const lastPost = new Map();
   for (const p of saved) {
@@ -1126,7 +1130,7 @@ async function classifyRules(supabase, body) {
 
   const posts = await selectIn(supabase, 'social_posts', 'id, text', 'id', rows.map(r => r.post_id));
   const textOf = new Map(posts.map(p => [p.id, p.text || '']));
-  const matcher = await loadMatcher(supabase);
+  const matcher = await loadMatcher(supabase, country);
   const perPost = new Map();
   const groups = new Map();        // type -> ids
   const toWeak = [];
