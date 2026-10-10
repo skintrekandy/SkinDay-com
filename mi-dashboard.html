@@ -1227,7 +1227,37 @@
   .tm { max-width:100%; font-size:15px; line-height:1.6; }
   .tm.me { align-self:flex-end; max-width:82%; background:var(--accent); color:#fff; border-radius:16px 16px 4px 16px; padding:10px 14px; white-space:pre-wrap; overflow-wrap:anywhere; }
   .tm.bot { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); overflow-wrap:anywhere; }
-  .tm.bot .tname { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:6px; }
+  .tm.bot .tname { display:flex; align-items:center; gap:7px; font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:8px; }
+  /* Tara's face */
+  .tface { display:inline-block; flex:0 0 auto; vertical-align:middle; overflow:visible; }
+  .tf-tab { width:20px; height:20px; margin-right:6px; vertical-align:-5px; }
+  .tf-nav { width:18px; height:18px; margin-right:4px; vertical-align:-4px; }
+  .tf-msg { width:30px; height:27px; margin-left:-3px; }
+  .tf-head { width:50px; height:45px; }
+  .tf-listen { display:none; width:30px; height:27px; }
+  .tmic.rec .tf-listen { display:inline-block; }
+  .tmic.rec > svg:not(.tface) { display:none; }
+  .tara-wave { transform-box:view-box; transform-origin:45px 52px; animation:twave 2.4s ease-in-out 3; }
+  @keyframes twave { 0%,40%,100% { transform:rotate(0); } 10%,30% { transform:rotate(-14deg); } 20% { transform:rotate(8deg); } }
+  .tara-waves path { animation:twaves 1.2s ease-in-out infinite; }
+  .tara-waves path + path { animation-delay:.2s; }
+  @keyframes twaves { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+  .tara-spark { transform-box:fill-box; transform-origin:center; animation:tspark 1.3s ease-out 2; }
+  @keyframes tspark { 0% { transform:scale(.3) rotate(-20deg); opacity:0; } 40% { transform:scale(1.15); opacity:1; } 100% { transform:scale(1); } }
+  .tf-big { width:76px; height:106px; }
+  .tara-who { display:flex; align-items:center; gap:12px; }
+  .tara-eyes { transform-box:fill-box; transform-origin:center; animation:tblink 5.5s infinite; }
+  @keyframes tblink { 0%,94%,100% { transform:scaleY(1); } 96% { transform:scaleY(.1); } }
+  .tm.bot.pending .tf-msg { animation:tbob 1.4s ease-in-out infinite; }
+  @keyframes tbob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-3px); } }
+  .tdots { display:inline-flex; gap:4px; }
+  .tdots i { width:6px; height:6px; border-radius:50%; background:var(--accent); opacity:.3; animation:tdot 1.2s infinite; }
+  .tdots i:nth-child(2) { animation-delay:.15s; } .tdots i:nth-child(3) { animation-delay:.3s; }
+  @keyframes tdot { 0%,60%,100% { opacity:.25; transform:translateY(0); } 30% { opacity:1; transform:translateY(-3px); } }
+  .thello { display:flex; align-items:center; gap:16px; margin:4px 0 22px; }
+  .thello .th1 { font-size:20px; font-weight:600; letter-spacing:-.01em; }
+  .thello .th2 { font-size:14.5px; color:var(--ink-2); margin-top:3px; }
+  @media (prefers-reduced-motion: reduce){ .tara-eyes, .tm.bot.pending .tf-msg, .tdots i, .tara-wave, .tara-waves path, .tara-spark { animation:none; } }
   .tm.bot p { margin:0 0 10px; } .tm.bot p:last-child { margin-bottom:0; }
   .tm.bot ul, .tm.bot ol { margin:4px 0 10px; padding-left:20px; } .tm.bot li { margin:5px 0; }
   .tm.bot .th { font-weight:600; margin:12px 0 6px; } .tm.bot .th:first-child { margin-top:0; }
@@ -1290,8 +1320,7 @@
     border:0; border-radius:13px; background:var(--surface-2); color:var(--accent-strong); cursor:pointer; font:inherit; font-size:13px; }
   .tmic[hidden] { display:none; }
   .tmic:hover { background:var(--accent-soft); }
-  .tmic.rec { background:#B3261E; border-color:#B3261E; color:#fff; }
-  .tmic.rec svg { animation:tpulse 1.2s ease-in-out infinite; }
+  .tmic.rec { background:#FDECEA; color:#B3261E; box-shadow:inset 0 0 0 1.5px #B3261E; }
   .tmic .trec:empty { display:none; }
   .tmic .trec { font-family:var(--font-mono); font-size:12px; }
   .tmic:disabled { opacity:.5; cursor:default; }
@@ -1302,6 +1331,9 @@
     body.on-tara main { padding-bottom:150px; }
     .tara-head { margin-bottom:12px; }
     .tara-head h2 { font-size:20px; }
+    .tf-head { width:42px; height:38px; }
+    .thello .th1 { font-size:18px; }
+    .tf-big { width:62px; height:86px; }
     .tara-head .tsub { font-size:13.5px; }
     .tm { font-size:15px; }
     .tm.me { max-width:88%; }
@@ -1330,6 +1362,174 @@
 </style>
 </head>
 <body>
+<!-- Tara: expressions for the conversation, a full figure for the welcome, and a tiny version for icons. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="taraSkin" cx=".40" cy=".34" r=".72">
+      <stop offset="0" stop-color="#FFEBDB"/><stop offset=".7" stop-color="#F5D0B4"/><stop offset="1" stop-color="#E8B996"/>
+    </radialGradient>
+    <radialGradient id="taraEye" cx=".38" cy=".32" r=".8">
+      <stop offset="0" stop-color="#5A463F"/><stop offset="1" stop-color="#160F0D"/>
+    </radialGradient>
+    <linearGradient id="taraBib" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7B3A3"/><stop offset="1" stop-color="#EE9583"/>
+    </linearGradient>
+    <pattern id="taraCheck" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="#F4F1EC"/><rect width="2" height="2" fill="#3A3634"/>
+      <rect x="2" y="2" width="2" height="2" fill="#3A3634" opacity=".35"/>
+      <rect x="2" width="2" height="2" fill="#3A3634" opacity=".6"/><rect y="2" width="2" height="2" fill="#3A3634" opacity=".6"/>
+    </pattern>
+  </defs>
+  <symbol id="taraBust-neutral" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-4 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M28.2 38.8 Q32 42.8 35.8 38.8 Q32 40.6 28.2 38.8 Z" fill="#D46E66"/></g></symbol>
+  <symbol id="taraBust-think" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-6 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="24.0" cy="26.0" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="42.400000000000006" cy="26.0" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="22.16" cy="22.98" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="40.56" cy="22.98" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="26.099999999999998" cy="28.8" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="44.5" cy="28.8" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.2 Q23 16.4 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 16.6 Q41 14 45.6 16.4" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><ellipse cx="33" cy="40" rx="1.5" ry="1.8" fill="#C9605A"/></g></symbol>
+  <symbol id="taraBust-found" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-3 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.5" ry="2.8" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.5" ry="2.8" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M27.4 38.4 Q32 38.9 36.6 38.4 Q36 43.6 32 43.6 Q28 43.6 27.4 38.4 Z" fill="#C25A55"/><path d="M29.4 41.8 Q32 40.6 34.6 41.8 Q32 43.4 29.4 41.8 Z" fill="#F29C90"/></g><path class="tara-spark" d="M52 2 C52.8 6.5 53.5 7.2 58 8 C53.5 8.8 52.8 9.5 52 14 C51.2 9.5 50.5 8.8 46 8 C50.5 7.2 51.2 6.5 52 2 Z" fill="#E9B65A"/></symbol>
+  <symbol id="taraBust-listen" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-9 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M29.2 39.6 Q32 41.4 34.8 39.6" fill="none" stroke="#C9605A" stroke-width="1.5" stroke-linecap="round"/></g>
+  <g class="tara-waves" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+    <path d="M58.6 14.4 Q61.2 19 59 23.8"/><path d="M61.8 11.6 Q65.6 19 62.2 26.6" opacity=".55"/>
+  </g></symbol>
+  <symbol id="taraFigure" viewBox="0 -5 64 89">
+  <ellipse cx="32" cy="81" rx="15" ry="2.4" fill="#000" opacity=".10"/>
+  <path d="M21 62 C21 58 43 58 43 62 L43 74 C43 77 38 78 36 76 L33 70 L31 70 L28 76 C26 78 21 77 21 74 Z" fill="url(#taraCheck)"/>
+  <path d="M21 62 C21 58 43 58 43 62 L43 74 C43 77 38 78 36 76 L33 70 L31 70 L28 76 C26 78 21 77 21 74 Z" fill="none" stroke="#2E2A28" stroke-width=".5" opacity=".25"/>
+  <ellipse cx="25" cy="77.6" rx="4.6" ry="2.6" fill="#F7EFE6"/><ellipse cx="39" cy="77.6" rx="4.6" ry="2.6" fill="#F7EFE6"/>
+  <path d="M19 52 C19 47 45 47 45 52 L45.5 63 C45.5 65 18.5 65 18.5 63 Z" fill="#F6DCDD"/>
+  <circle cx="24" cy="58" r=".9" fill="#7C8FB0"/><circle cx="38" cy="60" r=".9" fill="#E6B24C"/><circle cx="31" cy="62" r=".8" fill="#7C8FB0"/>
+  <path d="M19.5 52 C14 54 12.5 59 14 62.5 C15 64.5 18 64 18.6 61.5 L20 55 Z" fill="#F6DCDD"/>
+  <circle cx="15.6" cy="63" r="2.6" fill="url(#taraSkin)"/>
+  <g class="tara-wave">
+    <path d="M44 53 C49 50.5 52.5 46 53.5 41.5 C54 39.5 51.4 38.6 50.2 40.4 L45.2 49 Z" fill="#F6DCDD"/>
+    <circle cx="52.2" cy="39.4" r="2.8" fill="url(#taraSkin)"/>
+  </g>
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-4 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M28.2 38.8 Q32 42.8 35.8 38.8 Q32 40.6 28.2 38.8 Z" fill="#D46E66"/></g></symbol>
+  <symbol id="taraMini" viewBox="0 0 32 32">
+  <path d="M5 30 C5 26 9.6 24 16 24 C22.4 24 27 26 27 30 L27 32 L5 32 Z" fill="#F2A493"/>
+  <path d="M16 4.6 C23.4 4.6 28.2 9.6 28.2 15.6 C28.2 22.2 23 26.6 16 26.6 C9 26.6 3.8 22.2 3.8 15.6 C3.8 9.6 8.6 4.6 16 4.6 Z" fill="#F5D0B4"/>
+  <path d="M3.9 14.6 C3.4 7.8 8.8 3.4 16.2 3.5 C23.4 3.6 28.6 7.8 28 14 C26.6 10.6 23.4 8.6 20 8.4 C20.8 9.2 21.1 10.1 21.1 11 C19.4 9.4 17.2 8.8 15 8.9 C10.6 9.1 6.4 11 3.9 14.6 Z" fill="#3A2E2A"/>
+  <path d="M15.4 3.6 C14.8 1.6 16.2 .6 17.6 1.2" fill="none" stroke="#3A2E2A" stroke-width="1.3" stroke-linecap="round"/>
+  <g class="tara-eyes"><ellipse cx="11.2" cy="16.4" rx="2.9" ry="3.2" fill="#1E1614"/><ellipse cx="20.8" cy="16.4" rx="2.9" ry="3.2" fill="#1E1614"/>
+  <circle cx="10.2" cy="15.2" r="1.05" fill="#fff"/><circle cx="19.8" cy="15.2" r="1.05" fill="#fff"/></g>
+  <ellipse cx="7.6" cy="21.2" rx="2.2" ry="1.4" fill="#F29C90" opacity=".7"/><ellipse cx="24.4" cy="21.2" rx="2.2" ry="1.4" fill="#F29C90" opacity=".7"/>
+  <path d="M14.2 21.8 Q16 23.4 17.8 21.8" fill="none" stroke="#C9605A" stroke-width="1.2" stroke-linecap="round"/></symbol>
+</svg>
 
 <script>
   /* Runs before the gate paints. Only reads a flag — no auth decision is made
@@ -1459,7 +1659,7 @@
       <button data-tab="feed" style="display:none">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
       <!-- M28: shown only when the server says Tara is on for this account -->
-      <button data-tab="tara" id="tabTara" style="display:none">Ask Tara</button>
+      <button data-tab="tara" id="tabTara" style="display:none"><svg class="tface tf-tab" aria-hidden="true"><use href="#taraMini"/></svg>Ask Tara</button>
     </div>
   </header>
   <nav class="botnav" id="botnav" aria-label="Sections">
@@ -1467,7 +1667,7 @@
     <button type="button" data-go="landscape">Landscape</button>
     <button type="button" data-go="pulse">Pulse</button>
     <button type="button" data-go="list">My List<span class="bn-n" id="bnList" style="display:none"></span></button>
-    <button type="button" data-go="tara" id="bnTara" style="display:none">Tara</button>
+    <button type="button" data-go="tara" id="bnTara" style="display:none"><svg class="tface tf-nav" aria-hidden="true"><use href="#taraMini"/></svg>Tara</button>
   </nav>
   <div id="trialLock" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(20,24,29,.55);align-items:center;justify-content:center;padding:16px">
     <div style="background:var(--surface);border-radius:16px;max-width:440px;width:100%;padding:28px 26px;box-shadow:0 30px 70px rgba(0,0,0,.25)">
@@ -1963,7 +2163,7 @@
     <section class="panel" id="panel-tara">
       <div class="tara">
         <div class="tara-head">
-          <div><h2>Tara</h2><div class="tsub">Ask about your territory, your accounts and the market.</div></div>
+          <div class="tara-who"><svg class="tface tf-head" aria-hidden="true"><use href="#taraBust-neutral"/></svg><div><h2>Tara</h2><div class="tsub">Ask about your territory, your accounts and the market.</div></div></div>
           <div class="tara-tools">
             <select id="taraLang" aria-label="Reply language">
               <option value="">Reply in my language</option>
@@ -1983,6 +2183,7 @@
           <form id="taraForm" autocomplete="off">
             <textarea id="taraIn" rows="1" placeholder="Ask Tara" aria-label="Ask Tara"></textarea>
             <button type="button" class="tmic" id="taraMic" aria-label="Ask by voice" hidden>
+              <svg class="tface tf-listen" aria-hidden="true"><use href="#taraBust-listen"/></svg>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
               <span class="trec"></span>
             </button>
@@ -5977,6 +6178,12 @@
   // in mi-tara, one step at a time: the page asks, then keeps calling
   // 'continue' until the answer is ready.
   var TARA_API='/.netlify/functions/mi-tara';
+  // Each answer's face shows what she is doing: curious while she works,
+  // pleased for a moment when she finds the answer, then settled.
+  var TARA_FACE='<svg class="tface tf-msg" aria-hidden="true"><use href="#taraBust-think"/></svg>';
+  function taraMood(bot, mood){
+    var u=bot && bot.querySelector('.tf-msg use'); if(u) u.setAttribute('href','#taraBust-'+mood);
+  }
   var TARA={ on:false, thread:null, busy:false, used:0, limit:null };
   function taraApi(action, extra){
     var body=Object.assign({action:action,country:COUNTRY,side:SIDE},extra||{});
@@ -6021,7 +6228,10 @@
   }
   function taraEmpty(){
     var log=el('taraLog');
-    log.innerHTML='<div class="tara-empty"><p class="tlead">A few things you can ask:</p><div class="tsug">'+
+    var hi=(ME&&ME.user_name&&ME.user_name!=='Admin')?', '+esc(String(ME.user_name).split(' ')[0]):'';
+    log.innerHTML='<div class="tara-empty"><div class="thello"><svg class="tface tf-big" aria-hidden="true"><use href="#taraFigure"/></svg>'+
+      '<div><div class="th1">Hi'+hi+', I\u2019m Tara.</div><div class="th2">Ask me about clinics, products or your territory. You can type or tap the mic.</div></div></div>'+
+      '<p class="tlead">A few things you can ask:</p><div class="tsug">'+
       taraSuggestions().map(function(q){ return '<button type="button">'+esc(q)+'</button>'; }).join('')+'</div></div>';
     Array.prototype.forEach.call(log.querySelectorAll('.tsug button'),function(b){
       b.addEventListener('click',function(){ taraSend(b.textContent); });
@@ -6083,8 +6293,8 @@
     taraBusy(true);
     el('taraIn').value=''; taraGrow();
     taraAdd('me', (via==='voice'?'<span class="tvia">Spoken</span>':'')+esc(q));
-    var bot=taraAdd('bot','<div class="tname">Tara</div><div class="tbody"><div class="tstat"><span class="spin"></span><span class="tst">Thinking</span></div></div>');
-    bot.setAttribute('data-via', via||'');
+    var bot=taraAdd('bot','<div class="tname">'+TARA_FACE+'Tara</div><div class="tbody"><div class="tstat"><span class="tdots"><i></i><i></i><i></i></span><span class="tst">Thinking</span></div></div>');
+    bot.setAttribute('data-via', via||''); bot.classList.add('pending');
     taraApi('ask',{question:q, thread_id:TARA.thread, via:via||'', reply_lang:taraLangGet()}).then(function(j){
       taraThreadSet(j.thread_id||TARA.thread);
       if(j.used!=null){ TARA.used=j.used; taraQuota(); }
@@ -6105,6 +6315,9 @@
             });
   }
   function taraFinish(bot, j){
+    bot.classList.remove('pending');
+    if(j.answer && !bot.getAttribute('data-hist')){ taraMood(bot,'found'); setTimeout(function(){ taraMood(bot,'neutral'); },2600); }
+    else taraMood(bot,'neutral');
     var b=bot.querySelector('.tbody');
     if(j.answer){
       b.innerHTML=taraMd(j.answer)+
@@ -6129,6 +6342,7 @@
     taraBusy(false); taraScroll();
   }
   function taraFail(bot, e){
+    bot.classList.remove('pending'); taraMood(bot,'neutral');
     if(e && e.unauth){ location.reload(); return; }
     var msg=(e&&e.error)?e.error:'Tara could not reply just now. Please try again.';
     bot.querySelector('.tbody').innerHTML='<div class="terr">'+esc(msg)+'</div>';
@@ -6179,11 +6393,11 @@
       taraThreadSet(tid);
       turns.forEach(function(t){
         taraAdd('me', esc(t.question||''));
-        var bot=taraAdd('bot','<div class="tname">Tara</div><div class="tbody"><div class="tstat"><span class="spin"></span><span class="tst">Thinking</span></div></div>');
+        var bot=taraAdd('bot','<div class="tname">'+TARA_FACE+'Tara</div><div class="tbody"><div class="tstat"><span class="tdots"><i></i><i></i><i></i></span><span class="tst">Thinking</span></div></div>');
         if(t.done){
-          taraFinish(bot,t);
+          bot.setAttribute('data-hist','1'); taraFinish(bot,t);
           if(t.rating){ var on=bot.querySelector('.tfb button[data-r="'+t.rating+'"]'); if(on) on.classList.add('on'); }
-        } else { taraBusy(true); taraFollow(t, bot, 0); }
+        } else { bot.classList.add('pending'); taraBusy(true); taraFollow(t, bot, 0); }
       });
       taraScroll();
     }).catch(function(){ log.innerHTML=''; taraEmpty(); });
