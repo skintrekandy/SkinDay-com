@@ -1209,6 +1209,60 @@
   .ios-steps li::before { content:counter(s); flex:0 0 26px; height:26px; border-radius:50%; background:var(--accent-soft);
     color:var(--accent-strong); font-weight:600; font-size:13px; display:flex; align-items:center; justify-content:center; }
   .ios-steps svg { vertical-align:-3px; }
+
+  /* ================= TARA (M28) =================
+     A chat panel on a computer; a full-screen chat on a phone, with the
+     input above the bottom navigation and clinic cards in a bottom sheet. */
+  body.on-tara .geopill, body.on-tara #geobar { display:none !important; }
+  .tara { max-width:780px; margin:0 auto; }
+  .tara-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:18px; }
+  .tara-head h2 { font-size:22px; margin:0; line-height:1.2; letter-spacing:-.01em; }
+  .tara-head .tsub { color:var(--ink-2); font-size:14.5px; margin-top:4px; }
+  .tara-new { background:none; border:1px solid var(--line); border-radius:100px; padding:6px 13px; font:inherit; font-size:13px; color:var(--accent-strong); cursor:pointer; white-space:nowrap; }
+  .tara-new:hover { border-color:var(--accent); }
+  .tara-log { display:flex; flex-direction:column; gap:14px; padding-bottom:8px; }
+  .tm { max-width:100%; font-size:15px; line-height:1.6; }
+  .tm.me { align-self:flex-end; max-width:82%; background:var(--accent); color:#fff; border-radius:16px 16px 4px 16px; padding:10px 14px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .tm.bot { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow); overflow-wrap:anywhere; }
+  .tm.bot .tname { font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:6px; }
+  .tm.bot p { margin:0 0 10px; } .tm.bot p:last-child { margin-bottom:0; }
+  .tm.bot ul, .tm.bot ol { margin:4px 0 10px; padding-left:20px; } .tm.bot li { margin:5px 0; }
+  .tm.bot .th { font-weight:600; margin:12px 0 6px; } .tm.bot .th:first-child { margin-top:0; }
+  .tm.bot a.tclin { color:var(--accent-strong); font-weight:600; text-decoration:none; border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent); cursor:pointer; }
+  .tm.bot a.tclin:hover { border-bottom-color:var(--accent); }
+  .tm.bot code { font-family:var(--font-mono); font-size:13px; background:var(--surface-2); padding:1px 5px; border-radius:4px; }
+  .tm.bot .tstat { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:14px; }
+  .tm.bot .terr { color:var(--comp); font-size:14px; }
+  .tfb { display:flex; gap:8px; align-items:center; margin-top:12px; padding-top:10px; border-top:1px solid var(--line-2); font-size:12.5px; color:var(--muted); }
+  .tfb button { font:inherit; font-size:12.5px; color:var(--ink-2); background:none; border:1px solid var(--line); border-radius:100px; padding:3px 11px; cursor:pointer; }
+  .tfb button:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .tfb button.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent-strong); font-weight:600; }
+  .tara-empty { padding:6px 0 4px; }
+  .tara-empty .tlead { font-size:15px; color:var(--ink-2); margin:0 0 12px; }
+  .tsug { display:flex; flex-direction:column; gap:8px; }
+  .tsug button { text-align:left; font:inherit; font-size:14.5px; color:var(--ink); background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:11px 14px; cursor:pointer; }
+  .tsug button:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .tara-bar { position:sticky; bottom:0; z-index:5; background:var(--bg); padding:12px 0 14px; }
+  .tara-bar form { display:flex; gap:8px; align-items:flex-end; }
+  .tara-bar textarea { flex:1; resize:none; font:inherit; font-size:15px; line-height:1.45; padding:11px 14px; border:1px solid var(--line); border-radius:14px; background:var(--surface); color:var(--ink); max-height:160px; min-height:46px; }
+  .tara-bar textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .tara-bar .tgo { flex:0 0 auto; height:46px; padding:0 18px; border:0; border-radius:14px; background:var(--accent); color:#fff; font:inherit; font-size:14.5px; font-weight:600; cursor:pointer; }
+  .tara-bar .tgo:disabled { opacity:.5; cursor:default; }
+  .tara-quota { font-family:var(--font-mono); font-size:10.5px; color:var(--muted); margin-top:6px; min-height:14px; }
+  @media (max-width:640px){
+    body.on-tara main { padding-bottom:150px; }
+    .tara-head { margin-bottom:12px; }
+    .tara-head h2 { font-size:20px; }
+    .tara-head .tsub { font-size:13.5px; }
+    .tm { font-size:15px; }
+    .tm.me { max-width:88%; }
+    .tm.bot { padding:12px 14px; box-shadow:none; }
+    .tara-bar { position:fixed; left:0; right:0; bottom:calc(52px + env(safe-area-inset-bottom)); padding:8px 12px 6px;
+      border-top:1px solid var(--line-2); z-index:140; }
+    .tara-bar textarea { font-size:16px; border-radius:22px; padding:10px 15px; min-height:44px; }
+    .tara-bar .tgo { height:44px; border-radius:22px; padding:0 16px; }
+    .tara-quota { text-align:center; margin-top:4px; }
+  }
 </style>
 </head>
 <body>
@@ -1340,6 +1394,8 @@
       <!-- Signal tab hidden for the Kyle pilot 2026-08-06; panel and loadFeed() left intact, restore by removing style -->
       <button data-tab="feed" style="display:none">Signal</button>
       <button data-tab="list">My List <span class="listcount" id="listCount" style="display:none">0</span></button>
+      <!-- M28: shown only when the server says Tara is on for this account -->
+      <button data-tab="tara" id="tabTara" style="display:none">Ask Tara</button>
     </div>
   </header>
   <nav class="botnav" id="botnav" aria-label="Sections">
@@ -1347,6 +1403,7 @@
     <button type="button" data-go="landscape">Landscape</button>
     <button type="button" data-go="pulse">Pulse</button>
     <button type="button" data-go="list">My List<span class="bn-n" id="bnList" style="display:none"></span></button>
+    <button type="button" data-go="tara" id="bnTara" style="display:none">Tara</button>
   </nav>
   <div id="trialLock" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(20,24,29,.55);align-items:center;justify-content:center;padding:16px">
     <div style="background:var(--surface);border-radius:16px;max-width:440px;width:100%;padding:28px 26px;box-shadow:0 30px 70px rgba(0,0,0,.25)">
@@ -1836,6 +1893,25 @@
       </div>
       <div id="savedList"><div class="empty">Saved clinics appear here. Add them from Clinics.</div></div>
     </section>
+
+    <!-- M28: Tara. Questions go to mi-tara, which answers from the same data the
+         tabs use, through the same account and territory checks. -->
+    <section class="panel" id="panel-tara">
+      <div class="tara">
+        <div class="tara-head">
+          <div><h2>Tara</h2><div class="tsub">Ask about your territory, your accounts and the market.</div></div>
+          <button type="button" class="tara-new" id="taraNew">New chat</button>
+        </div>
+        <div class="tara-log" id="taraLog"></div>
+        <div class="tara-bar">
+          <form id="taraForm" autocomplete="off">
+            <textarea id="taraIn" rows="1" placeholder="Ask Tara" aria-label="Ask Tara"></textarea>
+            <button type="submit" class="tgo" id="taraGo">Ask</button>
+          </form>
+          <div class="tara-quota" id="taraQuota"></div>
+        </div>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -1954,6 +2030,7 @@
       // ⭐ Clinics is the landing tab, so the find bar and its count are ready
       // at sign-in — but the list itself waits for the rep to press Show.
       syncQuick(); gateAccounts(); loadNewCount();
+      taraInit();
     }).catch(function(e){
       KEY=null;
       // ⚠️ Only forget the token when the server REJECTED it. A network blip must
@@ -2197,6 +2274,7 @@
   // ⭐ BOTTOM NAV drives the same tab buttons, so every load rule stays in one
   // place. The top tabs report back, so the two never disagree.
   function syncBotnav(tab){
+    document.body.classList.toggle('on-tara', tab==='tara');
     Array.prototype.forEach.call(document.querySelectorAll('#botnav button'),function(b){
       b.classList.toggle('on', b.getAttribute('data-go')===tab);
     });
@@ -2412,6 +2490,7 @@
       if(tab==='pulse'&&!loaded.pulse) loadPulse();
       if(tab==='portfolio'&&PORTFOLIO_STALE) refreshPortfolio();
       if(tab==='list') loadSaved();
+      if(tab==='tara') taraOpen();
     });
   });
 
@@ -5810,6 +5889,196 @@
     var c=el('rCount'); if(!c) return;
     var n=el('savedList').querySelectorAll('.rpick:checked').length;
     c.textContent = n ? n+(n===1?' clinic selected':' clinics selected') : 'nothing selected yet';
+  }
+
+
+  // ================= TARA (M28) =================
+  // The page only shows the conversation. Every answer is built on the server
+  // in mi-tara, one step at a time: the page asks, then keeps calling
+  // 'continue' until the answer is ready.
+  var TARA_API='/.netlify/functions/mi-tara';
+  var TARA={ on:false, thread:null, busy:false, used:0, limit:null };
+  function taraApi(action, extra){
+    var body=Object.assign({action:action,country:COUNTRY,side:SIDE},extra||{});
+    return fetch(TARA_API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY},body:JSON.stringify(body)})
+      .then(function(r){
+        if(r.status===401) throw {unauth:true};
+        return r.json().catch(function(){ return {error: r.status>=500 ? 'Tara took too long to reply.' : 'Something went wrong.'}; })
+          .then(function(j){ if(!r.ok){ j.status=r.status; throw j; } return j; });
+      });
+  }
+  function taraInit(){
+    taraApi('status',{}).then(function(s){
+      if(!s || !s.enabled) return;
+      TARA.on=true; TARA.used=s.used||0; TARA.limit=s.limit||null;
+      el('tabTara').style.display=''; el('bnTara').style.display='';
+      taraQuota();
+    }).catch(function(){});
+  }
+  function taraQuota(){
+    var q=el('taraQuota'); if(!q) return;
+    if(!TARA.limit){ q.textContent=''; return; }
+    var left=Math.max(0, TARA.limit-TARA.used);
+    q.textContent=left+(left===1?' question':' questions')+' left today';
+  }
+  function taraSuggestions(){
+    var usa = CTY.key==='usa';
+    var place = usa ? 'Orange County' : 'Mississauga';
+    var place2 = usa ? 'Irvine' : 'Oakville';
+    if(isInj()) return [
+      'Which clinics in '+place+' offer a competitor’s biostimulator but none of our brands?',
+      'Which injectable brands are clinics posting about most this month?',
+      'Help me plan Thursday in '+place2+'.',
+      'Where are we weakest compared with competitors?'
+    ];
+    return [
+      'Which clinics in '+place+' run a competitor’s RF microneedling but nothing of ours?',
+      'Which devices did clinics start showing in the last 30 days?',
+      'Help me plan Thursday in '+place2+'.',
+      'Where are we weakest compared with competitors?'
+    ];
+  }
+  function taraEmpty(){
+    var log=el('taraLog');
+    log.innerHTML='<div class="tara-empty"><p class="tlead">A few things you can ask:</p><div class="tsug">'+
+      taraSuggestions().map(function(q){ return '<button type="button">'+esc(q)+'</button>'; }).join('')+'</div></div>';
+    Array.prototype.forEach.call(log.querySelectorAll('.tsug button'),function(b){
+      b.addEventListener('click',function(){ taraSend(b.textContent); });
+    });
+  }
+  function taraOpen(){
+    if(!el('taraLog').children.length) taraEmpty();
+    if(!isPhone()) setTimeout(function(){ el('taraIn').focus(); },50);
+  }
+  function taraScroll(){ window.scrollTo(0, document.body.scrollHeight); }
+  function taraAdd(who, html){
+    var log=el('taraLog');
+    var e=log.querySelector('.tara-empty'); if(e) e.remove();
+    var d=document.createElement('div'); d.className='tm '+who;
+    d.innerHTML=html; log.appendChild(d); taraScroll();
+    return d;
+  }
+  // Markdown, kept small: paragraphs, lists, bold, short headings and links.
+  // Clinic links look like [Name](clinic:ID). Single-asterisk emphasis is shown
+  // as plain text, so nothing ever renders in italics.
+  function taraInline(t){
+    t=esc(t);
+    t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
+    t=t.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/__([^_]+)__/g,'<b>$1</b>');
+    t=t.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g,'$1$2');
+    t=t.replace(/\[([^\]]+)\]\(clinic:([^)\s]+)\)/g,function(m,label,id){
+      return '<a class="tclin" href="#" data-cid="'+id+'">'+label+'</a>';
+    });
+    t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+    return t;
+  }
+  function taraMd(src){
+    var lines=String(src||'').replace(/\r/g,'').split('\n'), out=[], para=[], list=null;
+    function flushP(){ if(para.length){ out.push('<p>'+para.map(taraInline).join('<br>')+'</p>'); para=[]; } }
+    function flushL(){ if(list){ out.push('<'+list.t+'>'+list.items.map(function(i){ return '<li>'+taraInline(i)+'</li>'; }).join('')+'</'+list.t+'>'); list=null; } }
+    lines.forEach(function(line){
+      var m;
+      if(!line.trim()){ flushP(); flushL(); return; }
+      if((m=line.match(/^\s*#{1,6}\s+(.*)$/))){ flushP(); flushL(); out.push('<div class="th">'+taraInline(m[1])+'</div>'); return; }
+      if((m=line.match(/^\s*[-*•]\s+(.*)$/))){ flushP(); if(!list||list.t!=='ul'){ flushL(); list={t:'ul',items:[]}; } list.items.push(m[1]); return; }
+      if((m=line.match(/^\s*\d+[.)]\s+(.*)$/))){ flushP(); if(!list||list.t!=='ol'){ flushL(); list={t:'ol',items:[]}; } list.items.push(m[1]); return; }
+      if(list && /^\s{2,}\S/.test(line)){ list.items[list.items.length-1]+=' '+line.trim(); return; }
+      flushL(); para.push(line);
+    });
+    flushP(); flushL();
+    return out.join('');
+  }
+  function taraBusy(on){
+    TARA.busy=on; el('taraGo').disabled=on;
+  }
+  function taraSend(q){
+    q=String(q||'').trim();
+    if(!q || TARA.busy) return;
+    taraBusy(true);
+    el('taraIn').value=''; taraGrow();
+    taraAdd('me', esc(q));
+    var bot=taraAdd('bot','<div class="tname">Tara</div><div class="tbody"><div class="tstat"><span class="spin"></span><span class="tst">Thinking</span></div></div>');
+    taraApi('ask',{question:q, thread_id:TARA.thread}).then(function(j){
+      TARA.thread=j.thread_id||TARA.thread;
+      if(j.used!=null){ TARA.used=j.used; taraQuota(); }
+      return taraFollow(j, bot, 0);
+    }).catch(function(e){ taraFail(bot,e); });
+  }
+  function taraFollow(j, bot, tries){
+    if(j.done){ taraFinish(bot,j); return; }
+    var st=bot.querySelector('.tst'); if(st) st.textContent=j.status_text||'Thinking';
+    return new Promise(function(r){ setTimeout(r,250); })
+      .then(function(){ return taraApi('continue',{id:j.id}); })
+      .then(function(n){ return taraFollow(n, bot, 0); },
+            function(e){
+              // A dropped request is retried; the work carries on at the server.
+              if(e && e.unauth) throw e;
+              if(tries<4) return new Promise(function(r){ setTimeout(r,1200); }).then(function(){ return taraFollow(j, bot, tries+1); });
+              throw e;
+            });
+  }
+  function taraFinish(bot, j){
+    var b=bot.querySelector('.tbody');
+    if(j.answer){
+      b.innerHTML=taraMd(j.answer)+
+        '<div class="tfb" data-id="'+esc(j.id)+'"><span>Was this useful?</span>'+
+        '<button type="button" data-r="1">Yes</button><button type="button" data-r="-1">No</button></div>';
+    } else {
+      b.innerHTML='<div class="terr">'+esc(j.error||'Tara could not finish that one. Please try asking again.')+'</div>';
+    }
+    taraBusy(false); taraScroll();
+  }
+  function taraFail(bot, e){
+    if(e && e.unauth){ location.reload(); return; }
+    var msg=(e&&e.error)?e.error:'Tara could not reply just now. Please try again.';
+    bot.querySelector('.tbody').innerHTML='<div class="terr">'+esc(msg)+'</div>';
+    taraBusy(false);
+  }
+  function taraGrow(){
+    var t=el('taraIn'); t.style.height='auto'; t.style.height=Math.min(t.scrollHeight,160)+'px';
+  }
+  el('taraIn').addEventListener('input',taraGrow);
+  el('taraIn').addEventListener('keydown',function(e){
+    if(e.key==='Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); taraSend(this.value); }
+  });
+  el('taraForm').addEventListener('submit',function(e){ e.preventDefault(); taraSend(el('taraIn').value); });
+  el('taraNew').addEventListener('click',function(){
+    if(TARA.busy) return;
+    TARA.thread=null; el('taraLog').innerHTML=''; taraEmpty();
+  });
+  el('taraLog').addEventListener('click',function(e){
+    var a=e.target.closest('a.tclin');
+    if(a){ e.preventDefault(); taraClinic(a.getAttribute('data-cid')); return; }
+    var fb=e.target.closest('.tfb button');
+    if(fb){
+      var box=fb.parentNode, r=parseInt(fb.getAttribute('data-r'),10);
+      Array.prototype.forEach.call(box.querySelectorAll('button'),function(x){ x.classList.toggle('on', x===fb); });
+      taraApi('feedback',{id:box.getAttribute('data-id'), rating:r}).catch(function(){});
+    }
+  });
+  // A clinic named in an answer opens its full card: a drawer on a computer,
+  // a bottom sheet on a phone (the same panel the Group view uses).
+  function taraClinic(cid){
+    var p=el('grpPanel');
+    p.innerHTML='<div class="gp-top"><h3>Loading…</h3><button type="button" class="gp-x" aria-label="Close">&times;</button></div>';
+    p.querySelector('.gp-x').addEventListener('click',closeGroup);
+    p.classList.add('open'); el('grpShade').classList.add('open'); document.body.style.overflow='hidden'; p.scrollTop=0;
+    taraApi('clinic',{clinic_id:cid}).then(function(j){
+      var a=j.clinic;
+      if(!a){ p.querySelector('h3').textContent='This clinic is not available in your territory'; return; }
+      var tmp=document.createElement('div'); tmp.innerHTML=acctCard(a);
+      // The "why" line describes the Clinics tab's filters, which mean nothing here.
+      var w=tmp.querySelector('.why'); if(w) w.remove();
+      p.innerHTML='<div class="gp-top"><h3>'+esc(a.name)+'</h3><div class="gp-sub">'+esc(placeLine(a)||'')+'</div>'+
+        '<button type="button" class="gp-x" aria-label="Close">&times;</button></div>'+
+        '<div class="gp-body"><div class="gp-card" style="display:block;padding-top:14px">'+tmp.innerHTML+'</div></div>';
+      p.querySelector('.gp-x').addEventListener('click',closeGroup);
+      var body=p.querySelector('.gp-body');
+      wireSaveButtons(body); bindEvidence(body); bindFlags(body);
+    }).catch(function(e){
+      if(e&&e.unauth){ location.reload(); return; }
+      p.querySelector('h3').textContent='Could not open this clinic';
+    });
   }
 
   function handleErr(e){
