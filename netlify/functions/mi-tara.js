@@ -25,6 +25,10 @@
 //   TARA_TENANTS            tenant ids switched on for everyone in them (Phase 2)
 //   TARA_DAILY_LIMIT        questions per user per day, default 50
 //   MI_PULSE_INJECTABLES_EMAILS  internal accounts (same list the dashboard uses)
+//   TARA_STT_MODEL          speech-to-text, default 'gpt-transcribe'
+//   TARA_TTS_MODEL          read-aloud, default 'gpt-4o-mini-tts'
+//   TARA_VOICE              read-aloud voice, default 'marin'
+//   TARA_VOICE_LANGS        languages reps are expected to speak, default 'en,fr,zh,ko'
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
 // ============================================================================
 const { createClient } = require('@supabase/supabase-js');
@@ -142,6 +146,18 @@ function placeLine(a) {
   if (city && reg && city.toUpperCase() !== reg) return city + ', ' + reg;
   return city || reg || undefined;
 }
+// The results list under an answer: up to this many rows, each one short.
+const PANEL_MAX = 200;
+function panelRow(a) {
+  const devs = a.devices || [];
+  const mine = devs.filter(d => d.is_ours).map(d => d.model);
+  const other = devs.filter(d => !d.is_ours).map(d => d.model);
+  const names = [...new Set(mine.concat(other))];
+  return { id: a.clinic_id, name: a.name, area: placeLine(a),
+    line: names.length ? names.slice(0, 4).join(' \u00b7 ') + (names.length > 4 ? ' +' + (names.length - 4) : '') : (STATUS[a.in_category] || ''),
+    ours: mine.length ? true : undefined, group: a.group_name || undefined,
+    reviews: a.reviews != null ? a.reviews : undefined, rating: a.rating != null ? Number(a.rating) : undefined };
+}
 const STATUS = { ours: 'runs ours', competitor: 'competitor only', no_devices: 'nothing identified (checked)', research: 'not researched yet' };
 function slimClinic(a, ctx) {
   const devs = (a.devices || []).slice(0, 18).map(d =>
@@ -221,6 +237,13 @@ const TOOLS = [
   fn('pulse_clinics', 'The clinics that posted about one product in the latest month, newest and announcing first.',
     { product: { type: 'string', description: 'Product name exactly as pulse returns it' },
       province: GEO.province, city: GEO.city, neighbourhood: GEO.neighbourhood, country: GEO.country }, ['product']),
+  fn('recent_device_changes', 'Clinics where a device or brand first appeared in SkinDay\u2019s records within a period, newest first, plus the products that appeared most. This is when SkinDay first saw it, not when the clinic bought or installed it.',
+    { province: GEO.province, city: GEO.city, neighbourhood: GEO.neighbourhood, side: GEO.side, country: GEO.country,
+      days: { type: 'integer', enum: [30, 90, 365] } }),
+  fn('pulse_trend', 'How public posting about one product changed over time, week by week: businesses posting each week and a relative activity level. Use for "is X picking up" questions.',
+    { product: { type: 'string', description: 'Product name exactly as pulse returns it' },
+      days: { type: 'integer', enum: [30, 90, 365] },
+      province: GEO.province, city: GEO.city, neighbourhood: GEO.neighbourhood, country: GEO.country }, ['product']),
   fn('my_saved_list', 'The clinics the user’s team saved to My List, with notes.',
     { province: GEO.province, neighbourhood: GEO.neighbourhood, country: GEO.country })
 ];
@@ -228,7 +251,8 @@ const STATUS_TEXT = {
   territory_options: 'Checking the territory', list_categories: 'Checking categories', filter_options: 'Checking names',
   search_clinics: 'Searching clinics', clinic_profile: 'Reading the clinic', market_overview: 'Looking at your position',
   landscape: 'Looking at the market', overlap: 'Comparing products', group_detail: 'Reading the group',
-  pulse: 'Checking public posts', pulse_clinics: 'Finding who posted', my_saved_list: 'Opening My List'
+  pulse: 'Checking public posts', pulse_clinics: 'Finding who posted', my_saved_list: 'Opening My List',
+  recent_device_changes: 'Looking at recent changes', pulse_trend: 'Looking at the trend'
 };
 
 async function runTool(ctx, name, a) {
@@ -259,7 +283,7 @@ async function runTool(ctx, name, a) {
         category: nz(a.category) || undefined, segment: nz(a.segment) || undefined,
         filter_manufacturer: nz(a.manufacturer) || undefined, filter_distributor: nz(a.distributor) || undefined,
         device: nz(a.device) || undefined, exclude_manufacturer: nz(a.exclude_manufacturer) || undefined,
-        min_reviews: a.min_reviews || undefined, sort: nz(a.sort) || 'devices', limit: q ? 1500 : limit
+        min_reviews: a.min_reviews || undefined, sort: nz(a.sort) || 'devices', limit: q ? 1500 : Math.max(limit, PANEL_MAX)
       }));
       let rows = j.accounts || [];
       let total = rows.length && rows[0].total_matches != null ? Number(rows[0].total_matches) : rows.length;
@@ -268,7 +292,11 @@ async function runTool(ctx, name, a) {
         rows = rows.filter(r => { const h = String(r.name || '').toLowerCase(); return words.every(x => h.indexOf(x) !== -1); });
         total = rows.length;
       }
-      return { total_matching: total, shown: Math.min(rows.length, limit), clinics: rows.slice(0, limit).map(r => slimClinic(r, ctx)) };
+      return {
+        note: rows.length ? 'The user sees all matching clinics (up to ' + PANEL_MAX + ') in a list under your answer, each one openable. Do not list them all; summarise and pick out a few standouts.' : undefined,
+        total_matching: total, shown: Math.min(rows.length, limit), clinics: rows.slice(0, limit).map(r => slimClinic(r, ctx)),
+        __panel: { kind: 'clinics', args: a, total, rows: rows.slice(0, PANEL_MAX).map(panelRow) }
+      };
     }
     case 'clinic_profile': {
       const p = await clinicProfile(ctx, String(a.clinic_id || ''), nz(a.side));
@@ -368,8 +396,49 @@ async function runTool(ctx, name, a) {
     case 'pulse_clinics': {
       const j = await dash(ctx, 'pulse_clinics', Object.assign({}, w, { product: String(a.product || '') }));
       const rows = j.clinics || [];
-      return { total: rows.length, clinics: rows.slice(0, 50).map(c => ({ id: c.clinic_id, name: c.name, area: c.area, announced_as_new: !!c.announced || undefined,
-        last_posted: c.last_posted, posts: ctx.internal ? c.posts : undefined })) };
+      return { note: rows.length ? 'The user sees all of these clinics in a list under your answer. Do not list them all.' : undefined,
+        total: rows.length, clinics: rows.slice(0, 50).map(c => ({ id: c.clinic_id, name: c.name, area: c.area, announced_as_new: !!c.announced || undefined,
+        last_posted: c.last_posted, posts: ctx.internal ? c.posts : undefined })),
+        __panel: { kind: 'posted', args: a, total: rows.length, rows: rows.slice(0, PANEL_MAX).map(c => ({ id: c.clinic_id, name: c.name, area: c.area || undefined,
+          line: (c.announced ? 'Announced as new' : 'Posted about it') + (c.last_posted ? ' \u00b7 ' + String(c.last_posted).slice(0, 10) : '') })) } };
+    }
+    case 'recent_device_changes': {
+      const days = [30, 90, 365].includes(Number(a.days)) ? Number(a.days) : 30;
+      const j = await dash(ctx, 'feed', Object.assign({}, w, { days, limit: 150 }));
+      const f = j.feed || {};
+      const ev = f.events || [];
+      return {
+        note: 'Dates are when SkinDay first saw the product at the clinic, not purchase or install dates.' +
+          ((f.matcher_versions || []).length > 1 ? ' Part of this period reflects improved detection, so some entries are newly identified rather than newly added.' : '') +
+          (ev.length ? ' The user sees these clinics in a list under your answer.' : ''),
+        period_days: days, total_first_seen: f.total,
+        top_products: (f.top_devices || []).slice(0, 15).map(t => ({ name: t.model, maker: t.manufacturer || undefined, clinics: t.clinics })),
+        events: ev.slice(0, 40).map(e => ({ clinic_id: e.clinic_id, clinic: e.name, area: e.neighbourhood || undefined,
+          product: e.model, maker: e.manufacturer || undefined, first_seen: String(e.observed_at || '').slice(0, 10) })),
+        __panel: ev.length ? { kind: 'changes', args: Object.assign({}, a, { days }), total: ev.length,
+          rows: ev.slice(0, PANEL_MAX).map(e => ({ id: e.clinic_id, name: e.name, area: e.neighbourhood || undefined,
+            line: e.model + ' \u00b7 first seen ' + String(e.observed_at || '').slice(0, 10) })) } : undefined
+      };
+    }
+    case 'pulse_trend': {
+      const days = [30, 90, 365].includes(Number(a.days)) ? Number(a.days) : 90;
+      const j = await dash(ctx, 'pulse_trend', Object.assign({}, w, { product: String(a.product || ''), days }));
+      const t = j.trend || {}; const internal = !!j.internal;
+      const weeks = {};
+      (t.days || []).forEach(d => {
+        const dt = new Date(String(d.d) + 'T12:00:00Z'); const wd = (dt.getUTCDay() + 6) % 7; dt.setUTCDate(dt.getUTCDate() - wd);
+        const k = dt.toISOString().slice(0, 10);
+        const x = weeks[k] || (weeks[k] = { week_of: k, businesses_max_day: 0, activity: 0, still_collecting: false });
+        x.businesses_max_day = Math.max(x.businesses_max_day, d.b || 0);
+        x.activity += internal ? (d.p || 0) : (d.r || 0);
+        if (t.complete_until && String(d.d) > String(t.complete_until)) x.still_collecting = true;
+      });
+      const list = Object.values(weeks).sort((p, q) => p.week_of < q.week_of ? -1 : 1);
+      const max = Math.max(1, ...list.map(x => x.activity));
+      list.forEach(x => { x.activity = internal ? x.activity : Math.round(100 * x.activity / max); x.still_collecting = x.still_collecting || undefined; });
+      return { product: a.product, note: (internal ? 'activity = posts that week.' : 'activity is relative, 100 = the busiest week.') +
+        ' Weeks marked still_collecting are incomplete; do not read them as a drop. Posting shows promotion, not purchases.',
+        first_data: t.first || undefined, weeks: list };
     }
     case 'my_saved_list': {
       const j = await dash(ctx, 'list_saved', w);
@@ -527,15 +596,23 @@ function instructions(ctx) {
     '- Use list_categories for category keys and filter_options for exact device and company names before filtering on them.',
     '- Prefer one well-filtered search_clinics call over several broad ones. If more clinics match than you show, say how many in total.',
     '- For "how should I approach this clinic" questions, call clinic_profile first, and pulse_clinics or pulse if posts matter.',
+    '- Know what this company actually sells before recommending accounts or approaches: call landscape with company set to ' + JSON.stringify(me.owner_name || '') + ' (once per conversation is enough) and connect each opportunity to the specific products of theirs that fit it, by category. Do not invent product specifications, positioning or clinical comparisons; describe fit only at the level of category and what the clinic already runs.',
+    '- When you rank clinics, say which signal each ranking rests on and what it does and does not mean: review count suggests size or patient volume, not buying intent; recent posts show marketing activity, not a purchase plan; running a competitor in the category can mean an upgrade conversation or a hard switch. Weigh them for the product being sold rather than adding them up.',
+    '- For change over time use recent_device_changes and pulse_trend. A product first appearing in SkinDay\u2019s records is not its purchase or install date; say "first seen" or "started showing", never "bought" or "installed".',
     '- If a tool returns an error, try a corrected call once, then explain simply.',
     '',
     'WRITING',
     '- Short and practical. Lead with the answer. Full, plain sentences; a little warmth is fine. Bullets only for lists of clinics or steps.',
     '- Link every clinic you name from the data like [Clinic name](clinic:ID), using the id from the tools, so they can open its card. Never make up an id.',
-    '- For a clinic list: the linked name and area, then one line on why it fits, from the data. Put suggestions after the facts.',
+    '- When search_clinics or pulse_clinics returns clinics, the app shows the full list under your answer, each one openable, with a button to save them all. Do not repeat that list. Answer like an analyst: one or two sentences on how many matched and what they have in common, any pattern worth knowing (which devices or companies dominate, groups with several locations, who posted recently), then up to five standout clinics, each linked with one line on why it stands out, then a suggestion if it helps.',
+    '- When several clinics fit, say which you would look at first and why, using signals in the data: devices they already run, recent public posts or announcements, review count, group membership, newly listed. Present this as a suggestion, not a fact.',
+    '- Do not repeat a location when every result is in the same place.',
+    '- Simple questions get a simple conversational answer.',
     '- No headings in short answers. Never use italics. Write "before & after", not "before and after".',
     '- Do not hype, and do not claim virtues ("honestly", "to be transparent"). Calm and helpful.',
-    '- Reply in the language the user writes in.'
+    '- Reply in the language the user writes in.',
+    '- End every answer with one final line in exactly this form: [[next]] first question || second question || third question',
+    '  These are three short follow-up questions this user would likely ask next, specific to this answer and answerable from the data, in the user\u2019s language. Nothing after that line.'
   ].join('\n');
 }
 
@@ -614,7 +691,8 @@ async function advance(ctx, row, t0) {
       let result, err = null;
       try { result = await runTool(ctx, c.name, args); }
       catch (e) { err = String(e.message || e); result = { error: err }; }
-      row.tools = (row.tools || []).concat([{ name: c.name, args, ms: Date.now() - started, error: err || undefined }]);
+      const panel = result && result.__panel; if (panel) delete result.__panel;
+      row.tools = (row.tools || []).concat([{ name: c.name, args, ms: Date.now() - started, error: err || undefined, panel: panel || undefined }]);
       return { type: 'function_call_output', call_id: c.call_id, output: cap(result) };
     }));
     row.rounds = (row.rounds || 0) + 1;
@@ -626,15 +704,120 @@ async function advance(ctx, row, t0) {
   }
   return row;
 }
+// Tara ends each answer with "[[next]] q1 || q2 || q3": follow-up questions,
+// shown as buttons and never read aloud.
+function splitFollowups(text) {
+  const t = String(text || '');
+  const i = t.lastIndexOf('[[next]]');
+  if (i === -1) return { answer: t.trim(), followups: [] };
+  const list = t.slice(i + 8).split('||').map(x => x.replace(/^[\s\-\u2022*\d.)]+/, '').trim()).filter(x => x && x.length < 160).slice(0, 3);
+  return { answer: t.slice(0, i).trim(), followups: list };
+}
 function reply(row, extra) {
   const tl = row.tools || [];
   const last = tl[tl.length - 1];
+  const done = row.status === 'done';
+  const sp = done ? splitFollowups(row.answer) : { answer: null, followups: [] };
+  let panel = null;
+  if (done) for (let i = tl.length - 1; i >= 0; i--) { if (tl[i] && tl[i].panel) { panel = tl[i].panel; break; } }
   return Object.assign({
     id: row.id, thread_id: row.thread_id, done: row.status !== 'running',
-    answer: row.status === 'done' ? row.answer : null,
+    answer: done ? sp.answer : null, followups: sp.followups, results: panel,
     error: row.status === 'error' ? 'Tara could not finish that one. Please try asking again.' : null,
     status_text: row.status === 'running' ? ((last && STATUS_TEXT[last.name]) || 'Thinking') : null
   }, extra || {});
+}
+
+// ---- voice ------------------------------------------------------------------------
+// Notes added to a question, never stored in the log: how it was asked, and the
+// reply language if the rep picked one.
+const LANG_NAMES = { en: 'English', fr: 'French', 'zh-hant': 'Traditional Chinese', 'zh-hans': 'Simplified Chinese', ko: 'Korean', es: 'Spanish' };
+function askNotes(body) {
+  const notes = [];
+  if (body.via === 'voice') notes.push('Asked by voice, possibly while driving. Open with one or two plain sentences that answer it and work when read aloud, then the details. If the transcript has an odd product or place name, assume the closest real one and say which you assumed.');
+  const lang = LANG_NAMES[String(body.reply_lang || '').toLowerCase()];
+  if (lang) notes.push('Reply in ' + lang + '.');
+  return notes.length ? '\n\n(' + notes.join(' ') + ')' : '';
+}
+
+// Product names reps say out loud, so the transcription spells them right.
+let TERMS = { at: 0, list: [] };
+async function voiceTerms(sb) {
+  if (Date.now() - TERMS.at < 600000 && TERMS.list.length) return TERMS.list;
+  const set = new Set(['SkinDay', 'Tara', 'Market Intelligence', 'My List', 'Pulse']);
+  try {
+    const { data } = await sb.from('device_reference').select('model, manufacturer, name_us, name_ca')
+      .eq('active', true).is('parent_device_id', null).limit(1000);
+    (data || []).forEach(r => [r.model, r.manufacturer, r.name_us, r.name_ca].forEach(x => { if (x) set.add(String(x).trim()); }));
+  } catch (e) {}
+  // One line each, nothing the API rejects, and a sensible cap.
+  TERMS = { at: Date.now(), list: [...set].filter(x => x && x.length <= 40 && !/[<>\r\n]/.test(x)).slice(0, 400) };
+  return TERMS.list;
+}
+async function transcribe(ctx, buf, mime) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error('OPENAI_API_KEY is not set');
+  const ext = /mp4|m4a|aac/.test(mime) ? 'm4a' : (/mpeg|mp3/.test(mime) ? 'mp3' : (/wav/.test(mime) ? 'wav' : 'webm'));
+  const type = ext === 'm4a' ? 'audio/mp4' : (ext === 'mp3' ? 'audio/mpeg' : (ext === 'wav' ? 'audio/wav' : 'audio/webm'));
+  const model = process.env.TARA_STT_MODEL || 'gpt-transcribe';
+  const terms = await voiceTerms(ctx.sb);
+  const langs = list('TARA_VOICE_LANGS', 'en,fr,zh,ko');
+  const prompt = 'A sales rep asking about aesthetic clinics, devices and injectables in their territory.';
+  const send = async (rich) => {
+    const fd = new FormData();
+    fd.append('file', new Blob([buf], { type }), 'question.' + ext);
+    fd.append('model', model);
+    fd.append('response_format', 'json');
+    fd.append('prompt', prompt + (rich ? '' : ' Names that may come up: ' + terms.slice(0, 60).join(', ') + '.'));
+    if (rich) {
+      terms.forEach(t => fd.append('keywords[]', t));
+      langs.forEach(l => fd.append('languages[]', l));
+    }
+    const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 8500);
+    try {
+      const r = await fetch('https://api.openai.com/v1/audio/transcriptions', { method: 'POST', signal: ac.signal,
+        headers: { 'Authorization': 'Bearer ' + key }, body: fd });
+      const txt = await r.text(); let j = {}; try { j = JSON.parse(txt); } catch (e) {}
+      return { ok: r.ok, j, txt };
+    } finally { clearTimeout(tm); }
+  };
+  let r = await send(true);
+  // A model that does not take keywords or a language list gets the plain request.
+  if (!r.ok && /keyword|language/i.test(r.txt)) r = await send(false);
+  if (!r.ok) throw new Error((r.j.error && r.j.error.message) || 'Could not hear that.');
+  return String(r.j.text || '').trim();
+}
+// An answer as something a voice can read: link labels instead of links, no
+// list markers or bold, and cut at a sentence near 1,200 characters.
+function speechText(md) {
+  let t = splitFollowups(md).answer
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\*\*|__|`/g, '')
+    .replace(/^\s*#{1,6}\s+/gm, '')
+    .replace(/^\s*(?:[-*•]|\d+[.)])\s+/gm, '')
+    .replace(/\s*\n+\s*/g, '. ')
+    .replace(/([.!?。！？])\.\s/g, '$1 ')
+    .replace(/\s{2,}/g, ' ').trim();
+  if (t.length > 1200) {
+    const cut = t.slice(0, 1200);
+    const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('。'), cut.lastIndexOf('? '));
+    t = (end > 400 ? cut.slice(0, end + 1) : cut) + ' The rest is on your screen.';
+  }
+  return t;
+}
+async function speak(text) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) throw new Error('OPENAI_API_KEY is not set');
+  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 9000);
+  try {
+    const r = await fetch('https://api.openai.com/v1/audio/speech', { method: 'POST', signal: ac.signal,
+      headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: process.env.TARA_TTS_MODEL || 'gpt-4o-mini-tts', voice: process.env.TARA_VOICE || 'marin',
+        input: text, response_format: 'mp3',
+        instructions: 'Calm, warm and clear, like a helpful colleague. Natural pace. Read product and clinic names exactly as written. Speak in the language of the text.' }) });
+    if (!r.ok) { const e = await r.text(); throw new Error('Could not read that aloud. ' + e.slice(0, 200)); }
+    return Buffer.from(await r.arrayBuffer()).toString('base64');
+  } finally { clearTimeout(tm); }
 }
 
 // ---- handler ------------------------------------------------------------------------
@@ -652,7 +835,7 @@ exports.handler = async (event) => {
   try {
     if (action === 'status') {
       if (!enabled) return json(200, { enabled: false });
-      return json(200, { enabled: true, used: await usedToday(ctx), limit: dailyLimit(ctx) });
+      return json(200, { enabled: true, used: await usedToday(ctx), limit: dailyLimit(ctx), voice: true });
     }
     if (!enabled) return json(403, { error: 'Tara is not switched on for this account.' });
 
@@ -674,7 +857,7 @@ exports.handler = async (event) => {
         thread_id: thread, question, model: process.env.TARA_MODEL || 'gpt-5.6-sol' };
       let first;
       try {
-        first = await oaiCreate(ctx, Object.assign({ input: [{ role: 'user', content: question }] }, prevId ? { previous_response_id: prevId } : {}));
+        first = await oaiCreate(ctx, Object.assign({ input: [{ role: 'user', content: question + askNotes(body) }] }, prevId ? { previous_response_id: prevId } : {}));
       } catch (e) {
         await sb.from('mi_tara_log').insert(Object.assign({}, base, { status: 'error', error: String(e.message || e) }));
         return json(502, { error: 'Tara is not available right now. Please try again shortly.' });
@@ -701,6 +884,45 @@ exports.handler = async (event) => {
       await sb.from('mi_tara_log').update({ rating, feedback: nz(body.note) ? String(body.note).slice(0, 1000) : null })
         .eq('id', id).eq('user_key', ctx.userKey);
       return json(200, { ok: true });
+    }
+
+    // ---- voice: speech to text ----
+    if (action === 'transcribe') {
+      const b64 = String(body.audio || '');
+      if (!b64) return json(400, { error: 'No recording received.' });
+      if (b64.length > 5500000) return json(413, { error: 'That recording is too long. Please keep it under a minute.' });
+      const text = await transcribe(ctx, Buffer.from(b64, 'base64'), String(body.mime || 'audio/webm'));
+      return json(200, { text });
+    }
+
+    // ---- voice: read an answer aloud. The text comes from the log, never from
+    // the browser, so this cannot be used to voice anything else. ----
+    if (action === 'speak') {
+      const id = parseInt(body.id, 10);
+      const { data: row } = await sb.from('mi_tara_log').select('answer').eq('id', id).eq('user_key', ctx.userKey).maybeSingle();
+      if (!row || !row.answer) return json(404, { error: 'not found' });
+      const audio = await speak(speechText(row.answer));
+      return json(200, { audio, mime: 'audio/mpeg' });
+    }
+
+    // ---- past chats ----
+    if (action === 'threads') {
+      const { data } = await sb.from('mi_tara_log').select('id, thread_id, question, created_at, status')
+        .eq('user_key', ctx.userKey).order('id', { ascending: false }).limit(400);
+      const by = new Map();
+      (data || []).forEach(r => {
+        const t = by.get(r.thread_id);
+        // Rows come newest first, so the last one seen per thread is its first question.
+        if (!t) by.set(r.thread_id, { thread_id: r.thread_id, title: r.question, last_at: r.created_at, count: 1 });
+        else { t.title = r.question; t.count++; }
+      });
+      return json(200, { threads: [...by.values()].slice(0, 40) });
+    }
+    if (action === 'thread') {
+      const tid = String(body.thread_id || '');
+      const { data } = await sb.from('mi_tara_log').select('*')
+        .eq('user_key', ctx.userKey).eq('thread_id', tid).order('id', { ascending: true }).limit(60);
+      return json(200, { thread_id: tid, turns: (data || []).map(r => Object.assign({ question: r.question, rating: r.rating }, reply(r))) });
     }
 
     if (action === 'clinic') {
