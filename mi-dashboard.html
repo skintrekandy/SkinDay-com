@@ -1326,7 +1326,18 @@
   .tmic:disabled { opacity:.5; cursor:default; }
   @keyframes tpulse { 50% { opacity:.45; } }
   .tm.me .tvia { display:block; font-family:var(--font-mono); font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; opacity:.75; margin-bottom:2px; }
-  .tfb .tlisten { margin-left:auto; color:var(--accent-strong); }
+  .tlisten { display:inline-flex; align-items:center; gap:6px; margin:4px 0 2px; font:inherit; font-size:12.5px; color:var(--accent-strong); background:none; border:1px solid var(--line); border-radius:100px; padding:4px 12px 4px 9px; cursor:pointer; }
+  .tlisten svg { width:15px; height:15px; }
+  .tlisten .ti-stop { display:none; }
+  .tlisten.on { border-color:var(--accent); background:var(--accent-soft); }
+  .tlisten.on .ti-play { display:none; }
+  .tlisten.on .ti-stop { display:block; }
+  .tmore { margin-top:10px; border-top:1px solid var(--line-2); padding-top:8px; }
+  .tmore > summary { cursor:pointer; list-style:none; font-size:13px; font-weight:600; color:var(--ink-2); padding:4px 0; }
+  .tmore > summary::-webkit-details-marker { display:none; }
+  .tmore > summary::after { content:' +'; color:var(--muted); font-weight:400; }
+  .tmore[open] > summary::after { content:' \2212'; }
+  .tmore-b { padding-top:4px; }
   @media (max-width:640px){
     body.on-tara main { padding-bottom:150px; }
     .tara-head { margin-bottom:12px; }
@@ -6321,9 +6332,13 @@
     var b=bot.querySelector('.tbody');
     if(j.answer){
       b.innerHTML=taraMd(j.answer)+
+        (TARA.voice?'<button type="button" class="tlisten" data-listen="'+esc(j.id)+'" aria-label="Read this answer aloud">'+
+          '<svg class="ti-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'+
+          '<svg class="ti-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>'+
+          '<span class="tl-l">Listen</span></button>':'')+
+        (j.details?'<details class="tmore"><summary>More detail</summary><div class="tmore-b">'+taraMd(j.details)+'</div></details>':'')+
         '<div class="tfb" data-id="'+esc(j.id)+'"><span>Was this useful?</span>'+
-        '<button type="button" data-r="1">Yes</button><button type="button" data-r="-1">No</button>'+
-        (TARA.voice?'<button type="button" class="tlisten" data-listen="'+esc(j.id)+'">Listen</button>':'')+'</div>';
+        '<button type="button" data-r="1">Yes</button><button type="button" data-r="-1">No</button></div>';
       if(j.results && j.results.rows && j.results.rows.length){
         var fbEl=b.querySelector('.tfb'); var holder=document.createElement('div');
         holder.innerHTML=taraPanel(j.results); fbEl.parentNode.insertBefore(holder.firstChild, fbEl);
@@ -6420,7 +6435,7 @@
     if(op){ taraOpenInClinics(TPANELS[op.closest('.tres').getAttribute('data-p')].p.args||{}); return; }
     var sv=e.target.closest('.tres-save');
     if(sv){ taraSaveAll(sv); return; }
-    var ls=e.target.closest('.tfb .tlisten');
+    var ls=e.target.closest('.tlisten');
     if(ls){ taraListen(ls, false); return; }
     var fb=e.target.closest('.tfb button');
     if(fb){
@@ -6471,22 +6486,23 @@
   }
   function taraStopPlay(){
     if(TV.player){ try{ TV.player.pause(); }catch(e){} }
-    if(TV.playingBtn){ TV.playingBtn.textContent='Listen'; TV.playingBtn.classList.remove('on'); TV.playingBtn=null; }
+    if(TV.playingBtn){ taraLbl(TV.playingBtn,'Listen'); TV.playingBtn.classList.remove('on'); TV.playingBtn=null; }
   }
+  function taraLbl(btn, t){ var l=btn.querySelector('.tl-l'); if(l) l.textContent=t; else btn.textContent=t; }
   function taraListen(btn, auto){
     if(TV.playingBtn===btn){ taraStopPlay(); return; }
     taraStopPlay();
     var id=btn.getAttribute('data-listen');
-    btn.textContent='Loading…';
+    taraLbl(btn,'Loading…');
     var go=function(src){
-      var a=taraPlayer(); a.src=src; TV.playingBtn=btn; btn.textContent='Stop'; btn.classList.add('on');
+      var a=taraPlayer(); a.src=src; TV.playingBtn=btn; taraLbl(btn,'Stop'); btn.classList.add('on');
       var p=a.play();
-      if(p && p.catch) p.catch(function(){ btn.textContent='Listen'; btn.classList.remove('on'); TV.playingBtn=null; });
+      if(p && p.catch) p.catch(function(){ taraLbl(btn,'Listen'); btn.classList.remove('on'); TV.playingBtn=null; });
     };
     if(TV.cache[id]){ go(TV.cache[id]); return; }
     taraApi('speak',{id:id}).then(function(j){
       TV.cache[id]='data:'+(j.mime||'audio/mpeg')+';base64,'+j.audio; go(TV.cache[id]);
-    }).catch(function(){ btn.textContent=auto?'Listen':'Could not play'; if(!auto) setTimeout(function(){ btn.textContent='Listen'; },2000); });
+    }).catch(function(){ taraLbl(btn,auto?'Listen':'Could not play'); if(!auto) setTimeout(function(){ taraLbl(btn,'Listen'); },2000); });
   }
   function taraRecTick(){
     var s=Math.floor((Date.now()-TV.t0)/1000);
