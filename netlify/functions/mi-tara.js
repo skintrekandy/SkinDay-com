@@ -837,7 +837,7 @@ async function libAction(ctx, body) {
     if (error) throw error;
     // Bring files that are still being read up to date.
     const L = await libStore(sb, false);
-    const busy = (data || []).filter(r => r.status === 'processing').slice(0, 12);
+    const busy = (data || []).filter(r => r.status === 'processing').slice(0, 30);
     if (L.vs && busy.length) {
       const { data: full } = await sb.from('tara_sources').select('id, openai_file_id').in('id', busy.map(r => r.id));
       await Promise.all((full || []).map(async r => {
@@ -948,7 +948,9 @@ async function libAction(ctx, body) {
       const p = String(it.product || '').replace(/["()\[\]]/g, ' ').trim();
       if (!p) continue;
       const ctxTerm = '(skin[tiab] OR aesthetic*[tiab] OR cosmetic*[tiab] OR dermatol*[tiab] OR wrinkle*[tiab] OR laser*[tiab] OR facial[tiab] OR fat[tiab])';
-      const term = '"' + p + '"[tiab] AND ' + ctxTerm;
+      // Medical (non-aesthetic) uses of the same products are left out.
+      const notTerm = ' NOT (neuralgia[tiab] OR spasticity[tiab] OR dystonia[tiab] OR migraine[tiab] OR bladder[tiab] OR blepharospasm[tiab] OR sialorrhea[tiab] OR "cerebral palsy"[tiab] OR stroke[tiab])';
+      const term = '"' + p + '"[tiab] AND ' + ctxTerm + notTerm;
       try {
         const j = JSON.parse(await eu('esearch.fcgi?db=pubmed&retmode=json&retmax=12&sort=pub_date&datetype=pdat&mindate=' + encodeURIComponent(since) +
           '&maxdate=3000&term=' + encodeURIComponent(term)));
@@ -978,6 +980,11 @@ async function libAction(ctx, body) {
       }
     }
     return { added };
+  }
+  if (a === 'kb_lib_skip_many') {
+    const ids = (Array.isArray(body.ids) ? body.ids : []).map(x => parseInt(x, 10)).filter(Boolean).slice(0, 1000);
+    if (ids.length) await sb.from('tara_sources').update({ status: 'skipped', updated_at: now() }).in('id', ids).eq('status', 'suggested');
+    return { skipped: ids.length };
   }
   if (a === 'kb_lib_scan_end') {
     await sb.from('tara_settings').upsert({ key: 'pubmed_last_scan', value: new Date().toISOString().slice(0, 10), updated_at: now() });
