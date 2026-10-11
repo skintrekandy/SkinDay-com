@@ -338,8 +338,9 @@ function instructions(ctx) {
     '',
     'HOW YOU WORK',
     '- You operate the clinic’s tools; you never edit an image yourself and never claim to. You propose a plan with propose_studio or propose_simulation. The user sees it as a card and presses a button; the tool then does the work. Until they press it, nothing has happened: say "here is the plan", never "done".',
-    '- You never see the photos. The user’s message ends with a PHOTOS list: an id per photo (p1, p2...), its file name, the date it was taken (from the camera, when the file has one), the angle Visualize’s face check measured, and whether a face was found. Work only from that.',
-    '- Before vs after: when both photos have dates and they differ, the earlier one is before. When a date is missing or they match, ask which is before (or use clear file names such as "before"/"after", and say you did). Never guess from anything else.',
+    '- You never see the photos. The user’s message ends with a PHOTOS list: an id per photo (p1, p2...), its file name, the date it was taken (from the camera, when the file has one), the angle Visualize’s face check measured, whether a face was found, and a rough colour of the clothing, plus the photos grouped into sessions by date. Work only from that, and never describe or claim anything about a photo that the list does not say.',
+    '- Before vs after, in this order: (1) what the user says always wins, even over the dates. (2) If they identify the photos by something visible, such as clothing, hair or background, match it only against the clothing colour in the list; if that does not settle it for every photo, ask one short question by session and ids ("Is the 27 Feb 2024 set, p1 to p3, the before?"). Never say you matched by shirt or anything else you cannot see. (3) With no instruction, the earlier session is before. (4) No dates and nothing to go on: ask.',
+    '- When the user’s instruction and the dates disagree, follow the user and mention the dates in a few words ("the camera dates say the other way round, so check them") without asking them to justify it.',
     '- Angles: frontal → frontal. three-quarter with the patient’s RIGHT cheek toward the camera → r45, LEFT → l45. profile right/left → r90/l90. "no face found" or an unclear angle: ask.',
     '- Ask at most one short question at a time, and only when the answer changes the plan. If the request is clear, propose straight away.',
     '- When a card is already showing and the user changes something, propose again with the change; the new card replaces the old one.',
@@ -377,14 +378,21 @@ function instructions(ctx) {
 // what happened since the last answer. Added to the question, never stored.
 function photoLines(photos) {
   if (!photos.length) return 'PHOTOS: none attached.';
-  return 'PHOTOS:\n' + photos.map(p => {
+  const lines = photos.map(p => {
     const bits = [p.id, '"' + p.name + '"', p.date ? 'taken ' + p.date : 'no date in file'];
     if (p.face === false) bits.push('no face found');
     else if (p.view) bits.push('angle ' + p.view + (p.yaw != null ? ' (~' + p.yaw + '°)' : ''));
     else bits.push('angle not measured');
+    if (p.clothes) bits.push('clothing looks ' + p.clothes + ' (colour estimate)');
     if (p.size) bits.push(p.size);
     return '- ' + bits.join(', ');
-  }).join('\n');
+  });
+  // Sessions: photos taken the same day belong together.
+  const by = new Map();
+  photos.forEach(p => { const k = p.date ? p.date.slice(0, 10) : 'no date'; if (!by.has(k)) by.set(k, []); by.get(k).push(p.id); });
+  const sessions = [...by.entries()].sort((a, b) => a[0] < b[0] ? -1 : 1)
+    .map(([k, ids]) => '- ' + k + ': ' + ids.join(', '));
+  return 'PHOTOS:\n' + lines.join('\n') + '\nSESSIONS (by camera date, earliest first):\n' + sessions.join('\n');
 }
 const LANG_NAMES = { en: 'English', 'zh-hant': 'Traditional Chinese', 'zh-hans': 'Simplified Chinese', fr: 'French', ko: 'Korean', es: 'Spanish', ja: 'Japanese', vi: 'Vietnamese' };
 function askNotes(body, photos) {
@@ -405,6 +413,7 @@ function cleanPhotos(raw) {
     view: ['frontal', 'three-quarter right', 'three-quarter left', 'profile right', 'profile left', 'turned too far'].includes(p.view) ? p.view : null,
     yaw: Number.isFinite(p.yaw) ? Math.round(p.yaw) : null,
     face: p.face === false ? false : (p.face === true ? true : null),
+    clothes: ['black or navy', 'white', 'grey', 'red', 'brown', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink'].includes(p.clothes) ? p.clothes : null,
     size: /^\d{2,5}x\d{2,5}$/.test(String(p.size || '')) ? String(p.size) : null
   }));
 }
