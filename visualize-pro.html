@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Visualize Pro · SkinDay</title>
 <link rel="canonical" href="https://skinday.com/visualize-pro">
-<meta name="description" content="Your clinic already takes before-and-after photos. Visualize Pro makes each one work harder: one upload organizes the case, updates your website gallery, and strengthens AI consultations. Start a 14-day free trial, no application.">
+<meta name="description" content="Your clinic already takes before &amp; after photos. Visualize Pro makes each one work harder: one upload organizes the case, updates your website gallery, and strengthens AI consultations. Start a 14-day free trial, no application.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
@@ -120,7 +120,7 @@
   .loopsec .lead-eyebrow{color:var(--gold);}
   .loopsec h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:clamp(2.1rem,4.4vw,3.4rem);line-height:1.1;color:var(--cream);max-width:15ch;}
   body.zh .loopsec h2{line-height:1.45;font-family:'Noto Serif TC',serif;}
-  .loopsec h2 .lem{color:var(--gold);font-style:italic;white-space:nowrap;}
+  .loopsec h2 .lem{color:var(--gold);font-style:normal;white-space:nowrap;}
   body.zh .loopsec h2 .lem{font-style:normal;}
   .flowchart{margin-top:52px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
   .flowchart svg{width:100%;min-width:660px;max-width:880px;height:auto;display:block;margin:0 auto;}
@@ -235,6 +235,16 @@
   @media (max-width:560px){
     .tiers{grid-template-columns:1fr;}
   }
+
+/* Type aligned with the homepage and About page */
+h1,h2,h3{letter-spacing:-.008em}
+.brand{font-size:1.75rem}
+.nav-menu a{font-size:.875rem;font-weight:600;letter-spacing:0;color:#4A403A}
+.nav-menu a:hover{color:var(--deep)}
+.nav-login,.nav-cta{font-size:.875rem;font-weight:600}
+.btn,.plan .pcta{font-weight:600}
+.eyebrow,.lead-eyebrow{font-size:.75rem;font-weight:700;letter-spacing:.2em;color:var(--gold-deep)}
+body.zh .eyebrow,body.zh .lead-eyebrow{letter-spacing:.06em}
 </style>
 </head>
 <body>
@@ -258,7 +268,8 @@
 </nav>
 <header class="hero wrap">
   <div>
-    <h1 class="serif" data-en="Your clinic already takes before and after photos." data-zh="您的診所早就在拍術前術後照。">Your clinic already takes before and after photos.</h1>
+    <div class="eyebrow" data-en="Clinic Tools" data-zh="診所工具">Clinic Tools</div>
+    <h1 class="serif" data-en="Your clinic already takes before &amp; after photos." data-zh="您的診所早就在拍術前術後照。">Your clinic already takes before &amp; after photos.</h1>
     <p class="kicker serif" data-en="Visualize Pro makes <em>them work for you</em>." data-zh="Visualize Pro讓<em>每一張照片</em>發揮更大的價值。">Visualize Pro makes <em>them work for you</em>.</p>
     <p class="lede" data-en="Upload each completed case once. Visualize Pro automatically organizes every case, keeps your website gallery up to date, and grounds AI consultations using your own clinical outcomes." data-zh="完成一個案例，只需上傳一次。Visualize Pro 會自動整理每一個臨床案例、更新診所官網術前術後案例庫，並以您的真實治療成果提升 AI 諮詢的可信度。">Upload each completed case once. Visualize Pro automatically organizes every case, keeps your website gallery up to date, and grounds AI consultations using your own clinical outcomes.</p>
     <div class="cta-row">
@@ -334,7 +345,7 @@
       <div class="incl">
         <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg></span>
         <h3 data-en="Studio" data-zh="Studio">Studio</h3>
-        <p data-en="Compose clean before-and-after grids right in your browser." data-zh="直接在瀏覽器中製作乾淨的術前術後對比圖。">Compose clean before-and-after grids right in your browser.</p>
+        <p data-en="Compose clean before &amp; after grids right in your browser." data-zh="直接在瀏覽器中製作乾淨的術前術後對比圖。">Compose clean before &amp; after grids right in your browser.</p>
         <span class="free-tag" data-en="Free, and built in" data-zh="免費，已內建">Free, and built in</span>
       </div>
       <div class="incl">
@@ -345,7 +356,7 @@
       <div class="incl">
         <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.4 2.6 2.4 15.4 0 18M12 3c-2.4 2.6-2.4 15.4 0 18"/></svg></span>
         <h3 data-en="Website Gallery" data-zh="官網案例">Website Gallery</h3>
-        <p data-en="Your public before-and-after gallery updates itself as you save." data-zh="官網術前術後案例會隨著儲存自動更新。">Your public before-and-after gallery updates itself as you save.</p>
+        <p data-en="Your public before &amp; after gallery updates itself as you save." data-zh="官網術前術後案例會隨著儲存自動更新。">Your public before &amp; after gallery updates itself as you save.</p>
       </div>
       <div class="incl">
         <span class="iic"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></svg></span>
@@ -405,11 +416,11 @@
 <section class="trust" id="privacy">
   <div class="wrap">
     <p class="lead-eyebrow" data-en="Patient data" data-zh="病患資料">Patient data</p>
-    <h2 class="serif" data-en="Four things we hold to." data-zh="我們堅守的四件事。">Four things we hold to.</h2>
+    <h2 class="serif" data-en="How patient data is handled." data-zh="顧客資料的處理方式。">How patient data is handled.</h2>
     <div class="principles">
       <div class="principle"><span class="pmark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span><div><b data-en="Consent, per purpose" data-zh="分項同意">Consent, per purpose</b><span data-en="Storage, reference and publishing stay separate permissions." data-zh="儲存、模擬參考與官網發布，各自獨立授權。">Storage, reference and publishing stay separate permissions.</span></div></div>
       <div class="principle"><span class="pmark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span><div><b data-en="No cross-clinic training" data-zh="不跨診所訓練">No cross-clinic training</b><span data-en="Your cases guide your clinic. Not another clinic&rsquo;s, not ours." data-zh="您的案例只引導您的診所，不混用他人或 SkinDay 的案例。">Your cases guide your clinic. Not another clinic&rsquo;s, not ours.</span></div></div>
-      <div class="principle"><span class="pmark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span><div><b data-en="Withdrawal is real" data-zh="撤回即生效">Withdrawal is real</b><span data-en="Withdraw consent and the case leaves your site, simulations and our storage." data-zh="撤回同意後，案例會從官網、模擬與儲存中移除，並非隱藏。">Withdraw consent and the case leaves your site, simulations and our storage.</span></div></div>
+      <div class="principle"><span class="pmark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span><div><b data-en="Withdrawal" data-zh="撤回同意">Withdrawal</b><span data-en="Withdraw consent and the case leaves your site, simulations and our storage." data-zh="撤回同意後，案例會從官網、模擬與儲存中移除，並非隱藏。">Withdraw consent and the case leaves your site, simulations and our storage.</span></div></div>
       <div class="principle"><span class="pmark"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span><div><b data-en="The library is yours" data-zh="案例庫屬於您">The library is yours</b><span data-en="Export your full case library whenever you want, including on the way out." data-zh="可隨時匯出完整案例庫，即使停止使用也一樣。">Export your full case library whenever you want, including on the way out.</span></div></div>
     </div>
   </div>
