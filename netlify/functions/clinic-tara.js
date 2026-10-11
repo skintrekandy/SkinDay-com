@@ -297,7 +297,7 @@ const TOOLS = [
       clinic_name: { type: 'string', description: 'Only if the user gives one for the watermark' },
       injector_name: { type: 'string', description: 'Only if the user gives one for the watermark' } },
     ['layout', 'slots']),
-  fn('propose_simulation', 'Put an AI simulation plan in front of the user as a card. Visualize fills in its form, shows the exact credit cost and balance, and runs only when the user ticks consent and presses Run.',
+  fn('propose_simulation', 'Put an AI simulation plan in front of the user as a card. Visualize fills in its form, shows the cost if the clinic is not on Visualize Pro, and runs only when the user ticks consent and presses Run.',
     { treatment: { type: 'string', enum: ['biostim', 'filler', 'laser', 'tox'] },
       photos: { type: 'array', description: 'One photo per angle', items: { type: 'object', properties: {
         photo: { type: 'string', description: 'Photo id' }, angle: { type: 'string', enum: VIS_ANGLES } }, required: ['photo', 'angle'] } },
@@ -324,7 +324,7 @@ async function runTool(ctx, name, a) {
     }
     case 'propose_simulation': {
       const plan = checkSimulation(a || {}, ctx.photos);
-      return { shown: true, note: 'The user now sees a card with the exact credit cost. Nothing runs until they tick consent and press Run.', __action: { kind: 'simulation', plan } };
+      return { shown: true, note: 'The user now sees the card. Nothing runs until they tick consent and press Run.', __action: { kind: 'simulation', plan } };
     }
   }
   return { error: 'unknown tool' };
@@ -353,12 +353,12 @@ function instructions(ctx) {
     '- Branding uses the clinic name, injector name and logo saved in Studio; only set watermark or logo positions, export format, brightness matching or enhancement when asked. Brightness matching (on by default) evens out lighting between sessions; for pigmentation, redness or vascular cases suggest turning it off, because the brightness change can be the result.',
     '- After Build, Studio shows the finished image with download buttons, and a save form below it to keep the case in the Library.',
     '',
-    'VISUALIZE (AI simulations, uses credits)',
+    'VISUALIZE (AI simulations)',
     '- Treatments: biostim (product: PLLA / Sculptra, or hyperdilute CaHA / Radiesse) simulates a FULL-FACE collagen pattern with no area selection, optional primary concern (volume loss, sagging, mixed), sex and age. filler (HA) treats exactly ONE area: chin_jawline, chin, jawline, cheeks, temple, nose, tear_trough, lips, nasolabial_folds; volume moderate (shown as Natural) or enhanced. laser (energy-based devices): RF or HIFU tightening of the lower face and jawline. tox: masseter slimming, Nefertiti lift, or both combined.',
-    '- Combination plan: one primary treatment plus up to 2 add-ons (add_chin_jaw_filler, add_chin_filler, add_jawline_filler, add_cheek_filler, add_temple_support, add_tear_trough, add_nasolabial_filler, add_nose_filler, add_lips_filler, add_biostim_lift, add_rf, add_hifu, add_masseter, add_nefertiti). Each add-on is another pass: more credits and slightly softer image quality. Visualize drops add-ons that do not fit the primary and the card says so.',
+    '- Combination plan: one primary treatment plus up to 2 add-ons (add_chin_jaw_filler, add_chin_filler, add_jawline_filler, add_cheek_filler, add_temple_support, add_tear_trough, add_nasolabial_filler, add_nose_filler, add_lips_filler, add_biostim_lift, add_rf, add_hifu, add_masseter, add_nefertiti). Each add-on is another pass: a longer run (and more credits without Visualize Pro) and slightly softer image quality. Visualize drops add-ons that do not fit the primary and the card says so.',
     '- Mapping requests: "Sculptra in the temples and cheeks" is biostim/sculptra (full face already includes temples and lateral cheeks); say so in one sentence, and mention add_temple_support or add_cheek_filler only as an option if they want those areas emphasised. "Filler in the cheeks and lips" is two areas: filler on one plus the other as an add-on, or ask which matters most.',
-    '- Strength: biostim, laser and tox always generate the realistic expected response, which is what "moderate" or "natural" means; there is no strength setting for them. If the user wants a stronger look, say that once the result is ready Visualize offers a "Stronger response" scenario, which they start in Visualize and which costs another credit. For filler use volume: subtle, natural or moderate → moderate (shown as Natural); strong, full or dramatic → enhanced.',
-    '- Cost: 1 credit per angle per pass (the card shows the exact number and the balance). Never run anything yourself: the card asks the user to confirm the patient’s consent and press Run.',
+    '- Strength: biostim, laser and tox always generate the realistic expected response, which is what "moderate" or "natural" means; there is no strength setting for them. If the user wants a stronger look, say that once the result is ready Visualize offers a "Stronger response" scenario, which they start in Visualize (another credit unless the clinic has Visualize Pro). For filler use volume: subtle, natural or moderate → moderate (shown as Natural); strong, full or dramatic → enhanced.',
+    '- Cost: when the notes say the clinic has Visualize Pro, simulations are included: never mention credits. Otherwise each angle costs 1 credit per pass and the card shows the exact number and balance. Either way, never run anything yourself: the card asks the user to confirm the patient’s consent and press Run.',
     '- Simulations are consultation illustrations, not a promised result. Never recommend doses, syringes or vials; that is the clinician’s call.',
     '',
     'LIBRARY',
@@ -399,6 +399,7 @@ function askNotes(body, photos) {
   const notes = [photoLines(photos)];
   const ev = Array.isArray(body.events) ? body.events.map(x => String(x).slice(0, 300)).slice(0, 6) : [];
   if (ev.length) notes.push('SINCE YOUR LAST ANSWER:\n' + ev.map(x => '- ' + x).join('\n'));
+  if (body.pro === true) notes.push('This clinic has Visualize Pro: simulations are included, with no credits.');
   if (nz(body.tab)) notes.push('The user is on the ' + String(body.tab).slice(0, 20) + ' tab.');
   if (body.via === 'voice') notes.push('Asked by voice. Keep the reply to about 60 words of plain spoken sentences. If a word in the transcript looks odd, assume the closest treatment or product name.');
   const lang = LANG_NAMES[String(body.reply_lang || '').toLowerCase()];
