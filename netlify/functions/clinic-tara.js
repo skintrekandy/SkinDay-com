@@ -338,6 +338,18 @@ const TOOLS = [
       clinic_name: { type: 'string', description: 'Only if the user gives one for the watermark' },
       injector_name: { type: 'string', description: 'Only if the user gives one for the watermark' } },
     ['layout', 'slots']),
+  fn('update_studio', 'Change what is drawn ON TOP of the before & after already built in Studio: captions, dates, top line, clinic/injector names, watermark, logo size or position, export format, brightness, enhancement. Nothing is rebuilt: Studio keeps the photos, alignment, crop and background and simply re-renders, in a second. Use this whenever an image was already built in this chat and the user only wants one of these changed.',
+    { treatment_label: { type: 'string', description: 'New top line. Empty string removes it.' },
+      clinic_name: { type: 'string' }, injector_name: { type: 'string', description: 'Empty string removes it.' },
+      watermark_position: { type: 'string', enum: POSITIONS.concat(['tile']) },
+      logo_position: { type: 'string', enum: POSITIONS },
+      logo_size: { type: 'string', enum: ['small', 'medium', 'large'] },
+      logo: { type: 'string', enum: ['hide', 'show'], description: 'Hide or show the clinic logo on this image' },
+      labels: { type: 'array', items: { type: 'string' }, description: '2h/2v/3h: caption per photo' },
+      row_labels: { type: 'array', items: { type: 'string' }, description: '2x layouts: [top row, bottom row]' },
+      dates: { type: 'array', items: { type: 'string' }, description: 'YYYY-MM-DD / YYYY-MM / "" (removes). One per caption, in order.' },
+      export_format: { type: 'string', enum: ['square', 'portrait', 'story', 'free'] },
+      match_brightness: { type: 'boolean' }, enhance: { type: 'integer', enum: [0, 1, 2] } }),
   fn('propose_simulation', 'Put an AI simulation plan in front of the user as a card. Visualize fills in its form, shows the cost if the clinic is not on Visualize Pro, and runs only when the user ticks consent and presses Run.',
     { treatment: { type: 'string', enum: ['biostim', 'filler', 'laser', 'tox'] },
       photos: { type: 'array', description: 'One photo per angle', items: { type: 'object', properties: {
@@ -353,7 +365,7 @@ const TOOLS = [
       addons: { type: 'array', items: { type: 'string', enum: ADDONS }, description: 'Combination plan: up to 2 complementary treatments on top of the primary. Each adds a pass and costs credits.' } },
     ['treatment', 'photos'])
 ];
-const STATUS_TEXT = { find_cases: 'Looking in your Library', library_overview: 'Counting your cases', propose_studio: 'Preparing the plan', propose_simulation: 'Preparing the plan' };
+const STATUS_TEXT = { find_cases: 'Looking in your Library', library_overview: 'Counting your cases', propose_studio: 'Preparing the plan', update_studio: 'Preparing the change', propose_simulation: 'Preparing the plan' };
 
 async function runTool(ctx, name, a) {
   switch (name) {
@@ -362,6 +374,26 @@ async function runTool(ctx, name, a) {
     case 'propose_studio': {
       const plan = checkStudio(a || {}, ctx.photos);
       return { shown: true, note: 'The user now sees a Build card. Wait for them; do not say it is done.', __action: { kind: 'studio', plan } };
+    }
+    case 'update_studio': {
+      const a2 = a || {};
+      const u = {};
+      if (typeof a2.treatment_label === 'string') u.treatmentLabel = a2.treatment_label.slice(0, 60);
+      if (typeof a2.clinic_name === 'string') u.clinicName = a2.clinic_name.slice(0, 60);
+      if (typeof a2.injector_name === 'string') u.injectorName = a2.injector_name.slice(0, 60);
+      if (POSITIONS.concat(['tile']).includes(a2.watermark_position)) u.wmPos = a2.watermark_position;
+      if (POSITIONS.includes(a2.logo_position)) u.logoPos = a2.logo_position;
+      if (['small', 'medium', 'large'].includes(a2.logo_size)) u.logoSize = a2.logo_size;
+      if (a2.logo === 'hide') u.removeLogo = true;
+      if (a2.logo === 'show') u.showLogo = true;
+      if (Array.isArray(a2.labels)) u.labels = a2.labels.map(x => String(x || '').slice(0, 40));
+      if (Array.isArray(a2.row_labels)) u.rowLabels = a2.row_labels.map(x => String(x || '').slice(0, 40));
+      if (Array.isArray(a2.dates)) u.dates = a2.dates.map(parseDate);
+      if (['square', 'portrait', 'story', 'free'].includes(a2.export_format)) u.format = a2.export_format;
+      if (typeof a2.match_brightness === 'boolean') u.norm = a2.match_brightness;
+      if ([0, 1, 2].includes(a2.enhance)) u.enhance = a2.enhance;
+      if (!Object.keys(u).length) throw new Error('Nothing to change. Say what should change.');
+      return { shown: true, note: 'The user sees an Update card; one press re-renders the image.', __action: { kind: 'studio_update', update: u } };
     }
     case 'propose_simulation': {
       const plan = checkSimulation(a || {}, ctx.photos);
@@ -393,6 +425,7 @@ function instructions(ctx) {
     '- Captions: Before / After by default; 2x layouts caption each row once. Dates come from the camera dates; captions show month and year or the full date. Leave a date empty rather than invent one.',
     '- Branding uses the clinic name, injector name and logo saved in Studio; only set watermark or logo positions, export format, brightness matching or enhancement when asked. Brightness matching (on by default) evens out lighting between sessions; for pigmentation, redness or vascular cases suggest turning it off, because the brightness change can be the result.',
     '- After Build, Studio shows the finished image with download buttons, and a save form below it to keep the case in the Library.',
+    '- Once an image is built, changes to captions, dates, the top line, names, watermark, logo (size, position, hide) or export format use update_studio: it re-renders in a second and keeps everything else. Only use propose_studio again when photos, layout, crop or background change. Logo size can be small, medium or large.',
     '',
     'VISUALIZE (AI simulations)',
     '- Treatments: biostim (product: PLLA / Sculptra, or hyperdilute CaHA / Radiesse) simulates a FULL-FACE collagen pattern with no area selection, optional primary concern (volume loss, sagging, mixed), sex and age. filler (HA) treats exactly ONE area: chin_jawline, chin, jawline, cheeks, temple, nose, tear_trough, lips, nasolabial_folds; volume moderate (shown as Natural) or enhanced. laser (energy-based devices): RF or HIFU tightening of the lower face and jawline. tox: masseter slimming, Nefertiti lift, or both combined.',
