@@ -758,14 +758,35 @@
   #taraFab.working .tfab-st { display:inline; }
   body.tara-open #taraFab { display:none; }
 
+  :root { --tp-w:500px; }
   #taraPanel {
-    position:fixed; top:0; right:0; bottom:0; z-index:960; width:min(440px, 100vw);
+    position:fixed; top:0; right:0; bottom:0; z-index:960; width:min(var(--tp-w), 100vw);
     display:none; flex-direction:column; background:var(--bg);
     border-left:1px solid var(--line); box-shadow:-18px 0 40px -28px rgba(20,26,33,.45);
   }
   body.tara-open #taraPanel { display:flex; }
-  /* Wide screens: the page makes room for Tara instead of hiding under her. */
-  @media (min-width:1100px) { body.tara-open .stage, body.tara-open .wrap, body.tara-open #tabs { width:auto; margin-right:440px; } }
+  /* Wide screens: the page makes room for Tara instead of hiding under her.
+     Widths are set explicitly: body is a flex column, where an auto width with
+     an auto margin shrinks the block to its content and slides it right, which
+     is what squeezed Visualize into a narrow strip against the panel. */
+  @media (min-width:1100px) {
+    body.tara-open .stage { width:calc(100% - var(--tp-w)); margin-left:0; margin-right:var(--tp-w); }
+    body.tara-open .topbar { margin-right:var(--tp-w); }
+    body.tara-open .wrap { width:min(1040px, calc(100% - var(--tp-w))); margin-left:max(0px, calc((100% - var(--tp-w) - 1040px) / 2)); margin-right:auto; }
+  }
+  .tp-resize { position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:col-resize; z-index:6; }
+  .tp-resize::after { content:""; position:absolute; left:3px; top:50%; width:2px; height:44px; margin-top:-22px; border-radius:2px; background:var(--line); transition:background .15s; }
+  .tp-resize:hover::after, #taraPanel.resizing .tp-resize::after { background:var(--accent); }
+  #taraPanel.resizing, body.tara-resizing { user-select:none; cursor:col-resize; }
+  body.tara-resizing iframe { pointer-events:none; }
+  
+  /* Phones and iPads in portrait: Tara takes the whole screen, like an app
+     screen, rather than a side panel covering half the page. */
+  @media (max-width:1099px) {
+    #taraPanel { width:100vw; height:100dvh; border-left:0; box-shadow:none; }
+    .tp-resize { display:none; }
+    #taraFab { bottom:calc(16px + env(safe-area-inset-bottom)); right:16px; }
+  }
   @media (max-width:700px) {
     /* No scroll lock on purpose: Visualize and Studio scroll themselves into view
        while Tara drives them, and with the page locked that pans the phone's
@@ -780,7 +801,7 @@
   .tp-ib:hover { background:var(--surface-2); border-color:var(--line); }
   .tp-ib svg { width:19px; height:19px; }
   .tp-log { flex:1; overflow-y:auto; padding:16px 14px 8px; display:flex; flex-direction:column; gap:12px; overscroll-behavior:contain; }
-  .tm { max-width:100%; font-size:14.5px; line-height:1.55; }
+  .tm { max-width:100%; font-size:15px; line-height:1.55; }
   .tm.me { align-self:flex-end; max-width:86%; background:var(--accent); color:var(--accent-ink); border-radius:16px 16px 4px 16px; padding:9px 13px; white-space:pre-wrap; overflow-wrap:anywhere; }
   .tm.me .tvia { display:block; font:500 10px/1.2 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; opacity:.8; margin-bottom:3px; }
   .tm.me .tme-ph { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
@@ -867,7 +888,7 @@
   .tph.busy .tph-img::after { content:""; position:absolute; inset:0; border-radius:9px; background:rgba(255,255,255,.45); }
   .tp-form { display:flex; align-items:flex-end; gap:6px; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--line); }
   .tp-tray.on + .tp-form { border-top:0; }
-  .tp-form textarea { flex:1; min-width:0; resize:none; border:1px solid var(--line); border-radius:12px; padding:9px 11px; font:15px/1.4 var(--font-ui); color:var(--ink); background:var(--bg); max-height:140px; }
+  .tp-form textarea { flex:1; min-width:0; resize:none; border:1px solid var(--line); border-radius:12px; padding:11px 13px; font:16px/1.45 var(--font-ui); color:var(--ink); background:var(--bg); min-height:68px; max-height:220px; }
   .tp-form textarea:focus { outline:none; border-color:var(--accent); }
   .tp-form .tp-ib { width:40px; height:40px; flex:0 0 auto; }
   .tp-go { background:var(--accent) !important; color:var(--accent-ink) !important; border-radius:12px !important; }
@@ -878,6 +899,7 @@
   .tp-foot select { margin-left:auto; border:1px solid var(--line); background:var(--bg); border-radius:7px; font:500 11.5px/1 var(--font-ui); padding:4px 6px; color:var(--ink-2); }
   .tp-drop { position:absolute; inset:0; z-index:5; display:none; align-items:center; justify-content:center; background:color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.85)); border:2px dashed var(--accent); font:600 15px/1 var(--font-ui); color:var(--accent-deep); }
   #taraPanel.dragging .tp-drop { display:flex; }
+  @media (pointer:coarse) { .tp-foot select { font-size:16px; } }
   .thist { display:flex; flex-direction:column; gap:6px; }
   .thist button { text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer; }
   .thist button:hover { border-color:var(--accent-line); }
@@ -1682,6 +1704,7 @@
   <span>Tara</span><span class="tfab-st" id="taraFabSt"></span><span class="tfab-dot"></span>
 </button>
 <aside id="taraPanel" aria-label="Tara">
+  <div class="tp-resize" id="tpResize" title="Drag to resize" aria-hidden="true"></div>
   <div class="tp-head">
     <svg class="tface tf-head" aria-hidden="true"><use href="#taraBust-neutral"/></svg>
     <div class="tp-who"><h2>Tara</h2><div class="tp-sub" data-en="Before &amp; afters, simulations, your Library" data-zh="前後對比圖、模擬、案例資料庫">Before &amp; afters, simulations, your Library</div></div>
@@ -2453,6 +2476,9 @@ async function loadClinic(cid) {
   // banner) -> locked (library stays readable, new saves paused until a card is
   // added). Computed here so the save gates and the banner all read one state.
   computeTrialState(_sub0);
+  // M29: Pro clinics in good standing simulate without credits (start-visualization
+  // applies the same rule server-side; this only decides what Tara's card says).
+  PRO_INCLUDED = !!(_sub0 && _sub0.approved !== false && /^(active|trialing)$/.test(String(_sub0.status || '')) && TRIAL_STATE !== 'locked');
   IS_PILOT = !!(_sub0 && _sub0.is_pilot);
 
   // A patient photograph must never be SAVED into a relationship that has not been
@@ -2497,6 +2523,7 @@ let AGREE_DEADLINE = null;  // ms epoch; 7-day grace before the hard gate
 // 'locked' = grace lapsed (or payment failed): library stays readable, new saves
 // paused until a card is added. Only 'locked' blocks saving.
 let TRIAL_STATE = 'ok';
+let PRO_INCLUDED = false;   // M29: Visualize Pro simulations are included
 let TRIAL_ENDS = null;       // ms epoch of trial_ends_at
 let TRIAL_DAYS_LEFT = null;  // days left in the trial ('trial') or in grace ('grace')
 let IS_PILOT = false;        // curated pilot vs self-serve; affects Billing copy only
@@ -6733,7 +6760,7 @@ const TARA_API = '/.netlify/functions/clinic-tara';
 const TARA = { on: false, thread: null, busy: false, voice: false, used: 0, limit: null,
   photos: [], seq: 0, events: [], cards: {}, cardSeq: 0, caseRows: {}, pending: null, working: false };
 const TFACE = '<svg class="tface tf-msg" aria-hidden="true"><use href="#taraBust-think"/></svg>';
-const isPhoneW = () => matchMedia('(max-width:700px)').matches;
+const isPhoneW = () => matchMedia('(max-width:1099px)').matches;   // phone or iPad portrait: Tara is full screen
 
 async function taraApi(action, extra) {
   const t = await token();
@@ -6836,7 +6863,7 @@ function taraMd(src) {
   return out.join('');
 }
 function taraBusy(on) { TARA.busy = on; $('tpGo').disabled = on; }
-function taraGrow() { const t = $('tpIn'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; }
+function taraGrow() { const t = $('tpIn'); t.style.height = 'auto'; t.style.height = Math.min(Math.max(t.scrollHeight, 68), 220) + 'px'; }
 function taraEvent(text) { TARA.events.push(text); if (TARA.events.length > 6) TARA.events.shift(); }
 
 // ---- photos -------------------------------------------------------------------
@@ -6965,7 +6992,7 @@ async function taraSend(q, via) {
   const photos = TARA.photos.map(p => ({ id: p.id, name: p.name, date: p.date, view: p.view || null, yaw: p.yaw, face: p.face, size: p.size, clothes: p.clothes || null }));
   const events = TARA.events.splice(0);
   try {
-    const j = await taraApi('ask', { question: q, thread_id: TARA.thread, via: via || '', reply_lang: taraLangGet(), photos, events, tab: activePanel });
+    const j = await taraApi('ask', { question: q, thread_id: TARA.thread, via: via || '', reply_lang: taraLangGet(), photos, events, tab: activePanel, pro: PRO_INCLUDED });
     taraThreadSet(j.thread_id || TARA.thread);
     if (j.used != null) { TARA.used = j.used; taraQuota(); }
     await taraFollow(j, bot, 0);
@@ -7156,7 +7183,7 @@ function taraCardEl(action, rowId, hist, outcome) {
       '<div class="tc-thumbs">' + thumbs + '</div><ul class="tc-list tc-plan">' + li.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' +
       '<div class="tc-prep"></div>' +
       (hist ? '' : '<div class="tc-acts"><button type="button" class="act tc-setup">' + sdT('Set up in Visualize', '在 Visualize 設定') + '</button></div>') +
-      '<div class="note tc-st">' + escapeHtml(hist ? (outcome ? sdT('Result: ', '結果：') + outcome : sdT('Proposed earlier.', '先前提出的計畫。')) : sdT('Setting up is free: Visualize fills in its form and shows the exact credit cost before anything runs.', '設定免費：Visualize 會先填好表單並顯示確切點數，之後才會執行。')) + '</div>';
+      '<div class="note tc-st">' + escapeHtml(hist ? (outcome ? sdT('Result: ', '結果：') + outcome : sdT('Proposed earlier.', '先前提出的計畫。')) : (PRO_INCLUDED ? sdT('Visualize fills in its form first; nothing runs until you press Run.', 'Visualize 會先填好表單，按下執行後才會開始。') : sdT('Setting up is free: Visualize fills in its form and shows the exact credit cost before anything runs.', '設定免費：Visualize 會先填好表單並顯示確切點數，之後才會執行。'))) + '</div>';
     if (!hist) el.querySelector('.tc-setup').addEventListener('click', () => taraPrepareSim(card));
   }
   if (!hist) { TARA.cards[n] = card; taraKillOlderCards(n); }
@@ -7233,17 +7260,18 @@ async function taraPrepareSim(card) {
     if (!d.ok) throw new Error(d.error || 'Visualize could not set it up.');
     card.prepared = d;
     if (d.lines && d.lines.length) card.el.querySelector('.tc-plan').innerHTML = d.lines.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
-    const short = d.balance != null && d.balance < d.cost;
+    const short = !PRO_INCLUDED && d.balance != null && d.balance < d.cost;
     const prep = card.el.querySelector('.tc-prep');
     prep.innerHTML =
+      (PRO_INCLUDED ? '' :
       '<div class="tc-cost">' + sdT('This run uses ', '此次執行使用 ') + '<b>' + d.cost + (d.cost === 1 ? sdT(' credit', ' 點') : sdT(' credits', ' 點')) + '</b>' +
-        (d.balance != null ? sdT('. Balance: ', '。餘額：') + '<b>' + d.balance + '</b>' : '') + '.</div>' +
+        (d.balance != null ? sdT('. Balance: ', '。餘額：') + '<b>' + d.balance + '</b>' : '') + '.</div>') +
       (short ? '<div class="tc-warn">' + sdT('Not enough credits for this run. Top up in Billing first.', '點數不足，請先至帳務加值。') + '</div>' : '') +
       ((d.dropped && d.dropped.length) ? '<div class="tc-warn">' + escapeHtml(sdT('Left out (not available with this treatment): ', '已略過（此療程不適用）：') + d.dropped.join(', ')) + '</div>' : '') +
       ((d.warnings && d.warnings.length) ? '<div class="tc-warn">' + d.warnings.map(escapeHtml).join('<br>') + '</div>' : '') +
       '<label class="tc-consent"><input type="checkbox" class="tc-ok"> <span>' + sdT('I have this patient’s consent to upload their photo to an AI image provider for consultation visualization.', '我已取得此顧客同意，將其照片上傳至 AI 影像服務以供諮詢模擬使用。') + '</span></label>';
     const acts = card.el.querySelector('.tc-acts');
-    acts.innerHTML = '<button type="button" class="act tc-run" disabled>' + sdT('Run', '執行') + ' · ' + d.cost + (d.cost === 1 ? sdT(' credit', ' 點') : sdT(' credits', ' 點')) + '</button>' +
+    acts.innerHTML = '<button type="button" class="act tc-run" disabled>' + (PRO_INCLUDED ? sdT('Run simulation', '執行模擬') : sdT('Run', '執行') + ' · ' + d.cost + (d.cost === 1 ? sdT(' credit', ' 點') : sdT(' credits', ' 點'))) + '</button>' +
       '<button type="button" class="quiet tc-setup">' + sdT('Set up again', '重新設定') + '</button>';
     const ok = prep.querySelector('.tc-ok'), run = acts.querySelector('.tc-run');
     ok.addEventListener('change', () => { run.disabled = !ok.checked || short; });
@@ -7281,7 +7309,7 @@ async function taraRunSim(card) {
     if (errs.length) msg += ' ' + errs.join(' ');
     if (d.shortfall) msg += ' ' + sdT('Not enough credits: top up in Billing.', '點數不足，請至帳務加值。');
     taraCardStatus(card, msg, good === res.length && good ? 'ok' : 'bad');
-    taraEvent('The user pressed Run. Visualize finished: ' + good + ' of ' + res.length + ' angles ready.' + (errs.length ? ' Errors: ' + errs.join(' ') : '') + (d.balance != null ? ' Credit balance now ' + d.balance + '.' : ''));
+    taraEvent('The user pressed Run. Visualize finished: ' + good + ' of ' + res.length + ' angles ready.' + (errs.length ? ' Errors: ' + errs.join(' ') : '') + (!PRO_INCLUDED && d.balance != null ? ' Credit balance now ' + d.balance + '.' : ''));
     taraOutcome(card, 'ran: ' + good + '/' + res.length + ' ready' + (errs.length ? '; ' + errs.join(' ') : ''));
     if (good) setTimeout(() => scrollToInFrame('visFrame', 'outputSection'), 400);
   } catch (e) {
@@ -7422,6 +7450,34 @@ function taraRecDone() {
 }
 
 // ---- wiring -------------------------------------------------------------------------
+// The panel can be dragged wider or narrower from its left edge; the width is
+// remembered on this device.
+function taraSetWidth(w) {
+  const max = Math.max(380, Math.min(820, window.innerWidth - 520));
+  const v = Math.round(Math.max(380, Math.min(max, w)));
+  document.documentElement.style.setProperty('--tp-w', v + 'px');
+  return v;
+}
+(function taraResize() {
+  let saved = 0; try { saved = parseInt(localStorage.getItem('ctara_w') || '0', 10); } catch (e) {}
+  taraSetWidth(saved || Math.min(560, Math.max(460, window.innerWidth * 0.3)));
+  const h = $('tpResize'), panel = $('taraPanel');
+  let drag = null;
+  h.addEventListener('pointerdown', e => {
+    drag = { x: e.clientX, w: panel.getBoundingClientRect().width };
+    try { h.setPointerCapture(e.pointerId); } catch (err) {}
+    panel.classList.add('resizing'); document.body.classList.add('tara-resizing');
+  });
+  h.addEventListener('pointermove', e => { if (drag) taraSetWidth(drag.w + (drag.x - e.clientX)); });
+  const end = () => {
+    if (!drag) return; drag = null;
+    panel.classList.remove('resizing'); document.body.classList.remove('tara-resizing');
+    try { localStorage.setItem('ctara_w', String(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tp-w'), 10))); } catch (e) {}
+    try { fitFrame(activePanel === 'visualize' ? 'visFrame' : 'studioFrame'); } catch (e) {}
+  };
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+  window.addEventListener('resize', () => taraSetWidth(parseInt(getComputedStyle(document.documentElement).getPropertyValue('--tp-w'), 10) || 500));
+})();
 (function taraWire() {
   $('taraFab').addEventListener('click', taraOpenPanel);
   $('tpClose').addEventListener('click', taraClosePanel);
