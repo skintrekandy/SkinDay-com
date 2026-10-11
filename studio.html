@@ -1067,7 +1067,10 @@ function downscaleDataUrl(img, maxEdge, quality) {
   return out;
 }
 
-function loadFile(file, idx) {
+// M29: `done` is for Tara's build, which loads every photo first and then runs
+// detection once itself. A person's upload passes no `done` and behaves exactly
+// as before (detection starts when the last slot is filled).
+function loadFile(file, idx, done) {
   if (!file) return;
   const r = new FileReader();
   r.onload = ev => {
@@ -1106,6 +1109,7 @@ function loadFile(file, idx) {
       checkBgControlsVisibility();
       rebuildZoomControls();
 
+      if (typeof done === 'function') { done(); return; }
       const allFilled = S.slots.every(sl => sl.img);
       if (allFilled) {
         runDetectAll();
@@ -2481,6 +2485,111 @@ function newCase() {
   checkBgControlsVisibility();
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
+
+// ============================================================
+// M29: TARA'S INTERFACE (portal only)
+// ============================================================
+// A published message contract, so the portal never has to reach into this
+// page's variables to drive it. Tara sends a plan; Studio carries it out with
+// its own functions, in the order a person would: layout, photos, face
+// detection, background, crop, captions and dates, branding, then generate().
+// Everything stays on the device, exactly as when a person does it by hand.
+//
+//   sd:tara-studio-build {requestId, plan, files:[File per slot], consent:true}
+//     -> sd:tara-studio-built {requestId, ok, warnings, error}
+//
+// ⛔ Consent is per case (see the INIT note below). The build is refused unless
+// the portal says a person ticked consent on Tara's card for this case.
+async function sdTaraStudioBuild(plan, files, consent) {
+  if (consent !== true) throw new Error('Consent was not confirmed.');
+  if (S.bgProcessing) throw new Error('Studio is still removing a background. Try again in a moment.');
+  const cfg = GRID_CONFIG[plan.grid];
+  if (!cfg) throw new Error('Unknown layout ' + plan.grid);
+  if (!Array.isArray(files) || files.length !== cfg.count) throw new Error('Layout ' + plan.grid + ' needs ' + cfg.count + ' photos.');
+  const warnings = [];
+
+  newCase();                    // a fresh patient: clears photos, dates, treatment, consent
+  selGrid(plan.grid);
+  selSubject(plan.subject === 'body' ? 'body' : 'face');
+  if (S.subject === 'face') {
+    S.preset = FACE_PRESETS.find(p => p.key === plan.preset) ? plan.preset : 'full';
+    rebuildPresetGrid();
+  }
+
+  for (let i = 0; i < files.length; i++) {
+    await new Promise((res, rej) => {
+      const t = setTimeout(() => rej(new Error('Photo ' + (i + 1) + ' could not be read.')), 30000);
+      loadFile(files[i], i, () => { clearTimeout(t); res(); });
+    });
+  }
+
+  // Captions, then dates (the date fields are labelled with the captions).
+  if (cfg.rowLabels.length) {
+    (plan.rowLabels || cfg.rowLabels).forEach((v, r) => updateRowLabel(r, String(v || '')));
+  } else {
+    (plan.slots || []).forEach((sl, i) => { if (sl && sl.label) updateSlotLabel(i, sl.label); });
+  }
+  (plan.slots || []).forEach((sl, i) => {
+    if (!S.slots[i]) return;
+    const d = (sl && sl.date) || null;
+    S.slots[i].dateParts = d ? { m: d.m || '', d: d.d || '', y: d.y || '' } : {};
+    S.slots[i].date = composeDate(S.slots[i].dateParts);
+  });
+  renderDateFields();
+  if (currentLang === 'zh') applyLang();
+
+  await runDetectAll();
+  if (S.subject === 'face') {
+    const missed = S.slots.map((sl, i) => sl.lm ? null : (sl.label || ('Photo ' + (i + 1)))).filter(Boolean);
+    if (missed.length) warnings.push('No face found in ' + missed.join(', ') + ', so it was centred instead of aligned by the eyes. Check the crop.');
+  }
+
+  if (plan.background === 'black') {
+    toggleSelectAllBg(true);
+    await applyBgBlack();
+    const notBlack = S.slots.filter(sl => sl.bgMode !== 'black').length;
+    if (notBlack) warnings.push(notBlack + ' photo' + (notBlack === 1 ? '' : 's') + ' kept the original background (the patient could not be separated cleanly).');
+    if (S.bgResolved) continueToCrop(); else skipBg();
+  } else {
+    skipBg();
+  }
+
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = String(v); };
+  setVal('treatmentLabel', plan.treatmentLabel || '');
+  if (plan.clinicName) setVal('clinicName', plan.clinicName);
+  if (plan.injectorName) setVal('injectorName', plan.injectorName);
+  updateWmPosState();
+  if (plan.wmPos) {
+    selWmPos(plan.wmPos);
+    if (S.wmPos !== plan.wmPos) warnings.push('The watermark position needs a clinic or injector name in Studio’s branding first.');
+  }
+  if (plan.logoPos) {
+    if (S.logoImg) setVal('logoPos', plan.logoPos);
+    else warnings.push('No logo is loaded in Studio, so there is no logo to place.');
+  }
+  if (plan.format) { setVal('exportFormat', plan.format); refreshDownloadLabel(); }
+  if (plan.norm != null) setVal('norm', plan.norm ? '1' : '0');
+  if (plan.enhance != null) setVal('enhance', plan.enhance);
+
+  const consentBox = document.getElementById('consentCheck');
+  const gen = document.getElementById('genBtn');
+  if (consentBox) consentBox.checked = true;
+  if (gen) gen.disabled = false;
+  await generate();
+  return { warnings };
+}
+
+(function () {
+  if (!(window.parent && window.parent !== window)) return;
+  window.addEventListener('message', async ev => {
+    if (ev.origin !== location.origin) return;
+    const d = ev.data;
+    if (!d || d.type !== 'sd:tara-studio-build') return;
+    const reply = o => { try { window.parent.postMessage(Object.assign({ type: 'sd:tara-studio-built', requestId: d.requestId || null }, o), location.origin); } catch (e) {} };
+    try { reply(Object.assign({ ok: true }, await sdTaraStudioBuild(d.plan || {}, d.files || [], d.consent))); }
+    catch (e) { console.error('[Studio] Tara build failed', e); reply({ ok: false, error: String((e && e.message) || e) }); }
+  });
+})();
 
 // ============================================================
 // INIT

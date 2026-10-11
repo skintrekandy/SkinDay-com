@@ -4119,6 +4119,154 @@ if(SD_EMBEDDED){
   });
 }
 
+/* ── M29: Tara's interface ────────────────────────────────────────────────────
+   Same idea as sd:collect above: a published message contract, not an eval
+   bridge. Tara (in the portal) never touches this page's internals. She sends a
+   plan; this page fills in its OWN form with its OWN controls (the same clicks
+   a person makes), loads the photos through onSlotFile (so the same pose and
+   quality check runs), and reports back what it set and what it will cost.
+   Nothing is generated until a person presses Run on Tara's card, and then it
+   is runGeneration(), the exact path the Generate button takes, metered by
+   start-visualization like any other run.
+
+     sd:tara-analyze      {requestId, photos:[{id,file}]}  -> sd:tara-analyzed {results}
+                          Face found + measured angle per photo. Read here, in
+                          the browser; nothing leaves the page.
+     sd:tara-sim-prepare  {requestId, plan, photos:[{angle,file}]} -> sd:tara-sim-prepared
+     sd:tara-sim-run      {requestId, consent:true}                -> sd:tara-sim-started,
+                                                                      then sd:tara-sim-done
+   Consent is never assumed. Run is refused unless the portal says a person
+   ticked consent on the card for THIS patient. */
+async function sdTaraAnalyzeOne(file){
+  const full = await fileToDataUrl(file);
+  const img0 = await loadImage(full);
+  const size = img0.naturalWidth + 'x' + img0.naturalHeight;
+  const img = await loadImage(await boundWorkingImage(full, 1600));
+  const mod = await import('./sculptra-mask.js?v=' + MASK_MODULE_VERSION);
+  const a = await mod.analyzePhoto(img);
+  if(!a || !a.view) return { face:false, size };
+  const yaw = (a.yawDeg != null) ? Math.round(Math.abs(a.yawDeg)) : null;
+  let view = null;
+  if(a.view === 'frontal') view = 'frontal';
+  else if(a.view === 'three_quarter' && a.nearSide) view = 'three-quarter ' + a.nearSide;
+  else if(a.nearSide && yaw != null && yaw >= 60) view = 'profile ' + a.nearSide;
+  else view = 'turned too far';
+  return { face:true, view, yaw, size };
+}
+
+function sdTaraClick(sel){ const el = document.querySelector(sel); if(el) el.click(); return !!el; }
+function sdTaraSetToggle(containerId, attr, value, stateKey){
+  // The biostim sex/concern toggles deselect when the active pill is clicked, so
+  // set them directly to the wanted state instead of clicking blind.
+  const box = document.getElementById(containerId);
+  if(!box) return;
+  box.querySelectorAll('.pill').forEach(b => b.classList.toggle('active', !!value && b.dataset[attr] === value));
+  state[stateKey] = value || null;
+}
+
+async function sdTaraPrepare(plan, photos){
+  if(Object.values(state.slots).some(sl => sl.status === 'generating' || sl.status === 'checking'))
+    throw new Error('Visualize is busy with another run. Wait for it to finish.');
+  const warnings = [];
+  setPlanMode(plan.planMode === 'combo' ? 'combo' : 'single');
+  if(!sdTaraClick('#typeToggle .type-btn[data-type="' + plan.type + '"]')) throw new Error('Unknown treatment ' + plan.type);
+
+  if(plan.type === 'biostim'){
+    sdTaraClick('#biostimProduct .pill[data-product="' + (plan.product || 'sculptra') + '"]');
+    sdTaraSetToggle('patientSexToggle', 'sex', plan.sex, 'sex');
+    sdTaraSetToggle('primaryConcernToggle', 'concern', plan.concern, 'sculptraPhenotype');
+    const ageEl = document.getElementById('patientAge');
+    if(ageEl){ ageEl.value = plan.age ? String(plan.age) : ''; state.patientAge = plan.age || null; }
+  } else if(plan.type === 'filler'){
+    if(!sdTaraClick('#areaGrid .area-chip[data-area="' + plan.area + '"]')) throw new Error('Unknown filler area ' + plan.area);
+    if(plan.sex) sdTaraClick('#fillerSex .pill[data-sex="' + plan.sex + '"]');
+    sdTaraClick('#fillerVolumeToggle .pill[data-volume="' + (plan.volume === 'enhanced' ? 'enhanced' : 'moderate') + '"]');
+  } else if(plan.type === 'laser'){
+    sdTaraClick('#laserTypeToggle .pill[data-laser-type="' + (plan.laserType || 'rf') + '"]');
+  } else if(plan.type === 'tox'){
+    sdTaraClick('#toxModeToggle .pill[data-tox-mode="' + (plan.toxMode || 'combined') + '"]');
+  }
+
+  let dropped = [];
+  if(state.planMode === 'combo'){
+    const allowed = new Set(comboAllowedAddonKeys());
+    const want = (plan.addons || []).slice(0, COMBO_MAX_ADDONS);
+    dropped = want.filter(k => !allowed.has(k));
+    state.comboAddons = want.filter(k => allowed.has(k));
+    if(!state.comboAddons.length) setPlanMode('single');
+    else { renderComboAddonGrid(); renderComboPlanList(); }
+  }
+
+  // Angles: exactly the ones Tara planned, photos loaded through the normal path.
+  const angles = ANGLE_ORDER.filter(a => photos.some(p => p.angle === a));
+  if(!angles.length) throw new Error('No photo to simulate.');
+  document.querySelectorAll('#angleGrid .area-chip').forEach(c => c.classList.toggle('active', angles.includes(c.dataset.angle)));
+  state.selectedAngles = angles;
+  state.activeAngle = angles[0];
+  // A fresh patient: consent is ticked on Tara's card, never carried over.
+  consentChk.checked = false; consentBox.classList.remove('checked');
+  for(const p of photos){
+    await onSlotFile(p.angle, p.file);
+    const sl = state.slots[p.angle];
+    if(sl && sl.qcMsg && sl.qcMsg.indexOf('✓') !== 0) warnings.push(angleLabel(p.angle) + ': ' + sl.qcMsg.replace(/^Note:\s*/, ''));
+  }
+  renderSlots(); syncGenerateBtn();
+
+  const per = state.planMode === 'combo'
+    ? (creditCostFor(state.type) + state.comboAddons.length * scenarioCreditCost())
+    : creditCostFor(state.type);
+  let balance = null;
+  try { balance = await refreshCredits(1); } catch(e){}
+  if(balance == null) balance = creditBalance;
+  const primary = comboPrimaryLine();
+  const isZh = (typeof currentLang !== 'undefined' && currentLang === 'zh');
+  return {
+    cost: per * angles.length, balance, angles: angles.map(angleLabel),
+    lines: [isZh ? primary.zh : primary.en].concat(state.planMode === 'combo'
+      ? state.comboAddons.map(k => isZh ? COMBO_ADDON_META[k].lineZh : COMBO_ADDON_META[k].lineEn) : []),
+    dropped: dropped.map(k => (COMBO_ADDON_META[k] && COMBO_ADDON_META[k].shortEn) || k),
+    warnings
+  };
+}
+
+async function sdTaraRun(d){
+  if(d.consent !== true) throw new Error('Consent was not confirmed.');
+  consentChk.checked = true; consentBox.classList.add('checked');
+  syncGenerateBtn();
+  if(generateBtn.disabled) throw new Error(readySummary() || 'Visualize is not ready to generate yet.');
+  const angles = state.selectedAngles.slice();
+  sdPost({ type:'sd:tara-sim-started', requestId: d.requestId || null, angles });
+  let err = null;
+  try { await runGeneration(false); } catch(e){ err = (e && e.message) || String(e); }
+  const results = angles.map(a => ({ angle: a, label: angleLabel(a), status: state.slots[a].status, error: state.slots[a].error || null }));
+  try { await refreshCredits(1); } catch(e){}
+  sdPost({ type:'sd:tara-sim-done', requestId: d.requestId || null, results, error: err,
+    shortfall: !!creditShortfall, balance: creditBalance });
+}
+
+if(SD_EMBEDDED){
+  window.addEventListener('message', async (ev) => {
+    if(ev.origin !== location.origin) return;
+    const d = ev.data;
+    if(!d || typeof d.type !== 'string' || d.type.indexOf('sd:tara-') !== 0) return;
+    const rid = d.requestId || null;
+    if(d.type === 'sd:tara-analyze'){
+      const results = [];
+      for(const p of (d.photos || [])){
+        try { results.push(Object.assign({ id: p.id }, await sdTaraAnalyzeOne(p.file))); }
+        catch(e){ results.push({ id: p.id, face:null, error: String((e && e.message) || e) }); }
+      }
+      sdPost({ type:'sd:tara-analyzed', requestId: rid, results });
+    } else if(d.type === 'sd:tara-sim-prepare'){
+      try { sdPost(Object.assign({ type:'sd:tara-sim-prepared', requestId: rid, ok:true }, await sdTaraPrepare(d.plan || {}, d.photos || []))); }
+      catch(e){ sdPost({ type:'sd:tara-sim-prepared', requestId: rid, ok:false, error: String((e && e.message) || e) }); }
+    } else if(d.type === 'sd:tara-sim-run'){
+      try { await sdTaraRun(d); }
+      catch(e){ sdPost({ type:'sd:tara-sim-done', requestId: rid, results: [], error: String((e && e.message) || e), notStarted: true }); }
+    }
+  });
+}
+
 let creditShortfall = false; // M8: set on any 402 during a run
 
 /* ── Generation progress card ────────────────────────────────────────────────

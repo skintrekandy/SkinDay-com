@@ -659,10 +659,394 @@
   .gate .lang-toggle{justify-content:center;margin:0 0 22px;}
   body.zh{--font-ui:'Noto Sans TC','Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;}
   body.zh em{font-style:normal;}
+
+  /* ---------- M29: full-screen case viewer ---------- */
+  .lib-headrow { display:flex; align-items:stretch; }
+  .lib-headrow .lib-head { flex:1; min-width:0; }
+  .lib-view {
+    flex:0 0 auto; align-self:center; margin-left:8px;
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--surface); color:var(--ink-2); border:1px solid var(--line); border-radius:999px;
+    font:500 12.5px/1 var(--font-ui); padding:8px 12px; cursor:pointer; white-space:nowrap;
+  }
+  .lib-view:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .lib-view svg { width:14px; height:14px; }
+  @media (max-width:560px) { .lib-headrow .lib-head .count { display:none; } .lib-view span { display:none; } .lib-view { padding:9px; } }
+  .frame img.cv-zoomable { cursor:zoom-in; }
+  #caseViewer {
+    position:fixed; inset:0; z-index:2000; background:#0B0D10; color:#fff;
+    display:none; flex-direction:column; overscroll-behavior:contain;
+    -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
+  }
+  #caseViewer.open { display:flex; }
+  .cv-top {
+    position:absolute; left:0; right:0; top:0; z-index:3;
+    display:flex; align-items:flex-start; gap:12px;
+    padding:calc(12px + env(safe-area-inset-top)) 14px 28px 18px;
+    background:linear-gradient(to bottom, rgba(0,0,0,.72), rgba(0,0,0,0));
+    transition:opacity .2s;
+  }
+  #caseViewer.chrome-off .cv-top, #caseViewer.chrome-off .cv-nav, #caseViewer.chrome-off .cv-bottom { opacity:0; pointer-events:none; }
+  .cv-cap { flex:1; min-width:0; }
+  .cv-title { font:600 16px/1.3 var(--font-ui); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cv-sub { font:500 12px/1.4 var(--font-mono); letter-spacing:.04em; color:rgba(255,255,255,.75); margin-top:3px; }
+  .cv-sub b { color:#fff; font-weight:600; letter-spacing:.1em; text-transform:uppercase; }
+  .cv-sub b.sim { color:#E7C27A; }
+  .cv-count { font:500 12px/1 var(--font-mono); color:rgba(255,255,255,.75); padding-top:4px; white-space:nowrap; }
+  .cv-x {
+    flex:0 0 auto; width:40px; height:40px; margin:-6px -4px 0 0; border-radius:50%;
+    background:rgba(255,255,255,.12); border:0; color:#fff; font-size:24px; line-height:40px; cursor:pointer;
+  }
+  .cv-x:hover { background:rgba(255,255,255,.22); }
+  .cv-stage { position:relative; flex:1; overflow:hidden; touch-action:none; }
+  .cv-track { position:absolute; inset:0; display:flex; will-change:transform; }
+  .cv-slide { flex:0 0 100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative; }
+  .cv-slide img {
+    max-width:100%; max-height:100%; object-fit:contain; display:block;
+    transform-origin:center center; will-change:transform; -webkit-user-drag:none; pointer-events:none;
+  }
+  .cv-slide .cv-msg { font:500 13px/1.5 var(--font-ui); color:rgba(255,255,255,.7); text-align:center; padding:0 24px; }
+  .cv-spin { width:28px; height:28px; border-radius:50%; border:2px solid rgba(255,255,255,.2); border-top-color:#fff; animation:cvspin .8s linear infinite; }
+  @keyframes cvspin { to { transform:rotate(360deg); } }
+  .cv-nav {
+    position:absolute; top:50%; z-index:3; transform:translateY(-50%);
+    width:48px; height:48px; border-radius:50%; border:0; cursor:pointer;
+    background:rgba(255,255,255,.12); color:#fff; font-size:26px; line-height:48px; transition:opacity .2s;
+  }
+  .cv-nav:hover { background:rgba(255,255,255,.24); }
+  .cv-nav[disabled] { opacity:.25; cursor:default; }
+  .cv-prev { left:16px; } .cv-next { right:16px; }
+  @media (hover:none), (max-width:700px) { .cv-nav { display:none; } }
+  .cv-bottom {
+    position:absolute; left:0; right:0; bottom:0; z-index:3; display:flex; justify-content:center; gap:6px;
+    padding:28px 16px calc(16px + env(safe-area-inset-bottom));
+    background:linear-gradient(to top, rgba(0,0,0,.6), rgba(0,0,0,0)); transition:opacity .2s;
+  }
+  .cv-dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.35); border:0; padding:0; cursor:pointer; }
+  .cv-dot.on { background:#fff; }
+  .cv-hint { position:absolute; left:50%; bottom:calc(46px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:3;
+    font:500 12px/1 var(--font-ui); color:rgba(255,255,255,.8); background:rgba(0,0,0,.45); padding:8px 12px; border-radius:999px;
+    pointer-events:none; transition:opacity .4s; white-space:nowrap; }
+
+  /* ---------- M29: Tara for clinics ---------- */
+  .tface { display:inline-block; flex:0 0 auto; vertical-align:middle; overflow:visible; }
+  .tf-msg { width:28px; height:25px; margin-left:-3px; }
+  .tf-head { width:44px; height:40px; }
+  .tf-big { width:66px; height:92px; }
+  .tf-fab { width:30px; height:30px; }
+  .tara-eyes { transform-box:fill-box; transform-origin:center; animation:tblink 5.5s infinite; }
+  @keyframes tblink { 0%,94%,100% { transform:scaleY(1); } 96% { transform:scaleY(.1); } }
+  .tara-wave { transform-box:view-box; transform-origin:45px 52px; animation:twave 2.4s ease-in-out 3; }
+  @keyframes twave { 0%,40%,100% { transform:rotate(0); } 10%,30% { transform:rotate(-14deg); } 20% { transform:rotate(8deg); } }
+  .tara-waves path { animation:twaves 1.2s ease-in-out infinite; }
+  .tara-waves path + path { animation-delay:.2s; }
+  @keyframes twaves { 0%,100% { opacity:.25; } 50% { opacity:1; } }
+  .tara-spark { transform-box:fill-box; transform-origin:center; animation:tspark 1.3s ease-out 2; }
+  @keyframes tspark { 0% { transform:scale(.3) rotate(-20deg); opacity:0; } 40% { transform:scale(1.15); opacity:1; } 100% { transform:scale(1); } }
+
+  #taraFab {
+    position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom)); z-index:950;
+    display:none; align-items:center; gap:8px; padding:7px 16px 7px 8px;
+    background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:999px;
+    box-shadow:0 10px 30px -12px rgba(20,26,33,.45); font:600 14px/1 var(--font-ui); cursor:pointer;
+  }
+  #taraFab.on { display:inline-flex; }
+  #taraFab:hover { border-color:var(--accent); }
+  #taraFab .tfab-dot { width:9px; height:9px; border-radius:50%; background:var(--accent); display:none; }
+  #taraFab.ping .tfab-dot { display:inline-block; }
+  #taraFab .tfab-st { font:500 12px/1 var(--font-ui); color:var(--muted); display:none; }
+  #taraFab.working .tfab-st { display:inline; }
+  body.tara-open #taraFab { display:none; }
+
+  #taraPanel {
+    position:fixed; top:0; right:0; bottom:0; z-index:960; width:min(440px, 100vw);
+    display:none; flex-direction:column; background:var(--bg);
+    border-left:1px solid var(--line); box-shadow:-18px 0 40px -28px rgba(20,26,33,.45);
+  }
+  body.tara-open #taraPanel { display:flex; }
+  /* Wide screens: the page makes room for Tara instead of hiding under her. */
+  @media (min-width:1100px) { body.tara-open .stage, body.tara-open .wrap, body.tara-open #tabs { width:auto; margin-right:440px; } }
+  @media (max-width:700px) {
+    /* No scroll lock on purpose: Visualize and Studio scroll themselves into view
+       while Tara drives them, and with the page locked that pans the phone's
+       visual viewport and drags this fixed panel off the top of the screen. */
+    #taraPanel { width:100vw; height:100dvh; border-left:0; }
+  }
+  .tp-head { display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 12px 10px 14px; background:var(--surface); border-bottom:1px solid var(--line); }
+  .tp-who { flex:1; min-width:0; }
+  .tp-who h2 { margin:0; font:600 17px/1.2 var(--font-ui); }
+  .tp-who .tp-sub { font:500 11.5px/1.3 var(--font-ui); color:var(--muted); }
+  .tp-ib { width:36px; height:36px; border-radius:10px; border:1px solid transparent; background:none; color:var(--ink-2); cursor:pointer; display:inline-flex; align-items:center; justify-content:center; }
+  .tp-ib:hover { background:var(--surface-2); border-color:var(--line); }
+  .tp-ib svg { width:19px; height:19px; }
+  .tp-log { flex:1; overflow-y:auto; padding:16px 14px 8px; display:flex; flex-direction:column; gap:12px; overscroll-behavior:contain; }
+  .tm { max-width:100%; font-size:14.5px; line-height:1.55; }
+  .tm.me { align-self:flex-end; max-width:86%; background:var(--accent); color:var(--accent-ink); border-radius:16px 16px 4px 16px; padding:9px 13px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .tm.me .tvia { display:block; font:500 10px/1.2 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; opacity:.8; margin-bottom:3px; }
+  .tm.me .tme-ph { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+  .tm.me .tme-ph span { font:500 10.5px/1 var(--font-mono); background:rgba(255,255,255,.2); border-radius:6px; padding:3px 6px; }
+  .tm.bot { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; box-shadow:var(--shadow); overflow-wrap:anywhere; }
+  .tm.bot .tname { display:flex; align-items:center; gap:6px; font:500 10px/1 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--accent-strong); margin-bottom:8px; }
+  .tm.bot.pending .tf-msg { animation:tbob 1.4s ease-in-out infinite; }
+  @keyframes tbob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-3px); } }
+  .tm.bot p { margin:0 0 9px; } .tm.bot p:last-child { margin-bottom:0; }
+  .tm.bot ul, .tm.bot ol { margin:4px 0 9px; padding-left:20px; } .tm.bot li { margin:4px 0; }
+  .tstat { display:flex; align-items:center; gap:9px; color:var(--muted); font-size:13.5px; }
+  .tdots { display:inline-flex; gap:4px; }
+  .tdots i { width:6px; height:6px; border-radius:50%; background:var(--accent); opacity:.3; animation:tdot 1.2s infinite; }
+  .tdots i:nth-child(2) { animation-delay:.15s; } .tdots i:nth-child(3) { animation-delay:.3s; }
+  @keyframes tdot { 0%,60%,100% { opacity:.25; transform:translateY(0); } 30% { opacity:1; transform:translateY(-3px); } }
+  .terr { color:var(--bad); font-size:13.5px; }
+  .tfu { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .tfu button, .tsug button { text-align:left; background:var(--accent-soft); color:var(--accent-deep); border:1px solid var(--accent-line); border-radius:999px; padding:6px 11px; font:500 12.5px/1.35 var(--font-ui); cursor:pointer; }
+  .tfu button:hover, .tsug button:hover { background:var(--accent-tint); }
+  .tfb { display:flex; align-items:center; gap:6px; margin-top:10px; font-size:12px; color:var(--faint); }
+  .tfb button { background:none; border:1px solid var(--line); border-radius:999px; padding:2px 9px; font-size:12px; color:var(--muted); cursor:pointer; }
+  .tfb button.on { background:var(--accent-soft); border-color:var(--accent-line); color:var(--accent-deep); }
+  .tlisten { display:inline-flex; align-items:center; gap:5px; margin-top:8px; background:none; border:1px solid var(--line); border-radius:999px; padding:4px 10px; font:500 12px/1 var(--font-ui); color:var(--muted); cursor:pointer; }
+  .tlisten svg { width:14px; height:14px; } .tlisten .ti-stop { display:none; }
+  .tlisten.on .ti-stop { display:inline; } .tlisten.on .ti-play { display:none; }
+  .tempty { padding:6px 2px; }
+  .thello { display:flex; align-items:center; gap:14px; margin:4px 0 18px; }
+  .thello .th1 { font-size:19px; font-weight:600; letter-spacing:-.01em; }
+  .thello .th2 { font-size:13.5px; color:var(--ink-2); margin-top:3px; line-height:1.5; }
+  .tlead { font-size:12.5px; color:var(--muted); margin:0 0 8px; }
+  .tsug { display:flex; flex-direction:column; align-items:flex-start; gap:7px; }
+  a.tcase { color:var(--accent-strong); font-weight:600; cursor:pointer; }
+
+  .tcases { margin-top:10px; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .tcase-row { display:flex; align-items:center; gap:10px; padding:9px 11px; border-top:1px solid var(--line-2); }
+  .tcase-row:first-child { border-top:0; }
+  .tcase-row .tc-t { flex:1; min-width:0; }
+  .tcase-row .tc-t b { display:block; font-size:13.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tcase-row .tc-t span { display:block; font:500 11px/1.4 var(--font-mono); color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tcase-row .tc-kind { font:500 10px/1 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .tcases .tc-more { width:100%; background:var(--surface-2); border:0; border-top:1px solid var(--line-2); padding:8px; font:500 12.5px/1 var(--font-ui); color:var(--accent-strong); cursor:pointer; }
+
+  .tcard { margin-top:12px; border:1px solid var(--accent-line); background:var(--accent-soft); border-radius:12px; padding:12px; }
+  .tcard.dead { border-color:var(--line); background:var(--surface-2); }
+  .tcard .tc-h { display:flex; align-items:center; gap:8px; font:600 13.5px/1.3 var(--font-ui); color:var(--accent-deep); margin-bottom:9px; }
+  .tcard.dead .tc-h { color:var(--muted); }
+  .tcard .tc-h .tc-tag { margin-left:auto; font:500 10px/1 var(--font-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  .tc-thumbs { display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; }
+  .tc-thumb { flex:0 0 auto; width:76px; }
+  .tc-thumb .tc-img { width:76px; height:95px; border-radius:7px; background:var(--line) center/cover no-repeat; display:flex; align-items:flex-end; }
+  .tc-thumb .tc-img span { font:500 9.5px/1 var(--font-mono); background:rgba(20,26,33,.78); color:#fff; padding:3px 5px; border-radius:0 6px 0 7px; }
+  .tc-thumb .tc-cap { font:600 11px/1.3 var(--font-ui); margin-top:4px; }
+  .tc-thumb .tc-cap small { display:block; font:500 10.5px/1.3 var(--font-mono); color:var(--muted); }
+  .tc-list { margin:9px 0 0; padding-left:18px; font-size:13px; line-height:1.5; }
+  .tc-cost { margin-top:10px; font-size:13.5px; }
+  .tc-cost b { font-weight:700; }
+  .tc-warn { margin-top:8px; font-size:12.5px; color:#8A5A12; background:#FBF3E4; border-radius:8px; padding:7px 9px; }
+  .tc-consent { display:flex; gap:8px; align-items:flex-start; margin-top:11px; font-size:12.5px; line-height:1.45; color:var(--ink-2); cursor:pointer; }
+  .tc-consent input { margin-top:2px; accent-color:var(--accent); }
+  .tc-acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+  .tc-acts button.act { padding:9px 14px; font-size:13.5px; }
+  .tc-acts button.quiet { padding:8px 12px; font-size:13px; }
+  .tc-st { font-size:12.5px; margin-top:8px; }
+
+  .tp-tray { display:none; gap:8px; overflow-x:auto; padding:8px 12px 4px; border-top:1px solid var(--line); background:var(--surface); }
+  .tp-tray.on { display:flex; }
+  .tph { flex:0 0 auto; width:84px; position:relative; }
+  .tph .tph-img { width:84px; height:84px; border-radius:9px; background:var(--line) center/cover no-repeat; position:relative; }
+  .tph .tph-id { position:absolute; left:4px; top:4px; font:600 10px/1 var(--font-mono); background:rgba(20,26,33,.78); color:#fff; padding:3px 5px; border-radius:5px; }
+  .tph .tph-x { position:absolute; right:-5px; top:-5px; width:22px; height:22px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-2); font-size:14px; line-height:19px; cursor:pointer; padding:0; }
+  .tph .tph-m { font:500 10px/1.35 var(--font-mono); color:var(--muted); margin-top:4px; }
+  .tph .tph-m b { color:var(--ink-2); font-weight:600; }
+  .tph.busy .tph-img::after { content:""; position:absolute; inset:0; border-radius:9px; background:rgba(255,255,255,.45); }
+  .tp-form { display:flex; align-items:flex-end; gap:6px; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--line); }
+  .tp-tray.on + .tp-form { border-top:0; }
+  .tp-form textarea { flex:1; min-width:0; resize:none; border:1px solid var(--line); border-radius:12px; padding:9px 11px; font:15px/1.4 var(--font-ui); color:var(--ink); background:var(--bg); max-height:140px; }
+  .tp-form textarea:focus { outline:none; border-color:var(--accent); }
+  .tp-form .tp-ib { width:40px; height:40px; flex:0 0 auto; }
+  .tp-go { background:var(--accent) !important; color:var(--accent-ink) !important; border-radius:12px !important; }
+  .tp-go:disabled { opacity:.4; }
+  .tp-mic.rec { background:var(--bad) !important; color:#fff !important; border-radius:12px; }
+  .tp-mic .trec { font:600 10px/1 var(--font-mono); }
+  .tp-foot { display:flex; align-items:center; gap:8px; padding:0 12px 8px; background:var(--surface); font-size:11.5px; color:var(--muted); }
+  .tp-foot select { margin-left:auto; border:1px solid var(--line); background:var(--bg); border-radius:7px; font:500 11.5px/1 var(--font-ui); padding:4px 6px; color:var(--ink-2); }
+  .tp-drop { position:absolute; inset:0; z-index:5; display:none; align-items:center; justify-content:center; background:color-mix(in srgb, var(--accent) 12%, rgba(255,255,255,.85)); border:2px dashed var(--accent); font:600 15px/1 var(--font-ui); color:var(--accent-deep); }
+  #taraPanel.dragging .tp-drop { display:flex; }
+  .thist { display:flex; flex-direction:column; gap:6px; }
+  .thist button { text-align:left; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer; }
+  .thist button:hover { border-color:var(--accent-line); }
+  .thist button.cur { border-color:var(--accent); }
+  .thist .tn { display:block; font-size:13.5px; font-weight:600; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .thist .tr { display:block; font:500 11px/1.4 var(--font-mono); color:var(--muted); margin-top:2px; }
+  @media (prefers-reduced-motion: reduce){ .tara-eyes, .tm.bot.pending .tf-msg, .tdots i, .tara-wave, .tara-waves path, .tara-spark, .cv-spin { animation:none; } }
+
 </style>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
 </head>
 <body>
+<!-- M29: Tara's face (same drawings as MI Tara). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="taraSkin" cx=".40" cy=".34" r=".72">
+      <stop offset="0" stop-color="#FFEBDB"/><stop offset=".7" stop-color="#F5D0B4"/><stop offset="1" stop-color="#E8B996"/>
+    </radialGradient>
+    <radialGradient id="taraEye" cx=".38" cy=".32" r=".8">
+      <stop offset="0" stop-color="#5A463F"/><stop offset="1" stop-color="#160F0D"/>
+    </radialGradient>
+    <linearGradient id="taraBib" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7B3A3"/><stop offset="1" stop-color="#EE9583"/>
+    </linearGradient>
+    <pattern id="taraCheck" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="4" fill="#F4F1EC"/><rect width="2" height="2" fill="#3A3634"/>
+      <rect x="2" y="2" width="2" height="2" fill="#3A3634" opacity=".35"/>
+      <rect x="2" width="2" height="2" fill="#3A3634" opacity=".6"/><rect y="2" width="2" height="2" fill="#3A3634" opacity=".6"/>
+    </pattern>
+  </defs>
+  <symbol id="taraBust-neutral" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-4 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M28.2 38.8 Q32 42.8 35.8 38.8 Q32 40.6 28.2 38.8 Z" fill="#D46E66"/></g></symbol>
+  <symbol id="taraBust-think" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-6 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="24.0" cy="26.0" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="42.400000000000006" cy="26.0" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="22.16" cy="22.98" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="40.56" cy="22.98" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="26.099999999999998" cy="28.8" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="44.5" cy="28.8" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.2 Q23 16.4 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 16.6 Q41 14 45.6 16.4" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><ellipse cx="33" cy="40" rx="1.5" ry="1.8" fill="#C9605A"/></g></symbol>
+  <symbol id="taraBust-found" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-3 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.5" ry="2.8" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.5" ry="2.8" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M27.4 38.4 Q32 38.9 36.6 38.4 Q36 43.6 32 43.6 Q28 43.6 27.4 38.4 Z" fill="#C25A55"/><path d="M29.4 41.8 Q32 40.6 34.6 41.8 Q32 43.4 29.4 41.8 Z" fill="#F29C90"/></g><path class="tara-spark" d="M52 2 C52.8 6.5 53.5 7.2 58 8 C53.5 8.8 52.8 9.5 52 14 C51.2 9.5 50.5 8.8 46 8 C50.5 7.2 51.2 6.5 52 2 Z" fill="#E9B65A"/></symbol>
+  <symbol id="taraBust-listen" viewBox="2 -6 64 58">
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-9 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M29.2 39.6 Q32 41.4 34.8 39.6" fill="none" stroke="#C9605A" stroke-width="1.5" stroke-linecap="round"/></g>
+  <g class="tara-waves" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round">
+    <path d="M58.6 14.4 Q61.2 19 59 23.8"/><path d="M61.8 11.6 Q65.6 19 62.2 26.6" opacity=".55"/>
+  </g></symbol>
+  <symbol id="taraFigure" viewBox="0 -5 64 89">
+  <ellipse cx="32" cy="81" rx="15" ry="2.4" fill="#000" opacity=".10"/>
+  <path d="M21 62 C21 58 43 58 43 62 L43 74 C43 77 38 78 36 76 L33 70 L31 70 L28 76 C26 78 21 77 21 74 Z" fill="url(#taraCheck)"/>
+  <path d="M21 62 C21 58 43 58 43 62 L43 74 C43 77 38 78 36 76 L33 70 L31 70 L28 76 C26 78 21 77 21 74 Z" fill="none" stroke="#2E2A28" stroke-width=".5" opacity=".25"/>
+  <ellipse cx="25" cy="77.6" rx="4.6" ry="2.6" fill="#F7EFE6"/><ellipse cx="39" cy="77.6" rx="4.6" ry="2.6" fill="#F7EFE6"/>
+  <path d="M19 52 C19 47 45 47 45 52 L45.5 63 C45.5 65 18.5 65 18.5 63 Z" fill="#F6DCDD"/>
+  <circle cx="24" cy="58" r=".9" fill="#7C8FB0"/><circle cx="38" cy="60" r=".9" fill="#E6B24C"/><circle cx="31" cy="62" r=".8" fill="#7C8FB0"/>
+  <path d="M19.5 52 C14 54 12.5 59 14 62.5 C15 64.5 18 64 18.6 61.5 L20 55 Z" fill="#F6DCDD"/>
+  <circle cx="15.6" cy="63" r="2.6" fill="url(#taraSkin)"/>
+  <path d="M15.5 51 C17 46.5 24 44.5 32 44.5 C40 44.5 47 46.5 48.5 51 C49.5 54 46.5 55.5 44.5 54 C43.5 56.8 39.5 57 38.5 54.8 C37.5 57.6 33.5 58 32 55.6 C30.5 58 26.5 57.6 25.5 54.8 C24.5 57 20.5 56.8 19.5 54 C17.5 55.5 14.5 54 15.5 51 Z" fill="url(#taraBib)"/><g transform="rotate(-4 32 47)">
+  <ellipse cx="10.4" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <ellipse cx="53.6" cy="28" rx="3.9" ry="5.1" fill="#EDC2A2"/>
+  <path d="M32 3 C46.5 3 55.6 12.5 55.6 25.5 C55.6 33.2 53.6 38.8 49.6 42.6 C45 46.6 39 48.4 32 48.4 C25 48.4 19 46.6 14.4 42.6 C10.4 38.8 8.4 33.2 8.4 25.5 C8.4 12.5 17.5 3 32 3 Z" fill="url(#taraSkin)"/>
+  <ellipse cx="41" cy="18.4" rx="5.2" ry="2.3" fill="#fff" opacity=".30" transform="rotate(12 41 18.4)"/>
+  <path d="M9.2 24.2 C7.6 10.8 17.4 1.2 32.6 1.4 C46.8 1.6 56.4 10.6 54.8 22.4 C53.6 18.8 51.8 16.2 49.2 14.4 C46.8 12.8 43.6 11.8 40.2 11.6 C41.8 12.8 42.6 14.2 42.8 15.8 C39.6 13 35.2 11.8 30.6 12 C24.8 12.2 19.6 13.8 15.8 16.6 C12.8 18.8 10.6 21.2 9.2 24.2 Z" fill="#3A2E2A"/>
+  <path d="M30.6 12 C28.6 13.6 27.6 15.4 27.8 17.4 C28.8 15.6 30 14.4 31.6 13.6 Z" fill="#3A2E2A"/>
+  <path d="M23.2 12.8 C21.6 14.2 20.8 15.8 20.9 17.2 C21.8 15.8 22.8 14.8 24.2 14.1 Z" fill="#3A2E2A"/>
+  <path d="M18.6 6.4 C23.6 3.6 28.6 3.2 32.8 3.4 M36.2 4 C41.2 4.6 45.6 6.8 48.2 9.6 M14.4 12.2 C16.2 9 19.2 6.6 22.2 5.4 M25.6 8.4 C28.8 6.8 33 6.6 37.2 7.6 M44 11.2 C46.4 12 48.6 13.4 50.4 15.2" fill="none" stroke="#5A4943" stroke-width="1" stroke-linecap="round" opacity=".7"/>
+  <path d="M30.8 1.8 C29.6 -1.4 31.8 -2.8 34.2 -1.8 C32.4 -1 32.6 .6 34 1.8" fill="none" stroke="#3A2E2A" stroke-width="1.8" stroke-linecap="round"/>
+  <ellipse cx="40.4" cy="6.4" rx="5" ry="1.6" fill="#fff" opacity=".18" transform="rotate(14 40.4 6.4)"/>
+  <ellipse cx="15.2" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="48.8" cy="36.2" rx="4.4" ry="2.8" fill="#F29C90" opacity=".55"/>
+  <ellipse cx="32" cy="34.4" rx="2" ry="1.3" fill="#E1A988"/>
+  <g class="tara-eyes">
+    <ellipse cx="22.8" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="41.2" cy="27.4" rx="5.8" ry="6.3" fill="url(#taraEye)"/>
+    <ellipse cx="20.6" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <ellipse cx="39.0" cy="24.8" rx="2.1" ry="2.4" fill="#fff"/>
+    <circle cx="24.9" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+    <circle cx="43.3" cy="30.2" r=".9" fill="#fff" opacity=".85"/>
+  </g>
+  <path d="M18.4 18.6 Q23 16.2 27.4 17.8" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/>
+  <path d="M36.6 17.8 Q41 16.2 45.6 18.6" fill="none" stroke="#4A3A35" stroke-width="1.2" stroke-linecap="round" opacity=".6"/><path d="M28.2 38.8 Q32 42.8 35.8 38.8 Q32 40.6 28.2 38.8 Z" fill="#D46E66"/></g>
+  <g class="tara-wave">
+    <path d="M44 53 C49 50.5 52.5 46 53.5 41.5 C54 39.5 51.4 38.6 50.2 40.4 L45.2 49 Z" fill="#F6DCDD"/>
+    <circle cx="52.2" cy="39.4" r="2.8" fill="url(#taraSkin)"/>
+  </g></symbol>
+  <symbol id="taraMini" viewBox="0 0 32 32">
+  <path d="M5 30 C5 26 9.6 24 16 24 C22.4 24 27 26 27 30 L27 32 L5 32 Z" fill="#F2A493"/>
+  <path d="M16 4.6 C23.4 4.6 28.2 9.6 28.2 15.6 C28.2 22.2 23 26.6 16 26.6 C9 26.6 3.8 22.2 3.8 15.6 C3.8 9.6 8.6 4.6 16 4.6 Z" fill="#F5D0B4"/>
+  <path d="M3.9 14.6 C3.4 7.8 8.8 3.4 16.2 3.5 C23.4 3.6 28.6 7.8 28 14 C26.6 10.6 23.4 8.6 20 8.4 C20.8 9.2 21.1 10.1 21.1 11 C19.4 9.4 17.2 8.8 15 8.9 C10.6 9.1 6.4 11 3.9 14.6 Z" fill="#3A2E2A"/>
+  <path d="M15.4 3.6 C14.8 1.6 16.2 .6 17.6 1.2" fill="none" stroke="#3A2E2A" stroke-width="1.3" stroke-linecap="round"/>
+  <g class="tara-eyes"><ellipse cx="11.2" cy="16.4" rx="2.9" ry="3.2" fill="#1E1614"/><ellipse cx="20.8" cy="16.4" rx="2.9" ry="3.2" fill="#1E1614"/>
+  <circle cx="10.2" cy="15.2" r="1.05" fill="#fff"/><circle cx="19.8" cy="15.2" r="1.05" fill="#fff"/></g>
+  <ellipse cx="7.6" cy="21.2" rx="2.2" ry="1.4" fill="#F29C90" opacity=".7"/><ellipse cx="24.4" cy="21.2" rx="2.2" ry="1.4" fill="#F29C90" opacity=".7"/>
+  <path d="M14.2 21.8 Q16 23.4 17.8 21.8" fill="none" stroke="#C9605A" stroke-width="1.2" stroke-linecap="round"/></symbol>
+</svg>
 <script>
   function sdDetectLang(){try{var s=localStorage.getItem('sd-lang');if(s==='zh'||s==='en')return s;}catch(e){}try{var n=(navigator.language||(navigator.languages&&navigator.languages[0])||'').toLowerCase();if(n.indexOf('zh')===0)return 'zh';}catch(e){}return 'en';}
   var sdLang = sdDetectLang();
@@ -1260,6 +1644,58 @@
     </div>
   </section>
 </div>
+
+<!-- M29: full-screen case viewer. Opened from the Library (View, or tap a photo)
+     and from Tara's case list. Images are fetched into memory only while it is
+     open and released when it closes; nothing is downloaded to the device. -->
+<div id="caseViewer" role="dialog" aria-modal="true" aria-label="Case viewer">
+  <div class="cv-top">
+    <div class="cv-cap"><div class="cv-title" id="cvTitle"></div><div class="cv-sub" id="cvSub"></div></div>
+    <div class="cv-count" id="cvCount"></div>
+    <button type="button" class="cv-x" id="cvClose" aria-label="Close">&times;</button>
+  </div>
+  <div class="cv-stage" id="cvStage">
+    <div class="cv-track" id="cvTrack">
+      <div class="cv-slide"></div><div class="cv-slide"></div><div class="cv-slide"></div>
+    </div>
+  </div>
+  <button type="button" class="cv-nav cv-prev" id="cvPrev" aria-label="Previous">&#8249;</button>
+  <button type="button" class="cv-nav cv-next" id="cvNext" aria-label="Next">&#8250;</button>
+  <div class="cv-bottom" id="cvDots"></div>
+  <div class="cv-hint" id="cvHint"></div>
+</div>
+
+<!-- M29: Tara for clinics. Hidden until clinic-tara says she is switched on. -->
+<button type="button" id="taraFab" aria-label="Ask Tara">
+  <svg class="tface tf-fab" aria-hidden="true"><use href="#taraMini"/></svg>
+  <span>Tara</span><span class="tfab-st" id="taraFabSt"></span><span class="tfab-dot"></span>
+</button>
+<aside id="taraPanel" aria-label="Tara">
+  <div class="tp-head">
+    <svg class="tface tf-head" aria-hidden="true"><use href="#taraBust-neutral"/></svg>
+    <div class="tp-who"><h2>Tara</h2><div class="tp-sub" data-en="Before &amp; afters, simulations, your Library" data-zh="前後對比圖、模擬、案例資料庫">Before &amp; afters, simulations, your Library</div></div>
+    <button type="button" class="tp-ib" id="tpHist" aria-label="Past chats" title="Past chats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v4h4"/><path d="M12 7v5l3 2"/></svg></button>
+    <button type="button" class="tp-ib" id="tpNew" aria-label="New chat" title="New chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" class="tp-ib" id="tpClose" aria-label="Close" title="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="tp-log" id="tpLog" aria-live="polite"></div>
+  <div class="tp-tray" id="tpTray"></div>
+  <form class="tp-form" id="tpForm">
+    <input type="file" id="tpFile" accept="image/*" multiple hidden>
+    <button type="button" class="tp-ib" id="tpAttach" aria-label="Add photos" title="Add photos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.8"/><path d="M21 16l-5.5-5.5L7 19"/></svg></button>
+    <textarea id="tpIn" rows="1" placeholder="Ask Tara" data-en="Ask Tara" data-zh="詢問 Tara"></textarea>
+    <button type="button" class="tp-ib tp-mic" id="tpMic" aria-label="Ask by voice" hidden><svg class="ti-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span class="trec"></span></button>
+    <button type="submit" class="tp-ib tp-go" id="tpGo" aria-label="Send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </form>
+  <div class="tp-foot">
+    <span id="tpQuota"></span>
+    <select id="tpLang" aria-label="Reply language">
+      <option value="">Auto</option><option value="en">English</option><option value="zh-hant">繁體中文</option><option value="zh-hans">简体中文</option>
+      <option value="fr">Français</option><option value="ko">한국어</option><option value="ja">日本語</option><option value="es">Español</option><option value="vi">Tiếng Việt</option>
+    </select>
+  </div>
+  <div class="tp-drop" data-en="Drop photos for Tara" data-zh="將照片拖放給 Tara">Drop photos for Tara</div>
+</aside>
 
 <script type="module">
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -2334,6 +2770,7 @@ async function openPortal() {
   loadLibrary();
   renderAgreeBanner();
   renderTrialBanner();
+  taraInit(); // M29: shows Tara only if clinic-tara says she is on for this user/clinic
 
   if (BILLING_RESULT === 'ok') {
     settingsOpen = true;
@@ -3736,7 +4173,8 @@ async function runPatientSearch() {
     const pill = document.createElement('span');
     pill.className = 'pill';
     pill.textContent = first.kind === 'simulation' ? 'Visualize' : 'Studio';
-    row.append(g, pill);
+    row.append(g, pill, viewButton(rows));
+    item._caseRows = rows; // M29
 
     // Click the file to open its angles as full plates -- same images AND the same
     // action buttons (edit, publish, use as reference) as the treatment folders.
@@ -3871,6 +4309,7 @@ function caseFolder(rows, perms) {
   const first = rows[0];
   const wrap = document.createElement('div');
   wrap.className = 'lib-group';
+  wrap._caseRows = rows; // M29: the viewer swipes through every angle of this case
 
   const head = document.createElement('button');
   head.className = 'lib-head case';
@@ -3899,6 +4338,11 @@ function caseFolder(rows, perms) {
   count.textContent = sdT(rows.length + (rows.length === 1 ? ' angle' : ' angles'), rows.length + ' 個角度');
 
   head.append(caret, nameEl, count);
+
+  // M29: View opens the whole case full screen without expanding the folder.
+  const headRow = document.createElement('div');
+  headRow.className = 'lib-headrow';
+  headRow.append(head, viewButton(rows));
 
   const body = document.createElement('div');
   body.className = 'lib-body';
@@ -3929,7 +4373,7 @@ function caseFolder(rows, perms) {
     });
   };
 
-  wrap.append(head, body);
+  wrap.append(headRow, body);
   return wrap;
 }
 
@@ -4103,6 +4547,8 @@ function simPlate(r, perms, seriesSize) {
     fig.append(img, cap);
     dip.appendChild(fig);
     loadImage(r.case_id, which, img);
+    img.classList.add('cv-zoomable');
+    img.addEventListener('click', () => openViewerAt(el, r, r.case_id, which));
   });
 
   const body = document.createElement('div');
@@ -4164,7 +4610,11 @@ function simPlate(r, perms, seriesSize) {
     });
   };
 
-  acts.append(dl, wd);
+  const fsBtn = document.createElement('button');
+  fsBtn.className = 'quiet';
+  fsBtn.textContent = sdT('View full screen', '全螢幕檢視');
+  fsBtn.onclick = () => openViewerAt(el, r, r.case_id, 'before');
+  acts.append(fsBtn, dl, wd);
   body.append(acts, st);
   el.append(dip, body);
   return el;
@@ -4443,6 +4893,10 @@ function plate(r, perms, seriesSize) {
     fig.append(img, cap);
     dip.appendChild(fig);
     loadImage(r.id, which, img);
+    // M29: tap a photo to see it full screen.
+    img.classList.add('cv-zoomable');
+    img.addEventListener('click', () => openViewerAt(el, { case_id: r.id, kind: 'photograph', angle: r.angle,
+      before_date: r.before_date, after_date: r.after_date, treatment: r.treatment, treatment_label: r.treatment_label }, r.id, which));
   });
 
   const published = !!r.published_before_path;
@@ -4587,7 +5041,12 @@ function plate(r, perms, seriesSize) {
     editor.style.display = editor.style.display === 'none' ? 'block' : 'none';
   };
 
-  acts.append(pub, ref, dl, ed);
+  const fsBtn = document.createElement('button');
+  fsBtn.className = 'quiet';
+  fsBtn.textContent = sdT('View full screen', '全螢幕檢視');
+  fsBtn.onclick = () => openViewerAt(el, { case_id: r.id, kind: 'photograph', angle: r.angle,
+    before_date: r.before_date, after_date: r.after_date, treatment: r.treatment, treatment_label: r.treatment_label }, r.id, 'before');
+  acts.append(fsBtn, pub, ref, dl, ed);
   if (r.injector_name) acts.append(inj);
   acts.append(wd);
   body.append(acts, editor, st);
@@ -5932,6 +6391,1028 @@ async function run(btn, st, path, payload, onSuccess) {
     btn.disabled = false;
   }
 }
+
+/* ===================== M29: full-screen case viewer =====================
+   Find an old case, press View (or tap a photo), and it opens full screen.
+   Swipe or arrow between images, pinch or double-tap to zoom, swipe down or
+   Esc or the phone's back button to close. Each image is fetched the same way
+   the Library thumbnails are (clinic-case-image, with this user's session),
+   held in memory only while the viewer is open, and released on close. Nothing
+   is saved to the device. */
+const CV = { items: [], i: 0, urls: new Map(), open: false, z: 1, px: 0, py: 0, chrome: true, lastFocus: null, hinted: false };
+const CV_ANGLE_RANK = { frontal: 0, r45: 1, oblique_right: 1, l45: 2, oblique_left: 2, r90: 3, profile_right: 3, l90: 4, profile_left: 4 };
+
+function cvDate(d) {
+  if (!d) return '';
+  const m = String(d).match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+  if (!m) return String(d);
+  const mon = LIB_MONTHS_EN[parseInt(m[2], 10) - 1] || '';
+  return m[3] ? (mon.slice(0, 3) + ' ' + parseInt(m[3], 10) + ', ' + m[1]) : (mon.slice(0, 3) + ' ' + m[1]);
+}
+
+// One image per item, in pairs per angle (before, then after), so a swipe goes
+// before -> after -> next angle's before. Rows are the Library's own rows.
+function viewerItemsFromRows(rows, titleOverride) {
+  const list = (rows || []).slice().sort((a, b) =>
+    (CV_ANGLE_RANK[String(a.angle || '').toLowerCase()] ?? 9) - (CV_ANGLE_RANK[String(b.angle || '').toLowerCase()] ?? 9));
+  const first = list[0] || {};
+  const title = titleOverride || patientLabel(first) || first.treatment_label || (first.treatment ? treatmentName(first.treatment) : sdT('Case', '案例'));
+  const items = [];
+  list.forEach(r => {
+    const cid = r.case_id || r.id;
+    if (!cid) return;
+    const sim = r.kind === 'simulation';
+    const ang = r.angle ? libAngleLabel(r.angle) : '';
+    items.push({ caseId: cid, which: 'before', title, tag: sim ? sdT('Photograph', '實際照片') : sdT('Before', '治療前'), sim: false, angle: ang, date: sim ? '' : cvDate(r.before_date) });
+    items.push({ caseId: cid, which: 'after', title, tag: sim ? sdT('Simulated', '模擬') : sdT('After', '治療後'), sim, angle: ang, date: sim ? '' : cvDate(r.after_date) });
+  });
+  return items;
+}
+
+function cvUrl(item) {
+  const key = item.caseId + '|' + item.which;
+  if (CV.urls.has(key)) return CV.urls.get(key);
+  const p = (async () => {
+    const t = await token();
+    const r = await fetch('/api/clinic-case-image?case_id=' + encodeURIComponent(item.caseId) + '&which=' + item.which,
+      { headers: { Authorization: 'Bearer ' + t } });
+    if (!r.ok) throw new Error(String(r.status));
+    return URL.createObjectURL(await r.blob());
+  })();
+  CV.urls.set(key, p);
+  p.catch(() => CV.urls.delete(key));
+  return p;
+}
+
+function openCaseViewer(items, start) {
+  if (!items || !items.length) return;
+  CV.items = items;
+  CV.i = Math.max(0, Math.min(items.length - 1, start || 0));
+  CV.open = true;
+  CV.lastFocus = document.activeElement;
+  CV.chrome = true;
+  const v = $('caseViewer');
+  v.classList.add('open'); v.classList.remove('chrome-off');
+  document.documentElement.style.overflow = 'hidden';
+  try { history.pushState({ sdViewer: 1 }, ''); } catch (e) {}
+  cvDotsBuild();
+  cvRender();
+  const hint = $('cvHint');
+  if (!CV.hinted && items.length > 1) {
+    CV.hinted = true;
+    hint.textContent = matchMedia('(hover:none)').matches
+      ? sdT('Swipe for the next photo · pinch to zoom', '左右滑動切換照片 · 雙指縮放')
+      : sdT('Use ← → to move · double-click to zoom', '使用 ← → 切換 · 雙擊縮放');
+    hint.style.opacity = '1';
+    setTimeout(() => { hint.style.opacity = '0'; }, 2600);
+  } else hint.style.opacity = '0';
+  setTimeout(() => { try { $('cvClose').focus({ preventScroll: true }); } catch (e) {} }, 30);
+}
+
+function closeCaseViewer(fromPop) {
+  if (!CV.open) return;
+  CV.open = false;
+  $('caseViewer').classList.remove('open');
+  document.documentElement.style.overflow = '';
+  document.querySelectorAll('#cvTrack .cv-slide').forEach(s => { s.innerHTML = ''; });
+  const urls = [...CV.urls.values()];
+  CV.urls.clear();
+  urls.forEach(p => p.then(u => URL.revokeObjectURL(u)).catch(() => {}));
+  if (!fromPop) { try { if (history.state && history.state.sdViewer) history.back(); } catch (e) {} }
+  try { if (CV.lastFocus) CV.lastFocus.focus({ preventScroll: true }); } catch (e) {}
+}
+window.addEventListener('popstate', () => { if (CV.open) closeCaseViewer(true); });
+
+function cvDotsBuild() {
+  const host = $('cvDots');
+  host.innerHTML = '';
+  if (CV.items.length < 2 || CV.items.length > 24) return;
+  CV.items.forEach((it, k) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'cv-dot';
+    b.setAttribute('aria-label', (k + 1) + ' / ' + CV.items.length);
+    b.onclick = () => { CV.i = k; cvRender(); };
+    host.appendChild(b);
+  });
+}
+
+function cvFill(slide, idx) {
+  slide.innerHTML = '';
+  slide.dataset.idx = String(idx);
+  if (idx < 0 || idx >= CV.items.length) return;
+  const it = CV.items[idx];
+  const spin = document.createElement('div'); spin.className = 'cv-spin';
+  slide.appendChild(spin);
+  cvUrl(it).then(u => {
+    if (!CV.open || slide.dataset.idx !== String(idx)) return;
+    const img = new Image();
+    img.alt = it.tag + (it.angle ? ' · ' + it.angle : '');
+    img.draggable = false;
+    img.onload = () => { if (slide.dataset.idx === String(idx)) { slide.innerHTML = ''; slide.appendChild(img); if (idx === CV.i) cvApplyZoom(); } };
+    img.onerror = () => { slide.innerHTML = '<div class="cv-msg">' + sdT('This image could not be shown.', '無法顯示此影像。') + '</div>'; };
+    img.src = u;
+  }).catch(() => {
+    if (slide.dataset.idx !== String(idx)) return;
+    slide.innerHTML = '<div class="cv-msg">' + sdT('This image could not be loaded.', '無法載入此影像。') + '</div>';
+  });
+}
+
+function cvRender() {
+  const it = CV.items[CV.i];
+  if (!it) return;
+  CV.z = 1; CV.px = 0; CV.py = 0;
+  const slides = document.querySelectorAll('#cvTrack .cv-slide');
+  cvFill(slides[0], CV.i - 1); cvFill(slides[1], CV.i); cvFill(slides[2], CV.i + 1);
+  const tr = $('cvTrack');
+  tr.style.transition = 'none';
+  tr.style.transform = 'translateX(-100%)';
+  $('cvTitle').textContent = it.title || '';
+  $('cvSub').innerHTML = '<b class="' + (it.sim ? 'sim' : '') + '">' + escapeHtml(it.tag) + '</b>' +
+    [it.angle, it.date].filter(Boolean).map(x => ' · ' + escapeHtml(x)).join('');
+  $('cvCount').textContent = CV.items.length > 1 ? (CV.i + 1) + ' / ' + CV.items.length : '';
+  $('cvPrev').disabled = CV.i === 0;
+  $('cvNext').disabled = CV.i === CV.items.length - 1;
+  document.querySelectorAll('#cvDots .cv-dot').forEach((d, k) => d.classList.toggle('on', k === CV.i));
+  // Warm the neighbours so the next swipe is instant.
+  [CV.i + 2, CV.i - 2].forEach(k => { if (CV.items[k]) cvUrl(CV.items[k]).catch(() => {}); });
+}
+
+function cvGo(dir) {
+  const to = CV.i + dir;
+  const tr = $('cvTrack');
+  if (to < 0 || to >= CV.items.length) {
+    tr.style.transition = 'transform .22s ease-out';
+    tr.style.transform = 'translateX(-100%)';
+    return;
+  }
+  tr.style.transition = 'transform .26s cubic-bezier(.2,.7,.3,1)';
+  tr.style.transform = 'translateX(' + (-100 - dir * 100) + '%)';
+  let doneOnce = false;
+  const done = () => { if (doneOnce) return; doneOnce = true; tr.removeEventListener('transitionend', done); CV.i = to; cvRender(); };
+  tr.addEventListener('transitionend', done);
+  setTimeout(done, 340);
+}
+
+function cvImg() { return document.querySelector('#cvTrack .cv-slide:nth-child(2) img'); }
+function cvClampPan() {
+  const img = cvImg(), st = $('cvStage');
+  if (!img) { CV.px = CV.py = 0; return; }
+  const mx = Math.max(0, (img.clientWidth * CV.z - st.clientWidth) / 2);
+  const my = Math.max(0, (img.clientHeight * CV.z - st.clientHeight) / 2);
+  CV.px = Math.max(-mx, Math.min(mx, CV.px));
+  CV.py = Math.max(-my, Math.min(my, CV.py));
+}
+function cvApplyZoom(animate) {
+  const img = cvImg();
+  if (!img) return;
+  if (CV.z <= 1.01) { CV.z = 1; CV.px = 0; CV.py = 0; }
+  cvClampPan();
+  img.style.transition = animate ? 'transform .2s ease-out' : 'none';
+  img.style.transform = 'translate(' + CV.px + 'px,' + CV.py + 'px) scale(' + CV.z + ')';
+}
+// Zoom toward a point (client coordinates), keeping that point under the finger.
+function cvZoomAt(z, cx, cy, animate) {
+  const st = $('cvStage').getBoundingClientRect();
+  const ox = cx - (st.left + st.width / 2), oy = cy - (st.top + st.height / 2);
+  const nz = Math.max(1, Math.min(4, z));
+  const k = nz / CV.z;
+  CV.px = ox - (ox - CV.px) * k;
+  CV.py = oy - (oy - CV.py) * k;
+  CV.z = nz;
+  cvApplyZoom(animate);
+}
+
+(function cvGestures() {
+  const stage = $('cvStage'), tr = $('cvTrack');
+  const pts = new Map();
+  let g = null;          // current gesture
+  let lastTap = { t: 0, x: 0, y: 0 };
+  stage.addEventListener('pointerdown', e => {
+    try { stage.setPointerCapture(e.pointerId); } catch (err) {}
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pts.size === 2) {
+      const [a, b] = [...pts.values()];
+      g = { type: 'pinch', d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: CV.z, px0: CV.px, py0: CV.py,
+        cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2 };
+      tr.style.transition = 'transform .2s'; tr.style.transform = 'translateX(-100%)';
+    } else if (pts.size === 1) {
+      g = { type: 'pending', x0: e.clientX, y0: e.clientY, t0: Date.now(), px0: CV.px, py0: CV.py };
+    }
+  });
+  stage.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId) || !g) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (g.type === 'pinch' && pts.size >= 2) {
+      const [a, b] = [...pts.values()];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+      CV.z = g.z0; CV.px = g.px0; CV.py = g.py0;
+      cvZoomAt(g.z0 * d / g.d0, g.cx, g.cy, false);
+      return;
+    }
+    const dx = e.clientX - g.x0, dy = e.clientY - g.y0;
+    if (g.type === 'pending') {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+      g.type = CV.z > 1 ? 'pan' : (Math.abs(dy) > Math.abs(dx) * 1.2 && dy > 0 ? 'down' : 'swipe');
+    }
+    if (g.type === 'pan') {
+      CV.px = g.px0 + dx; CV.py = g.py0 + dy; cvApplyZoom(false);
+    } else if (g.type === 'swipe') {
+      const w = stage.clientWidth || 1;
+      const edge = (CV.i === 0 && dx > 0) || (CV.i === CV.items.length - 1 && dx < 0);
+      const off = edge ? dx * 0.3 : dx;
+      tr.style.transition = 'none';
+      tr.style.transform = 'translateX(calc(-100% + ' + off + 'px))';
+      g.w = w; g.dx = dx;
+    } else if (g.type === 'down') {
+      tr.style.transition = 'none';
+      tr.style.transform = 'translate(-100%,' + Math.max(0, dy) + 'px)';
+      $('caseViewer').style.background = 'rgba(11,13,16,' + Math.max(.35, 1 - dy / 500) + ')';
+      g.dy = dy;
+    }
+  });
+  const end = e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    if (!g) return;
+    if (g.type === 'pinch') {
+      if (pts.size === 0) { g = null; cvApplyZoom(true); }
+      else { const p = [...pts.values()][0]; g = { type: CV.z > 1 ? 'pan' : 'pending', x0: p.x, y0: p.y, t0: Date.now(), px0: CV.px, py0: CV.py }; }
+      return;
+    }
+    const dt = Date.now() - g.t0;
+    if (g.type === 'swipe') {
+      const v = Math.abs(g.dx) / Math.max(1, dt);
+      if (Math.abs(g.dx) > g.w * 0.18 || (Math.abs(g.dx) > 30 && v > 0.45)) cvGo(g.dx < 0 ? 1 : -1);
+      else cvGo(0);
+    } else if (g.type === 'down') {
+      $('caseViewer').style.background = '';
+      if ((g.dy || 0) > 110) closeCaseViewer(false);
+      else { tr.style.transition = 'transform .2s'; tr.style.transform = 'translateX(-100%)'; }
+    } else if (g.type === 'pending' && dt < 300) {
+      // A tap. Two quick taps zoom; one tap shows or hides the captions.
+      const now = Date.now();
+      if (now - lastTap.t < 320 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 30) {
+        clearTimeout(lastTap.timer);
+        if (CV.z > 1) { CV.z = 1; cvApplyZoom(true); } else cvZoomAt(2.5, e.clientX, e.clientY, true);
+        lastTap = { t: 0, x: 0, y: 0 };
+      } else {
+        lastTap = { t: now, x: e.clientX, y: e.clientY,
+          timer: setTimeout(() => { CV.chrome = !CV.chrome; $('caseViewer').classList.toggle('chrome-off', !CV.chrome); }, 330) };
+      }
+    }
+    g = null;
+  };
+  stage.addEventListener('pointerup', end);
+  stage.addEventListener('pointercancel', end);
+  stage.addEventListener('wheel', e => {
+    if (!CV.open) return;
+    e.preventDefault();
+    if (e.ctrlKey || CV.z > 1 || Math.abs(e.deltaY) > Math.abs(e.deltaX)) cvZoomAt(CV.z * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY, false);
+  }, { passive: false });
+  $('cvPrev').onclick = () => cvGo(-1);
+  $('cvNext').onclick = () => cvGo(1);
+  $('cvClose').onclick = () => closeCaseViewer(false);
+  document.addEventListener('keydown', e => {
+    if (!CV.open) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeCaseViewer(false); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); cvGo(1); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); cvGo(-1); }
+  });
+  window.addEventListener('resize', () => { if (CV.open) cvApplyZoom(false); });
+})();
+
+// Library hooks: a View button for a whole case, and a tap on any photo.
+const CV_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V5h4M20 9V5h-4M4 15v4h4M20 15v4h-4"/></svg>';
+function viewButton(rows, label, title) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'lib-view';
+  b.innerHTML = CV_EYE + '<span>' + (label || sdT('View', '檢視')) + '</span>';
+  b.setAttribute('aria-label', sdT('View full screen', '全螢幕檢視'));
+  b.addEventListener('click', e => { e.stopPropagation(); openCaseViewer(viewerItemsFromRows(rows, title), 0); });
+  return b;
+}
+// The rows of the case a plate belongs to, so the viewer can swipe through
+// every angle of the patient's case, not just the one plate that was tapped.
+function caseRowsFor(el, fallback) {
+  let n = el;
+  while (n && !n._caseRows) n = n.parentElement;
+  return (n && n._caseRows) || [fallback];
+}
+function openViewerAt(el, fallbackRow, caseId, which) {
+  const items = viewerItemsFromRows(caseRowsFor(el, fallbackRow));
+  const k = items.findIndex(it => String(it.caseId) === String(caseId) && it.which === which);
+  openCaseViewer(items, Math.max(0, k));
+}
+
+
+/* ===================== M29: Tara for clinics =====================
+   A chat panel on every tab. Staff add patient photos and say what they need;
+   Tara answers with a plan card. Pressing the card's button makes the real
+   Studio or the real Visualize do the work, through the message contracts in
+   studio.html (sd:tara-studio-build) and visualize.html (sd:tara-*).
+
+   ⭐ The photos never go to Tara. Each one is read here: its camera date (EXIF)
+   and, via Visualize's own face check in the frame, whether a face is visible
+   and at what angle. Only that text is sent with a question. The photos
+   themselves only ever go where they already went before Tara existed: Studio
+   (in this browser) and Visualize's generation (on Run, after consent).
+   ⭐ Credits are spent only from the card's Run button, after a person has
+   ticked consent for this patient and seen the exact cost Visualize reports. */
+const TARA_API = '/.netlify/functions/clinic-tara';
+const TARA = { on: false, thread: null, busy: false, voice: false, used: 0, limit: null,
+  photos: [], seq: 0, events: [], cards: {}, cardSeq: 0, caseRows: {}, pending: null, working: false };
+const TFACE = '<svg class="tface tf-msg" aria-hidden="true"><use href="#taraBust-think"/></svg>';
+const isPhoneW = () => matchMedia('(max-width:700px)').matches;
+
+async function taraApi(action, extra) {
+  const t = await token();
+  const r = await fetch(TARA_API, { method: 'POST',
+    headers: { 'content-type': 'application/json', Authorization: 'Bearer ' + t },
+    body: JSON.stringify(Object.assign({ action, clinicId }, extra || {})) });
+  let j = {};
+  try { j = await r.json(); } catch (e) { j = { error: r.status >= 500 ? sdT('Tara took too long to reply.', 'Tara 回覆逾時。') : sdT('Something went wrong.', '發生錯誤。') }; }
+  if (r.status === 401) throw { unauth: true, error: sdT('Your session ended. Please sign in again.', '您的登入已逾時，請重新登入。') };
+  if (!r.ok) { j.status = r.status; throw j; }
+  return j;
+}
+function taraThreadKey() { return 'ctara_thread:' + clinicId; }
+function taraThreadSet(t) { TARA.thread = t || null; try { if (t) localStorage.setItem(taraThreadKey(), t); else localStorage.removeItem(taraThreadKey()); } catch (e) {} }
+function taraLangGet() { try { return localStorage.getItem('ctara_lang') || ''; } catch (e) { return ''; } }
+
+async function taraInit() {
+  if (TARA.on || !clinicId) return;
+  try {
+    const s = await taraApi('status', {});
+    if (!s || !s.enabled) return;
+    TARA.on = true; TARA.used = s.used || 0; TARA.limit = s.limit || null; TARA.voice = !!s.voice;
+    $('taraFab').classList.add('on');
+    taraVoiceSetup(); taraQuota();
+  } catch (e) {}
+}
+function taraQuota() {
+  const q = $('tpQuota'); if (!q) return;
+  if (!TARA.limit) { q.textContent = ''; return; }
+  const left = Math.max(0, TARA.limit - TARA.used);
+  q.textContent = left < 20 ? sdT(left + (left === 1 ? ' question' : ' questions') + ' left today', '今天還可提問 ' + left + ' 次') : '';
+}
+function taraOpenPanel() {
+  document.body.classList.add('tara-open');
+  $('taraFab').classList.remove('ping');
+  if (!$('tpLog').children.length) {
+    let last = ''; try { last = localStorage.getItem(taraThreadKey()) || ''; } catch (e) {}
+    if (last) taraLoadThread(last); else taraEmpty();
+  }
+  if (!isPhoneW()) setTimeout(() => $('tpIn').focus(), 60);
+}
+function taraClosePanel() { document.body.classList.remove('tara-open'); }
+function taraWorking(text) {
+  TARA.working = !!text;
+  $('taraFab').classList.toggle('working', !!text);
+  $('taraFabSt').textContent = text || '';
+}
+
+function taraEmpty() {
+  const log = $('tpLog');
+  log.innerHTML = '<div class="tempty"><div class="thello"><svg class="tface tf-big" aria-hidden="true"><use href="#taraFigure"/></svg>' +
+    '<div><div class="th1">' + sdT('Hi, I’m Tara.', '嗨，我是 Tara。') + '</div><div class="th2">' +
+    sdT('Add the patient’s photos with the photo button, then tell me what you need. I set it up in Studio or Visualize, and nothing runs until you confirm.',
+        '用照片按鈕加入顧客照片，再告訴我您需要什麼。我會在 Studio 或 Visualize 中設定好，您確認後才會執行。') +
+    '</div></div></div><p class="tlead">' + sdT('For example:', '例如：') + '</p><div class="tsug">' +
+    [sdT('Make a before & after from these photos with a black background', '用這些照片做一張黑色背景的前後對比圖'),
+     sdT('Simulate Sculptra on this patient, moderate result', '為這位顧客模擬 Sculptra，中等效果'),
+     sdT('Lip filler simulation, natural volume', '模擬唇部玻尿酸，自然量'),
+     sdT('Find our most recent Sculptra cases', '找出我們最近的 Sculptra 案例')]
+      .map(q => '<button type="button">' + escapeHtml(q) + '</button>').join('') + '</div></div>';
+  log.querySelectorAll('.tsug button').forEach(b => b.addEventListener('click', () => {
+    if (/photos|照片|patient|顧客/i.test(b.textContent) && !TARA.photos.length) { $('tpIn').value = b.textContent; taraGrow(); $('tpFile').click(); return; }
+    taraSend(b.textContent);
+  }));
+}
+function taraAdd(who, html) {
+  const log = $('tpLog');
+  const e = log.querySelector('.tempty'); if (e) e.remove();
+  const d = document.createElement('div'); d.className = 'tm ' + who;
+  d.innerHTML = html; log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+  return d;
+}
+function taraMood(bot, mood) { const u = bot && bot.querySelector('.tf-msg use'); if (u) u.setAttribute('href', '#taraBust-' + mood); }
+
+// Markdown, kept small. [label](case:KEY) opens that case in the viewer.
+function taraInline(t) {
+  t = escapeHtml(t);
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/__([^_]+)__/g, '<b>$1</b>');
+  t = t.replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s).,;:!?]|$)/g, '$1$2');
+  t = t.replace(/\[([^\]]+)\]\(case:([^)\s]+)\)/g, (m, label, key) => '<a class="tcase" data-key="' + key + '">' + label + '</a>');
+  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  return t;
+}
+function taraMd(src) {
+  const lines = String(src || '').replace(/\r/g, '').split('\n'), out = [];
+  let para = [], list = null;
+  const flushP = () => { if (para.length) { out.push('<p>' + para.map(taraInline).join('<br>') + '</p>'); para = []; } };
+  const flushL = () => { if (list) { out.push('<' + list.t + '>' + list.items.map(i => '<li>' + taraInline(i) + '</li>').join('') + '</' + list.t + '>'); list = null; } };
+  lines.forEach(line => {
+    let m;
+    if (!line.trim()) { flushP(); return; }
+    if ((m = line.match(/^\s*#{1,6}\s+(.*)$/))) { flushP(); flushL(); out.push('<p><b>' + taraInline(m[1]) + '</b></p>'); return; }
+    if ((m = line.match(/^\s*[-*•]\s+(.*)$/))) { flushP(); if (!list || list.t !== 'ul') { flushL(); list = { t: 'ul', items: [] }; } list.items.push(m[1]); return; }
+    if ((m = line.match(/^\s*\d+[.)]\s+(.*)$/))) { flushP(); if (!list || list.t !== 'ol') { flushL(); list = { t: 'ol', items: [] }; } list.items.push(m[1]); return; }
+    flushL(); para.push(line);
+  });
+  flushP(); flushL();
+  return out.join('');
+}
+function taraBusy(on) { TARA.busy = on; $('tpGo').disabled = on; }
+function taraGrow() { const t = $('tpIn'); t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 140) + 'px'; }
+function taraEvent(text) { TARA.events.push(text); if (TARA.events.length > 6) TARA.events.shift(); }
+
+// ---- photos -------------------------------------------------------------------
+// The camera's own date, read from the JPEG's EXIF block. Nothing else is read.
+async function exifDate(file) {
+  try {
+    const buf = await file.slice(0, 256 * 1024).arrayBuffer();
+    const v = new DataView(buf);
+    if (v.getUint16(0) !== 0xFFD8) return null;
+    let off = 2;
+    while (off + 4 < v.byteLength) {
+      const marker = v.getUint16(off), len = v.getUint16(off + 2);
+      if (marker === 0xFFE1 && v.getUint32(off + 4) === 0x45786966) return readTiffDate(v, off + 10);
+      if ((marker & 0xFF00) !== 0xFF00 || marker === 0xFFDA) break;
+      off += 2 + len;
+    }
+  } catch (e) {}
+  return null;
+}
+function readTiffDate(v, t) {
+  const le = v.getUint16(t) === 0x4949;
+  const u16 = o => v.getUint16(t + o, le), u32 = o => v.getUint32(t + o, le);
+  const str = (o, n) => { let s = ''; for (let i = 0; i < n - 1 && t + o + i < v.byteLength; i++) s += String.fromCharCode(v.getUint8(t + o + i)); return s; };
+  const ifd = (o, want) => {
+    const n = u16(o); const found = {};
+    for (let i = 0; i < n; i++) {
+      const e = o + 2 + i * 12, tag = u16(e);
+      if (want.includes(tag)) { const cnt = u32(e + 4); found[tag] = (tag === 0x8769) ? u32(e + 8) : str(u32(e + 8), cnt); }
+    }
+    return found;
+  };
+  const i0 = ifd(u32(4), [0x8769, 0x0132]);
+  let raw = null;
+  if (i0[0x8769]) { const ex = ifd(i0[0x8769], [0x9003, 0x9004]); raw = ex[0x9003] || ex[0x9004] || null; }
+  raw = raw || i0[0x0132] || null;
+  const m = raw && raw.match(/^(\d{4}):(\d{2}):(\d{2})(?: (\d{2}):(\d{2}))?/);
+  if (!m || m[1] === '0000') return null;
+  return m[1] + '-' + m[2] + '-' + m[3] + (m[4] ? ' ' + m[4] + ':' + m[5] : '');
+}
+
+function frameReady(frameId) {
+  return new Promise(res => {
+    const f = $(frameId);
+    let d = null; try { d = f && f.contentDocument; } catch (e) {}
+    if (d && d.readyState === 'complete' && f.contentWindow.location.href !== 'about:blank') return res();
+    f.addEventListener('load', () => setTimeout(res, 300), { once: true });
+  });
+}
+// Ask an embedded tool to do something and wait for its answer (same origin,
+// matched by requestId). onOther sees intermediate messages, e.g. "started".
+function frameRequest(frameId, msg, finalType, timeoutMs, onOther) {
+  return new Promise((resolve, reject) => {
+    const f = $(frameId);
+    if (!f || !f.contentWindow) return reject(new Error(sdT('That tool is not loaded yet.', '該工具尚未載入。')));
+    const requestId = 'tq_' + Math.random().toString(16).slice(2);
+    const timer = setTimeout(() => { window.removeEventListener('message', on); reject(new Error(sdT('The tool did not answer. Reload the tab and try again.', '工具沒有回應，請重新載入分頁後再試一次。'))); }, timeoutMs || 30000);
+    function on(ev) {
+      if (ev.origin !== location.origin) return;
+      const d = ev.data;
+      if (!d || d.requestId !== requestId) return;
+      if (d.type === finalType) { clearTimeout(timer); window.removeEventListener('message', on); resolve(d); }
+      else if (onOther) onOther(d);
+    }
+    window.addEventListener('message', on);
+    f.contentWindow.postMessage(Object.assign({}, msg, { requestId }), location.origin);
+  });
+}
+
+function taraViewLabel(p) {
+  if (p.analyzing) return sdT('checking…', '檢查中…');
+  if (p.face === false) return sdT('no face', '未偵測到臉');
+  const m = { 'frontal': sdT('Frontal', '正面'), 'three-quarter right': sdT('Right 45°', '右 45°'), 'three-quarter left': sdT('Left 45°', '左 45°'),
+    'profile right': sdT('Right 90°', '右 90°'), 'profile left': sdT('Left 90°', '左 90°'), 'turned too far': sdT('turned', '角度過大') };
+  return m[p.view] || '';
+}
+function taraRenderTray() {
+  const tray = $('tpTray');
+  tray.classList.toggle('on', TARA.photos.length > 0);
+  tray.innerHTML = TARA.photos.map(p =>
+    '<div class="tph' + (p.analyzing ? ' busy' : '') + '" data-id="' + p.id + '">' +
+      '<div class="tph-img" style="background-image:url(\'' + p.url + '\')"><span class="tph-id">' + p.id + '</span></div>' +
+      '<button type="button" class="tph-x" aria-label="' + sdT('Remove', '移除') + '">&times;</button>' +
+      '<div class="tph-m"><b>' + escapeHtml(p.date ? p.date.slice(0, 10) : sdT('no date', '無日期')) + '</b><br>' + escapeHtml(taraViewLabel(p)) + '</div>' +
+    '</div>').join('');
+}
+async function taraAddFiles(fileList) {
+  const files = [...(fileList || [])].filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name || ''));
+  const fresh = [];
+  for (const f of files) {
+    if (TARA.photos.length >= 12) { $('tpQuota').textContent = sdT('Up to 12 photos at a time.', '一次最多 12 張照片。'); break; }
+    const p = { id: 'p' + (++TARA.seq), file: f, name: f.name || ('photo-' + TARA.seq + '.jpg'), url: URL.createObjectURL(f), date: null, analyzing: true };
+    TARA.photos.push(p); fresh.push(p);
+  }
+  if (!fresh.length) return;
+  taraRenderTray();
+  const job = (async () => {
+    await Promise.all(fresh.map(async p => { p.date = await exifDate(p.file); }));
+    try {
+      await frameReady('visFrame');
+      const d = await frameRequest('visFrame', { type: 'sd:tara-analyze', photos: fresh.map(p => ({ id: p.id, file: p.file })) }, 'sd:tara-analyzed', 120000);
+      (d.results || []).forEach(r => {
+        const p = TARA.photos.find(x => x.id === r.id);
+        if (p) Object.assign(p, { face: r.face == null ? null : !!r.face, view: r.view || null, yaw: r.yaw != null ? r.yaw : null, size: r.size || null });
+      });
+    } catch (e) { /* no angle: Tara will ask */ }
+    fresh.forEach(p => { p.analyzing = false; });
+    taraRenderTray();
+  })();
+  TARA.pending = Promise.all([TARA.pending, job].filter(Boolean));
+  await job;
+}
+function taraPhoto(id) { return TARA.photos.find(p => p.id === id) || null; }
+function taraClearPhotos() { TARA.photos.forEach(p => { try { URL.revokeObjectURL(p.url); } catch (e) {} }); TARA.photos = []; taraRenderTray(); }
+
+// ---- asking -------------------------------------------------------------------
+async function taraSend(q, via) {
+  q = String(q || '').trim();
+  if (!q || TARA.busy) return;
+  taraBusy(true);
+  $('tpIn').value = ''; taraGrow();
+  const ph = TARA.photos.map(p => '<span>' + p.id + '</span>').join('');
+  taraAdd('me', (via === 'voice' ? '<span class="tvia">' + sdT('Spoken', '語音') + '</span>' : '') + escapeHtml(q) + (ph ? '<div class="tme-ph">' + ph + '</div>' : ''));
+  const bot = taraAdd('bot', '<div class="tname">' + TFACE + 'Tara</div><div class="tbody"><div class="tstat"><span class="tdots"><i></i><i></i><i></i></span><span class="tst">' + sdT('Thinking', '思考中') + '</span></div></div>');
+  bot.dataset.via = via || ''; bot.classList.add('pending');
+  try { if (TARA.pending) { bot.querySelector('.tst').textContent = sdT('Checking the photos', '正在檢查照片'); await TARA.pending; } } catch (e) {}
+  const photos = TARA.photos.map(p => ({ id: p.id, name: p.name, date: p.date, view: p.view || null, yaw: p.yaw, face: p.face, size: p.size }));
+  const events = TARA.events.splice(0);
+  try {
+    const j = await taraApi('ask', { question: q, thread_id: TARA.thread, via: via || '', reply_lang: taraLangGet(), photos, events, tab: activePanel });
+    taraThreadSet(j.thread_id || TARA.thread);
+    if (j.used != null) { TARA.used = j.used; taraQuota(); }
+    await taraFollow(j, bot, 0);
+  } catch (e) { taraFail(bot, e); }
+}
+async function taraFollow(j, bot, tries) {
+  while (!j.done) {
+    const st = bot.querySelector('.tst'); if (st) st.textContent = j.status_text || sdT('Thinking', '思考中');
+    await new Promise(r => setTimeout(r, 250));
+    try { j = await taraApi('continue', { id: j.id }); tries = 0; }
+    catch (e) {
+      if (e && e.unauth) throw e;
+      if (++tries > 4) throw e;
+      await new Promise(r => setTimeout(r, 1200));
+    }
+  }
+  taraFinish(bot, j, false);
+}
+function taraFail(bot, e) {
+  bot.classList.remove('pending'); taraMood(bot, 'neutral');
+  const msg = (e && e.error) ? e.error : sdT('Tara could not reply just now. Please try again.', 'Tara 暫時無法回覆，請再試一次。');
+  bot.querySelector('.tbody').innerHTML = '<div class="terr">' + escapeHtml(msg) + '</div>';
+  taraBusy(false);
+}
+const TLISTEN = '<svg class="ti-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><svg class="ti-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></svg>';
+function taraFinish(bot, j, hist) {
+  bot.classList.remove('pending');
+  if (j.answer && !hist) { taraMood(bot, 'found'); setTimeout(() => taraMood(bot, 'neutral'), 2600); } else taraMood(bot, 'neutral');
+  const b = bot.querySelector('.tbody');
+  if (!j.answer) {
+    b.innerHTML = '<div class="terr">' + escapeHtml(j.error || sdT('Tara could not finish that one. Please try again.', 'Tara 無法完成此問題，請再試一次。')) + '</div>';
+    taraBusy(false); return;
+  }
+  b.innerHTML = taraMd(j.answer);
+  if (j.cases && j.cases.cases && j.cases.cases.length) b.appendChild(taraCasesEl(j.cases.cases));
+  if (j.action) b.appendChild(taraCardEl(j.action, j.id, hist, j.outcome));
+  if (TARA.voice) {
+    const lb = document.createElement('button');
+    lb.type = 'button'; lb.className = 'tlisten'; lb.dataset.listen = j.id;
+    lb.innerHTML = TLISTEN + '<span class="tl-l">' + sdT('Listen', '朗讀') + '</span>';
+    b.appendChild(lb);
+  }
+  if (j.followups && j.followups.length && !hist) {
+    const fu = document.createElement('div'); fu.className = 'tfu';
+    fu.innerHTML = j.followups.map(q => '<button type="button">' + escapeHtml(q) + '</button>').join('');
+    b.appendChild(fu);
+  }
+  const fb = document.createElement('div'); fb.className = 'tfb'; fb.dataset.id = j.id;
+  fb.innerHTML = '<span>' + sdT('Useful?', '有幫助嗎？') + '</span><button type="button" data-r="1">' + sdT('Yes', '是') + '</button><button type="button" data-r="-1">' + sdT('No', '否') + '</button>';
+  if (j.rating) { const on = fb.querySelector('button[data-r="' + j.rating + '"]'); if (on) on.classList.add('on'); }
+  b.appendChild(fb);
+  if (TARA.voice && bot.dataset.via === 'voice' && !hist) { const lb = b.querySelector('.tlisten'); if (lb) taraListen(lb, true); }
+  if (!hist) { taraBusy(false); if (!document.body.classList.contains('tara-open')) $('taraFab').classList.add('ping'); }
+  const log = $('tpLog'); log.scrollTop = log.scrollHeight;
+}
+
+// ---- cases found in the Library -------------------------------------------------
+function taraCasesEl(cases) {
+  const box = document.createElement('div'); box.className = 'tcases';
+  const draw = all => {
+    box.innerHTML = '';
+    (all ? cases : cases.slice(0, 5)).forEach(c => {
+      TARA.caseRows[c.key] = c.rows || [];
+      const row = document.createElement('div'); row.className = 'tcase-row';
+      row.innerHTML = '<div class="tc-t"><b>' + escapeHtml(c.title || '') + '</b><span>' + escapeHtml(c.meta || '') + '</span></div>' +
+        '<span class="tc-kind">' + (c.kind === 'simulation' ? sdT('Sim', '模擬') : sdT('B&A', '前後')) + '</span>';
+      row.appendChild(viewButton(c.rows || [], null, c.title));
+      box.appendChild(row);
+    });
+    if (!all && cases.length > 5) {
+      const more = document.createElement('button'); more.type = 'button'; more.className = 'tc-more';
+      more.textContent = sdT('Show all ' + cases.length, '顯示全部 ' + cases.length + ' 個');
+      more.onclick = () => draw(true);
+      box.appendChild(more);
+    }
+  };
+  draw(false);
+  return box;
+}
+
+// ---- plan cards ---------------------------------------------------------------------
+const T_LAYOUT = { '2h': ['Side by side', '左右並排'], '2v': ['Stacked', '上下排列'], '3h': ['Three across', '三張並排'], '2x2': ['2 angles, before over after', '2 個角度，上前下後'], '2x3': ['3 angles, before over after', '3 個角度，上前下後'], '2x5': ['5 angles, before over after', '5 個角度，上前下後'] };
+const T_CROP = { full: ['Full face', '全臉'], lower: ['Lower face', '下半臉'], upper: ['Upper face', '上半臉'], eyes: ['Eye area', '眼周'] };
+const T_ANGLE = { frontal: ['Frontal', '正面'], r45: ['Right 45°', '右 45°'], l45: ['Left 45°', '左 45°'], r90: ['Right 90°', '右 90°'], l90: ['Left 90°', '左 90°'] };
+const T_TREAT = { biostim: ['Biostimulator', '膠原增生'], filler: ['HA filler', '玻尿酸'], laser: ['Energy-based device', '能量儀器'], tox: ['Neurotoxin', '肉毒桿菌素'] };
+const tl = pair => pair ? sdT(pair[0], pair[1]) : '';
+function tDateShort(d) { if (!d || !d.y) return ''; if (!d.m) return d.y; const mon = LIB_MONTHS_EN[parseInt(d.m, 10) - 1].slice(0, 3); return (d.d ? mon + ' ' + d.d + ', ' : mon + ' ') + d.y; }
+function taraThumb(id, cap, sub) {
+  const p = taraPhoto(id);
+  return '<div class="tc-thumb"><div class="tc-img" style="' + (p ? 'background-image:url(\'' + p.url + '\')' : '') + '"><span>' + escapeHtml(id) + (p ? '' : ' ×') + '</span></div>' +
+    '<div class="tc-cap">' + escapeHtml(cap || '') + (sub ? '<small>' + escapeHtml(sub) + '</small>' : '') + '</div></div>';
+}
+function taraKillOlderCards(exceptN) {
+  Object.keys(TARA.cards).forEach(n => {
+    const c = TARA.cards[n];
+    if (+n === exceptN || c.dead || c.running) return;
+    c.dead = true;
+    if (c.el) {
+      c.el.classList.add('dead');
+      c.el.querySelectorAll('button, input').forEach(x => { x.disabled = true; });
+      const st = c.el.querySelector('.tc-st'); if (st && !c.done) st.textContent = sdT('Replaced by the newer plan below.', '已由下方較新的計畫取代。');
+    }
+  });
+}
+function taraCardEl(action, rowId, hist, outcome) {
+  const n = ++TARA.cardSeq;
+  const card = { n, action, rowId, el: null, dead: !!hist };
+  const el = document.createElement('div'); el.className = 'tcard' + (hist ? ' dead' : '');
+  card.el = el;
+  const plan = action.plan || {};
+  if (action.kind === 'studio') {
+    const rowCols = { '2x2': 2, '2x3': 3, '2x5': 5 }[plan.grid] || 0;
+    const thumbs = (plan.slots || []).map((s, i) => {
+      const cap = rowCols ? ((plan.rowLabels || ['Before', 'After'])[Math.floor(i / rowCols)] || '') : (s.label || (i === 0 ? sdT('Before', '治療前') : i === plan.slots.length - 1 ? sdT('After', '治療後') : sdT('Photo', '照片') + ' ' + (i + 1)));
+      const dt = rowCols ? (i % rowCols === 0 ? tDateShort(s.date) : '') : tDateShort(s.date);
+      return taraThumb(s.photo, cap, dt);
+    }).join('');
+    const li = [tl(T_LAYOUT[plan.grid]),
+      plan.subject === 'body' ? sdT('Body photos, no crop', '身體照片，不裁切') : sdT('Crop: ', '裁切：') + tl(T_CROP[plan.preset || 'full']),
+      plan.background === 'black' ? sdT('Black background', '黑色背景') : sdT('Original background', '保留原背景'),
+      plan.treatmentLabel ? sdT('Top line: ', '標題：') + plan.treatmentLabel : null,
+      plan.norm === false ? sdT('Brightness kept as shot', '保留原始亮度') : null,
+      plan.format ? sdT('Format: ', '格式：') + plan.format : null].filter(Boolean);
+    el.innerHTML = '<div class="tc-h">' + sdT('Before & after', '前後對比圖') + '<span class="tc-tag">Studio</span></div>' +
+      '<div class="tc-thumbs">' + thumbs + '</div><ul class="tc-list">' + li.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' +
+      (hist ? '' :
+        '<label class="tc-consent"><input type="checkbox" class="tc-ok"> <span>' + sdT('I have this patient’s consent to use these photos.', '我已取得此顧客使用這些照片的同意。') + '</span></label>' +
+        '<div class="tc-acts"><button type="button" class="act tc-go" disabled>' + sdT('Build in Studio', '在 Studio 製作') + '</button></div>') +
+      '<div class="note tc-st">' + escapeHtml(hist ? (outcome ? sdT('Result: ', '結果：') + outcome : sdT('Proposed earlier.', '先前提出的計畫。')) : sdT('Free. This replaces whatever is open in Studio now.', '免費。這會取代 Studio 中目前的內容。')) + '</div>';
+    if (!hist) {
+      const ok = el.querySelector('.tc-ok'), go = el.querySelector('.tc-go');
+      ok.addEventListener('change', () => { go.disabled = !ok.checked; });
+      go.addEventListener('click', () => taraBuildStudio(card));
+    }
+  } else if (action.kind === 'simulation') {
+    const thumbs = (plan.photos || []).map(p => taraThumb(p.photo, tl(T_ANGLE[p.angle]), '')).join('');
+    let first = tl(T_TREAT[plan.type]);
+    if (plan.type === 'biostim') first += ' · ' + (plan.product === 'hdr' ? sdT('Hyperdilute CaHA', '稀釋 CaHA') : 'PLLA (Sculptra)') + ' · ' + sdT('full face', '全臉');
+    if (plan.type === 'filler') first += ' · ' + String(plan.area || '').replace(/_/g, ' ') + ' · ' + (plan.volume === 'enhanced' ? sdT('enhanced', '加強') : sdT('natural', '自然'));
+    if (plan.type === 'laser') first += ' · ' + (plan.laserType === 'hifu' ? 'HIFU' : 'RF');
+    if (plan.type === 'tox') first += ' · ' + (plan.toxMode || 'combined');
+    const li = [first].concat((plan.addons || []).map(k => '+ ' + k.replace(/^add_/, '').replace(/_/g, ' ')));
+    el.innerHTML = '<div class="tc-h">' + sdT('AI simulation', 'AI 模擬') + '<span class="tc-tag">Visualize</span></div>' +
+      '<div class="tc-thumbs">' + thumbs + '</div><ul class="tc-list tc-plan">' + li.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' +
+      '<div class="tc-prep"></div>' +
+      (hist ? '' : '<div class="tc-acts"><button type="button" class="act tc-setup">' + sdT('Set up in Visualize', '在 Visualize 設定') + '</button></div>') +
+      '<div class="note tc-st">' + escapeHtml(hist ? (outcome ? sdT('Result: ', '結果：') + outcome : sdT('Proposed earlier.', '先前提出的計畫。')) : sdT('Setting up is free: Visualize fills in its form and shows the exact credit cost before anything runs.', '設定免費：Visualize 會先填好表單並顯示確切點數，之後才會執行。')) + '</div>';
+    if (!hist) el.querySelector('.tc-setup').addEventListener('click', () => taraPrepareSim(card));
+  }
+  if (!hist) { TARA.cards[n] = card; taraKillOlderCards(n); }
+  return el;
+}
+function taraCardStatus(card, text, cls) { const st = card.el.querySelector('.tc-st'); st.className = 'note tc-st ' + (cls || ''); st.textContent = text; }
+function gotoTab(panel) { const t = document.querySelector('#tabs .tab[data-panel="' + panel + '"]'); if (t && activePanel !== panel) t.click(); }
+function scrollToInFrame(frameId, elId) {
+  try {
+    const f = $(frameId), el = f.contentDocument.getElementById(elId);
+    if (!el) return;
+    const top = window.scrollY + f.getBoundingClientRect().top + el.getBoundingClientRect().top - 90;
+    window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  } catch (e) {}
+}
+function taraOutcome(card, text) { if (card.rowId) taraApi('outcome', { id: card.rowId, outcome: text }).catch(() => {}); }
+
+async function taraBuildStudio(card) {
+  if (card.dead || card.running) return;
+  const plan = card.action.plan;
+  const missing = plan.slots.filter(s => !taraPhoto(s.photo)).map(s => s.photo);
+  if (missing.length) { taraCardStatus(card, sdT('Photo ' + missing.join(', ') + ' is no longer attached. Add it again and ask Tara.', '照片 ' + missing.join('、') + ' 已移除，請重新加入後再詢問 Tara。'), 'bad'); return; }
+  card.running = true;
+  card.el.querySelectorAll('button, input').forEach(x => { x.disabled = true; });
+  taraCardStatus(card, sdT('Building in Studio: finding faces, then background, crop and captions…', '正在 Studio 製作：偵測臉部、背景、裁切與標題…'));
+  taraWorking(sdT('building…', '製作中…'));
+  gotoTab('studio');
+  if (isPhoneW()) taraClosePanel();
+  try {
+    await frameReady('studioFrame');
+    const d = await frameRequest('studioFrame', { type: 'sd:tara-studio-build', plan, files: plan.slots.map(s => taraPhoto(s.photo).file), consent: true }, 'sd:tara-studio-built', 300000);
+    if (!d.ok) throw new Error(d.error || 'Studio could not build it.');
+    card.done = true;
+    const w = (d.warnings || []);
+    taraCardStatus(card, sdT('Done. The image is ready in Studio: download it there, or save it to your Library with the form below it.', '完成。圖片已在 Studio 中：可在那裡下載，或用下方表單存入案例資料庫。') + (w.length ? ' ' + w.join(' ') : ''), w.length ? '' : 'ok');
+    const show = document.createElement('button'); show.type = 'button'; show.className = 'quiet'; show.textContent = sdT('Show me', '帶我去看');
+    show.onclick = () => { if (isPhoneW()) taraClosePanel(); gotoTab('studio'); scrollToInFrame('studioFrame', 'outputSection'); };
+    card.el.querySelector('.tc-acts').appendChild(show); show.disabled = false;
+    try { fitFrame('studioFrame'); } catch (e) {}
+    setTimeout(() => scrollToInFrame('studioFrame', 'outputSection'), 400);
+    taraEvent('The user pressed Build. Studio finished the before & after (' + plan.grid + ', ' + plan.slots.map(s => s.photo).join(', ') + ').' + (w.length ? ' Notes: ' + w.join(' ') : ''));
+    taraOutcome(card, 'built' + (w.length ? ' (' + w.join(' ') + ')' : ''));
+  } catch (e) {
+    taraCardStatus(card, (e && e.message) || String(e), 'bad');
+    taraEvent('Studio could not build the before & after: ' + ((e && e.message) || e));
+    taraOutcome(card, 'failed: ' + ((e && e.message) || e));
+    card.el.querySelectorAll('.tc-ok').forEach(x => { x.disabled = false; x.checked = false; });
+  } finally {
+    card.running = false; taraWorking(null);
+    if (!document.body.classList.contains('tara-open')) $('taraFab').classList.add('ping');
+  }
+}
+
+async function taraPrepareSim(card) {
+  if (card.dead || card.running) return;
+  const plan = card.action.plan;
+  const missing = plan.photos.filter(p => !taraPhoto(p.photo)).map(p => p.photo);
+  if (missing.length) { taraCardStatus(card, sdT('Photo ' + missing.join(', ') + ' is no longer attached.', '照片 ' + missing.join('、') + ' 已移除。'), 'bad'); return; }
+  if (Object.keys(simReady).length && !confirm(sdT('Visualize is holding a finished simulation. If it is not saved, setting up this one replaces it. Continue?', 'Visualize 中有已完成的模擬。若尚未儲存，設定新的會將其取代。要繼續嗎？'))) return;
+  card.running = true;
+  const setup = card.el.querySelector('.tc-setup'); setup.disabled = true;
+  taraCardStatus(card, sdT('Setting up Visualize and checking the photos…', '正在設定 Visualize 並檢查照片…'));
+  if (!isPhoneW()) gotoTab('visualize');
+  try {
+    await frameReady('visFrame');
+    const d = await frameRequest('visFrame', { type: 'sd:tara-sim-prepare', plan, photos: plan.photos.map(p => ({ angle: p.angle, file: taraPhoto(p.photo).file })) }, 'sd:tara-sim-prepared', 180000);
+    if (!d.ok) throw new Error(d.error || 'Visualize could not set it up.');
+    card.prepared = d;
+    if (d.lines && d.lines.length) card.el.querySelector('.tc-plan').innerHTML = d.lines.map(x => '<li>' + escapeHtml(x) + '</li>').join('');
+    const short = d.balance != null && d.balance < d.cost;
+    const prep = card.el.querySelector('.tc-prep');
+    prep.innerHTML =
+      '<div class="tc-cost">' + sdT('This run uses ', '此次執行使用 ') + '<b>' + d.cost + (d.cost === 1 ? sdT(' credit', ' 點') : sdT(' credits', ' 點')) + '</b>' +
+        (d.balance != null ? sdT('. Balance: ', '。餘額：') + '<b>' + d.balance + '</b>' : '') + '.</div>' +
+      (short ? '<div class="tc-warn">' + sdT('Not enough credits for this run. Top up in Billing first.', '點數不足，請先至帳務加值。') + '</div>' : '') +
+      ((d.dropped && d.dropped.length) ? '<div class="tc-warn">' + escapeHtml(sdT('Left out (not available with this treatment): ', '已略過（此療程不適用）：') + d.dropped.join(', ')) + '</div>' : '') +
+      ((d.warnings && d.warnings.length) ? '<div class="tc-warn">' + d.warnings.map(escapeHtml).join('<br>') + '</div>' : '') +
+      '<label class="tc-consent"><input type="checkbox" class="tc-ok"> <span>' + sdT('I have this patient’s consent to upload their photo to an AI image provider for consultation visualization.', '我已取得此顧客同意，將其照片上傳至 AI 影像服務以供諮詢模擬使用。') + '</span></label>';
+    const acts = card.el.querySelector('.tc-acts');
+    acts.innerHTML = '<button type="button" class="act tc-run" disabled>' + sdT('Run', '執行') + ' · ' + d.cost + (d.cost === 1 ? sdT(' credit', ' 點') : sdT(' credits', ' 點')) + '</button>' +
+      '<button type="button" class="quiet tc-setup">' + sdT('Set up again', '重新設定') + '</button>';
+    const ok = prep.querySelector('.tc-ok'), run = acts.querySelector('.tc-run');
+    ok.addEventListener('change', () => { run.disabled = !ok.checked || short; });
+    run.addEventListener('click', () => taraRunSim(card));
+    acts.querySelector('.tc-setup').addEventListener('click', () => taraPrepareSim(card));
+    taraCardStatus(card, sdT('Visualize is filled in. Nothing has run yet.', 'Visualize 已填好，尚未執行。'));
+    card.running = false;
+  } catch (e) {
+    card.running = false; setup.disabled = false;
+    taraCardStatus(card, (e && e.message) || String(e), 'bad');
+  }
+}
+
+async function taraRunSim(card) {
+  if (card.dead || card.running || !card.prepared) return;
+  const ok = card.el.querySelector('.tc-ok');
+  if (!ok || !ok.checked) return;
+  card.running = true;
+  card.el.querySelectorAll('button, input').forEach(x => { x.disabled = true; });
+  taraCardStatus(card, sdT('Starting…', '開始中…'));
+  gotoTab('visualize');
+  if (isPhoneW()) taraClosePanel();
+  taraWorking(sdT('simulating…', '模擬中…'));
+  try {
+    const d = await frameRequest('visFrame', { type: 'sd:tara-sim-run', consent: true }, 'sd:tara-sim-done', 1200000,
+      m => { if (m.type === 'sd:tara-sim-started') { taraCardStatus(card, sdT('Running in Visualize. It usually takes about a minute per angle; you can keep working.', 'Visualize 執行中，每個角度約一分鐘，您可以繼續其他工作。')); setTimeout(() => scrollToInFrame('visFrame', 'genCard'), 300); } });
+    if (d.notStarted) throw new Error(d.error || 'Visualize did not start.');
+    const res = d.results || [];
+    const good = res.filter(r => r.status === 'done').length;
+    card.done = true;
+    let msg = good
+      ? sdT(good + ' of ' + res.length + (res.length === 1 ? ' angle' : ' angles') + ' ready in Visualize. To keep it, save it under the result.', 'Visualize 已完成 ' + good + ' / ' + res.length + ' 個角度。如需保留，請在結果下方儲存。')
+      : sdT('The simulation did not finish.', '模擬未完成。');
+    const errs = res.filter(r => r.status === 'error').map(r => r.label + ': ' + (r.error || 'failed'));
+    if (errs.length) msg += ' ' + errs.join(' ');
+    if (d.shortfall) msg += ' ' + sdT('Not enough credits: top up in Billing.', '點數不足，請至帳務加值。');
+    taraCardStatus(card, msg, good === res.length && good ? 'ok' : 'bad');
+    taraEvent('The user pressed Run. Visualize finished: ' + good + ' of ' + res.length + ' angles ready.' + (errs.length ? ' Errors: ' + errs.join(' ') : '') + (d.balance != null ? ' Credit balance now ' + d.balance + '.' : ''));
+    taraOutcome(card, 'ran: ' + good + '/' + res.length + ' ready' + (errs.length ? '; ' + errs.join(' ') : ''));
+    if (good) setTimeout(() => scrollToInFrame('visFrame', 'outputSection'), 400);
+  } catch (e) {
+    taraCardStatus(card, (e && e.message) || String(e), 'bad');
+    taraOutcome(card, 'failed: ' + ((e && e.message) || e));
+  } finally {
+    card.running = false; taraWorking(null);
+    if (!document.body.classList.contains('tara-open')) $('taraFab').classList.add('ping');
+  }
+}
+
+// ---- past chats -------------------------------------------------------------------
+async function taraHistory() {
+  if (TARA.busy) return;
+  const log = $('tpLog');
+  log.innerHTML = '<div class="tstat"><span class="tdots"><i></i><i></i><i></i></span></div>';
+  try {
+    const j = await taraApi('threads', {});
+    const list = j.threads || [];
+    log.innerHTML = '<p class="tlead"><b>' + sdT('Past chats', '過去的對話') + '</b></p>';
+    if (!list.length) { log.innerHTML += '<p class="tlead">' + sdT('No past chats yet.', '尚無對話紀錄。') + '</p>'; return; }
+    const box = document.createElement('div'); box.className = 'thist';
+    list.forEach(t => {
+      const d = new Date(t.last_at);
+      const when = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+      const b = document.createElement('button'); b.type = 'button'; if (t.thread_id === TARA.thread) b.className = 'cur';
+      b.innerHTML = '<span class="tn">' + escapeHtml(t.title) + '</span><span class="tr">' + escapeHtml(when) + ' · ' + t.count + '</span>';
+      b.onclick = () => taraLoadThread(t.thread_id);
+      box.appendChild(b);
+    });
+    log.appendChild(box);
+  } catch (e) { log.innerHTML = '<p class="terr">' + sdT('Could not load past chats.', '無法載入對話紀錄。') + '</p>'; }
+}
+async function taraLoadThread(tid) {
+  if (TARA.busy) return;
+  const log = $('tpLog');
+  log.innerHTML = '<div class="tstat"><span class="tdots"><i></i><i></i><i></i></span></div>';
+  try {
+    const j = await taraApi('thread', { thread_id: tid });
+    const turns = j.turns || [];
+    log.innerHTML = '';
+    if (!turns.length) { taraThreadSet(null); taraEmpty(); return; }
+    taraThreadSet(tid);
+    for (const t of turns) {
+      taraAdd('me', escapeHtml(t.question || ''));
+      const bot = taraAdd('bot', '<div class="tname">' + TFACE + 'Tara</div><div class="tbody"><div class="tstat"><span class="tdots"><i></i><i></i><i></i></span><span class="tst"></span></div></div>');
+      if (t.done) taraFinish(bot, t, true);
+      else { bot.classList.add('pending'); taraBusy(true); taraFollow(t, bot, 0).catch(e => taraFail(bot, e)); }
+    }
+    log.scrollTop = log.scrollHeight;
+  } catch (e) { log.innerHTML = ''; taraEmpty(); }
+}
+
+// ---- voice (same pattern as MI Tara) ----------------------------------------------
+const TV = { rec: null, chunks: [], stream: null, mime: '', t0: 0, timer: null, player: null, playingBtn: null, cache: {} };
+function taraPickMime() {
+  if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+  const c = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/aac'];
+  for (const m of c) if (MediaRecorder.isTypeSupported(m)) return m;
+  return '';
+}
+function taraVoiceSetup() { $('tpMic').hidden = !(TARA.voice && navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder); }
+function taraPlayer() { if (!TV.player) { TV.player = new Audio(); TV.player.addEventListener('ended', taraStopPlay); } return TV.player; }
+// A real, tiny silent WAV built in the page, used only to unlock playback.
+function taraSilence() {
+  const n = 800, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf);
+  const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+  w(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 16000, true);
+  v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, n * 2, true);
+  let bin = ''; const bytes = new Uint8Array(buf); for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return 'data:audio/wav;base64,' + btoa(bin);
+}
+function taraUnlock() {
+  // iPhone only plays sound that starts from a tap: unlock the player on the mic tap.
+  const a = taraPlayer();
+  try { a.src = taraSilence(); const p = a.play(); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
+function taraStopPlay() {
+  if (TV.player) { try { TV.player.pause(); } catch (e) {} }
+  if (TV.playingBtn) { TV.playingBtn.querySelector('.tl-l').textContent = sdT('Listen', '朗讀'); TV.playingBtn.classList.remove('on'); TV.playingBtn = null; }
+}
+async function taraListen(btn, auto) {
+  if (TV.playingBtn === btn) { taraStopPlay(); return; }
+  taraStopPlay();
+  const id = btn.dataset.listen, lbl = btn.querySelector('.tl-l');
+  lbl.textContent = sdT('Loading…', '載入中…');
+  const go = src => {
+    const a = taraPlayer(); a.src = src; TV.playingBtn = btn; lbl.textContent = sdT('Stop', '停止'); btn.classList.add('on');
+    const p = a.play(); if (p && p.catch) p.catch(() => { lbl.textContent = sdT('Listen', '朗讀'); btn.classList.remove('on'); TV.playingBtn = null; });
+  };
+  if (TV.cache[id]) { go(TV.cache[id]); return; }
+  try { const j = await taraApi('speak', { id }); TV.cache[id] = 'data:' + (j.mime || 'audio/mpeg') + ';base64,' + j.audio; go(TV.cache[id]); }
+  catch (e) { lbl.textContent = sdT('Listen', '朗讀'); }
+}
+function taraRecStart() {
+  if (TARA.busy) return;
+  taraStopPlay(); taraUnlock();
+  TV.mime = taraPickMime(); TV.chunks = [];
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    TV.stream = stream;
+    try { TV.rec = TV.mime ? new MediaRecorder(stream, { mimeType: TV.mime }) : new MediaRecorder(stream); } catch (e) { TV.rec = new MediaRecorder(stream); }
+    TV.mime = TV.rec.mimeType || TV.mime || 'audio/webm';
+    TV.rec.ondataavailable = ev => { if (ev.data && ev.data.size) TV.chunks.push(ev.data); };
+    TV.rec.onstop = taraRecDone;
+    TV.rec.start();
+    TV.t0 = Date.now();
+    TV.timer = setInterval(() => { const s = Math.floor((Date.now() - TV.t0) / 1000); $('tpMic').querySelector('.trec').textContent = '0:' + (s < 10 ? '0' : '') + s; if (s >= 60) taraRecStop(); }, 250);
+    $('tpMic').classList.add('rec'); $('tpMic').querySelector('.ti-mic').style.display = 'none';
+    $('tpIn').placeholder = sdT('Listening… tap again to send', '聆聽中…再按一次送出');
+  }).catch(() => { $('tpQuota').textContent = sdT('The microphone is blocked. Allow it in your browser settings.', '麥克風已被封鎖，請在瀏覽器設定中允許。'); });
+}
+function taraRecStop() { if (TV.rec && TV.rec.state !== 'inactive') { try { TV.rec.stop(); } catch (e) {} } }
+function taraRecReset() {
+  clearInterval(TV.timer); TV.timer = null;
+  if (TV.stream) { TV.stream.getTracks().forEach(t => t.stop()); TV.stream = null; }
+  const m = $('tpMic'); m.classList.remove('rec'); m.querySelector('.trec').textContent = ''; m.querySelector('.ti-mic').style.display = '';
+  $('tpIn').placeholder = sdT('Ask Tara', '詢問 Tara');
+}
+function taraRecDone() {
+  const short = (Date.now() - TV.t0) < 700;
+  taraRecReset();
+  const blob = new Blob(TV.chunks, { type: TV.mime || 'audio/webm' }); TV.chunks = [];
+  if (short || !blob.size) return;
+  const m = $('tpMic'); m.disabled = true;
+  $('tpIn').placeholder = sdT('Getting your question…', '正在辨識您的問題…');
+  const fr = new FileReader();
+  fr.onload = async () => {
+    try {
+      const j = await taraApi('transcribe', { audio: String(fr.result || '').split(',')[1] || '', mime: TV.mime });
+      const t = String(j.text || '').trim();
+      if (!t) $('tpQuota').textContent = sdT('I could not hear a question. Please try again.', '沒有聽到問題，請再試一次。');
+      else taraSend(t, 'voice');
+    } catch (e) { $('tpQuota').textContent = (e && e.error) || sdT('Could not hear that. Please try again.', '無法辨識，請再試一次。'); }
+    m.disabled = false; $('tpIn').placeholder = sdT('Ask Tara', '詢問 Tara');
+  };
+  fr.readAsDataURL(blob);
+}
+
+// ---- wiring -------------------------------------------------------------------------
+(function taraWire() {
+  $('taraFab').addEventListener('click', taraOpenPanel);
+  $('tpClose').addEventListener('click', taraClosePanel);
+  $('tpNew').addEventListener('click', () => {
+    if (TARA.busy) return;
+    taraThreadSet(null); taraClearPhotos(); TARA.events = []; $('tpLog').innerHTML = ''; taraEmpty();
+  });
+  $('tpHist').addEventListener('click', taraHistory);
+  $('tpAttach').addEventListener('click', () => $('tpFile').click());
+  $('tpFile').addEventListener('change', e => { taraAddFiles(e.target.files); e.target.value = ''; });
+  $('tpTray').addEventListener('click', e => {
+    const x = e.target.closest('.tph-x'); if (!x) return;
+    const id = x.closest('.tph').dataset.id;
+    const p = taraPhoto(id);
+    TARA.photos = TARA.photos.filter(q => q.id !== id);
+    if (p) setTimeout(() => { try { URL.revokeObjectURL(p.url); } catch (e2) {} }, 60000);
+    taraRenderTray();
+  });
+  const panel = $('taraPanel');
+  panel.addEventListener('dragover', e => { if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) { e.preventDefault(); panel.classList.add('dragging'); } });
+  panel.addEventListener('dragleave', e => { if (!panel.contains(e.relatedTarget)) panel.classList.remove('dragging'); });
+  panel.addEventListener('drop', e => { e.preventDefault(); panel.classList.remove('dragging'); taraAddFiles(e.dataTransfer.files); });
+  $('tpIn').addEventListener('input', taraGrow);
+  $('tpIn').addEventListener('paste', e => {
+    const files = [...((e.clipboardData && e.clipboardData.files) || [])].filter(f => /^image\//.test(f.type));
+    if (files.length) { e.preventDefault(); taraAddFiles(files); }
+  });
+  $('tpIn').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); taraSend($('tpIn').value); } });
+  $('tpForm').addEventListener('submit', e => { e.preventDefault(); taraSend($('tpIn').value); });
+  $('tpMic').addEventListener('click', () => { if (TV.rec && TV.rec.state === 'recording') taraRecStop(); else taraRecStart(); });
+  const lang = $('tpLang'); lang.value = taraLangGet();
+  lang.addEventListener('change', () => { try { localStorage.setItem('ctara_lang', lang.value); } catch (e) {} });
+  $('tpLog').addEventListener('click', e => {
+    const a = e.target.closest('a.tcase');
+    if (a) {
+      e.preventDefault();
+      const rows = TARA.caseRows[a.dataset.key];
+      if (rows && rows.length) openCaseViewer(viewerItemsFromRows(rows, a.textContent), 0);
+      else { taraClosePanel(); gotoTab('library'); const si = $('libSearch'); si.value = a.textContent; si.dispatchEvent(new Event('input')); }
+      return;
+    }
+    const fu = e.target.closest('.tfu button'); if (fu) { taraSend(fu.textContent); return; }
+    const ls = e.target.closest('.tlisten'); if (ls) { taraListen(ls, false); return; }
+    const fb = e.target.closest('.tfb button');
+    if (fb) {
+      const box = fb.parentNode;
+      box.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === fb));
+      taraApi('feedback', { id: box.dataset.id, rating: parseInt(fb.dataset.r, 10) }).catch(() => {});
+    }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !CV.open && document.body.classList.contains('tara-open') && isPhoneW()) taraClosePanel(); });
+})();
+
 </script>
 
 <footer class="site-foot" data-en='&lt;span class="pw"&gt;Powered by&lt;/span&gt;
