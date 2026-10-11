@@ -204,12 +204,30 @@ function checkStudio(a, photos) {
   const layout = String(a.layout || '');
   const count = STUDIO_LAYOUTS[layout];
   if (!count) throw new Error('layout must be one of ' + Object.keys(STUDIO_LAYOUTS).join(', '));
-  const slots = Array.isArray(a.slots) ? a.slots.map(String) : [];
+  let slots = Array.isArray(a.slots) ? a.slots.map(String) : [];
   if (slots.length !== count) throw new Error('Layout ' + layout + ' has ' + count + ' photo slots; slots lists ' + slots.length + '. Pick a layout that matches the photos, or ask the user.');
   slots.forEach(id => { if (!ids.has(id)) throw new Error('No photo called ' + id + '. Photos in this chat: ' + ([...ids].join(', ') || 'none') + '.'); });
   const subject = a.subject === 'body' ? 'body' : 'face';
   const crop = subject === 'face' ? (STUDIO_CROPS.includes(a.crop) ? a.crop : 'full') : null;
   const rowCols = STUDIO_ROW_LAYOUTS[layout] || 0;
+  // House default: on multi-angle grids the frontal sits in the middle, with the
+  // right side views to its left and the left side views to its right (R90, R45,
+  // frontal, L45, L90). Each row is sorted by its photos' measured angles, so a
+  // plan can never come out with the frontal at the edge by accident. Only when
+  // every photo in a row has a known, distinct angle; otherwise the row is left
+  // exactly as planned. The user can still ask for another order (keep_order).
+  if (rowCols && !a.keep_order) {
+    const byId = new Map(photos.map(p => [p.id, p]));
+    const rank = id => ({ 'profile right': 0, 'three-quarter right': 1, 'frontal': 2, 'three-quarter left': 3, 'profile left': 4 })[(byId.get(id) || {}).view];
+    const sorted = [];
+    for (let r = 0; r < 2; r++) {
+      const row = slots.slice(r * rowCols, (r + 1) * rowCols);
+      const ranks = row.map(rank);
+      const known = ranks.every(x => x !== undefined) && new Set(ranks).size === ranks.length;
+      sorted.push(...(known ? row.slice().sort((x, y) => rank(x) - rank(y)) : row));
+    }
+    slots = sorted;
+  }
   const dates = Array.isArray(a.dates) ? a.dates : [];
   const labels = Array.isArray(a.labels) ? a.labels.map(x => String(x || '').slice(0, 40)) : [];
   const rowLabels = rowCols ? (Array.isArray(a.row_labels) && a.row_labels.length === 2 ? a.row_labels.map(x => String(x || '').slice(0, 40)) : ['Before', 'After']) : null;
@@ -293,6 +311,7 @@ const TOOLS = [
       logo_position: { type: 'string', enum: POSITIONS, description: 'Only if the user asks.' },
       export_format: { type: 'string', enum: ['square', 'portrait', 'story', 'free'], description: 'Only if the user asks. square 1:1, portrait 4:5, story 9:16, free = match crop.' },
       match_brightness: { type: 'boolean', description: 'Only if the user asks or the case is pigmentation, redness or vascular (then false).' },
+      keep_order: { type: 'boolean', description: '2x layouts only: true only if the user asked for a specific column order. Otherwise columns are arranged frontal-in-the-middle automatically.' },
       enhance: { type: 'integer', enum: [0, 1, 2], description: 'Only if the user asks. 0 none, 1 subtle, 2 strong. Applied to every panel equally.' },
       clinic_name: { type: 'string', description: 'Only if the user gives one for the watermark' },
       injector_name: { type: 'string', description: 'Only if the user gives one for the watermark' } },
@@ -346,7 +365,7 @@ function instructions(ctx) {
     '- When a card is already showing and the user changes something, propose again with the change; the new card replaces the old one.',
     '',
     'STUDIO (before & after, free, all on the device)',
-    '- Layouts: 2h two side by side; 2v two stacked; 3h three across (e.g. before, mid-course, after); 2x2, 2x3, 2x5: top row before, bottom row after, 2, 3 or 5 angles, the SAME angle order in both rows (frontal, right 45, left 45, right 90, left 90 as available). Pick the layout from the photos: one before + one after = 2h unless they ask for stacked.',
+    '- Layouts: 2h two side by side; 2v two stacked; 3h three across (e.g. before, mid-course, after); 2x2, 2x3, 2x5: top row before, bottom row after, 2, 3 or 5 angles, the SAME angle order in both rows, with the frontal in the MIDDLE: right 90, right 45, frontal, left 45, left 90 (as available; for 3 angles that is right 45, frontal, left 45). Studio enforces this; set keep_order only if the user asks for a different order. Pick the layout from the photos: one before + one after = 2h unless they ask for stacked.',
     '- Crop presets for faces: full face (default), lower face (cheeks to jaw: chin, jawline, lower-face cases), upper face (forehead to brows: brow and forehead toxin), eye area. Body photos are not cropped. Studio aligns the photos by the eyes automatically.',
     '- Background: black removes the background on the device and puts black behind the patient on every photo; original keeps it. Use black if they ask, otherwise original.',
     '- Captions: Before / After by default; 2x layouts caption each row once. Dates come from the camera dates; captions show month and year or the full date. Leave a date empty rather than invent one.',
