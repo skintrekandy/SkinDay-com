@@ -33,8 +33,12 @@
 //   OPENAI_API_KEY                required
 //   CLINIC_TARA_MODEL             default TARA_MODEL, then 'gpt-5.6-sol'
 //   CLINIC_TARA_REASONING         default 'low' ('off' to omit)
-//   CLINIC_TARA_EMAILS            users who see Tara, default 'andy@skin-trek.com'
-//   CLINIC_TARA_CLINICS           clinic ids switched on for everyone in them
+//   Who gets Tara: every clinic whose Visualize Pro is in good standing (active,
+//   or trialing up to 7 days past trial end, the same rule the portal and
+//   start-visualization use). No list to maintain.
+//   CLINIC_TARA_EMAILS            extra users who always see Tara, default 'andy@skin-trek.com'
+//   CLINIC_TARA_OFF               clinic ids to switch Tara OFF for (rarely needed)
+//   CLINIC_TARA_ALL               set to 'off' to turn Tara off everywhere
 //   CLINIC_TARA_DAILY_LIMIT       questions per user per day, default 100
 //   TARA_STT_MODEL / TARA_TTS_MODEL / TARA_VOICE   shared with MI Tara
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -81,9 +85,27 @@ async function buildCtx(sb, event, body) {
   try { const { data: c } = await sb.from('clinics').select('name').eq('id', clinicId).maybeSingle(); clinicName = c && c.name; } catch (e) {}
   return { sb, user, clinicId, clinicName, role: mem[0].role || null, userKey: user.id };
 }
-function taraEnabled(ctx) {
+// Tara comes with Visualize Pro. A clinic in good standing has her; a lapsed
+// trial or a cancelled plan does not. Same rule as the portal's save-lock.
+async function clinicHasPro(ctx) {
+  try {
+    const { data } = await ctx.sb.from('clinic_subscriptions').select('approved,status,trial_ends_at').eq('clinic_id', ctx.clinicId).limit(1);
+    const sub = data && data[0];
+    if (!sub || sub.approved === false) return false;
+    const st = String(sub.status || '');
+    if (st === 'active') return true;
+    if (st === 'trialing') {
+      const ends = sub.trial_ends_at ? new Date(sub.trial_ends_at).getTime() : null;
+      return !ends || Date.now() <= ends + 7 * 24 * 60 * 60 * 1000;
+    }
+    return false;
+  } catch (e) { return false; }
+}
+async function taraEnabled(ctx) {
   if (ctx.user.email && list('CLINIC_TARA_EMAILS', 'andy@skin-trek.com').includes(ctx.user.email)) return true;
-  return list('CLINIC_TARA_CLINICS', '').includes(String(ctx.clinicId).toLowerCase());
+  if (String(process.env.CLINIC_TARA_ALL || '').toLowerCase() === 'off') return false;
+  if (list('CLINIC_TARA_OFF', '').includes(String(ctx.clinicId).toLowerCase())) return false;
+  return await clinicHasPro(ctx);
 }
 function dailyLimit() { return parseInt(process.env.CLINIC_TARA_DAILY_LIMIT, 10) || 100; }
 async function usedToday(ctx) {
@@ -624,10 +646,11 @@ exports.handler = async (event) => {
   const action = body.action;
   try {
     if (action === 'status') {
-      if (!taraEnabled(ctx)) return json(200, { enabled: false });
+      const on = await taraEnabled(ctx);
+      if (!on) return json(200, { enabled: false });
       return json(200, { enabled: true, used: await usedToday(ctx), limit: dailyLimit(), voice: true });
     }
-    if (!taraEnabled(ctx)) return json(403, { error: 'Tara is not switched on for this clinic yet.' });
+    if (!(await taraEnabled(ctx))) return json(403, { error: 'Tara comes with Visualize Pro. This clinic’s plan is not active.' });
 
     if (action === 'ask') {
       const question = String(body.question || '').trim().slice(0, 2000);
