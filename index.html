@@ -1,466 +1,66 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light only">
-<title>SkinDay · Helping aesthetic clinics build lasting patient relationships</title>
-<meta name="description" content="SkinDay helps aesthetic clinics build lasting patient relationships. A directory to be discovered, Visualize for AI consultation previews, and Studio for branded before-and-after images.">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SkinDay · See the industry more clearly</title>
+<meta name="description" content="SkinDay connects clinic discovery, practical tools and market intelligence through one growing foundation of medical aesthetics data.">
 <link rel="canonical" href="https://skinday.com/">
-<link rel="icon" href="/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Noto+Serif+TC:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root{color-scheme:light;
-    --deep:#1C1714;--deep-soft:#2A231E;--cream:#FAF7F2;--warm:#F4EDE4;
-    --rose:#C8725A;--gold:#C9A96E;
-    --rose-bg:#F5E8E3;
-    --border:#EAE2D8;
-    --muted:#8A7F76;
-    --line:rgba(28,23,20,.12);
-    --line-light:rgba(250,247,242,.16);
-  }
-  *{margin:0;padding:0;box-sizing:border-box;}
-  html{scroll-behavior:smooth;}
-  body{font-family:'DM Sans',system-ui,sans-serif;background:var(--cream);color:var(--deep);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
-  .serif{font-family:'Cormorant Garamond',Georgia,serif;}
-  body.zh{font-family:'Noto Serif TC','DM Sans',system-ui,sans-serif;}
-  body.zh .serif{font-family:'Noto Serif TC',Georgia,serif;}
-  a{color:inherit;}
+<link rel="icon" href="/favicon.ico"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@400;500;600&display=swap" rel="stylesheet"><style>
+:root{--ink:#1C1714;--muted:#7A6F67;--teal:#A8864B;--line:#EAE2D8;--cream:#FAF7F2;--mint:#F4EDE4;--white:#fff;--gold:#C9A96E}*{box-sizing:border-box}body{margin:0;background:var(--cream);font-family:'DM Sans',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}a{text-decoration:none;color:inherit}.container{max-width:1192px;margin:auto;padding:0 28px}nav{height:84px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.brand{font-family:Manrope,sans-serif;font-weight:800;letter-spacing:-1.7px;font-size:27px}.brand span{color:var(--teal)}.navlinks{display:flex;gap:33px;align-items:center;color:#4A403A;font-size:14px;font-weight:600}nav{position:relative}.navright{display:flex;align-items:center;gap:12px}.lang{border:1px solid #D9CDBF;background:#fff;border-radius:22px;padding:7px 13px;font:600 12px "DM Sans",sans-serif;color:#4A403A;cursor:pointer}.mobilemenu{display:none;border:1px solid #D9CDBF;background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:15px}.foot .legal{max-width:640px;font-size:11px;line-height:1.6;color:#9A8E84;margin-top:14px}.btn{display:inline-flex;align-items:center;gap:12px;padding:14px 21px;background:var(--ink);color:white;border-radius:8px;font-size:14px;font-weight:600}.btn.secondary{background:transparent;color:var(--ink);border:1px solid #D9CDBF}.btn.light{background:#fff;color:var(--ink)}.btn:hover{transform:translateY(-2px);transition:.2s}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacing:2.4px;font-weight:700;color:var(--teal)}h1,h2,h3,p{margin-top:0}h1,h2,h3{font-family:Manrope,sans-serif;letter-spacing:-.055em}h1{font-size:clamp(48px,5.7vw,82px);line-height:1.095;max-width:850px;margin:24px 0}h1 em{font-style:normal;color:var(--teal)}h2{font-size:clamp(34px,3.7vw,54px);line-height:1.16;margin:15px 0 20px}p{line-height:1.7;color:var(--muted)}.hero{padding:86px 0 72px}.hero-top{display:grid;grid-template-columns:1.05fr .95fr;gap:55px;align-items:center}.hero p{max-width:545px;font-size:18px}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:32px}.preview{background:#F4EDE4;border-radius:20px;min-height:424px;position:relative;overflow:hidden;border:1px solid #EAE2D8;box-shadow:0 22px 60px #1C171420}.map-grid{position:absolute;inset:0;background-image:linear-gradient(#D9CDBF55 1px,transparent 1px),linear-gradient(90deg,#D9CDBF55 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(to bottom,black,transparent)}.continent{position:absolute;opacity:.8;filter:blur(.1px)}.continent.a{width:240px;height:170px;left:35px;top:68px;background:#E6D9C6;clip-path:polygon(4% 27%,23% 10%,57% 2%,84% 29%,71% 49%,93% 73%,67% 95%,53% 71%,36% 64%,23% 48%)}.continent.b{width:190px;height:200px;right:35px;top:125px;background:#E6D9C6;clip-path:polygon(14% 10%,54% 0,89% 23%,76% 50%,96% 67%,63% 96%,35% 69%,12% 75%,27% 46%,0 32%)}.dot{position:absolute;width:8px;height:8px;border-radius:50%;background:#A8864B;box-shadow:0 0 0 6px #C9A96E22}.dot:nth-of-type(1){top:34%;left:26%}.dot:nth-of-type(2){top:43%;left:35%}.dot:nth-of-type(3){top:58%;left:27%}.dot:nth-of-type(4){top:41%;right:24%}.dot:nth-of-type(5){top:60%;right:28%}.dot:nth-of-type(6){top:65%;right:18%}.map-overlay{position:absolute;top:22px;left:24px;right:24px;display:flex;justify-content:space-between;align-items:center}.map-overlay .chip{background:#fffdf9d9;backdrop-filter:blur(8px);border:1px solid #ffffff;padding:9px 12px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.5px}.mini-card{position:absolute;bottom:23px;left:24px;right:24px;background:#fffefaf2;border:1px solid white;box-shadow:0 12px 40px #1C171425;border-radius:12px;padding:19px 21px}.mini-card .header{font-size:11px;color:#8A7F76;font-weight:700;letter-spacing:1px;text-transform:uppercase}.mini-card strong{font-size:22px;display:block;margin:4px 0 2px;font-family:Manrope}.mini-card small{color:#8A7F76}.progress{height:5px;background:#EDE5DA;border-radius:4px;margin-top:16px;overflow:hidden}.progress:before{content:'';display:block;background:#C9A96E;width:67%;height:100%}.trustline{display:flex;gap:25px;margin-top:28px;font-size:12px;color:#8A7F76}.trustline span:before{content:'•';color:var(--teal);padding-right:8px}.section{padding:96px 0}.section.border{border-top:1px solid var(--line)}.sectionhead{display:flex;justify-content:space-between;align-items:end;gap:30px;margin-bottom:35px}.sectionhead p{max-width:380px}.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:17px}.pillar{background:white;border:1px solid var(--line);border-radius:16px;padding:33px 28px 27px;display:flex;flex-direction:column;min-height:390px;transition:.2s}.pillar:hover{box-shadow:0 18px 42px #1C171414;transform:translateY(-3px)}.symbol{width:49px;height:49px;border-radius:13px;background:var(--mint);display:grid;place-items:center;font-size:25px;color:#A8864B}.number{font-size:11px;color:#A89B90;letter-spacing:2px;font-weight:700;margin-top:33px}.pillar h3{font-size:28px;margin:11px 0}.pillar p{font-size:14px;flex:1}.pillar a{font-size:13px;font-weight:700;color:var(--teal);border-top:1px solid var(--line);padding-top:20px}.data{background:#1C1714;color:white;position:relative;overflow:hidden}.data .eyebrow{color:#C9A96E}.data h2{max-width:780px}.data p{color:#BFB3A7;max-width:630px}.data .diagram{margin-top:45px;display:grid;grid-template-columns:1.4fr repeat(3,1fr);gap:12px;align-items:stretch}.node{border:1px solid #C9A96E33;border-radius:13px;background:#ffffff10;padding:26px}.node.primary{background:#F4EDE4;color:var(--ink);border:none}.node b{font-size:18px}.node small{display:block;margin-top:12px;line-height:1.6;color:#B5A89F}.node.primary small{color:#8A7F76}.node .tag{font-size:11px;text-transform:uppercase;letter-spacing:1.8px;color:#C9A96E;margin-bottom:15px}.node.primary .tag{color:#A8864B}.small-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}.visual-stack{border:1px solid var(--line);background:#F4EDE4;border-radius:18px;padding:24px;min-height:360px}.ui-panel{background:white;box-shadow:0 18px 45px #1C171413;border:1px solid #EAE2D8;border-radius:13px;padding:24px;margin-top:22px}.ui-panel .row{display:flex;justify-content:space-between;padding:13px 0;border-bottom:1px solid #F1EBE3;font-size:14px}.ui-panel .row:last-child{border:none}.tag2{padding:5px 9px;background:#F6EEDF;border-radius:6px;color:#A8864B;font-size:11px}.about-strip{border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:30px;padding-top:40px;padding-bottom:40px}.about-strip p{max-width:600px;margin:0}.final-cta{background:#F4EDE4;padding:75px 0;text-align:center}.final-cta p{max-width:550px;margin:auto}footer{background:#1C1714;color:#FAF7F2;padding:52px 0}footer .foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}footer p,footer a{color:#B5A89F;font-size:13px}footer .links{display:flex;gap:24px;flex-wrap:wrap}footer .brand{color:#fff}@media(max-width:900px){.navlinks{display:none}.mobilemenu{display:inline-block}.navlinks.open{display:flex;position:absolute;left:-28px;right:-28px;top:83px;background:#fff;flex-direction:column;align-items:stretch;gap:16px;padding:22px 28px;border-bottom:1px solid var(--line);z-index:20}.hero-top{grid-template-columns:1fr}.preview{min-height:340px}.pillars{grid-template-columns:1fr}.pillar{min-height:300px}.data .diagram{grid-template-columns:repeat(2,1fr)}.small-grid{grid-template-columns:1fr}.sectionhead{display:block}}@media(max-width:600px){.container{padding:0 20px}nav{height:70px}.navlinks.open{top:69px;left:-20px;right:-20px}.navright .btn{display:none}.hero{padding:62px 0}.section{padding:65px 0}h1{font-size:49px}.hero p{font-size:16px}.preview{min-height:305px}.data .diagram{grid-template-columns:1fr}.about-strip{display:block}.about-strip .btn{margin-top:20px}.btn{font-size:13px}.trustline{flex-direction:column;gap:5px}}
 
-  .wrap{max-width:1080px;margin:0 auto;padding:0 32px;}
-
-  /* ── NAV ─────────────────────────────────────────── */
-  .site-nav{position:absolute;top:0;left:0;right:0;z-index:20;padding:30px 0;}
-  .nav-inner{max-width:1080px;margin:0 auto;padding:0 32px;display:flex;align-items:center;justify-content:space-between;}
-  .brand{font-family:'Cormorant Garamond',serif;font-size:1.55rem;font-weight:400;letter-spacing:.01em;color:var(--deep);text-decoration:none;}
-  .brand span{color:var(--gold);}
-  .nav-right{display:flex;align-items:center;gap:30px;}
-  .nav-links{display:flex;align-items:center;gap:30px;}
-  .nav-links a{text-decoration:none;font-size:.82rem;letter-spacing:.04em;color:var(--deep-soft);transition:color .25s;}
-  .nav-links a:hover{color:var(--deep);}
-  .nav-login{font-size:.8rem;letter-spacing:.03em;color:var(--deep);border:1px solid var(--gold);border-radius:999px;padding:6px 14px;text-decoration:none;white-space:nowrap;transition:background .2s,color .2s;}
-  .nav-login:hover{background:var(--deep);color:var(--cream);border-color:var(--deep);}
-  .lang-toggle{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:5px 12px;}
-  .lang-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.72rem;letter-spacing:.06em;color:#6B5F55;padding:0;transition:color .2s;}
-  .lang-btn.active{color:var(--deep);}
-  .lang-btn:hover:not(.active){color:var(--gold);}
-  .lang-sep{width:1px;height:11px;background:var(--line);}
-  .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:4px;color:var(--deep);}
-  .nav-toggle svg{display:block;}
-  .nav-mobile{display:none;}
-  @media(max-width:760px){
-    .nav-links{display:none;}
-    .nav-login{display:none;}
-    .nav-toggle{display:block;}
-    .nav-mobile.open{display:flex;flex-direction:column;gap:12px;position:absolute;top:78px;left:0;right:0;background:var(--cream);border-bottom:1px solid var(--line);padding:24px 32px 30px;z-index:30;max-height:calc(100vh - 78px);overflow-y:auto;}
-    .nav-mobile a{text-decoration:none;font-size:1rem;color:var(--deep);display:flex;align-items:center;}
-    .nav-mobile a.nm-sub{font-size:.98rem;padding-left:2px;}
-    .nav-mobile .nm-group{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:12px;}
-    .nav-mobile .nm-group:first-child{margin-top:0;}
-    .nav-mobile .nm-badge{font-size:.58rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 5px;margin-left:8px;}
-    body.zh .nav-mobile .nm-group,body.zh .nav-mobile .nm-badge{letter-spacing:.04em;}
-    .nav-mobile .lang-toggle{width:fit-content;margin-top:14px;}
-  }
-
-  /* ── DIRECTORY DROPDOWN ──────────────────────────── */
-  .nav-dir{position:relative;}
-  .nav-dir-btn{background:none;border:none;cursor:pointer;font-family:inherit;font-size:.82rem;letter-spacing:.04em;color:var(--deep-soft);transition:color .25s;display:flex;align-items:center;gap:5px;padding:0;}
-  .nav-dir-btn:hover{color:var(--deep);}
-  .nav-dir-btn svg{transition:transform .2s;}
-  .nav-dir.open .nav-dir-btn svg{transform:rotate(180deg);}
-  .nav-dir-menu{display:none;position:absolute;top:calc(100% + 14px);left:50%;transform:translateX(-50%);background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:8px;min-width:200px;box-shadow:0 8px 32px rgba(28,23,20,.12);z-index:50;}
-  .nav-dir.open .nav-dir-menu{display:block;}
-  .nav-dir-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:5px;text-decoration:none;font-size:.85rem;color:var(--deep);transition:background .15s;}
-  .nav-dir-item:hover{background:var(--warm);}
-  .nav-dir-item.soon{color:#aaa;cursor:default;pointer-events:none;}
-  .nav-dir-badge{font-size:.62rem;letter-spacing:.06em;text-transform:uppercase;background:var(--warm);color:var(--muted);border:1px solid var(--border);border-radius:3px;padding:1px 5px;white-space:nowrap;}
-  .nav-dir-badge.live{background:rgba(61,122,85,.1);color:#3D7A55;border-color:rgba(61,122,85,.2);}
-
-  /* ── HERO (the silent first screen) ──────────────── */
-  .hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 32px 80px;}
-  .hero-mark{font-family:'Cormorant Garamond',serif;font-size:clamp(3.4rem,9vw,6rem);font-weight:400;letter-spacing:.005em;line-height:1;color:var(--deep);opacity:0;transform:translateY(14px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) .15s forwards;}
-  .hero-mark span{color:var(--gold);}
-  .hero-line{margin-top:26px;font-size:clamp(1.15rem,2.8vw,1.5rem);letter-spacing:.02em;color:var(--deep);font-weight:400;line-height:1.35;max-width:18em;opacity:0;transform:translateY(14px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) .4s forwards;}
-  .hero-sub{margin-top:14px;font-size:clamp(.9rem,2vw,1.02rem);letter-spacing:.03em;color:var(--muted);font-weight:300;opacity:0;transform:translateY(14px);animation:rise 1.1s cubic-bezier(.2,.7,.2,1) .55s forwards;}
-  .pills{margin-top:60px;display:flex;gap:20px;flex-wrap:wrap;justify-content:center;align-items:stretch;opacity:0;transform:translateY(16px);animation:rise 1.2s cubic-bezier(.2,.7,.2,1) .7s forwards;}
-  .pill{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;text-decoration:none;width:240px;height:100%;min-height:140px;padding:28px;border:1px solid var(--line);border-radius:999px;background:transparent;transition:border-color .4s,transform .4s,background .4s;}
-  .pill:hover{border-color:var(--gold);transform:translateY(-3px);background:rgba(201,169,110,.05);}
-  .pill-name{font-family:'Cormorant Garamond',serif;font-size:1.65rem;font-weight:500;color:var(--deep);letter-spacing:.01em;line-height:1.2;display:flex;align-items:flex-end;justify-content:center;height:2.4rem;}
-  .pill-sub{margin-top:6px;font-size:.74rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:400;line-height:1.4;min-height:2.8em;display:flex;align-items:flex-start;justify-content:center;text-align:center;}
-  .pill.is-visualize:hover{border-color:var(--rose);background:rgba(200,114,90,.05);}
-  .pill.is-directory:hover{border-color:var(--gold);background:rgba(201,169,110,.05);}
-
-  /* ── DIRECTORY PILL PICKER ───────────────────────── */
-  .pill-dir-wrap{position:relative;display:flex;align-items:stretch;width:240px;}
-  .pill-dir-wrap .pill{cursor:pointer;font-family:inherit;font-size:inherit;line-height:normal;width:100%;margin:0;-webkit-appearance:none;appearance:none;}
-  .pill-dir-menu{display:none;position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);background:var(--cream);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:240px;box-shadow:0 12px 40px rgba(28,23,20,.16);z-index:60;}
-  .pill-dir-wrap.open .pill-dir-menu{display:block;}
-  .pill-dir-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-radius:7px;text-decoration:none;font-size:.95rem;color:var(--deep);transition:background .15s;}
-  .pill-dir-item:hover{background:var(--warm);}
-  .pill-dir-item.soon{color:#aaa;cursor:default;pointer-events:none;}
-
-  @keyframes rise{to{opacity:1;transform:translateY(0);}}
-
-  /* ── PRODUCT CARDS ───────────────────────────────── */
-  .products{padding:40px 0 110px;}
-  .product-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
-  @media(max-width:760px){.product-grid{grid-template-columns:1fr;}}
-  .card{border:1px solid var(--border);border-radius:4px;padding:48px 44px;background:#fff;display:flex;flex-direction:column;transition:border-color .4s;}
-  .card:hover{border-color:var(--gold);}
-  .card.is-visualize:hover{border-color:var(--rose);}
-  .card-eyebrow{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:18px;}
-  .card.is-visualize .card-eyebrow{color:var(--rose);}
-  .card-name{font-family:'Cormorant Garamond',serif;font-size:2.2rem;font-weight:500;line-height:1.05;margin-bottom:16px;}
-  .card-desc{font-size:.98rem;color:var(--muted);font-weight:300;line-height:1.7;margin-bottom:34px;max-width:34ch;}
-  .card-note{font-size:.74rem;letter-spacing:.04em;line-height:1.5;color:var(--rose);font-weight:400;margin-top:-20px;margin-bottom:34px;max-width:34ch;}
-  .card-cta{margin-top:auto;align-self:flex-start;text-decoration:none;font-size:.82rem;letter-spacing:.05em;color:var(--deep);border-bottom:1px solid var(--gold);padding-bottom:3px;transition:color .25s,border-color .25s;}
-  .card-cta:hover{color:var(--gold);}
-  .card-cta-row{margin-top:auto;display:flex;flex-wrap:wrap;gap:14px 24px;align-items:baseline;}
-  .card-cta-row .card-cta{margin-top:0;}
-  .card-cta-soft{border-bottom-color:var(--border);color:#6B5F55;}
-  .card-cta-soft:hover{color:var(--rose);border-bottom-color:var(--rose);}
-  .card.is-visualize .card-cta{border-color:var(--rose);}
-  .card.is-visualize .card-cta:hover{color:var(--rose);}
-
-  /* ── TRUST STRIP ─────────────────────────────────── */
-  .pro-strip{border-top:1px solid var(--border);}
-  .pro-strip .wrap{padding-top:26px;padding-bottom:26px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;}
-  .pro-strip .pro-tag{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;color:var(--rose);}
-  .pro-strip .pro-text{font-size:.9rem;font-weight:300;color:var(--muted);}
-  .pro-strip .pro-link{margin-left:auto;text-decoration:none;font-size:.82rem;letter-spacing:.05em;color:var(--deep);border-bottom:1px solid var(--gold);padding-bottom:3px;transition:color .25s;}
-  .pro-strip .pro-link:hover{color:var(--rose);}
-  @media(max-width:640px){.pro-strip .pro-link{margin-left:0;}}
-  .trust{border-top:1px solid var(--line);padding:64px 0;}
-  .trust-inner{max-width:640px;margin:0 auto;text-align:center;}
-  .trust-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;font-weight:500;margin-bottom:20px;}
-  .trust-text{font-size:.9rem;color:var(--muted);font-weight:300;line-height:1.8;}
-
-  /* ── FOOTER ──────────────────────────────────────── */
-  footer{background:var(--deep);color:rgba(250,247,242,.7);padding:64px 0 40px;}
-  .foot-top{display:flex;justify-content:space-between;gap:48px;flex-wrap:wrap;margin-bottom:48px;}
-  .foot-brand{max-width:280px;}
-  .foot-brand .brand{color:var(--cream);}
-  .foot-brand .brand span{color:var(--gold);}
-  .foot-tagline{margin-top:14px;font-size:.85rem;color:rgba(250,247,242,.5);font-weight:300;line-height:1.7;}
-  .foot-cols{display:flex;gap:56px;flex-wrap:wrap;}
-  .foot-col h4{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(250,247,242,.4);margin-bottom:16px;font-weight:500;}
-  .foot-col a{display:block;text-decoration:none;font-size:.88rem;color:rgba(250,247,242,.7);margin-bottom:10px;transition:color .2s;}
-  .foot-col a:hover{color:var(--gold);}
-  .foot-legal{border-top:1px solid var(--line-light);padding-top:28px;font-size:.74rem;color:rgba(250,247,242,.4);font-weight:300;line-height:1.7;}
-  .foot-legal span{display:block;margin-bottom:10px;}
-  .foot-copy{margin-top:18px;font-size:.74rem;color:rgba(250,247,242,.35);}
-  a:focus-visible,.lang-btn:focus-visible,.nav-toggle:focus-visible,.pill:focus-visible,.card-cta:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px;}
-
-  @media(prefers-reduced-motion:reduce){
-    .hero-mark,.hero-line,.pills{animation:none;opacity:1;transform:none;}
-  }
-</style>
-</head>
-<body>
-
-<nav class="site-nav" aria-label="Main navigation">
-  <div class="nav-inner">
-    <a href="/" class="brand">Skin<span>Day</span></a>
-    <div class="nav-right">
-      <div class="nav-links">
-        <div class="nav-dir" id="navDir">
-          <button class="nav-dir-btn" onclick="toggleDirMenu()" aria-expanded="false" aria-haspopup="true">
-            <span data-en="Directory" data-zh="診所搜尋">Directory</span>
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
-          </button>
-          <div class="nav-dir-menu" role="menu">
-            <a href="/canada" class="nav-dir-item" role="menuitem"><span>🍁 Canada</span><span class="nav-dir-badge live">Live</span></a>
-            <a href="/us" class="nav-dir-item" role="menuitem"><span>🇺🇸 USA</span><span class="nav-dir-badge live">Live</span></a>
-            <a href="/taiwan" class="nav-dir-item" role="menuitem"><span>🇹🇼 Taiwan</span><span class="nav-dir-badge live">Live</span></a>
-            <a href="/hongkong" class="nav-dir-item" role="menuitem"><span>🇭🇰 Hong Kong</span><span class="nav-dir-badge live">Live</span></a>
-          </div>
-        </div>
-        <div class="nav-dir" id="navViz">
-          <button class="nav-dir-btn" onclick="toggleVizMenu()" aria-expanded="false" aria-haspopup="true">
-            <span data-en="Visualize" data-zh="Visualize">Visualize</span>
-            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 1l4 4 4-4"/></svg>
-          </button>
-          <div class="nav-dir-menu" role="menu">
-            <a href="/visualize" class="nav-dir-item" role="menuitem"><span data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</span></a>
-            <a href="/visualize/cases" class="nav-dir-item" role="menuitem"><span data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</span></a>
-            <a href="/guide" class="nav-dir-item" role="menuitem"><span data-en="Guide" data-zh="使用指南">Guide</span></a>
-            <a href="/studio" class="nav-dir-item" role="menuitem"><span data-en="Studio" data-zh="Studio">Studio</span><span class="nav-dir-badge" data-en="Free" data-zh="免費">Free</span></a>
-          </div>
-        </div>
-        <a href="/visualize-pro" data-en="For Clinics" data-zh="診所專用">For Clinics</a>
-        <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
-      </div>
-      <a href="/clinic-portal" class="nav-login" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
-      <div class="lang-toggle" role="group" aria-label="Language">
-        <button class="lang-btn active" onclick="setLang('en')">EN</button>
-        <div class="lang-sep"></div>
-        <button class="lang-btn" onclick="setLang('zh')">繁中</button>
-      </div>
-      <button class="nav-toggle" aria-label="Open menu" aria-expanded="false" onclick="toggleNav(this)">
-        <svg width="22" height="16" viewBox="0 0 22 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
-          <line x1="0" y1="2" x2="22" y2="2"/>
-          <line x1="0" y1="8" x2="22" y2="8"/>
-          <line x1="0" y1="14" x2="22" y2="14"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-  <div class="nav-mobile" id="navMobile">
-    <span class="nm-group" data-en="Directory" data-zh="診所搜尋">Directory</span>
-    <a class="nm-sub" href="/canada" data-en="🍁 Canada" data-zh="🍁 加拿大">🍁 Canada</a>
-    <a class="nm-sub" href="/us" data-en="🇺🇸 USA" data-zh="🇺🇸 美國">🇺🇸 USA</a>
-    <a class="nm-sub" href="/taiwan" data-en="🇹🇼 Taiwan" data-zh="🇹🇼 台灣">🇹🇼 Taiwan</a>
-    <a class="nm-sub" href="/hongkong" data-en="🇭🇰 Hong Kong" data-zh="🇭🇰 香港">🇭🇰 Hong Kong</a>
-
-    <span class="nm-group" data-en="Visualize" data-zh="Visualize">Visualize</span>
-    <a class="nm-sub" href="/visualize" data-en="Visualize" data-zh="AI 諮詢預覽">Visualize</a>
-    <a class="nm-sub" href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
-    <a class="nm-sub" href="/guide" data-en="Guide" data-zh="使用指南">Guide</a>
-
-    <span class="nm-group" data-en="For clinics" data-zh="診所專用">For clinics</span>
-    <a class="nm-sub" href="/visualize-pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
-    <a class="nm-sub" href="/clinic-portal" data-en="Clinic login" data-zh="診所登入">Clinic login</a>
-
-    <span class="nm-group" data-en="More" data-zh="更多">More</span>
-    <a class="nm-sub" href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
-    <a class="nm-sub" href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
-
-    <div class="lang-toggle" role="group" aria-label="Language">
-      <button class="lang-btn active" onclick="setLang('en')">EN</button>
-      <div class="lang-sep"></div>
-      <button class="lang-btn" onclick="setLang('zh')">繁中</button>
-    </div>
-  </div>
-</nav>
-
-<!-- HERO: the silent first screen -->
-<header class="hero">
-  <h1 class="hero-mark serif">Skin<span>Day</span></h1>
-  <p class="hero-line" data-en="Helping aesthetic clinics build lasting patient relationships." data-zh="協助醫美診所贏得顧客長久的信任。">Helping aesthetic clinics build lasting patient relationships.</p>
-  <p class="hero-sub" data-en="Because every lasting relationship begins with the right expectations." data-zh="因為每一段長久的關係，都始於正確的期待。">Because every lasting relationship begins with the right expectations.</p>
-  <div class="pills">
-    <div class="pill-dir-wrap" id="pillDir">
-      <button type="button" class="pill is-directory" onclick="togglePillDir()" aria-expanded="false" aria-haspopup="true">
-        <span class="pill-name serif">Directory</span>
-        <span class="pill-sub" data-en="Be found by the right patients" data-zh="讓對的客戶找到您">Be found by the right patients</span>
-      </button>
-      <div class="pill-dir-menu" role="menu">
-        <a href="/canada" class="pill-dir-item" role="menuitem"><span>🍁 Canada</span><span class="nav-dir-badge live">Live</span></a>
-        <a href="/us" class="pill-dir-item" role="menuitem"><span>🇺🇸 USA</span><span class="nav-dir-badge live">Live</span></a>
-        <a href="/taiwan" class="pill-dir-item" role="menuitem"><span>🇹🇼 Taiwan</span><span class="nav-dir-badge live">Live</span></a>
-        <a href="/hongkong" class="pill-dir-item" role="menuitem"><span>🇭🇰 Hong Kong</span><span class="nav-dir-badge live">Live</span></a>
-      </div>
-    </div>
-    <a href="/visualize" class="pill is-visualize">
-      <span class="pill-name serif">Visualize</span>
-      <span class="pill-sub" data-en="Align expectations before treatment" data-zh="療程前，建立正確期待">Align expectations before treatment</span>
-    </a>
-    <a href="/studio" class="pill is-studio">
-      <span class="pill-name serif">Studio</span>
-      <span class="pill-sub" data-en="Build trust with real results" data-zh="以真實成果建立信任">Build trust with real results</span>
-    </a>
-  </div>
-</header>
-
-<!-- PRODUCT CARDS -->
-<section class="products">
-  <div class="wrap">
-    <div class="product-grid">
-      <article class="card is-visualize">
-        <div class="card-eyebrow">Visualize</div>
-        <h2 class="card-name serif" data-en="Preview treatment possibilities during consultation." data-zh="在諮詢中呈現療程可能帶來的變化。">Preview treatment possibilities during consultation.</h2>
-        <p class="card-desc" data-en="AI-generated previews built for clinician-led aesthetic conversations." data-zh="專為醫師主導的醫美諮詢而設計。">AI-generated previews designed for clinician-led aesthetic conversations.</p>
-        <p class="card-note" data-en="Built on clinical aesthetic expertise, not a generic AI filter." data-zh="建立於臨床美學專業，而非一般的 AI 濾鏡。">Built on clinical aesthetic expertise, not a generic AI filter.</p>
-        <div class="card-cta-row">
-          <a href="/visualize" class="card-cta" data-en="Explore Visualize" data-zh="了解 Visualize">Explore Visualize</a>
-          <a href="/guide" class="card-cta card-cta-soft" data-en="How to use it in a consult" data-zh="諮詢中如何使用">How to use it in a consult</a>
-        </div>
-      </article>
-      <article class="card is-studio">
-        <div class="card-eyebrow">Studio</div>
-        <h2 class="card-name serif" data-en="Create polished before-and-after images." data-zh="製作專業、精緻的前後對比圖。">Create polished before-and-after images.</h2>
-        <p class="card-desc" data-en="Aligned, branded, and ready in seconds. Private, browser-based, and free to use." data-zh="自動對齊、加入品牌標誌，數秒完成。完全在瀏覽器中運作，免費使用。">Aligned, branded, and ready in seconds. Private, browser-based, and free to use.</p>
-        <a href="/studio" class="card-cta" data-en="Open Studio" data-zh="開啟 Studio">Open Studio</a>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- VISUALIZE PRO -->
-<section class="pro-strip">
-  <div class="wrap">
-    <span class="pro-tag">Visualize Pro</span>
-    <span class="pro-text" data-en="In private pilot with a small number of clinics." data-zh="目前僅開放少數診所參與內測。">In private pilot with a small number of clinics.</span>
-    <a href="/visualize-pro" class="pro-link" data-en="Request an invitation" data-zh="申請邀請">Request an invitation</a>
-  </div>
-</section>
-
-<!-- TRUST STRIP -->
-<section class="trust">
-  <div class="wrap">
-    <div class="trust-inner">
-      <h2 class="trust-title serif" data-en="Designed for clinical use." data-zh="專為臨床使用而設計。">Designed for clinical use.</h2>
-      <p class="trust-text" data-en="Studio runs entirely in your browser. Visualize sends a photo to an AI provider for that single request only. Outputs are for consultation use and are not a prediction of actual results." data-zh="Studio 完全在您的瀏覽器中運作。Visualize 僅為當次生成將照片傳送給 AI 服務供應商。輸出內容僅供諮詢參考，並非實際治療結果的預測。">Studio runs entirely in your browser. Visualize sends a photo to an AI provider for that single request only. Outputs are for consultation use and are not a prediction of actual results.</p>
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <div class="foot-top">
-      <div class="foot-brand">
-        <a href="/" class="brand">Skin<span>Day</span></a>
-        <div class="foot-tagline" data-en="Helping aesthetic clinics build lasting patient relationships." data-zh="協助醫美診所贏得顧客長久的信任。">Helping aesthetic clinics build lasting patient relationships.</div>
-      </div>
-      <div class="foot-cols">
-        <div class="foot-col">
-          <h4 data-en="Tools" data-zh="工具">Tools</h4>
-          <a href="/studio" data-en="Studio" data-zh="Studio">Studio</a>
-          <a href="/visualize" data-en="Visualize" data-zh="Visualize">Visualize</a>
-          <a href="/visualize/cases" data-en="Simulation Library" data-zh="模擬案例庫">Simulation Library</a>
-          <a href="/visualize-pro" data-en="Visualize Pro" data-zh="Visualize Pro">Visualize Pro</a>
-          <a href="/websites" data-en="GEO/AEO Websites" data-zh="GEO/AEO 網站">GEO/AEO Websites</a>
-        </div>
-        <div class="foot-col">
-          <h4 data-en="Directory" data-zh="診所目錄">Directory</h4>
-          <a href="/canada" data-en="Canada" data-zh="加拿大">Canada</a>
-          <a href="/us" data-en="United States" data-zh="美國">United States</a>
-          <a href="/taiwan" data-en="Taiwan" data-zh="台灣">Taiwan</a>
-          <a href="/hongkong" data-en="Hong Kong" data-zh="香港">Hong Kong</a>
-          <a href="/directory" data-en="All clinics" data-zh="所有診所">All clinics</a>
-        </div>
-        <div class="foot-col">
-          <h4 data-en="Company" data-zh="公司">Company</h4>
-          <a href="/about" data-en="About" data-zh="關於我們">About</a>
-          <a href="/mi" data-en="Market Intelligence" data-zh="市場情報">Market Intelligence</a>
-          <a href="/contact" data-en="Contact" data-zh="聯絡我們">Contact</a>
-        </div>
-        <div class="foot-col">
-          <h4 data-en="Legal" data-zh="法律">Legal</h4>
-          <a href="/privacy" data-en="Privacy" data-zh="隱私政策">Privacy</a>
-          <a href="/terms" data-en="Terms" data-zh="服務條款">Terms</a>
-          <a href="/refund" data-en="Refunds" data-zh="退款政策">Refunds</a>
-        </div>
-      </div>
-    </div>
-    <div class="foot-legal">
-      <span data-en="Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model." data-zh="Studio 會在您的瀏覽器中本地處理照片，SkinDay 不會上傳、儲存或查看這些影像。Visualize 只會為了本次生成，將照片傳送給 AI 服務供應商，不會用於模型訓練。">Studio processes photos locally in your browser. SkinDay does not upload, store, or view those images. Visualize sends a photo to an AI provider for that single request only and it is not used to train any model.</span>
-      <span data-en="Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice." data-zh="Visualize 的輸出內容是 AI 生成的諮詢預覽，並非實際治療結果預測。使用或分享任何影像前，診所應先取得顧客的適當同意。SkinDay 並非醫療裝置，亦不提供醫療建議。">Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. Obtaining appropriate patient consent before using or sharing any image is the clinic's responsibility. SkinDay is not a medical device and does not provide medical advice.</span>
-      <div class="foot-copy"><span>&#169; 2026 SkinDay. <span data-en="All rights reserved." data-zh="版權所有。">All rights reserved.</span></span></div>
-    </div>
-  </div>
-</footer>
-
+/* SkinDay brand type */
+body{font-family:'DM Sans',system-ui,sans-serif}
+h1,h2,h3,.statement,.founderquote,.mini-card strong,.float strong,.boardfoot b,.stat b,.node b{font-family:'Cormorant Garamond',Georgia,serif!important;font-weight:500!important;letter-spacing:-.008em!important}
+h1{line-height:1.05}h2{line-height:1.1}
+.brand,.logo{font-family:'Cormorant Garamond',Georgia,serif!important;font-weight:500!important;letter-spacing:.005em!important;font-size:28px}
+.brand span,.logo span{color:#C9A96E!important}
+footer .brand,.footer .logo{color:#FAF7F2}
+h1 em,.statement span{color:#A8864B!important}
+html[lang="zh-TW"] body{font-family:'Noto Sans TC','DM Sans',sans-serif}
+html[lang="zh-TW"] h1,html[lang="zh-TW"] h2,html[lang="zh-TW"] h3,html[lang="zh-TW"] .statement,html[lang="zh-TW"] .founderquote,html[lang="zh-TW"] .mini-card strong{font-family:'Noto Serif TC',Georgia,serif!important;letter-spacing:0!important}
+html[lang="zh-TW"] .eyebrow,html[lang="zh-TW"] .number,html[lang="zh-TW"] .pillarnum{letter-spacing:.06em}
+</style></head><body><div class="container"><nav><a class="brand" href="https://skinday.com">Skin<span>Day</span></a><div class="navlinks" id="navlinks"><a href="#discovery">Discovery</a><a href="#clinic-tools">Clinic Tools</a><a href="#intelligence">Intelligence</a><a href="https://skinday.com/about">About</a><a href="/clinic-portal">Clinic login</a></div><div class="navright"><button class="lang" type="button" onclick="toggleLang()">繁中</button><a class="btn secondary" href="https://skinday.com/contact">Get in touch ↗</a><button class="mobilemenu" id="mobilemenu" type="button" aria-label="Menu">☰</button></div></nav></div><main><section class="hero"><div class="container hero-top"><div><div class="eyebrow">An independent platform for medical aesthetics</div><h1>See the industry<br><em>more clearly.</em></h1><p>Better decisions begin with better information. SkinDay connects clinic discovery, practical tools, and market intelligence through one growing foundation of medical aesthetics data.</p><div class="actions"><a class="btn" href="#pillars">Explore SkinDay <span>↗</span></a><a class="btn secondary" href="https://skinday.com/about">Our story →</a></div><div class="trustline"><span>Built with clinical insight</span><span>Designed for a changing industry</span></div></div><div class="preview"><div class="map-grid"></div><div class="continent a"></div><div class="continent b"></div><i class="dot" style="top:34%;left:26%"></i><i class="dot" style="top:43%;left:35%"></i><i class="dot" style="top:58%;left:27%"></i><i class="dot" style="top:41%;right:24%"></i><i class="dot" style="top:60%;right:28%"></i><i class="dot" style="top:65%;right:18%"></i><div class="map-overlay"><div class="chip">CONNECTED CLINIC LANDSCAPE</div><div class="chip">SKINDAY / 2026</div></div><div class="mini-card"><div class="header">A connected view of the market</div><strong>Connecting the world of medical aesthetics.</strong><small>Across Canada, the United States, Taiwan and Hong Kong</small><div class="progress"></div></div></div></div></section><section class="section border" id="pillars"><div class="container"><div class="sectionhead"><div><div class="eyebrow">One platform · Three ways to use it</div><h2>Different needs.<br>One connected picture.</h2></div><p>Whether you're choosing a clinic, running one, or working across the industry, the right information changes what you can do next.</p></div><div class="pillars"><article class="pillar" id="discovery"><div class="symbol">⌕</div><div class="number">01 / FOR PATIENTS</div><h3>Discovery</h3><p>Find and compare aesthetic clinics based on location, treatments, products and devices. Explore your options before making a decision.</p><a href="https://skinday.com/directory">Explore clinic directory ↗</a></article><article class="pillar" id="clinic-tools"><div class="symbol">▤</div><div class="number">02 / FOR CLINICS</div><h3>Clinic Tools</h3><p>Communicate treatment possibilities, present results clearly and strengthen how patients discover your practice online.</p><a href="https://skinday.com/visualize-pro">Explore clinic tools ↗</a></article><article class="pillar" id="intelligence"><div class="symbol">↗</div><div class="number">03 / FOR INDUSTRY</div><h3>Intelligence</h3><p>Understand clinic landscapes, product and device adoption, and market activity with structured intelligence built for commercial teams.</p><a href="https://skinday.com/mi">Explore Market Intelligence ↗</a></article></div></div></section><section class="section data"><div class="container"><div class="eyebrow">The common foundation</div><h2>Not three separate products.<br>One evolving understanding of the market.</h2><p>Behind SkinDay is a structured view of clinics, what they offer, the products and devices they use, and the signals they share publicly. Different products turn that foundation into different decisions.</p><div class="diagram"><div class="node primary"><div class="tag">Shared foundation</div><b>SkinDay Data Layer</b><small>Clinic profiles · Treatments · Products &amp; devices · Public market activity</small></div><div class="node"><div class="tag">Discover</div><b>Choose with context</b><small>Patients and clinic discovery</small></div><div class="node"><div class="tag">Communicate</div><b>Build patient trust</b><small>Consultations and visibility</small></div><div class="node"><div class="tag">Understand</div><b>Read the market</b><small>Commercial intelligence</small></div></div></div></section><section class="section"><div class="container small-grid"><div><div class="eyebrow">Intelligence in practice</div><h2>Move beyond a list of clinics.</h2><p>Knowing where clinics are is only the starting point. The more useful questions are what they offer, how markets differ, and which changes are emerging over time.</p><p>SkinDay's Market Intelligence brings structured clinic information together with publicly observable market activity. Currently focused on Canada.</p><div class="actions"><a class="btn" href="https://skinday.com/mi">See Market Intelligence ↗</a></div></div><div class="visual-stack"><div class="ui-panel"><strong>Market signals</strong><div class="row"><span>Clinic product and device profiles</span><span class="tag2">Mapped</span></div><div class="row"><span>Device presence by location</span><span class="tag2">Tracked</span></div><div class="row"><span>Public promotional activity</span><span class="tag2">Observed</span></div><div class="row"><span>Changes over time</span><span class="tag2">Compared</span></div></div></div></div></section><div class="container"><div class="about-strip"><div><div class="eyebrow">Why SkinDay exists</div><p>Created from firsthand experience in aesthetic medicine, SkinDay aims to make a fast-growing but fragmented industry easier to navigate, for everyone participating in it.</p></div><a class="btn secondary" href="https://skinday.com/about">Read our story →</a></div></div><section class="final-cta"><div class="container"><div class="eyebrow">Discover what comes next</div><h2>A more connected industry<br>starts with better information.</h2><p>Explore SkinDay's directory, clinic tools, and market intelligence, all built around a clearer view of medical aesthetics.</p><div class="actions" style="justify-content:center"><a href="https://skinday.com/directory" class="btn">Find clinics →</a><a href="https://skinday.com/contact" class="btn light">Talk to SkinDay ↗</a></div></div></section></main><footer><div class="container foot"><div><div class="brand">Skin<span>Day</span></div><p>Medical aesthetics, more connected.</p><p class="legal">Studio processes photos locally in your browser. Visualize sends a photo to an AI provider for that single request only. Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. SkinDay is not a medical device and does not provide medical advice.</p><p class="legal">© 2026 SkinDay. <span>All rights reserved.</span></p></div><div class="links"><a href="/directory">Discovery</a><a href="/visualize-pro">Clinic Tools</a><a href="/mi">Intelligence</a><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy">Privacy</a><a href="/terms">Terms</a></div></div></footer>
+<script>var PAGE_TITLE={en:"SkinDay · See the industry more clearly",zh:"SkinDay · 把產業看得更清楚"};</script>
 <script>
-  // Language choice persists across sessions (localStorage). On a first-ever
-  // visit with no saved choice, auto-detect from the browser language so a
-  // Traditional Chinese user lands in 繁中 without having to toggle.
-  function detectLang() {
-    try {
-      var saved = localStorage.getItem('sd-lang');
-      if (saved === 'zh' || saved === 'en') return saved;
-    } catch (e) {}
-    try {
-      var navLang = (navigator.language || (navigator.languages && navigator.languages[0]) || '').toLowerCase();
-      if (navLang.indexOf('zh') === 0) return 'zh';
-    } catch (e) {}
+(function(){
+  var ZH = {"Discovery": "探索", "Clinic Tools": "診所工具", "Intelligence": "市場情報", "About": "關於我們", "Our story": "我們的故事", "Clinic login": "診所登入", "Get in touch": "聯絡我們", "Get in touch ↗": "聯絡我們 ↗", "Contact": "聯絡我們", "Privacy": "隱私政策", "Terms": "服務條款", "Medical aesthetics, more connected.": "讓醫美產業更緊密地連結。", "All rights reserved.": "版權所有。", "An independent platform for medical aesthetics": "獨立的醫美產業平台", "See the industry": "把產業", "more clearly.": "看得更清楚。", "Better decisions begin with better information. SkinDay connects clinic discovery, practical tools, and market intelligence through one growing foundation of medical aesthetics data.": "更好的決定，始於更好的資訊。SkinDay 以一個持續成長的醫美數據基礎，連結診所探索、實用工具與市場情報。", "Explore SkinDay": "探索 SkinDay", "Our story →": "我們的故事 →", "Built with clinical insight": "以臨床洞察打造", "Designed for a changing industry": "為不斷變化的產業而設計", "CONNECTED CLINIC LANDSCAPE": "連結的診所版圖", "A connected view of the market": "連結的市場全貌", "Connecting the world of medical aesthetics.": "連結整個醫美產業。", "Across Canada, the United States, Taiwan and Hong Kong": "涵蓋加拿大、美國、台灣與香港", "One platform · Three ways to use it": "同一個平台 · 三種使用方式", "Different needs.": "不同的需求，", "One connected picture.": "同一份連結的全貌。", "Whether you're choosing a clinic, running one, or working across the industry, the right information changes what you can do next.": "無論您是在選擇診所、經營診所，或在產業中工作，對的資訊都會改變您下一步能做的事。", "01 / FOR PATIENTS": "01 / 為顧客", "02 / FOR CLINICS": "02 / 為診所", "03 / FOR INDUSTRY": "03 / 為產業", "Find and compare aesthetic clinics based on location, treatments, products and devices. Explore your options before making a decision.": "依地點、療程、產品與儀器尋找並比較醫美診所，在做決定之前，先了解您的選擇。", "Explore clinic directory ↗": "瀏覽診所目錄 ↗", "Communicate treatment possibilities, present results clearly and strengthen how patients discover your practice online.": "清楚傳達療程可能性、呈現治療成果，並讓顧客更容易在網路上找到您的診所。", "Explore clinic tools ↗": "了解診所工具 ↗", "Understand clinic landscapes, product and device adoption, and market activity with structured intelligence built for commercial teams.": "以專為商業團隊打造的結構化情報，了解診所版圖、產品與儀器的採用，以及市場動態。", "Explore Market Intelligence ↗": "了解 Market Intelligence ↗", "The common foundation": "共同的基礎", "Not three separate products.": "不是三個分開的產品，", "One evolving understanding of the market.": "而是一份持續演進的市場理解。", "Behind SkinDay is a structured view of clinics, what they offer, the products and devices they use, and the signals they share publicly. Different products turn that foundation into different decisions.": "SkinDay 背後，是一份結構化的市場全貌：診所、他們提供的服務、使用的產品與儀器，以及公開分享的訊號。不同的產品，把這個基礎轉化為不同的決策。", "Shared foundation": "共同基礎", "SkinDay Data Layer": "SkinDay 數據層", "Clinic profiles · Treatments · Products & devices · Public market activity": "診所資料 · 療程 · 產品與儀器 · 公開市場動態", "Discover": "探索", "Choose with context": "有依據地選擇", "Patients and clinic discovery": "顧客與診所探索", "Communicate": "溝通", "Build patient trust": "建立顧客信任", "Consultations and visibility": "諮詢與曝光", "Understand": "理解", "Read the market": "讀懂市場", "Commercial intelligence": "商業情報", "Intelligence in practice": "市場情報的實際應用", "Move beyond a list of clinics.": "不只是一份診所名單。", "Knowing where clinics are is only the starting point. The more useful questions are what they offer, how markets differ, and which changes are emerging over time.": "知道診所在哪裡，只是起點。更有用的問題是：他們提供什麼、各市場有何不同，以及隨著時間出現了哪些變化。", "SkinDay's Market Intelligence brings structured clinic information together with publicly observable market activity. Currently focused on Canada.": "SkinDay 的 Market Intelligence 將結構化的診所資訊與公開可見的市場動態結合在一起。目前專注於加拿大。", "See Market Intelligence ↗": "查看 Market Intelligence ↗", "Market signals": "市場訊號", "Clinic product and device profiles": "診所產品與儀器概況", "Mapped": "已建立", "Device presence by location": "各地區的儀器分布", "Tracked": "持續追蹤", "Public promotional activity": "公開的推廣活動", "Observed": "持續觀察", "Changes over time": "隨時間的變化", "Compared": "比較分析", "Why SkinDay exists": "SkinDay 為什麼存在", "Created from firsthand experience in aesthetic medicine, SkinDay aims to make a fast-growing but fragmented industry easier to navigate, for everyone participating in it.": "SkinDay 源自醫美臨床的第一手經驗，希望讓這個快速成長卻資訊分散的產業，對每一位參與者都更容易掌握。", "Read our story →": "閱讀我們的故事 →", "Discover what comes next": "探索下一步", "A more connected industry": "更緊密連結的產業，", "starts with better information.": "從更好的資訊開始。", "Explore SkinDay's directory, clinic tools, and market intelligence, all built around a clearer view of medical aesthetics.": "探索 SkinDay 的診所目錄、診所工具與市場情報，全都圍繞著更清楚的醫美產業全貌而打造。", "Find clinics →": "尋找診所 →", "Talk to SkinDay ↗": "與 SkinDay 聯絡 ↗", "Independent · Built from clinical experience · Growing across markets": "獨立 · 源自臨床經驗 · 持續擴展至更多市場", "SKINDAY / MARKET VIEW": "SKINDAY / 市場概覽", "Connected dataset": "連結的資料集", "Clinic coverage": "診所涵蓋", "mapped clinics": "已收錄診所", "Clinic–device links": "診所與儀器連結", "relationships": "對應關係", "THE CHALLENGE": "挑戰", "01 / PATIENTS": "01 / 顧客", "02 / CLINICS": "02 / 診所", "03 / INDUSTRY": "03 / 產業", "Choosing with confidence": "更有把握地選擇", "Finding relevant clinics and understanding which treatments, products and devices they offer.": "找到合適的診所，並了解他們提供哪些療程、產品與儀器。", "Standing out in a crowded market": "在競爭激烈的市場中脫穎而出", "Helping practices communicate their value and become easier for patients to discover.": "協助診所傳達自身價值，讓顧客更容易找到他們。", "Seeing the market as it changes": "看見市場的變化", "Understanding clinic adoption, market activity, and territory-level opportunities.": "了解診所的技術採用、市場動態，以及各區域的機會。", "Three perspectives.": "三個角度，", "One underlying information problem.": "同一個資訊問題。", "THE SHARED FOUNDATION": "共同的基礎", "SkinDay organizes this information into a growing, structured view of the medical aesthetics market. The goal is not just a larger directory. It is to understand how clinics, treatments, products, devices and market activity relate to one another, and how those relationships change over time.": "SkinDay 把這些資訊整理成一份持續成長、結構化的醫美市場全貌。目標不只是更大的目錄，而是理解診所、療程、產品、儀器與市場動態之間的關係，以及這些關係如何隨時間變化。", "Clinics": "診所", "Locations, profiles and geographic coverage": "位置、資料與地理涵蓋", "Products & Devices": "產品與儀器", "Injectables, energy-based devices and other products each clinic uses": "每家診所使用的注射產品、能量儀器與其他產品", "Treatments": "療程", "Services offered across different markets": "各市場提供的服務", "Pricing": "價格", "Available published treatment prices": "可取得的公開療程價格", "Signals": "訊號", "Public activity and emerging industry trends": "公開動態與新興產業趨勢", "A GROWING FOOTPRINT": "持續擴大的版圖", "SkinDay has mapped clinics across multiple markets and is expanding the depth and frequency of its data collection. Coverage is not identical in every country, and individual products have their own availability.": "SkinDay 已在多個市場建立診所資料，並持續加深資料的深度與更新頻率。各國的涵蓋範圍不盡相同，各項產品也有各自的開放地區。", "Canada": "加拿大", "United States": "美國", "Taiwan": "台灣", "Hong Kong": "香港", "Clinics mapped": "已收錄的診所", "Clinic–device relationships": "診所與儀器的對應關係", "Named geographic markets": "已涵蓋的市場", "Connected platform pillars": "相互連結的平台支柱", "ONE PLATFORM · THREE PILLARS": "同一個平台 · 三大支柱", "The same underlying market understanding supports different experiences for people throughout the industry.": "同一份市場理解，為產業中不同的人，提供不同的使用體驗。", "Find a clinic or treatment": "搜尋診所或療程", "⌕ Find a clinic or treatment": "⌕ 搜尋診所或療程", "Clinic discovery": "診所探索", "Services · Location": "服務 · 地點", "Explore options": "了解選擇", "Devices · Details": "儀器 · 細節", "Make finding and evaluating medical aesthetics providers more transparent, useful and informed.": "讓尋找與評估醫美診所，變得更透明、更有用、更有依據。", "Explore the directory ↗": "瀏覽診所目錄 ↗", "Help clinics communicate what makes them different through consultation visuals, content tools and better digital visibility.": "透過諮詢視覺工具、內容工具與更好的網路曝光，協助診所傳達自己的不同之處。", "Turn scattered clinic activity into structured visibility for manufacturers, distributors and industry teams.": "把分散的診所動態，轉化為廠商、經銷商與產業團隊看得見的結構化資訊。", "OUR ORIGIN": "我們的起源", "“Better information shouldn't be a privilege reserved for the biggest players.”": "「更好的資訊，不應該只屬於最大的業者。」", "SkinDay was founded by a cosmetic physician with more than 16 years of experience in aesthetic medicine across Greater China and North America: treating patients, working with clinics, and training practitioners on energy-based technologies.": "SkinDay 由一位醫美醫師創立。他在大中華地區與北美累積超過 16 年的醫美經驗：治療顧客、與診所合作，並培訓醫師使用能量儀器。", "From that vantage point, one pattern became impossible to ignore: patients needed clearer choices, clinics needed better ways to demonstrate their value, and the companies serving them needed more visibility into a fragmented market.": "從這個角度看，有一個現象再明顯不過：顧客需要更清楚的選擇，診所需要更好的方式展現價值，而服務診所的企業，則需要看清一個分散的市場。", "SkinDay began with the belief that the industry works better when useful information is easier to find, compare and act on.": "SkinDay 始於一個信念：當有用的資訊更容易找到、比較與運用時，整個產業會運作得更好。", "The platform has evolved, but that idea remains the same.": "平台持續演進，但這個信念始終不變。", "Clinically informed · Independently built · Data driven": "臨床為本 · 獨立打造 · 數據驅動", "WHAT COMES NEXT": "下一步", "Explore the platform from the perspective that matters to you.": "從對您最重要的角度，探索這個平台。", "Find a clinic ↗": "尋找診所 ↗", "For clinics ↗": "診所專區 ↗", "For industry ↗": "產業專區 ↗", "Studio processes photos locally in your browser. Visualize sends a photo to an AI provider for that single request only. Visualize outputs are AI-generated consultation previews and are not a prediction of actual results. SkinDay is not a medical device and does not provide medical advice.": "Studio 在您的瀏覽器中本地處理照片。Visualize 只會為了本次生成將照片傳送給 AI 服務供應商。Visualize 的輸出內容是 AI 生成的諮詢預覽，並非實際治療結果預測。SkinDay 並非醫療裝置，亦不提供醫療建議。"};
+  function detect(){
+    try{var s=localStorage.getItem('sd-lang');if(s==='zh'||s==='en')return s;}catch(e){}
+    try{var n=(navigator.language||(navigator.languages&&navigator.languages[0])||'').toLowerCase();if(n.indexOf('zh')===0)return 'zh';}catch(e){}
     return 'en';
   }
-  var currentLang = detectLang();
-
-  function setLang(lang) {
-    currentLang = lang;
-    try { localStorage.setItem('sd-lang', lang); } catch (e) {}
-    applyLang();
-  }
-
-  function applyLang() {
-    var isZh = currentLang === 'zh';
-    document.body.classList.toggle('zh', isZh);
-    document.documentElement.setAttribute('lang', isZh ? 'zh-TW' : 'en');
-
-    document.querySelectorAll('[data-en][data-zh]').forEach(function(el) {
-      var val = isZh ? el.getAttribute('data-zh') : el.getAttribute('data-en');
-      if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
-        el.placeholder = val;
-      } else {
-        el.innerHTML = val;
-      }
-    });
-
-    document.querySelectorAll('.lang-btn').forEach(function(btn) {
-      btn.classList.toggle('active',
-        (btn.textContent.trim() === 'EN' && !isZh) ||
-        (btn.textContent.trim() === '繁中' && isZh)
-      );
-    });
-
-    document.title = isZh
-      ? 'SkinDay · 協助醫美診所贏得顧客長久的信任'
-      : 'SkinDay · Helping aesthetic clinics build lasting patient relationships';
-  }
-
-  applyLang();
-
-  function toggleNav(btn) {
-    var m = document.getElementById('navMobile');
-    var open = m.classList.toggle('open');
-    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
-    btn.querySelector('svg').innerHTML = open
-      ? '<line x1="2" y1="2" x2="20" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="14" x2="20" y2="2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
-      : '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
-  }
-  document.getElementById('navMobile').querySelectorAll('a').forEach(function(a) {
-    a.addEventListener('click', function() {
-      document.getElementById('navMobile').classList.remove('open');
-      var btn = document.querySelector('.nav-toggle');
-      if (btn) {
-        btn.setAttribute('aria-expanded', 'false');
-        btn.querySelector('svg').innerHTML = '<line x1="0" y1="2" x2="22" y2="2"/><line x1="0" y1="8" x2="22" y2="8"/><line x1="0" y1="14" x2="22" y2="14"/>';
-      }
-    });
-  });
-
-  function toggleDirMenu() {
-    var dir = document.getElementById('navDir');
-    var viz = document.getElementById('navViz');
-    if (viz) { viz.classList.remove('open'); viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false'); }
-    var isOpen = dir.classList.toggle('open');
-    dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  }
-
-  function toggleVizMenu() {
-    var viz = document.getElementById('navViz');
-    var dir = document.getElementById('navDir');
-    if (dir) { dir.classList.remove('open'); dir.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false'); }
-    var isOpen = viz.classList.toggle('open');
-    viz.querySelector('.nav-dir-btn').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  }
-
-  function togglePillDir() {
-    var p = document.getElementById('pillDir');
-    var isOpen = p.classList.toggle('open');
-    p.querySelector('.pill').setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-  }
-
-  document.addEventListener('click', function(e) {
-    ['navDir', 'navViz'].forEach(function(id) {
-      var el = document.getElementById(id);
-      if (el && !el.contains(e.target)) {
-        el.classList.remove('open');
-        el.querySelector('.nav-dir-btn').setAttribute('aria-expanded', 'false');
-      }
-    });
-    var pill = document.getElementById('pillDir');
-    if (pill && !pill.contains(e.target)) {
-      pill.classList.remove('open');
-      pill.querySelector('.pill').setAttribute('aria-expanded', 'false');
+  var lang=detect(), nodes=null;
+  function collect(){
+    nodes=[];
+    var w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,null);
+    var n;
+    while((n=w.nextNode())){
+      var p=n.parentNode;
+      if(!p||p.closest('script,style,svg,[data-en]'))continue;
+      var t=n.nodeValue.replace(/\s+/g,' ').trim();
+      if(t&&ZH[t]){nodes.push({n:n,en:n.nodeValue,zh:n.nodeValue.replace(n.nodeValue.trim(),ZH[t])});}
     }
-  });
+  }
+  function apply(){
+    var zh=lang==='zh';
+    if(!nodes)collect();
+    nodes.forEach(function(o){o.n.nodeValue=zh?o.zh:o.en;});
+    document.querySelectorAll('[data-en][data-zh]').forEach(function(el){el.innerHTML=zh?el.getAttribute('data-zh'):el.getAttribute('data-en');});
+    document.documentElement.lang=zh?'zh-TW':'en';
+    document.querySelectorAll('.lang').forEach(function(b){b.textContent=zh?'EN':'繁中';});
+    if(window.PAGE_TITLE)document.title=zh?PAGE_TITLE.zh:PAGE_TITLE.en;
+  }
+  window.toggleLang=function(){lang=lang==='en'?'zh':'en';try{localStorage.setItem('sd-lang',lang);}catch(e){}apply();};
+  apply();
+
+  var mm=document.getElementById('mobilemenu');
+  if(mm)mm.onclick=function(){document.getElementById('navlinks').classList.toggle('open');};
+
+  // Live figures; the numbers in the markup are the fallback.
+  fetch('/api/site-stats').then(function(r){return r.ok?r.json():null;}).then(function(s){
+    if(!s)return;
+    document.querySelectorAll('[data-stat]').forEach(function(el){
+      var v=s[el.getAttribute('data-stat')];
+      if(v==null||!(v>0))return;
+      el.textContent=el.hasAttribute('data-plain')?String(v):Number(v).toLocaleString('en-US')+'+';
+    });
+  }).catch(function(){});
+})();
 </script>
-</body>
-</html>
+</body></html>
