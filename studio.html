@@ -1090,6 +1090,7 @@ function loadFile(file, idx, done) {
       S.slots[idx].processedDataUrl = null;
       S.slots[idx]._processedImg = null;
       S.slots[idx].bgMode = 'orig';
+      S.slots[idx].faceHint = null;
 
       const zone = document.getElementById(`zone-${idx}`);
       zone.classList.add('filled');
@@ -1137,7 +1138,14 @@ function initFM() {
   });
 }
 
-function detect(img) {
+// ⭐ M29: EVERY PHOTO IS A FRESH DETECTION. FaceMesh is built for video: after
+// one frame it TRACKS the face from where it was last seen instead of searching
+// again. Handed a different photograph next, it looks in the old place, misses,
+// and reports "no face" for a face it would have found easily on its own. That is
+// how one oblique in a grid fell back to an uncropped, unaligned frame. reset()
+// clears the tracking state so each photo is searched from scratch.
+function detect(img, maxEdge) {
+  try { if (S.fm && typeof S.fm.reset === 'function') S.fm.reset(); } catch (e) {}
   return new Promise(async (res, rej) => {
     S.fm.onResults(r => {
       if (r.multiFaceLandmarks?.length > 0) res(r.multiFaceLandmarks[0]);
@@ -1149,7 +1157,8 @@ function detect(img) {
     // produces identical results against the full-size image.
     const w = img.naturalWidth, h = img.naturalHeight;
     const longest = Math.max(w, h) || 1;
-    const scale = longest > DETECT_MAX_EDGE ? DETECT_MAX_EDGE / longest : 1;
+    const lim = maxEdge || DETECT_MAX_EDGE;
+    const scale = longest > lim ? lim / longest : 1;
     const c = document.createElement('canvas');
     c.width  = Math.max(1, Math.round(w * scale));
     c.height = Math.max(1, Math.round(h * scale));
@@ -1177,13 +1186,14 @@ async function runDetectAll() {
   let warns = 0;
   const n = S.slots.length;
   for (let i = 0; i < n; i++) {
-    try {
-      setProg(10 + Math.round((i / n) * 80));
-      S.slots[i].lm = await detect(S.slots[i].img);
-    } catch(e) {
-      S.slots[i].lm = null;
-      warns++;
+    setProg(10 + Math.round((i / n) * 80));
+    S.slots[i].lm = null;
+    // A second, larger look before giving up: small faces in a big frame are the
+    // usual miss at 1024px.
+    for (const edge of [DETECT_MAX_EDGE, 1600]) {
+      try { S.slots[i].lm = await detect(S.slots[i].img, edge); break; } catch (e) {}
     }
+    if (!S.slots[i].lm) warns++;
   }
   setProg(100);
   let msg;
@@ -1309,20 +1319,34 @@ function lmToBaseBox(lm, iw, ih, preset) {
   const foreY = browY - (nose.y - browY) * 0.85;
   const faceH = chin.y - browY;
   const eyeDist = Math.abs(re.x - le.x);
-  const eyeRatio = eyeDist / iw;
-  const isProfile = eyeRatio < 0.07;
-  const isAngled = eyeRatio >= 0.07 && eyeRatio < 0.14;
   const cx = (le.x + re.x) / 2;
   const jawW = jawR.x - jawL.x;
   const facingLeft = nose.x < cx;
+  // ⭐ M29: THE ANGLE IS READ FROM THE FACE, NOT FROM HOW BIG IT IS IN THE FRAME.
+  // This used to be eye distance as a share of the PHOTO width, so a close-up 45
+  // degree photo (face filling the frame, as clinics shoot them) measured as
+  // "frontal", got the narrow frontal box centred between the eyes, and lost the
+  // ear. Two measures that do not care about framing instead: how far the nose tip
+  // sits from the midpoint of the eyes, in eye widths, and the eye width against
+  // brow-to-chin height (about 0.65 facing the camera, under 0.5 at 45 degrees).
+  const yawIdx = (nose.x - cx) / Math.max(1, eyeDist);
+  const shape = eyeDist / Math.max(1, faceH);
+  const isProfile = shape < 0.25 || Math.abs(yawIdx) > 0.9;
+  const isAngled = !isProfile && (Math.abs(yawIdx) > 0.2 || (shape < 0.5 && Math.abs(yawIdx) > 0.08));
   let halfW, cxA;
   if (isProfile) {
-    halfW = Math.max(eyeDist * 4.2, iw * 0.35);
+    halfW = Math.max(eyeDist * 4.2, faceH * 0.9);
     cxA = cx + (facingLeft ? halfW * 0.18 : -halfW * 0.18);
   } else if (isAngled) {
-    halfW = Math.max(jawW * 0.88, eyeDist * 2.2);
-    const earShift = halfW * 0.14;
-    cxA = cx + (facingLeft ? earShift : -earShift);
+    // The ear is outside the face mesh, so the box is built from the mesh's own
+    // edges plus room for it: a little past the nose on one side, an ear's width
+    // past the cheek on the other.
+    let minX = Infinity, maxX = -Infinity;
+    for (let k = 0; k < lm.length; k++) { const x = lm[k].x * iw; if (x < minX) minX = x; if (x > maxX) maxX = x; }
+    const left = facingLeft ? minX - faceH * 0.22 : minX - faceH * 0.45;
+    const right = facingLeft ? maxX + faceH * 0.45 : maxX + faceH * 0.22;
+    halfW = Math.max((right - left) / 2, jawW * 0.88, eyeDist * 2.2);
+    cxA = (left + right) / 2;
   } else {
     halfW = jawW * 0.65;
     cxA = cx;
@@ -1372,6 +1396,25 @@ function faceFallbackBox(iw, ih, preset) {
   const [t, b, l, r] = p[preset] || [.03,.96,.08,.92];
   const box = {x: l*iw, y: t*ih, w: (r-l)*iw, h: (b-t)*ih, cx: (l+r)/2*iw, cy: (t+b)/2*ih};
   return lockPresetAspect(box, preset);
+}
+
+// M29: when FaceMesh still misses, Visualize's face check (run on the same photo
+// when it was given to Tara) supplies the face box, normalised 0-1. Sizing from
+// its height keeps the head the same size as its neighbours instead of showing
+// the whole uncropped frame. Approximate, so the zoom slider still matters.
+function faceHintBox(iw, ih, hint, preset) {
+  if (!hint || !(hint.y1 > hint.y0) || !(hint.x1 > hint.x0)) return null;
+  const top0 = hint.y0 * ih, bot0 = hint.y1 * ih, h0 = bot0 - top0;
+  const faceH = h0 * 0.8;                 // roughly brow to chin
+  const browY = top0 + h0 * 0.18, chinY = bot0, noseY = browY + faceH * 0.45;
+  const foreY = browY - (noseY - browY) * 0.85;
+  const cx = (hint.x0 + hint.x1) / 2 * iw;
+  const halfW = Math.max((hint.x1 - hint.x0) * iw * 0.75, faceH * 0.6);
+  let top = foreY - faceH * .42, bot = chinY + faceH * .28;
+  if (preset === 'lower') { top = noseY - faceH * .10; bot = chinY + faceH * .38; }
+  if (preset === 'upper') { top = foreY - faceH * .15; bot = noseY - faceH * .05; }
+  if (preset === 'eyes')  { top = browY - faceH * .20; bot = noseY + faceH * .08; }
+  return lockPresetAspect({ x: cx - halfW, y: top, w: halfW * 2, h: bot - top, cx, cy: (top + bot) / 2 }, preset);
 }
 
 // Shrink a box to fit inside the photograph WITHOUT changing its shape.
@@ -1435,6 +1478,10 @@ function getBoxForSlot(idx, targetEyePx) {
     return {x: 0, y: 0, w: iw, h: ih, cx: iw / 2, cy: ih / 2};
   }
 
+  if (!sl.lm && sl.faceHint) {
+    const hb = faceHintBox(iw, ih, sl.faceHint, preset);
+    if (hb) return fitBoxToImage(hb.w / zoom, hb.h / zoom, hb.cx, hb.cy, iw, ih);
+  }
   if (!sl.lm) {
     const fb = faceFallbackBox(iw, ih, preset);
     return fitBoxToImage(fb.w / zoom, fb.h / zoom, fb.cx, fb.cy, iw, ih);
@@ -2455,7 +2502,7 @@ function newCase() {
     img: null, lm: null, zoom: 1.0, pan: {x:0,y:0},
     label: sl.label,
     date: '', dateParts: {},
-    origDataUrl: null, processedDataUrl: null, bgMode: 'orig'
+    origDataUrl: null, processedDataUrl: null, bgMode: 'orig', faceHint: null
   }));
   S.bgChecked = {};
   const sa = document.getElementById('bgSelectAll');
@@ -2500,7 +2547,7 @@ function newCase() {
 //
 // ⛔ Consent is per case (see the INIT note below). The build is refused unless
 // the portal says a person ticked consent on Tara's card for this case.
-async function sdTaraStudioBuild(plan, files, consent) {
+async function sdTaraStudioBuild(plan, files, consent, hints) {
   if (consent !== true) throw new Error('Consent was not confirmed.');
   if (S.bgProcessing) throw new Error('Studio is still removing a background. Try again in a moment.');
   const cfg = GRID_CONFIG[plan.grid];
@@ -2521,6 +2568,7 @@ async function sdTaraStudioBuild(plan, files, consent) {
       const t = setTimeout(() => rej(new Error('Photo ' + (i + 1) + ' could not be read.')), 30000);
       loadFile(files[i], i, () => { clearTimeout(t); res(); });
     });
+    S.slots[i].faceHint = (hints && hints[i]) || null;
   }
 
   // Captions, then dates (the date fields are labelled with the captions).
@@ -2539,10 +2587,8 @@ async function sdTaraStudioBuild(plan, files, consent) {
   if (currentLang === 'zh') applyLang();
 
   await runDetectAll();
-  if (S.subject === 'face') {
-    const missed = S.slots.map((sl, i) => sl.lm ? null : (sl.label || ('Photo ' + (i + 1)))).filter(Boolean);
-    if (missed.length) warnings.push('No face found in ' + missed.join(', ') + ', so it was centred instead of aligned by the eyes. Check the crop.');
-  }
+  // Which slots Studio could not align. The portal names them by photo and angle.
+  const missed = S.subject === 'face' ? S.slots.map((sl, i) => sl.lm ? -1 : i).filter(i => i >= 0) : [];
 
   if (plan.background === 'black') {
     toggleSelectAllBg(true);
@@ -2576,7 +2622,7 @@ async function sdTaraStudioBuild(plan, files, consent) {
   if (consentBox) consentBox.checked = true;
   if (gen) gen.disabled = false;
   await generate();
-  return { warnings };
+  return { warnings, missed };
 }
 
 (function () {
@@ -2586,7 +2632,7 @@ async function sdTaraStudioBuild(plan, files, consent) {
     const d = ev.data;
     if (!d || d.type !== 'sd:tara-studio-build') return;
     const reply = o => { try { window.parent.postMessage(Object.assign({ type: 'sd:tara-studio-built', requestId: d.requestId || null }, o), location.origin); } catch (e) {} };
-    try { reply(Object.assign({ ok: true }, await sdTaraStudioBuild(d.plan || {}, d.files || [], d.consent))); }
+    try { reply(Object.assign({ ok: true }, await sdTaraStudioBuild(d.plan || {}, d.files || [], d.consent, d.hints || null))); }
     catch (e) { console.error('[Studio] Tara build failed', e); reply({ ok: false, error: String((e && e.message) || e) }); }
   });
 })();

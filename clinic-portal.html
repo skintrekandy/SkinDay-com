@@ -834,6 +834,17 @@
   .tc-thumb .tc-img span { font:500 9.5px/1 var(--font-mono); background:rgba(20,26,33,.78); color:#fff; padding:3px 5px; border-radius:0 6px 0 7px; }
   .tc-thumb .tc-cap { font:600 11px/1.3 var(--font-ui); margin-top:4px; }
   .tc-thumb .tc-cap small { display:block; font:500 10.5px/1.3 var(--font-mono); color:var(--muted); }
+  .tc-grid { display:flex; flex-direction:column; gap:6px; }
+  .tg-row { display:flex; gap:8px; align-items:flex-start; }
+  .tg-lab { flex:0 0 58px; padding-top:4px; }
+  .tg-lab b { display:block; font:600 11.5px/1.2 var(--font-ui); }
+  .tg-lab small { display:block; font:500 10px/1.3 var(--font-mono); color:var(--muted); margin-top:2px; }
+  .tg-cells { flex:1; display:grid; gap:5px; min-width:0; }
+  .tc-grid { max-width:340px; }
+  .tg-cell .tc-img { width:100%; height:auto; aspect-ratio:4/5; border-radius:6px; background:var(--line) center/cover no-repeat; display:flex; align-items:flex-end; }
+  .tg-cell .tc-img span { font:500 9.5px/1 var(--font-mono); background:rgba(20,26,33,.78); color:#fff; padding:3px 5px; border-radius:0 6px 0 6px; }
+  .tg-cell small { display:block; font:500 10px/1.3 var(--font-mono); color:var(--muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tc-swap { margin-top:8px; padding:6px 11px !important; font-size:12.5px !important; }
   .tc-list { margin:9px 0 0; padding-left:18px; font-size:13px; line-height:1.5; }
   .tc-cost { margin-top:10px; font-size:13.5px; }
   .tc-cost b { font-weight:700; }
@@ -6928,7 +6939,7 @@ async function taraAddFiles(fileList) {
       const d = await frameRequest('visFrame', { type: 'sd:tara-analyze', photos: fresh.map(p => ({ id: p.id, file: p.file })) }, 'sd:tara-analyzed', 120000);
       (d.results || []).forEach(r => {
         const p = TARA.photos.find(x => x.id === r.id);
-        if (p) Object.assign(p, { face: r.face == null ? null : !!r.face, view: r.view || null, yaw: r.yaw != null ? r.yaw : null, size: r.size || null });
+        if (p) Object.assign(p, { face: r.face == null ? null : !!r.face, view: r.view || null, yaw: r.yaw != null ? r.yaw : null, size: r.size || null, clothes: r.clothes || null, box: r.box || null });
       });
     } catch (e) { /* no angle: Tara will ask */ }
     fresh.forEach(p => { p.analyzing = false; });
@@ -6951,7 +6962,7 @@ async function taraSend(q, via) {
   const bot = taraAdd('bot', '<div class="tname">' + TFACE + 'Tara</div><div class="tbody"><div class="tstat"><span class="tdots"><i></i><i></i><i></i></span><span class="tst">' + sdT('Thinking', '思考中') + '</span></div></div>');
   bot.dataset.via = via || ''; bot.classList.add('pending');
   try { if (TARA.pending) { bot.querySelector('.tst').textContent = sdT('Checking the photos', '正在檢查照片'); await TARA.pending; } } catch (e) {}
-  const photos = TARA.photos.map(p => ({ id: p.id, name: p.name, date: p.date, view: p.view || null, yaw: p.yaw, face: p.face, size: p.size }));
+  const photos = TARA.photos.map(p => ({ id: p.id, name: p.name, date: p.date, view: p.view || null, yaw: p.yaw, face: p.face, size: p.size, clothes: p.clothes || null }));
   const events = TARA.events.splice(0);
   try {
     const j = await taraApi('ask', { question: q, thread_id: TARA.thread, via: via || '', reply_lang: taraLangGet(), photos, events, tab: activePanel });
@@ -7059,6 +7070,47 @@ function taraKillOlderCards(exceptN) {
     }
   });
 }
+// The card shows the plan laid out the way Studio will lay it out, each photo
+// with its angle and session date, so a wrong before/after is obvious at a glance.
+function taraStudioGrid(host, plan) {
+  const rowCols = { '2x2': 2, '2x3': 3, '2x5': 5 }[plan.grid] || 0;
+  const slots = plan.slots || [];
+  const cols = rowCols || (plan.grid === '2v' ? 1 : slots.length);
+  const cell = (s, cap) => {
+    const p = taraPhoto(s.photo);
+    return '<div class="tg-cell"><div class="tc-img" style="' + (p ? 'background-image:url(\'' + p.url + '\')' : '') + '"><span>' + escapeHtml(s.photo) + (p ? '' : ' ×') + '</span></div>' +
+      '<small>' + escapeHtml(cap || '') + '</small></div>';
+  };
+  let html = '';
+  if (rowCols) {
+    for (let r = 0; r < 2; r++) {
+      const first = slots[r * rowCols] || {};
+      html += '<div class="tg-row"><div class="tg-lab"><b>' + escapeHtml((plan.rowLabels || ['Before', 'After'])[r] || '') + '</b>' +
+        (first.date ? '<small>' + escapeHtml(tDateShort(first.date)) + '</small>' : '') + '</div><div class="tg-cells" style="grid-template-columns:repeat(' + rowCols + ',1fr)">' +
+        slots.slice(r * rowCols, (r + 1) * rowCols).map(s => cell(s, taraViewLabel(taraPhoto(s.photo) || {}))).join('') + '</div></div>';
+    }
+  } else {
+    html = '<div class="tg-cells" style="grid-template-columns:repeat(' + cols + ',1fr)">' + slots.map((s, i) => {
+      const lab = s.label || (i === 0 ? sdT('Before', '治療前') : i === slots.length - 1 ? sdT('After', '治療後') : sdT('Photo', '照片') + ' ' + (i + 1));
+      return cell(s, lab + (s.date ? ' · ' + tDateShort(s.date) : ''));
+    }).join('') + '</div>';
+  }
+  host.innerHTML = html;
+}
+// Swap which photos are before and which are after. Captions stay where they
+// are; the photos move, and each row's date moves with its photos.
+function taraSwapPlan(plan) {
+  const rowCols = { '2x2': 2, '2x3': 3, '2x5': 5 }[plan.grid] || 0;
+  const sl = plan.slots;
+  if (rowCols) {
+    const top = sl.slice(0, rowCols), bot = sl.slice(rowCols, rowCols * 2);
+    const keep = sl.map(s => s.label);
+    plan.slots = bot.concat(top).map((s, i) => Object.assign({}, s, { label: keep[i] }));
+  } else {
+    const photos = sl.map(s => ({ photo: s.photo, date: s.date })).reverse();
+    plan.slots = sl.map((s, i) => Object.assign({}, s, photos[i]));
+  }
+}
 function taraCardEl(action, rowId, hist, outcome) {
   const n = ++TARA.cardSeq;
   const card = { n, action, rowId, el: null, dead: !!hist };
@@ -7066,12 +7118,6 @@ function taraCardEl(action, rowId, hist, outcome) {
   card.el = el;
   const plan = action.plan || {};
   if (action.kind === 'studio') {
-    const rowCols = { '2x2': 2, '2x3': 3, '2x5': 5 }[plan.grid] || 0;
-    const thumbs = (plan.slots || []).map((s, i) => {
-      const cap = rowCols ? ((plan.rowLabels || ['Before', 'After'])[Math.floor(i / rowCols)] || '') : (s.label || (i === 0 ? sdT('Before', '治療前') : i === plan.slots.length - 1 ? sdT('After', '治療後') : sdT('Photo', '照片') + ' ' + (i + 1)));
-      const dt = rowCols ? (i % rowCols === 0 ? tDateShort(s.date) : '') : tDateShort(s.date);
-      return taraThumb(s.photo, cap, dt);
-    }).join('');
     const li = [tl(T_LAYOUT[plan.grid]),
       plan.subject === 'body' ? sdT('Body photos, no crop', '身體照片，不裁切') : sdT('Crop: ', '裁切：') + tl(T_CROP[plan.preset || 'full']),
       plan.background === 'black' ? sdT('Black background', '黑色背景') : sdT('Original background', '保留原背景'),
@@ -7079,15 +7125,24 @@ function taraCardEl(action, rowId, hist, outcome) {
       plan.norm === false ? sdT('Brightness kept as shot', '保留原始亮度') : null,
       plan.format ? sdT('Format: ', '格式：') + plan.format : null].filter(Boolean);
     el.innerHTML = '<div class="tc-h">' + sdT('Before & after', '前後對比圖') + '<span class="tc-tag">Studio</span></div>' +
-      '<div class="tc-thumbs">' + thumbs + '</div><ul class="tc-list">' + li.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' +
+      '<div class="tc-grid"></div>' +
+      (hist ? '' : '<button type="button" class="quiet tc-swap">' + sdT('Swap before & after', '對調治療前後') + '</button>') +
+      '<ul class="tc-list">' + li.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' +
       (hist ? '' :
         '<label class="tc-consent"><input type="checkbox" class="tc-ok"> <span>' + sdT('I have this patient’s consent to use these photos.', '我已取得此顧客使用這些照片的同意。') + '</span></label>' +
         '<div class="tc-acts"><button type="button" class="act tc-go" disabled>' + sdT('Build in Studio', '在 Studio 製作') + '</button></div>') +
       '<div class="note tc-st">' + escapeHtml(hist ? (outcome ? sdT('Result: ', '結果：') + outcome : sdT('Proposed earlier.', '先前提出的計畫。')) : sdT('Free. This replaces whatever is open in Studio now.', '免費。這會取代 Studio 中目前的內容。')) + '</div>';
+    taraStudioGrid(el.querySelector('.tc-grid'), plan);
     if (!hist) {
       const ok = el.querySelector('.tc-ok'), go = el.querySelector('.tc-go');
       ok.addEventListener('change', () => { go.disabled = !ok.checked; });
       go.addEventListener('click', () => taraBuildStudio(card));
+      el.querySelector('.tc-swap').addEventListener('click', () => {
+        if (card.running || card.dead) return;
+        taraSwapPlan(plan);
+        taraStudioGrid(el.querySelector('.tc-grid'), plan);
+        card.swapped = !card.swapped;
+      });
     }
   } else if (action.kind === 'simulation') {
     const thumbs = (plan.photos || []).map(p => taraThumb(p.photo, tl(T_ANGLE[p.angle]), '')).join('');
@@ -7132,17 +7187,24 @@ async function taraBuildStudio(card) {
   if (isPhoneW()) taraClosePanel();
   try {
     await frameReady('studioFrame');
-    const d = await frameRequest('studioFrame', { type: 'sd:tara-studio-build', plan, files: plan.slots.map(s => taraPhoto(s.photo).file), consent: true }, 'sd:tara-studio-built', 300000);
+    const d = await frameRequest('studioFrame', { type: 'sd:tara-studio-build', plan, files: plan.slots.map(s => taraPhoto(s.photo).file),
+      hints: plan.slots.map(s => taraPhoto(s.photo).box || null), consent: true }, 'sd:tara-studio-built', 300000);
     if (!d.ok) throw new Error(d.error || 'Studio could not build it.');
     card.done = true;
-    const w = (d.warnings || []);
+    const w = (d.warnings || []).slice();
+    const missed = (d.missed || []).map(i => plan.slots[i] && plan.slots[i].photo).filter(Boolean);
+    if (missed.length) {
+      const names = missed.map(id => { const v = taraViewLabel(taraPhoto(id) || {}); return id + (v ? ' (' + v + ')' : ''); }).join(', ');
+      w.push(sdT('Studio could not find the eyes in ' + names + ', so ' + (missed.length === 1 ? 'that photo is' : 'those photos are') + ' framed from the face outline instead. Check ' + (missed.length === 1 ? 'its' : 'their') + ' size against the others and use zoom if needed.',
+        'Studio 無法在 ' + names + ' 中定位眼睛，因此改用臉部輪廓取景。請與其他照片比對大小，必要時調整縮放。'));
+    }
     taraCardStatus(card, sdT('Done. The image is ready in Studio: download it there, or save it to your Library with the form below it.', '完成。圖片已在 Studio 中：可在那裡下載，或用下方表單存入案例資料庫。') + (w.length ? ' ' + w.join(' ') : ''), w.length ? '' : 'ok');
     const show = document.createElement('button'); show.type = 'button'; show.className = 'quiet'; show.textContent = sdT('Show me', '帶我去看');
     show.onclick = () => { if (isPhoneW()) taraClosePanel(); gotoTab('studio'); scrollToInFrame('studioFrame', 'outputSection'); };
     card.el.querySelector('.tc-acts').appendChild(show); show.disabled = false;
     try { fitFrame('studioFrame'); } catch (e) {}
     setTimeout(() => scrollToInFrame('studioFrame', 'outputSection'), 400);
-    taraEvent('The user pressed Build. Studio finished the before & after (' + plan.grid + ', ' + plan.slots.map(s => s.photo).join(', ') + ').' + (w.length ? ' Notes: ' + w.join(' ') : ''));
+    taraEvent('The user pressed Build' + (card.swapped ? ' after swapping before and after on the card' : '') + '. Studio finished the before & after (' + plan.grid + ', slots in order: ' + plan.slots.map(s => s.photo).join(', ') + ').' + (w.length ? ' Notes: ' + w.join(' ') : ''));
     taraOutcome(card, 'built' + (w.length ? ' (' + w.join(' ') + ')' : ''));
   } catch (e) {
     taraCardStatus(card, (e && e.message) || String(e), 'bad');
