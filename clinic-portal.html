@@ -3783,6 +3783,23 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
+const COLUMN_ANGLES = {
+  1: ['frontal'],
+  2: ['frontal', 'oblique_right'],
+  3: ['oblique_right', 'frontal', 'oblique_left'],
+  4: ['profile_right', 'oblique_right', 'oblique_left', 'profile_left'],
+  5: ['profile_right', 'oblique_right', 'frontal', 'oblique_left', 'profile_left']
+};
+const VIEW_TO_ANGLE = { 'frontal': 'frontal', 'three-quarter right': 'oblique_right', 'three-quarter left': 'oblique_left',
+  'profile right': 'profile_right', 'profile left': 'profile_left' };
+function pairDefaultAngle(i, n) {
+  try {
+    const b = window.TARA_LAST_BUILD;
+    if (b && b.grid === studioGridId() && b.columns && b.columns[i] && VIEW_TO_ANGLE[b.columns[i]]) return VIEW_TO_ANGLE[b.columns[i]];
+  } catch (e) {}
+  return (COLUMN_ANGLES[n] || ANGLE_ORDER)[i] || 'frontal';
+}
+
 function renderPairs(pairs) {
   const host = $('pairs');
   host.innerHTML = '';
@@ -3813,7 +3830,10 @@ function renderPairs(pairs) {
     });
     // A multi-angle grid is one angle per column in Studio's column order. A
     // 3-timepoint grid is one angle at several times, so every pair is frontal.
-    sel.value = (studioGridId() === '3h') ? 'frontal' : (ANGLE_ORDER[i] || 'frontal');
+    // M29: the house order is frontal in the MIDDLE (R90, R45, frontal, L45,
+    // L90). If Tara built this grid she measured each column's angle, so use
+    // that; otherwise default to the house order for the number of columns.
+    sel.value = (studioGridId() === '3h') ? 'frontal' : pairDefaultAngle(i, pairs.length);
 
     const wrap = document.createElement('div');
     wrap.className = 'pair-field';
@@ -7206,6 +7226,29 @@ function taraCardEl(action, rowId, hist, outcome) {
         card.swapped = !card.swapped;
       });
     }
+  } else if (action.kind === 'studio_update') {
+    const u = action.update || {};
+    const POS = { tl: sdT('top left', '左上'), tr: sdT('top right', '右上'), bl: sdT('bottom left', '左下'), br: sdT('bottom right', '右下'), center: sdT('centre', '中央'), tile: sdT('tiled', '平鋪') };
+    const li = [];
+    if (u.treatmentLabel != null) li.push(u.treatmentLabel ? sdT('Top line: ', '標題：') + u.treatmentLabel : sdT('Remove the top line', '移除標題'));
+    if (u.clinicName != null) li.push(sdT('Clinic name: ', '診所名稱：') + (u.clinicName || '-'));
+    if (u.injectorName != null) li.push(u.injectorName ? sdT('Injector: ', '施作者：') + u.injectorName : sdT('Remove the injector name', '移除施作者姓名'));
+    if (u.wmPos) li.push(sdT('Watermark: ', '浮水印：') + POS[u.wmPos]);
+    if (u.logoSize) li.push(sdT('Logo size: ', 'Logo 大小：') + ({ small: sdT('small', '小'), medium: sdT('medium', '中'), large: sdT('large', '大') })[u.logoSize]);
+    if (u.logoPos) li.push(sdT('Logo: ', 'Logo：') + POS[u.logoPos]);
+    if (u.removeLogo) li.push(sdT('Hide the logo', '隱藏 Logo'));
+    if (u.showLogo) li.push(sdT('Show the logo', '顯示 Logo'));
+    if (u.rowLabels) li.push(sdT('Row captions: ', '列標題：') + u.rowLabels.join(' / '));
+    if (u.labels) li.push(sdT('Captions: ', '標題：') + u.labels.join(' / '));
+    if (u.dates) li.push(sdT('Dates: ', '日期：') + u.dates.map(d => tDateShort(d) || sdT('none', '無')).join(' / '));
+    if (u.format) li.push(sdT('Format: ', '格式：') + u.format);
+    if (u.norm != null) li.push(u.norm ? sdT('Match brightness', '統一亮度') : sdT('Keep brightness as shot', '保留原始亮度'));
+    if (u.enhance != null) li.push(sdT('Enhancement: ', '增強：') + ['none', 'subtle', 'strong'][u.enhance]);
+    el.innerHTML = '<div class="tc-h">' + sdT('Update the image', '更新圖片') + '<span class="tc-tag">Studio</span></div>' +
+      '<ul class="tc-list">' + li.map(x => '<li>' + escapeHtml(x) + '</li>').join('') + '</ul>' +
+      (hist ? '' : '<div class="tc-acts"><button type="button" class="act tc-go">' + sdT('Update image', '更新圖片') + '</button></div>') +
+      '<div class="note tc-st">' + escapeHtml(hist ? (outcome ? sdT('Result: ', '結果：') + outcome : sdT('Proposed earlier.', '先前提出的變更。')) : sdT('Keeps the photos, crop and background; only redraws the image.', '保留照片、裁切與背景，只重新繪製圖片。')) + '</div>';
+    if (!hist) el.querySelector('.tc-go').addEventListener('click', () => taraUpdateStudio(card));
   } else if (action.kind === 'simulation') {
     const thumbs = (plan.photos || []).map(p => taraThumb(p.photo, tl(T_ANGLE[p.angle]), '')).join('');
     let first = tl(T_TREAT[plan.type]);
@@ -7253,6 +7296,11 @@ async function taraBuildStudio(card) {
       hints: plan.slots.map(s => taraPhoto(s.photo).box || null), consent: true }, 'sd:tara-studio-built', 300000);
     if (!d.ok) throw new Error(d.error || 'Studio could not build it.');
     card.done = true;
+    // The angle Tara measured for each column of the top row, so the save form
+    // below Studio can label the angles correctly without asking.
+    const rc = { '2x2': 2, '2x3': 3, '2x5': 5 }[plan.grid] || 0;
+    window.TARA_LAST_BUILD = { grid: plan.grid, columns: rc ? plan.slots.slice(0, rc).map(s => (taraPhoto(s.photo) || {}).view || null) : null };
+    studioGrid = null;   // re-render the save form with these angles
     const w = (d.warnings || []).slice();
     const missed = (d.missed || []).map(i => plan.slots[i] && plan.slots[i].photo).filter(Boolean);
     if (missed.length) {
@@ -7277,6 +7325,29 @@ async function taraBuildStudio(card) {
     card.running = false; taraWorking(null);
     if (!document.body.classList.contains('tara-open')) $('taraFab').classList.add('ping');
   }
+}
+
+async function taraUpdateStudio(card) {
+  if (card.dead || card.running) return;
+  card.running = true;
+  card.el.querySelectorAll('button').forEach(x => { x.disabled = true; });
+  taraCardStatus(card, sdT('Updating…', '更新中…'));
+  gotoTab('studio');
+  try {
+    await frameReady('studioFrame');
+    const d = await frameRequest('studioFrame', { type: 'sd:tara-studio-update', update: card.action.update }, 'sd:tara-studio-built', 60000);
+    if (!d.ok) throw new Error(d.error || 'Studio could not update it.');
+    card.done = true;
+    const w = d.warnings || [];
+    taraCardStatus(card, sdT('Updated.', '已更新。') + (w.length ? ' ' + w.join(' ') : ''), w.length ? '' : 'ok');
+    try { fitFrame('studioFrame'); } catch (e) {}
+    if (!isPhoneW()) setTimeout(() => scrollToInFrame('studioFrame', 'outputSection'), 300);
+    taraEvent('The user pressed Update. Studio re-rendered the image with the changes.');
+    taraOutcome(card, 'updated');
+  } catch (e) {
+    taraCardStatus(card, (e && e.message) || String(e), 'bad');
+    card.el.querySelectorAll('button').forEach(x => { x.disabled = false; });
+  } finally { card.running = false; }
 }
 
 async function taraPrepareSim(card) {

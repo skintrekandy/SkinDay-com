@@ -530,6 +530,12 @@
             <option value="bl" data-en="Bottom left" data-zh="左下">Bottom left</option>
             <option value="center" data-en="Centre" data-zh="置中">Centre</option>
           </select>
+          <label data-en="Logo size" data-zh="Logo 大小" style="margin-top:10px;">Logo size</label>
+          <select id="logoSize" onchange="S.logoSize=this.value">
+            <option value="small" data-en="Small" data-zh="小">Small</option>
+            <option value="medium" selected data-en="Medium" data-zh="中">Medium</option>
+            <option value="large" data-en="Large" data-zh="大">Large</option>
+          </select>
         </div>
       </div>
 
@@ -690,6 +696,7 @@ const S = {
   slots: [],
   logoImg: null,
   logoDataUrl: null,
+  logoSize: 'medium',
   bgChecked: {},
   rowLabelValues: null,
   bgProcessing: false,
@@ -1381,8 +1388,11 @@ function lockPresetAspect(box, preset) {
   const targetAR = 4 / 5;
   const ar = box.w / box.h;
   if (!isFinite(ar) || ar <= 0) return box;
+  // M29: only ever WIDEN to 4:5. Growing the height of a box that came out
+  // wide (an oblique with room for the ear) shrank that face against the
+  // frontal beside it. Height is the head-size measure, so it is never touched
+  // here; getAllBoxes gives the whole grid one shape by widening, not by height.
   if (ar < targetAR) box.w = box.h * targetAR;
-  else if (ar > targetAR) box.h = box.w / targetAR;
   box.x = box.cx - box.w / 2;
   box.y = box.cy - box.h / 2;
   return box;
@@ -1466,7 +1476,10 @@ function fitBoxToImage(nw, nh, cx, cy, iw, ih) {
 // The argument stays in the signature so a mismatched deploy of studio.html and
 // the clinic portal cannot break: an extra argument is harmless, a missing one is
 // not.
-function getBoxForSlot(idx, targetEyePx) {
+function getBoxForSlot(idx, targetEyePx, raw) {
+  // raw: the box before it is fitted to its own photograph. getAllBoxes uses it
+  // so the whole grid can be fitted with ONE common scale.
+  const fit = raw ? (w, h, cx, cy) => ({ x: cx - w / 2, y: cy - h / 2, w, h, cx, cy }) : fitBoxToImage;
   const sl = S.slots[idx];
   const img = sl.img;
   const iw = img.naturalWidth, ih = img.naturalHeight;
@@ -1480,48 +1493,45 @@ function getBoxForSlot(idx, targetEyePx) {
 
   if (!sl.lm && sl.faceHint) {
     const hb = faceHintBox(iw, ih, sl.faceHint, preset);
-    if (hb) return fitBoxToImage(hb.w / zoom, hb.h / zoom, hb.cx, hb.cy, iw, ih);
+    if (hb) return fit(hb.w / zoom, hb.h / zoom, hb.cx, hb.cy, iw, ih);
   }
   if (!sl.lm) {
     const fb = faceFallbackBox(iw, ih, preset);
-    return fitBoxToImage(fb.w / zoom, fb.h / zoom, fb.cx, fb.cy, iw, ih);
+    return fit(fb.w / zoom, fb.h / zoom, fb.cx, fb.cy, iw, ih);
   }
 
   const base = lmToBaseBox(sl.lm, iw, ih, preset);
   const scale = 1 / zoom;
-  return fitBoxToImage(base.w * scale, base.h * scale, base.cx, base.cy, iw, ih);
+  return fit(base.w * scale, base.h * scale, base.cx, base.cy, iw, ih);
 }
 
 function getAllBoxes() {
-  const boxes = S.slots.map((_, i) => getBoxForSlot(i));
-
-  // ONE SHAPE FOR THE WHOLE GRID.
-  //
-  // getBoxForSlot now normalizes head SIZE, so every box has the same height
-  // relative to the face. It does not normalize head WIDTH, and it cannot: a face
-  // turned 45 degrees is genuinely narrower in the photograph, and lmToBaseBox
-  // widens the oblique crop deliberately so the ear stays in frame.
-  //
-  // So the boxes come out the same height and slightly different widths, which is
-  // slightly different aspects, which renderPreviews then squashes into one common
-  // frame: some panels stretched, some compressed, and a before that does not line
-  // up with its after.
-  //
-  // Unify to the WIDEST aspect in the grid. Widening a narrow box only ever adds
-  // context and can never clip a face; narrowing to the average would cut ears off
-  // obliques. Every panel in the grid is now exactly the same shape, so the common
-  // frame no longer distorts anything, and a saved case is pixel-identical across
-  // its before and its after.
-  const widest = boxes.reduce((m, b) => Math.max(m, b.w / b.h), 0);
-  if (!isFinite(widest) || widest <= 0) return boxes;
-
-  return boxes.map((b, i) => {
+  // ⭐ M29: ONE SCALE FOR THE WHOLE GRID. Each box is sized from the head
+  // (brow to chin), so every face starts the same size. Previously each box was
+  // then squeezed into its OWN photograph separately: a box that ran past the
+  // edge of its photo was shrunk, the others were not, and that face came out
+  // bigger or smaller than its neighbours. Now the boxes are given one shape
+  // (the widest, so an oblique keeps its ear), and if any of them does not fit
+  // its photo, EVERY box is scaled by the same amount. Faces stay the same size
+  // across the grid; the crop simply gets a little tighter for all of them.
+  const raw = S.slots.map((_, i) => getBoxForSlot(i, undefined, true));
+  const widest = raw.reduce((m, b) => Math.max(m, (b && b.h) ? b.w / b.h : 0), 0);
+  const shaped = raw.map(b => {
+    if (!b || !isFinite(widest) || widest <= 0 || S.subject === 'body') return b;
+    return Object.assign({}, b, { w: b.h * widest });
+  });
+  let k = 1;
+  if (S.subject !== 'body') {
+    shaped.forEach((b, i) => {
+      const sl = S.slots[i];
+      if (!b || !sl || !sl.img || !sl.lm) return;   // a photo with no face found is fitted on its own
+      k = Math.min(k, sl.img.naturalWidth / b.w, sl.img.naturalHeight / b.h);
+    });
+  }
+  return shaped.map((b, i) => {
     const sl = S.slots[i];
-    if (!sl || !sl.img) return b;
-    return fitBoxToImage(
-      b.h * widest, b.h, b.cx, b.cy,
-      sl.img.naturalWidth, sl.img.naturalHeight
-    );
+    if (!b || !sl || !sl.img) return b;
+    return fitBoxToImage(b.w * k, b.h * k, b.cx, b.cy, sl.img.naturalWidth, sl.img.naturalHeight);
   });
 }
 
@@ -2145,9 +2155,10 @@ function drawWatermark(ctx, cW, cH, clinic, inj, pos) {
   });
 }
 
+const LOGO_SCALE = { small: 0.6, medium: 1, large: 1.4 };
 function drawLogo(ctx, canvasW, canvasH, logo, pos) {
   if (!logo) return;
-  const maxH = Math.round(canvasH * 0.08);
+  const maxH = Math.round(canvasH * 0.08 * (LOGO_SCALE[S.logoSize] || 1));
   const scale = maxH / logo.naturalHeight;
   const lw = Math.round(logo.naturalWidth * scale), lh = maxH;
   const margin = 24;
@@ -2462,6 +2473,7 @@ function saveSettings() {
     clinic:    document.getElementById('clinicName').value.trim(),
     injector:  document.getElementById('injectorName').value.trim(),
     wmPos:     S.wmPos,
+    logoSize:  S.logoSize,
     format:    document.getElementById('exportFormat').value,
     norm:      document.getElementById('norm').value,
     enhance:   document.getElementById('enhance').value,
@@ -2491,6 +2503,7 @@ function loadSettings() {
     if (s.subject)   selSubject(s.subject);
     updateWmPosState();
     if (s.wmPos)     selWmPos(s.wmPos);
+    if (s.logoSize && LOGO_SCALE[s.logoSize]) { S.logoSize = s.logoSize; const ls = document.getElementById('logoSize'); if (ls) ls.value = s.logoSize; }
   } catch(e) {}
 }
 
@@ -2556,6 +2569,7 @@ async function sdTaraStudioBuild(plan, files, consent, hints) {
   const warnings = [];
 
   newCase();                    // a fresh patient: clears photos, dates, treatment, consent
+  if (S._stashedLogo) { S.logoImg = S._stashedLogo; S._stashedLogo = null; }
   selGrid(plan.grid);
   selSubject(plan.subject === 'body' ? 'body' : 'face');
   if (S.subject === 'face') {
@@ -2600,8 +2614,23 @@ async function sdTaraStudioBuild(plan, files, consent, hints) {
     skipBg();
   }
 
+  sdTaraApplyBranding(plan, warnings, true);
+
+  const consentBox = document.getElementById('consentCheck');
+  const gen = document.getElementById('genBtn');
+  if (consentBox) consentBox.checked = true;
+  if (gen) gen.disabled = false;
+  await generate();
+  return { warnings, missed };
+}
+
+// Captions, dates and branding: everything that is drawn ON TOP of the photos.
+// Used by a full build, and on its own by an update, which re-renders the image
+// that is already there without reloading photos, finding faces again or
+// removing backgrounds again.
+function sdTaraApplyBranding(plan, warnings, isBuild) {
   const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = String(v); };
-  setVal('treatmentLabel', plan.treatmentLabel || '');
+  if (isBuild || plan.treatmentLabel != null) setVal('treatmentLabel', plan.treatmentLabel || '');
   if (plan.clinicName) setVal('clinicName', plan.clinicName);
   if (plan.injectorName) setVal('injectorName', plan.injectorName);
   updateWmPosState();
@@ -2613,16 +2642,35 @@ async function sdTaraStudioBuild(plan, files, consent, hints) {
     if (S.logoImg) setVal('logoPos', plan.logoPos);
     else warnings.push('No logo is loaded in Studio, so there is no logo to place.');
   }
+  if (plan.logoSize && LOGO_SCALE[plan.logoSize]) { S.logoSize = plan.logoSize; setVal('logoSize', plan.logoSize); }
   if (plan.format) { setVal('exportFormat', plan.format); refreshDownloadLabel(); }
   if (plan.norm != null) setVal('norm', plan.norm ? '1' : '0');
   if (plan.enhance != null) setVal('enhance', plan.enhance);
+}
 
-  const consentBox = document.getElementById('consentCheck');
-  const gen = document.getElementById('genBtn');
-  if (consentBox) consentBox.checked = true;
-  if (gen) gen.disabled = false;
+async function sdTaraStudioUpdate(u) {
+  if (!S.master || !S.slots.length || !S.slots.every(sl => sl.img)) throw new Error('There is no finished image in Studio to update. Build it first.');
+  const warnings = [];
+  const cfg = GRID_CONFIG[S.grid];
+  if (Array.isArray(u.rowLabels) && cfg.rowLabels.length) u.rowLabels.forEach((v, r) => { if (v) updateRowLabel(r, String(v)); });
+  if (Array.isArray(u.labels) && !cfg.rowLabels.length) u.labels.forEach((v, i) => { if (v && S.slots[i]) updateSlotLabel(i, String(v)); });
+  if (Array.isArray(u.dates)) {
+    // One date per caption: per row on 2x layouts, per photo otherwise.
+    const idx = cfg.rowLabels.length ? cfg.rowLabels.map((_, r) => r * cfg.cols) : S.slots.map((_, i) => i);
+    u.dates.forEach((d, k) => {
+      const i = idx[k]; if (i == null || !S.slots[i] || d === undefined) return;
+      S.slots[i].dateParts = d ? { m: d.m || '', d: d.d || '', y: d.y || '' } : {};
+      S.slots[i].date = composeDate(S.slots[i].dateParts);
+    });
+    renderDateFields();
+  }
+  // Hiding the logo is for this image only; the clinic's saved logo is kept and
+  // comes back with the next build or when asked.
+  if (u.removeLogo && S.logoImg) { S._stashedLogo = S.logoImg; S.logoImg = null; }
+  if (u.showLogo && !S.logoImg && S._stashedLogo) { S.logoImg = S._stashedLogo; S._stashedLogo = null; }
+  sdTaraApplyBranding(u, warnings, false);
   await generate();
-  return { warnings, missed };
+  return { warnings };
 }
 
 (function () {
@@ -2630,8 +2678,13 @@ async function sdTaraStudioBuild(plan, files, consent, hints) {
   window.addEventListener('message', async ev => {
     if (ev.origin !== location.origin) return;
     const d = ev.data;
-    if (!d || d.type !== 'sd:tara-studio-build') return;
+    if (!d || (d.type !== 'sd:tara-studio-build' && d.type !== 'sd:tara-studio-update')) return;
     const reply = o => { try { window.parent.postMessage(Object.assign({ type: 'sd:tara-studio-built', requestId: d.requestId || null }, o), location.origin); } catch (e) {} };
+    if (d.type === 'sd:tara-studio-update') {
+      try { reply(Object.assign({ ok: true }, await sdTaraStudioUpdate(d.update || {}))); }
+      catch (e) { reply({ ok: false, error: String((e && e.message) || e) }); }
+      return;
+    }
     try { reply(Object.assign({ ok: true }, await sdTaraStudioBuild(d.plan || {}, d.files || [], d.consent, d.hints || null))); }
     catch (e) { console.error('[Studio] Tara build failed', e); reply({ ok: false, error: String((e && e.message) || e) }); }
   });
