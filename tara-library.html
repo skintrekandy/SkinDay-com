@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Tara Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#FBFCFD; --surface:#FFFFFF; --surface-2:#F7F9FB;
+    --ink:#14181D; --ink-2:#3A424C; --muted:#697079; --faint:#9AA1AA;
+    --line:#E7EBEF; --line-2:#F0F3F6;
+    --accent:#147D74; --accent-strong:#0F5F58; --accent-soft:#EAF4F2;
+    --warn:#9A6212; --warn-soft:#FBF1DF; --bad:#B3261E; --bad-soft:#FDECEA;
+    --radius:14px; --radius-sm:9px;
+    --font-ui:'Hanken Grotesk',system-ui,-apple-system,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-ui); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; }
+  button, input, select { font:inherit; color:inherit; }
+  header { position:sticky; top:0; z-index:10; background:var(--surface); border-bottom:1px solid var(--line); }
+  .hin { max-width:920px; margin:0 auto; padding:14px 24px; display:flex; align-items:center; gap:12px; }
+  .brand { font-weight:600; font-size:16px; }
+  .brand b { color:var(--accent-strong); }
+  .spacer { flex:1; }
+  .btn { display:inline-block; border:1px solid var(--line); background:var(--surface); border-radius:100px; padding:7px 14px; font-size:13.5px; cursor:pointer; color:var(--ink-2); text-decoration:none; }
+  .btn:hover { border-color:var(--accent); color:var(--accent-strong); }
+  .btn.go { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .btn.go:hover { background:var(--accent-strong); }
+  .btn:disabled { opacity:.5; cursor:default; }
+  .wrap { max-width:920px; margin:0 auto; padding:20px 24px 80px; }
+  .acts { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .panel { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:14px; }
+  .panel h2 { margin:0 0 12px; font-size:16px; }
+  .f { margin-bottom:12px; }
+  .f label { display:block; font-family:var(--font-mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+  .f input[type=text], .f input[type=number] { width:100%; border:1px solid var(--line); border-radius:var(--radius-sm); padding:9px 12px; font-size:14.5px; background:var(--surface); }
+  .f input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .grid { display:grid; grid-template-columns:2fr 1fr; gap:12px; }
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:100px; padding:3px; background:var(--surface-2); }
+  .seg button { border:0; background:none; border-radius:100px; padding:5px 14px; font-size:13.5px; cursor:pointer; color:var(--muted); }
+  .seg button.on { background:var(--surface); color:var(--ink); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.06); }
+  .bar { height:6px; border-radius:6px; background:var(--line-2); overflow:hidden; margin-top:10px; }
+  .bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .2s; }
+  .note { font-size:13px; color:var(--muted); margin-top:8px; }
+  .tabs { display:flex; gap:6px; margin:6px 0 10px; }
+  .tabs button { border:1px solid var(--line); background:var(--surface); border-radius:100px; padding:5px 13px; font-size:13px; cursor:pointer; color:var(--muted); }
+  .tabs button.on { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600; }
+  .list { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 12px; padding:12px 16px; border-bottom:1px solid var(--line-2); align-items:center; }
+  .row:last-child { border-bottom:0; }
+  .row .t { font-weight:600; font-size:14.5px; line-height:1.4; }
+  .row .m { font-size:12.5px; color:var(--muted); grid-column:1; }
+  .row .m a { color:var(--accent-strong); }
+  .row .m .warn { color:var(--warn); }
+  .row .m .bad { color:var(--bad); }
+  .row .r { grid-column:2; grid-row:1 / 3; display:flex; gap:6px; align-items:center; }
+  .chip { font-family:var(--font-mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase; border-radius:100px; padding:2px 8px; white-space:nowrap; }
+  .chip.ready { background:var(--accent-soft); color:var(--accent-strong); }
+  .chip.busy { background:var(--surface-2); color:var(--muted); border:1px solid var(--line); }
+  .chip.failed { background:var(--bad-soft); color:var(--bad); }
+  .chip.kind { background:none; color:var(--faint); padding-left:0; }
+  .row .r .btn { padding:4px 11px; font-size:12.5px; }
+  .row .r .btn.confirm { border-color:var(--bad); color:var(--bad); }
+  .empty { color:var(--muted); text-align:center; padding:40px 20px; }
+  .gate { max-width:420px; margin:80px auto; text-align:center; color:var(--ink-2); }
+  @media (max-width:700px){
+    .hin { padding:12px 16px; }
+    .wrap { padding:12px 12px 90px; }
+    .acts { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .acts .btn { padding:9px 6px; font-size:12.5px; text-align:center; white-space:nowrap; }
+    .grid { grid-template-columns:1fr; }
+    .row { grid-template-columns:1fr; }
+    .row .r { grid-column:1; grid-row:auto; margin-top:6px; }
+  }
+</style>
+</head>
+<body>
+<header><div class="hin">
+  <div class="brand">SkinDay <b>Tara Library</b></div>
+  <div class="spacer"></div>
+  <a class="btn" href="/tara-knowledge">Products</a>
+</div></header>
+<div id="app" class="wrap" hidden>
+  <div class="acts">
+    <button class="btn go" id="openUp">Upload PDF</button>
+    <button class="btn" id="openRef">Add from PubMed</button>
+    <button class="btn" id="scan">Find new studies</button>
+  </div>
+
+  <div class="panel" id="upPanel" hidden>
+    <h2>Upload a book or study</h2>
+    <div class="f"><div class="seg" id="kind"><button data-k="book" class="on">Book</button><button data-k="study">Study</button></div></div>
+    <div class="f"><label for="upFile">PDF</label><input type="file" id="upFile" accept="application/pdf,.pdf"></div>
+    <div class="grid">
+      <div class="f"><label for="upTitle">Title</label><input type="text" id="upTitle"></div>
+      <div class="f"><label for="upYear">Year</label><input type="number" id="upYear" min="1950" max="2100"></div>
+    </div>
+    <div class="f"><label for="upAuthors">Authors or editors (optional)</label><input type="text" id="upAuthors"></div>
+    <button class="btn go" id="upGo">Upload</button>
+    <div class="bar" id="upBar" hidden><i></i></div>
+    <div class="note" id="upMsg"></div>
+  </div>
+
+  <div class="panel" id="refPanel" hidden>
+    <h2>Add a study from PubMed</h2>
+    <div class="f"><label for="refIn">PubMed link, PubMed number or DOI</label><input type="text" id="refIn" placeholder="https://pubmed.ncbi.nlm.nih.gov/…"></div>
+    <button class="btn go" id="refGo">Add</button>
+    <div class="note" id="refMsg"></div>
+  </div>
+
+  <div class="note" id="scanMsg" style="margin:-4px 0 10px"></div>
+  <div class="tabs" id="tabs">
+    <button data-t="lib" class="on">In the library</button>
+    <button data-t="sug">Suggested studies</button>
+  </div>
+  <div class="list" id="list"></div>
+</div>
+<div class="gate" id="gate" hidden></div>
+
+<script>
+(function(){
+  'use strict';
+  var API='/.netlify/functions/mi-tara';
+  var KEY=null; try{ KEY=localStorage.getItem('mi_session'); }catch(e){}
+  var ALL=[], TAB='lib', PART=3*1024*1024, KIND='book', POLL=null, LAST=null;
+  function el(id){ return document.getElementById(id); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function api(action, extra){
+    return fetch(API,{method:'POST',headers:{'content-type':'application/json','x-mi-secret':KEY||''},body:JSON.stringify(Object.assign({action:action},extra||{}))})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok){ j.status=r.status; throw j; } return j; }); });
+  }
+  function errText(e, fallback){ return (e&&(e.error||e.message))||fallback; }
+  function gate(msg){ el('app').hidden=true; el('gate').hidden=false; el('gate').innerHTML=msg; }
+
+  function load(){
+    if(!KEY){ gate('Please <a href="/mi-dashboard">sign in to MI</a> first, then come back to this page.'); return; }
+    return api('kb_lib_list').then(function(j){
+      ALL=j.sources||[]; LAST=j.last_scan; if(j.part_bytes) PART=j.part_bytes;
+      el('app').hidden=false; paint();
+      clearTimeout(POLL);
+      if(ALL.some(function(r){ return r.status==='processing'||r.status==='uploading'; })) POLL=setTimeout(load,6000);
+    }).catch(function(e){
+      gate(e&&e.status===401 ? 'Your MI session has expired. Please <a href="/mi-dashboard">sign in again</a>.' : 'This page is only for SkinDay internal accounts.');
+    });
+  }
+  function size(b){ if(!b) return ''; return b>1048576 ? (b/1048576).toFixed(b>10485760?0:1)+' MB' : Math.max(1,Math.round(b/1024))+' KB'; }
+  function paint(){
+    var sug=ALL.filter(function(r){ return r.status==='suggested'; });
+    var lib=ALL.filter(function(r){ return r.status!=='suggested'; });
+    el('tabs').children[0].textContent='In the library ('+lib.filter(function(r){return r.status==='ready';}).length+')';
+    el('tabs').children[1].textContent='Suggested studies'+(sug.length?' ('+sug.length+')':'');
+    var rows=TAB==='sug'?sug:lib;
+    if(!rows.length){
+      el('list').innerHTML='<div class="empty">'+(TAB==='sug'
+        ? 'No suggestions waiting. Find new studies checks PubMed for recent papers on the products Tara knows.'
+        : 'Nothing here yet. Upload a textbook or add a study to start.')+'</div>';
+      return;
+    }
+    el('list').innerHTML=rows.map(function(r){
+      var meta=[r.kind==='book'?'Book':'Study', r.authors, r.journal, r.year].filter(Boolean).map(esc).join(' · ');
+      if(r.status==='suggested'){
+        if(r.pub_types) meta+=' · '+esc(r.pub_types.replace(/Journal Article;? ?/,'').replace(/;\s*$/,''));
+        if(r.product) meta+=' · <span>for '+esc(r.product)+'</span>';
+        return '<div class="row"><div class="t">'+esc(r.title)+'</div><div class="m">'+meta+'</div><div class="r">'+
+          '<a class="btn" target="_blank" rel="noopener" href="https://pubmed.ncbi.nlm.nih.gov/'+esc(r.pmid)+'/">PubMed</a>'+
+          '<button class="btn" data-skip="'+r.id+'">Skip</button><button class="btn go" data-accept="'+r.id+'">Add</button></div></div>';
+      }
+      var chip = r.status==='ready' ? '<span class="chip ready">Ready</span>'
+        : r.status==='failed' ? '<span class="chip failed">Failed</span>'
+        : '<span class="chip busy">'+(r.status==='uploading'?'Uploading':'Reading')+'</span>';
+      if(r.bytes && r.kind==='book') meta+=' · '+size(r.bytes);
+      if(r.status==='ready' && r.kind==='book' && r.usage_bytes!=null && r.usage_bytes<20000) meta+=' · <span class="warn">Very little readable text. If this is a scanned book, Tara cannot read the pages.</span>';
+      if(r.status==='failed' && r.error) meta+=' · <span class="bad">'+esc(r.error)+'</span>';
+      if(r.pmid) meta+=' · <a href="https://pubmed.ncbi.nlm.nih.gov/'+esc(r.pmid)+'/" target="_blank" rel="noopener">PubMed</a>';
+      return '<div class="row"><div class="t">'+esc(r.title)+'</div><div class="m">'+meta+'</div><div class="r">'+chip+
+        '<button class="btn" data-rm="'+r.id+'">Remove</button></div></div>';
+    }).join('');
+  }
+  el('tabs').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    TAB=b.getAttribute('data-t');
+    Array.prototype.forEach.call(el('tabs').children,function(x){ x.classList.toggle('on',x===b); });
+    paint();
+  });
+  el('list').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    var rm=b.getAttribute('data-rm'), ac=b.getAttribute('data-accept'), sk=b.getAttribute('data-skip');
+    if(rm){
+      if(!b.classList.contains('confirm')){ b.classList.add('confirm'); b.textContent='Remove?'; setTimeout(function(){ b.classList.remove('confirm'); b.textContent='Remove'; },3000); return; }
+      b.disabled=true; api('kb_lib_remove',{id:rm}).then(load).catch(function(e2){ alert(errText(e2,'Could not remove it.')); load(); });
+    } else if(ac){
+      b.disabled=true; b.textContent='Adding…';
+      api('kb_lib_accept',{id:ac}).then(load).catch(function(e2){ alert(errText(e2,'Could not add it.')); load(); });
+    } else if(sk){
+      b.disabled=true; api('kb_lib_remove',{id:sk}).then(load).catch(load);
+    }
+  });
+
+  // ---- uploading a PDF in slices
+  el('openUp').addEventListener('click',function(){ el('upPanel').hidden=!el('upPanel').hidden; el('refPanel').hidden=true; });
+  el('openRef').addEventListener('click',function(){ el('refPanel').hidden=!el('refPanel').hidden; el('upPanel').hidden=true; });
+  el('kind').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return; KIND=b.getAttribute('data-k');
+    Array.prototype.forEach.call(el('kind').children,function(x){ x.classList.toggle('on',x===b); });
+  });
+  el('upFile').addEventListener('change',function(){
+    var f=this.files&&this.files[0]; if(f && !el('upTitle').value.trim()) el('upTitle').value=f.name.replace(/\.pdf$/i,'').replace(/[_]+/g,' ');
+  });
+  function sendPart(id, blob, tries){
+    return fetch(API+'?action=kb_lib_part&id='+encodeURIComponent(id),{method:'POST',headers:{'content-type':'application/octet-stream','x-mi-secret':KEY||''},body:blob})
+      .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ if(!r.ok||!j.part_id) throw j; return j.part_id; }); })
+      .catch(function(e){ if(tries>0) return new Promise(function(res){ setTimeout(res,1500); }).then(function(){ return sendPart(id, blob, tries-1); }); throw e; });
+  }
+  el('upGo').addEventListener('click',function(){
+    var f=el('upFile').files&&el('upFile').files[0], title=el('upTitle').value.trim();
+    if(!f){ el('upMsg').textContent='Choose a PDF first.'; return; }
+    if(!title){ el('upMsg').textContent='Give it a title first.'; return; }
+    var go=el('upGo'); go.disabled=true; el('upBar').hidden=false; el('upBar').firstChild.style.width='0';
+    el('upMsg').textContent='Starting…';
+    var id, parts=[];
+    api('kb_lib_start',{kind:KIND,title:title,year:el('upYear').value,authors:el('upAuthors').value,bytes:f.size}).then(function(j){
+      id=j.id; var step=j.part_bytes||PART, off=0;
+      function next(){
+        if(off>=f.size) return Promise.resolve();
+        var end=Math.min(off+step,f.size);
+        return sendPart(id, f.slice(off,end), 2).then(function(pid){
+          parts.push(pid); off=end;
+          var pct=Math.round(off/f.size*100);
+          el('upBar').firstChild.style.width=pct+'%';
+          el('upMsg').textContent='Uploading '+pct+'% · '+size(off)+' of '+size(f.size)+'. Keep this page open.';
+          return next();
+        });
+      }
+      return next();
+    }).then(function(){
+      el('upMsg').textContent='Finishing…';
+      return api('kb_lib_finish',{id:id,part_ids:parts});
+    }).then(function(){
+      el('upMsg').textContent='Uploaded. Tara is reading it now. Large books can take several minutes; it shows Ready when done.';
+      el('upFile').value=''; el('upTitle').value=''; el('upYear').value=''; el('upAuthors').value='';
+      TAB='lib'; el('tabs').children[0].click(); load();
+    }).catch(function(e){
+      el('upMsg').textContent=errText(e,'The upload stopped. Please try again.');
+      if(id) load();
+    }).then(function(){ go.disabled=false; });
+  });
+
+  // ---- a study from PubMed
+  el('refGo').addEventListener('click',function(){
+    var v=el('refIn').value.trim(); if(!v) return;
+    var b=el('refGo'); b.disabled=true; el('refMsg').textContent='Looking it up…';
+    api('kb_lib_add_ref',{ref:v}).then(function(j){
+      el('refMsg').textContent=j.note || ('Added: '+(j.title||'study')+'. Tara is reading it now.');
+      el('refIn').value=''; load();
+    }).catch(function(e){ el('refMsg').textContent=errText(e,'Could not add that study.'); })
+      .then(function(){ b.disabled=false; });
+  });
+
+  // ---- recent studies on the products Tara knows
+  el('scan').addEventListener('click',function(){
+    var b=el('scan'); b.disabled=true; el('scanMsg').textContent='Getting the product list…';
+    var found=0;
+    api('kb_lib_scan_begin').then(function(j){
+      var list=j.products||[], i=0, N=4;
+      if(!list.length){ el('scanMsg').textContent='Approve some products first, then this can look for studies on them.'; return; }
+      function next(){
+        if(i>=list.length) return api('kb_lib_scan_end');
+        el('scanMsg').textContent='Checking PubMed since '+j.since+' · '+Math.min(i+N,list.length)+' of '+list.length+' products · '+found+' new so far';
+        return api('kb_lib_scan',{items:list.slice(i,i+N),since:j.since}).then(function(r){ found+=r.added||0; i+=N; return next(); })
+          .catch(function(){ i+=N; return next(); });
+      }
+      return next().then(function(){
+        el('scanMsg').textContent=found ? found+' new '+(found===1?'study':'studies')+' to look through under Suggested studies.' : 'No new studies since '+j.since+'.';
+        if(found) el('tabs').children[1].click();
+        return load();
+      });
+    }).catch(function(e){ el('scanMsg').textContent=errText(e,'Could not check PubMed just now.'); })
+      .then(function(){ b.disabled=false; });
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
