@@ -19,6 +19,7 @@
     --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
   }
   * { box-sizing:border-box; }
+  [hidden] { display:none !important; }
   body { margin:0; background:var(--bg); color:var(--ink); font-family:var(--font-ui); font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased; }
   button, input, select { font:inherit; color:inherit; }
   header { position:sticky; top:0; z-index:10; background:var(--surface); border-bottom:1px solid var(--line); }
@@ -66,6 +67,14 @@
   .row .r .btn { padding:4px 11px; font-size:12.5px; }
   .row .r .btn.confirm { border-color:var(--bad); color:var(--bad); }
   .empty { color:var(--muted); text-align:center; padding:40px 20px; }
+  .search { margin-bottom:10px; }
+  .search input { width:100%; border:1px solid var(--line); border-radius:100px; padding:9px 16px; font-size:14.5px; background:var(--surface); }
+  .search input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .sugbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+  .sugbar select { border:1px solid var(--line); border-radius:100px; padding:6px 12px; font-size:13px; background:var(--surface); max-width:220px; }
+  .sugbar .spacer { flex:1; }
+  .sugbar .btn.confirm { border-color:var(--bad); color:var(--bad); background:var(--surface); }
+  .ev { font-weight:600; color:var(--ink-2); }
   .gate { max-width:420px; margin:80px auto; text-align:center; color:var(--ink-2); }
   @media (max-width:700px){
     .hin { padding:12px 16px; }
@@ -75,6 +84,9 @@
     .grid { grid-template-columns:1fr; }
     .row { grid-template-columns:1fr; }
     .row .r { grid-column:1; grid-row:auto; margin-top:6px; }
+    .sugbar select { flex:1; max-width:none; }
+    .sugbar .spacer { display:none; }
+    .sugbar .btn { flex:1; text-align:center; }
   }
 </style>
 </head>
@@ -88,7 +100,7 @@
   <div class="acts">
     <button class="btn go" id="openUp">Upload PDF</button>
     <button class="btn" id="openRef">Add from PubMed</button>
-    <button class="btn" id="scan">Find new studies</button>
+    <button class="btn" id="scan">Update studies</button>
   </div>
 
   <div class="panel" id="upPanel" hidden>
@@ -113,9 +125,17 @@
   </div>
 
   <div class="note" id="scanMsg" style="margin:-4px 0 10px"></div>
-  <div class="tabs" id="tabs">
+  <div class="search"><input type="search" id="q" placeholder="Search the library"></div>
+  <div class="tabs" id="tabs" hidden>
     <button data-t="lib" class="on">In the library</button>
     <button data-t="sug">Suggested studies</button>
+  </div>
+  <div class="sugbar" id="sugbar" hidden>
+    <select id="fProd"><option value="">All products</option></select>
+    <select id="fType"><option value="strong">Trials and reviews</option><option value="">All study types</option></select>
+    <span class="spacer"></span>
+    <button class="btn" id="skipAll">Skip all shown</button>
+    <button class="btn go" id="addAll">Add all shown</button>
   </div>
   <div class="list" id="list"></div>
 </div>
@@ -147,23 +167,51 @@
       gate(e&&e.status===401 ? 'Your MI session has expired. Please <a href="/mi-dashboard">sign in again</a>.' : 'This page is only for SkinDay internal accounts.');
     });
   }
+  // Evidence type from PubMed's publication types, strongest first.
+  var EV=[['Meta-Analysis','Meta-analysis'],['Systematic Review','Systematic review'],['Randomized Controlled Trial','Randomised trial'],
+    ['Clinical Trial','Clinical trial'],['Multicenter Study','Multicentre study'],['Comparative Study','Comparative study'],
+    ['Practice Guideline','Guideline'],['Consensus','Consensus'],['Observational Study','Observational study'],['Review','Review'],
+    ['Case Reports','Case report']];
+  function evidence(pt){
+    pt=String(pt||'');
+    for(var i=0;i<EV.length;i++){ if(pt.indexOf(EV[i][0])>-1) return {rank:i, label:EV[i][1]}; }
+    return {rank:EV.length, label:''};
+  }
+  function strong(r){ var e=evidence(r.pub_types); return e.rank<=5 || e.label==='Review' || e.label==='Guideline' || e.label==='Consensus'; }
+  function shownSuggestions(){
+    var p=el('fProd').value, t=el('fType').value;
+    return ALL.filter(function(r){ return r.status==='suggested' && (!p || r.product===p) && (!t || strong(r)); })
+      .sort(function(a,b){ return evidence(a.pub_types).rank-evidence(b.pub_types).rank || (b.year||0)-(a.year||0); });
+  }
+  function fillProducts(sug){
+    var cur=el('fProd').value, n={};
+    sug.forEach(function(r){ if(r.product) n[r.product]=(n[r.product]||0)+1; });
+    el('fProd').innerHTML='<option value="">All products ('+sug.length+')</option>'+Object.keys(n).sort().map(function(k){
+      return '<option value="'+esc(k)+'"'+(k===cur?' selected':'')+'>'+esc(k)+' ('+n[k]+')</option>'; }).join('');
+    if(cur && !n[cur]) el('fProd').value='';
+  }
   function size(b){ if(!b) return ''; return b>1048576 ? (b/1048576).toFixed(b>10485760?0:1)+' MB' : Math.max(1,Math.round(b/1024))+' KB'; }
   function paint(){
     var sug=ALL.filter(function(r){ return r.status==='suggested'; });
     var lib=ALL.filter(function(r){ return r.status!=='suggested'; });
     el('tabs').children[0].textContent='In the library ('+lib.filter(function(r){return r.status==='ready';}).length+')';
     el('tabs').children[1].textContent='Suggested studies'+(sug.length?' ('+sug.length+')':'');
-    var rows=TAB==='sug'?sug:lib;
+    el('sugbar').hidden = TAB!=='sug' || !sug.length;
+    if(TAB==='sug') fillProducts(sug);
+    var q=el('q').value.trim().toLowerCase();
+    if(q) lib=lib.filter(function(r){ return [r.title,r.authors,r.journal,r.product,r.year].join(' ').toLowerCase().indexOf(q)>-1; });
+    var rows=TAB==='sug'?shownSuggestions():lib;
+    if(TAB==='sug'){ el('addAll').textContent='Add all '+rows.length+' shown'; el('skipAll').textContent='Skip all '+rows.length+' shown'; }
     if(!rows.length){
       el('list').innerHTML='<div class="empty">'+(TAB==='sug'
-        ? 'No suggestions waiting. Find new studies checks PubMed for recent papers on the products Tara knows.'
-        : 'Nothing here yet. Upload a textbook or add a study to start.')+'</div>';
+        ? (sug.length ? 'Nothing matches this filter.' : 'No suggestions waiting. Find new studies checks PubMed for recent papers on the products Tara knows.')
+        : (q ? 'Nothing matches that search.' : 'Nothing here yet. Upload a textbook, add a study, or press Update studies.'))+'</div>';
       return;
     }
     el('list').innerHTML=rows.map(function(r){
       var meta=[r.kind==='book'?'Book':'Study', r.authors, r.journal, r.year].filter(Boolean).map(esc).join(' · ');
       if(r.status==='suggested'){
-        if(r.pub_types) meta+=' · '+esc(r.pub_types.replace(/Journal Article;? ?/,'').replace(/;\s*$/,''));
+        var ev=evidence(r.pub_types).label; if(ev) meta+=' · <span class="ev">'+esc(ev)+'</span>';
         if(r.product) meta+=' · <span>for '+esc(r.product)+'</span>';
         return '<div class="row"><div class="t">'+esc(r.title)+'</div><div class="m">'+meta+'</div><div class="r">'+
           '<a class="btn" target="_blank" rel="noopener" href="https://pubmed.ncbi.nlm.nih.gov/'+esc(r.pmid)+'/">PubMed</a>'+
@@ -185,6 +233,42 @@
     TAB=b.getAttribute('data-t');
     Array.prototype.forEach.call(el('tabs').children,function(x){ x.classList.toggle('on',x===b); });
     paint();
+  });
+  el('q').addEventListener('input',paint);
+  el('fProd').addEventListener('change',paint);
+  el('fType').addEventListener('change',paint);
+  function twoTap(b, label){
+    if(b.classList.contains('confirm')) return true;
+    var orig=b.textContent; b.classList.add('confirm'); b.textContent=label;
+    setTimeout(function(){ if(b.classList.contains('confirm')){ b.classList.remove('confirm'); b.textContent=orig; } },3500);
+    return false;
+  }
+  var BUSY=false;
+  el('skipAll').addEventListener('click',function(){
+    var rows=shownSuggestions(); if(!rows.length||BUSY) return;
+    if(!twoTap(this,'Skip '+rows.length+'?')) return;
+    this.classList.remove('confirm'); BUSY=true;
+    api('kb_lib_skip_many',{ids:rows.map(function(r){ return r.id; })}).then(load).catch(load).then(function(){ BUSY=false; });
+  });
+  // Adds studies to the library, three at a time.
+  function addMany(rows){
+    var i=0, done=0, failed=0, total=rows.length;
+    function worker(){
+      if(i>=total) return Promise.resolve();
+      var r=rows[i++];
+      el('scanMsg').textContent='Adding studies to the library: '+(done+failed+1)+' of '+total+'. Keep this page open.';
+      return api('kb_lib_accept',{id:r.id}).then(function(){ done++; },function(){ failed++; }).then(worker);
+    }
+    return Promise.all([worker(),worker(),worker()]).then(function(){ return {done:done, failed:failed}; });
+  }
+  el('addAll').addEventListener('click',function(){
+    var rows=shownSuggestions(); if(!rows.length||BUSY) return;
+    if(!twoTap(this,'Add '+rows.length+'?')) return;
+    this.classList.remove('confirm'); BUSY=true;
+    addMany(rows).then(function(r){
+      el('scanMsg').textContent='Added '+r.done+' '+(r.done===1?'study':'studies')+(r.failed?', '+r.failed+' could not be added':'')+'. Tara is reading them now.';
+      BUSY=false; return load();
+    });
   });
   el('list').addEventListener('click',function(e){
     var b=e.target.closest('button'); if(!b) return;
@@ -273,10 +357,13 @@
         return api('kb_lib_scan',{items:list.slice(i,i+N),since:j.since}).then(function(r){ found+=r.added||0; i+=N; return next(); })
           .catch(function(){ i+=N; return next(); });
       }
-      return next().then(function(){
-        el('scanMsg').textContent=found ? found+' new '+(found===1?'study':'studies')+' to look through under Suggested studies.' : 'No new studies since '+j.since+'.';
-        if(found) el('tabs').children[1].click();
-        return load();
+      return next().then(load).then(function(){
+        var waiting=ALL.filter(function(r){ return r.status==='suggested'; });
+        if(!waiting.length){ el('scanMsg').textContent='No new studies since '+j.since+'.'; return; }
+        return addMany(waiting).then(function(r){
+          el('scanMsg').textContent='Added '+r.done+' new '+(r.done===1?'study':'studies')+(r.failed?' ('+r.failed+' could not be added; press Update studies again to retry)':'')+'. Tara is reading them now.';
+          return load();
+        });
       });
     }).catch(function(e){ el('scanMsg').textContent=errText(e,'Could not check PubMed just now.'); })
       .then(function(){ b.disabled=false; });
