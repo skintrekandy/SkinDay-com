@@ -197,6 +197,7 @@
     el('tabs').children[0].textContent='In the library ('+lib.filter(function(r){return r.status==='ready';}).length+')';
     el('tabs').children[1].textContent='Suggested studies'+(sug.length?' ('+sug.length+')':'');
     el('sugbar').hidden = TAB!=='sug' || !sug.length;
+    if(sug.length && !BUSY && !el('scan').disabled) el('scanMsg').textContent=sug.length+' '+(sug.length===1?'study is':'studies are')+' waiting to be added. Press Update studies to add '+(sug.length===1?'it':'them')+'.';
     if(TAB==='sug') fillProducts(sug);
     var q=el('q').value.trim().toLowerCase();
     if(q) lib=lib.filter(function(r){ return [r.title,r.authors,r.journal,r.product,r.year].join(' ').toLowerCase().indexOf(q)>-1; });
